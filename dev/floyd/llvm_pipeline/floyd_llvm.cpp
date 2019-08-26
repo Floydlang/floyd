@@ -17,8 +17,8 @@
 namespace floyd {
 
 
-run_output_t run_program_helper(const std::string& program_source, const std::string& file, const std::vector<std::string>& main_args){
-	const auto cu = floyd::make_compilation_unit_nolib(program_source, file);
+run_output_t run_program_helper(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const std::vector<std::string>& main_args){
+	const auto cu = floyd::make_compilation_unit(program_source, file, mode);
 	const auto sem_ast = compile_to_sematic_ast__errors(cu);
 
 	llvm_instance_t instance;

@@ -184,7 +184,7 @@ static int do_run(const command_t& command, const command_t::compile_and_run_t& 
 	const auto source = read_text_file(command2.source_path);
 
 	if(command2.backend == ebackend::llvm){
-		const auto run_results = floyd::run_program_helper(source, command2.source_path, command2.floyd_main_args);
+		const auto run_results = floyd::run_program_helper(source, command2.source_path, compilation_unit_mode::k_include_core_lib, command2.floyd_main_args);
 		if(run_results.process_results.empty()){
 			return static_cast<int>(run_results.main_result);
 		}

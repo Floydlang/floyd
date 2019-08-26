@@ -2,7 +2,6 @@
 
 
 benchmark-def "AAA" {
-	print("YES")
 	return [ benchmark_result_t(200, json("0 eleements")) ]
 }
 
@@ -67,4 +66,12 @@ benchmark-def "dict hamt push_back()" {
 }
 
 //print(make_benchmark_report(run_benchmarks(get_benchmarks())))
+
+
+let to_run = [
+	benchmark_id_t("", "Linear veq"),
+	benchmark_id_t("", "dict hamt push_back()")
+]
+
+print(make_benchmark_report(run_benchmarks(to_run)))
 

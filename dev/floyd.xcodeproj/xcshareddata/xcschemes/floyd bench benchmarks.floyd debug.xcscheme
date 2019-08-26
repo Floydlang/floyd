@@ -63,7 +63,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "bench"
+            argument = "run"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -76,11 +76,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&quot;Linear veq&quot;"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&quot;dict hamt push_back()&quot;"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>
