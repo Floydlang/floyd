@@ -886,7 +886,7 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 
 		return result_reg;
 	}
-	else if(is_dict_cppmap(parent_type) || is_dict_hamt(parent_type)){
+	else if(is_dict_cppmap(parent_type) || is_dict_hamt(parent_type)){
 		QUARK_ASSERT(key_type.is_string());
 
 		const auto element_type0 = parent_type.get_dict_value_type();
