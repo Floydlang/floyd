@@ -76,7 +76,7 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 
 
 	func benchmark_id_t get_benchmarks_f(benchmark_def_t def, int c){
-		return benchmark_id_t( "module x", def.name)
+		return benchmark_id_t( "", def.name)
 	}
 
 	func [benchmark_id_t] get_benchmarks(){

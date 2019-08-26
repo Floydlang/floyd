@@ -68,7 +68,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-t"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&quot;benchmarks/floyd_benchmarks.floyd&quot;"
@@ -76,6 +76,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&quot;Linear veq&quot;"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&quot;dict hamt push_back()&quot;"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

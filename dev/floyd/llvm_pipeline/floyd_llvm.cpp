@@ -32,8 +32,8 @@ run_output_t run_program_helper(const std::string& program_source, const std::st
 
 
 
-std::vector<bench_t> collect_benchmarks(const std::string& program_source, const std::string& file){
-	const auto cu = floyd::make_compilation_unit_nolib(program_source, file);
+std::vector<bench_t> collect_benchmarks(const std::string& program_source, const std::string& file, compilation_unit_mode mode){
+	const auto cu = floyd::make_compilation_unit(program_source, file, mode);
 	const auto sem_ast = compile_to_sematic_ast__errors(cu);
 
 	llvm_instance_t instance;
@@ -45,8 +45,8 @@ std::vector<bench_t> collect_benchmarks(const std::string& program_source, const
 //	const auto result = mapf<benchmark_id_t>(b, [](auto& e){ return e.benchmark_id; });
 }
 
-std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_source, const std::string& file, const std::vector<std::string>& tests){
-	const auto cu = floyd::make_compilation_unit_nolib(program_source, file);
+std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const std::vector<std::string>& tests){
+	const auto cu = floyd::make_compilation_unit(program_source, file, mode);
 	const auto sem_ast = compile_to_sematic_ast__errors(cu);
 
 	llvm_instance_t instance;
@@ -78,6 +78,7 @@ QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
 			}
 		)",
 		"myfile.floyd",
+		compilation_unit_mode::k_no_core_lib,
 		{ }
 	);
 	QUARK_UT_VERIFY(true);

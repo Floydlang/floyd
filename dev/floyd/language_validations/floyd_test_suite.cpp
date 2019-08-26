@@ -2663,7 +2663,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_benchmarks()", "", ""){
 			print(get_benchmarks())
 		)",
 		{
-			R"___([{module="module x", test="AAA"}, {module="module x", test="BBB"}])___",
+			R"___([{module="", test="AAA"}, {module="", test="BBB"}])___",
 		}
 	);
 }
@@ -2683,7 +2683,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "run_benchmarks()", "", ""){
 			print(run_benchmarks(get_benchmarks()))
 		)",
 		{
-			R"___([{test_id={module="module x", test="AAA"}, result={dur=200, more="0 eleements"}}, {test_id={module="module x", test="BBB"}, result={dur=300, more="3 monkeys"}}])___",
+			R"___([{test_id={module="", test="AAA"}, result={dur=200, more="0 eleements"}}, {test_id={module="", test="BBB"}, result={dur=300, more="3 monkeys"}}])___",
 		}
 	);
 }
@@ -2705,8 +2705,8 @@ FLOYD_LANG_PROOF("Floyd test suite", "run_benchmarks()", "", ""){
 		{
 R"___(| MODULE    | TEST  |    DUR|              |
 |-----------|-------|-------|--------------|
-| module x  | AAA   | 200 ns| 0 eleements  |
-| module x  | BBB   | 300 ns| 3 monkeys    |
+|   | AAA   | 200 ns| 0 eleements  |
+|   | BBB   | 300 ns| 3 monkeys    |
 )___"
 		}
 	);
