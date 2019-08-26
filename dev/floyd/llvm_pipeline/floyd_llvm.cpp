@@ -55,7 +55,7 @@ std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_sourc
 
 	const auto b = collect_benchmarks(*ee);
 	const auto b2 = filter_benchmarks(b, tests);
-	if(b2.size() != b.size()){
+	if(b2.size() < tests.size()){
 		QUARK_TRACE("Some specified tests were not found");
 	}
 

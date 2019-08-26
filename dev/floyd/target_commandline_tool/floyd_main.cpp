@@ -29,7 +29,9 @@
 
 #include "floyd_command_line_parser.h"
 
-
+/*
+https://www.raywenderlich.com/511-command-line-programs-on-macos-tutorial
+*/
 
 
 using namespace floyd;
@@ -373,7 +375,7 @@ QUARK_UNIT_TEST("", "do_user_benchmarks_list()", "", ""){
 
 
 static int do_user_benchmarks(const command_t& command, const command_t::user_benchmarks_t& command2){
-	g_trace_on = false;
+	g_trace_on = command2.trace;
 
 	if(command2.backend != ebackend::llvm){
 		throw std::runtime_error("Command requires LLVM backend.");
@@ -382,6 +384,13 @@ static int do_user_benchmarks(const command_t& command, const command_t::user_be
 	const auto program_source = read_text_file(command2.source_path);
 
 	if(command2.mode == command_t::user_benchmarks_t::mode::run_all){
+		if(DEBUG){
+			std::cout << "DEBUG build: WARNING: benchmarking a debug build" << std::endl;
+		}
+		else{
+			std::cout << "RELEASE build" << std::endl;
+		}
+
 		const auto s = do_user_benchmarks_run_all(program_source, command2.source_path);
 		std::cout << get_current_date_and_time_string() << std::endl;
 		std::cout << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;
@@ -389,6 +398,13 @@ static int do_user_benchmarks(const command_t& command, const command_t::user_be
 		return EXIT_SUCCESS;
 	}
 	else if(command2.mode == command_t::user_benchmarks_t::mode::run_specified){
+		if(DEBUG){
+			std::cout << "DEBUG build: WARNING: benchmarking a debug build" << std::endl;
+		}
+		else{
+			std::cout << "RELEASE build" << std::endl;
+		}
+
 		const auto s = do_user_benchmarks_run_specified(program_source, command2.source_path, command2.optional_benchmark_keys);
 		std::cout << get_current_date_and_time_string() << std::endl;
 		std::cout << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;

@@ -63,11 +63,19 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "bench examples/benchmarks.floyd AAA"
+            argument = "bench"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-t"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "benchmarks/floyd_benchmarks.floyd"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&quot;Linear veq&quot;"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
