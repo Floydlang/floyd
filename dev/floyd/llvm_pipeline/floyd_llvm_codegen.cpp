@@ -1380,7 +1380,7 @@ static llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& ge
 static llvm::Value* generate_push_back_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
-	QUARK_ASSERT(e.get_output_type().is_vector());
+	QUARK_ASSERT(e.get_output_type().is_vector() || e.get_output_type().is_string());
 
 	auto& builder = gen_acc.get_builder();
 
