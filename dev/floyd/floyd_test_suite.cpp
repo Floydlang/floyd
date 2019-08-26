@@ -6925,6 +6925,36 @@ FLOYD_LANG_PROOF("MANUAL SNIPPETS", "subset()", "", ""){
 
 
 #if 0
+Crashes at runtime when k_max_samples_count = 100000
+FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"___(
+
+				mutable [benchmark_result_t] results = []
+//				let instances = [ 0, 1, 2, 3, 4, 10, 20, 100, 1000 ]
+				let instances = [ 0, 1, 2, 3, 4, 10, 20 ]
+//				let instances = [ 20 ]
+//				let instances = [ 10, 20 ]
+				for(instance in 0 ..< size(instances)){
+					let count = instances[instance]
+					let [int] start = []
+
+					let r = benchmark {
+						//	The work to measure
+						for(a in 0 ..< count){
+							let b = push_back(start, 0)
+						}
+					}
+					results = push_back(results, benchmark_result_t(r, json( { "Count": count, "Per Element": count > 0 ? r / count : -1 } )))
+				}
+
+		)___"
+	);
+}
+#endif
+
+#if 1
 
 FLOYD_LANG_PROOF("Floyd test suite", "dict hamt performance()", "", ""){
 	ut_run_closed_lib(
@@ -6933,15 +6963,15 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict hamt performance()", "", ""){
 
 			benchmark-def "dict hamt push_back()" {
 				mutable [benchmark_result_t] results = []
-				let instances = [ 0, 1, 2, 3, 4, 10, 20, 100, 1000, 10000 ]
+				let instances = [ 0, 1, 2, 3, 4, 10, 20, 100, 1000 ]
 				for(instance in 0 ..< size(instances)){
 					let count = instances[instance]
-					mutable [int] acc = []
+					let [int] start = []
 
 					let r = benchmark {
 						//	The work to measure
 						for(a in 0 ..< count){
-							acc = push_back(acc, 0)
+							let b = push_back(start, 0)
 						}
 					}
 					results = push_back(results, benchmark_result_t(r, json( { "Count": count, "Per Element": count > 0 ? r / count : -1 } )))

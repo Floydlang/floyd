@@ -260,6 +260,7 @@ void release_ref(heap_alloc_64_t& alloc){
 
 bool heap_t::check_invariant() const{
 	std::lock_guard<std::recursive_mutex> guard(*alloc_records_mutex);
+#if 0
 	for(const auto& e: alloc_records){
 		QUARK_ASSERT(e.alloc_ptr != nullptr);
 		QUARK_ASSERT(e.alloc_ptr->heap64 == this);
@@ -275,6 +276,7 @@ bool heap_t::check_invariant() const{
 */
 
 	}
+#endif
 	return true;
 }
 

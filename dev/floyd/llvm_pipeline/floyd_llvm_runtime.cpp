@@ -1137,9 +1137,12 @@ static int64_t floydrt_analyse_benchmark_samples(floyd_runtime_t* frp, const int
 
 	QUARK_ASSERT(index >= 2);
 	if(trace_flag){
+		uint64_t total_acc = 0;
 		for(int64_t i = 0 ; i < index ; i++){
+			total_acc += samples[i];
 			std::cout << samples[i] << std::endl;
 		}
+		std::cout << "Samples: " << index << "Total COW time: " << total_acc << std::endl;
 	}
 
 	const auto result = analyse_samples(samples, index);

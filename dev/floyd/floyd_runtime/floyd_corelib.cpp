@@ -362,21 +362,6 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 	}
 
 
-
-	let color__black = color_t(0.0, 0.0, 0.0, 1.0)
-	let color__white = color_t(1.0, 1.0, 1.0, 1.0)
-
-
-	func color_t add_colors(color_t a, color_t b){
-		return color_t(
-			a.red + b.red,
-			a.green + b.green,
-			a.blue + b.blue,
-			a.alpha + b.alpha
-		)
-	}
-
-
 	////////////////////////////		FILE SYSTEM TYPES
 
 

@@ -235,6 +235,7 @@ struct llvm_function_generator_t {
 		return true;
 	}
 
+	//	??? rename to get_fcp().
 	llvm::Value* get_callers_fcp(){
 		return &floyd_runtime_ptr_reg;
 	}
@@ -1744,6 +1745,8 @@ static llvm::Value* generate_construct_value_expression(llvm_function_generator_
 	}
 }
 
+
+
 /*
 // do no allocate between execution of <body> -- that will pollute caches
 
@@ -1778,8 +1781,22 @@ end_bb:
 	int best_dur = find_smallest_int(samples, index, overhead)
 */
 
-//??? Could be performed in semantic analysis pass, by inserting statements around the generate_block(). Problem is mutating samples-array.
+//??? Could be generated in semantic analysis pass, by inserting statements around the generate_block(). Problem is implementing the mutating samples-array.
+
 //??? Measured body needs access to all function's locals -- cannot easily put body into separate function.
+
+//	Pointer to int64_t x 10000
+/*
+	; Foo bar[100]
+	%bar = alloca %Foo, i32 100
+	; bar[17].c = 0.0
+	%2 = getelementptr %Foo, %Foo* %bar, i32 17, i32 2
+	store double 0.0, double* %2
+*/
+
+static int64_t k_max_samples_count = 10000;
+static int64_t k_max_run_time_ns = 3000000000;
+static int64_t k_min_run_count = 2;
 
 static llvm::Value* generate_benchmark_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::benchmark_expr_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1788,9 +1805,8 @@ static llvm::Value* generate_benchmark_expression(llvm_function_generator_t& gen
 	auto& builder = gen_acc.get_builder();
 	auto& context = builder.getContext();
 
-	const auto& get_profile_time_def = gen_acc.gen.floydrt_get_profile_time;
-	const auto& analyse_benchmark_samples_def = gen_acc.gen.floydrt_analyse_benchmark_samples;
-
+	const auto& get_profile_time_f = gen_acc.gen.floydrt_get_profile_time.llvm_codegen_f;
+	const auto& analyse_benchmark_samples_f = gen_acc.gen.floydrt_analyse_benchmark_samples.llvm_codegen_f;
 
 	llvm::Function* parent_function = builder.GetInsertBlock()->getParent();
 
@@ -1802,36 +1818,23 @@ static llvm::Value* generate_benchmark_expression(llvm_function_generator_t& gen
 
 	////////	current BB
 
-	auto samples_array_type = llvm::Type::getInt64Ty(context);
-	auto sample_count_reg = generate_constant(gen_acc, value_t::make_int(10000));
+	auto max_sample_count_reg = generate_constant(gen_acc, value_t::make_int(k_max_samples_count));
 
-	//	Pointer to int64_t x 10000
-	/*
-		; Foo bar[100]
-		%bar = alloca %Foo, i32 100
-		; bar[17].c = 0.0
-		%2 = getelementptr %Foo, %Foo* %bar, i32 17, i32 2
-		store double 0.0, double* %2
-	*/
-	auto samples_ptr_reg = builder.CreateAlloca(samples_array_type, sample_count_reg, "samples array");
+	auto samples_ptr_reg = builder.CreateAlloca(llvm::Type::getInt64Ty(context), max_sample_count_reg, "samples array");
 	QUARK_ASSERT(samples_ptr_reg->getType()->isPointerTy());
 	QUARK_ASSERT(samples_ptr_reg->getType() == llvm::Type::getInt64Ty(context)->getPointerTo());
-
-
 
 	auto index_ptr_reg = builder.CreateAlloca(llvm::Type::getInt64Ty(context));
 	auto zero_int_reg = generate_constant(gen_acc, value_t::make_int(0));
 	auto one_int_reg = generate_constant(gen_acc, value_t::make_int(1));
 	builder.CreateStore(zero_int_reg, index_ptr_reg);
-	auto min_count_reg = generate_constant(gen_acc, value_t::make_int(2));
+	auto min_count_reg = generate_constant(gen_acc, value_t::make_int(k_min_run_count));
 
-	auto start_time_reg = builder.CreateCall(get_profile_time_def.llvm_codegen_f, { gen_acc.get_callers_fcp() }, "");
+	auto start_time_reg = builder.CreateCall(get_profile_time_f, { gen_acc.get_callers_fcp() }, "");
 
-	auto length_ns_reg = generate_constant(gen_acc, value_t::make_int(1000000000));
+	auto length_ns_reg = generate_constant(gen_acc, value_t::make_int(k_max_run_time_ns));
 	auto end_time_reg = builder.CreateAdd(start_time_reg, length_ns_reg);
 	builder.CreateBr(while_cond1_bb);
-
-
 
 
 	////////	while_cond1_bb: minimum 2 runs
@@ -1842,40 +1845,41 @@ static llvm::Value* generate_benchmark_expression(llvm_function_generator_t& gen
 	builder.CreateCondBr(test2_reg, while_loop_bb, while_cond2_bb);
 
 	
-	////////	while_cond2_bb: minimum 1 second = 1000000000 ns
+	////////	while_cond2_bb: minimum run time
 	builder.SetInsertPoint(while_cond2_bb);
-	auto cur_time_reg = builder.CreateCall(get_profile_time_def.llvm_codegen_f, { gen_acc.get_callers_fcp() }, "");
+	auto cur_time_reg = builder.CreateCall(get_profile_time_f, { gen_acc.get_callers_fcp() }, "");
 	auto test3_reg = builder.CreateICmp(llvm::CmpInst::Predicate::ICMP_SLT, cur_time_reg, end_time_reg);
 	builder.CreateCondBr(test3_reg, while_loop_bb, while_join_bb);
-
-
-
 
 
 	////////	while_loop_bb
 
 	builder.SetInsertPoint(while_loop_bb);
-	auto a_time_reg = builder.CreateCall(get_profile_time_def.llvm_codegen_f, { gen_acc.get_callers_fcp() }, "");
+	auto a_time_reg = builder.CreateCall(get_profile_time_f, { gen_acc.get_callers_fcp() }, "");
+
+	//	BODY
 	generate_block(gen_acc, *details.body);
 
-	auto b_time_reg = builder.CreateCall(get_profile_time_def.llvm_codegen_f, { gen_acc.get_callers_fcp() }, "");
+	auto b_time_reg = builder.CreateCall(get_profile_time_f, { gen_acc.get_callers_fcp() }, "");
+
 	auto duration_reg = builder.CreateSub(b_time_reg, a_time_reg, "calc dur");
-
 	auto index_reg = builder.CreateLoad(index_ptr_reg);
-
 	const auto gep = std::vector<llvm::Value*>{
 		index_reg
 	};
-	auto dest_sample_reg = builder.CreateGEP(llvm::Type::getInt64Ty(context), samples_ptr_reg, std::vector<llvm::Value*>{ index_reg }, "");
+	auto dest_sample_reg = builder.CreateGEP(
+		llvm::Type::getInt64Ty(context),
+		samples_ptr_reg,
+		std::vector<llvm::Value*>{ index_reg },
+		""
+	);
 	builder.CreateStore(duration_reg, dest_sample_reg);
 
 	//	Increment index.
-	auto index3_reg = builder.CreateLoad(index_ptr_reg);
-	auto index4_reg = builder.CreateAdd(index3_reg, one_int_reg);
+	auto index4_reg = builder.CreateAdd(index_reg, one_int_reg);
 	builder.CreateStore(index4_reg, index_ptr_reg);
 
-//	builder.CreateBr(while_cond1_bb);
-	auto test4_reg = builder.CreateICmp(llvm::CmpInst::Predicate::ICMP_SLT, index4_reg, sample_count_reg);
+	auto test4_reg = builder.CreateICmp(llvm::CmpInst::Predicate::ICMP_SLT, index4_reg, max_sample_count_reg);
 	builder.CreateCondBr(test4_reg, while_cond1_bb, while_join_bb);
 
 
@@ -1883,10 +1887,17 @@ static llvm::Value* generate_benchmark_expression(llvm_function_generator_t& gen
 
 	builder.SetInsertPoint(while_join_bb);
 	auto index5_reg = builder.CreateLoad(index_ptr_reg);
-	auto best_dur_reg = builder.CreateCall(analyse_benchmark_samples_def.llvm_codegen_f, { gen_acc.get_callers_fcp(), samples_ptr_reg, index5_reg }, "");
+	auto best_dur_reg = builder.CreateCall(
+		analyse_benchmark_samples_f,
+		{ gen_acc.get_callers_fcp(), samples_ptr_reg, index5_reg },
+		""
+	);
 
 	return best_dur_reg;
 }
+
+
+
 
 static llvm::Value* generate_load2_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::load2_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());

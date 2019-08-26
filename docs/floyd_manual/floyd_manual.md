@@ -2310,6 +2310,12 @@ The returned value is the measured time, in nanoseconds.
 
 Notice: compiler's dead-code elimination is NOT currently disabled correctly.
 
+The instructions will be run:
+- For maximum 10.000 times (runs)
+- For max 3 seconds
+- Minimum 2 times, no matter how long run takes. If your code takes 20 seconds, it will still be run twice.
+
+Notice: if you measure something very fast, the complete benchmark will run quickly too since it stops at 100.000 runs.
 
 
 <a id="example-expressions"></a>

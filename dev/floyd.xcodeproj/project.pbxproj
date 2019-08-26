@@ -1745,7 +1745,7 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_INSTRUMENT_PROGRAM_FLOW_ARCS = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_OPTIMIZATION_LEVEL = fast;
+				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"QUARK_ASSERT_ON=0",
 					"QUARK_TRACE_ON=0",
@@ -1775,7 +1775,7 @@
 					"\"$(SRCROOT)/floyd/libs/benchmark/googletest/googletest\"/**",
 					"\"$(SRCROOT)/floyd/libs/benchmark/googletest/googletest/include\"/**",
 				);
-				LLVM_LTO = YES;
+				LLVM_LTO = YES_THIN;
 				SDKROOT = macosx;
 				SYSTEM_HEADER_SEARCH_PATHS = "/usr/local/Cellar/zlib/1.2.11/include /usr/local/Cellar/llvm/8.0.1/include";
 			};
@@ -1884,7 +1884,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_OPTIMIZATION_LEVEL = fast;
+				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"QUARK_ASSERT_ON=0",
 					"QUARK_TRACE_ON=0",
@@ -1912,7 +1912,7 @@
 					"\"$(SRCROOT)/floyd/libs/benchmark/googletest/googletest\"/**",
 					"\"$(SRCROOT)/floyd/libs/benchmark/googletest/googletest/include\"/**",
 				);
-				LLVM_LTO = YES;
+				LLVM_LTO = YES_THIN;
 				SDKROOT = macosx;
 				SYSTEM_HEADER_SEARCH_PATHS = "/usr/local/Cellar/zlib/1.2.11/include /usr/local/Cellar/llvm/8.0.1/include";
 			};
