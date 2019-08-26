@@ -5875,30 +5875,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "cmath_pi", "", ""){
 	);
 }
 
-FLOYD_LANG_PROOF("Floyd test suite", "color__black", "", ""){
-	ut_run_closed_lib(QUARK_POS, R"(
-
-		assert(color__black.red == 0.0)
-		assert(color__black.green == 0.0)
-		assert(color__black.blue == 0.0)
-		assert(color__black.alpha == 1.0)
-
-	)");
-}
-
-
-FLOYD_LANG_PROOF("Floyd test suite", "color__black", "", ""){
-	ut_run_closed_lib(QUARK_POS, R"(
-
-		let r = add_colors(color_t(1.0, 2.0, 3.0, 4.0), color_t(1000.0, 2000.0, 3000.0, 4000.0))
-		assert(r.red == 1001.0)
-		assert(r.green == 2002.0)
-		assert(r.blue == 3003.0)
-		assert(r.alpha == 4004.0)
-
-	)");
-}
-
 FLOYD_LANG_PROOF("Floyd test suite", "", "pixel_t()", ""){
 	const auto pixel_t__def = std::vector<member_t>{
 		member_t(typeid_t::make_int(), "red"),
