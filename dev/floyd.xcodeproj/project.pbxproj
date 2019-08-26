@@ -65,6 +65,7 @@
 		2C1CEFCC23140F7D00DE9A77 /* semantic_ast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C674F97230A0CF800838CCF /* semantic_ast.cpp */; };
 		2C1CEFCD23140F7D00DE9A77 /* software_system.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB30737214ACF09007D2732 /* software_system.cpp */; };
 		2C1CEFCE23140F7D00DE9A77 /* test_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC0B3E122248EBD00C9D584 /* test_helpers.cpp */; };
+		2C1CEFD4231415AE00DE9A77 /* benchmark_soundsystem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1CEFD2231415AE00DE9A77 /* benchmark_soundsystem.cpp */; };
 		2C3174AC2262125F0004E086 /* parse_tree_to_ast_conv.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C3174AA2262125F0004E086 /* parse_tree_to_ast_conv.cpp */; };
 		2C3174AD2262125F0004E086 /* parse_tree_to_ast_conv.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C3174AA2262125F0004E086 /* parse_tree_to_ast_conv.cpp */; };
 		2C36C083221DF09E00CAFEF4 /* test_main.floyd in Sources */ = {isa = PBXBuildFile; fileRef = 2C36C082221DEF0900CAFEF4 /* test_main.floyd */; };
@@ -247,6 +248,9 @@
 		2C18048C208B947C00F62480 /* statement.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = statement.cpp; sourceTree = "<group>"; };
 		2C18048D208B947C00F62480 /* statement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = statement.h; sourceTree = "<group>"; };
 		2C182F1F220B17780003FC1F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		2C1CEFD2231415AE00DE9A77 /* benchmark_soundsystem.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = benchmark_soundsystem.cpp; sourceTree = "<group>"; };
+		2C1CEFD3231415AE00DE9A77 /* benchmark_soundsystem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = benchmark_soundsystem.h; sourceTree = "<group>"; };
+		2C1CEFD5231415FB00DE9A77 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		2C1D84DD1CA765A90042F0A8 /* floyd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = floyd; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C3174AA2262125F0004E086 /* parse_tree_to_ast_conv.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = parse_tree_to_ast_conv.cpp; sourceTree = "<group>"; };
 		2C3174AB2262125F0004E086 /* parse_tree_to_ast_conv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = parse_tree_to_ast_conv.h; sourceTree = "<group>"; };
@@ -852,9 +856,7 @@
 		2C1D84DF1CA765A90042F0A8 /* floyd */ = {
 			isa = PBXGroup;
 			children = (
-				2C6CDA9122FD9108008F65C7 /* benchmark_internals */,
 				2C4699AC214EC97A007216BE /* bytecode_interpreter */,
-				2C6CDA8E22FD9079008F65C7 /* commandline_tool */,
 				2C4574D322493DA2008A55B0 /* compiler_helpers.cpp */,
 				2C4574D422493DA2008A55B0 /* compiler_helpers.h */,
 				2C00BC411F2428FF0087B8BB /* cpp_experiments.cpp */,
@@ -871,6 +873,8 @@
 				2C674F98230A0CF800838CCF /* semantic_ast.h */,
 				2CB30737214ACF09007D2732 /* software_system.cpp */,
 				2CB30738214ACF09007D2732 /* software_system.h */,
+				2C6CDA9122FD9108008F65C7 /* target_benchmark_internals */,
+				2C6CDA8E22FD9079008F65C7 /* target_commandline_tool */,
 				2CC0B3E122248EBD00C9D584 /* test_helpers.cpp */,
 				2CC0B3E222248EBD00C9D584 /* test_helpers.h */,
 			);
@@ -1470,7 +1474,7 @@
 			path = src;
 			sourceTree = "<group>";
 		};
-		2C6CDA8E22FD9079008F65C7 /* commandline_tool */ = {
+		2C6CDA8E22FD9079008F65C7 /* target_commandline_tool */ = {
 			isa = PBXGroup;
 			children = (
 				2C6CDA9322FD92FD008F65C7 /* floyd_command_line_parser.cpp */,
@@ -1481,20 +1485,23 @@
 				2C4DA09023035A0100190C37 /* format_table.cpp */,
 				2C4DA09123035A0100190C37 /* format_table.h */,
 			);
-			path = commandline_tool;
+			path = target_commandline_tool;
 			sourceTree = "<group>";
 		};
-		2C6CDA9122FD9108008F65C7 /* benchmark_internals */ = {
+		2C6CDA9122FD9108008F65C7 /* target_benchmark_internals */ = {
 			isa = PBXGroup;
 			children = (
 				2CEB57462071069B0005AC7A /* benchmark_basics.cpp */,
 				2CEB5748207106C60005AC7A /* benchmark_basics.h */,
+				2C1CEFD2231415AE00DE9A77 /* benchmark_soundsystem.cpp */,
+				2C1CEFD3231415AE00DE9A77 /* benchmark_soundsystem.h */,
 				2CC0B3DD2224232700C9D584 /* compressed_vector_benchmark.cpp */,
+				2C69C49D2221D39B00E9D03E /* floyd_benchmark_main.cpp */,
 				2CB2A511203C4AA80001A19E /* interpretator_benchmark.cpp */,
 				2CB2A513203C4ACB0001A19E /* interpretator_benchmark.h */,
-				2C69C49D2221D39B00E9D03E /* floyd_benchmark_main.cpp */,
+				2C1CEFD5231415FB00DE9A77 /* README.md */,
 			);
-			path = benchmark_internals;
+			path = target_benchmark_internals;
 			sourceTree = "<group>";
 		};
 		2CBB527B21F655A600E5024A /* examples */ = {
@@ -1772,6 +1779,7 @@
 				2C8C03D02221DBD70085EBBE /* quark.cpp in Sources */,
 				2C085D0923140CA6009E6D24 /* floyd_llvm_helpers.cpp in Sources */,
 				2C1CEFC923140F7D00DE9A77 /* sha1_class.cpp in Sources */,
+				2C1CEFD4231415AE00DE9A77 /* benchmark_soundsystem.cpp in Sources */,
 				2C42609822F06B9400ECF817 /* ast_helpers.cpp in Sources */,
 				2C8C03D32221DBD70085EBBE /* sleep.cc in Sources */,
 				2C8C03D42221DBD70085EBBE /* statistics.cc in Sources */,

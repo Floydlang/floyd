@@ -20,7 +20,6 @@
 #include "ast_value.h"
 #include "json_support.h"
 #include "text_parser.h"
-#include "interpretator_benchmark.h"
 #include "file_handling.h"
 #include "floyd_corelib.h"
 
@@ -165,9 +164,6 @@ void floyd_quark_runtime::runtime_i__on_unit_test_failed(const quark::source_cod
 
 
 
-static void run_benchmark(){
-	floyd_benchmark();
-}
 
 static int do_compile_command(const command_t& command, const command_t::compile_to_ast_t& command2){
 	const auto source = read_text_file(command2.source_path);

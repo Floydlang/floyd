@@ -51,7 +51,6 @@ static const std::string pixel_floyd_str = R"(
 
 //////////////////////////////////////////		C
 
-//	https://medium.com/@n0mad/when-competing-with-c-fudge-the-benchmark-16d3a91b437c
 
 static unsigned int tmetrics_hamming (unsigned int len, uint8_t *a, uint8_t *b)
 {
