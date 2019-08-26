@@ -2703,10 +2703,10 @@ FLOYD_LANG_PROOF("Floyd test suite", "run_benchmarks()", "", ""){
 			print(make_benchmark_report(run_benchmarks(get_benchmarks())))
 		)",
 		{
-R"___(| MODULE    | TEST  |    DUR|              |
-|-----------|-------|-------|--------------|
-|   | AAA   | 200 ns| 0 eleements  |
-|   | BBB   | 300 ns| 3 monkeys    |
+R"___(| MODULE  | TEST  |    DUR|              |
+|---------|-------|-------|--------------|
+|         | AAA   | 200 ns| 0 eleements  |
+|         | BBB   | 300 ns| 3 monkeys    |
 )___"
 		}
 	);
