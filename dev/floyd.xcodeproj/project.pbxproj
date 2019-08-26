@@ -794,12 +794,14 @@
 		2C182F20220BCD410003FC1F /* floyd_basics */ = {
 			isa = PBXGroup;
 			children = (
-				2C574E48203107D80035EA62 /* typeid.cpp */,
-				2C574E49203107D80035EA62 /* typeid.h */,
 				2C4F355D1D4794CD0061CA93 /* ast_value.cpp */,
 				2C4F355E1D4794CD0061CA93 /* ast_value.h */,
 				2CB7AA692209E51E0011DE4B /* compiler_basics.cpp */,
 				2CB7AA6A2209E51E0011DE4B /* compiler_basics.h */,
+				2C4574D322493DA2008A55B0 /* compiler_helpers.cpp */,
+				2C4574D422493DA2008A55B0 /* compiler_helpers.h */,
+				2C574E48203107D80035EA62 /* typeid.cpp */,
+				2C574E49203107D80035EA62 /* typeid.h */,
 			);
 			path = floyd_basics;
 			sourceTree = "<group>";
@@ -827,6 +829,8 @@
 				2C02667A2014CAF000A82AD6 /* floyd_test_suite.cpp */,
 				2C02667B2014CAF000A82AD6 /* floyd_test_suite.h */,
 				2CC0B3DF22248E3E00C9D584 /* issue_regression_tests.cpp */,
+				2CC0B3E122248EBD00C9D584 /* test_helpers.cpp */,
+				2CC0B3E222248EBD00C9D584 /* test_helpers.h */,
 			);
 			path = language_validations;
 			sourceTree = "<group>";
@@ -857,8 +861,6 @@
 			isa = PBXGroup;
 			children = (
 				2C4699AC214EC97A007216BE /* bytecode_interpreter */,
-				2C4574D322493DA2008A55B0 /* compiler_helpers.cpp */,
-				2C4574D422493DA2008A55B0 /* compiler_helpers.h */,
 				2C00BC411F2428FF0087B8BB /* cpp_experiments.cpp */,
 				2C180485208B947C00F62480 /* floyd_ast */,
 				2C182F20220BCD410003FC1F /* floyd_basics */,
@@ -875,8 +877,6 @@
 				2CB30738214ACF09007D2732 /* software_system.h */,
 				2C6CDA9122FD9108008F65C7 /* target_benchmark_internals */,
 				2C6CDA8E22FD9079008F65C7 /* target_commandline_tool */,
-				2CC0B3E122248EBD00C9D584 /* test_helpers.cpp */,
-				2CC0B3E222248EBD00C9D584 /* test_helpers.h */,
 			);
 			path = floyd;
 			sourceTree = SOURCE_ROOT;
