@@ -66,6 +66,7 @@
 		2C1CEFCD23140F7D00DE9A77 /* software_system.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB30737214ACF09007D2732 /* software_system.cpp */; };
 		2C1CEFCE23140F7D00DE9A77 /* test_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC0B3E122248EBD00C9D584 /* test_helpers.cpp */; };
 		2C1CEFD4231415AE00DE9A77 /* benchmark_soundsystem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1CEFD2231415AE00DE9A77 /* benchmark_soundsystem.cpp */; };
+		2C1CEFDA23141F7200DE9A77 /* floyd_benchmarks.floyd in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2C1CEFD623141B4200DE9A77 /* floyd_benchmarks.floyd */; };
 		2C3174AC2262125F0004E086 /* parse_tree_to_ast_conv.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C3174AA2262125F0004E086 /* parse_tree_to_ast_conv.cpp */; };
 		2C3174AD2262125F0004E086 /* parse_tree_to_ast_conv.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C3174AA2262125F0004E086 /* parse_tree_to_ast_conv.cpp */; };
 		2C36C083221DF09E00CAFEF4 /* test_main.floyd in Sources */ = {isa = PBXBuildFile; fileRef = 2C36C082221DEF0900CAFEF4 /* test_main.floyd */; };
@@ -191,6 +192,16 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		2C1CEFD923141F6300DE9A77 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = benchmarks;
+			dstSubfolderSpec = 6;
+			files = (
+				2C1CEFDA23141F7200DE9A77 /* floyd_benchmarks.floyd in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		2C1D84DB1CA765A90042F0A8 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 12;
@@ -251,6 +262,7 @@
 		2C1CEFD2231415AE00DE9A77 /* benchmark_soundsystem.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = benchmark_soundsystem.cpp; sourceTree = "<group>"; };
 		2C1CEFD3231415AE00DE9A77 /* benchmark_soundsystem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = benchmark_soundsystem.h; sourceTree = "<group>"; };
 		2C1CEFD5231415FB00DE9A77 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		2C1CEFD623141B4200DE9A77 /* floyd_benchmarks.floyd */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = floyd_benchmarks.floyd; sourceTree = "<group>"; };
 		2C1D84DD1CA765A90042F0A8 /* floyd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = floyd; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C3174AA2262125F0004E086 /* parse_tree_to_ast_conv.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = parse_tree_to_ast_conv.cpp; sourceTree = "<group>"; };
 		2C3174AB2262125F0004E086 /* parse_tree_to_ast_conv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = parse_tree_to_ast_conv.h; sourceTree = "<group>"; };
@@ -1497,6 +1509,7 @@
 				2C1CEFD3231415AE00DE9A77 /* benchmark_soundsystem.h */,
 				2CC0B3DD2224232700C9D584 /* compressed_vector_benchmark.cpp */,
 				2C69C49D2221D39B00E9D03E /* floyd_benchmark_main.cpp */,
+				2C1CEFD623141B4200DE9A77 /* floyd_benchmarks.floyd */,
 				2CB2A511203C4AA80001A19E /* interpretator_benchmark.cpp */,
 				2CB2A513203C4ACB0001A19E /* interpretator_benchmark.h */,
 				2C1CEFD5231415FB00DE9A77 /* README.md */,
@@ -1582,6 +1595,7 @@
 				2C1D84DA1CA765A90042F0A8 /* Frameworks */,
 				2C1D84DB1CA765A90042F0A8 /* CopyFiles */,
 				2C36C08A221DF9E600CAFEF4 /* CopyFiles */,
+				2C1CEFD923141F6300DE9A77 /* CopyFiles */,
 			);
 			buildRules = (
 			);

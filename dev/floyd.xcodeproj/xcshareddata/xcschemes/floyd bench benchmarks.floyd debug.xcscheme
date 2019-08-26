@@ -63,7 +63,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "bench examples/benchmarks.floyd AAA"
+            argument = "bench benchmarks/floyd_benchmarks.floyd AAA"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

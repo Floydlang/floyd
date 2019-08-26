@@ -6930,7 +6930,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
 }
 #endif
 
-#if 1
+#if 0
 
 FLOYD_LANG_PROOF("Floyd test suite", "dict hamt performance()", "", ""){
 	ut_run_closed_lib(
