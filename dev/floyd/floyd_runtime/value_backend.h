@@ -85,7 +85,7 @@ static const uint64_t ALLOC_64_MAGIC = 0xa110a11c;
 //	allocation and stuff its pointer into data1.
 //	Designed to be 64 bytes = 1 cacheline.
 struct heap_alloc_64_t {
-	heap_alloc_64_t(heap_t* heap, uint64_t allocation_word_count, const typeid_t& debug_value_type) :
+	heap_alloc_64_t(heap_t* heap, uint64_t allocation_word_count, const typeid_t& debug_value_type, const char debug_string[]) :
 		rc(1),
 		magic(ALLOC_64_MAGIC),
 		data_a(0x00000000),
@@ -96,6 +96,9 @@ struct heap_alloc_64_t {
 		allocation_word_count_x(allocation_word_count)
 	{
 		QUARK_ASSERT(heap != nullptr);
+		QUARK_ASSERT(debug_string != nullptr && strlen(debug_string) < sizeof(debug_info));
+
+		std::strcpy(debug_info, debug_string);
 
 		QUARK_ASSERT(check_invariant());
 	}
@@ -124,8 +127,6 @@ struct heap_alloc_64_t {
 #endif
 };
 
-
-void set_debug_info(heap_alloc_64_t& info, const std::string& s);
 std::string get_debug_info(const heap_alloc_64_t& info);
 
 
@@ -175,7 +176,7 @@ struct heap_t {
 
 	DEBUG VERSION: We never actually free the heap blocks, we keep them around for debugging.
 */
-heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, const typeid_t& value_type);
+heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, const typeid_t& value_type, const char debug_string[]);
 
 //	Returns pointer to the allocated words that sits after the
 void* get_alloc_ptr(heap_alloc_64_t& alloc);
