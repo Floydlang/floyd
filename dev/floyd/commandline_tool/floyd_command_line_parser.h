@@ -67,9 +67,6 @@ struct command_t {
 	struct hwcaps_t {
 		bool trace;
 	};
-	struct benchmark_internals_t {
-		bool trace;
-	};
 	struct runtests_internals_t {
 		bool trace;
 	};
@@ -86,7 +83,6 @@ struct command_t {
 		user_benchmarks_t,
 		hwcaps_t,
 
-		benchmark_internals_t,
 		runtests_internals_t
 	> _contents;
 };

@@ -169,7 +169,6 @@ Floyd generates native machine code but also comes with a bytecode interpreter.
 | floyd bench mygame.floyd rle game_loop	| Runs specified benchmarks "rle" and "game_loop"
 | floyd bench -l mygame.floyd				| Returns list of benchmarks
 | floyd hwcaps								| Outputs hardware capabilities
-| floyd benchmark_internal					| Runs Floyd built in suite of benchmark tests and prints the results
 | floyd runtests							| Runs Floyd built internal unit tests
 | Flag t									| Verbose tracing
 | Flag b									| Use Floyd's bytecode backend (compiler, bytecode ISA and interpreter) rather than the default, LLVM

@@ -529,10 +529,6 @@ static int do_command(const command_t& command){
 			return EXIT_SUCCESS;
 		}
 
-		int operator()(const command_t::benchmark_internals_t& command2) const{
-			run_benchmark();
-			return EXIT_SUCCESS;
-		}
 		int operator()(const command_t::runtests_internals_t& command2) const{
 			run_tests();
 			return EXIT_SUCCESS;

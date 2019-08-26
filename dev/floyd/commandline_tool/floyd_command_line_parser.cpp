@@ -57,7 +57,6 @@ Usage:
 | floyd bench mygame.floyd rle game_loop	| Runs specified benchmarks "rle" and "game_loop"
 | floyd bench -l mygame.floyd				| Returns list of benchmarks
 | floyd hwcaps								| Outputs hardware capabilities
-| floyd benchmark_internal					| Runs Floyd built in suite of benchmark tests and prints the results
 | floyd runtests							| Runs Floyd built internal unit tests
 | Flag t									| Verbose tracing
 | Flag b									| Use Floyd's bytecode backend (compiler, bytecode ISA and interpreter) rather than the default, LLVM
@@ -217,9 +216,6 @@ command_t parse_command(const std::vector<std::string>& args){
 	else if(command_line_args.subcommand == "hwcaps"){
 		return command_t { command_t::hwcaps_t { trace_on } };
 	}
-	else if(command_line_args.subcommand == "benchmark_internal"){
-		return command_t { command_t::benchmark_internals_t { trace_on } };
-	}
 	else if(command_line_args.subcommand == "runtests"){
 		return command_t { command_t::runtests_internals_t { trace_on } };
 	}
@@ -289,10 +285,6 @@ QUARK_UNIT_TEST("", "parse_command()", "floyd help", ""){
 
 
 
-QUARK_UNIT_TEST("", "parse_command()", "floyd benchmark_internal", ""){
-	const auto r = parse_command(string_to_args("floyd benchmark_internal"));
-	std::get<command_t::benchmark_internals_t>(r._contents);
-}
 
 
 QUARK_UNIT_TEST("", "parse_command()", "floyd runtests", ""){
