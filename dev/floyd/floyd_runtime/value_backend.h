@@ -45,7 +45,7 @@ enum vector_backend {
 //	There is still only one typeid_t/itype for vector.
 //	Future: make this flag a per-vector setting.
 
-#if 1
+#if 0
 const vector_backend k_global_vector_type = vector_backend::cppvector;
 #else
 const vector_backend k_global_vector_type = vector_backend::hamt;

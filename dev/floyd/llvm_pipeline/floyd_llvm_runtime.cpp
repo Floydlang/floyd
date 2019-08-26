@@ -509,6 +509,26 @@ static function_bind_t floydrt_concatunate_vectors__make(llvm::LLVMContext& cont
 
 
 
+static runtime_value_t floydrt_push_back__hamt__pod64(floyd_runtime_t* frp, runtime_value_t vec, runtime_value_t element){
+	return push_back_immutable(vec, element);
+}
+
+static function_bind_t floydrt_push_back__hamt__pod64__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		make_generic_vec_type(type_lookup)->getPointerTo(),
+		{
+			make_frp_type(type_lookup),
+			make_generic_vec_type(type_lookup)->getPointerTo(),
+			make_runtime_value_type(type_lookup)
+		},
+		false
+	);
+	return { "push_back__hamt__pod64", function_type, reinterpret_cast<void*>(floydrt_push_back__hamt__pod64) };
+}
+
+
+
+
 //	DICT
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1174,6 +1194,7 @@ std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, c
 		floydrt_load_vector_element__make(context, type_lookup),
 		floydrt_store_vector_element_mutable__make(context, type_lookup),
 		floydrt_concatunate_vectors__make(context, type_lookup),
+		floydrt_push_back__hamt__pod64__make(context, type_lookup),
 
 		floydrt_allocate_dict__make(context, type_lookup),
 		floydrt_retain_dict__make(context, type_lookup),
@@ -2134,6 +2155,7 @@ void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t arg0_valu
 	printf("%s\n", s.c_str());
 	r._print_output.push_back(s);
 }
+
 
 
 

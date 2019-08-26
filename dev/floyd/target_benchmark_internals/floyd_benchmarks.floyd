@@ -47,9 +47,9 @@ benchmark-def "Linear veq" {
 
 
 
-benchmark-def "dict hamt push_back()" {
+benchmark-def "[int] push_back() hamt" {
 	mutable [benchmark_result_t] results = []
-	let instances = [ 0, 1, 2, 3, 4, 10, 20, 100, 1000 ]
+	let instances = [ 0, 1, 2, 31, 32, 33, 100, 1000, 1000000 ]
 	for(instance in 0 ..< size(instances)){
 		let count = instances[instance]
 		let [int] start = []
@@ -69,8 +69,7 @@ benchmark-def "dict hamt push_back()" {
 
 
 let to_run = [
-	benchmark_id_t("", "Linear veq"),
-	benchmark_id_t("", "dict hamt push_back()")
+	benchmark_id_t("", "[int] push_back() hamt")
 ]
 
 print(make_benchmark_report(run_benchmarks(to_run)))

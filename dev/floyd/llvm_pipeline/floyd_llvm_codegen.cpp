@@ -109,6 +109,7 @@ struct llvm_code_generator_t {
 		floydrt_load_vector_element(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("load_vector_element"))),
 		floydrt_store_vector_element_mutable(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("store_vector_element_mutable"))),
 		floydrt_concatunate_vectors(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("concatunate_vectors"))),
+		floydrt_push_back__hamt__pod64(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("push_back__hamt__pod64"))),
 
 		floydrt_allocate_dict(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_dict"))),
 		floydrt_retain_dict(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("retain_dict"))),
@@ -183,7 +184,8 @@ struct llvm_code_generator_t {
 	const function_def_t& floydrt_load_vector_element;
 	const function_def_t& floydrt_store_vector_element_mutable;
 	const function_def_t& floydrt_concatunate_vectors;
-
+	const function_def_t& floydrt_push_back__hamt__pod64;
+	
 	const function_def_t& floydrt_allocate_dict;
 	const function_def_t& floydrt_retain_dict;
 	const function_def_t& floydrt_release_dict;
@@ -1372,6 +1374,37 @@ static llvm::Value* generate_call_expression(llvm_function_generator_t& gen_acc,
 }
 
 
+static llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details);
+
+
+static llvm::Value* generate_push_back_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(e.get_output_type().is_vector());
+
+	auto& builder = gen_acc.get_builder();
+
+	const auto vec_type = details.args[0].get_output_type();
+	if(is_vector_hamt(vec_type) && vec_type == typeid_t::make_vector(typeid_t::make_int())){
+//		QUARK_ASSERT(details.args[0].get_output_type().is_int());
+		QUARK_ASSERT(details.args[1].get_output_type().is_int());
+
+		auto vector_reg = generate_expression(gen_acc, details.args[0]);
+		auto element_reg = generate_expression(gen_acc, details.args[1]);
+
+		auto vec_ptr_reg = builder.CreateCall(
+			gen_acc.gen.floydrt_push_back__hamt__pod64.llvm_codegen_f,
+			{ gen_acc.get_callers_fcp(), vector_reg, element_reg },
+			""
+		);
+		return vec_ptr_reg;
+	}
+	else{
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
+}
+
+
 //	Generates a call to the global function that implements the intrinsic.
 static llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1431,7 +1464,7 @@ static llvm::Value* generate_intrinsic_expression(llvm_function_generator_t& gen
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
 	else if(details.call_name == get_intrinsic_opcode(make_push_back_signature())){
-		return generate_fallthrough_intrinsic(gen_acc, e, details);
+		return generate_push_back_expression(gen_acc, e, details);
 	}
 	else if(details.call_name == get_intrinsic_opcode(make_subset_signature())){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
