@@ -6920,5 +6920,43 @@ FLOYD_LANG_PROOF("MANUAL SNIPPETS", "subset()", "", ""){
 	)");
 }
 
+
+
+
+
+#if 0
+
+FLOYD_LANG_PROOF("Floyd test suite", "dict hamt performance()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"___(
+
+			benchmark-def "dict hamt push_back()" {
+				mutable [benchmark_result_t] results = []
+				let instances = [ 0, 1, 2, 3, 4, 10, 20, 100, 1000, 10000 ]
+				for(instance in 0 ..< size(instances)){
+					let count = instances[instance]
+					mutable [int] acc = []
+
+					let r = benchmark {
+						//	The work to measure
+						for(a in 0 ..< count){
+							acc = push_back(acc, 0)
+						}
+					}
+					results = push_back(results, benchmark_result_t(r, json( { "Count": count, "Per Element": count > 0 ? r / count : -1 } )))
+				}
+				return results
+			}
+
+			print(make_benchmark_report(run_benchmarks(get_benchmarks())))
+
+		)___"
+	);
+}
+
+#endif
+
+
 #endif	//	RUN_EXAMPLE_AND_DOCS_TESTS
 

@@ -116,46 +116,6 @@ std::string get_debug_info(const heap_alloc_64_t& info){
 }
 
 
-
-heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, const typeid_t& value_type){
-	QUARK_ASSERT(heap.check_invariant());
-
-	const auto header_size = sizeof(heap_alloc_64_t);
-	QUARK_ASSERT(header_size == 64);
-
-	{
-		std::lock_guard<std::recursive_mutex> guard(*heap.alloc_records_mutex);
-
-
-		const auto malloc_size = header_size + allocation_word_count * sizeof(uint64_t);
-		void* alloc0 = std::malloc(malloc_size);
-		if(alloc0 == nullptr){
-			throw std::exception();
-		}
-
-		auto alloc = reinterpret_cast<heap_alloc_64_t*>(alloc0);
-
-		alloc->rc = 1;
-		alloc->magic = ALLOC_64_MAGIC;
-
-		alloc->data_a = 0;
-		alloc->data_b = 0;
-		alloc->data_c = 0;
-		alloc->data_d = 0;
-//		alloc->data_e = 0;
-
-		alloc->heap64 = &heap;
-		set_debug_info(*alloc, "alloc");
-
-		heap.alloc_records.push_back({ alloc });
-
-		QUARK_ASSERT(alloc->check_invariant());
-		QUARK_ASSERT(heap.check_invariant());
-		return alloc;
-	}
-}
-
-#if 0
 heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, const typeid_t& debug_value_type){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(debug_value_type.check_invariant());
@@ -170,7 +130,7 @@ heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, const ty
 		throw std::exception();
 	}
 
-	auto alloc = new (alloc0 ) heap_alloc_64_t(&heap, allocation_word_count, debug_value_type);
+	auto alloc = new (alloc0) heap_alloc_64_t(&heap, allocation_word_count, debug_value_type);
 	QUARK_ASSERT(alloc->rc == 1);
 	QUARK_ASSERT(alloc->check_invariant());
 	heap.alloc_records.push_back({ alloc });
@@ -179,7 +139,7 @@ heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, const ty
 	QUARK_ASSERT(heap.check_invariant());
 	return alloc;
 }
-#endif
+
 
 QUARK_UNIT_TEST("heap_t", "alloc_64()", "", ""){
 	heap_t heap;

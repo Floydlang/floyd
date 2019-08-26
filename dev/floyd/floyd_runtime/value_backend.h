@@ -45,7 +45,7 @@ enum vector_backend {
 //	There is still only one typeid_t/itype for vector.
 //	Future: make this flag a per-vector setting.
 
-#if 0
+#if 1
 const vector_backend k_global_vector_type = vector_backend::cppvector;
 #else
 const vector_backend k_global_vector_type = vector_backend::hamt;
@@ -75,32 +75,15 @@ struct heap_t;
 
 static const uint64_t ALLOC_64_MAGIC = 0xa110a11c;
 
+//??? Make debug field a std::string.
+//??? Make debug version of heap_alloc_64_t larger than 64 byte.
+//??? Store debug_value_type.
+
 //	This header is followed by a number of uint64_t elements in the same heap block.
 //	This header represents a sharepoint of many clients and holds an RC to count clients.
 //	If you want to change the size of the allocation, allocate 0 following elements and make separate dynamic
 //	allocation and stuff its pointer into data1.
 //	Designed to be 64 bytes = 1 cacheline.
-struct heap_alloc_64_t {
-	public: bool check_invariant() const;
-
-
-	////////////////////////////////		STATE
-
-	mutable std::atomic<int32_t> rc;
-	uint32_t magic;
-
-	//	 data_*: 5 x 8 bytes.
-	uint64_t data_a;
-	uint64_t data_b;
-	uint64_t data_c;
-	uint64_t data_d;
-	uint64_t data_e;
-
-	heap_t* heap64;
-	char debug_info[8];
-};
-
-#if 0
 struct heap_alloc_64_t {
 	heap_alloc_64_t(heap_t* heap, uint64_t allocation_word_count, const typeid_t& debug_value_type) :
 		rc(1),
@@ -109,17 +92,13 @@ struct heap_alloc_64_t {
 		data_b(0x00000000),
 		data_c(0x00000000),
 		data_d(0x00000000),
-		data_e(0x00000000),
-		heap(heap),
-		debug_value_type(debug_value_type),
-		debug_allocation_word_count(allocation_word_count)
+		heap64(heap),
+		allocation_word_count_x(allocation_word_count)
 	{
 		QUARK_ASSERT(heap != nullptr);
-		QUARK_ASSERT(debug_value_type.check_invariant());
 
 		QUARK_ASSERT(check_invariant());
 	}
-
 
 	public: bool check_invariant() const;
 
@@ -134,16 +113,16 @@ struct heap_alloc_64_t {
 	uint64_t data_b;
 	uint64_t data_c;
 	uint64_t data_d;
-	uint64_t data_e;
+	uint64_t allocation_word_count_x;
 
-	heap_t* heap;
+	heap_t* heap64;
+	char debug_info[8];
 
-#if DEBUG
+#if DEBUG && 0
 	typeid_t debug_value_type;
 	uint64_t debug_allocation_word_count;
 #endif
 };
-#endif
 
 
 void set_debug_info(heap_alloc_64_t& info, const std::string& s);
