@@ -222,15 +222,5 @@ static void BM_read_vlq_vector4(benchmark::State& state) {
 
 
 
-
-int main(int argc, char** argv) {
-	const auto caps = floyd::read_hardware_caps();
-	const auto caps_string = get_hardware_caps_string(caps);
-	std::cout << caps_string;
-
-	::benchmark::Initialize(&argc, argv);
-	if (::benchmark::ReportUnrecognizedArguments(argc, argv)) return 1;
-	::benchmark::RunSpecifiedBenchmarks();
-}
 //BENCHMARK_MAIN();
 

@@ -8,6 +8,7 @@
 
 #include "gtest/gtest.h"
 #include "benchmark/benchmark.h"
+#include "hardware_caps.h"
 
 #include <iostream>
 #include <vector>
@@ -516,3 +517,17 @@ BENCHMARK(BM_DenseThreadRanges)->Arg(3)->DenseThreadRange(5, 14, 3);
 
 
 
+
+
+
+
+
+int main(int argc, char** argv) {
+	const auto caps = read_hardware_caps();
+	const auto caps_string = get_hardware_caps_string(caps);
+	std::cout << caps_string;
+
+	::benchmark::Initialize(&argc, argv);
+	if (::benchmark::ReportUnrecognizedArguments(argc, argv)) return 1;
+	::benchmark::RunSpecifiedBenchmarks();
+}
