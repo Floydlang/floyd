@@ -698,9 +698,14 @@ typeid_t lookup_type(const value_backend_t& backend, runtime_type_t itype);
 const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, const typeid_t& type);
 
 
+
+////////////////////////////////		REFERENCE COUNTING
+
+
+
 void retain_value(value_backend_t& backend, runtime_value_t value, const typeid_t& type);
 void retain_vector_cppvector(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
-void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
+inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype);
 void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, const typeid_t& type);
 void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, const typeid_t& type);
 void retain_struct(value_backend_t& backend, runtime_value_t s, const typeid_t& type);
@@ -709,8 +714,9 @@ void retain_struct(value_backend_t& backend, runtime_value_t s, const typeid_t& 
 void release_deep(value_backend_t& backend, runtime_value_t value, const typeid_t& type);
 
 void release_vector_cppvector(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
-inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
+inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype);
 inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
+
 
 
 
@@ -787,11 +793,27 @@ inline int32_t inc_rc(const heap_alloc_64_t& alloc){
 
 
 
-inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, const typeid_t& type){
+inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype){
+#if DEBUG
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
+	const auto type = lookup_type(backend, itype);
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(is_rc_value(type));
+	QUARK_ASSERT(is_vector_hamt(type));
+#endif
+
+	inc_rc(vec.vector_hamt_ptr->alloc);
+}
+
+inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype){
+#if DEBUG
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(vec.check_invariant());
+	const auto type = lookup_type(backend, itype);
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(is_vector_hamt(type));
+#endif
 
 	if(dec_rc(vec.vector_hamt_ptr->alloc) == 0){
 		dispose_vector_hamt(vec);

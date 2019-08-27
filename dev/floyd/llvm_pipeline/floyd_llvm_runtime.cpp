@@ -52,15 +52,6 @@ ret i32 %2
 }
 */
 
-llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp){
-	QUARK_ASSERT(frp != nullptr);
-
-	auto ptr = reinterpret_cast<llvm_execution_engine_t*>(frp);
-	QUARK_ASSERT(ptr != nullptr);
-	QUARK_ASSERT(ptr->debug_magic == k_debug_magic);
-	QUARK_ASSERT(ptr->check_invariant());
-	return *ptr;
-}
 
 static floyd_runtime_t* make_runtime_ptr(llvm_execution_engine_t* ee){
 	return reinterpret_cast<floyd_runtime_t*>(ee);
@@ -350,13 +341,13 @@ static void floydrt_retain_vec(floyd_runtime_t* frp, runtime_value_t vec, runtim
 
 static void floydrt_retain_vector_hamt(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
-	const auto type = lookup_type(r.backend, type0);
 #if DEBUG
+	const auto type = lookup_type(r.backend, type0);
 	QUARK_ASSERT(type.is_string() || type.is_vector());
 	QUARK_ASSERT(is_rc_value(type));
 #endif
 
-	retain_vector_hamt(r.backend, vec, type);
+	retain_vector_hamt(r.backend, vec, type0);
 }
 
 
@@ -375,12 +366,13 @@ static void floydrt_release_vec(floyd_runtime_t* frp, runtime_value_t vec, runti
 }
 static void floydrt_release_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
+#if DEBUG
 	const auto type = lookup_type(r.backend, type0);
 	QUARK_ASSERT(is_vector_hamt(type));
-
 	QUARK_ASSERT(is_rc_value(type.get_vector_element_type()) == false);
+#endif
 
-	release_vector_hamt_pod(r.backend, vec, type);
+	release_vector_hamt_pod(r.backend, vec, type0);
 }
 
 

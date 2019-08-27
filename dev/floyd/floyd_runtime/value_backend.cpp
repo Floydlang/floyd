@@ -1061,15 +1061,6 @@ void retain_vector_cppvector(value_backend_t& backend, runtime_value_t vec, cons
 
 	inc_rc(vec.vector_cppvector_ptr->alloc);
 }
-void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, const typeid_t& type){
-	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(vec.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(is_rc_value(type));
-	QUARK_ASSERT(is_vector_hamt(type));
-
-	inc_rc(vec.vector_hamt_ptr->alloc);
-}
 
 
 
@@ -1115,7 +1106,7 @@ void retain_value(value_backend_t& backend, runtime_value_t value, const typeid_
 			retain_vector_cppvector(backend, value, type);
 		}
 		else if(is_vector_hamt(type)){
-			retain_vector_hamt(backend, value, type);
+			retain_vector_hamt(backend, value, lookup_runtime_type(backend, type));
 		}
 		else if(is_dict_cppmap(type)){
 			retain_dict_cppmap(backend, value, type);
@@ -1236,7 +1227,7 @@ static void release_vec_deep(value_backend_t& backend, runtime_value_t vec, cons
 			release_vector_hamt_nonpod(backend, vec, type);
 		}
 		else{
-			release_vector_hamt_pod(backend, vec, type);
+			release_vector_hamt_pod(backend, vec, lookup_runtime_type(backend, type));
 		}
 	}
 	else{

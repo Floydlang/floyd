@@ -151,7 +151,7 @@ value_t load_global(const llvm_execution_engine_t& ee, const std::pair<void*, ty
 llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name);
 
 
-llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp);
+inline llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp);
 
 
 ////////////////////////////////		VALUES
@@ -203,6 +203,25 @@ inline bool operator==(const bench_t& lhs, const bench_t& rhs){ return lhs.bench
 std::vector<bench_t> collect_benchmarks(const llvm_execution_engine_t& ee);
 std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, const std::vector<bench_t>& tests);
 std::vector<bench_t> filter_benchmarks(const std::vector<bench_t>& b, const std::vector<std::string>& run_tests);
+
+
+
+
+
+//	Inlines
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+inline llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp){
+	QUARK_ASSERT(frp != nullptr);
+
+	auto ptr = reinterpret_cast<llvm_execution_engine_t*>(frp);
+	QUARK_ASSERT(ptr != nullptr);
+	QUARK_ASSERT(ptr->debug_magic == k_debug_magic);
+	QUARK_ASSERT(ptr->check_invariant());
+	return *ptr;
+}
 
 
 }	//	namespace floyd
