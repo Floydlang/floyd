@@ -71,6 +71,24 @@ const bool k_global_dict_is_hamt = true;
 */
 
 
+/*
+64 bytes = 8 x int64_t
+
+[ atomic RC] [ magic: 0xa110a11c	]
+[ data #0							]
+[ data #1							]
+[ data #2							]
+[ data #3							]
+[ elements							]
+[ heap								]
+[ debug_info char x 8				]
+[ allocation word 0 (optional)		]
+[ allocation word 1 (optional)		]
+[ allocation word 2 (optional)		]
+[ ...								]
+*/
+
+
 struct heap_t;
 
 static const uint64_t ALLOC_64_MAGIC = 0xa110a11c;
@@ -85,18 +103,23 @@ static const uint64_t ALLOC_64_MAGIC = 0xa110a11c;
 //	allocation and stuff its pointer into data1.
 //	Designed to be 64 bytes = 1 cacheline.
 struct heap_alloc_64_t {
+	static const int k_data_elements = 4;
+	static const size_t k_data_bytes = sizeof(uint64_t) * k_data_elements;
+
+
 	heap_alloc_64_t(heap_t* heap, uint64_t allocation_word_count, const typeid_t& debug_value_type, const char debug_string[]) :
 		rc(1),
 		magic(ALLOC_64_MAGIC),
-		data_a(0x00000000),
-		data_b(0x00000000),
-		data_c(0x00000000),
-		data_d(0x00000000),
-		heap(heap),
-		allocation_word_count_x(allocation_word_count)
+		allocation_word_count(allocation_word_count),
+		heap(heap)
 	{
 		QUARK_ASSERT(heap != nullptr);
 		QUARK_ASSERT(debug_string != nullptr && strlen(debug_string) < sizeof(debug_info));
+
+		data[0] = 0x00000000'00000000;
+		data[1] = 0x00000000'00000000;
+		data[2] = 0x00000000'00000000;
+		data[3] = 0x00000000'00000000;
 
 		std::strcpy(debug_info, debug_string);
 
@@ -106,25 +129,21 @@ struct heap_alloc_64_t {
 	public: bool check_invariant() const;
 
 
+
 	////////////////////////////////		STATE
 
 	mutable std::atomic<int32_t> rc;
 	uint32_t magic;
 
-	//	 data_*: 5 x 8 bytes.
-	uint64_t data_a;
-	uint64_t data_b;
-	uint64_t data_c;
-	uint64_t data_d;
-	uint64_t allocation_word_count_x;
+	//	 data_*: 4 x 8 bytes.
+	uint64_t data[4];
+	uint64_t allocation_word_count;
 
 	heap_t* heap;
 	char debug_info[8];
 
-#if DEBUG && 0
-	typeid_t debug_value_type;
-	uint64_t debug_allocation_word_count;
-#endif
+	//??? why can't I add more fields?
+//	uint64_t dummy[8];
 };
 
 std::string get_debug_info(const heap_alloc_64_t& info);
@@ -315,7 +334,7 @@ WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
 
 ////////////////////////////////		VECTOR_CPPVECTOR_T
 
-
+//?? rename to "C ARRAY"
 /*
 	A fixed-size immutable vector with RC. Deep copy everytime = expensive to mutate.
 
@@ -325,23 +344,22 @@ WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
 	Invariant:
 		alloc_count = roundup(element_count * element_bits, 64) / 64
 
-	data_a: element count
-	data_b: allocation count
+	data[0]: element count
 */
 struct VECTOR_CPPVECTOR_T {
 	~VECTOR_CPPVECTOR_T();
 	bool check_invariant() const;
 
-	inline uint64_t get_allocation_count() const{
-		QUARK_ASSERT(check_invariant());
-
-		return alloc.data_b;
-	}
-
 	inline uint64_t get_element_count() const{
 		QUARK_ASSERT(check_invariant());
 
-		return alloc.data_a;
+		return alloc.data[0];
+	}
+
+	inline uint64_t get_allocation_count() const{
+		QUARK_ASSERT(check_invariant());
+
+		return alloc.allocation_word_count;
 	}
 
 	inline const runtime_value_t* begin() const {
@@ -403,12 +421,7 @@ void dispose_vector_cppvector(const runtime_value_t& value);
 	Invariant:
 		alloc_count = roundup(element_count * element_bits, 64) / 64
 
-
-
-	data_a: embeds immer::vector<runtime_value_t> in data_a, data_b, data_c.
-	data_b
-	data_c
-	data_d: element_count
+	data: embeds immer::vector<runtime_value_t>
 */
 
 struct VECTOR_HAMT_T {
@@ -416,16 +429,16 @@ struct VECTOR_HAMT_T {
 	bool check_invariant() const;
 
 	const immer::vector<runtime_value_t>& get_vecref() const {
-		return *reinterpret_cast<const immer::vector<runtime_value_t>*>(&alloc.data_a);
+		return *reinterpret_cast<const immer::vector<runtime_value_t>*>(&alloc.data[0]);
 	}
 	immer::vector<runtime_value_t>& get_vecref_mut(){
-		return *reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc.data_a);
+		return *reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc.data[0]);
 	}
 
 	inline uint64_t get_allocation_count() const{
 		QUARK_ASSERT(check_invariant());
 
-		return alloc.data_d;
+		return alloc.allocation_word_count;
 	}
 
 	inline uint64_t get_element_count() const{
@@ -486,9 +499,7 @@ runtime_value_t push_back_immutable(const runtime_value_t& vec0, runtime_value_t
 
 /*
 	A std::map<> is stored inplace:
-	data_a: embeds std::map<std::string, runtime_value_t>
-	data_b: - " -
-	data_c - " -
+	data: embeds std::map<std::string, runtime_value_t>
 */
 
 typedef std::map<std::string, runtime_value_t> CPPMAP;
@@ -498,10 +509,10 @@ struct DICT_CPPMAP_T {
 	uint64_t size() const;
 
 	const CPPMAP& get_map() const {
-		return *reinterpret_cast<const CPPMAP*>(&alloc.data_a);
+		return *reinterpret_cast<const CPPMAP*>(&alloc.data[0]);
 	}
 	CPPMAP& get_map_mut(){
-		return *reinterpret_cast<CPPMAP*>(&alloc.data_a);
+		return *reinterpret_cast<CPPMAP*>(&alloc.data[0]);
 	}
 
 
@@ -519,8 +530,7 @@ void dispose_dict_cppmap(runtime_value_t& vec);
 
 /*
 	A std::map<> is stored inplace:
-	data_a: embeds std::map<std::string, runtime_value_t>
-	data_b: - " -
+	data: embeds std::map<std::string, runtime_value_t>
 */
 typedef immer::map<std::string, runtime_value_t> HAMT_MAP;
 
@@ -529,10 +539,10 @@ struct DICT_HAMT_T {
 	uint64_t size() const;
 
 	const HAMT_MAP& get_map() const {
-		return *reinterpret_cast<const HAMT_MAP*>(&alloc.data_a);
+		return *reinterpret_cast<const HAMT_MAP*>(&alloc.data[0]);
 	}
 	HAMT_MAP& get_map_mut(){
-		return *reinterpret_cast<HAMT_MAP*>(&alloc.data_a);
+		return *reinterpret_cast<HAMT_MAP*>(&alloc.data[0]);
 	}
 
 
@@ -549,7 +559,7 @@ void dispose_dict_hamt(runtime_value_t& vec);
 
 
 /*
-	Store a json_t* in data_a. It need to be new/deletes via C++.
+	Store a json_t* in data[0]. It need to be new/deletes via C++.
 */
 
 typedef std::map<std::string, runtime_value_t> CPPMAP;
@@ -558,7 +568,7 @@ struct JSON_T {
 	bool check_invariant() const;
 
 	const json_t& get_json() const {
-		return *reinterpret_cast<const json_t*>(alloc.data_a);
+		return *reinterpret_cast<const json_t*>(alloc.data[0]);
 	}
 
 

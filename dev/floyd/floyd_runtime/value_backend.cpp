@@ -46,7 +46,10 @@ void trace_alloc(const heap_rec_t& e){
 //		<< "used: " << e.in_use
 		<< " rc: " << e.alloc_ptr->rc
 		<< " debug_info: " << get_debug_info(*e.alloc_ptr)
-		<< " data_a: " << e.alloc_ptr->data_a
+		<< " data[0]: " << e.alloc_ptr->data[0]
+		<< " data[1]: " << e.alloc_ptr->data[1]
+		<< " data[2]: " << e.alloc_ptr->data[2]
+		<< " data[3]: " << e.alloc_ptr->data[3]
 	);
 }
 
@@ -108,6 +111,7 @@ heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, const ty
 	QUARK_ASSERT(debug_string != nullptr);
 
 	const auto header_size = sizeof(heap_alloc_64_t);
+	QUARK_ASSERT((header_size % 8) == 0);
 
 	std::lock_guard<std::recursive_mutex> guard(*heap.alloc_records_mutex);
 
@@ -173,8 +177,13 @@ QUARK_UNIT_TEST("heap_t", "release_ref()", "", ""){
 void* get_alloc_ptr(heap_alloc_64_t& alloc){
 	QUARK_ASSERT(alloc.check_invariant());
 
+	const auto size = sizeof(heap_alloc_64_t);
+	const auto p0 = reinterpret_cast<uint8_t*>(&alloc);
+	const auto p1 = p0 + size;
 	auto p = &alloc;
-	return p + 1;
+	const auto result = p + 1;
+	QUARK_ASSERT(reinterpret_cast<uint8_t*>(result) == p1);
+	return result;
 }
 const void* get_alloc_ptr(const heap_alloc_64_t& alloc){
 	QUARK_ASSERT(alloc.check_invariant());
@@ -235,6 +244,18 @@ void dispose_alloc(heap_alloc_64_t& alloc){
 //	it->in_use = false;
 
 	//??? we don't delete the malloc() block in debug version.
+#if DEBUG
+	alloc.magic = 0xdeadbeef;
+	alloc.data[0] = 0xdeadbeef'00000001;
+	alloc.data[1] = 0xdeadbeef'00000002;
+	alloc.data[2] = 0xdeadbeef'00000003;
+	alloc.data[3] = 0xdeadbeef'00000004;
+
+	alloc.allocation_word_count = 0xdeadbeef'00000005;
+
+	alloc.heap = reinterpret_cast<heap_t*>(0xdeadbeef'00000005);
+	std::memset(alloc.debug_info, 0xaa, sizeof(alloc.debug_info));
+#endif
 }
 
 
@@ -431,8 +452,7 @@ runtime_value_t alloc_vector_ccpvector2(heap_t& heap, uint64_t allocation_count,
 	QUARK_ASSERT(heap.check_invariant());
 
 	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count, value_type, "cppvec");
-	alloc->data_a = element_count;
-	alloc->data_b = allocation_count;
+	alloc->data[0] = element_count;
 
 	auto vec = reinterpret_cast<VECTOR_CPPVECTOR_T*>(alloc);
 
@@ -444,12 +464,15 @@ runtime_value_t alloc_vector_ccpvector2(heap_t& heap, uint64_t allocation_count,
 
 
 void dispose_vector_cppvector(const runtime_value_t& value){
+	QUARK_ASSERT(sizeof(VECTOR_CPPVECTOR_T) == sizeof(heap_alloc_64_t));
+
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(value.vector_cppvector_ptr != nullptr);
 	QUARK_ASSERT(value.vector_cppvector_ptr->check_invariant());
 
+	auto heap = value.vector_cppvector_ptr->alloc.heap;
 	dispose_alloc(value.vector_cppvector_ptr->alloc);
-	QUARK_ASSERT(value.vector_cppvector_ptr->alloc.heap->check_invariant());
+	QUARK_ASSERT(heap->check_invariant());
 }
 
 
@@ -487,13 +510,8 @@ QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
 
 
 QUARK_UNIT_TEST("", "", "", ""){
-	const auto vec_struct_size = sizeof(std::vector<int>);
-	QUARK_UT_VERIFY(vec_struct_size == 24);
-}
-
-QUARK_UNIT_TEST("", "", "", ""){
-	const auto wr_struct_size = sizeof(WIDE_RETURN_T);
-	QUARK_UT_VERIFY(wr_struct_size == 16);
+	const auto vec_size = sizeof(immer::vector<runtime_value_t>);
+	QUARK_UT_VERIFY(vec_size == 32);
 }
 
 
@@ -513,14 +531,10 @@ bool VECTOR_HAMT_T::check_invariant() const {
 runtime_value_t alloc_vector_hamt(heap_t& heap, uint64_t allocation_count, uint64_t element_count, const typeid_t& value_type){
 	QUARK_ASSERT(heap.check_invariant());
 
-	heap_alloc_64_t* alloc = alloc_64(heap, 0, value_type, "vechamt");
-	alloc->data_d = element_count;
+	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc_64(heap, 0, value_type, "vechamt"));
 
-	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
-
-	auto buffer_ptr = reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc->data_a);
-    auto vec2 = new (buffer_ptr) immer::vector<runtime_value_t>(allocation_count, runtime_value_t{ .int_value = (int64_t)0xdeadbeef12345678 } );
-	QUARK_ASSERT(vec2 == buffer_ptr);
+	QUARK_ASSERT(sizeof(immer::vector<runtime_value_t>) <= heap_alloc_64_t::k_data_bytes);
+    new (&vec->alloc.data[0]) immer::vector<runtime_value_t>(allocation_count, runtime_value_t{ .int_value = (int64_t)0xdeadbeef12345678 } );
 
 	QUARK_ASSERT(vec->check_invariant());
 	QUARK_ASSERT(heap.check_invariant());
@@ -533,11 +547,11 @@ runtime_value_t alloc_vector_hamt(heap_t& heap, const runtime_value_t elements[]
 	QUARK_ASSERT(element_count == 0 || elements != nullptr);
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0, value_type, "vechamt");
-	alloc->data_d = element_count;
 
 	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
+	auto buffer_ptr = reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc->data[0]);
 
-	auto buffer_ptr = reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc->data_a);
+	QUARK_ASSERT(sizeof(immer::vector<runtime_value_t>) <= heap_alloc_64_t::k_data_bytes);
     auto vec2 = new (buffer_ptr) immer::vector<runtime_value_t>(&elements[0], &elements[element_count]);
 	QUARK_ASSERT(vec2 == buffer_ptr);
 
@@ -548,15 +562,17 @@ runtime_value_t alloc_vector_hamt(heap_t& heap, const runtime_value_t elements[]
 }
 
 void dispose_vector_hamt(const runtime_value_t& vec){
+	QUARK_ASSERT(vec.check_invariant());
+	QUARK_ASSERT(sizeof(VECTOR_HAMT_T) == sizeof(heap_alloc_64_t));
 	QUARK_ASSERT(vec.vector_hamt_ptr != nullptr);
 	QUARK_ASSERT(vec.vector_hamt_ptr->check_invariant());
 
 	auto& vec2 = vec.vector_hamt_ptr->get_vecref_mut();
-
 	vec2.~vector<runtime_value_t>();
 
+	auto heap = vec.vector_hamt_ptr->alloc.heap;
 	dispose_alloc(vec.vector_hamt_ptr->alloc);
-	QUARK_ASSERT(vec.vector_hamt_ptr->alloc.heap->check_invariant());
+	QUARK_ASSERT(heap->check_invariant());
 }
 
 runtime_value_t store_immutable(const runtime_value_t& vec0, const uint64_t index, runtime_value_t value){
@@ -566,11 +582,12 @@ runtime_value_t store_immutable(const runtime_value_t& vec0, const uint64_t inde
 	auto& heap = *vec1.alloc.heap;
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0, typeid_t::make_undefined(), "vechamt");
-	alloc->data_d = vec1.get_element_count();
 
 	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
 
-	auto buffer_ptr = reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc->data_a);
+	auto buffer_ptr = reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc->data[0]);
+
+	QUARK_ASSERT(sizeof(immer::vector<runtime_value_t>) <= heap_alloc_64_t::k_data_bytes);
     auto vec2 = new (buffer_ptr) immer::vector<runtime_value_t>();
 
 	const auto& v2 = vec1.get_vecref().set(index, value);
@@ -588,11 +605,10 @@ runtime_value_t push_back_immutable(const runtime_value_t& vec0, runtime_value_t
 	auto& heap = *vec1.alloc.heap;
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0, typeid_t::make_undefined(), "vechamt");
-	alloc->data_d = vec1.get_element_count() + 1;
-
 	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
+	auto buffer_ptr = reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc->data[0]);
 
-	auto buffer_ptr = reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc->data_a);
+	QUARK_ASSERT(sizeof(immer::vector<runtime_value_t>) <= heap_alloc_64_t::k_data_bytes);
     auto vec2 = new (buffer_ptr) immer::vector<runtime_value_t>();
 
 	const auto& v2 = vec1.get_vecref().push_back(value);
@@ -668,6 +684,8 @@ runtime_value_t alloc_dict_cppmap(heap_t& heap, const typeid_t& value_type){
 	auto dict = reinterpret_cast<DICT_CPPMAP_T*>(alloc);
 
 	auto& m = dict->get_map_mut();
+
+	QUARK_ASSERT(sizeof(CPPMAP) <= heap_alloc_64_t::k_data_bytes);
     new (&m) CPPMAP();
 
 	QUARK_ASSERT(heap.check_invariant());
@@ -677,14 +695,16 @@ runtime_value_t alloc_dict_cppmap(heap_t& heap, const typeid_t& value_type){
 }
 
 void dispose_dict_cppmap(runtime_value_t& d){
+	QUARK_ASSERT(sizeof(DICT_CPPMAP_T) == sizeof(heap_alloc_64_t));
 	QUARK_ASSERT(d.dict_cppmap_ptr != nullptr);
 	auto& dict = *d.dict_cppmap_ptr;
 
 	QUARK_ASSERT(dict.check_invariant());
 
 	dict.get_map_mut().~CPPMAP();
+	auto heap = dict.alloc.heap;
 	dispose_alloc(dict.alloc);
-	QUARK_ASSERT(dict.alloc.heap->check_invariant());
+	QUARK_ASSERT(heap->check_invariant());
 }
 
 
@@ -721,6 +741,8 @@ runtime_value_t alloc_dict_hamt(heap_t& heap, const typeid_t& value_type){
 	auto dict = reinterpret_cast<DICT_HAMT_T*>(alloc);
 
 	auto& m = dict->get_map_mut();
+
+	QUARK_ASSERT(sizeof(HAMT_MAP) <= heap_alloc_64_t::k_data_bytes);
     new (&m) HAMT_MAP();
 
 	QUARK_ASSERT(heap.check_invariant());
@@ -730,14 +752,16 @@ runtime_value_t alloc_dict_hamt(heap_t& heap, const typeid_t& value_type){
 }
 
 void dispose_dict_hamt(runtime_value_t& d){
+	QUARK_ASSERT(sizeof(DICT_HAMT_T) == sizeof(heap_alloc_64_t));
 	QUARK_ASSERT(d.dict_hamt_ptr != nullptr);
 	auto& dict = *d.dict_hamt_ptr;
 
 	QUARK_ASSERT(dict.check_invariant());
 
 	dict.get_map_mut().~HAMT_MAP();
+	auto heap = dict.alloc.heap;
 	dispose_alloc(dict.alloc);
-	QUARK_ASSERT(dict.alloc.heap->check_invariant());
+	QUARK_ASSERT(heap->check_invariant());
 }
 
 
@@ -768,7 +792,7 @@ JSON_T* alloc_json(heap_t& heap, const json_t& init){
 
 	auto json = reinterpret_cast<JSON_T*>(alloc);
 	auto copy = new json_t(init);
-	json->alloc.data_a = reinterpret_cast<uint64_t>(copy);
+	json->alloc.data[0] = reinterpret_cast<uint64_t>(copy);
 
 	QUARK_ASSERT(json->check_invariant());
 	QUARK_ASSERT(heap.check_invariant());
@@ -776,13 +800,15 @@ JSON_T* alloc_json(heap_t& heap, const json_t& init){
 }
 
 void dispose_json(JSON_T& json){
+	QUARK_ASSERT(sizeof(JSON_T) == sizeof(heap_alloc_64_t));
 	QUARK_ASSERT(json.check_invariant());
 
 	delete &json.get_json();
-	json.alloc.data_a = 666;
-	dispose_alloc(json.alloc);
+	json.alloc.data[0] = 0x00000000'00000000;
 
-	QUARK_ASSERT(json.alloc.heap->check_invariant());
+	auto heap = json.alloc.heap;
+	dispose_alloc(json.alloc);
+	QUARK_ASSERT(heap->check_invariant());
 }
 
 
@@ -792,6 +818,7 @@ void dispose_json(JSON_T& json){
 ////////////////////////////////		STRUCT_T
 
 
+//??? Store small structs inplace.
 
 
 STRUCT_T::~STRUCT_T(){
@@ -814,11 +841,12 @@ STRUCT_T* alloc_struct(heap_t& heap, std::size_t size, const typeid_t& value_typ
 }
 
 void dispose_struct(STRUCT_T& s){
+	QUARK_ASSERT(sizeof(STRUCT_T) == sizeof(heap_alloc_64_t));
 	QUARK_ASSERT(s.check_invariant());
 
+	auto heap = s.alloc.heap;
 	dispose_alloc(s.alloc);
-
-	QUARK_ASSERT(s.alloc.heap->check_invariant());
+	QUARK_ASSERT(heap->check_invariant());
 }
 
 
@@ -1104,8 +1132,6 @@ const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_backe
 
 
 
-
-
 void retain_value(value_backend_t& backend, runtime_value_t value, const typeid_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
@@ -1256,12 +1282,6 @@ void release_vec_deep(value_backend_t& backend, runtime_value_t vec, const typei
 	}
 }
 
-
-
-
-
-
-
 void release_struct_deep(value_backend_t& backend, STRUCT_T* s, const typeid_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(s != nullptr);
@@ -1286,11 +1306,6 @@ void release_struct_deep(value_backend_t& backend, STRUCT_T* s, const typeid_t& 
 		dispose_struct(*s);
 	}
 }
-
-
-
-
-
 
 
 }	//	floyd
