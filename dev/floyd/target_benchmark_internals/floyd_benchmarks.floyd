@@ -65,11 +65,40 @@ benchmark-def "[int] push_back() hamt" {
 	return results
 }
 
+
+func [int] fill_int_vec(int count){
+	mutable [int] v = []
+	for(i in 0 ..< count){
+		v = push_back(v, i)
+	}
+	return v
+}
+
+benchmark-def "[int] lookup() hamt" {
+	mutable [benchmark_result_t] results = []
+	let instances = [ 0, 1, 2, 31, 32, 33, 100, 1000, 1000000 ]
+	for(instance in 0 ..< size(instances)){
+		let count = instances[instance]
+		let [int] v = fill_int_vec(count)
+
+		let r = benchmark {
+			for(a in 0 ..< count){
+				let b = v[a]
+			}
+		}
+		results = push_back(results, benchmark_result_t(r, json( { "Count": count, "Per Element": count > 0 ? r / count : -1 } )))
+	}
+	return results
+}
+
+
+
 //print(make_benchmark_report(run_benchmarks(get_benchmarks())))
 
 
 let to_run = [
-	benchmark_id_t("", "[int] push_back() hamt")
+	benchmark_id_t("", "[int] push_back() hamt"),
+	benchmark_id_t("", "[int] lookup() hamt")
 ]
 
 print(make_benchmark_report(run_benchmarks(to_run)))
