@@ -57,6 +57,8 @@ struct llvm_bind_t {
 struct function_def_t {
 	link_name_t link_name;
 
+	llvm::FunctionType* llvm_function_type;
+
 	//	Only valid during codegen
 	llvm::Function* llvm_codegen_f;
 

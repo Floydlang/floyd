@@ -2622,12 +2622,80 @@ static llvm::Function* generate_function_prototype(llvm::Module& module, const l
 	return f;
 }
 
+static function_def_t generate_function_prototype2(llvm::Module& module, const llvm_type_lookup& type_lookup, const function_definition_t& function_def){
+	QUARK_ASSERT(check_invariant__module(&module));
+	QUARK_ASSERT(type_lookup.check_invariant());
+	QUARK_ASSERT(function_def.check_invariant());
 
+	const auto function_type = function_def._function_type;
+	const auto link_name = encode_floyd_func_link_name(function_def._definition_name);
+	llvm::Type* function_ptr_type = get_exact_llvm_type(type_lookup, function_type);
+	const auto function_byvalue_type = deref_ptr(function_ptr_type);
+	return function_def_t{ link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_def };
+}
+
+static std::vector<function_def_t> make_complete_function_list(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
+	QUARK_ASSERT(type_lookup.check_invariant());
+
+	std::vector<function_def_t> result;
+
+	auto& context = module.getContext();
+
+	//	Make prototypes for all runtime functions, like floydrt_retain_vec().
+	const auto runtime_functions = get_runtime_functions(context, type_lookup);
+	for(const auto& e: runtime_functions){
+		const auto link_name = encode_runtime_func_link_name(e.name);
+		const auto def0 = function_definition_t::make_func(k_no_location, e.name, typeid_t::make_void(), {}, {});
+		const auto def = function_def_t{ link_name, e.function_type, nullptr, def0 };
+		result.push_back(def);
+	}
+
+	//	init()
+	{
+		const auto name = "init";
+		const auto link_name = encode_runtime_func_link_name(name);
+		llvm::FunctionType* function_type = llvm::FunctionType::get(
+			llvm::Type::getInt64Ty(context),
+			{
+				make_frp_type(type_lookup)
+			},
+			false
+		);
+		const auto def0 = function_definition_t::make_func(k_no_location, name, typeid_t::make_void(), {}, {});
+		const auto def = function_def_t{ link_name, function_type, nullptr, def0 };
+		result.push_back(def);
+	}
+
+	//	deinit()
+	{
+		const auto name = "deinit";
+		const auto link_name = encode_runtime_func_link_name(name);
+		llvm::FunctionType* function_type = llvm::FunctionType::get(
+			llvm::Type::getInt64Ty(context),
+			{
+				make_frp_type(type_lookup)
+			},
+			false
+		);
+		const auto def0 = function_definition_t::make_func(k_no_location, name, typeid_t::make_void(), {}, {});
+		const auto def = function_def_t{ link_name, function_type, nullptr, def0 };
+		result.push_back(def);
+	}
+
+	//	Make function prototypes for all floyd functions.
+	{
+		for(const auto& function_def: ast_function_defs){
+			auto def = generate_function_prototype2(module, type_lookup, function_def);
+			result.push_back(def);
+		}
+	}
+	return result;
+}
 
 //??? Generate all llvm function prototypes from Floyd prototypes using unified system: including init() and deinit().
 //	Make LLVM functions -- runtime, floyd host functions, floyd functions.
 //	host functions are later linked by LLVM execution engine, by matching the function names.
-static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& defs){
+static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	std::vector<function_def_t> result;
@@ -2642,7 +2710,7 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 		QUARK_ASSERT(check_invariant__module(&module));
 
 		const auto def0 = function_definition_t::make_func(k_no_location, e.name, typeid_t::make_void(), {}, {});
-		const auto def = function_def_t{ link_name, llvm::cast<llvm::Function>(f), def0 };
+		const auto def = function_def_t{ link_name, e.function_type, llvm::cast<llvm::Function>(f), def0 };
 		result.push_back(def);
 	}
 
@@ -2659,7 +2727,7 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 		);
 		auto f = module.getOrInsertFunction(link_name.s, function_type);
 		const auto def0 = function_definition_t::make_func(k_no_location, name, typeid_t::make_void(), {}, {});
-		const auto def = function_def_t{ link_name, llvm::cast<llvm::Function>(f), def0 };
+		const auto def = function_def_t{ link_name, function_type, llvm::cast<llvm::Function>(f), def0 };
 		result.push_back(def);
 	}
 
@@ -2676,20 +2744,27 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 		);
 		auto f = module.getOrInsertFunction(link_name.s, function_type);
 		const auto def0 = function_definition_t::make_func(k_no_location, name, typeid_t::make_void(), {}, {});
-		const auto def = function_def_t{ link_name, llvm::cast<llvm::Function>(f), def0 };
+		const auto def = function_def_t{ link_name, function_type, llvm::cast<llvm::Function>(f), def0 };
 		result.push_back(def);
 	}
 
 	//	Make function prototypes for all floyd functions.
 	{
-		for(const auto& function_def: defs){
+		for(const auto& function_def: ast_function_defs){
 			auto f = generate_function_prototype(module, type_lookup, function_def);
-			const auto def = function_def_t{ encode_floyd_func_link_name(function_def._definition_name), llvm::cast<llvm::Function>(f), function_def };
+			auto f2 = llvm::cast<llvm::Function>(f);
+			auto function_type = f2->getFunctionType();
+			const auto def = function_def_t{ encode_floyd_func_link_name(function_def._definition_name), function_type, f2, function_def };
 			result.push_back(def);
 		}
 	}
 	return result;
 }
+
+
+
+
+
 
 /*
 	GENERATE CODE for floyd_runtime_init()
