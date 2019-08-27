@@ -151,6 +151,8 @@ const function_def_t& find_function_def_from_link_name(const std::vector<functio
 std::pair<void*, typeid_t> bind_global(const llvm_execution_engine_t& ee, const std::string& name);
 value_t load_global(const llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& v);
 
+void store_via_ptr(llvm_execution_engine_t& runtime, const typeid_t& member_type, void* value_ptr, const value_t& value);
+
 llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name);
 
 
@@ -181,8 +183,6 @@ inline runtime_value_t to_runtime_string(llvm_execution_engine_t& runtime, const
 
 
 
-//	These are the support function built into the runtime, like RC primitives.
-std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup);
 
 int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const std::vector<std::string>& main_args);
 
