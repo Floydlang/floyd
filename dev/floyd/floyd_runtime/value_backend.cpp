@@ -1098,7 +1098,8 @@ QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
 
 
 
-static std::string from_runtime_string0(runtime_value_t encoded_value){
+std::string from_runtime_string2(const value_backend_t& backend, runtime_value_t encoded_value){
+	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(encoded_value.check_invariant());
 	QUARK_ASSERT(encoded_value.vector_cppvector_ptr != nullptr);
 
@@ -1129,7 +1130,7 @@ QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
 	auto backend = make_test_value_backend();
 	const auto a = to_runtime_string2(backend, "hello, world!");
 
-	const auto r = from_runtime_string0(a);
+	const auto r = from_runtime_string2(backend, a);
 	QUARK_UT_VERIFY(r == "hello, world!");
 }
 
@@ -1140,12 +1141,6 @@ QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
 
 
 
-std::string from_runtime_string2(const value_backend_t& backend, runtime_value_t encoded_value){
-	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(encoded_value.check_invariant());
-
-	return from_runtime_string0(encoded_value);
-}
 
 const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, const typeid_t& type){
 	QUARK_ASSERT(backend.check_invariant());
