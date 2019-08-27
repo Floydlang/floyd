@@ -267,7 +267,7 @@ static void llvm_corelib__rename_fsentry(floyd_runtime_t* frp, runtime_value_t p
 
 
 
-std::map<std::string, void*> get_corelib_c_function_ptrs(){
+std::map<std::string, void*> get_corelib_binds(){
 
 	////////////////////////////////		CORE FUNCTIONS AND HOST FUNCTIONS
 	const std::map<std::string, void*> host_functions_map = {

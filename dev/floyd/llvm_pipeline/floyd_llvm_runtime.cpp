@@ -1171,7 +1171,7 @@ static function_bind_t floydrt_analyse_benchmark_samples__make(llvm::LLVMContext
 
 
 //??? Keep typeid_t for each, then convert to LLVM type. Can't go the other way.
-std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	std::vector<function_bind_t> result = {
 		floydrt_alloc_kstr__make(context, type_lookup),
 		floydrt_allocate_vector__make(context, type_lookup),
@@ -2484,7 +2484,7 @@ static JSON_T* floyd_llvm_intrinsic__to_json(floyd_runtime_t* frp, runtime_value
 
 
 
-static std::map<std::string, void*> get_intrinsic_c_function_ptrs(){
+static std::map<std::string, void*> get_intrinsic_binds(){
 
 	////////////////////////////////		CORE FUNCTIONS AND HOST FUNCTIONS
 	const std::map<std::string, void*> host_functions_map = {
@@ -2560,11 +2560,11 @@ static void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p
 }
 #endif
 
-static std::map<link_name_t, void*> register_c_functions(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+static std::map<link_name_t, void*> make_function_binds(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 
 	////////	Functions to support the runtime
 
-	const auto runtime_functions = get_runtime_functions(context, type_lookup);
+	const auto runtime_functions = get_runtime_function_binds(context, type_lookup);
 	std::map<link_name_t, void*> runtime_functions_map;
 	for(const auto& e: runtime_functions){
 		const auto link_name = encode_runtime_func_link_name(e.name);
@@ -2575,7 +2575,7 @@ static std::map<link_name_t, void*> register_c_functions(llvm::LLVMContext& cont
 	std::map<link_name_t, void*> function_map = runtime_functions_map;
 
 	////////	intrinsics
-	const auto intrinsics0 = get_intrinsic_c_function_ptrs();
+	const auto intrinsics0 = get_intrinsic_binds();
 	std::map<link_name_t, void*> intrinsics;
 	for(const auto& e: intrinsics0){
 		intrinsics.insert({ encode_floyd_func_link_name(e.first), e.second });
@@ -2583,7 +2583,7 @@ static std::map<link_name_t, void*> register_c_functions(llvm::LLVMContext& cont
 	function_map.insert(intrinsics.begin(), intrinsics.end());
 
 	////////	Corelib
-	const auto corelib_function_map0 = get_corelib_c_function_ptrs();
+	const auto corelib_function_map0 = get_corelib_binds();
 	std::map<link_name_t, void*> corelib_function_map;
 	for(const auto& e: corelib_function_map0){
 		corelib_function_map.insert({ encode_floyd_func_link_name(e.first), e.second });
@@ -2714,9 +2714,9 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 
 	auto ee1 = std::shared_ptr<llvm::ExecutionEngine>(exeEng);
 
-	auto function_map = register_c_functions(instance.context, program_breaks.type_lookup);
+	auto function_map = make_function_binds(instance.context, program_breaks.type_lookup);
 
-	//	Resolve all unresolved functions.
+	//	LINK. Resolve all unresolved functions.
 	{
 		//	https://stackoverflow.com/questions/33328562/add-mapping-to-c-lambda-from-llvm
 		auto lambda = [&](const std::string& s) -> void* {

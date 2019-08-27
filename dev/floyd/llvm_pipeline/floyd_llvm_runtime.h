@@ -181,7 +181,7 @@ inline runtime_value_t to_runtime_string(llvm_execution_engine_t& runtime, const
 
 
 //	These are the support function built into the runtime, like RC primitives.
-std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup);
+std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup);
 
 int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const std::vector<std::string>& main_args);
 

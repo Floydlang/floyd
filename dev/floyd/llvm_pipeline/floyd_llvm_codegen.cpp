@@ -2618,12 +2618,14 @@ static std::vector<function_def_t> make_complete_function_list(llvm::LLVMContext
 	std::vector<function_def_t> result;
 
 	//	Make prototypes for all runtime functions, like floydrt_retain_vec().
-	const auto runtime_functions = get_runtime_functions(context, type_lookup);
-	for(const auto& e: runtime_functions){
-		const auto link_name = encode_runtime_func_link_name(e.name);
-		const auto def0 = function_definition_t::make_func(k_no_location, e.name, typeid_t::make_void(), {}, {});
-		const auto def = function_def_t{ link_name, e.function_type, nullptr, def0 };
-		result.push_back(def);
+	{
+		const auto runtime_functions = get_runtime_function_binds(context, type_lookup);
+		for(const auto& e: runtime_functions){
+			const auto link_name = encode_runtime_func_link_name(e.name);
+			const auto def0 = function_definition_t::make_func(k_no_location, e.name, typeid_t::make_void(), {}, {});
+			const auto def = function_def_t{ link_name, e.function_type, nullptr, def0 };
+			result.push_back(def);
+		}
 	}
 
 	//	init()
