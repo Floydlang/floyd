@@ -63,6 +63,7 @@ const bool k_trace_types = k_trace_input_output;
 namespace floyd {
 
 
+struct llvm_code_generator_t;
 
 
 
@@ -79,24 +80,13 @@ struct resolved_symbol_t {
 };
 
 
-////////////////////////////////		llvm_code_generator_t
 
-struct llvm_code_generator_t;
-
+////////////////////////////////		runtime_functions_t
 
 
 
-////////////////////////////////		llvm_code_generator_t
-
-
-struct llvm_code_generator_t {
-	public: llvm_code_generator_t(llvm_instance_t& instance, llvm::Module* module, const type_interner_t& interner, const llvm_type_lookup& type_lookup, const std::vector<function_def_t>& function_defs) :
-		instance(&instance),
-		module(module),
-		builder(instance.context),
-		type_lookup(type_lookup),
-		function_defs(function_defs),
-
+struct runtime_functions_t {
+	runtime_functions_t(const std::vector<function_def_t>& function_defs) :
 		floydrt_init(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("init"))),
 		floydrt_deinit(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("deinit"))),
 
@@ -140,6 +130,65 @@ struct llvm_code_generator_t {
 		floydrt_get_profile_time(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("get_profile_time"))),
 		floydrt_analyse_benchmark_samples(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("analyse_benchmark_samples")))
 	{
+	}
+
+
+	////////////////////////////////		STATE
+
+	const function_def_t floydrt_init;
+	const function_def_t floydrt_deinit;
+
+	const function_def_t floydrt_alloc_kstr;
+	const function_def_t floydrt_allocate_vector;
+	const function_def_t floydrt_allocate_vector_fill;
+	const function_def_t floydrt_retain_vec;
+	const function_def_t floydrt_retain_vector_hamt;
+	const function_def_t floydrt_release_vec;
+	const function_def_t floydrt_release_vector_hamt_pod;
+	const function_def_t floydrt_load_vector_element;
+	const function_def_t floydrt_store_vector_element_mutable;
+	const function_def_t floydrt_concatunate_vectors;
+	const function_def_t floydrt_push_back__hamt__pod64;
+	
+	const function_def_t floydrt_allocate_dict;
+	const function_def_t floydrt_retain_dict;
+	const function_def_t floydrt_release_dict;
+	const function_def_t floydrt_lookup_dict;
+	const function_def_t floydrt_store_dict_mutable;
+
+	const function_def_t floydrt_allocate_json;
+	const function_def_t floydrt_retain_json;
+	const function_def_t floydrt_release_json;
+	const function_def_t floydrt_lookup_json;
+	const function_def_t floydrt_json_to_string;
+
+	const function_def_t floydrt_allocate_struct;
+	const function_def_t floydrt_retain_struct;
+	const function_def_t floydrt_release_struct;
+	const function_def_t floydrt_update_struct_member;
+
+	const function_def_t floydrt_compare_values;
+
+	const function_def_t floydrt_get_profile_time;
+	const function_def_t floydrt_analyse_benchmark_samples;
+};
+
+
+
+
+////////////////////////////////		llvm_code_generator_t
+
+
+struct llvm_code_generator_t {
+	public: llvm_code_generator_t(llvm_instance_t& instance, llvm::Module* module, const type_interner_t& interner, const llvm_type_lookup& type_lookup, const std::vector<function_def_t>& function_defs) :
+		instance(&instance),
+		module(module),
+		builder(instance.context),
+		type_lookup(type_lookup),
+		function_defs(function_defs),
+
+		runtime_functions(function_defs)
+	{
 		QUARK_ASSERT(instance.check_invariant());
 
 		llvm::InitializeNativeTarget();
@@ -180,42 +229,7 @@ struct llvm_code_generator_t {
 	//	One element for each global symbol in AST. Same indexes as in symbol table.
 	std::vector<std::vector<resolved_symbol_t>> scope_path;
 
-	const function_def_t& floydrt_init;
-	const function_def_t& floydrt_deinit;
-
-	const function_def_t& floydrt_alloc_kstr;
-	const function_def_t& floydrt_allocate_vector;
-	const function_def_t& floydrt_allocate_vector_fill;
-	const function_def_t& floydrt_retain_vec;
-	const function_def_t& floydrt_retain_vector_hamt;
-	const function_def_t& floydrt_release_vec;
-	const function_def_t& floydrt_release_vector_hamt_pod;
-	const function_def_t& floydrt_load_vector_element;
-	const function_def_t& floydrt_store_vector_element_mutable;
-	const function_def_t& floydrt_concatunate_vectors;
-	const function_def_t& floydrt_push_back__hamt__pod64;
-	
-	const function_def_t& floydrt_allocate_dict;
-	const function_def_t& floydrt_retain_dict;
-	const function_def_t& floydrt_release_dict;
-	const function_def_t& floydrt_lookup_dict;
-	const function_def_t& floydrt_store_dict_mutable;
-
-	const function_def_t& floydrt_allocate_json;
-	const function_def_t& floydrt_retain_json;
-	const function_def_t& floydrt_release_json;
-	const function_def_t& floydrt_lookup_json;
-	const function_def_t& floydrt_json_to_string;
-
-	const function_def_t& floydrt_allocate_struct;
-	const function_def_t& floydrt_retain_struct;
-	const function_def_t& floydrt_release_struct;
-	const function_def_t& floydrt_update_struct_member;
-
-	const function_def_t& floydrt_compare_values;
-
-	const function_def_t& floydrt_get_profile_time;
-	const function_def_t& floydrt_analyse_benchmark_samples;
+	const runtime_functions_t runtime_functions;
 };
 
 
@@ -416,7 +430,7 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 					&value_reg,
 					generate_itype_constant(gen_acc.gen, type)
 				};
-				builder.CreateCall(gen_acc.gen.floydrt_retain_vector_hamt.llvm_codegen_f, args, "");
+				builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_retain_vector_hamt.llvm_codegen_f, args, "");
 			}
 			else{
 				std::vector<llvm::Value*> args = {
@@ -424,7 +438,7 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 					&value_reg,
 					generate_itype_constant(gen_acc.gen, type)
 				};
-				builder.CreateCall(gen_acc.gen.floydrt_retain_vec.llvm_codegen_f, args, "");
+				builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_retain_vec.llvm_codegen_f, args, "");
 			}
 		}
 		else if(type.is_dict()){
@@ -433,7 +447,7 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 				&value_reg,
 				generate_itype_constant(gen_acc.gen, type)
 			};
-			builder.CreateCall(gen_acc.gen.floydrt_retain_dict.llvm_codegen_f, args, "");
+			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_retain_dict.llvm_codegen_f, args, "");
 		}
 		else if(type.is_json()){
 			std::vector<llvm::Value*> args = {
@@ -441,7 +455,7 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 				&value_reg,
 				generate_itype_constant(gen_acc.gen, type)
 			};
-			builder.CreateCall(gen_acc.gen.floydrt_retain_json.llvm_codegen_f, args, "");
+			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_retain_json.llvm_codegen_f, args, "");
 		}
 		else if(type.is_struct()){
 			auto generic_vec_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value_reg, get_generic_struct_type(gen_acc.gen.type_lookup)->getPointerTo(), "");
@@ -450,7 +464,7 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 				generic_vec_reg,
 				generate_itype_constant(gen_acc.gen, type)
 			};
-			builder.CreateCall(gen_acc.gen.floydrt_retain_struct.llvm_codegen_f, args, "");
+			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_retain_struct.llvm_codegen_f, args, "");
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -473,7 +487,7 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 					&value_reg,
 					generate_itype_constant(gen_acc.gen, type)
 				};
-				builder.CreateCall(gen_acc.gen.floydrt_release_vector_hamt_pod.llvm_codegen_f, args);
+				builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_release_vector_hamt_pod.llvm_codegen_f, args);
 			}
 			else{
 				std::vector<llvm::Value*> args = {
@@ -481,7 +495,7 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 					&value_reg,
 					generate_itype_constant(gen_acc.gen, type)
 				};
-				builder.CreateCall(gen_acc.gen.floydrt_release_vec.llvm_codegen_f, args);
+				builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_release_vec.llvm_codegen_f, args);
 			}
 		}
 		else if(type.is_dict()){
@@ -490,7 +504,7 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 				&value_reg,
 				generate_itype_constant(gen_acc.gen, type)
 			};
-			builder.CreateCall(gen_acc.gen.floydrt_release_dict.llvm_codegen_f, args);
+			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_release_dict.llvm_codegen_f, args);
 		}
 		else if(type.is_json()){
 			std::vector<llvm::Value*> args = {
@@ -498,7 +512,7 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 				&value_reg,
 				generate_itype_constant(gen_acc.gen, type)
 			};
-			builder.CreateCall(gen_acc.gen.floydrt_release_json.llvm_codegen_f, args);
+			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_release_json.llvm_codegen_f, args);
 		}
 		else if(type.is_struct()){
 			std::vector<llvm::Value*> args = {
@@ -506,7 +520,7 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 				&value_reg,
 				generate_itype_constant(gen_acc.gen, type)
 			};
-			builder.CreateCall(gen_acc.gen.floydrt_release_struct.llvm_codegen_f, args);
+			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_release_struct.llvm_codegen_f, args);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -548,7 +562,7 @@ llvm::Value* generate_constant_string(llvm_function_generator_t& gen_acc, const 
 		str_ptr,
 		str_size
 	};
-	auto string_vec_ptr_reg = builder.CreateCall(gen_acc.gen.floydrt_alloc_kstr.llvm_codegen_f, args, "string literal");
+	auto string_vec_ptr_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_alloc_kstr.llvm_codegen_f, args, "string literal");
 	return string_vec_ptr_reg;
 };
 
@@ -825,7 +839,7 @@ static llvm::Value* generate_update_member_expression(llvm_function_generator_t&
 		generate_cast_to_runtime_value(gen_acc.gen, *new_value_reg, member_type),
 		generate_itype_constant(gen_acc.gen, member_type)
 	};
-	auto struct2_ptr_reg = builder.CreateCall(gen_acc.gen.floydrt_update_struct_member.llvm_codegen_f, args2, "");
+	auto struct2_ptr_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_update_struct_member.llvm_codegen_f, args2, "");
 
 	generate_release(gen_acc, *new_value_reg, member_type);
 	generate_release(gen_acc, *parent_struct_ptr_reg, struct_type);
@@ -874,7 +888,7 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 			generate_cast_to_runtime_value(gen_acc.gen, *key_reg, key_type),
 			generate_itype_constant(gen_acc.gen, key_type)
 		};
-		auto result = builder.CreateCall(gen_acc.gen.floydrt_lookup_json.llvm_codegen_f, args, "");
+		auto result = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_lookup_json.llvm_codegen_f, args, "");
 
 		generate_release(gen_acc, *parent_reg, parent_type);
 		generate_release(gen_acc, *key_reg, key_type);
@@ -909,7 +923,7 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 			generate_itype_constant(gen_acc.gen, parent_type),
 			generate_cast_to_runtime_value(gen_acc.gen, *key_reg, key_type),
 		};
-		auto element_value_uint64_reg = builder.CreateCall(gen_acc.gen.floydrt_load_vector_element.llvm_codegen_f, args2, "");
+		auto element_value_uint64_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_load_vector_element.llvm_codegen_f, args2, "");
 		auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
 
 		generate_retain(gen_acc, *result_reg, element_type0);
@@ -930,7 +944,7 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 			dict_type_reg,
 			key_reg
 		};
-		auto element_value_uint64_reg = builder.CreateCall(gen_acc.gen.floydrt_lookup_dict.llvm_codegen_f, args2, "");
+		auto element_value_uint64_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_lookup_dict.llvm_codegen_f, args2, "");
 		auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
 
 		generate_retain(gen_acc, *result_reg, element_type0);
@@ -1042,7 +1056,7 @@ static llvm::Value* generate_arithmetic_expression(llvm_function_generator_t& ge
 			lhs_temp,
 			rhs_temp
 		};
-		auto result = gen_acc.get_builder().CreateCall(gen_acc.gen.floydrt_concatunate_vectors.llvm_codegen_f, args2, "");
+		auto result = gen_acc.get_builder().CreateCall(gen_acc.gen.runtime_functions.floydrt_concatunate_vectors.llvm_codegen_f, args2, "");
 		generate_release(gen_acc, *lhs_temp, *details.lhs->_output_type);
 		generate_release(gen_acc, *rhs_temp, *details.rhs->_output_type);
 		return result;
@@ -1070,7 +1084,7 @@ static llvm::Value* generate_compare_values(llvm_function_generator_t& gen_acc, 
 		generate_cast_to_runtime_value(gen_acc.gen, lhs_reg, type),
 		generate_cast_to_runtime_value(gen_acc.gen, rhs_reg, type)
 	};
-	auto result = gen_acc.get_builder().CreateCall(gen_acc.gen.floydrt_compare_values.llvm_codegen_f, args, "");
+	auto result = gen_acc.get_builder().CreateCall(gen_acc.gen.runtime_functions.floydrt_compare_values.llvm_codegen_f, args, "");
 
 	QUARK_ASSERT(gen_acc.check_invariant());
 	return result;
@@ -1423,7 +1437,7 @@ static llvm::Value* generate_push_back_expression(llvm_function_generator_t& gen
 		auto element_reg = generate_expression(gen_acc, details.args[1]);
 
 		auto vec_ptr_reg = builder.CreateCall(
-			gen_acc.gen.floydrt_push_back__hamt__pod64.llvm_codegen_f,
+			gen_acc.gen.runtime_functions.floydrt_push_back__hamt__pod64.llvm_codegen_f,
 			{ gen_acc.get_callers_fcp(), vector_reg, element_reg },
 			""
 		);
@@ -1596,7 +1610,7 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 
 	if(is_vector_cppvector(details.value_type)){
 		auto vec_ptr_reg = builder.CreateCall(
-			gen_acc.gen.floydrt_allocate_vector.llvm_codegen_f,
+			gen_acc.gen.runtime_functions.floydrt_allocate_vector.llvm_codegen_f,
 			{ gen_acc.get_callers_fcp(), vec_type_reg, element_count_reg },
 			""
 		);
@@ -1634,7 +1648,7 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 		}
 	}
 	else if(is_vector_hamt(details.value_type)){
-		auto vec_ptr_reg = builder.CreateCall(gen_acc.gen.floydrt_allocate_vector.llvm_codegen_f, { gen_acc.get_callers_fcp(), vec_type_reg, element_count_reg }, "");
+		auto vec_ptr_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_allocate_vector.llvm_codegen_f, { gen_acc.get_callers_fcp(), vec_type_reg, element_count_reg }, "");
 
 		int element_index = 0;
 		for(const auto& element_value: details.elements){
@@ -1643,7 +1657,7 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 			auto element_value2_reg = generate_cast_to_runtime_value(gen_acc.gen, *element_value_reg, element_type0);
 
 			//	Move ownwership from temp to member element, no need for retain-release.
-			builder.CreateCall(gen_acc.gen.floydrt_store_vector_element_mutable.llvm_codegen_f, { gen_acc.get_callers_fcp(), vec_ptr_reg, vec_type_reg, index_reg, element_value2_reg }, "");
+			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_store_vector_element_mutable.llvm_codegen_f, { gen_acc.get_callers_fcp(), vec_ptr_reg, vec_type_reg, index_reg, element_value2_reg }, "");
 			element_index++;
 		}
 		return vec_ptr_reg;
@@ -1662,7 +1676,7 @@ static llvm::Value* generate_construct_dict(llvm_function_generator_t& gen_acc, 
 
 	const auto element_type0 = details.value_type.get_dict_value_type();
 	auto dict_type_reg = generate_itype_constant(gen_acc.gen, details.value_type);
-	auto dict_acc_ptr_reg = builder.CreateCall(gen_acc.gen.floydrt_allocate_dict.llvm_codegen_f, { gen_acc.get_callers_fcp(), dict_type_reg }, "");
+	auto dict_acc_ptr_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_allocate_dict.llvm_codegen_f, { gen_acc.get_callers_fcp(), dict_type_reg }, "");
 
 	//	Elements are stored as pairs.
 	QUARK_ASSERT((details.elements.size() & 1) == 0);
@@ -1679,7 +1693,7 @@ static llvm::Value* generate_construct_dict(llvm_function_generator_t& gen_acc, 
 			key0_reg,
 			generate_cast_to_runtime_value(gen_acc.gen, *element0_reg, element_type0)
 		};
-		builder.CreateCall(gen_acc.gen.floydrt_store_dict_mutable.llvm_codegen_f, args2, "");
+		builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_store_dict_mutable.llvm_codegen_f, args2, "");
 
 		generate_release(gen_acc, *key0_reg, typeid_t::make_string());
 	}
@@ -1713,7 +1727,7 @@ static llvm::Value* generate_construct_struct(llvm_function_generator_t& gen_acc
 		size_reg
 	};
 	//	Returns STRUCT_T*.
-	auto generic_struct_ptr_reg = gen_acc.get_builder().CreateCall(gen_acc.gen.floydrt_allocate_struct.llvm_codegen_f, args2, "");
+	auto generic_struct_ptr_reg = gen_acc.get_builder().CreateCall(gen_acc.gen.runtime_functions.floydrt_allocate_struct.llvm_codegen_f, args2, "");
 
 
 	//!!! We basically inline the entire constructor here -- bad idea? Maybe generate a construction function and call it.
@@ -1766,7 +1780,7 @@ static llvm::Value* generate_construct_primitive(llvm_function_generator_t& gen_
 			gen_acc.get_callers_fcp(),
 			element0_reg
 		};
-		auto result = gen_acc.get_builder().CreateCall(gen_acc.gen.floydrt_json_to_string.llvm_codegen_f, args, "");
+		auto result = gen_acc.get_builder().CreateCall(gen_acc.gen.runtime_functions.floydrt_json_to_string.llvm_codegen_f, args, "");
 
 		generate_release(gen_acc, *element0_reg, input_value_type);
 		return result;
@@ -1778,7 +1792,7 @@ static llvm::Value* generate_construct_primitive(llvm_function_generator_t& gen_
 			generate_cast_to_runtime_value(gen_acc.gen, *element0_reg, input_value_type),
 			generate_itype_constant(gen_acc.gen, input_value_type)
 		};
-		auto result = gen_acc.get_builder().CreateCall(gen_acc.gen.floydrt_allocate_json.llvm_codegen_f, args2, "");
+		auto result = gen_acc.get_builder().CreateCall(gen_acc.gen.runtime_functions.floydrt_allocate_json.llvm_codegen_f, args2, "");
 
 		generate_release(gen_acc, *element0_reg, input_value_type);
 		return result;
@@ -1868,8 +1882,8 @@ static llvm::Value* generate_benchmark_expression(llvm_function_generator_t& gen
 	auto& builder = gen_acc.get_builder();
 	auto& context = builder.getContext();
 
-	const auto& get_profile_time_f = gen_acc.gen.floydrt_get_profile_time.llvm_codegen_f;
-	const auto& analyse_benchmark_samples_f = gen_acc.gen.floydrt_analyse_benchmark_samples.llvm_codegen_f;
+	const auto& get_profile_time_f = gen_acc.gen.runtime_functions.floydrt_get_profile_time.llvm_codegen_f;
+	const auto& analyse_benchmark_samples_f = gen_acc.gen.runtime_functions.floydrt_analyse_benchmark_samples.llvm_codegen_f;
 
 	llvm::Function* parent_function = builder.GetInsertBlock()->getParent();
 
@@ -2704,7 +2718,7 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const bo
 	auto& builder = gen_acc.get_builder();
 	auto& context = builder.getContext();
 
-	llvm::Function* f = gen_acc.floydrt_init.llvm_codegen_f;
+	llvm::Function* f = gen_acc.runtime_functions.floydrt_init.llvm_codegen_f;
 	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(context, "entry", f);
 	llvm::BasicBlock* destructBB = llvm::BasicBlock::Create(context, "destruct", f);
 
@@ -2746,7 +2760,7 @@ static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const 
 	auto& builder = gen_acc.get_builder();
 	auto& context = builder.getContext();
 
-	llvm::Function* f = gen_acc.floydrt_deinit.llvm_codegen_f;
+	llvm::Function* f = gen_acc.runtime_functions.floydrt_deinit.llvm_codegen_f;
 	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(context, "entry", f);
 
 	{
@@ -2804,7 +2818,7 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> gen
 
 	//	Global variables.
 	{
-		llvm_function_generator_t function_gen_acc(gen_acc, *gen_acc.floydrt_init.llvm_codegen_f);
+		llvm_function_generator_t function_gen_acc(gen_acc, *gen_acc.runtime_functions.floydrt_init.llvm_codegen_f);
 
 		std::vector<resolved_symbol_t> globals = generate_globals_from_ast(
 			function_gen_acc,
