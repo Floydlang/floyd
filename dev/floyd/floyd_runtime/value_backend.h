@@ -133,6 +133,10 @@ struct heap_alloc_64_t {
 		magic(ALLOC_64_MAGIC),
 		allocation_word_count(allocation_word_count),
 		heap(heap)
+#if DEBUG
+		,
+		debug_value_type(debug_value_type)
+#endif
 	{
 		QUARK_ASSERT(heap != nullptr);
 		QUARK_ASSERT(debug_string != nullptr && strlen(debug_string) < sizeof(debug_info));
@@ -171,6 +175,8 @@ struct heap_alloc_64_t {
 
 #if DEBUG
 	std::string debug_info;
+	runtime_type_t debug_value_type;
+//	std::string debug_value_type_str;
 #endif
 
 };
