@@ -512,7 +512,7 @@ llvm::Type* make_frp_type(const llvm_type_lookup& type_lookup){
 	return type_lookup.state.runtime_ptr_type;
 }
 
-
+/*
 llvm_function_def_t map_function_arguments(const llvm_type_lookup& type_lookup, const floyd::typeid_t& function_type){
 	QUARK_ASSERT(function_type.is_function());
 
@@ -520,7 +520,7 @@ llvm_function_def_t map_function_arguments(const llvm_type_lookup& type_lookup, 
 	QUARK_ASSERT(entry.optional_function_def);
 	return *entry.optional_function_def;
 }
-
+*/
 
 ////////////////////////////////		TESTS
 

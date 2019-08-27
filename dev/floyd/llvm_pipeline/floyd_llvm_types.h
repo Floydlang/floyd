@@ -158,7 +158,7 @@ llvm::Type* get_generic_struct_type(const llvm_type_lookup& type_lookup);
 
 llvm::Type* make_json_type(const llvm_type_lookup& type_lookup);
 
-llvm_function_def_t map_function_arguments(const llvm_type_lookup& type_lookup, const floyd::typeid_t& function_type);
+//llvm_function_def_t map_function_arguments(const llvm_type_lookup& type_lookup, const floyd::typeid_t& function_type);
 
 llvm::Type* make_frp_type(const llvm_type_lookup& type_lookup);
 
