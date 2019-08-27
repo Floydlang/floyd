@@ -406,10 +406,6 @@ runtime_value_t make_runtime_typeid(runtime_type_t type){
 	return { .typeid_itype = type };
 }
 
-runtime_value_t make_runtime_string(VECTOR_CPPVECTOR_T* string_cppvector_ptr){
-	return { .vector_cppvector_ptr = string_cppvector_ptr };
-}
-
 runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr){
 	return { .struct_ptr = struct_ptr };
 }
@@ -1051,14 +1047,20 @@ typeid_t lookup_type(const value_backend_t& backend, runtime_type_t itype){
 ////////////////////////////////		VALUES
 
 
+static value_backend_t make_test_value_backend(){
+	return value_backend_t(
+		{},
+		{},
+		{}
+	);
+}
 
-
-static runtime_value_t to_runtime_string0(heap_t& heap, const std::string& s){
-	QUARK_ASSERT(heap.check_invariant());
+runtime_value_t to_runtime_string2(value_backend_t& backend, const std::string& s){
+	QUARK_ASSERT(backend.check_invariant());
 
 	const auto count = static_cast<uint64_t>(s.size());
 	const auto allocation_count = size_to_allocation_blocks(s.size());
-	auto result = alloc_vector_ccpvector2(heap, allocation_count, count, typeid_t::make_string());
+	auto result = alloc_vector_ccpvector2(backend.heap, allocation_count, count, typeid_t::make_string());
 
 	size_t char_pos = 0;
 	int element_index = 0;
@@ -1080,8 +1082,8 @@ static runtime_value_t to_runtime_string0(heap_t& heap, const std::string& s){
 
 
 QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
-	heap_t heap;
-	const auto a = to_runtime_string0(heap, "hello, world!");
+	auto backend = make_test_value_backend();
+	const auto a = to_runtime_string2(backend, "hello, world!");
 
 	QUARK_UT_VERIFY(a.vector_cppvector_ptr->get_element_count() == 13);
 
@@ -1124,8 +1126,8 @@ static std::string from_runtime_string0(runtime_value_t encoded_value){
 }
 
 QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
-	heap_t heap;
-	const auto a = to_runtime_string0(heap, "hello, world!");
+	auto backend = make_test_value_backend();
+	const auto a = to_runtime_string2(backend, "hello, world!");
 
 	const auto r = from_runtime_string0(a);
 	QUARK_UT_VERIFY(r == "hello, world!");
@@ -1135,11 +1137,6 @@ QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
 
 
 
-runtime_value_t to_runtime_string2(value_backend_t& backend, const std::string& s){
-	QUARK_ASSERT(backend.check_invariant());
-
-	return to_runtime_string0(backend.heap, s);
-}
 
 
 

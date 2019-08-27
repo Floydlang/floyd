@@ -121,7 +121,7 @@ static STRUCT_T* llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* 
 
 	const auto& binary = *reinterpret_cast<const native_binary_t*>(binary_ptr->get_data_ptr());
 
-	const auto& s = from_runtime_string(r, make_runtime_string(binary.ascii40));
+	const auto& s = from_runtime_string(r, make_runtime_vector_cppvector(binary.ascii40));
 	const auto ascii40 = corelib_calc_string_sha1(s);
 
 	const auto a = value_t::make_struct_value(
