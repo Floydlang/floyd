@@ -709,9 +709,13 @@ void retain_struct(value_backend_t& backend, runtime_value_t s, const typeid_t& 
 void release_deep(value_backend_t& backend, runtime_value_t value, const typeid_t& type);
 
 void release_vector_cppvector(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
-void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
-void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
+inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
+inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
 
+
+
+
+void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
 
 
 /*
@@ -779,6 +783,31 @@ inline int32_t inc_rc(const heap_alloc_64_t& alloc){
 #endif
 	const auto rc2 = prev_rc + 1;
 	return rc2;
+}
+
+
+
+inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, const typeid_t& type){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(vec.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(is_vector_hamt(type));
+
+	if(dec_rc(vec.vector_hamt_ptr->alloc) == 0){
+		dispose_vector_hamt(vec);
+	}
+}
+
+inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, const typeid_t& type){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(vec.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(is_vector_hamt(type));
+
+	if(dec_rc(vec.vector_hamt_ptr->alloc) == 0){
+		release_vector_hamt_elements_internal(backend, vec, type);
+		dispose_vector_hamt(vec);
+	}
 }
 
 
