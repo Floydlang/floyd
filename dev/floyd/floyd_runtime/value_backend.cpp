@@ -1047,99 +1047,13 @@ typeid_t lookup_type(const value_backend_t& backend, runtime_type_t itype){
 ////////////////////////////////		VALUES
 
 
-static value_backend_t make_test_value_backend(){
+value_backend_t make_test_value_backend(){
 	return value_backend_t(
 		{},
 		{},
 		{}
 	);
 }
-
-runtime_value_t to_runtime_string2(value_backend_t& backend, const std::string& s){
-	QUARK_ASSERT(backend.check_invariant());
-
-	const auto count = static_cast<uint64_t>(s.size());
-	const auto allocation_count = size_to_allocation_blocks(s.size());
-	auto result = alloc_vector_ccpvector2(backend.heap, allocation_count, count, typeid_t::make_string());
-
-	size_t char_pos = 0;
-	int element_index = 0;
-	uint64_t acc = 0;
-	while(char_pos < s.size()){
-		const uint64_t ch = s[char_pos];
-		const auto x = (char_pos & 7) * 8;
-		acc = acc | (ch << x);
-		char_pos++;
-
-		if(((char_pos & 7) == 0) || (char_pos == s.size())){
-			result.vector_cppvector_ptr->store(element_index, make_runtime_int(static_cast<int64_t>(acc)));
-			element_index = element_index + 1;
-			acc = 0;
-		}
-	}
-	return result;
-}
-
-
-QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
-	auto backend = make_test_value_backend();
-	const auto a = to_runtime_string2(backend, "hello, world!");
-
-	QUARK_UT_VERIFY(a.vector_cppvector_ptr->get_element_count() == 13);
-
-	//	int64_t	'hello, w'
-//	QUARK_UT_VERIFY(a.vector_cppvector_ptr->load_element(0).int_value == 0x68656c6c6f2c2077);
-	QUARK_UT_VERIFY(a.vector_cppvector_ptr->load_element(0).int_value == 0x77202c6f6c6c6568);
-
-	//int_value	int64_t	'orld!\0\0\0'
-//	QUARK_UT_VERIFY(a.vector_cppvector_ptr->load_element(1).int_value == 0x6f726c6421000000);
-	QUARK_UT_VERIFY(a.vector_cppvector_ptr->load_element(1).int_value == 0x00000021646c726f);
-}
-
-
-
-std::string from_runtime_string2(const value_backend_t& backend, runtime_value_t encoded_value){
-	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(encoded_value.check_invariant());
-	QUARK_ASSERT(encoded_value.vector_cppvector_ptr != nullptr);
-
-	const size_t size = get_vec_string_size(encoded_value);
-
-	std::string result;
-
-	//	Read 8 characters at a time.
-	size_t char_pos = 0;
-	const auto begin0 = encoded_value.vector_cppvector_ptr->begin();
-	const auto end0 = encoded_value.vector_cppvector_ptr->end();
-	for(auto it = begin0 ; it != end0 ; it++){
-		const size_t copy_chars = std::min(size - char_pos, (size_t)8);
-		const uint64_t element = it->int_value;
-		for(int i = 0 ; i < copy_chars ; i++){
-			const uint64_t x = i * 8;
-			const uint64_t ch = (element >> x) & 0xff;
-			result.push_back(static_cast<char>(ch));
-		}
-		char_pos += copy_chars;
-	}
-
-	QUARK_ASSERT(result.size() == size);
-	return result;
-}
-
-QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
-	auto backend = make_test_value_backend();
-	const auto a = to_runtime_string2(backend, "hello, world!");
-
-	const auto r = from_runtime_string2(backend, a);
-	QUARK_UT_VERIFY(r == "hello, world!");
-}
-
-
-
-
-
-
-
 
 
 const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, const typeid_t& type){

@@ -697,10 +697,6 @@ runtime_type_t lookup_runtime_type(const value_backend_t& backend, const typeid_
 typeid_t lookup_type(const value_backend_t& backend, runtime_type_t itype);
 
 
-runtime_value_t to_runtime_string2(value_backend_t& backend, const std::string& s);
-std::string from_runtime_string2(const value_backend_t& backend, runtime_value_t encoded_value);
-
-
 const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, const typeid_t& type);
 
 
@@ -741,6 +737,8 @@ inline bool is_dict_hamt(const typeid_t& t){
 	return t.is_dict() && (k_global_dict_is_hamt == true);
 }
 
+
+value_backend_t make_test_value_backend();
 
 
 }	// floyd
