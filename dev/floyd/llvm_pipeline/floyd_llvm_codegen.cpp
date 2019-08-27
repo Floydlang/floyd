@@ -2582,51 +2582,7 @@ static void generate_all_floyd_function_bodies(llvm_code_generator_t& gen_acc, c
 
 //	The AST contains statements that initializes the global variables, including global functions.
 
-#if 0
-//	Function prototype must NOT EXIST already.
-static llvm::Function* xxxx___generate_function_prototype(llvm::Module& module, const llvm_type_lookup& type_lookup, const function_definition_t& function_def){
-	QUARK_ASSERT(check_invariant__module(&module));
-	QUARK_ASSERT(type_lookup.check_invariant());
-	QUARK_ASSERT(function_def.check_invariant());
-
-	const auto function_type = function_def._function_type;
-	const auto link_name = encode_floyd_func_link_name(function_def._definition_name);
-
-	auto existing_f = module.getFunction(link_name.s);
-	QUARK_ASSERT(existing_f == nullptr);
-
-
-	const auto& mapping0 = *type_lookup.find_from_type(function_type).optional_function_def;
-	const auto mapping = name_args(mapping0, function_def._named_args);
-
-	llvm::Type* function_ptr_type = get_exact_llvm_type(type_lookup, function_type);
-	const auto function_byvalue_type = deref_ptr(function_ptr_type);
-
-	//	IMPORTANT: Must cast to (llvm::FunctionType*) to get correct overload of getOrInsertFunction() to be called!
-	auto f3 = module.getOrInsertFunction(link_name.s, (llvm::FunctionType*)function_byvalue_type);
-	llvm::Function* f = llvm::cast<llvm::Function>(f3);
-
-	//	Set names for all arguments.
-	auto f_args = f->args();
-	const auto f_arg_count = f_args.end() - f_args.begin();
-	QUARK_ASSERT(f_arg_count == mapping.args.size());
-
-	int index = 0;
-	for(auto& e: f_args){
-		const auto& m = mapping.args[index];
-		const auto name = m.floyd_name;
-		e.setName(name);
-		index++;
-	}
-
-	QUARK_ASSERT(check_invariant__function(f));
-	QUARK_ASSERT(check_invariant__module(&module));
-	return f;
-}
-#endif
-
-static function_def_t generate_function_prototype2(llvm::Module& module, const llvm_type_lookup& type_lookup, const function_definition_t& function_def){
-	QUARK_ASSERT(check_invariant__module(&module));
+static function_def_t make_floyd_function_def(const llvm_type_lookup& type_lookup, const function_definition_t& function_def){
 	QUARK_ASSERT(type_lookup.check_invariant());
 	QUARK_ASSERT(function_def.check_invariant());
 
@@ -2637,12 +2593,12 @@ static function_def_t generate_function_prototype2(llvm::Module& module, const l
 	return function_def_t{ link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_def };
 }
 
-static std::vector<function_def_t> make_complete_function_list(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
+//	Returns a complete list of all functions: programmed in floyd, runtime functions, init() deinit().
+//	Notice that intrinics area already in the ast_function_defs-list.
+static std::vector<function_def_t> make_complete_function_list(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	std::vector<function_def_t> result;
-
-	auto& context = module.getContext();
 
 	//	Make prototypes for all runtime functions, like floydrt_retain_vec().
 	const auto runtime_functions = get_runtime_functions(context, type_lookup);
@@ -2688,21 +2644,18 @@ static std::vector<function_def_t> make_complete_function_list(llvm::Module& mod
 	//	Make function prototypes for all floyd functions.
 	{
 		for(const auto& function_def: ast_function_defs){
-			auto def = generate_function_prototype2(module, type_lookup, function_def);
+			auto def = make_floyd_function_def(type_lookup, function_def);
 			result.push_back(def);
 		}
 	}
 	return result;
 }
 
-//??? Generate all llvm function prototypes from Floyd prototypes using unified system: including init() and deinit().
-//	Make LLVM functions -- runtime, floyd host functions, floyd functions.
-//	host functions are later linked by LLVM execution engine, by matching the function names.
-static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
+//	Notice: this function fills-in more information in each function_def_t. Make sure you use the output moving on, not the input.
+static std::vector<function_def_t> generate_llvm_function_stubs(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<function_def_t>& pass0){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	std::vector<function_def_t> pass1;
-	const std::vector<function_def_t> pass0 = make_complete_function_list(module, type_lookup, ast_function_defs);
+	std::vector<function_def_t> result;
 	for(const auto& e: pass0){
 		auto existing_f = module.getFunction(e.link_name.s);
 		QUARK_ASSERT(existing_f == nullptr);
@@ -2735,15 +2688,10 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 		QUARK_ASSERT(check_invariant__function(f));
 		QUARK_ASSERT(check_invariant__module(&module));
 
-		pass1.push_back(function_def_t{ e.link_name, e.llvm_function_type, f, e.floyd_fundef });
+		result.push_back(function_def_t{ e.link_name, e.llvm_function_type, f, e.floyd_fundef });
 	}
-	return pass1;
+	return result;
 }
-
-
-
-
-
 
 /*
 	GENERATE CODE for floyd_runtime_init()
@@ -2849,7 +2797,8 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> gen
 	//	Generate all LLVM nodes: functions (without implementation) and globals.
 	//	This lets all other code reference them, even if they're not filled up with code yet.
 
-	const auto funcs = make_all_function_prototypes(*module, type_lookup, semantic_ast._tree._function_defs);
+	const auto functions0 = make_complete_function_list(module->getContext(), type_lookup, semantic_ast._tree._function_defs);
+	const auto funcs = generate_llvm_function_stubs(*module, type_lookup, functions0);
 
 	llvm_code_generator_t gen_acc(instance, module.get(), semantic_ast._tree._interned_types, type_lookup, funcs);
 
