@@ -2568,7 +2568,7 @@ static std::map<link_name_t, void*> make_function_binds(llvm::LLVMContext& conte
 	std::map<link_name_t, void*> runtime_functions_map;
 	for(const auto& e: runtime_functions){
 		const auto link_name = encode_runtime_func_link_name(e.name);
-		const auto e2 = std::pair<link_name_t, void*>(link_name, e.implementation_f);
+		const auto e2 = std::pair<link_name_t, void*>(link_name, e.native_f);
 		runtime_functions_map.insert(e2);
 	}
 

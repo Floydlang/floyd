@@ -36,8 +36,9 @@ struct llvm_instance_t;
 
 struct function_bind_t {
 	std::string name;
-	llvm::FunctionType* function_type;
-	void* implementation_f;
+//	typeid_t function_type2;
+	llvm::FunctionType* llvm_function_type;
+	void* native_f;
 };
 
 
