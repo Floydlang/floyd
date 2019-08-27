@@ -156,14 +156,14 @@ static llvm::StructType* make_generic_runtime_type_internal(llvm::LLVMContext& c
 
 static llvm::StructType* make_generic_struct_type_internal(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
-		llvm::Type::getInt64Ty(context)->getPointerTo(),
-		llvm::Type::getInt64Ty(context)->getPointerTo(),
-		llvm::Type::getInt64Ty(context)->getPointerTo(),
-		llvm::Type::getInt64Ty(context)->getPointerTo(),
-		llvm::Type::getInt64Ty(context)->getPointerTo(),
-		llvm::Type::getInt64Ty(context)->getPointerTo(),
-		llvm::Type::getInt64Ty(context)->getPointerTo(),
-		llvm::Type::getInt64Ty(context)->getPointerTo()
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context)
 	};
 	llvm::StructType* s = llvm::StructType::create(context, members, "struct");
 	return s;
