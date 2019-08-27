@@ -220,8 +220,6 @@ heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, const ty
 //	Returns pointer to the allocated words that sits after the
 void* get_alloc_ptr(heap_alloc_64_t& alloc);
 const void* get_alloc_ptr(const heap_alloc_64_t& alloc);
-void add_ref(heap_alloc_64_t& alloc);
-void release_ref(heap_alloc_64_t& alloc);
 
 void trace_heap(const heap_t& heap);
 void detect_leaks(const heap_t& heap);
@@ -230,8 +228,8 @@ uint64_t size_to_allocation_blocks(std::size_t size);
 
 //	Returns updated RC, no need to atomically read it yourself.
 //	If returned RC is 0, there is no way for any other client to bump it up again.
-int32_t dec_rc(const heap_alloc_64_t& alloc);
-int32_t inc_rc(const heap_alloc_64_t& alloc);
+inline int32_t dec_rc(const heap_alloc_64_t& alloc);
+inline int32_t inc_rc(const heap_alloc_64_t& alloc);
 
 void dispose_alloc(heap_alloc_64_t& alloc);
 
@@ -740,6 +738,49 @@ inline bool is_dict_hamt(const typeid_t& t){
 
 
 value_backend_t make_test_value_backend();
+
+
+
+
+
+
+
+//	Inlines
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+inline int32_t dec_rc(const heap_alloc_64_t& alloc){
+	QUARK_ASSERT(alloc.check_invariant());
+
+#if ATOMIC_RC
+	const auto prev_rc = std::atomic_fetch_sub_explicit(&alloc.rc, 1, std::memory_order_relaxed);
+#else
+	const auto prev_rc = alloc.rc;
+	alloc.rc--;
+#endif
+	const auto rc2 = prev_rc - 1;
+
+	if(rc2 < 0){
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+
+	return rc2;
+}
+
+inline int32_t inc_rc(const heap_alloc_64_t& alloc){
+	QUARK_ASSERT(alloc.check_invariant());
+
+#if ATOMIC_RC
+	const auto prev_rc = std::atomic_fetch_add_explicit(&alloc.rc, 1, std::memory_order_relaxed);
+#else
+	const auto prev_rc = alloc.rc;
+	alloc.rc++;
+#endif
+	const auto rc2 = prev_rc + 1;
+	return rc2;
+}
+
 
 
 }	// floyd

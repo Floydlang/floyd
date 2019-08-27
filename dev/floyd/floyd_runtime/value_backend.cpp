@@ -114,6 +114,20 @@ std::string get_debug_info(const heap_alloc_64_t& alloc){
 }
 #endif
 
+static inline void add_ref(heap_alloc_64_t& alloc){
+	QUARK_ASSERT(alloc.check_invariant());
+
+	inc_rc(alloc);
+}
+
+static inline void release_ref(heap_alloc_64_t& alloc){
+	QUARK_ASSERT(alloc.check_invariant());
+
+	if(dec_rc(alloc) == 0){
+		dispose_alloc(alloc);
+	}
+}
+
 
 heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, const typeid_t& debug_value_type, const char debug_string[]){
 	QUARK_ASSERT(heap.check_invariant());
@@ -209,6 +223,8 @@ const void* get_alloc_ptr(const heap_alloc_64_t& alloc){
 }
 
 
+
+
 bool heap_alloc_64_t::check_invariant() const{
 	QUARK_ASSERT(magic == ALLOC_64_MAGIC);
 	QUARK_ASSERT(heap != nullptr);
@@ -220,42 +236,6 @@ bool heap_alloc_64_t::check_invariant() const{
 	return true;
 }
 
-int32_t dec_rc(const heap_alloc_64_t& alloc){
-	QUARK_ASSERT(alloc.check_invariant());
-
-#if ATOMIC_RC
-	const auto prev_rc = std::atomic_fetch_sub_explicit(&alloc.rc, 1, std::memory_order_relaxed);
-#else
-	const auto prev_rc = alloc.rc;
-	alloc.rc--;
-#endif
-	const auto rc2 = prev_rc - 1;
-
-	if(rc2 < 0){
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-
-	return rc2;
-}
-int32_t inc_rc(const heap_alloc_64_t& alloc){
-	QUARK_ASSERT(alloc.check_invariant());
-
-#if ATOMIC_RC
-	const auto prev_rc = std::atomic_fetch_add_explicit(&alloc.rc, 1, std::memory_order_relaxed);
-#else
-	const auto prev_rc = alloc.rc;
-	alloc.rc++;
-#endif
-	const auto rc2 = prev_rc + 1;
-	return rc2;
-}
-
-void add_ref(heap_alloc_64_t& alloc){
-	QUARK_ASSERT(alloc.check_invariant());
-
-	inc_rc(alloc);
-}
 
 
 void dispose_alloc(heap_alloc_64_t& alloc){
@@ -289,13 +269,6 @@ void dispose_alloc(heap_alloc_64_t& alloc){
 }
 
 
-void release_ref(heap_alloc_64_t& alloc){
-	QUARK_ASSERT(alloc.check_invariant());
-
-	if(dec_rc(alloc) == 0){
-		dispose_alloc(alloc);
-	}
-}
 
 bool heap_t::check_invariant() const{
 #if HEAP_MUTEX
