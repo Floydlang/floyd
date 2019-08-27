@@ -380,8 +380,7 @@ static void floydrt_release_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_
 
 	QUARK_ASSERT(is_rc_value(type.get_vector_element_type()) == false);
 
-///???specialise for pods
-	release_vector_hamt(r.backend, vec, type);
+	release_vector_hamt_pod(r.backend, vec, type);
 }
 
 
