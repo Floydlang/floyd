@@ -128,7 +128,9 @@ struct heap_alloc_64_t {
 		data[2] = 0x00000000'00000000;
 		data[3] = 0x00000000'00000000;
 
+#if DEBUG
 		debug_info = std::string(debug_string);
+#endif
 
 		QUARK_ASSERT(check_invariant());
 	}

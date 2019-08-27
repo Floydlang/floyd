@@ -149,7 +149,9 @@ QUARK_UNIT_TEST("heap_t", "alloc_64()", "", ""){
 	QUARK_UT_VERIFY(a != nullptr);
 	QUARK_UT_VERIFY(a->check_invariant());
 	QUARK_UT_VERIFY(a->rc == 1);
+#if DEBUG
 	QUARK_UT_VERIFY(get_debug_info(*a) == "test");
+#endif
 
 	//	Must release alloc or heap will detect leakage.
 	release_ref(*a);
