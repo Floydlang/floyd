@@ -715,6 +715,10 @@ void retain_struct(value_backend_t& backend, runtime_value_t s, const typeid_t& 
 
 void release_deep(value_backend_t& backend, runtime_value_t value, const typeid_t& type);
 
+void release_vector_cppvector(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
+void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
+void release_vector_hamt_ext(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
+
 
 
 /*

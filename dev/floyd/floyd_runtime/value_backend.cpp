@@ -1301,6 +1301,26 @@ static void release_dict_deep(value_backend_t& backend, runtime_value_t dict0, c
 	}
 }
 
+void release_vector_cppvector(value_backend_t& backend, runtime_value_t vec, const typeid_t& type){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(vec.check_invariant());
+	QUARK_ASSERT(type.is_string() || is_vector_cppvector(type));
+
+	if(dec_rc(vec.vector_cppvector_ptr->alloc) == 0){
+		//	Release all elements.
+		{
+			const auto element_type = type.get_vector_element_type();
+			if(is_rc_value(element_type)){
+				auto element_ptr = vec.vector_cppvector_ptr->get_element_ptr();
+				for(int i = 0 ; i < vec.vector_cppvector_ptr->get_element_count() ; i++){
+					const auto& element = element_ptr[i];
+					release_deep(backend, element, element_type);
+				}
+			}
+		}
+		dispose_vector_cppvector(vec);
+	}
+}
 static void release_vec_deep(value_backend_t& backend, runtime_value_t vec, const typeid_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
@@ -1314,20 +1334,7 @@ static void release_vec_deep(value_backend_t& backend, runtime_value_t vec, cons
 		}
 	}
 	else if(is_vector_cppvector(type)){
-		if(dec_rc(vec.vector_cppvector_ptr->alloc) == 0){
-			//	Release all elements.
-			{
-				const auto element_type = type.get_vector_element_type();
-				if(is_rc_value(element_type)){
-					auto element_ptr = vec.vector_cppvector_ptr->get_element_ptr();
-					for(int i = 0 ; i < vec.vector_cppvector_ptr->get_element_count() ; i++){
-						const auto& element = element_ptr[i];
-						release_deep(backend, element, element_type);
-					}
-				}
-			}
-			dispose_vector_cppvector(vec);
-		}
+		release_vector_cppvector(backend, vec, type);
 	}
 	else if(is_vector_hamt(type)){
 		if(dec_rc(vec.vector_hamt_ptr->alloc) == 0){
