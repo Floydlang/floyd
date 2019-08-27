@@ -54,9 +54,20 @@ const vector_backend k_global_vector_type = vector_backend::hamt;
 const bool k_global_dict_is_hamt = true;
 
 
+
+
+
 ////////////////////////////////		heap_t
 
 /*
+	TERMS
+
+	- Alloc: one memory allocation. It contains a 64 byte header, then optional a number of 8 byte allocations
+	- Allocation word: an 8 byte section of data.
+	- Allocation word count: how many allocation words
+	- Element count: how many logical elements are stored? If an element is 1 byte big we can fit 8 elements in ONE allocation word
+
+
 	Why: we need out own memory heap handling for:
 	- Having a unified memory handler / RC / GC / arena.
 	- Running separate heaps for separate threads / process
@@ -93,10 +104,6 @@ struct heap_t;
 
 static const uint64_t ALLOC_64_MAGIC = 0xa110a11c;
 
-//??? Make debug field a std::string.
-//??? Make debug version of heap_alloc_64_t larger than 64 byte.
-//??? Store debug_value_type.
-
 //	This header is followed by a number of uint64_t elements in the same heap block.
 //	This header represents a sharepoint of many clients and holds an RC to count clients.
 //	If you want to change the size of the allocation, allocate 0 following elements and make separate dynamic
@@ -121,7 +128,7 @@ struct heap_alloc_64_t {
 		data[2] = 0x00000000'00000000;
 		data[3] = 0x00000000'00000000;
 
-		std::strcpy(debug_info, debug_string);
+		debug_info = std::string(debug_string);
 
 		QUARK_ASSERT(check_invariant());
 	}
@@ -137,18 +144,18 @@ struct heap_alloc_64_t {
 
 	//	 data_*: 4 x 8 bytes.
 	uint64_t data[4];
+
 	uint64_t allocation_word_count;
 
 	heap_t* heap;
-	char debug_info[8];
 
-	//??? why can't I add more fields?
-//	uint64_t dummy[8];
+#if DEBUG
+	std::string debug_info;
+#endif
+
 };
 
-std::string get_debug_info(const heap_alloc_64_t& info);
-
-
+std::string get_debug_info(const heap_alloc_64_t& alloc);
 
 
 

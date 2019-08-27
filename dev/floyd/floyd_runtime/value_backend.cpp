@@ -100,9 +100,15 @@ heap_t::~heap_t(){
 
 }
 
-std::string get_debug_info(const heap_alloc_64_t& info){
-	return std::string(&info.debug_info[0]);
+#if DEBUG
+std::string get_debug_info(const heap_alloc_64_t& alloc){
+	return alloc.debug_info;
 }
+#else
+std::string get_debug_info(const heap_alloc_64_t& alloc){
+	return "";
+}
+#endif
 
 
 heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, const typeid_t& debug_value_type, const char debug_string[]){
@@ -254,7 +260,7 @@ void dispose_alloc(heap_alloc_64_t& alloc){
 	alloc.allocation_word_count = 0xdeadbeef'00000005;
 
 	alloc.heap = reinterpret_cast<heap_t*>(0xdeadbeef'00000005);
-	std::memset(alloc.debug_info, 0xaa, sizeof(alloc.debug_info));
+	alloc.debug_info = "disposed alloc";
 #endif
 }
 
