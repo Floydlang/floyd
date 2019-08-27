@@ -2570,7 +2570,7 @@ static std::vector<function_def_t> make_complete_function_list(llvm::LLVMContext
 		result.push_back(def);
 	}
 
-	//	Make function prototypes for all floyd functions.
+	//	Make function prototypes for all floyd functions. This includes intrinsics!
 	{
 		for(const auto& function_def: ast_function_defs){
 			auto def = make_floyd_function_def(type_lookup, function_def);
