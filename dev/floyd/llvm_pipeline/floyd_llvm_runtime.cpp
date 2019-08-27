@@ -348,18 +348,6 @@ static void floydrt_retain_vec(floyd_runtime_t* frp, runtime_value_t vec, runtim
 	retain_value(r.backend, vec, type);
 }
 
-static function_bind_t floydrt_retain_vec__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
-	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		llvm::Type::getVoidTy(context),
-		{
-			make_frp_type(type_lookup),
-			make_generic_vec_type(type_lookup)->getPointerTo(),
-			make_runtime_type_type(type_lookup)
-		},
-		false
-	);
-	return { "retain_vec", function_type, reinterpret_cast<void*>(floydrt_retain_vec) };
-}
 
 
 
@@ -1189,7 +1177,23 @@ std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, c
 		floydrt_alloc_kstr__make(context, type_lookup),
 		floydrt_allocate_vector__make(context, type_lookup),
 		floydrt_allocate_vector_fill__make(context, type_lookup),
-		floydrt_retain_vec__make(context, type_lookup),
+
+
+//		floydrt_retain_vec__make(context, type_lookup),
+		{
+			"retain_vec",
+			llvm::FunctionType::get(
+				llvm::Type::getVoidTy(context),
+				{
+					make_frp_type(type_lookup),
+					make_generic_vec_type(type_lookup)->getPointerTo(),
+					make_runtime_type_type(type_lookup)
+				},
+				false
+			),
+			reinterpret_cast<void*>(floydrt_retain_vec)
+		},
+
 		floydrt_release_vec__make(context, type_lookup),
 		floydrt_load_vector_element__make(context, type_lookup),
 		floydrt_store_vector_element_mutable__make(context, type_lookup),
