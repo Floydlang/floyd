@@ -97,7 +97,7 @@ benchmark-def "[int] lookup() hamt" {
 
 
 let to_run = [
-	benchmark_id_t("", "[int] push_back() hamt"),
+//	benchmark_id_t("", "[int] push_back() hamt"),
 	benchmark_id_t("", "[int] lookup() hamt")
 ]
 
