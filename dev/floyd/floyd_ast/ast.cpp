@@ -25,13 +25,21 @@ namespace floyd {
 
 
 
-struct itype_lookup {
-};
-
 
 //////////////////////////////////////////////////		type_interner_t
 
+//??? move out of ast. Needed at runtime
 
+itype_t get_undefined_itype(){
+	return itype_t(0);
+}
+itype_t get_string_itype(){
+	return itype_t(6);
+}
+
+itype_t get_json_itype(){
+	return itype_t(7);
+}
 
 type_interner_t::type_interner_t() :
 	simple_next_id(0),
@@ -98,40 +106,49 @@ static itype_t make_new_itype_recursive(type_interner_t& interner, const typeid_
 		const typeid_t& type;
 
 		int32_t operator()(const typeid_t::undefined_t& e) const{
+			QUARK_ASSERT(false);
 			interner.interned.push_back({ interner.simple_next_id, type });
 			return interner.simple_next_id++;
 		}
 		int32_t operator()(const typeid_t::any_t& e) const{
+			QUARK_ASSERT(false);
 			interner.interned.push_back({ interner.simple_next_id, type });
 			return interner.simple_next_id++;
 		}
 
 		int32_t operator()(const typeid_t::void_t& e) const{
+			QUARK_ASSERT(false);
 			interner.interned.push_back({ interner.simple_next_id, type });
 			return interner.simple_next_id++;
 		}
 		int32_t operator()(const typeid_t::bool_t& e) const{
+			QUARK_ASSERT(false);
 			interner.interned.push_back({ interner.simple_next_id, type });
 			return interner.simple_next_id++;
 		}
 		int32_t operator()(const typeid_t::int_t& e) const{
+			QUARK_ASSERT(false);
 			interner.interned.push_back({ interner.simple_next_id, type });
 			return interner.simple_next_id++;
 		}
 		int32_t operator()(const typeid_t::double_t& e) const{
+			QUARK_ASSERT(false);
 			interner.interned.push_back({ interner.simple_next_id, type });
 			return interner.simple_next_id++;
 		}
 		int32_t operator()(const typeid_t::string_t& e) const{
+			QUARK_ASSERT(false);
 			interner.interned.push_back({ interner.simple_next_id, type });
 			return interner.simple_next_id++;
 		}
 
 		int32_t operator()(const typeid_t::json_type_t& e) const{
+			QUARK_ASSERT(false);
 			interner.interned.push_back({ interner.simple_next_id, type });
 			return interner.simple_next_id++;
 		}
 		int32_t operator()(const typeid_t::typeid_type_t& e) const{
+			QUARK_ASSERT(false);
 			interner.interned.push_back({ interner.simple_next_id, type });
 			return interner.simple_next_id++;
 		}

@@ -84,6 +84,9 @@ inline bool is_function(itype_t type){
 	return type.itype >= 400000000;
 }
 
+itype_t get_undefined_itype();
+itype_t get_string_itype();
+itype_t get_json_itype();
 
 
 

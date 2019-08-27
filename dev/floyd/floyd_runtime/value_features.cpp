@@ -128,7 +128,7 @@ const runtime_value_t update__cppvector(value_backend_t& backend, runtime_value_
 		quark::throw_runtime_error("Position argument to update() is outside collection span.");
 	}
 
-	auto result = alloc_vector_ccpvector2(backend.heap, vec->get_element_count(), vec->get_element_count(), type0);
+	auto result = alloc_vector_ccpvector2(backend.heap, vec->get_element_count(), vec->get_element_count(), lookup_runtime_type(backend, type0));
 	auto dest_ptr = result.vector_cppvector_ptr->get_element_ptr();
 	auto source_ptr = vec->get_element_ptr();
 	if(is_rc_value(element_type)){
@@ -197,7 +197,7 @@ const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_valu
 	const auto value_type = type0.get_dict_value_type();
 
 	//	Deep copy dict.
-	auto dict2 = alloc_dict_cppmap(backend.heap, type0);
+	auto dict2 = alloc_dict_cppmap(backend.heap, lookup_runtime_type(backend, type0));
 	dict2.dict_cppmap_ptr->get_map_mut() = dict->get_map();
 
 	dict2.dict_cppmap_ptr->get_map_mut().insert_or_assign(key, arg2);
@@ -225,7 +225,7 @@ const runtime_value_t update__dict_hamt(value_backend_t& backend, runtime_value_
 	const auto value_type = type0.get_dict_value_type();
 
 	//	Deep copy dict.
-	auto dict2 = alloc_dict_hamt(backend.heap, type0);
+	auto dict2 = alloc_dict_hamt(backend.heap, lookup_runtime_type(backend, type0));
 	dict2.dict_hamt_ptr->get_map_mut() = dict->get_map();
 
 	dict2.dict_hamt_ptr->get_map_mut() = dict2.dict_hamt_ptr->get_map_mut().set(key, arg2);
@@ -280,7 +280,7 @@ const runtime_value_t subset__cppvector(value_backend_t& backend, runtime_value_
 		throw std::exception();
 	}
 
-	auto vec2 = alloc_vector_ccpvector2(backend.heap, len2, len2, type0);
+	auto vec2 = alloc_vector_ccpvector2(backend.heap, len2, len2, lookup_runtime_type(backend, type0));
 	if(is_rc_value(element_type)){
 		for(int i = 0 ; i < len2 ; i++){
 			const auto& value = vec->get_element_ptr()[start2 + i];
@@ -314,7 +314,7 @@ const runtime_value_t subset__hamt(value_backend_t& backend, runtime_value_t arg
 		throw std::exception();
 	}
 
-	auto vec2 = alloc_vector_hamt(backend.heap, len2, len2, type0);
+	auto vec2 = alloc_vector_hamt(backend.heap, len2, len2, lookup_runtime_type(backend, type0));
 	if(is_rc_value(element_type)){
 		for(int i = 0 ; i < len2 ; i++){
 			const auto& value = vec.load_element(start2 + i);
@@ -401,7 +401,7 @@ const runtime_value_t replace__cppvector(value_backend_t& backend, runtime_value
 	const auto section3_len = vec->get_element_count() - end2;
 
 	const auto len2 = section1_len + section2_len + section3_len;
-	auto vec2 = alloc_vector_ccpvector2(backend.heap, len2, len2, type0);
+	auto vec2 = alloc_vector_ccpvector2(backend.heap, len2, len2, lookup_runtime_type(backend, type0));
 	copy_elements(&vec2.vector_cppvector_ptr->get_element_ptr()[0], &vec->get_element_ptr()[0], section1_len);
 	copy_elements(&vec2.vector_cppvector_ptr->get_element_ptr()[section1_len], &replace_vec->get_element_ptr()[0], section2_len);
 	copy_elements(&vec2.vector_cppvector_ptr->get_element_ptr()[section1_len + section2_len], &vec->get_element_ptr()[end2], section3_len);
@@ -435,7 +435,7 @@ const runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t ar
 	const auto section3_len = vec.get_element_count() - end2;
 
 	const auto len2 = section1_len + section2_len + section3_len;
-	auto vec2 = alloc_vector_hamt(backend.heap, len2, len2, type0);
+	auto vec2 = alloc_vector_hamt(backend.heap, len2, len2, lookup_runtime_type(backend, type0));
 	for(size_t i = 0 ; i < section1_len ; i++){
 		const auto& value = vec.load_element(0 + i);
 		vec2.vector_hamt_ptr->store_mutate(0 + i, value);
@@ -546,7 +546,7 @@ runtime_value_t get_keys__cppmap_cppvector(value_backend_t& backend, runtime_val
 	const auto& m = dict->get_map();
 	const auto count = (uint64_t)m.size();
 
-	auto result_vec = alloc_vector_ccpvector2(backend.heap, count, count, typeid_t::make_vector(typeid_t::make_string()));
+	auto result_vec = alloc_vector_ccpvector2(backend.heap, count, count, lookup_runtime_type(backend, typeid_t::make_vector(typeid_t::make_string())));
 
 	int index = 0;
 	for(const auto& e: m){
@@ -569,7 +569,7 @@ runtime_value_t get_keys__cppmap_hamt(value_backend_t& backend, runtime_value_t 
 	const auto& m = dict->get_map();
 	const auto count = (uint64_t)m.size();
 
-	auto result_vec = alloc_vector_hamt(backend.heap, count, count, typeid_t::make_vector(typeid_t::make_string()));
+	auto result_vec = alloc_vector_hamt(backend.heap, count, count, lookup_runtime_type(backend, typeid_t::make_vector(typeid_t::make_string())));
 
 	int index = 0;
 	for(const auto& e: m){
@@ -594,7 +594,7 @@ runtime_value_t get_keys__hamtmap_cppvector(value_backend_t& backend, runtime_va
 	const auto& m = dict->get_map();
 	const auto count = (uint64_t)m.size();
 
-	auto result_vec = alloc_vector_ccpvector2(backend.heap, count, count, typeid_t::make_vector(typeid_t::make_string()));
+	auto result_vec = alloc_vector_ccpvector2(backend.heap, count, count, lookup_runtime_type(backend, typeid_t::make_vector(typeid_t::make_string())));
 
 	int index = 0;
 	for(const auto& e: m){
@@ -617,7 +617,7 @@ runtime_value_t get_keys__hamtmap_hamt(value_backend_t& backend, runtime_value_t
 	const auto& m = dict->get_map();
 	const auto count = (uint64_t)m.size();
 
-	auto result_vec = alloc_vector_hamt(backend.heap, count, count, typeid_t::make_vector(typeid_t::make_string()));
+	auto result_vec = alloc_vector_hamt(backend.heap, count, count, lookup_runtime_type(backend, typeid_t::make_vector(typeid_t::make_string())));
 
 	int index = 0;
 	for(const auto& e: m){
@@ -679,7 +679,7 @@ runtime_value_t concat_vector_cppvector(value_backend_t& backend, const typeid_t
 
 	const auto count2 = lhs.vector_cppvector_ptr->get_element_count() + rhs.vector_cppvector_ptr->get_element_count();
 
-	auto result = alloc_vector_ccpvector2(backend.heap, count2, count2, type);
+	auto result = alloc_vector_ccpvector2(backend.heap, count2, count2, lookup_runtime_type(backend, type));
 
 	//??? warning: assumes element = allocation.
 
@@ -722,7 +722,7 @@ runtime_value_t concat_vector_hamt(value_backend_t& backend, const typeid_t& typ
 
 	const auto count2 = lhs_count + rhs_count;
 
-	auto result = alloc_vector_hamt(backend.heap, count2, count2, type);
+	auto result = alloc_vector_hamt(backend.heap, count2, count2, lookup_runtime_type(backend, type));
 
 	//??? warning: assumes element = allocation.
 

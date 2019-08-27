@@ -15,6 +15,7 @@
 #include "json_support.h"
 #include "compiler_basics.h"
 #include "quark.h"
+#include "ast.h"
 
 
 namespace floyd {
@@ -129,9 +130,8 @@ static inline void release_ref(heap_alloc_64_t& alloc){
 }
 
 
-heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, const typeid_t& debug_value_type, const char debug_string[]){
+heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, runtime_type_t debug_value_type, const char debug_string[]){
 	QUARK_ASSERT(heap.check_invariant());
-	QUARK_ASSERT(debug_value_type.check_invariant());
 	QUARK_ASSERT(debug_string != nullptr);
 
 	const auto header_size = sizeof(heap_alloc_64_t);
@@ -167,7 +167,7 @@ QUARK_UNIT_TEST("heap_t", "alloc_64()", "", ""){
 
 QUARK_UNIT_TEST("heap_t", "alloc_64()", "", ""){
 	heap_t heap;
-	auto a = alloc_64(heap, 0, typeid_t::make_undefined(), "test");
+	auto a = alloc_64(heap, 0, get_undefined_itype().itype, "test");
 	QUARK_UT_VERIFY(a != nullptr);
 	QUARK_UT_VERIFY(a->check_invariant());
 	QUARK_UT_VERIFY(a->rc == 1);
@@ -181,7 +181,7 @@ QUARK_UNIT_TEST("heap_t", "alloc_64()", "", ""){
 
 QUARK_UNIT_TEST("heap_t", "add_ref()", "", ""){
 	heap_t heap;
-	auto a = alloc_64(heap, 0, typeid_t::make_undefined(), "test");
+	auto a = alloc_64(heap, 0, get_undefined_itype().itype, "test");
 	add_ref(*a);
 	QUARK_UT_VERIFY(a->rc == 2);
 
@@ -192,7 +192,7 @@ QUARK_UNIT_TEST("heap_t", "add_ref()", "", ""){
 
 QUARK_UNIT_TEST("heap_t", "release_ref()", "", ""){
 	heap_t heap;
-	auto a = alloc_64(heap, 0, typeid_t::make_undefined(), "test");
+	auto a = alloc_64(heap, 0, get_undefined_itype().itype, "test");
 
 	QUARK_UT_VERIFY(a->rc == 1);
 	release_ref(*a);
@@ -457,7 +457,7 @@ bool VECTOR_CPPVECTOR_T::check_invariant() const {
 	return true;
 }
 
-runtime_value_t alloc_vector_ccpvector2(heap_t& heap, uint64_t allocation_count, uint64_t element_count, const typeid_t& value_type){
+runtime_value_t alloc_vector_ccpvector2(heap_t& heap, uint64_t allocation_count, uint64_t element_count, runtime_type_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 
 	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count, value_type, "cppvec");
@@ -499,7 +499,7 @@ QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
 	heap_t heap;
 	detect_leaks(heap);
 
-	auto v = alloc_vector_ccpvector2(heap, 3, 3, typeid_t::make_undefined());
+	auto v = alloc_vector_ccpvector2(heap, 3, 3, get_undefined_itype().itype);
 	QUARK_UT_VERIFY(v.vector_cppvector_ptr != nullptr);
 
 	if(dec_rc(v.vector_cppvector_ptr->alloc) == 0){
@@ -537,7 +537,7 @@ bool VECTOR_HAMT_T::check_invariant() const {
 	return true;
 }
 
-runtime_value_t alloc_vector_hamt(heap_t& heap, uint64_t allocation_count, uint64_t element_count, const typeid_t& value_type){
+runtime_value_t alloc_vector_hamt(heap_t& heap, uint64_t allocation_count, uint64_t element_count, runtime_type_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 
 	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc_64(heap, 0, value_type, "vechamt"));
@@ -551,7 +551,7 @@ runtime_value_t alloc_vector_hamt(heap_t& heap, uint64_t allocation_count, uint6
 	return { .vector_hamt_ptr = vec };
 }
 
-runtime_value_t alloc_vector_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count, const typeid_t& value_type){
+runtime_value_t alloc_vector_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count, runtime_type_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(element_count == 0 || elements != nullptr);
 
@@ -590,7 +590,7 @@ runtime_value_t store_immutable(const runtime_value_t& vec0, const uint64_t inde
 	QUARK_ASSERT(index < vec1.get_element_count());
 	auto& heap = *vec1.alloc.heap;
 
-	heap_alloc_64_t* alloc = alloc_64(heap, 0, typeid_t::make_undefined(), "vechamt");
+	heap_alloc_64_t* alloc = alloc_64(heap, 0, get_undefined_itype().itype, "vechamt");
 
 	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
 
@@ -613,7 +613,7 @@ runtime_value_t push_back_immutable(const runtime_value_t& vec0, runtime_value_t
 	const auto& vec1 = *vec0.vector_hamt_ptr;
 	auto& heap = *vec1.alloc.heap;
 
-	heap_alloc_64_t* alloc = alloc_64(heap, 0, typeid_t::make_undefined(), "vechamt");
+	heap_alloc_64_t* alloc = alloc_64(heap, 0, get_undefined_itype().itype, "vechamt");
 	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
 	auto buffer_ptr = reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc->data[0]);
 
@@ -632,18 +632,17 @@ runtime_value_t push_back_immutable(const runtime_value_t& vec0, runtime_value_t
 
 
 
-
 QUARK_UNIT_TEST("VECTOR_HAMT_T", "", "", ""){
 	const auto vec_struct_size2 = sizeof(immer::vector<int>);
 	QUARK_UT_VERIFY(vec_struct_size2 == 32);
 }
 
 QUARK_UNIT_TEST("VECTOR_HAMT_T", "", "", ""){
-	heap_t heap;
-	detect_leaks(heap);
+	auto backend = make_test_value_backend();
+	detect_leaks(backend.heap);
 
 	const runtime_value_t a[] = { make_runtime_int(1000), make_runtime_int(2000), make_runtime_int(3000) };
-	auto v = alloc_vector_hamt(heap, a, 3, typeid_t::make_vector(typeid_t::make_int()));
+	auto v = alloc_vector_hamt(backend.heap, a, 3, lookup_runtime_type(backend, typeid_t::make_double()));
 	QUARK_UT_VERIFY(v.vector_hamt_ptr != nullptr);
 
 	QUARK_UT_VERIFY(v.vector_hamt_ptr->get_element_count() == 3);
@@ -655,8 +654,8 @@ QUARK_UNIT_TEST("VECTOR_HAMT_T", "", "", ""){
 		dispose_vector_hamt(v);
 	}
 
-	QUARK_UT_VERIFY(heap.check_invariant());
-	detect_leaks(heap);
+	QUARK_UT_VERIFY(backend.check_invariant());
+	detect_leaks(backend.heap);
 }
 
 
@@ -686,7 +685,7 @@ uint64_t DICT_CPPMAP_T::size() const {
 	return d.size();
 }
 
-runtime_value_t alloc_dict_cppmap(heap_t& heap, const typeid_t& value_type){
+runtime_value_t alloc_dict_cppmap(heap_t& heap, runtime_type_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0, value_type, "cppdict");
@@ -743,7 +742,7 @@ uint64_t DICT_HAMT_T::size() const {
 	return d.size();
 }
 
-runtime_value_t alloc_dict_hamt(heap_t& heap, const typeid_t& value_type){
+runtime_value_t alloc_dict_hamt(heap_t& heap, runtime_type_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0, value_type, "hamtdic");
@@ -797,7 +796,7 @@ JSON_T* alloc_json(heap_t& heap, const json_t& init){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(init.check_invariant());
 
-	heap_alloc_64_t* alloc = alloc_64(heap, 0, typeid_t::make_json(), "JSON");
+	heap_alloc_64_t* alloc = alloc_64(heap, 0, get_json_itype().itype, "JSON");
 
 	auto json = reinterpret_cast<JSON_T*>(alloc);
 	auto copy = new json_t(init);
@@ -840,7 +839,7 @@ bool STRUCT_T::check_invariant() const {
 	return true;
 }
 
-STRUCT_T* alloc_struct(heap_t& heap, std::size_t size, const typeid_t& value_type){
+STRUCT_T* alloc_struct(heap_t& heap, std::size_t size, runtime_type_t value_type){
 	const auto allocation_count = size_to_allocation_blocks(size);
 
 	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count, value_type, "struct");
@@ -1021,10 +1020,16 @@ typeid_t lookup_type(const value_backend_t& backend, runtime_type_t itype){
 
 
 value_backend_t make_test_value_backend(){
+	type_interner_t type_interner;
+
+	std::map<runtime_type_t, typeid_t> itype_to_typeid;
+	for(const auto& e: type_interner.interned){
+		itype_to_typeid.insert( { make_runtime_type(e.first.itype), e.second } );
+	}
 	return value_backend_t(
 		{},
 		{},
-		{}
+		itype_to_typeid
 	);
 }
 

@@ -58,6 +58,17 @@ const bool k_global_dict_is_hamt = true;
 
 
 
+////////////////////////////////	runtime_type_t
+
+/*
+	An integer that specifies a unique type a type interner. Use this to specify types in running program.
+	Avoid using floyd::typeid_t
+*/
+
+typedef int32_t runtime_type_t;
+
+runtime_type_t make_runtime_type(int32_t itype);
+
 
 
 ////////////////////////////////		heap_t
@@ -117,7 +128,7 @@ struct heap_alloc_64_t {
 	static const size_t k_data_bytes = sizeof(uint64_t) * k_data_elements;
 
 
-	heap_alloc_64_t(heap_t* heap, uint64_t allocation_word_count, const typeid_t& debug_value_type, const char debug_string[]) :
+	heap_alloc_64_t(heap_t* heap, uint64_t allocation_word_count, runtime_type_t debug_value_type, const char debug_string[]) :
 		rc(1),
 		magic(ALLOC_64_MAGIC),
 		allocation_word_count(allocation_word_count),
@@ -215,7 +226,7 @@ struct heap_t {
 
 	DEBUG VERSION: We never actually free the heap blocks, we keep them around for debugging.
 */
-heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, const typeid_t& value_type, const char debug_string[]);
+heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, runtime_type_t value_type, const char debug_string[]);
 
 //	Returns pointer to the allocated words that sits after the
 void* get_alloc_ptr(heap_alloc_64_t& alloc);
@@ -236,17 +247,6 @@ void dispose_alloc(heap_alloc_64_t& alloc);
 
 
 
-
-////////////////////////////////	runtime_type_t
-
-/*
-	An integer that specifies a unique type a type interner. Use this to specify types in running program.
-	Avoid using floyd::typeid_t
-*/
-
-typedef int32_t runtime_type_t;
-
-runtime_type_t make_runtime_type(int32_t itype);
 
 
 
@@ -420,7 +420,7 @@ struct VECTOR_CPPVECTOR_T {
 	heap_alloc_64_t alloc;
 };
 
-runtime_value_t alloc_vector_ccpvector2(heap_t& heap, uint64_t allocation_count, uint64_t element_count, const typeid_t& value_type);
+runtime_value_t alloc_vector_ccpvector2(heap_t& heap, uint64_t allocation_count, uint64_t element_count, runtime_type_t value_type);
 void dispose_vector_cppvector(const runtime_value_t& value);
 
 
@@ -502,8 +502,8 @@ struct VECTOR_HAMT_T {
 	heap_alloc_64_t alloc;
 };
 
-runtime_value_t alloc_vector_hamt(heap_t& heap, uint64_t allocation_count, uint64_t element_count, const typeid_t& value_type);
-runtime_value_t alloc_vector_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count, const typeid_t& value_type);
+runtime_value_t alloc_vector_hamt(heap_t& heap, uint64_t allocation_count, uint64_t element_count, runtime_type_t value_type);
+runtime_value_t alloc_vector_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count, runtime_type_t value_type);
 void dispose_vector_hamt(const runtime_value_t& vec);
 
 runtime_value_t store_immutable(const runtime_value_t& vec, const uint64_t index, runtime_value_t value);
@@ -537,7 +537,7 @@ struct DICT_CPPMAP_T {
 	heap_alloc_64_t alloc;
 };
 
-runtime_value_t alloc_dict_cppmap(heap_t& heap, const typeid_t& value_type);
+runtime_value_t alloc_dict_cppmap(heap_t& heap, runtime_type_t value_type);
 void dispose_dict_cppmap(runtime_value_t& vec);
 
 
@@ -567,7 +567,7 @@ struct DICT_HAMT_T {
 	heap_alloc_64_t alloc;
 };
 
-runtime_value_t alloc_dict_hamt(heap_t& heap, const typeid_t& value_type);
+runtime_value_t alloc_dict_hamt(heap_t& heap, runtime_type_t value_type);
 void dispose_dict_hamt(runtime_value_t& vec);
 
 
@@ -624,7 +624,7 @@ struct STRUCT_T {
 	heap_alloc_64_t alloc;
 };
 
-STRUCT_T* alloc_struct(heap_t& heap, std::size_t size, const typeid_t& value_type);
+STRUCT_T* alloc_struct(heap_t& heap, std::size_t size, runtime_type_t value_type);
 void dispose_struct(STRUCT_T& v);
 
 
