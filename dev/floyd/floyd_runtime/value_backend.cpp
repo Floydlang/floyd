@@ -1304,6 +1304,7 @@ static void release_dict_deep(value_backend_t& backend, runtime_value_t dict0, c
 void release_vector_cppvector(value_backend_t& backend, runtime_value_t vec, const typeid_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(type.is_string() || is_vector_cppvector(type));
 
 	if(dec_rc(vec.vector_cppvector_ptr->alloc) == 0){
@@ -1321,9 +1322,31 @@ void release_vector_cppvector(value_backend_t& backend, runtime_value_t vec, con
 		dispose_vector_cppvector(vec);
 	}
 }
+void release_vector_hamt(value_backend_t& backend, runtime_value_t vec, const typeid_t& type){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(vec.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(is_vector_hamt(type));
+
+	if(dec_rc(vec.vector_hamt_ptr->alloc) == 0){
+		//	Release all elements.
+		{
+			const auto element_type = type.get_vector_element_type();
+			if(is_rc_value(element_type)){
+				for(int i = 0 ; i < vec.vector_hamt_ptr->get_element_count() ; i++){
+					const auto& element = vec.vector_hamt_ptr->load_element(i);
+					release_deep(backend, element, element_type);
+				}
+			}
+		}
+		dispose_vector_hamt(vec);
+	}
+}
+
 static void release_vec_deep(value_backend_t& backend, runtime_value_t vec, const typeid_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(type.is_string() || type.is_vector());
 
 	if(type.is_string()){
@@ -1337,19 +1360,7 @@ static void release_vec_deep(value_backend_t& backend, runtime_value_t vec, cons
 		release_vector_cppvector(backend, vec, type);
 	}
 	else if(is_vector_hamt(type)){
-		if(dec_rc(vec.vector_hamt_ptr->alloc) == 0){
-			//	Release all elements.
-			{
-				const auto element_type = type.get_vector_element_type();
-				if(is_rc_value(element_type)){
-					for(int i = 0 ; i < vec.vector_hamt_ptr->get_element_count() ; i++){
-						const auto& element = vec.vector_hamt_ptr->load_element(i);
-						release_deep(backend, element, element_type);
-					}
-				}
-			}
-			dispose_vector_hamt(vec);
-		}
+		release_vector_hamt(backend, vec, type);
 	}
 	else{
 		QUARK_ASSERT(false);
