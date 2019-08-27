@@ -105,12 +105,14 @@ struct llvm_code_generator_t {
 		floydrt_allocate_vector(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_vector"))),
 		floydrt_allocate_vector_fill(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_vector_fill"))),
 		floydrt_retain_vec(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("retain_vec"))),
-		floydrt_retain_vector_pod_hamt(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("retain_vector_pod_hamt"))),
+		floydrt_retain_vector_hamt(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("retain_vector_hamt"))),
 		floydrt_release_vec(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("release_vec"))),
+		floydrt_release_vector_hamt_pod(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("release_vector_hamt_pod"))),
 		floydrt_load_vector_element(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("load_vector_element"))),
 		floydrt_store_vector_element_mutable(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("store_vector_element_mutable"))),
 		floydrt_concatunate_vectors(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("concatunate_vectors"))),
 		floydrt_push_back__hamt__pod64(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("push_back__hamt__pod64"))),
+
 
 		floydrt_allocate_dict(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_dict"))),
 		floydrt_retain_dict(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("retain_dict"))),
@@ -118,18 +120,22 @@ struct llvm_code_generator_t {
 		floydrt_lookup_dict(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("lookup_dict"))),
 		floydrt_store_dict_mutable(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("store_dict_mutable"))),
 
+
 		floydrt_allocate_json(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_json"))),
 		floydrt_retain_json(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("retain_json"))),
 		floydrt_release_json(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("release_json"))),
 		floydrt_lookup_json(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("lookup_json"))),
 		floydrt_json_to_string(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("json_to_string"))),
 
+
 		floydrt_allocate_struct(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_struct"))),
 		floydrt_retain_struct(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("retain_struct"))),
 		floydrt_release_struct(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("release_struct"))),
 		floydrt_update_struct_member(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("update_struct_member"))),
 
+
 		floydrt_compare_values(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("compare_values"))),
+
 
 		floydrt_get_profile_time(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("get_profile_time"))),
 		floydrt_analyse_benchmark_samples(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("analyse_benchmark_samples")))
@@ -181,9 +187,9 @@ struct llvm_code_generator_t {
 	const function_def_t& floydrt_allocate_vector;
 	const function_def_t& floydrt_allocate_vector_fill;
 	const function_def_t& floydrt_retain_vec;
-	const function_def_t& floydrt_retain_vector_pod_hamt;
-
+	const function_def_t& floydrt_retain_vector_hamt;
 	const function_def_t& floydrt_release_vec;
+	const function_def_t& floydrt_release_vector_hamt_pod;
 	const function_def_t& floydrt_load_vector_element;
 	const function_def_t& floydrt_store_vector_element_mutable;
 	const function_def_t& floydrt_concatunate_vectors;
@@ -410,7 +416,7 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 					&value_reg,
 					generate_itype_constant(gen_acc.gen, type)
 				};
-				builder.CreateCall(gen_acc.gen.floydrt_retain_vector_pod_hamt.llvm_codegen_f, args, "");
+				builder.CreateCall(gen_acc.gen.floydrt_retain_vector_hamt.llvm_codegen_f, args, "");
 			}
 			else{
 				std::vector<llvm::Value*> args = {
@@ -461,12 +467,22 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 	auto& builder = gen_acc.get_builder();
 	if(is_rc_value(type)){
 		if(type.is_string() || type.is_vector()){
-			std::vector<llvm::Value*> args = {
-				gen_acc.get_callers_fcp(),
-				&value_reg,
-				generate_itype_constant(gen_acc.gen, type)
-			};
-			builder.CreateCall(gen_acc.gen.floydrt_release_vec.llvm_codegen_f, args);
+			if(is_vector_hamt(type) && is_rc_value(type.get_vector_element_type()) == false){
+				std::vector<llvm::Value*> args = {
+					gen_acc.get_callers_fcp(),
+					&value_reg,
+					generate_itype_constant(gen_acc.gen, type)
+				};
+				builder.CreateCall(gen_acc.gen.floydrt_release_vector_hamt_pod.llvm_codegen_f, args);
+			}
+			else{
+				std::vector<llvm::Value*> args = {
+					gen_acc.get_callers_fcp(),
+					&value_reg,
+					generate_itype_constant(gen_acc.gen, type)
+				};
+				builder.CreateCall(gen_acc.gen.floydrt_release_vec.llvm_codegen_f, args);
+			}
 		}
 		else if(type.is_dict()){
 			std::vector<llvm::Value*> args = {

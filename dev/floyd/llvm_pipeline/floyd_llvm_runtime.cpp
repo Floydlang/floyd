@@ -348,7 +348,7 @@ static void floydrt_retain_vec(floyd_runtime_t* frp, runtime_value_t vec, runtim
 	retain_value(r.backend, vec, type);
 }
 
-static void floydrt_retain_vector_pod_hamt(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
+static void floydrt_retain_vector_hamt(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 	const auto type = lookup_type(r.backend, type0);
 #if DEBUG
@@ -373,18 +373,15 @@ static void floydrt_release_vec(floyd_runtime_t* frp, runtime_value_t vec, runti
 
 	release_deep(r.backend, vec, type);
 }
+static void floydrt_release_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
+	auto& r = get_floyd_runtime(frp);
+	const auto type = lookup_type(r.backend, type0);
+	QUARK_ASSERT(is_vector_hamt(type));
 
-static function_bind_t floydrt_release_vec__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
-	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		llvm::Type::getVoidTy(context),
-		{
-			make_frp_type(type_lookup),
-			make_generic_vec_type(type_lookup)->getPointerTo(),
-			make_runtime_type_type(type_lookup)
-		},
-		false
-	);
-	return { "release_vec", function_type, reinterpret_cast<void*>(floydrt_release_vec) };
+	QUARK_ASSERT(is_rc_value(type.get_vector_element_type()) == false);
+
+///???specialise for pods
+	release_vector_hamt(r.backend, vec, type);
 }
 
 
@@ -1203,7 +1200,7 @@ std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, c
 			reinterpret_cast<void*>(floydrt_retain_vec)
 		},
 		{
-			"retain_vector_pod_hamt",
+			"retain_vector_hamt",
 			llvm::FunctionType::get(
 				llvm::Type::getVoidTy(context),
 				{
@@ -1213,10 +1210,37 @@ std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, c
 				},
 				false
 			),
-			reinterpret_cast<void*>(floydrt_retain_vector_pod_hamt)
+			reinterpret_cast<void*>(floydrt_retain_vector_hamt)
 		},
 
-		floydrt_release_vec__make(context, type_lookup),
+		{
+			"release_vec",
+			llvm::FunctionType::get(
+				llvm::Type::getVoidTy(context),
+				{
+					make_frp_type(type_lookup),
+					make_generic_vec_type(type_lookup)->getPointerTo(),
+					make_runtime_type_type(type_lookup)
+				},
+				false
+			),
+			reinterpret_cast<void*>(floydrt_release_vec)
+		},
+		{
+			"release_vector_hamt_pod",
+			llvm::FunctionType::get(
+				llvm::Type::getVoidTy(context),
+				{
+					make_frp_type(type_lookup),
+					make_generic_vec_type(type_lookup)->getPointerTo(),
+					make_runtime_type_type(type_lookup)
+				},
+				false
+			),
+			reinterpret_cast<void*>(floydrt_release_vector_hamt_pod)
+		},
+
+
 		floydrt_load_vector_element__make(context, type_lookup),
 		floydrt_store_vector_element_mutable__make(context, type_lookup),
 		floydrt_concatunate_vectors__make(context, type_lookup),
