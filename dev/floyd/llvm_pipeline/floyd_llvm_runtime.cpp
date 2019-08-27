@@ -356,7 +356,7 @@ static void floydrt_retain_vector_pod_hamt(floyd_runtime_t* frp, runtime_value_t
 	QUARK_ASSERT(is_rc_value(type));
 #endif
 
-	retain_value(r.backend, vec, type);
+	retain_vector_hamt(r.backend, vec, type);
 }
 
 
@@ -371,7 +371,7 @@ static void floydrt_release_vec(floyd_runtime_t* frp, runtime_value_t vec, runti
 	const auto type = lookup_type(r.backend, type0);
 	QUARK_ASSERT(type.is_string() || type.is_vector());
 
-	release_vec_deep(r.backend, vec, type);
+	release_deep(r.backend, vec, type);
 }
 
 static function_bind_t floydrt_release_vec__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -607,7 +607,7 @@ static void floydrt_release_dict(floyd_runtime_t* frp, runtime_value_t dict, run
 	const auto type = lookup_type(r.backend, type0);
 	QUARK_ASSERT(type.is_dict());
 
-	release_dict_deep(r.backend, dict, type);
+	release_deep(r.backend, dict, type);
 }
 
 static function_bind_t floydrt_release_dict__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -967,7 +967,7 @@ static void floydrt_retain_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_typ
 	QUARK_ASSERT(is_rc_value(type));
 	QUARK_ASSERT(type.is_struct());
 
-	inc_rc(v->alloc);
+	retain_struct(r.backend, make_runtime_struct(v), type);
 }
 
 static function_bind_t floydrt_retain_struct__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -995,7 +995,7 @@ static void floydrt_release_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_ty
 	QUARK_ASSERT(type.is_struct());
 
 	QUARK_ASSERT(v != nullptr);
-	release_struct_deep(r.backend, v, type);
+	release_deep(r.backend, make_runtime_struct(v), type);
 }
 
 static function_bind_t floydrt_release_struct__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){

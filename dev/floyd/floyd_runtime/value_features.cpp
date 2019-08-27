@@ -138,7 +138,7 @@ const runtime_value_t update__cppvector(value_backend_t& backend, runtime_value_
 			dest_ptr[i] = source_ptr[i];
 		}
 
-		release_vec_deep(backend, dest_ptr[index], element_type);
+		release_deep(backend, dest_ptr[index], type0);
 		dest_ptr[index] = arg2;
 	}
 	else{

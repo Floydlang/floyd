@@ -706,10 +706,15 @@ const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_backe
 
 
 void retain_value(value_backend_t& backend, runtime_value_t value, const typeid_t& type);
+void retain_vector_cppvector(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
+void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
+void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, const typeid_t& type);
+void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, const typeid_t& type);
+void retain_struct(value_backend_t& backend, runtime_value_t s, const typeid_t& type);
+
+
 void release_deep(value_backend_t& backend, runtime_value_t value, const typeid_t& type);
-void release_dict_deep(value_backend_t& backend, runtime_value_t dict, const typeid_t& type);
-void release_vec_deep(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
-void release_struct_deep(value_backend_t& backend, STRUCT_T* s, const typeid_t& type);
+
 
 
 /*
