@@ -2582,6 +2582,7 @@ static void generate_all_floyd_function_bodies(llvm_code_generator_t& gen_acc, c
 
 //	The AST contains statements that initializes the global variables, including global functions.
 
+#if 0
 //	Function prototype must NOT EXIST already.
 static llvm::Function* xxxx___generate_function_prototype(llvm::Module& module, const llvm_type_lookup& type_lookup, const function_definition_t& function_def){
 	QUARK_ASSERT(check_invariant__module(&module));
@@ -2622,6 +2623,7 @@ static llvm::Function* xxxx___generate_function_prototype(llvm::Module& module, 
 	QUARK_ASSERT(check_invariant__module(&module));
 	return f;
 }
+#endif
 
 static function_def_t generate_function_prototype2(llvm::Module& module, const llvm_type_lookup& type_lookup, const function_definition_t& function_def){
 	QUARK_ASSERT(check_invariant__module(&module));
@@ -2709,7 +2711,30 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 		auto f0 = module.getOrInsertFunction(e.link_name.s, e.llvm_function_type);
 		auto f = llvm::cast<llvm::Function>(f0);
 
+		QUARK_ASSERT(check_invariant__function(f));
 		QUARK_ASSERT(check_invariant__module(&module));
+
+		//	Set names for all function defintion's arguments - makes IR easier to read.
+		const auto unnamed_mapping_ptr = type_lookup.find_from_type(e.floyd_fundef._function_type).optional_function_def;
+		if(unnamed_mapping_ptr != nullptr){
+			const auto named_mapping = name_args(*unnamed_mapping_ptr, e.floyd_fundef._named_args);
+
+			auto f_args = f->args();
+			const auto f_arg_count = f_args.end() - f_args.begin();
+			QUARK_ASSERT(f_arg_count == named_mapping.args.size());
+
+			int index = 0;
+			for(auto& a: f_args){
+				const auto& m = named_mapping.args[index];
+				const auto name = m.floyd_name;
+				a.setName(name);
+				index++;
+			}
+		}
+
+		QUARK_ASSERT(check_invariant__function(f));
+		QUARK_ASSERT(check_invariant__module(&module));
+
 		pass1.push_back(function_def_t{ e.link_name, e.llvm_function_type, f, e.floyd_fundef });
 	}
 	return pass1;
