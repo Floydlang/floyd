@@ -32,7 +32,10 @@ struct DICT_HAMT_T;
 struct JSON_T;
 struct STRUCT_T;
 
+static const bool k_record_allocs = false;
 
+#define HEAP_MUTEX 0
+#define ATOMIC_RC 0
 
 
 enum vector_backend {
@@ -141,7 +144,11 @@ struct heap_alloc_64_t {
 
 	////////////////////////////////		STATE
 
+#if ATOMIC_RC
 	mutable std::atomic<int32_t> rc;
+#else
+	mutable int32_t rc;
+#endif
 	uint32_t magic;
 
 	//	 data_*: 4 x 8 bytes.
@@ -175,7 +182,9 @@ struct heap_t {
 	heap_t() :
 		magic(0xf00d1234)
 	{
+#if HEAP_MUTEX
 		alloc_records_mutex = std::make_shared<std::recursive_mutex>();
+#endif
 	}
 	~heap_t();
 	public: bool check_invariant() const;
@@ -184,7 +193,9 @@ struct heap_t {
 
 	////////////////////////////////		STATE
 	uint64_t magic;
+#if HEAP_MUTEX
 	std::shared_ptr<std::recursive_mutex> alloc_records_mutex;
+#endif
 	std::vector<heap_rec_t> alloc_records;
 };
 

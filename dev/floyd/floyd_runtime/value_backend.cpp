@@ -59,11 +59,15 @@ void trace_heap(const heap_t& heap){
 	if(false){
 		QUARK_SCOPED_TRACE("HEAP");
 
-		std::lock_guard<std::recursive_mutex> guard(*heap.alloc_records_mutex);
+		if(k_record_allocs){
+#if HEAP_MUTEX
+			std::lock_guard<std::recursive_mutex> guard(*heap.alloc_records_mutex);
+#endif
 
-		for(int i = 0 ; i < heap.alloc_records.size() ; i++){
-			const auto& e = heap.alloc_records[i];
-			trace_alloc(e);
+			for(int i = 0 ; i < heap.alloc_records.size() ; i++){
+				const auto& e = heap.alloc_records[i];
+				trace_alloc(e);
+			}
 		}
 	}
 }
@@ -119,7 +123,9 @@ heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, const ty
 	const auto header_size = sizeof(heap_alloc_64_t);
 	QUARK_ASSERT((header_size % 8) == 0);
 
+#if HEAP_MUTEX
 	std::lock_guard<std::recursive_mutex> guard(*heap.alloc_records_mutex);
+#endif
 
 	const auto malloc_size = header_size + allocation_word_count * sizeof(uint64_t);
 	void* alloc0 = std::malloc(malloc_size);
@@ -130,7 +136,9 @@ heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, const ty
 	auto alloc = new (alloc0) heap_alloc_64_t(&heap, allocation_word_count, debug_value_type, debug_string);
 	QUARK_ASSERT(alloc->rc == 1);
 	QUARK_ASSERT(alloc->check_invariant());
-	heap.alloc_records.push_back({ alloc });
+	if(k_record_allocs){
+		heap.alloc_records.push_back({ alloc });
+	}
 
 	QUARK_ASSERT(alloc->check_invariant());
 	QUARK_ASSERT(heap.check_invariant());
@@ -215,7 +223,12 @@ bool heap_alloc_64_t::check_invariant() const{
 int32_t dec_rc(const heap_alloc_64_t& alloc){
 	QUARK_ASSERT(alloc.check_invariant());
 
+#if ATOMIC_RC
 	const auto prev_rc = std::atomic_fetch_sub_explicit(&alloc.rc, 1, std::memory_order_relaxed);
+#else
+	const auto prev_rc = alloc.rc;
+	alloc.rc--;
+#endif
 	const auto rc2 = prev_rc - 1;
 
 	if(rc2 < 0){
@@ -228,7 +241,12 @@ int32_t dec_rc(const heap_alloc_64_t& alloc){
 int32_t inc_rc(const heap_alloc_64_t& alloc){
 	QUARK_ASSERT(alloc.check_invariant());
 
+#if ATOMIC_RC
 	const auto prev_rc = std::atomic_fetch_add_explicit(&alloc.rc, 1, std::memory_order_relaxed);
+#else
+	const auto prev_rc = alloc.rc;
+	alloc.rc++;
+#endif
 	const auto rc2 = prev_rc + 1;
 	return rc2;
 }
@@ -243,14 +261,18 @@ void add_ref(heap_alloc_64_t& alloc){
 void dispose_alloc(heap_alloc_64_t& alloc){
 	QUARK_ASSERT(alloc.check_invariant());
 
+#if HEAP_MUTEX
 	std::lock_guard<std::recursive_mutex> guard(*alloc.heap->alloc_records_mutex);
+#endif
 
-	auto it = std::find_if(alloc.heap->alloc_records.begin(), alloc.heap->alloc_records.end(), [&](heap_rec_t& e){ return e.alloc_ptr == &alloc; });
-	QUARK_ASSERT(it != alloc.heap->alloc_records.end());
+	if(k_record_allocs){
+		auto it = std::find_if(alloc.heap->alloc_records.begin(), alloc.heap->alloc_records.end(), [&](heap_rec_t& e){ return e.alloc_ptr == &alloc; });
+		QUARK_ASSERT(it != alloc.heap->alloc_records.end());
 
-//	QUARK_ASSERT(it->in_use);
-//	it->in_use = false;
-
+//		QUARK_ASSERT(it->in_use);
+//		it->in_use = false;
+	}
+	
 	//??? we don't delete the malloc() block in debug version.
 #if DEBUG
 	alloc.magic = 0xdeadbeef;
@@ -276,7 +298,10 @@ void release_ref(heap_alloc_64_t& alloc){
 }
 
 bool heap_t::check_invariant() const{
+#if HEAP_MUTEX
 	std::lock_guard<std::recursive_mutex> guard(*alloc_records_mutex);
+#endif
+
 #if 0
 	for(const auto& e: alloc_records){
 		QUARK_ASSERT(e.alloc_ptr != nullptr);
@@ -301,13 +326,20 @@ int heap_t::count_used() const {
 	QUARK_ASSERT(check_invariant());
 
 	int result = 0;
+#if HEAP_MUTEX
 	std::lock_guard<std::recursive_mutex> guard(*alloc_records_mutex);
-	for(const auto& e: alloc_records){
-		if(e.alloc_ptr->rc){
-			result = result + 1;
+#endif
+	if(k_record_allocs){
+		for(const auto& e: alloc_records){
+			if(e.alloc_ptr->rc){
+				result = result + 1;
+			}
 		}
+		return result;
 	}
-	return result;
+	else{
+		return 0;
+	}
 }
 
 
