@@ -17,7 +17,6 @@ std::string generate_line(const line_t& line, const std::vector<column_t>& colum
 
 	const auto bar_char = line.bar_char == 0x00 ? std::string("") : std::string(1, line.bar_char);
 
-
 	std::string acc = bar_char;
 	for(int c = 0 ; c < line.columns.size() ; c++){
 		const auto s0 = line.columns[c];

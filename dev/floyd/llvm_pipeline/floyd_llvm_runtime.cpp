@@ -6,6 +6,8 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
+static const bool k_trace = false;
+
 #include "floyd_llvm_runtime.h"
 
 #include "floyd_llvm_codegen.h"
@@ -18,6 +20,7 @@
 #include "text_parser.h"
 #include "os_process.h"
 #include "compiler_helpers.h"
+#include "format_table.h"
 
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/GenericValue.h>
@@ -278,10 +281,69 @@ std::vector<function_def_t> make_complete_function_list(llvm::LLVMContext& conte
 			result.push_back(def);
 		}
 	}
+
+	if(k_trace){
+		trace_function_defs(result);
+	}
+
 	return result;
 }
 
 
+/*
+void trace_function_defs(const std::vector<function_def_t>& defs){
+	QUARK_SCOPED_TRACE("Function defs");
+	for(const auto& e: defs){
+		QUARK_TRACE_SS(
+			"Link name: \t\"" << e.link_name.s << "\""
+			<< "\t" << "llvm_function_type: " << (e.llvm_function_type == nullptr ? "NULL": "used")
+			<< "\t" << "llvm_codegen_f: " << (e.llvm_codegen_f == nullptr ? "NULL": "used")
+			<< "\t" << "floyd_fundef: " << json_to_compact_string(function_def_to_ast_json(e.floyd_fundef))
+		);
+	}
+}
+*/
+
+void trace_function_defs(const std::vector<function_def_t>& defs){
+	std::vector<line_t> table = {
+		line_t( { "LINK-NAME", "LLVM_FUNCTION_TYPE", "LLVM_CODEGEN_F", "FLOYD_FUNDEF" }, ' ', '|'),
+		line_t( { "", "", "", "" }, '-', '|'),
+	};
+
+
+	for(const auto& e: defs){
+
+		const auto f0 = json_to_compact_string(function_def_to_ast_json(e.floyd_fundef));
+		const auto f1 = f0.substr(0, 100);
+		const auto f = f1.size() != f0.size() ? (f1 + "...") : f1;
+
+		const auto l = line_t {
+			{
+				e.link_name.s,
+				(e.llvm_function_type == nullptr ? "NULL": "used"),
+				(e.llvm_codegen_f == nullptr ? "NULL": "used"),
+				f
+			},
+			' ',
+			'|'
+		};
+		table.push_back(l);
+	}
+
+	table.push_back(line_t( { "", "", "", "" }, '-', '|'));
+
+	const auto default_column = column_t{ 0, -1, 0 };
+	const auto columns0 = std::vector<column_t>{ default_column, default_column, default_column, default_column };
+	const auto columns = fit_columns(columns0, table);
+	const auto r = generate_table(table, columns);
+
+	std::stringstream ss;
+	ss << std::endl;
+	for(const auto& e: r){
+		ss << e << std::endl;
+	}
+	QUARK_TRACE(ss.str());
+}
 
 
 

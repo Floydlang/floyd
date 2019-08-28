@@ -74,12 +74,7 @@ struct runtime_functions_t {
 
 llvm::Value* generate_allocate_vector(const runtime_functions_t& functions, llvm::IRBuilder<>& builder, llvm::Value& frp_reg, llvm::Value& vector_type_reg, int64_t element_count);
 
-struct runtime_funcs_t {
-	std::vector<function_bind_t> binds;
-	std::shared_ptr<runtime_functions_t> runtime_functions;
-};
 
-runtime_funcs_t make_runtime_funcs(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<function_def_t>& function_defs);
 
 } // floyd
 

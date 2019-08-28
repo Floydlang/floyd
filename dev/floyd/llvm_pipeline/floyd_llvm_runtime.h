@@ -35,7 +35,19 @@ struct llvm_instance_t;
 static const bool k_trace_process_messaging = false;
 
 
+////////////////////////////////		llvm_bind_t
+
+struct llvm_bind_t {
+	link_name_t link_name;
+	void* address;
+	typeid_t type;
+};
+
+
+
 ////////////////////////////////		function_bind_t
+
+
 
 struct function_bind_t {
 	std::string name;
@@ -44,14 +56,6 @@ struct function_bind_t {
 	void* native_f;
 };
 
-
-////////////////////////////////		llvm_bind_t
-
-struct llvm_bind_t {
-	link_name_t link_name;
-	void* address;
-	typeid_t type;
-};
 
 
 ////////////////////////////////		function_def_t
@@ -69,6 +73,7 @@ struct function_def_t {
 	function_definition_t floyd_fundef;
 };
 
+void trace_function_defs(const std::vector<function_def_t>& defs);
 
 
 

@@ -236,10 +236,15 @@ function_definition_t json_to_function_def(const json_t& p){
 	);
 }
 
-
-
-
-
+void trace_function_definition_t(const function_definition_t& def){
+	QUARK_TRACE_SS(
+		"location: " << def._location.offset
+		<< "\t" << "defintion_name: " << def._definition_name
+		<< "\t" << "function_type: " << typeid_to_compact_string(def._function_type)
+		<< "\t" << "named_args: " << members_to_string(def._named_args)
+		<< "\t" << "optional_body: " << def._optional_body ? "BODY" : "NO_BODY"
+	);
+}
 
 QUARK_UNIT_TEST("", "", "", ""){
 	

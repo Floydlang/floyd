@@ -607,7 +607,7 @@ struct member_t {
 
 std::vector<floyd::typeid_t> get_member_types(const std::vector<member_t>& m);
 
-
+std::string members_to_string(const std::vector<member_t>& m);
 
 
 

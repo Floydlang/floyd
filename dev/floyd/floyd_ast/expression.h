@@ -210,7 +210,7 @@ const typeid_t& get_function_type(const function_definition_t& f);
 json_t function_def_to_ast_json(const function_definition_t& v);
 function_definition_t json_to_function_def(const json_t& p);
 
-
+void trace_function_definition_t(const function_definition_t& def);
 
 
 

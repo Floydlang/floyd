@@ -820,6 +820,18 @@ std::vector<floyd::typeid_t> get_member_types(const std::vector<member_t>& m){
 	return r;
 }
 
+std::string members_to_string(const std::vector<member_t>& m){
+	std::string result;
+	for(const auto& e: m){
+		const std::string s = std::string("(") + typeid_to_compact_string(e._type) + " " + e._name + std::string(")");
+		result = result + s;
+	}
+
+	//	Remove trailing ',' character, if any.
+	return result == "" ? "" : result.substr(0, result.size() - 1);
+}
+
+
 
 ////////////////////////			typeid_t
 
