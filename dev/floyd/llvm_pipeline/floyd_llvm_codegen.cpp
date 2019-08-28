@@ -1339,16 +1339,14 @@ static llvm::Value* generate_push_back_expression(llvm_function_generator_t& gen
 	auto& builder = gen_acc.get_builder();
 
 	const auto vec_type = details.args[0].get_output_type();
-	if(is_vector_hamt(vec_type) && vec_type == typeid_t::make_vector(typeid_t::make_int())){
-//		QUARK_ASSERT(details.args[0].get_output_type().is_int());
-		QUARK_ASSERT(details.args[1].get_output_type().is_int());
-
+	if(is_vector_hamt(vec_type) && is_rc_value(vec_type.get_vector_element_type()) == false){
 		auto vector_reg = generate_expression(gen_acc, details.args[0]);
 		auto element_reg = generate_expression(gen_acc, details.args[1]);
+		const auto packed_reg = generate_cast_to_runtime_value(gen_acc.gen, *element_reg, details.args[1].get_output_type());
 
 		auto vec_ptr_reg = builder.CreateCall(
-			gen_acc.gen.runtime_functions.floydrt_push_back__hamt__pod64.llvm_codegen_f,
-			{ gen_acc.get_callers_fcp(), vector_reg, element_reg },
+			gen_acc.gen.runtime_functions.floydrt_push_back_hamt_pod.llvm_codegen_f,
+			{ gen_acc.get_callers_fcp(), vector_reg, packed_reg },
 			""
 		);
 		return vec_ptr_reg;

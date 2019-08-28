@@ -51,7 +51,6 @@ struct llvm_bind_t {
 
 struct function_bind_t {
 	std::string name;
-//	typeid_t function_type2;
 	llvm::FunctionType* llvm_function_type;
 	void* native_f;
 };
