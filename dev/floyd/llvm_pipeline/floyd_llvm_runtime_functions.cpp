@@ -338,6 +338,38 @@ static function_bind_t floydrt_push_back_hamt_pod__make(llvm::LLVMContext& conte
 
 
 
+//??? value_backend never handle RC automatically = no need to make pod/nonpod access to it.
+static runtime_value_t floydrt_load_vector_element_hamt(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type, uint64_t index){
+	auto& r = get_floyd_runtime(frp);
+	(void)r;
+
+#if DEBUG
+	const auto type0 = lookup_type(r.backend, type);
+	QUARK_ASSERT(is_vector_hamt(type0));
+#endif
+
+	return vec.vector_hamt_ptr->load_element(index);
+}
+
+static function_bind_t floydrt_load_vector_element_hamt__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		make_runtime_value_type(type_lookup),
+		{
+			make_frp_type(type_lookup),
+			make_generic_vec_type(type_lookup)->getPointerTo(),
+			make_runtime_type_type(type_lookup),
+			llvm::Type::getInt64Ty(context)
+		},
+		false
+	);
+	return { "load_vector_element_hamt", function_type, reinterpret_cast<void*>(floydrt_load_vector_element_hamt) };
+}
+
+
+
+
+
+
 //	DICT
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1057,6 +1089,7 @@ std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& conte
 		floydrt_store_vector_element_mutable__make(context, type_lookup),
 		floydrt_concatunate_vectors__make(context, type_lookup),
 		floydrt_push_back_hamt_pod__make(context, type_lookup),
+		floydrt_load_vector_element_hamt__make(context, type_lookup),
 
 		floydrt_allocate_dict__make(context, type_lookup),
 		floydrt_retain_dict__make(context, type_lookup),
@@ -1109,6 +1142,7 @@ runtime_functions_t::runtime_functions_t(const std::vector<function_def_t>& func
 	floydrt_store_vector_element_mutable(resolve_func(function_defs, "store_vector_element_mutable")),
 	floydrt_concatunate_vectors(resolve_func(function_defs, "concatunate_vectors")),
 	floydrt_push_back_hamt_pod(resolve_func(function_defs, "push_back_hamt_pod")),
+	floydrt_load_vector_element_hamt(resolve_func(function_defs, "load_vector_element_hamt")),
 
 
 	floydrt_allocate_dict(resolve_func(function_defs, "allocate_dict")),

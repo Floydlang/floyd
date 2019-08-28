@@ -826,18 +826,19 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 		QUARK_ASSERT(key_type.is_int());
 
 		const auto element_type0 = parent_type.get_vector_element_type();
-
 		std::vector<llvm::Value*> args2 = {
 			gen_acc.get_callers_fcp(),
 			parent_reg,
 			generate_itype_constant(gen_acc.gen, parent_type),
 			generate_cast_to_runtime_value(gen_acc.gen, *key_reg, key_type),
 		};
-		auto element_value_uint64_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_load_vector_element.llvm_codegen_f, args2, "");
+		auto element_value_uint64_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_load_vector_element_hamt.llvm_codegen_f, args2, "");
 		auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
 
 		generate_retain(gen_acc, *result_reg, element_type0);
 		generate_release(gen_acc, *parent_reg, parent_type);
+
+		//?? not needed, key is always int
 		generate_release(gen_acc, *key_reg, key_type);
 
 		return result_reg;
