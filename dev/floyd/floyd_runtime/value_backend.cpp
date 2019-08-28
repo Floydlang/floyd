@@ -642,7 +642,7 @@ QUARK_UNIT_TEST("VECTOR_HAMT_T", "", "", ""){
 	detect_leaks(backend.heap);
 
 	const runtime_value_t a[] = { make_runtime_int(1000), make_runtime_int(2000), make_runtime_int(3000) };
-	auto v = alloc_vector_hamt(backend.heap, a, 3, lookup_itype(backend, typeid_t::make_double()));
+	auto v = alloc_vector_hamt(backend.heap, a, 3, make_itype(base_type::k_double));
 	QUARK_UT_VERIFY(v.vector_hamt_ptr != nullptr);
 
 	QUARK_UT_VERIFY(v.vector_hamt_ptr->get_element_count() == 3);
@@ -866,6 +866,11 @@ bool is_rc_value(const typeid_t& type){
 	return type.is_string() || type.is_vector() || type.is_dict() || type.is_struct() || type.is_json();
 }
 
+bool is_rc_value(const itype_t& type){
+	const auto b = get_basetype(type);
+	return b == base_type::k_string || b == base_type::k_vector || b == base_type::k_dict || b == base_type::k_struct || b == base_type::k_json;
+}
+
 
 
 // IMPORTANT: Different types will access different number of bytes, for example a BYTE. We cannot dereference pointer as a uint64*!!
@@ -1018,15 +1023,16 @@ itype_t lookup_itype(const value_backend_t& backend, const typeid_t& type){
 	throw std::exception();
 }
 
-typeid_t lookup_type(const value_backend_t& backend, runtime_type_t type){
+const typeid_t& lookup_type(const value_backend_t& backend, runtime_type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	return lookup_type(backend, itype_t(type));
 }
-typeid_t lookup_type(const value_backend_t& backend, itype_t itype){
+
+const typeid_t& lookup_type(const value_backend_t& backend, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type = backend.itype_to_typeid.at(itype);
+	const auto& type = backend.itype_to_typeid.at(itype);
 	return type;
 }
 

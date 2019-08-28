@@ -69,8 +69,27 @@ typeid_t lookup_type(const type_interner_t& interner, const itype_t& type);
 
 
 
-inline bool is_simple(itype_t type){
-	return type.itype >= 0 && type.itype < 100000000;
+inline bool is_atomic_type(itype_t type){
+	const auto i = type.itype;
+	if(
+		i == (int)base_type::k_undefined
+		|| i == (int)base_type::k_any
+		|| i == (int)base_type::k_void
+
+		|| i == (int)base_type::k_bool
+		|| i == (int)base_type::k_int
+		|| i == (int)base_type::k_double
+		|| i == (int)base_type::k_string
+		|| i == (int)base_type::k_json
+
+		|| i == (int)base_type::k_typeid
+		|| i == (int)base_type::k_unresolved
+	){
+		return true;
+	}
+	else{
+		return false;
+	}
 }
 
 inline bool is_struct(itype_t type){
@@ -90,7 +109,7 @@ inline bool is_function(itype_t type){
 }
 
 inline base_type get_basetype(itype_t itype){
-	if(is_simple(itype)){
+	if(is_atomic_type(itype)){
 		const auto result = static_cast<base_type>(itype.itype);
 		return result;
 	}
@@ -122,6 +141,7 @@ inline itype_t make_itype(base_type type){
 inline itype_t get_undefined_itype(){
 	return make_itype(base_type::k_undefined);
 }
+
 inline itype_t get_json_itype(){
 	return make_itype(base_type::k_json);
 }

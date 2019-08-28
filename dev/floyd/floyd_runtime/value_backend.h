@@ -641,7 +641,7 @@ void dispose_struct(STRUCT_T& v);
 
 
 
-bool is_rc_value(const typeid_t& type);
+
 
 runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type);
 void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t& value);
@@ -702,8 +702,8 @@ struct value_backend_t {
 
 runtime_type_t lookup_runtime_type(const value_backend_t& backend, const typeid_t& type);
 itype_t lookup_itype(const value_backend_t& backend, const typeid_t& type);
-typeid_t lookup_type(const value_backend_t& backend, runtime_type_t type);
-typeid_t lookup_type(const value_backend_t& backend, itype_t itype);
+const typeid_t& lookup_type(const value_backend_t& backend, runtime_type_t type);
+const typeid_t& lookup_type(const value_backend_t& backend, itype_t itype);
 
 
 const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, const typeid_t& type);
@@ -712,6 +712,9 @@ const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_backe
 
 ////////////////////////////////		REFERENCE COUNTING
 
+//	Tells if this type uses reference counting for its values.
+bool is_rc_value(const typeid_t& type);
+bool is_rc_value(const itype_t& type);
 
 
 void retain_value(value_backend_t& backend, runtime_value_t value, itype_t itype);
