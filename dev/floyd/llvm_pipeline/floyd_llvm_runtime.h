@@ -71,6 +71,7 @@ struct function_def_t {
 	llvm::Function* llvm_codegen_f;
 
 	function_definition_t floyd_fundef;
+	void* native_f;
 };
 
 void trace_function_defs(const std::vector<function_def_t>& defs);

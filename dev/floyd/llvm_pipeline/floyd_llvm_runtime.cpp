@@ -6,7 +6,7 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-static const bool k_trace_function_defs = true;
+static const bool k_trace_function_defs = false;
 
 #include "floyd_llvm_runtime.h"
 
@@ -223,13 +223,13 @@ static function_def_t make_floyd_function_def(const llvm_type_lookup& type_looku
 	const auto link_name = encode_floyd_func_link_name(function_def._definition_name);
 	llvm::Type* function_ptr_type = get_exact_llvm_type(type_lookup, function_type);
 	const auto function_byvalue_type = deref_ptr(function_ptr_type);
-	return function_def_t{ link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_def };
+	return function_def_t{ link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_def, nullptr };
 }
 
 std::vector<function_def_t> make_all_function_defs(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	std::vector<function_def_t> result;
+	std::vector<function_def_t> result0;
 
 	//	Make prototypes for all runtime functions, like floydrt_retain_vec().
 	{
@@ -237,8 +237,8 @@ std::vector<function_def_t> make_all_function_defs(llvm::LLVMContext& context, c
 		for(const auto& e: runtime_functions){
 			const auto link_name = encode_runtime_func_link_name(e.name);
 			const auto def0 = function_definition_t::make_func(k_no_location, e.name, typeid_t::make_void(), {}, {});
-			const auto def = function_def_t{ link_name, e.llvm_function_type, nullptr, def0 };
-			result.push_back(def);
+			const auto def = function_def_t{ link_name, e.llvm_function_type, nullptr, def0, nullptr };
+			result0.push_back(def);
 		}
 	}
 
@@ -254,8 +254,8 @@ std::vector<function_def_t> make_all_function_defs(llvm::LLVMContext& context, c
 			false
 		);
 		const auto def0 = function_definition_t::make_func(k_no_location, name, typeid_t::make_void(), {}, {});
-		const auto def = function_def_t{ link_name, function_type, nullptr, def0 };
-		result.push_back(def);
+		const auto def = function_def_t{ link_name, function_type, nullptr, def0, nullptr };
+		result0.push_back(def);
 	}
 
 	//	deinit()
@@ -270,8 +270,8 @@ std::vector<function_def_t> make_all_function_defs(llvm::LLVMContext& context, c
 			false
 		);
 		const auto def0 = function_definition_t::make_func(k_no_location, name, typeid_t::make_void(), {}, {});
-		const auto def = function_def_t{ link_name, function_type, nullptr, def0 };
-		result.push_back(def);
+		const auto def = function_def_t{ link_name, function_type, nullptr, def0, nullptr };
+		result0.push_back(def);
 	}
 
 	//	Make function def for all functions inside the floyd program (floyd source code).
@@ -279,12 +279,30 @@ std::vector<function_def_t> make_all_function_defs(llvm::LLVMContext& context, c
 	{
 		for(const auto& function_def: ast_function_defs){
 			auto def = make_floyd_function_def(type_lookup, function_def);
-			result.push_back(def);
+			result0.push_back(def);
 		}
 	}
 
 	if(k_trace_function_defs){
-		trace_function_defs(result);
+		trace_function_defs(result0);
+	}
+
+	//	Resolve native functions pointers - for built-in C functions like runtime functions and intrinsics.
+	std::vector<function_def_t> result;
+	const auto binds = make_all_function_binds(context, type_lookup);
+	for(const auto& e: result0){
+		const auto it = binds.find(e.link_name);
+		if(it != binds.end()){
+			const auto def2 = function_def_t{ e.link_name, e.llvm_function_type, e.llvm_codegen_f, e.floyd_fundef, it->second };
+			result.push_back(def2);
+		}
+		else{
+			result.push_back(e);
+		}
+	}
+
+	if(k_trace_function_defs){
+		trace_function_defs(result0);
 	}
 
 	return result;
@@ -307,8 +325,8 @@ void trace_function_defs(const std::vector<function_def_t>& defs){
 
 void trace_function_defs(const std::vector<function_def_t>& defs){
 	std::vector<line_t> table = {
-		line_t( { "LINK-NAME", "LLVM_FUNCTION_TYPE", "LLVM_CODEGEN_F", "FLOYD_FUNDEF" }, ' ', '|'),
-		line_t( { "", "", "", "" }, '-', '|'),
+		line_t( { "LINK-NAME", "LLVM_FUNCTION_TYPE", "LLVM_CODEGEN_F", "FLOYD_FUNDEF", "NATIVE_F" }, ' ', '|'),
+		line_t( { "", "", "", "", "" }, '-', '|'),
 	};
 
 
@@ -323,7 +341,8 @@ void trace_function_defs(const std::vector<function_def_t>& defs){
 				e.link_name.s,
 				(e.llvm_function_type == nullptr ? "-": "YES"),
 				(e.llvm_codegen_f == nullptr ? "-": "YES"),
-				f
+				f,
+				(e.native_f == nullptr ? "-": "YES"),
 			},
 			' ',
 			'|'
@@ -331,10 +350,10 @@ void trace_function_defs(const std::vector<function_def_t>& defs){
 		table.push_back(l);
 	}
 
-	table.push_back(line_t( { "", "", "", "" }, '-', '|'));
+	table.push_back(line_t( { "", "", "", "", "" }, '-', '|'));
 
 	const auto default_column = column_t{ 0, -1, 0 };
-	const auto columns0 = std::vector<column_t>{ default_column, default_column, default_column, default_column };
+	const auto columns0 = std::vector<column_t>{ default_column, default_column, default_column, default_column, default_column };
 	const auto columns = fit_columns(columns0, table);
 	const auto r = generate_table(table, columns);
 

@@ -8,7 +8,7 @@
 
 const bool k_trace_input_output = false;
 const bool k_trace_types = k_trace_input_output;
-static const bool k_trace_function_defs = true;
+static const bool k_trace_function_defs = false;
 
 
 #include "floyd_llvm_codegen.h"
@@ -2545,7 +2545,7 @@ static std::vector<function_def_t> generate_llvm_function_entry(llvm::Module& mo
 		QUARK_ASSERT(check_invariant__function(f));
 		QUARK_ASSERT(check_invariant__module(&module));
 
-		result.push_back(function_def_t{ e.link_name, e.llvm_function_type, f, e.floyd_fundef });
+		result.push_back(function_def_t{ e.link_name, e.llvm_function_type, f, e.floyd_fundef, e.native_f });
 	}
 	if(k_trace_function_defs){
 		trace_function_defs(result);
