@@ -166,19 +166,6 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 static std::map<link_name_t, void*> make_all_function_binds(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 
 	////////	Functions to support the runtime
@@ -211,9 +198,6 @@ static std::map<link_name_t, void*> make_all_function_binds(llvm::LLVMContext& c
 
 	return function_map;
 }
-
-
-//	The AST contains statements that initializes the global variables, including global functions.
 
 static function_def_t make_floyd_function_def(const llvm_type_lookup& type_lookup, const function_definition_t& function_def){
 	QUARK_ASSERT(type_lookup.check_invariant());
@@ -302,26 +286,12 @@ std::vector<function_def_t> make_all_function_defs(llvm::LLVMContext& context, c
 	}
 
 	if(k_trace_function_defs){
-		trace_function_defs(result0);
+		trace_function_defs(result);
 	}
 
 	return result;
 }
 
-
-/*
-void trace_function_defs(const std::vector<function_def_t>& defs){
-	QUARK_SCOPED_TRACE("Function defs");
-	for(const auto& e: defs){
-		QUARK_TRACE_SS(
-			"Link name: \t\"" << e.link_name.s << "\""
-			<< "\t" << "llvm_function_type: " << (e.llvm_function_type == nullptr ? "NULL": "used")
-			<< "\t" << "llvm_codegen_f: " << (e.llvm_codegen_f == nullptr ? "NULL": "used")
-			<< "\t" << "floyd_fundef: " << json_to_compact_string(function_def_to_ast_json(e.floyd_fundef))
-		);
-	}
-}
-*/
 
 void trace_function_defs(const std::vector<function_def_t>& defs){
 	std::vector<line_t> table = {
@@ -369,10 +339,6 @@ void trace_function_defs(const std::vector<function_def_t>& defs){
 
 
 
-
-
-
-
 int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const std::vector<std::string>& main_args){
 	QUARK_ASSERT(f.address != nullptr);
 
@@ -400,7 +366,6 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 		throw std::exception();
 	}
 }
-
 
 
 
@@ -523,10 +488,30 @@ static std::map<runtime_type_t, typeid_t> make_type_lookup(const llvm_type_looku
 	return result;
 }
 
+#if __APPLE__
+std::string strip_link_name(const std::string& s){
+	QUARK_ASSERT(s.empty() == false);
+	QUARK_ASSERT(s[0] == '_');
+	const auto s2 = s.substr(1);
+	return s2;
+}
+#else
+std::string strip_link_name(const std::string& platform_link_name){
+	QUARK_ASSERT(s.empty() == false);
+	return s;
+}
+#endif
+
+
+
 //	Destroys program, can only run it once!
 static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks){
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(program_breaks.check_invariant());
+
+	if(k_trace_function_defs){
+		trace_function_defs(program_breaks.function_defs);
+	}
 
 	std::string collectedErrors;
 
@@ -549,29 +534,23 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 
 	auto ee1 = std::shared_ptr<llvm::ExecutionEngine>(exeEng);
 
-	auto function_map = make_all_function_binds(instance.context, program_breaks.type_lookup);
+//	auto function_map = make_all_function_binds(instance.context, program_breaks.type_lookup);
 
 	//	LINK. Resolve all unresolved functions.
 	{
 		//	https://stackoverflow.com/questions/33328562/add-mapping-to-c-lambda-from-llvm
 		auto lambda = [&](const std::string& s) -> void* {
-			QUARK_ASSERT(s.empty() == false);
-			//QUARK_ASSERT(s[0] == '_');
-#ifndef __APPLE__
-			const auto s2 = s; //s.substr(1);
-#else
-			const auto s2 = s.substr(1);
-#endif
-			const auto it = function_map.find(link_name_t{ s2 });
-			if(it != function_map.end()){
-				return it->second;
+			const auto s2 = strip_link_name(s);
+
+			const auto& function_defs = program_breaks.function_defs;
+			const auto it = std::find_if(function_defs.begin(), function_defs.end(), [&](const function_def_t& def){ return def.link_name.s == s2; });
+			if(it != function_defs.end() && it->native_f != nullptr){
+				return it->native_f;
 			}
-			else{
+			else {
 				return (void*)&floyd_llvm_intrinsic__dummy;
 //				throw std::exception();
 			}
-
-			return nullptr;
 		};
 		std::function<void*(const std::string&)> on_lazy_function_creator2 = lambda;
 

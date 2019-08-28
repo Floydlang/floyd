@@ -991,17 +991,6 @@ static function_bind_t floydrt_analyse_benchmark_samples__make(llvm::LLVMContext
 }
 
 
-
-/*
-runtime_funcs_t make_runtime_funcs(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<function_def_t>& function_defs){
-	runtime_funcs_t result;
-	result.binds = get_runtime_function_binds(context, type_lookup);
-	result.runtime_functions = std::make_shared<runtime_functions_t>(function_defs);
-	return result;
-}
-*/
-
-
 //??? Keep typeid_t for each, then convert to LLVM type. Can't go the other way.
 std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	std::vector<function_bind_t> result = {
