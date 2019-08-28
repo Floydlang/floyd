@@ -329,25 +329,25 @@ static llvm::Type* make_llvm_type(const builder_t& builder, const typeid_t& type
 	return std::visit(visitor_t{ builder, type }, type._contents);
 }
 
-static llvm::Type* make_generic_type_internals(builder_t& builder, const typeid_t& type){
+static llvm::Type* make_generic_type(const builder_t& builder, const typeid_t& type){
 	if(type.is_vector()){
-		return builder.acc.generic_vec_type->getPointerTo();
+		return builder.acc.generic_vec_type;
 	}
 	else if(type.is_string()){
-		return builder.acc.generic_vec_type->getPointerTo();
+		return builder.acc.generic_vec_type;
 	}
 	else if(type.is_dict()){
-		return builder.acc.generic_dict_type->getPointerTo();
+		return builder.acc.generic_dict_type;
 	}
 	else if(type.is_struct()){
-		return builder.acc.generic_struct_type->getPointerTo();
+		return builder.acc.generic_struct_type;
 	}
 	else{
 		return nullptr;
 	}
 }
 
-static type_entry_t make_and_register_type(builder_t& builder, const typeid_t& type){
+static type_entry_t make_type(const builder_t& builder, const typeid_t& type){
 	QUARK_ASSERT(builder.interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -355,7 +355,8 @@ static type_entry_t make_and_register_type(builder_t& builder, const typeid_t& t
 	const auto llvm_type0 = make_llvm_type(builder, type);
 	const auto llvm_type = pass_as_ptr(type) ? llvm_type0->getPointerTo() : llvm_type0;
 
-	llvm::Type* llvm_generic_type = make_generic_type_internals(builder, type);
+	llvm::Type* llvm_generic_type0 = make_generic_type(builder, type);
+	llvm::Type* llvm_generic_type = llvm_generic_type0 ? llvm_generic_type0->getPointerTo() : nullptr;
 
 	std::shared_ptr<const llvm_function_def_t> optional_function_def;
 	if(type.is_function()){
@@ -371,7 +372,6 @@ static type_entry_t make_and_register_type(builder_t& builder, const typeid_t& t
 		optional_function_def
 	};
 
-	builder.acc.types.push_back(entry);
 	return entry;
 }
 
@@ -384,7 +384,8 @@ static type_entry_t touch_type2000(builder_t& builder, const typeid_t& type){
 		return *it;
 	}
 	else{
-		const auto entry = make_and_register_type(builder, type);
+		const auto entry = make_type(builder, type);
+		builder.acc.types.push_back(entry);
 		return entry;
 	}
 }
