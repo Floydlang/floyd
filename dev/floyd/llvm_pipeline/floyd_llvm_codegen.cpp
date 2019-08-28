@@ -8,6 +8,7 @@
 
 const bool k_trace_input_output = false;
 const bool k_trace_types = k_trace_input_output;
+static const bool k_trace_function_defs = true;
 
 
 #include "floyd_llvm_codegen.h"
@@ -2508,7 +2509,7 @@ static void generate_all_floyd_function_bodies(llvm_code_generator_t& gen_acc, c
 
 
 //	Notice: this function fills-in more information in each function_def_t. Make sure you use the output moving on, not the input.
-static std::vector<function_def_t> generate_llvm_function_stubs(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<function_def_t>& pass0){
+static std::vector<function_def_t> generate_llvm_function_entry(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<function_def_t>& pass0){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	std::vector<function_def_t> result;
@@ -2545,6 +2546,9 @@ static std::vector<function_def_t> generate_llvm_function_stubs(llvm::Module& mo
 		QUARK_ASSERT(check_invariant__module(&module));
 
 		result.push_back(function_def_t{ e.link_name, e.llvm_function_type, f, e.floyd_fundef });
+	}
+	if(k_trace_function_defs){
+		trace_function_defs(result);
 	}
 	return result;
 }
@@ -2653,8 +2657,8 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> gen
 	//	Generate all LLVM nodes: functions (without implementation) and globals.
 	//	This lets all other code reference them, even if they're not filled up with code yet.
 
-	const auto functions0 = make_complete_function_list(module->getContext(), type_lookup, semantic_ast._tree._function_defs);
-	const auto funcs = generate_llvm_function_stubs(*module, type_lookup, functions0);
+	const auto functions0 = make_all_function_defs(module->getContext(), type_lookup, semantic_ast._tree._function_defs);
+	const auto funcs = generate_llvm_function_entry(*module, type_lookup, functions0);
 
 	llvm_code_generator_t gen_acc(instance, module.get(), semantic_ast._tree._interned_types, type_lookup, funcs);
 

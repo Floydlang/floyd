@@ -6,7 +6,7 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-static const bool k_trace = false;
+static const bool k_trace_function_defs = true;
 
 #include "floyd_llvm_runtime.h"
 
@@ -179,7 +179,7 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name)
 
 
 
-static std::map<link_name_t, void*> make_function_binds(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+static std::map<link_name_t, void*> make_all_function_binds(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 
 	////////	Functions to support the runtime
 
@@ -226,7 +226,7 @@ static function_def_t make_floyd_function_def(const llvm_type_lookup& type_looku
 	return function_def_t{ link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_def };
 }
 
-std::vector<function_def_t> make_complete_function_list(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
+std::vector<function_def_t> make_all_function_defs(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	std::vector<function_def_t> result;
@@ -274,7 +274,8 @@ std::vector<function_def_t> make_complete_function_list(llvm::LLVMContext& conte
 		result.push_back(def);
 	}
 
-	//	Make function prototypes for all floyd functions. This includes intrinsics!
+	//	Make function def for all functions inside the floyd program (floyd source code).
+	//	This includes intrinsics!
 	{
 		for(const auto& function_def: ast_function_defs){
 			auto def = make_floyd_function_def(type_lookup, function_def);
@@ -282,7 +283,7 @@ std::vector<function_def_t> make_complete_function_list(llvm::LLVMContext& conte
 		}
 	}
 
-	if(k_trace){
+	if(k_trace_function_defs){
 		trace_function_defs(result);
 	}
 
@@ -320,8 +321,8 @@ void trace_function_defs(const std::vector<function_def_t>& defs){
 		const auto l = line_t {
 			{
 				e.link_name.s,
-				(e.llvm_function_type == nullptr ? "NULL": "used"),
-				(e.llvm_codegen_f == nullptr ? "NULL": "used"),
+				(e.llvm_function_type == nullptr ? "-": "YES"),
+				(e.llvm_codegen_f == nullptr ? "-": "YES"),
 				f
 			},
 			' ',
@@ -529,7 +530,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 
 	auto ee1 = std::shared_ptr<llvm::ExecutionEngine>(exeEng);
 
-	auto function_map = make_function_binds(instance.context, program_breaks.type_lookup);
+	auto function_map = make_all_function_binds(instance.context, program_breaks.type_lookup);
 
 	//	LINK. Resolve all unresolved functions.
 	{
