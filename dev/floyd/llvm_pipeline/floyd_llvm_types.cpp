@@ -662,7 +662,7 @@ runtime_type_t lookup_runtime_type(const llvm_type_lookup& type_lookup, const ty
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto a = lookup_itype(type_lookup, type);
-	return make_runtime_type(a.itype);
+	return make_runtime_type(a);
 }
 
 

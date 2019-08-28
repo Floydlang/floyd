@@ -330,8 +330,8 @@ uint64_t size_to_allocation_blocks(std::size_t size){
 
 
 
-runtime_type_t make_runtime_type(int32_t itype){
-	return runtime_type_t{ itype };
+runtime_type_t make_runtime_type(itype_t itype){
+	return runtime_type_t{ itype.itype };
 }
 
 
@@ -375,8 +375,8 @@ runtime_value_t make_runtime_double(double value){
 	return { .double_value = value };
 }
 
-runtime_value_t make_runtime_typeid(runtime_type_t type){
-	return { .typeid_itype = type };
+runtime_value_t make_runtime_typeid(itype_t type){
+	return { .typeid_itype = type.itype };
 }
 
 runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr){
@@ -907,7 +907,7 @@ runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type){
 		}
 		runtime_value_t operator()(const typeid_t::typeid_type_t& e) const{
 			const auto value = *static_cast<const int32_t*>(value_ptr);
-			return make_runtime_typeid(value);
+			return make_runtime_typeid(itype_t(value));
 		}
 
 		runtime_value_t operator()(const typeid_t::struct_t& e) const{

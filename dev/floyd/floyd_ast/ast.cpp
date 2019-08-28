@@ -103,32 +103,41 @@ static itype_t make_new_itype_recursive(type_interner_t& interner, const typeid_
 
 		int32_t operator()(const typeid_t::undefined_t& e) const{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 		int32_t operator()(const typeid_t::any_t& e) const{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 
 		int32_t operator()(const typeid_t::void_t& e) const{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 		int32_t operator()(const typeid_t::bool_t& e) const{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 		int32_t operator()(const typeid_t::int_t& e) const{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 		int32_t operator()(const typeid_t::double_t& e) const{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 		int32_t operator()(const typeid_t::string_t& e) const{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 
 		int32_t operator()(const typeid_t::json_type_t& e) const{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 		int32_t operator()(const typeid_t::typeid_type_t& e) const{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 
 		int32_t operator()(const typeid_t::struct_t& e) const{
@@ -173,6 +182,7 @@ static itype_t make_new_itype_recursive(type_interner_t& interner, const typeid_
 		}
 		int32_t operator()(const typeid_t::unresolved_t& e) const{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 	};
 	const auto new_id = std::visit(visitor_t{ interner, type }, type._contents);

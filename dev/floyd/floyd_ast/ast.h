@@ -109,6 +109,7 @@ inline base_type get_basetype(itype_t itype){
 		}
 		else{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 	}
 }

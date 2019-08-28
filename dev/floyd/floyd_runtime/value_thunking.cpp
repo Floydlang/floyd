@@ -343,7 +343,7 @@ runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value
 		}
 		runtime_value_t operator()(const typeid_t::typeid_type_t& e) const{
 			const auto t0 = value.get_typeid_value();
-			const auto t1 = lookup_runtime_type(backend, t0);
+			const auto t1 = lookup_itype(backend, t0);
 			return make_runtime_typeid(t1);
 		}
 

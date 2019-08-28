@@ -69,7 +69,7 @@ const bool k_global_dict_is_hamt = true;
 
 typedef int32_t runtime_type_t;
 
-runtime_type_t make_runtime_type(int32_t itype);
+runtime_type_t make_runtime_type(itype_t itype);
 
 
 
@@ -301,7 +301,7 @@ runtime_value_t make_blank_runtime_value();
 runtime_value_t make_runtime_bool(bool value);
 runtime_value_t make_runtime_int(int64_t value);
 runtime_value_t make_runtime_double(double value);
-runtime_value_t make_runtime_typeid(runtime_type_t type);
+runtime_value_t make_runtime_typeid(itype_t type);
 runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr);
 runtime_value_t make_runtime_vector_cppvector(VECTOR_CPPVECTOR_T* vector_ptr);
 runtime_value_t make_runtime_vector_hamt(VECTOR_HAMT_T* vector_hamt_ptr);
