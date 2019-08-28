@@ -71,6 +71,9 @@ struct itype_t {
 inline bool operator<(itype_t lhs, itype_t rhs){
 	return lhs.itype < rhs.itype;
 }
+inline bool operator==(itype_t lhs, itype_t rhs){
+	return lhs.itype == rhs.itype;
+}
 
 
 
