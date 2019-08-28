@@ -14,7 +14,6 @@ namespace floyd {
 
 struct builder_t;
 
-static llvm::Type* touch_get_exact_llvm_type(builder_t& builder, const typeid_t& type);
 
 
 
@@ -101,7 +100,6 @@ static llvm::Type* make_runtime_type_type_internal(llvm::LLVMContext& context){
 	return llvm::Type::getInt64Ty(context);
 }
 
-
 static llvm::StructType* make_wide_return_type_internal(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
 		//	a
@@ -156,11 +154,7 @@ static llvm::StructType* make_generic_struct_type_internal(llvm::LLVMContext& co
 	return s;
 }
 
-static llvm::StructType* make_wide_return_type(const llvm_type_lookup& type_lookup){
-	QUARK_ASSERT(type_lookup.check_invariant());
 
-	return type_lookup.state.wide_return_type;
-}
 
 
 
@@ -175,6 +169,7 @@ struct builder_t {
 	state_t acc;
 };
 
+static llvm::Type* touch_get_exact_llvm_type(builder_t& builder, const typeid_t& type);
 
 static llvm::StructType* make_exact_struct_type(builder_t& builder, const typeid_t& type){
 	QUARK_ASSERT(type.is_struct());
@@ -240,13 +235,6 @@ static llvm::Type* make_function_type_internal(builder_t& builder, const typeid_
 	return function_pointer_type;
 }
 
-
-
-
-
-
-
-
 static llvm::Type* make_exact_type_internal(builder_t& builder, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
@@ -297,7 +285,6 @@ static llvm::Type* make_exact_type_internal(builder_t& builder, const typeid_t& 
 			return make_function_type_internal(builder, type);
 		}
 		llvm::Type* operator()(const typeid_t::unresolved_t& e) const{
-//			UNSUPPORTED();
 			return llvm::Type::getInt16Ty(builder.context);
 		}
 	};
@@ -369,10 +356,7 @@ static llvm::Type* touch_get_exact_llvm_type(builder_t& builder, const typeid_t&
 	}
 }
 
-
-
-
-//??? Doesn't work if a type references a type later in the type_lookup vector.
+//	Notice: the entries in the type_interner may reference eachother = we need to process recursively.
 llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const type_interner_t& i){
 	QUARK_ASSERT(i.check_invariant());
 
@@ -384,7 +368,6 @@ llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const type_intern
 	acc.wide_return_type = make_wide_return_type_internal(context);
 	acc.runtime_ptr_type = make_generic_runtime_type_internal(context)->getPointerTo();
 
-	//??? 32!!!
 	acc.runtime_type_type = make_runtime_type_type_internal(context);
 	acc.runtime_value_type = make_runtime_value_type_internal(context);
 
@@ -399,6 +382,14 @@ llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const type_intern
 
 	QUARK_ASSERT(check_invariant());
 }
+
+
+
+
+
+
+
+
 
 bool llvm_type_lookup::check_invariant() const {
 	QUARK_ASSERT(state.generic_vec_type != nullptr);
@@ -650,20 +641,6 @@ QUARK_UNIT_TEST
 	QUARK_UT_VERIFY(r.args[4].map_type == llvm_arg_mapping_t::map_type::k_known_value_type);
 }
 #endif
-
-
-
-////////////////////////////////	type_interner_t helpers
-
-
-
-runtime_type_t lookup_runtime_type(const llvm_type_lookup& type_lookup, const typeid_t& type){
-	QUARK_ASSERT(type_lookup.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	const auto a = lookup_itype(type_lookup, type);
-	return make_runtime_type(a);
-}
 
 
 }	// floyd

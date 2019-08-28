@@ -676,13 +676,7 @@ struct value_backend_t {
 		const std::vector<std::pair<link_name_t, void*>>& native_func_lookup,
 		const std::vector<std::pair<itype_t, struct_layout_t>>& struct_layouts,
 		const std::map<itype_t, typeid_t>& itype_to_typeid
-	) :
-		heap(),
-		itype_to_typeid(itype_to_typeid),
-		native_func_lookup(native_func_lookup),
-		struct_layouts(struct_layouts)
-	{
-	}
+	);
 
 	bool check_invariant() const {
 		QUARK_ASSERT(heap.check_invariant());

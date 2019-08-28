@@ -87,9 +87,6 @@ bool type_interner_t::check_invariant() const {
 
 	//!!! We don't register struct, vector, dict and function, since those get explicit types.
 
-
-	//	Make sure each itype
-
 	return true;
 }
 

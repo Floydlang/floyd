@@ -18,9 +18,7 @@
 namespace floyd {
 
 
-
 llvm::Type* deref_ptr(llvm::Type* type);
-
 
 
 
@@ -33,8 +31,6 @@ llvm::Type* deref_ptr(llvm::Type* type);
 	vector[T]		vector<T>	VEC_T*					VEC_T*
 	json_t			json_t		json_t*					int16*
 */
-
-
 
 
 
@@ -84,7 +80,6 @@ struct llvm_function_def_t {
 };
 
 llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<member_t>& args);
-
 
 
 
@@ -157,20 +152,7 @@ llvm::Type* make_generic_dict_type(const llvm_type_lookup& type_lookup);
 llvm::Type* get_generic_struct_type(const llvm_type_lookup& type_lookup);
 
 llvm::Type* make_json_type(const llvm_type_lookup& type_lookup);
-
-//llvm_function_def_t map_function_arguments(const llvm_type_lookup& type_lookup, const floyd::typeid_t& function_type);
-
 llvm::Type* make_frp_type(const llvm_type_lookup& type_lookup);
-
-
-
-
-////////////////////////////////	type_interner_t helpers
-
-
-//base_type get_base_type(const type_interner_t& interner, const runtime_type_t& type);
-//typeid_t lookup_type(const type_interner_t& interner, const runtime_type_t& type);
-runtime_type_t lookup_runtime_type(const llvm_type_lookup& type_lookup, const typeid_t& type);
 
 
 }	// floyd

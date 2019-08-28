@@ -994,6 +994,36 @@ void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t
 
 
 
+////////////////////////////////		value_backend_t
+
+
+
+
+/*
+static std::map<itype_t, typeid_t> make_type_lookup(const llvm_type_lookup& type_lookup){
+	QUARK_ASSERT(type_lookup.check_invariant());
+
+	std::map<itype_t, typeid_t> result;
+	for(const auto& e: type_lookup.state.types){
+		result.insert( { e.itype, e.type } );
+	}
+	return result;
+}
+*/
+
+value_backend_t::value_backend_t(
+	const std::vector<std::pair<link_name_t, void*>>& native_func_lookup,
+	const std::vector<std::pair<itype_t, struct_layout_t>>& struct_layouts,
+	const std::map<itype_t, typeid_t>& itype_to_typeid
+) :
+	heap(),
+	itype_to_typeid(itype_to_typeid),
+	native_func_lookup(native_func_lookup),
+	struct_layouts(struct_layouts)
+{
+	QUARK_ASSERT(check_invariant());
+}
+
 
 
 
