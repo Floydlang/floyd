@@ -866,6 +866,10 @@ bool is_rc_value(const itype_t& type){
 	return b == base_type::k_string || b == base_type::k_vector || b == base_type::k_dict || b == base_type::k_struct || b == base_type::k_json;
 }
 
+bool is_rc_value(const typeid_t& type){
+	return type.is_string() || type.is_vector() || type.is_dict() || type.is_struct() || type.is_json();
+}
+
 
 
 // IMPORTANT: Different types will access different number of bytes, for example a BYTE. We cannot dereference pointer as a uint64*!!

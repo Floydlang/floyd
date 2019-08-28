@@ -257,9 +257,6 @@ std::string print_program(const llvm_ir_program_t& program){
 
 
 
-static bool is_rc_value(const typeid_t& type){
-	return type.is_string() || type.is_vector() || type.is_dict() || type.is_struct() || type.is_json();
-}
 
 
 static llvm::Value* generate_cast_to_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const typeid_t& floyd_type){

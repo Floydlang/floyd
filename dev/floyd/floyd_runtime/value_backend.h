@@ -694,6 +694,10 @@ struct value_backend_t {
 
 	heap_t heap;
 
+//??? Use type_interner here -- use array lookup to go from itype -> typeid_t.
+//	??? Also go from itype -> struct_layout
+// 	??? also go from itype -> collection element-type without using typeid_t.
+
 	std::map<itype_t, typeid_t> itype_to_typeid;
 	std::vector<std::pair<link_name_t, void*>> native_func_lookup;
 	std::vector<std::pair<itype_t, struct_layout_t>> struct_layouts;
@@ -714,6 +718,7 @@ const std::pair<itype_t, struct_layout_t>& find_struct_layout(const value_backen
 
 //	Tells if this type uses reference counting for its values.
 bool is_rc_value(const itype_t& type);
+bool is_rc_value(const typeid_t& type);
 
 
 void retain_value(value_backend_t& backend, runtime_value_t value, itype_t itype);
