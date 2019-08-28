@@ -130,7 +130,7 @@ static inline void release_ref(heap_alloc_64_t& alloc){
 }
 
 
-heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, runtime_type_t debug_value_type, const char debug_string[]){
+heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, itype_t debug_value_type, const char debug_string[]){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(debug_string != nullptr);
 
@@ -167,7 +167,7 @@ QUARK_UNIT_TEST("heap_t", "alloc_64()", "", ""){
 
 QUARK_UNIT_TEST("heap_t", "alloc_64()", "", ""){
 	heap_t heap;
-	auto a = alloc_64(heap, 0, get_undefined_itype().itype, "test");
+	auto a = alloc_64(heap, 0, get_undefined_itype(), "test");
 	QUARK_UT_VERIFY(a != nullptr);
 	QUARK_UT_VERIFY(a->check_invariant());
 	QUARK_UT_VERIFY(a->rc == 1);
@@ -181,7 +181,7 @@ QUARK_UNIT_TEST("heap_t", "alloc_64()", "", ""){
 
 QUARK_UNIT_TEST("heap_t", "add_ref()", "", ""){
 	heap_t heap;
-	auto a = alloc_64(heap, 0, get_undefined_itype().itype, "test");
+	auto a = alloc_64(heap, 0, get_undefined_itype(), "test");
 	add_ref(*a);
 	QUARK_UT_VERIFY(a->rc == 2);
 
@@ -192,7 +192,7 @@ QUARK_UNIT_TEST("heap_t", "add_ref()", "", ""){
 
 QUARK_UNIT_TEST("heap_t", "release_ref()", "", ""){
 	heap_t heap;
-	auto a = alloc_64(heap, 0, get_undefined_itype().itype, "test");
+	auto a = alloc_64(heap, 0, get_undefined_itype(), "test");
 
 	QUARK_UT_VERIFY(a->rc == 1);
 	release_ref(*a);
@@ -457,7 +457,7 @@ bool VECTOR_CPPVECTOR_T::check_invariant() const {
 	return true;
 }
 
-runtime_value_t alloc_vector_ccpvector2(heap_t& heap, uint64_t allocation_count, uint64_t element_count, runtime_type_t value_type){
+runtime_value_t alloc_vector_ccpvector2(heap_t& heap, uint64_t allocation_count, uint64_t element_count, itype_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 
 	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count, value_type, "cppvec");
@@ -499,7 +499,7 @@ QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
 	heap_t heap;
 	detect_leaks(heap);
 
-	auto v = alloc_vector_ccpvector2(heap, 3, 3, get_undefined_itype().itype);
+	auto v = alloc_vector_ccpvector2(heap, 3, 3, get_undefined_itype());
 	QUARK_UT_VERIFY(v.vector_cppvector_ptr != nullptr);
 
 	if(dec_rc(v.vector_cppvector_ptr->alloc) == 0){
@@ -540,7 +540,7 @@ bool VECTOR_HAMT_T::check_invariant() const {
 runtime_value_t alloc_vector_hamt(heap_t& heap, uint64_t allocation_count, uint64_t element_count, runtime_type_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 
-	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc_64(heap, 0, value_type, "vechamt"));
+	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc_64(heap, 0, itype_t(value_type), "vechamt"));
 
 	QUARK_ASSERT(sizeof(immer::vector<runtime_value_t>) <= heap_alloc_64_t::k_data_bytes);
     new (&vec->alloc.data[0]) immer::vector<runtime_value_t>(allocation_count, runtime_value_t{ .int_value = (int64_t)0xdeadbeef12345678 } );
@@ -555,7 +555,7 @@ runtime_value_t alloc_vector_hamt(heap_t& heap, const runtime_value_t elements[]
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(element_count == 0 || elements != nullptr);
 
-	heap_alloc_64_t* alloc = alloc_64(heap, 0, value_type, "vechamt");
+	heap_alloc_64_t* alloc = alloc_64(heap, 0, itype_t(value_type), "vechamt");
 
 	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
 	auto buffer_ptr = reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc->data[0]);
@@ -590,7 +590,7 @@ runtime_value_t store_immutable(const runtime_value_t& vec0, const uint64_t inde
 	QUARK_ASSERT(index < vec1.get_element_count());
 	auto& heap = *vec1.alloc.heap;
 
-	heap_alloc_64_t* alloc = alloc_64(heap, 0, get_undefined_itype().itype, "vechamt");
+	heap_alloc_64_t* alloc = alloc_64(heap, 0, get_undefined_itype(), "vechamt");
 
 	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
 
@@ -613,7 +613,7 @@ runtime_value_t push_back_immutable(const runtime_value_t& vec0, runtime_value_t
 	const auto& vec1 = *vec0.vector_hamt_ptr;
 	auto& heap = *vec1.alloc.heap;
 
-	heap_alloc_64_t* alloc = alloc_64(heap, 0, get_undefined_itype().itype, "vechamt");
+	heap_alloc_64_t* alloc = alloc_64(heap, 0, get_undefined_itype(), "vechamt");
 	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
 	auto buffer_ptr = reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc->data[0]);
 
@@ -688,7 +688,7 @@ uint64_t DICT_CPPMAP_T::size() const {
 runtime_value_t alloc_dict_cppmap(heap_t& heap, runtime_type_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 
-	heap_alloc_64_t* alloc = alloc_64(heap, 0, value_type, "cppdict");
+	heap_alloc_64_t* alloc = alloc_64(heap, 0, itype_t(value_type), "cppdict");
 	auto dict = reinterpret_cast<DICT_CPPMAP_T*>(alloc);
 
 	auto& m = dict->get_map_mut();
@@ -745,7 +745,7 @@ uint64_t DICT_HAMT_T::size() const {
 runtime_value_t alloc_dict_hamt(heap_t& heap, runtime_type_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 
-	heap_alloc_64_t* alloc = alloc_64(heap, 0, value_type, "hamtdic");
+	heap_alloc_64_t* alloc = alloc_64(heap, 0, itype_t(value_type), "hamtdic");
 	auto dict = reinterpret_cast<DICT_HAMT_T*>(alloc);
 
 	auto& m = dict->get_map_mut();
@@ -796,7 +796,7 @@ JSON_T* alloc_json(heap_t& heap, const json_t& init){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(init.check_invariant());
 
-	heap_alloc_64_t* alloc = alloc_64(heap, 0, get_json_itype().itype, "JSON");
+	heap_alloc_64_t* alloc = alloc_64(heap, 0, get_json_itype(), "JSON");
 
 	auto json = reinterpret_cast<JSON_T*>(alloc);
 	auto copy = new json_t(init);
@@ -842,7 +842,7 @@ bool STRUCT_T::check_invariant() const {
 STRUCT_T* alloc_struct(heap_t& heap, std::size_t size, runtime_type_t value_type){
 	const auto allocation_count = size_to_allocation_blocks(size);
 
-	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count, value_type, "struct");
+	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count, itype_t(value_type), "struct");
 
 	auto vec = reinterpret_cast<STRUCT_T*>(alloc);
 	return vec;
@@ -1001,6 +1001,18 @@ runtime_type_t lookup_runtime_type(const value_backend_t& backend, const typeid_
 	for(const auto& e: backend.itype_to_typeid){
 		if(e.second == type){
 			return e.first;
+		}
+	}
+	throw std::exception();
+}
+
+itype_t lookup_itype(const value_backend_t& backend, const typeid_t& type){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	for(const auto& e: backend.itype_to_typeid){
+		if(e.second == type){
+			return itype_t(e.first);
 		}
 	}
 	throw std::exception();

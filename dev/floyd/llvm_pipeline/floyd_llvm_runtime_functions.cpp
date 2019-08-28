@@ -74,7 +74,7 @@ static runtime_value_t floydrt_allocate_vector(floyd_runtime_t* frp, runtime_typ
 
 	const auto type1 = lookup_type(r.backend, type);
 	if(is_vector_cppvector(type1)){
-		return alloc_vector_ccpvector2(r.backend.heap, element_count, element_count, type);
+		return alloc_vector_ccpvector2(r.backend.heap, element_count, element_count, itype_t(type));
 	}
 	else if(is_vector_hamt(type1)){
 		return alloc_vector_hamt(r.backend.heap, element_count, element_count, type);
@@ -119,7 +119,7 @@ static runtime_value_t floydrt_allocate_vector_fill(floyd_runtime_t* frp, runtim
 
 	const auto type1 = lookup_type(r.backend, type);
 	if(is_vector_cppvector(type1)){
-		return alloc_vector_ccpvector2(r.backend.heap, element_count, element_count, type);
+		return alloc_vector_ccpvector2(r.backend.heap, element_count, element_count, itype_t(type));
 	}
 	else if(is_vector_hamt(type1)){
 		return alloc_vector_hamt(r.backend.heap, element_count, element_count, type);

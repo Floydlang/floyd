@@ -16,6 +16,7 @@
 #include <map>
 #include <mutex>
 #include "ast_value.h"
+#include "ast.h"
 
 #include "quark.h"
 
@@ -128,7 +129,7 @@ struct heap_alloc_64_t {
 	static const size_t k_data_bytes = sizeof(uint64_t) * k_data_elements;
 
 
-	heap_alloc_64_t(heap_t* heap, uint64_t allocation_word_count, runtime_type_t debug_value_type, const char debug_string[]) :
+	heap_alloc_64_t(heap_t* heap, uint64_t allocation_word_count, itype_t debug_value_type, const char debug_string[]) :
 		rc(1),
 		magic(ALLOC_64_MAGIC),
 		allocation_word_count(allocation_word_count),
@@ -175,7 +176,7 @@ struct heap_alloc_64_t {
 
 #if DEBUG
 	std::string debug_info;
-	runtime_type_t debug_value_type;
+	itype_t debug_value_type;
 //	std::string debug_value_type_str;
 #endif
 
@@ -232,7 +233,7 @@ struct heap_t {
 
 	DEBUG VERSION: We never actually free the heap blocks, we keep them around for debugging.
 */
-heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, runtime_type_t value_type, const char debug_string[]);
+heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, itype_t value_type, const char debug_string[]);
 
 //	Returns pointer to the allocated words that sits after the
 void* get_alloc_ptr(heap_alloc_64_t& alloc);
@@ -426,7 +427,7 @@ struct VECTOR_CPPVECTOR_T {
 	heap_alloc_64_t alloc;
 };
 
-runtime_value_t alloc_vector_ccpvector2(heap_t& heap, uint64_t allocation_count, uint64_t element_count, runtime_type_t value_type);
+runtime_value_t alloc_vector_ccpvector2(heap_t& heap, uint64_t allocation_count, uint64_t element_count, itype_t value_type);
 void dispose_vector_cppvector(const runtime_value_t& value);
 
 
@@ -691,6 +692,8 @@ struct value_backend_t {
 	////////////////////////////////		STATE
 
 	heap_t heap;
+
+	//??? use itype_t instead of runtime_type_t
 	std::map<runtime_type_t, typeid_t> itype_to_typeid;
 	std::vector<std::pair<link_name_t, void*>> native_func_lookup;
 	std::vector<std::pair<typeid_t, struct_layout_t>> struct_layouts;
@@ -698,6 +701,7 @@ struct value_backend_t {
 
 
 runtime_type_t lookup_runtime_type(const value_backend_t& backend, const typeid_t& type);
+itype_t lookup_itype(const value_backend_t& backend, const typeid_t& type);
 typeid_t lookup_type(const value_backend_t& backend, runtime_type_t itype);
 
 

@@ -129,7 +129,7 @@ const runtime_value_t update__cppvector(value_backend_t& backend, runtime_value_
 		quark::throw_runtime_error("Position argument to update() is outside collection span.");
 	}
 
-	auto result = alloc_vector_ccpvector2(backend.heap, vec->get_element_count(), vec->get_element_count(), lookup_runtime_type(backend, type0));
+	auto result = alloc_vector_ccpvector2(backend.heap, vec->get_element_count(), vec->get_element_count(), lookup_itype(backend, type0));
 	auto dest_ptr = result.vector_cppvector_ptr->get_element_ptr();
 	auto source_ptr = vec->get_element_ptr();
 	if(is_rc_value(element_type)){
@@ -286,7 +286,7 @@ const runtime_value_t subset__cppvector(value_backend_t& backend, runtime_value_
 
 	const auto element_itype = lookup_runtime_type(backend, element_type);
 
-	auto vec2 = alloc_vector_ccpvector2(backend.heap, len2, len2, lookup_runtime_type(backend, type0));
+	auto vec2 = alloc_vector_ccpvector2(backend.heap, len2, len2, lookup_itype(backend, type0));
 	if(is_rc_value(element_type)){
 		for(int i = 0 ; i < len2 ; i++){
 			const auto& value = vec->get_element_ptr()[start2 + i];
@@ -410,7 +410,7 @@ const runtime_value_t replace__cppvector(value_backend_t& backend, runtime_value
 	const auto section3_len = vec->get_element_count() - end2;
 
 	const auto len2 = section1_len + section2_len + section3_len;
-	auto vec2 = alloc_vector_ccpvector2(backend.heap, len2, len2, lookup_runtime_type(backend, type0));
+	auto vec2 = alloc_vector_ccpvector2(backend.heap, len2, len2, lookup_itype(backend, type0));
 	copy_elements(&vec2.vector_cppvector_ptr->get_element_ptr()[0], &vec->get_element_ptr()[0], section1_len);
 	copy_elements(&vec2.vector_cppvector_ptr->get_element_ptr()[section1_len], &replace_vec->get_element_ptr()[0], section2_len);
 	copy_elements(&vec2.vector_cppvector_ptr->get_element_ptr()[section1_len + section2_len], &vec->get_element_ptr()[end2], section3_len);
@@ -556,7 +556,7 @@ runtime_value_t get_keys__cppmap_cppvector(value_backend_t& backend, runtime_val
 	const auto& m = dict->get_map();
 	const auto count = (uint64_t)m.size();
 
-	auto result_vec = alloc_vector_ccpvector2(backend.heap, count, count, lookup_runtime_type(backend, typeid_t::make_vector(typeid_t::make_string())));
+	auto result_vec = alloc_vector_ccpvector2(backend.heap, count, count, lookup_itype(backend, typeid_t::make_vector(typeid_t::make_string())));
 
 	int index = 0;
 	for(const auto& e: m){
@@ -604,7 +604,7 @@ runtime_value_t get_keys__hamtmap_cppvector(value_backend_t& backend, runtime_va
 	const auto& m = dict->get_map();
 	const auto count = (uint64_t)m.size();
 
-	auto result_vec = alloc_vector_ccpvector2(backend.heap, count, count, lookup_runtime_type(backend, typeid_t::make_vector(typeid_t::make_string())));
+	auto result_vec = alloc_vector_ccpvector2(backend.heap, count, count, lookup_itype(backend, typeid_t::make_vector(typeid_t::make_string())));
 
 	int index = 0;
 	for(const auto& e: m){
@@ -689,7 +689,7 @@ runtime_value_t concat_vector_cppvector(value_backend_t& backend, const typeid_t
 
 	const auto count2 = lhs.vector_cppvector_ptr->get_element_count() + rhs.vector_cppvector_ptr->get_element_count();
 
-	auto result = alloc_vector_ccpvector2(backend.heap, count2, count2, lookup_runtime_type(backend, type));
+	auto result = alloc_vector_ccpvector2(backend.heap, count2, count2, lookup_itype(backend, type));
 
 	//??? warning: assumes element = allocation.
 

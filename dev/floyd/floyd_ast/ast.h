@@ -25,7 +25,7 @@ namespace floyd {
 
 
 struct itype_t {
-	itype_t(int32_t itype) : itype(itype){}
+	explicit itype_t(int32_t itype) : itype(itype){}
 
 	int32_t itype;
 };

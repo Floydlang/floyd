@@ -107,55 +107,37 @@ static itype_t make_new_itype_recursive(type_interner_t& interner, const typeid_
 
 		int32_t operator()(const typeid_t::undefined_t& e) const{
 			QUARK_ASSERT(false);
-			interner.interned.push_back({ interner.simple_next_id, type });
-			return interner.simple_next_id++;
 		}
 		int32_t operator()(const typeid_t::any_t& e) const{
 			QUARK_ASSERT(false);
-			interner.interned.push_back({ interner.simple_next_id, type });
-			return interner.simple_next_id++;
 		}
 
 		int32_t operator()(const typeid_t::void_t& e) const{
 			QUARK_ASSERT(false);
-			interner.interned.push_back({ interner.simple_next_id, type });
-			return interner.simple_next_id++;
 		}
 		int32_t operator()(const typeid_t::bool_t& e) const{
 			QUARK_ASSERT(false);
-			interner.interned.push_back({ interner.simple_next_id, type });
-			return interner.simple_next_id++;
 		}
 		int32_t operator()(const typeid_t::int_t& e) const{
 			QUARK_ASSERT(false);
-			interner.interned.push_back({ interner.simple_next_id, type });
-			return interner.simple_next_id++;
 		}
 		int32_t operator()(const typeid_t::double_t& e) const{
 			QUARK_ASSERT(false);
-			interner.interned.push_back({ interner.simple_next_id, type });
-			return interner.simple_next_id++;
 		}
 		int32_t operator()(const typeid_t::string_t& e) const{
 			QUARK_ASSERT(false);
-			interner.interned.push_back({ interner.simple_next_id, type });
-			return interner.simple_next_id++;
 		}
 
 		int32_t operator()(const typeid_t::json_type_t& e) const{
 			QUARK_ASSERT(false);
-			interner.interned.push_back({ interner.simple_next_id, type });
-			return interner.simple_next_id++;
 		}
 		int32_t operator()(const typeid_t::typeid_type_t& e) const{
 			QUARK_ASSERT(false);
-			interner.interned.push_back({ interner.simple_next_id, type });
-			return interner.simple_next_id++;
 		}
 
 		int32_t operator()(const typeid_t::struct_t& e) const{
 			//	Warning: Need to remember struct_next_id since members can add intern other structs and bump struct_next_id.
-			interner.interned.push_back({ interner.struct_next_id, type });
+			interner.interned.push_back({ itype_t(interner.struct_next_id), type });
 			const auto result = interner.struct_next_id++;
 
 			for(const auto& m: e._struct_def->_members){
@@ -167,7 +149,7 @@ static itype_t make_new_itype_recursive(type_interner_t& interner, const typeid_
 			//	Warning: Need to remember vector_next_id since members can add intern other structs and bump vector_next_id.
 			QUARK_ASSERT(e._parts.size() == 1);
 
-			interner.interned.push_back({ interner.vector_next_id, type });
+			interner.interned.push_back({ itype_t(interner.vector_next_id), type });
 			const auto result = interner.vector_next_id++;
 
 			intern_type(interner, e._parts[0]);
@@ -177,7 +159,7 @@ static itype_t make_new_itype_recursive(type_interner_t& interner, const typeid_
 			//	Warning: Need to remember dict_next_id since members can add intern other structs and bump dict_next_id.
 			QUARK_ASSERT(e._parts.size() == 1);
 
-			interner.interned.push_back({ interner.dict_next_id, type });
+			interner.interned.push_back({ itype_t(interner.dict_next_id), type });
 			const auto result = interner.dict_next_id++;
 
 			intern_type(interner, e._parts[0]);
@@ -185,7 +167,7 @@ static itype_t make_new_itype_recursive(type_interner_t& interner, const typeid_
 		}
 		int32_t operator()(const typeid_t::function_t& e) const{
 			//	Warning: Need to remember function_next_id since members can add intern other structs and bump function_next_id.
-			interner.interned.push_back({ interner.function_next_id, type });
+			interner.interned.push_back({ itype_t(interner.function_next_id), type });
 			const auto result = interner.function_next_id++;
 
 			for(const auto& m: e._parts){
@@ -194,13 +176,13 @@ static itype_t make_new_itype_recursive(type_interner_t& interner, const typeid_
 			return result;
 		}
 		int32_t operator()(const typeid_t::unresolved_t& e) const{
-			interner.interned.push_back({ interner.simple_next_id, type });
+			interner.interned.push_back({ itype_t(interner.simple_next_id), type });
 			return interner.simple_next_id++;
 		}
 	};
 	const auto new_id = std::visit(visitor_t{ interner, type }, type._contents);
 
-	return { new_id };
+	return { itype_t(new_id) };
 }
 
 std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid_t& type){
