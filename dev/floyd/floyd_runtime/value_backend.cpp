@@ -1000,7 +1000,7 @@ runtime_type_t lookup_runtime_type(const value_backend_t& backend, const typeid_
 
 	for(const auto& e: backend.itype_to_typeid){
 		if(e.second == type){
-			return e.first;
+			return e.first.itype;
 		}
 	}
 	throw std::exception();
@@ -1012,22 +1012,21 @@ itype_t lookup_itype(const value_backend_t& backend, const typeid_t& type){
 
 	for(const auto& e: backend.itype_to_typeid){
 		if(e.second == type){
-			return itype_t(e.first);
+			return e.first;
 		}
 	}
 	throw std::exception();
 }
 
-typeid_t lookup_type(const value_backend_t& backend, runtime_type_t itype){
+typeid_t lookup_type(const value_backend_t& backend, runtime_type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type = backend.itype_to_typeid.at(itype);
-	return type;
+	return lookup_type(backend, itype_t(type));
 }
 typeid_t lookup_type(const value_backend_t& backend, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type = backend.itype_to_typeid.at(itype.itype);
+	const auto type = backend.itype_to_typeid.at(itype);
 	return type;
 }
 
@@ -1039,9 +1038,9 @@ typeid_t lookup_type(const value_backend_t& backend, itype_t itype){
 value_backend_t make_test_value_backend(){
 	type_interner_t type_interner;
 
-	std::map<runtime_type_t, typeid_t> itype_to_typeid;
+	std::map<itype_t, typeid_t> itype_to_typeid;
 	for(const auto& e: type_interner.interned){
-		itype_to_typeid.insert( { make_runtime_type(e.first.itype), e.second } );
+		itype_to_typeid.insert( { e.first, e.second } );
 	}
 	return value_backend_t(
 		{},

@@ -478,12 +478,12 @@ static std::vector<std::pair<typeid_t, struct_layout_t>> make_struct_layouts(con
 	return result;
 }
 
-static std::map<runtime_type_t, typeid_t> make_type_lookup(const llvm_type_lookup& type_lookup){
+static std::map<itype_t, typeid_t> make_type_lookup(const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	std::map<runtime_type_t, typeid_t> result;
+	std::map<itype_t, typeid_t> result;
 	for(const auto& e: type_lookup.state.types){
-		result.insert( { make_runtime_type(e.itype.itype), e.type } );
+		result.insert( { e.itype, e.type } );
 	}
 	return result;
 }

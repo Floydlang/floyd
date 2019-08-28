@@ -30,6 +30,10 @@ struct itype_t {
 	int32_t itype;
 };
 
+inline bool operator<(itype_t lhs, itype_t rhs){
+	return lhs.itype < rhs.itype;
+}
+
 
 
 //////////////////////////////////////////////////		type_interner_t
