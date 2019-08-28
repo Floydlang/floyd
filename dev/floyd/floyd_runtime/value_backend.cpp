@@ -1056,16 +1056,19 @@ value_backend_t make_test_value_backend(){
 }
 
 
-const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, const typeid_t& type){
+const std::pair<itype_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, itype_t type){
+#if DEBUG
 	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
+	const auto type2 = lookup_type(backend, type);
+	QUARK_ASSERT(type2.check_invariant());
+#endif
 
 	const auto& vec = backend.struct_layouts;
 	const auto it = std::find_if(
 		vec.begin(),
 		vec.end(),
 		[&] (auto& e) {
-			return e.first == type;
+			return e.first.itype == type.itype;
 		}
 	);
 	if(it != vec.end()){
@@ -1287,15 +1290,17 @@ static void release_struct_deep(value_backend_t& backend, STRUCT_T* s, itype_t i
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(s != nullptr);
 
+#if DEBUG
 	const auto type = lookup_type(backend, itype);
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(type.is_struct());
+#endif
 
 	if(dec_rc(s->alloc) == 0){
 		const auto& struct_def = type.get_struct();
 		const auto struct_base_ptr = s->get_data_ptr();
 
-		const auto& struct_layout = find_struct_layout(backend, type);
+		const auto& struct_layout = find_struct_layout(backend, itype);
 
 		int member_index = 0;
 		for(const auto& e: struct_def._members){

@@ -451,14 +451,15 @@ static std::vector<std::pair<link_name_t, void*>> collection_native_func_ptrs(ll
 
 	return result;
 }
+
+
 //??? LLVM codegen unlinks functions not called: need to mark functions external.
 
 
-
-static std::vector<std::pair<typeid_t, struct_layout_t>> make_struct_layouts(const llvm_type_lookup& type_lookup, const llvm::DataLayout& data_layout){
+static std::vector<std::pair<itype_t, struct_layout_t>> make_struct_layouts(const llvm_type_lookup& type_lookup, const llvm::DataLayout& data_layout){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	std::vector<std::pair<typeid_t, struct_layout_t>> result;
+	std::vector<std::pair<itype_t, struct_layout_t>> result;
 
 	for(const auto& e: type_lookup.state.types){
 		if(e.type.is_struct()){
@@ -472,7 +473,7 @@ static std::vector<std::pair<typeid_t, struct_layout_t>> make_struct_layouts(con
 				member_offsets.push_back(offset);
 			}
 
-			result.push_back( { e.type, struct_layout_t{ member_offsets, struct_bytes } } );
+			result.push_back( { e.itype, struct_layout_t{ member_offsets, struct_bytes } } );
 		}
 	}
 	return result;

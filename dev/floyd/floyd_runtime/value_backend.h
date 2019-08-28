@@ -674,7 +674,7 @@ struct struct_layout_t {
 struct value_backend_t {
 	value_backend_t(
 		const std::vector<std::pair<link_name_t, void*>>& native_func_lookup,
-		const std::vector<std::pair<typeid_t, struct_layout_t>>& struct_layouts,
+		const std::vector<std::pair<itype_t, struct_layout_t>>& struct_layouts,
 		const std::map<itype_t, typeid_t>& itype_to_typeid
 	) :
 		heap(),
@@ -696,7 +696,7 @@ struct value_backend_t {
 
 	std::map<itype_t, typeid_t> itype_to_typeid;
 	std::vector<std::pair<link_name_t, void*>> native_func_lookup;
-	std::vector<std::pair<typeid_t, struct_layout_t>> struct_layouts;
+	std::vector<std::pair<itype_t, struct_layout_t>> struct_layouts;
 };
 
 
@@ -706,7 +706,7 @@ const typeid_t& lookup_type(const value_backend_t& backend, runtime_type_t type)
 const typeid_t& lookup_type(const value_backend_t& backend, itype_t itype);
 
 
-const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, const typeid_t& type);
+const std::pair<itype_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, itype_t type);
 
 
 

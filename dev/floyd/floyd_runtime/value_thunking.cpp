@@ -110,7 +110,7 @@ static runtime_value_t to_runtime_struct(value_backend_t& backend, const typeid_
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 
-	const auto& struct_layout = find_struct_layout(backend, value.get_type());
+	const auto& struct_layout = find_struct_layout(backend, lookup_itype(backend, value.get_type()));
 
 	auto s = alloc_struct(backend.heap, struct_layout.second.size, lookup_itype(backend, value.get_type()));
 	const auto struct_base_ptr = s->get_data_ptr();
@@ -132,7 +132,7 @@ static value_t from_runtime_struct(const value_backend_t& backend, const runtime
 	QUARK_ASSERT(encoded_value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto& struct_layout = find_struct_layout(backend, type);
+	const auto& struct_layout = find_struct_layout(backend, lookup_itype(backend, type));
 
 	const auto& struct_def = type.get_struct();
 	const auto struct_base_ptr = encoded_value.struct_ptr->get_data_ptr();
