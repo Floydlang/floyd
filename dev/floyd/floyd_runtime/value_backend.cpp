@@ -1073,7 +1073,7 @@ const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_backe
 
 
 
-void retain_vector_cppvector(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype){
+void retain_vector_cppvector(value_backend_t& backend, runtime_value_t vec, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 #if DEBUG
@@ -1088,7 +1088,7 @@ void retain_vector_cppvector(value_backend_t& backend, runtime_value_t vec, runt
 
 
 
-void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, runtime_type_t itype){
+void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dict.check_invariant());
 #if DEBUG
@@ -1100,7 +1100,7 @@ void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, runtime_
 
 	inc_rc(dict.dict_cppmap_ptr->alloc);
 }
-void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, runtime_type_t itype){
+void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dict.check_invariant());
 #if DEBUG
@@ -1113,7 +1113,7 @@ void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, runtime_ty
 	inc_rc(dict.dict_hamt_ptr->alloc);
 }
 
-void retain_struct(value_backend_t& backend, runtime_value_t s, runtime_type_t itype){
+void retain_struct(value_backend_t& backend, runtime_value_t s, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(s.check_invariant());
 #if DEBUG
@@ -1126,7 +1126,7 @@ void retain_struct(value_backend_t& backend, runtime_value_t s, runtime_type_t i
 	inc_rc(s.struct_ptr->alloc);
 }
 
-void retain_value(value_backend_t& backend, runtime_value_t value, runtime_type_t itype){
+void retain_value(value_backend_t& backend, runtime_value_t value, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	const auto type = lookup_type(backend, itype);
@@ -1165,7 +1165,7 @@ void retain_value(value_backend_t& backend, runtime_value_t value, runtime_type_
 
 
 
-static void release_dict_deep(value_backend_t& backend, runtime_value_t dict0, runtime_type_t itype){
+static void release_dict_deep(value_backend_t& backend, runtime_value_t dict0, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dict0.check_invariant());
 	const auto type = lookup_type(backend, itype);
@@ -1178,7 +1178,7 @@ static void release_dict_deep(value_backend_t& backend, runtime_value_t dict0, r
 			//	Release all elements.
 			const auto element_type = type.get_dict_value_type();
 			if(is_rc_value(element_type)){
-				const auto element_type2 = lookup_runtime_type(backend, element_type);
+				const auto element_type2 = lookup_itype(backend, element_type);
 				auto m = dict.get_map();
 				for(const auto& e: m){
 					release_deep(backend, e.second, element_type2);
@@ -1194,7 +1194,7 @@ static void release_dict_deep(value_backend_t& backend, runtime_value_t dict0, r
 			//	Release all elements.
 			const auto element_type = type.get_dict_value_type();
 			if(is_rc_value(element_type)){
-				const auto element_type2 = lookup_runtime_type(backend, element_type);
+				const auto element_type2 = lookup_itype(backend, element_type);
 				auto m = dict.get_map();
 				for(const auto& e: m){
 					release_deep(backend, e.second, element_type2);
@@ -1208,7 +1208,7 @@ static void release_dict_deep(value_backend_t& backend, runtime_value_t dict0, r
 	}
 }
 
-void release_vector_cppvector(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype){
+void release_vector_cppvector(value_backend_t& backend, runtime_value_t vec, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	const auto type = lookup_type(backend, itype);
@@ -1220,7 +1220,7 @@ void release_vector_cppvector(value_backend_t& backend, runtime_value_t vec, run
 		{
 			const auto element_type = type.get_vector_element_type();
 			if(is_rc_value(element_type)){
-				const auto element_type2 = lookup_runtime_type(backend, element_type);
+				const auto element_type2 = lookup_itype(backend, element_type);
 				auto element_ptr = vec.vector_cppvector_ptr->get_element_ptr();
 				for(int i = 0 ; i < vec.vector_cppvector_ptr->get_element_count() ; i++){
 					const auto& element = element_ptr[i];
@@ -1232,7 +1232,7 @@ void release_vector_cppvector(value_backend_t& backend, runtime_value_t vec, run
 	}
 }
 
-void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype){
+void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_value_t vec, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	const auto type = lookup_type(backend, itype);
@@ -1240,14 +1240,14 @@ void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_val
 	QUARK_ASSERT(is_vector_hamt(type));
 
 	const auto element_type = type.get_vector_element_type();
-	const auto element_type2 = lookup_runtime_type(backend, element_type);
+	const auto element_type2 = lookup_itype(backend, element_type);
 	for(int i = 0 ; i < vec.vector_hamt_ptr->get_element_count() ; i++){
 		const auto& element = vec.vector_hamt_ptr->load_element(i);
 		release_deep(backend, element, element_type2);
 	}
 }
 
-static void release_vec_deep(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype){
+static void release_vec_deep(value_backend_t& backend, runtime_value_t vec, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	const auto type = lookup_type(backend, itype);
@@ -1277,7 +1277,7 @@ static void release_vec_deep(value_backend_t& backend, runtime_value_t vec, runt
 	}
 }
 
-static void release_struct_deep(value_backend_t& backend, STRUCT_T* s, runtime_type_t itype){
+static void release_struct_deep(value_backend_t& backend, STRUCT_T* s, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(s != nullptr);
 
@@ -1294,7 +1294,7 @@ static void release_struct_deep(value_backend_t& backend, STRUCT_T* s, runtime_t
 		int member_index = 0;
 		for(const auto& e: struct_def._members){
 			if(is_rc_value(e._type)){
-				const auto member_itype = lookup_runtime_type(backend, e._type);
+				const auto member_itype = lookup_itype(backend, e._type);
 				const auto offset = struct_layout.second.offsets[member_index];
 				const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
 				release_deep(backend, *member_ptr, member_itype);
@@ -1305,7 +1305,7 @@ static void release_struct_deep(value_backend_t& backend, STRUCT_T* s, runtime_t
 	}
 }
 
-void release_deep(value_backend_t& backend, runtime_value_t value, runtime_type_t itype){
+void release_deep(value_backend_t& backend, runtime_value_t value, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	const auto type = lookup_type(backend, itype);

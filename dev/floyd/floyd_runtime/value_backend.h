@@ -694,7 +694,6 @@ struct value_backend_t {
 
 	heap_t heap;
 
-	//??? use itype_t instead of runtime_type_t
 	std::map<itype_t, typeid_t> itype_to_typeid;
 	std::vector<std::pair<link_name_t, void*>> native_func_lookup;
 	std::vector<std::pair<typeid_t, struct_layout_t>> struct_layouts;
@@ -715,25 +714,25 @@ const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_backe
 
 
 
-void retain_value(value_backend_t& backend, runtime_value_t value, runtime_type_t itype);
-void retain_vector_cppvector(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype);
-inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype);
-void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, runtime_type_t itype);
-void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, runtime_type_t itype);
-void retain_struct(value_backend_t& backend, runtime_value_t s, runtime_type_t itype);
+void retain_value(value_backend_t& backend, runtime_value_t value, itype_t itype);
+void retain_vector_cppvector(value_backend_t& backend, runtime_value_t vec, itype_t itype);
+inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, itype_t itype);
+void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, itype_t itype);
+void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, itype_t itype);
+void retain_struct(value_backend_t& backend, runtime_value_t s, itype_t itype);
 
 
-void release_deep(value_backend_t& backend, runtime_value_t value, runtime_type_t itype);
+void release_deep(value_backend_t& backend, runtime_value_t value, itype_t itype);
 
-void release_vector_cppvector(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype);
-inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype);
-inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype);
-
-
+void release_vector_cppvector(value_backend_t& backend, runtime_value_t vec, itype_t itype);
+inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, itype_t itype);
+inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, itype_t itype);
 
 
 
-void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype);
+
+
+void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_value_t vec, itype_t itype);
 
 
 /*
@@ -805,7 +804,7 @@ inline int32_t inc_rc(const heap_alloc_64_t& alloc){
 
 
 
-inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype){
+inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, itype_t itype){
 #if DEBUG
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
@@ -818,7 +817,7 @@ inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, ru
 	inc_rc(vec.vector_hamt_ptr->alloc);
 }
 
-inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype){
+inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, itype_t itype){
 #if DEBUG
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
@@ -832,7 +831,7 @@ inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t ve
 	}
 }
 
-inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype){
+inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 #if DEBUG
