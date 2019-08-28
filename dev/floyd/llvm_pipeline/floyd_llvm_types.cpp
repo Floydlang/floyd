@@ -172,12 +172,11 @@ static llvm::StructType* make_generic_struct_type_internal(llvm::LLVMContext& co
 
 struct builder_t {
 	llvm::LLVMContext& context;
-	const type_interner_t interner;
 	state_t acc;
 };
 
 static const type_entry_t& find_type(const builder_t& builder, const typeid_t& type){
-	QUARK_ASSERT(builder.interner.check_invariant());
+	QUARK_ASSERT(builder.acc.type_interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto it = std::find_if(builder.acc.types.begin(), builder.acc.types.end(), [&](const type_entry_t& e){ return e.type == type; });
@@ -348,10 +347,10 @@ static llvm::Type* make_generic_type(const builder_t& builder, const typeid_t& t
 }
 
 static type_entry_t make_type(const builder_t& builder, const typeid_t& type){
-	QUARK_ASSERT(builder.interner.check_invariant());
+	QUARK_ASSERT(builder.acc.type_interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto itype = lookup_itype(builder.interner, type);
+	const auto itype = lookup_itype(builder.acc.type_interner, type);
 	const auto llvm_type0 = make_llvm_type(builder, type);
 	const auto llvm_type = pass_as_ptr(type) ? llvm_type0->getPointerTo() : llvm_type0;
 
@@ -375,8 +374,8 @@ static type_entry_t make_type(const builder_t& builder, const typeid_t& type){
 	return entry;
 }
 
-static type_entry_t touch_type2000(builder_t& builder, const typeid_t& type){
-	QUARK_ASSERT(builder.interner.check_invariant());
+static type_entry_t touch_type(builder_t& builder, const typeid_t& type){
+	QUARK_ASSERT(builder.acc.type_interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto it = std::find_if(builder.acc.types.begin(), builder.acc.types.end(), [&](const type_entry_t& e){ return e.type == type; });
@@ -391,10 +390,11 @@ static type_entry_t touch_type2000(builder_t& builder, const typeid_t& type){
 }
 
 //	Notice: the entries in the type_interner may reference eachother = we need to process recursively.
-llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const type_interner_t& i){
-	QUARK_ASSERT(i.check_invariant());
+llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const type_interner_t& type_interner){
+	QUARK_ASSERT(type_interner.check_invariant());
 
 	state_t acc;
+	acc.type_interner = type_interner;
 	acc.generic_vec_type = make_generic_vec_type_internal(context);
 	acc.generic_dict_type = make_generic_dict_type_internal(context);
 	acc.json_type = make_json_type_internal(context);
@@ -406,16 +406,15 @@ llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const type_intern
 	acc.runtime_value_type = make_runtime_value_type_internal(context);
 
 
-	builder_t builder { context, i, acc };
+	builder_t builder { context, acc };
 
-	for(const auto& e: i.interned){
-		touch_type2000(builder, e);
+	for(const auto& e: acc.type_interner.interned){
+		touch_type(builder, e);
 	}
 
 	state = builder.acc;
 
 	QUARK_ASSERT(check_invariant());
-
 
 //	trace_llvm_type_lookup(*this);
 }

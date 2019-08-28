@@ -50,6 +50,8 @@ struct llvm_arg_mapping_t {
 	}
 
 
+	////////////////////////////////		STATE
+
 	llvm::Type* llvm_type;
 
 	std::string floyd_name;
@@ -76,6 +78,8 @@ struct llvm_function_def_t {
 	}
 
 
+	////////////////////////////////		STATE
+
 	llvm::Type* return_type;
 	std::vector<llvm_arg_mapping_t> args;
 	std::vector<llvm::Type*> llvm_args;
@@ -97,6 +101,38 @@ llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<
 */
 
 struct type_entry_t {
+	type_entry_t() :
+		itype(itype_t::make_undefined()),
+		type(typeid_t::make_undefined()),
+		llvm_type_specific(nullptr),
+		llvm_type_generic(nullptr),
+		optional_function_def {}
+	{
+		QUARK_ASSERT(itype.check_invariant());
+		QUARK_ASSERT(type.check_invariant());
+
+		QUARK_ASSERT(check_invariant());
+	}
+
+	type_entry_t(itype_t itype, const typeid_t& type, llvm::Type* llvm_type_specific, llvm::Type* llvm_type_generic, std::shared_ptr<const llvm_function_def_t> optional_function_def) :
+		itype(itype),
+		type(type),
+		llvm_type_specific(llvm_type_specific),
+		llvm_type_generic(llvm_type_generic),
+		optional_function_def(optional_function_def)
+	{
+	}
+
+	bool check_invariant() const {
+		QUARK_ASSERT(itype.check_invariant());
+		QUARK_ASSERT(type.check_invariant());
+		return true;
+	}
+
+
+
+	////////////////////////////////		STATE
+
 	itype_t itype;
 	typeid_t type;
 	llvm::Type* llvm_type_specific;
@@ -116,14 +152,14 @@ struct state_t {
 	public: llvm::Type* runtime_type_type;
 	public: llvm::Type* runtime_value_type;
 
-	type_interner_t type_interner;
+	public: type_interner_t type_interner;
 	public: std::vector<type_entry_t> types;
 };
 
 
 
 struct llvm_type_lookup {
-	llvm_type_lookup(llvm::LLVMContext& context, const type_interner_t& interner);
+	llvm_type_lookup(llvm::LLVMContext& context, const type_interner_t& type_interner);
 	bool check_invariant() const;
 
 	const type_entry_t& find_from_type(const typeid_t& type) const;
@@ -131,7 +167,6 @@ struct llvm_type_lookup {
 
 
 	////////////////////////////////		STATE
-
 
 	public: state_t state;
 };
