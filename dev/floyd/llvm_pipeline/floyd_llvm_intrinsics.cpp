@@ -87,8 +87,9 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 		m.erase(key_string);
 
 		if(is_rc_value(value_type)){
+			const auto value_itype = lookup_runtime_type(r.backend, value_type);
 			for(auto& e: m){
-				retain_value(r.backend, e.second, value_type);
+				retain_value(r.backend, e.second, value_itype);
 			}
 		}
 		return dict2;
@@ -107,8 +108,9 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 		m = m.erase(key_string);
 
 		if(is_rc_value(value_type)){
+			const auto value_itype = lookup_runtime_type(r.backend, value_type);
 			for(auto& e: m){
-				retain_value(r.backend, e.second, value_type);
+				retain_value(r.backend, e.second, value_itype);
 			}
 		}
 		return dict2;
@@ -669,6 +671,7 @@ static runtime_value_t filter__cppvector(floyd_runtime_t* frp, value_backend_t& 
 	auto count = vec.get_element_count();
 
 	const auto e_element_type = type0.get_vector_element_type();
+	const auto e_element_itype = lookup_runtime_type(r.backend, e_element_type);
 
 	std::vector<runtime_value_t> acc;
 	for(int i = 0 ; i < count ; i++){
@@ -678,7 +681,7 @@ static runtime_value_t filter__cppvector(floyd_runtime_t* frp, value_backend_t& 
 			acc.push_back(element_value);
 
 			if(is_rc_value(e_element_type)){
-				retain_value(r.backend, element_value, e_element_type);
+				retain_value(r.backend, element_value, e_element_itype);
 			}
 		}
 		else{
@@ -714,6 +717,7 @@ static runtime_value_t filter__hamt(floyd_runtime_t* frp, value_backend_t& backe
 	auto count = vec.get_element_count();
 
 	const auto e_element_type = type0.get_vector_element_type();
+	const auto e_element_itype = lookup_runtime_type(r.backend, e_element_type);
 
 	std::vector<runtime_value_t> acc;
 	for(int i = 0 ; i < count ; i++){
@@ -723,7 +727,7 @@ static runtime_value_t filter__hamt(floyd_runtime_t* frp, value_backend_t& backe
 			acc.push_back(element_value);
 
 			if(is_rc_value(e_element_type)){
-				retain_value(r.backend, element_value, e_element_type);
+				retain_value(r.backend, element_value, e_element_itype);
 			}
 		}
 		else{
@@ -772,13 +776,13 @@ static runtime_value_t reduce__cppvector(floyd_runtime_t* frp, value_backend_t& 
 
 	auto count = vec.get_element_count();
 	runtime_value_t acc = init;
-	retain_value(backend, acc, type1);
+	retain_value(backend, acc, arg1_type);
 
 	for(int i = 0 ; i < count ; i++){
 		const auto element_value = vec.get_element_ptr()[i];
 		const auto acc2 = (*f)(frp, acc, element_value, context);
 
-		release_deep(backend, acc, type1);
+		release_deep(backend, acc, arg1_type);
 		acc = acc2;
 	}
 	return acc;
@@ -800,13 +804,13 @@ static runtime_value_t reduce__hamt(floyd_runtime_t* frp, value_backend_t& backe
 
 	auto count = vec.get_element_count();
 	runtime_value_t acc = init;
-	retain_value(backend, acc, type1);
+	retain_value(backend, acc, arg1_type);
 
 	for(int i = 0 ; i < count ; i++){
 		const auto element_value = vec.load_element(i);
 		const auto acc2 = (*f)(frp, acc, element_value, context);
 
-		release_deep(backend, acc, type1);
+		release_deep(backend, acc, arg1_type);
 		acc = acc2;
 	}
 	return acc;
@@ -1010,10 +1014,10 @@ static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, run
 		auto source_ptr = vs->get_element_ptr();
 
 		if(is_rc_value(element_type)){
-			retain_value(r.backend, element, element_type);
+			retain_value(r.backend, element, arg1_type);
 
 			for(int i = 0 ; i < vs->get_element_count() ; i++){
-				retain_value(r.backend, source_ptr[i], element_type);
+				retain_value(r.backend, source_ptr[i], arg1_type);
 				dest_ptr[i] = source_ptr[i];
 			}
 			dest_ptr[vs->get_element_count()] = element;
@@ -1036,7 +1040,7 @@ static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, run
 		if(is_rc_value(element_type)){
 			for(int i = 0 ; i < vec2.vector_hamt_ptr->get_element_count() ; i++){
 				const auto& value = vec2.vector_hamt_ptr->load_element(i);
-				retain_value(r.backend, value, element_type);
+				retain_value(r.backend, value, arg1_type);
 			}
 		}
 		return vec2;

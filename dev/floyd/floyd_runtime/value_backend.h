@@ -709,25 +709,25 @@ const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_backe
 
 
 
-void retain_value(value_backend_t& backend, runtime_value_t value, const typeid_t& type);
-void retain_vector_cppvector(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
+void retain_value(value_backend_t& backend, runtime_value_t value, runtime_type_t itype);
+void retain_vector_cppvector(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype);
 inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype);
-void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, const typeid_t& type);
-void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, const typeid_t& type);
-void retain_struct(value_backend_t& backend, runtime_value_t s, const typeid_t& type);
+void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, runtime_type_t itype);
+void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, runtime_type_t itype);
+void retain_struct(value_backend_t& backend, runtime_value_t s, runtime_type_t itype);
 
 
-void release_deep(value_backend_t& backend, runtime_value_t value, const typeid_t& type);
+void release_deep(value_backend_t& backend, runtime_value_t value, runtime_type_t itype);
 
-void release_vector_cppvector(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
+void release_vector_cppvector(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype);
 inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype);
-inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
+inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype);
 
 
 
 
 
-void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
+void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype);
 
 
 /*
@@ -826,14 +826,17 @@ inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t ve
 	}
 }
 
-inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, const typeid_t& type){
+inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, runtime_type_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
+#if DEBUG
+	const auto type = lookup_type(backend, itype);
+#endif
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(is_vector_hamt(type));
 
 	if(dec_rc(vec.vector_hamt_ptr->alloc) == 0){
-		release_vector_hamt_elements_internal(backend, vec, type);
+		release_vector_hamt_elements_internal(backend, vec, itype);
 		dispose_vector_hamt(vec);
 	}
 }

@@ -354,7 +354,7 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 		const auto main_args3 = value_t::make_vector_value(typeid_t::make_string(), main_args2);
 		const auto main_args4 = to_runtime_value(ee, main_args3);
 		const auto main_result_int = (*f2)(make_runtime_ptr(&ee), main_args4);
-		release_deep(ee.backend, main_args4, typeid_t::make_vector(typeid_t::make_string()));
+		release_deep(ee.backend, main_args4, lookup_runtime_type(ee.backend, typeid_t::make_vector(typeid_t::make_string())));
 		return main_result_int;
 	}
 	else if(f.type == get_main_signature_no_arg_impure() || f.type == get_main_signature_no_arg_pure()){
