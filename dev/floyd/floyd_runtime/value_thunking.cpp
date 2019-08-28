@@ -158,8 +158,9 @@ static runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t
 	const auto& v0 = value.get_vector_value();
 	const auto count = v0.size();
 
-	if(is_vector_cppvector(value.get_type())){
-		auto result = alloc_vector_ccpvector2(backend.heap, count, count, lookup_itype(backend, value.get_type()));
+	const auto itype = lookup_itype(backend, value.get_type());
+	if(is_vector_cppvector(itype)){
+		auto result = alloc_vector_ccpvector2(backend.heap, count, count, itype);
 
 		const auto element_type = value.get_type().get_vector_element_type();
 		auto p = result.vector_cppvector_ptr->get_element_ptr();
@@ -171,14 +172,14 @@ static runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t
 		}
 		return result;
 	}
-	else if(is_vector_hamt(value.get_type())){
+	else if(is_vector_hamt(itype)){
 		std::vector<runtime_value_t> temp;
 		for(int i = 0 ; i < count ; i++){
 			const auto& e = v0[i];
 			const auto a = to_runtime_value2(backend, e);
 			temp.push_back(a);
 		}
-		auto result = alloc_vector_hamt(backend.heap, &temp[0], temp.size(), lookup_itype(backend, value.get_type()));
+		auto result = alloc_vector_hamt(backend.heap, &temp[0], temp.size(), itype);
 		return result;
 	}
 	else{
@@ -193,7 +194,8 @@ static value_t from_runtime_vector(const value_backend_t& backend, const runtime
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(type.is_vector());
 
-	if(is_vector_cppvector(type)){
+	const auto itype = lookup_itype(backend, type);
+	if(is_vector_cppvector(itype)){
 		const auto element_type = type.get_vector_element_type();
 		const auto vec = encoded_value.vector_cppvector_ptr;
 
@@ -208,7 +210,7 @@ static value_t from_runtime_vector(const value_backend_t& backend, const runtime
 		const auto val = value_t::make_vector_value(element_type, elements);
 		return val;
 	}
-	else if(is_vector_hamt(type)){
+	else if(is_vector_hamt(itype)){
 		const auto element_type = type.get_vector_element_type();
 		const auto vec = encoded_value.vector_hamt_ptr;
 
@@ -233,10 +235,11 @@ static runtime_value_t to_runtime_dict(value_backend_t& backend, const typeid_t:
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(value.get_type().is_dict());
 
-	if(is_dict_cppmap(value.get_type())){
+	const auto itype = lookup_itype(backend, value.get_type());
+	if(is_dict_cppmap(itype)){
 		const auto& v0 = value.get_dict_value();
 
-		auto result = alloc_dict_cppmap(backend.heap, lookup_itype(backend, value.get_type()));
+		auto result = alloc_dict_cppmap(backend.heap, itype);
 
 		const auto element_type = value.get_type().get_dict_value_type();
 		auto& m = result.dict_cppmap_ptr->get_map_mut();
@@ -246,7 +249,7 @@ static runtime_value_t to_runtime_dict(value_backend_t& backend, const typeid_t:
 		}
 		return result;
 	}
-	else if(is_dict_hamt(value.get_type())){
+	else if(is_dict_hamt(itype)){
 		const auto& v0 = value.get_dict_value();
 
 		auto result = alloc_dict_hamt(backend.heap, lookup_itype(backend, value.get_type()));
@@ -270,7 +273,8 @@ static value_t from_runtime_dict(const value_backend_t& backend, const runtime_v
 	QUARK_ASSERT(encoded_value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	if(is_dict_cppmap(type)){
+	const auto itype = lookup_itype(backend, type);
+	if(is_dict_cppmap(itype)){
 		const auto value_type = type.get_dict_value_type();
 		const auto dict = encoded_value.dict_cppmap_ptr;
 
@@ -283,7 +287,7 @@ static value_t from_runtime_dict(const value_backend_t& backend, const runtime_v
 		const auto val = value_t::make_dict_value(type, values);
 		return val;
 	}
-	else if(is_dict_hamt(type)){
+	else if(is_dict_hamt(itype)){
 		const auto value_type = type.get_dict_value_type();
 		const auto dict = encoded_value.dict_hamt_ptr;
 

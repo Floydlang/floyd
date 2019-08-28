@@ -132,7 +132,7 @@ const runtime_value_t update__cppvector(value_backend_t& backend, runtime_value_
 	auto result = alloc_vector_ccpvector2(backend.heap, vec->get_element_count(), vec->get_element_count(), lookup_itype(backend, type0));
 	auto dest_ptr = result.vector_cppvector_ptr->get_element_ptr();
 	auto source_ptr = vec->get_element_ptr();
-	if(is_rc_value(element_type)){
+	if(is_rc_value(element_itype)){
 		retain_value(backend, arg2, element_itype);
 		for(int i = 0 ; i < result.vector_cppvector_ptr->get_element_count() ; i++){
 			retain_value(backend, source_ptr[i], element_itype);
@@ -172,7 +172,7 @@ const runtime_value_t update__vector_hamt(value_backend_t& backend, runtime_valu
 		quark::throw_runtime_error("Position argument to update() is outside collection span.");
 	}
 
-	if(is_rc_value(element_type)){
+	if(is_rc_value(element_itype)){
 		const auto result = store_immutable(arg0, index, arg2);
 		for(int i = 0 ; i < result.vector_hamt_ptr->get_element_count() ; i++){
 			auto v = result.vector_hamt_ptr->load_element(i);
@@ -205,7 +205,7 @@ const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_valu
 
 	dict2.dict_cppmap_ptr->get_map_mut().insert_or_assign(key, arg2);
 
-	if(is_rc_value(value_type)){
+	if(is_rc_value(value_itype)){
 		for(const auto& e: dict2.dict_cppmap_ptr->get_map()){
 			retain_value(backend, e.second, value_itype);
 		}
@@ -234,7 +234,7 @@ const runtime_value_t update__dict_hamt(value_backend_t& backend, runtime_value_
 
 	dict2.dict_hamt_ptr->get_map_mut() = dict2.dict_hamt_ptr->get_map_mut().set(key, arg2);
 
-	if(is_rc_value(value_type)){
+	if(is_rc_value(value_itype)){
 		for(const auto& e: dict2.dict_hamt_ptr->get_map()){
 			retain_value(backend, e.second, value_itype);
 		}
@@ -287,7 +287,7 @@ const runtime_value_t subset__cppvector(value_backend_t& backend, runtime_value_
 	const auto element_itype = lookup_itype(backend, element_type);
 
 	auto vec2 = alloc_vector_ccpvector2(backend.heap, len2, len2, lookup_itype(backend, type0));
-	if(is_rc_value(element_type)){
+	if(is_rc_value(element_itype)){
 		for(int i = 0 ; i < len2 ; i++){
 			const auto& value = vec->get_element_ptr()[start2 + i];
 			vec2.vector_cppvector_ptr->get_element_ptr()[i] = value;
@@ -323,7 +323,7 @@ const runtime_value_t subset__hamt(value_backend_t& backend, runtime_value_t arg
 	const auto element_itype = lookup_itype(backend, element_type);
 
 	auto vec2 = alloc_vector_hamt(backend.heap, len2, len2, itype_t(arg0_type));
-	if(is_rc_value(element_type)){
+	if(is_rc_value(element_itype)){
 		for(int i = 0 ; i < len2 ; i++){
 			const auto& value = vec.load_element(start2 + i);
 			vec2.vector_hamt_ptr->store_mutate(i, value);
@@ -415,7 +415,7 @@ const runtime_value_t replace__cppvector(value_backend_t& backend, runtime_value
 	copy_elements(&vec2.vector_cppvector_ptr->get_element_ptr()[section1_len], &replace_vec->get_element_ptr()[0], section2_len);
 	copy_elements(&vec2.vector_cppvector_ptr->get_element_ptr()[section1_len + section2_len], &vec->get_element_ptr()[end2], section3_len);
 
-	if(is_rc_value(element_type)){
+	if(is_rc_value(element_itype)){
 		for(int i = 0 ; i < len2 ; i++){
 			retain_value(backend, vec2.vector_cppvector_ptr->get_element_ptr()[i], element_itype);
 		}
@@ -459,7 +459,7 @@ const runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t ar
 		vec2.vector_hamt_ptr->store_mutate(section1_len + section2_len + i, value);
 	}
 
-	if(is_rc_value(element_type)){
+	if(is_rc_value(element_itype)){
 		for(int i = 0 ; i < len2 ; i++){
 			retain_value(backend, vec2.vector_hamt_ptr->load_element(i), element_itype);
 		}
@@ -701,7 +701,7 @@ runtime_value_t concat_vector_cppvector(value_backend_t& backend, const typeid_t
 	auto lhs_ptr = lhs.vector_cppvector_ptr->get_element_ptr();
 	auto rhs_ptr = rhs.vector_cppvector_ptr->get_element_ptr();
 
-	if(is_rc_value(element_type)){
+	if(is_rc_value(element_itype)){
 		for(int i = 0 ; i < lhs.vector_cppvector_ptr->get_element_count() ; i++){
 			retain_value(backend, lhs_ptr[i], element_itype);
 			dest_ptr[i] = lhs_ptr[i];
@@ -741,7 +741,7 @@ runtime_value_t concat_vector_hamt(value_backend_t& backend, const typeid_t& typ
 	const auto element_itype = lookup_itype(backend, element_type);
 
 	//??? Causes a full path copy for EACH ELEMENT = slow. better to make new hamt in one go.
-	if(is_rc_value(element_type)){
+	if(is_rc_value(element_itype)){
 		for(int i = 0 ; i < lhs_count ; i++){
 			auto value = lhs.vector_hamt_ptr->load_element(i);
 			retain_value(backend, value, element_itype);

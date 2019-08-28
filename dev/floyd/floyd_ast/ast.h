@@ -27,6 +27,44 @@ namespace floyd {
 struct itype_t {
 	explicit itype_t(int32_t itype) : itype(itype){}
 
+
+	bool check_invariant() const {
+		return true;
+	}
+
+
+
+	bool is_undefined() const {
+		return itype == (int)base_type::k_string;
+	}
+
+	bool is_string() const {
+		return itype == (int)base_type::k_string;
+	}
+
+	bool is_json() const {
+		return itype == (int)base_type::k_json;
+	}
+
+	bool is_struct() const {
+		return itype >= 100000000 && itype < 200000000;
+	}
+
+	bool is_vector() const {
+		return itype >= 200000000 && itype < 300000000;
+	}
+
+	bool is_dict() const {
+		return itype >= 300000000 && itype < 400000000;
+	}
+	bool is_function() const {
+		return itype >= 400000000;
+	}
+
+
+
+
+	////////////////////////////////	STATE
 	int32_t itype;
 };
 
@@ -93,19 +131,19 @@ inline bool is_atomic_type(itype_t type){
 }
 
 inline bool is_struct(itype_t type){
-	return type.itype >= 100000000 && type.itype < 200000000;
+	return type.is_struct();
 }
 
 inline bool is_vector(itype_t type){
-	return type.itype >= 200000000 && type.itype < 300000000;
+	return type.is_vector();
 }
 
 inline bool is_dict(itype_t type){
-	return type.itype >= 300000000 && type.itype < 400000000;
+	return type.is_dict();
 }
 
 inline bool is_function(itype_t type){
-	return type.itype >= 400000000;
+	return type.is_function();
 }
 
 inline base_type get_basetype(itype_t itype){
