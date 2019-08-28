@@ -1037,23 +1037,26 @@ const typeid_t& lookup_type(const value_backend_t& backend, itype_t itype){
 
 
 
-////////////////////////////////		VALUES
+itype_t lookup_vector_element_type(const value_backend_t& backend, itype_t itype){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(itype.check_invariant());
+	QUARK_ASSERT(itype.is_vector());
 
-
-value_backend_t make_test_value_backend(){
-	type_interner_t type_interner;
-
-	std::map<itype_t, typeid_t> itype_to_typeid;
-	for(const auto& e: type_interner.interned){
-		itype_to_typeid.insert( { e.first, e.second } );
-	}
-	return value_backend_t(
-		{},
-		{},
-		itype_to_typeid
-	);
+	const auto& type = lookup_type(backend, itype);
+	const auto element_type = type.get_vector_element_type();
+	return lookup_itype(backend, element_type);
 }
 
+itype_t lookup_dict_value_type(const value_backend_t& backend, itype_t itype){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(itype.check_invariant());
+	QUARK_ASSERT(itype.is_dict());
+
+	const auto& type = lookup_type(backend, itype);
+	const auto value_type = type.get_dict_value_type();
+	return lookup_itype(backend, value_type);
+
+}
 
 const std::pair<itype_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, itype_t type){
 #if DEBUG
@@ -1078,6 +1081,23 @@ const std::pair<itype_t, struct_layout_t>& find_struct_layout(const value_backen
 	}
 }
 
+
+////////////////////////////////		VALUES
+
+
+value_backend_t make_test_value_backend(){
+	type_interner_t type_interner;
+
+	std::map<itype_t, typeid_t> itype_to_typeid;
+	for(const auto& e: type_interner.interned){
+		itype_to_typeid.insert( { e.first, e.second } );
+	}
+	return value_backend_t(
+		{},
+		{},
+		itype_to_typeid
+	);
+}
 
 
 
