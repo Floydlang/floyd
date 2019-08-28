@@ -114,6 +114,7 @@ struct state_t {
 	public: llvm::Type* runtime_type_type;
 	public: llvm::Type* runtime_value_type;
 
+	type_interner_t type_interner;
 	public: std::vector<type_entry_t> types;
 };
 

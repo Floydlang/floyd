@@ -159,28 +159,21 @@ static llvm::StructType* make_generic_struct_type_internal(llvm::LLVMContext& co
 
 
 
-
-
-
-
 struct builder_t {
 	llvm::LLVMContext& context;
 	const type_interner_t interner;
 	state_t acc;
 };
 
-static llvm::Type* touch_get_exact_llvm_type(builder_t& builder, const typeid_t& type);
+static type_entry_t touch_type(builder_t& builder, const typeid_t& type);
 
-static llvm::StructType* make_exact_struct_type(builder_t& builder, const typeid_t& type){
-	QUARK_ASSERT(type.is_struct());
-
-	std::vector<llvm::Type*> members;
-	for(const auto& m: type.get_struct_ref()->_members){
-		const auto m2 = touch_get_exact_llvm_type(builder, m._type);
-		members.push_back(m2);
+static llvm::Type* get_llvm_type_prefer_generic(const type_entry_t& entry){
+	if(entry.llvm_type_generic != nullptr){
+		return entry.llvm_type_generic;
 	}
-	llvm::StructType* s = llvm::StructType::get(builder.context, members, false);
-	return s;
+	else{
+		return entry.llvm_type_specific;
+	}
 }
 
 static llvm_function_def_t map_function_arguments_internal(builder_t& builder, const floyd::typeid_t& function_type){
@@ -189,7 +182,14 @@ static llvm_function_def_t map_function_arguments_internal(builder_t& builder, c
 	const auto ret = function_type.get_function_return();
 
 	// Notice: we always resolve the return type in semantic analysis -- no need to use WIDE_RETURN and provide a dynamic type. We use int64 here and cast it when calling.
-	llvm::Type* return_type = ret.is_any() ? llvm::Type::getInt64Ty(builder.context) : touch_get_exact_llvm_type(builder, ret);
+	llvm::Type* return_type = nullptr;
+	if(ret.is_any()){
+	 	return_type = llvm::Type::getInt64Ty(builder.context);
+	}
+	else {
+		const type_entry_t a = touch_type(builder, ret);
+		return_type = get_llvm_type_prefer_generic(a);
+	}
 
 	const auto args = function_type.get_function_args();
 	std::vector<llvm_arg_mapping_t> arg_results;
@@ -210,7 +210,8 @@ static llvm_function_def_t map_function_arguments_internal(builder_t& builder, c
 			arg_results.push_back({ builder.acc.runtime_type_type, std::to_string(index), typeid_t::make_undefined(), index, llvm_arg_mapping_t::map_type::k_dyn_type });
 		}
 		else {
-			auto arg_itype = touch_get_exact_llvm_type(builder, arg);
+			const type_entry_t a = touch_type(builder, arg);
+			auto arg_itype = get_llvm_type_prefer_generic(a);
 			arg_results.push_back({ arg_itype, std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_known_value_type });
 		}
 	}
@@ -233,6 +234,20 @@ static llvm::Type* make_function_type_internal(builder_t& builder, const typeid_
 	llvm::FunctionType* function_type2 = llvm::FunctionType::get(mapping.return_type, mapping.llvm_args, false);
 	auto function_pointer_type = function_type2->getPointerTo();
 	return function_pointer_type;
+}
+
+
+static llvm::StructType* make_exact_struct_type(builder_t& builder, const typeid_t& type){
+	QUARK_ASSERT(type.is_struct());
+
+	std::vector<llvm::Type*> members;
+	for(const auto& m: type.get_struct_ref()->_members){
+		const type_entry_t a = touch_type(builder, m._type);
+		const auto m2 = get_llvm_type_prefer_generic(a);
+		members.push_back(m2);
+	}
+	llvm::StructType* s = llvm::StructType::get(builder.context, members, false);
+	return s;
 }
 
 static llvm::Type* make_exact_type_internal(builder_t& builder, const typeid_t& type){
@@ -309,6 +324,32 @@ static llvm::Type* make_generic_type_internals(builder_t& builder, const typeid_
 	}
 }
 
+static type_entry_t make_and_register_type(builder_t& builder, const typeid_t& type){
+	QUARK_ASSERT(builder.interner.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto itype = lookup_itype(builder.interner, type);
+	const auto llvm_type = make_exact_type_internal(builder, type);
+	llvm::Type* llvm_generic_type = make_generic_type_internals(builder, type);
+
+	std::shared_ptr<const llvm_function_def_t> optional_function_def;
+	if(type.is_function()){
+		const auto function_def = map_function_arguments_internal(builder, type);
+		optional_function_def = std::make_shared<llvm_function_def_t>(function_def);
+	}
+
+	const auto entry = type_entry_t{
+		itype,
+		type,
+		llvm_type,
+		llvm_generic_type,
+		optional_function_def
+	};
+
+	builder.acc.types.push_back(entry);
+	return entry;
+}
+
 static type_entry_t touch_type(builder_t& builder, const typeid_t& type){
 	QUARK_ASSERT(builder.interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -318,41 +359,8 @@ static type_entry_t touch_type(builder_t& builder, const typeid_t& type){
 		return *it;
 	}
 	else{
-		const auto itype = lookup_itype(builder.interner, type);
-		const auto llvm_type = make_exact_type_internal(builder, type);
-		llvm::Type* llvm_generic_type = make_generic_type_internals(builder, type);
-
-		std::shared_ptr<const llvm_function_def_t> optional_function_def;
-		if(type.is_function()){
-			const auto function_def = map_function_arguments_internal(builder, type);
-			optional_function_def = std::make_shared<llvm_function_def_t>(function_def);
-		}
-
-		const auto entry = type_entry_t{
-			itype,
-			type,
-			llvm_type,
-			llvm_generic_type,
-			optional_function_def
-		};
-
-		builder.acc.types.push_back(entry);
+		const auto entry = make_and_register_type(builder, type);
 		return entry;
-	}
-}
-
-static llvm::Type* touch_get_exact_llvm_type(builder_t& builder, const typeid_t& type){
-	QUARK_ASSERT(builder.interner.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-//??? Use types-lookup.
-
-	const type_entry_t a = touch_type(builder, type);
-	if(a.llvm_type_generic != nullptr){
-		return a.llvm_type_generic;
-	}
-	else{
-		return a.llvm_type_specific;
 	}
 }
 
@@ -503,15 +511,7 @@ llvm::Type* make_frp_type(const llvm_type_lookup& type_lookup){
 	return type_lookup.state.runtime_ptr_type;
 }
 
-/*
-llvm_function_def_t map_function_arguments(const llvm_type_lookup& type_lookup, const floyd::typeid_t& function_type){
-	QUARK_ASSERT(function_type.is_function());
 
-	const auto& entry = type_lookup.find_from_type(function_type);
-	QUARK_ASSERT(entry.optional_function_def);
-	return *entry.optional_function_def;
-}
-*/
 
 ////////////////////////////////		TESTS
 
