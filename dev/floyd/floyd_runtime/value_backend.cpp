@@ -1036,8 +1036,7 @@ const typeid_t& lookup_type(const value_backend_t& backend, itype_t itype){
 }
 
 
-
-itype_t lookup_vector_element_type(const value_backend_t& backend, itype_t itype){
+itype_t lookup_vector_element_itype(const value_backend_t& backend, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(itype.check_invariant());
 	QUARK_ASSERT(itype.is_vector());
@@ -1047,7 +1046,7 @@ itype_t lookup_vector_element_type(const value_backend_t& backend, itype_t itype
 	return lookup_itype(backend, element_type);
 }
 
-itype_t lookup_dict_value_type(const value_backend_t& backend, itype_t itype){
+itype_t lookup_dict_value_itype(const value_backend_t& backend, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(itype.check_invariant());
 	QUARK_ASSERT(itype.is_dict());
@@ -1193,8 +1192,7 @@ static void release_dict_deep(value_backend_t& backend, runtime_value_t dict0, i
 		if(dec_rc(dict.alloc) == 0){
 
 			//	Release all elements.
-			const auto element_type = lookup_type(backend, itype).get_dict_value_type();
-			const auto element_type2 = lookup_itype(backend, element_type);
+			const auto element_type2 = lookup_dict_value_itype(backend, itype);
 			if(is_rc_value(element_type2)){
 				auto m = dict.get_map();
 				for(const auto& e: m){
@@ -1209,8 +1207,7 @@ static void release_dict_deep(value_backend_t& backend, runtime_value_t dict0, i
 		if(dec_rc(dict.alloc) == 0){
 
 			//	Release all elements.
-			const auto element_type = lookup_type(backend, itype).get_dict_value_type();
-			const auto element_type2 = lookup_itype(backend, element_type);
+			const auto element_type2 = lookup_dict_value_itype(backend, itype);
 			if(is_rc_value(element_type2)){
 				auto m = dict.get_map();
 				for(const auto& e: m){
@@ -1234,13 +1231,12 @@ void release_vector_cppvector(value_backend_t& backend, runtime_value_t vec, ity
 	if(dec_rc(vec.vector_cppvector_ptr->alloc) == 0){
 		//	Release all elements.
 		{
-			const auto element_type = lookup_type(backend, itype).get_vector_element_type();
-			const auto element_type2 = lookup_itype(backend, element_type);
-			if(is_rc_value(element_type2)){
+			const auto element_type = lookup_vector_element_itype(backend, itype);
+			if(is_rc_value(element_type)){
 				auto element_ptr = vec.vector_cppvector_ptr->get_element_ptr();
 				for(int i = 0 ; i < vec.vector_cppvector_ptr->get_element_count() ; i++){
 					const auto& element = element_ptr[i];
-					release_deep(backend, element, element_type2);
+					release_deep(backend, element, element_type);
 				}
 			}
 		}
@@ -1254,11 +1250,10 @@ void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_val
 	QUARK_ASSERT(itype.check_invariant());
 	QUARK_ASSERT(is_vector_hamt(itype));
 
-	const auto element_type = lookup_type(backend, itype).get_vector_element_type();
-	const auto element_type2 = lookup_itype(backend, element_type);
+	const auto element_type = lookup_vector_element_itype(backend, itype);
 	for(int i = 0 ; i < vec.vector_hamt_ptr->get_element_count() ; i++){
 		const auto& element = vec.vector_hamt_ptr->load_element(i);
-		release_deep(backend, element, element_type2);
+		release_deep(backend, element, element_type);
 	}
 }
 
@@ -1279,9 +1274,8 @@ static void release_vec_deep(value_backend_t& backend, runtime_value_t vec, ityp
 		release_vector_cppvector(backend, vec, itype);
 	}
 	else if(is_vector_hamt(itype)){
-		const auto element_type = lookup_type(backend, itype).get_vector_element_type();
-		const auto element_type2 = lookup_itype(backend, element_type);
-		if(is_rc_value(element_type2)){
+		const auto element_type = lookup_vector_element_itype(backend, itype);
+		if(is_rc_value(element_type)){
 			release_vector_hamt_nonpod(backend, vec, itype);
 		}
 		else{

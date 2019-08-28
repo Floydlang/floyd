@@ -119,11 +119,8 @@ const runtime_value_t update__cppvector(value_backend_t& backend, runtime_value_
 	QUARK_ASSERT(type1.is_int());
 
 	const auto vec = unpack_vector_cppvector_arg(backend, arg0, arg0_type);
-	const auto element_type = type0.get_vector_element_type();
 	const auto index = arg1.int_value;
-
-	QUARK_ASSERT(element_type == type2);
-	const auto element_itype = lookup_itype(backend, element_type);
+	const auto element_itype = lookup_vector_element_itype(backend, itype_t(arg0_type));
 
 	if(index < 0 || index >= vec->get_element_count()){
 		quark::throw_runtime_error("Position argument to update() is outside collection span.");
@@ -162,11 +159,8 @@ const runtime_value_t update__vector_hamt(value_backend_t& backend, runtime_valu
 	QUARK_ASSERT(type1.is_int());
 
 	const auto vec = arg0.vector_hamt_ptr;
-	const auto element_type = type0.get_vector_element_type();
 	const auto index = arg1.int_value;
-
-	QUARK_ASSERT(element_type == type2);
-	const auto element_itype = lookup_itype(backend, element_type);
+	const auto element_itype = lookup_vector_element_itype(backend, itype_t(arg0_type));
 
 	if(index < 0 || index >= vec->get_element_count()){
 		quark::throw_runtime_error("Position argument to update() is outside collection span.");
@@ -275,7 +269,6 @@ const runtime_value_t subset__cppvector(value_backend_t& backend, runtime_value_
 	}
 
 	const auto type0 = lookup_type(backend, arg0_type);
-	const auto element_type = type0.get_vector_element_type();
 	const auto vec = unpack_vector_cppvector_arg(backend, arg0, arg0_type);
 	const auto end2 = std::min(end, vec->get_element_count());
 	const auto start2 = std::min(start, end2);
@@ -284,7 +277,7 @@ const runtime_value_t subset__cppvector(value_backend_t& backend, runtime_value_
 		throw std::exception();
 	}
 
-	const auto element_itype = lookup_itype(backend, element_type);
+	const auto element_itype = lookup_vector_element_itype(backend, itype_t(arg0_type));
 
 	auto vec2 = alloc_vector_ccpvector2(backend.heap, len2, len2, lookup_itype(backend, type0));
 	if(is_rc_value(element_itype)){
@@ -311,7 +304,6 @@ const runtime_value_t subset__hamt(value_backend_t& backend, runtime_value_t arg
 	}
 
 	const auto type0 = lookup_type(backend, arg0_type);
-	const auto element_type = type0.get_vector_element_type();
 	const auto& vec = *arg0.vector_hamt_ptr;
 	const auto end2 = std::min(end, vec.get_element_count());
 	const auto start2 = std::min(start, end2);
@@ -320,7 +312,7 @@ const runtime_value_t subset__hamt(value_backend_t& backend, runtime_value_t arg
 		throw std::exception();
 	}
 
-	const auto element_itype = lookup_itype(backend, element_type);
+	const auto element_itype = lookup_vector_element_itype(backend, itype_t(arg0_type));
 
 	auto vec2 = alloc_vector_hamt(backend.heap, len2, len2, itype_t(arg0_type));
 	if(is_rc_value(element_itype)){
@@ -396,8 +388,7 @@ const runtime_value_t replace__cppvector(value_backend_t& backend, runtime_value
 	const auto type0 = lookup_type(backend, arg0_type);
 	QUARK_ASSERT(lookup_type(backend, arg3_type) == type0);
 
-	const auto element_type = type0.get_vector_element_type();
-	const auto element_itype = lookup_itype(backend, element_type);
+	const auto element_itype = lookup_vector_element_itype(backend, itype_t(arg0_type));
 
 	const auto vec = unpack_vector_cppvector_arg(backend, arg0, arg0_type);
 	const auto replace_vec = unpack_vector_cppvector_arg(backend, arg3, arg3_type);
@@ -431,8 +422,7 @@ const runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t ar
 	const auto type0 = lookup_type(backend, arg0_type);
 	QUARK_ASSERT(lookup_type(backend, arg3_type) == type0);
 
-	const auto element_type = type0.get_vector_element_type();
-	const auto element_itype = lookup_itype(backend, element_type);
+	const auto element_itype = lookup_vector_element_itype(backend, itype_t(arg0_type));
 
 	const auto& vec = *arg0.vector_hamt_ptr;
 	const auto& replace_vec = *arg3.vector_hamt_ptr;
@@ -681,7 +671,7 @@ runtime_value_t concat_strings(value_backend_t& backend, const runtime_value_t& 
 	return to_runtime_string2(backend, result);
 }
 
-runtime_value_t concat_vector_cppvector(value_backend_t& backend, const typeid_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs){
+runtime_value_t concat_vector_cppvector(value_backend_t& backend, const itype_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(lhs.check_invariant());
@@ -689,12 +679,11 @@ runtime_value_t concat_vector_cppvector(value_backend_t& backend, const typeid_t
 
 	const auto count2 = lhs.vector_cppvector_ptr->get_element_count() + rhs.vector_cppvector_ptr->get_element_count();
 
-	auto result = alloc_vector_ccpvector2(backend.heap, count2, count2, lookup_itype(backend, type));
+	auto result = alloc_vector_ccpvector2(backend.heap, count2, count2, type);
 
 	//??? warning: assumes element = allocation.
 
-	const auto element_type = type.get_vector_element_type();
-	const auto element_itype = lookup_itype(backend, element_type);
+	const auto element_itype = lookup_vector_element_itype(backend, type);
 
 	auto dest_ptr = result.vector_cppvector_ptr->get_element_ptr();
 	auto dest_ptr2 = dest_ptr + lhs.vector_cppvector_ptr->get_element_count();
@@ -722,7 +711,7 @@ runtime_value_t concat_vector_cppvector(value_backend_t& backend, const typeid_t
 	return result;
 }
 
-runtime_value_t concat_vector_hamt(value_backend_t& backend, const typeid_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs){
+runtime_value_t concat_vector_hamt(value_backend_t& backend, const itype_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(lhs.check_invariant());
@@ -733,12 +722,11 @@ runtime_value_t concat_vector_hamt(value_backend_t& backend, const typeid_t& typ
 
 	const auto count2 = lhs_count + rhs_count;
 
-	auto result = alloc_vector_hamt(backend.heap, count2, count2, lookup_itype(backend, type));
+	auto result = alloc_vector_hamt(backend.heap, count2, count2, type);
 
 	//??? warning: assumes element = allocation.
 
-	const auto element_type = type.get_vector_element_type();
-	const auto element_itype = lookup_itype(backend, element_type);
+	const auto element_itype = lookup_vector_element_itype(backend, type);
 
 	//??? Causes a full path copy for EACH ELEMENT = slow. better to make new hamt in one go.
 	if(is_rc_value(element_itype)){

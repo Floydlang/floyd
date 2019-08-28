@@ -281,7 +281,7 @@ static runtime_value_t floydrt_concatunate_vectors(floyd_runtime_t* frp, runtime
 	QUARK_ASSERT(lhs.check_invariant());
 	QUARK_ASSERT(rhs.check_invariant());
 
-	const auto type0 = lookup_type(r.backend, type);
+	const auto type0 = itype_t(type);
 	if(type0.is_string()){
 		return concat_strings(r.backend, lhs, rhs);
 	}

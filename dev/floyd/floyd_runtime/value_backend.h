@@ -709,8 +709,8 @@ itype_t lookup_itype(const value_backend_t& backend, const typeid_t& type);
 const typeid_t& lookup_type(const value_backend_t& backend, runtime_type_t type);
 const typeid_t& lookup_type(const value_backend_t& backend, itype_t itype);
 
-itype_t lookup_vector_element_type(const value_backend_t& backend, itype_t itype);
-itype_t lookup_dict_value_type(const value_backend_t& backend, itype_t itype);
+itype_t lookup_vector_element_itype(const value_backend_t& backend, itype_t itype);
+itype_t lookup_dict_value_itype(const value_backend_t& backend, itype_t itype);
 const std::pair<itype_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, itype_t type);
 
 

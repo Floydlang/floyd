@@ -679,7 +679,7 @@ static runtime_value_t filter__cppvector(floyd_runtime_t* frp, value_backend_t& 
 
 	auto count = vec.get_element_count();
 
-	const auto e_element_itype = lookup_vector_element_type(backend, itype_t(arg0_type));
+	const auto e_element_itype = lookup_vector_element_itype(backend, itype_t(arg0_type));
 
 	std::vector<runtime_value_t> acc;
 	for(int i = 0 ; i < count ; i++){
@@ -724,7 +724,7 @@ static runtime_value_t filter__hamt(floyd_runtime_t* frp, value_backend_t& backe
 
 	auto count = vec.get_element_count();
 
-	const auto e_element_itype = lookup_vector_element_type(backend, itype_t(arg0_type));
+	const auto e_element_itype = lookup_vector_element_itype(backend, itype_t(arg0_type));
 
 	std::vector<runtime_value_t> acc;
 	for(int i = 0 ; i < count ; i++){
@@ -891,6 +891,7 @@ static runtime_value_t stable_sort__cppvector(
 	auto mutate_inplace_elements = elements2.get_vector_value();
 	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
 
+	//??? optimize
 	const auto result = to_runtime_value2(backend, value_t::make_vector_value(type0.get_vector_element_type(), mutate_inplace_elements));
 	return result;
 }
@@ -941,6 +942,7 @@ static runtime_value_t stable_sort__hamt(
 	auto mutate_inplace_elements = elements2.get_vector_value();
 	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
 
+	//??? optimize
 	const auto result = to_runtime_value2(backend, value_t::make_vector_value(type0.get_vector_element_type(), mutate_inplace_elements));
 	return result;
 }
