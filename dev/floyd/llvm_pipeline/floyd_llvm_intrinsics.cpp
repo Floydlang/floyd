@@ -258,20 +258,23 @@ static runtime_value_t floyd_llvm_intrinsic__from_json(floyd_runtime_t* frp, JSO
 
 
 
-
+//??? Record all types at compile time, provide as arguments here.
 
 typedef runtime_value_t (*MAP_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value);
 
 static runtime_value_t map__cppvector(floyd_runtime_t* frp, value_backend_t& backend, runtime_value_t elements_vec, runtime_type_t elements_vec_type, runtime_value_t f_value, runtime_type_t f_value_type, runtime_value_t context_value, runtime_type_t context_value_type){
+
+	const auto type1 = lookup_type(backend, f_value_type);
+#if DEBUG
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto type0 = lookup_type(backend, elements_vec_type);
-	const auto type1 = lookup_type(backend, f_value_type);
 	const auto type2 = lookup_type(backend, context_value_type);
 	QUARK_ASSERT(check_map_func_type(type0, type1, type2));
 
 	const auto e_type = type0.get_vector_element_type();
 	const auto f_arg_types = type1.get_function_args();
+#endif
 	const auto r_type = type1.get_function_return();
 	const auto f = reinterpret_cast<MAP_F>(f_value.function_ptr);
 
@@ -286,15 +289,18 @@ static runtime_value_t map__cppvector(floyd_runtime_t* frp, value_backend_t& bac
 }
 
 static runtime_value_t map__hamt(floyd_runtime_t* frp, value_backend_t& backend, runtime_value_t elements_vec, runtime_type_t elements_vec_type, runtime_value_t f_value, runtime_type_t f_value_type, runtime_value_t context_value, runtime_type_t context_value_type){
+
+	const auto type1 = lookup_type(backend, f_value_type);
+#if DEBUG
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto type0 = lookup_type(backend, elements_vec_type);
-	const auto type1 = lookup_type(backend, f_value_type);
 	const auto type2 = lookup_type(backend, context_value_type);
 	QUARK_ASSERT(check_map_func_type(type0, type1, type2));
 
 	const auto e_type = type0.get_vector_element_type();
 	const auto f_arg_types = type1.get_function_args();
+#endif
 	const auto r_type = type1.get_function_return();
 	const auto f = reinterpret_cast<MAP_F>(f_value.function_ptr);
 
@@ -387,7 +393,9 @@ static runtime_value_t map_dag__cppvector(
 	QUARK_ASSERT(check_map_dag_func_type(type0, type1, type2, lookup_type(backend, context_type)));
 
 	const auto& elements = arg0_value;
+#if DEBUG
 	const auto& e_type = type0.get_vector_element_type();
+#endif
 	const auto& parents = arg1_value;
 	const auto& f = arg2_value;
 	const auto& r_type = type2.get_function_return();
@@ -512,7 +520,9 @@ static runtime_value_t map_dag__hamt(
 	QUARK_ASSERT(check_map_dag_func_type(type0, type1, type2, lookup_type(backend, context_type)));
 
 	const auto& elements = arg0_value;
+#if DEBUG
 	const auto& e_type = type0.get_vector_element_type();
+#endif
 	const auto& parents = arg1_value;
 	const auto& f = arg2_value;
 	const auto& r_type = type2.get_function_return();
@@ -669,8 +679,7 @@ static runtime_value_t filter__cppvector(floyd_runtime_t* frp, value_backend_t& 
 
 	auto count = vec.get_element_count();
 
-	const auto e_element_type = type0.get_vector_element_type();
-	const auto e_element_itype = lookup_itype(r.backend, e_element_type);
+	const auto e_element_itype = lookup_vector_element_type(backend, itype_t(arg0_type));
 
 	std::vector<runtime_value_t> acc;
 	for(int i = 0 ; i < count ; i++){
@@ -715,8 +724,7 @@ static runtime_value_t filter__hamt(floyd_runtime_t* frp, value_backend_t& backe
 
 	auto count = vec.get_element_count();
 
-	const auto e_element_type = type0.get_vector_element_type();
-	const auto e_element_itype = lookup_itype(r.backend, e_element_type);
+	const auto e_element_itype = lookup_vector_element_type(backend, itype_t(arg0_type));
 
 	std::vector<runtime_value_t> acc;
 	for(int i = 0 ; i < count ; i++){
