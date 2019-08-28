@@ -297,7 +297,7 @@ static llvm::Type* make_exact_type_internal(builder_t& builder, const typeid_t& 
 			return make_function_type_internal(builder, type);
 		}
 		llvm::Type* operator()(const typeid_t::unresolved_t& e) const{
-			UNSUPPORTED();
+//			UNSUPPORTED();
 			return llvm::Type::getInt16Ty(builder.context);
 		}
 	};

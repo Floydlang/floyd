@@ -52,7 +52,6 @@ struct type_interner_t {
 	////////////////////////////////	STATE
 	std::vector<std::pair<itype_t, typeid_t>> interned;
 
-	int32_t simple_next_id;
 	int32_t struct_next_id;
 	int32_t vector_next_id;
 	int32_t dict_next_id;
@@ -63,6 +62,8 @@ struct type_interner_t {
 std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid_t& type);
 itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type);
 typeid_t lookup_type(const type_interner_t& interner, const itype_t& type);
+
+
 
 inline bool is_simple(itype_t type){
 	return type.itype >= 0 && type.itype < 100000000;
@@ -84,9 +85,41 @@ inline bool is_function(itype_t type){
 	return type.itype >= 400000000;
 }
 
-itype_t get_undefined_itype();
-itype_t get_string_itype();
-itype_t get_json_itype();
+inline base_type get_basetype(itype_t itype){
+	if(is_simple(itype)){
+		const auto result = static_cast<base_type>(itype.itype);
+		return result;
+	}
+	else{
+		if(is_struct(itype)){
+			return base_type::k_struct;
+		}
+		else if(is_vector(itype)){
+			return base_type::k_vector;
+		}
+		else if(is_dict(itype)){
+			return base_type::k_dict;
+		}
+		else if(is_function(itype)){
+			return base_type::k_function;
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+}
+
+inline itype_t make_itype(base_type type){
+	const auto value = static_cast<int32_t>(type);
+	return itype_t(value);
+}
+
+inline itype_t get_undefined_itype(){
+	return make_itype(base_type::k_undefined);
+}
+inline itype_t get_json_itype(){
+	return make_itype(base_type::k_json);
+}
 
 
 

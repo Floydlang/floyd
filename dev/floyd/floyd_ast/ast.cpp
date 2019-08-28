@@ -30,36 +30,33 @@ namespace floyd {
 
 //??? move out of ast. Needed at runtime
 
-itype_t get_undefined_itype(){
-	return itype_t(0);
-}
-itype_t get_string_itype(){
-	return itype_t(6);
-}
 
-itype_t get_json_itype(){
-	return itype_t(7);
-}
 
 type_interner_t::type_interner_t() :
-	simple_next_id(0),
 	struct_next_id(100000000),
 	vector_next_id(200000000),
 	dict_next_id(300000000),
 	function_next_id(400000000)
 {
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(0), typeid_t::make_undefined() });
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(1), typeid_t::make_any() });
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(2), typeid_t::make_void() });
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_undefined)), typeid_t::make_undefined() });
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_any)), typeid_t::make_any() });
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_void)), typeid_t::make_void() });
 
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(3), typeid_t::make_bool() });
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(4), typeid_t::make_int() });
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(5), typeid_t::make_double() });
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(6), typeid_t::make_string() });
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(7), typeid_t::make_json() });
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_bool)), typeid_t::make_bool() });
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_int)), typeid_t::make_int() });
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_double)), typeid_t::make_double() });
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_string)), typeid_t::make_string() });
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_json)), typeid_t::make_json() });
 
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(8), typeid_t::make_typeid() });
-	simple_next_id = static_cast<int32_t>(interned.size());
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_typeid)), typeid_t::make_typeid() });
+
+	//	These are complex types and are undefined. We need them to take up space in the interned-vector.
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_struct)), typeid_t::make_undefined() });
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_vector)), typeid_t::make_undefined() });
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_dict)), typeid_t::make_undefined() });
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_function)), typeid_t::make_undefined() });
+
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_unresolved)), typeid_t::make_unresolved_type_identifier("") });
 
 	QUARK_ASSERT(check_invariant());
 }
@@ -86,6 +83,7 @@ bool type_interner_t::check_invariant() const {
 	QUARK_ASSERT(check_basetype(*this, base_type::k_json));
 
 	QUARK_ASSERT(check_basetype(*this, base_type::k_typeid));
+	QUARK_ASSERT(check_basetype(*this, base_type::k_unresolved));
 
 	//!!! We don't register struct, vector, dict and function, since those get explicit types.
 
@@ -94,8 +92,6 @@ bool type_interner_t::check_invariant() const {
 
 	return true;
 }
-
-
 
 static itype_t make_new_itype_recursive(type_interner_t& interner, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
@@ -176,8 +172,7 @@ static itype_t make_new_itype_recursive(type_interner_t& interner, const typeid_
 			return result;
 		}
 		int32_t operator()(const typeid_t::unresolved_t& e) const{
-			interner.interned.push_back({ itype_t(interner.simple_next_id), type });
-			return interner.simple_next_id++;
+			QUARK_ASSERT(false);
 		}
 	};
 	const auto new_id = std::visit(visitor_t{ interner, type }, type._contents);
