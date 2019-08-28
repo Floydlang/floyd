@@ -200,7 +200,7 @@ const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_valu
 	const auto value_itype = lookup_runtime_type(backend, value_type);
 
 	//	Deep copy dict.
-	auto dict2 = alloc_dict_cppmap(backend.heap, lookup_runtime_type(backend, type0));
+	auto dict2 = alloc_dict_cppmap(backend.heap, itype_t(arg0_type));
 	dict2.dict_cppmap_ptr->get_map_mut() = dict->get_map();
 
 	dict2.dict_cppmap_ptr->get_map_mut().insert_or_assign(key, arg2);
@@ -229,7 +229,7 @@ const runtime_value_t update__dict_hamt(value_backend_t& backend, runtime_value_
 	const auto value_itype = lookup_runtime_type(backend, value_type);
 
 	//	Deep copy dict.
-	auto dict2 = alloc_dict_hamt(backend.heap, lookup_runtime_type(backend, type0));
+	auto dict2 = alloc_dict_hamt(backend.heap, itype_t(arg1_type));
 	dict2.dict_hamt_ptr->get_map_mut() = dict->get_map();
 
 	dict2.dict_hamt_ptr->get_map_mut() = dict2.dict_hamt_ptr->get_map_mut().set(key, arg2);
@@ -322,7 +322,7 @@ const runtime_value_t subset__hamt(value_backend_t& backend, runtime_value_t arg
 
 	const auto element_itype = lookup_runtime_type(backend, element_type);
 
-	auto vec2 = alloc_vector_hamt(backend.heap, len2, len2, lookup_runtime_type(backend, type0));
+	auto vec2 = alloc_vector_hamt(backend.heap, len2, len2, itype_t(arg0_type));
 	if(is_rc_value(element_type)){
 		for(int i = 0 ; i < len2 ; i++){
 			const auto& value = vec.load_element(start2 + i);
@@ -445,7 +445,7 @@ const runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t ar
 	const auto section3_len = vec.get_element_count() - end2;
 
 	const auto len2 = section1_len + section2_len + section3_len;
-	auto vec2 = alloc_vector_hamt(backend.heap, len2, len2, lookup_runtime_type(backend, type0));
+	auto vec2 = alloc_vector_hamt(backend.heap, len2, len2, itype_t(arg0_type));
 	for(size_t i = 0 ; i < section1_len ; i++){
 		const auto& value = vec.load_element(0 + i);
 		vec2.vector_hamt_ptr->store_mutate(0 + i, value);
@@ -579,7 +579,7 @@ runtime_value_t get_keys__cppmap_hamt(value_backend_t& backend, runtime_value_t 
 	const auto& m = dict->get_map();
 	const auto count = (uint64_t)m.size();
 
-	auto result_vec = alloc_vector_hamt(backend.heap, count, count, lookup_runtime_type(backend, typeid_t::make_vector(typeid_t::make_string())));
+	auto result_vec = alloc_vector_hamt(backend.heap, count, count, lookup_itype(backend, typeid_t::make_vector(typeid_t::make_string())));
 
 	int index = 0;
 	for(const auto& e: m){
@@ -627,7 +627,7 @@ runtime_value_t get_keys__hamtmap_hamt(value_backend_t& backend, runtime_value_t
 	const auto& m = dict->get_map();
 	const auto count = (uint64_t)m.size();
 
-	auto result_vec = alloc_vector_hamt(backend.heap, count, count, lookup_runtime_type(backend, typeid_t::make_vector(typeid_t::make_string())));
+	auto result_vec = alloc_vector_hamt(backend.heap, count, count, lookup_itype(backend, typeid_t::make_vector(typeid_t::make_string())));
 
 	int index = 0;
 	for(const auto& e: m){
@@ -733,7 +733,7 @@ runtime_value_t concat_vector_hamt(value_backend_t& backend, const typeid_t& typ
 
 	const auto count2 = lhs_count + rhs_count;
 
-	auto result = alloc_vector_hamt(backend.heap, count2, count2, lookup_runtime_type(backend, type));
+	auto result = alloc_vector_hamt(backend.heap, count2, count2, lookup_itype(backend, type));
 
 	//??? warning: assumes element = allocation.
 

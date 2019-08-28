@@ -112,7 +112,7 @@ static runtime_value_t to_runtime_struct(value_backend_t& backend, const typeid_
 
 	const auto& struct_layout = find_struct_layout(backend, value.get_type());
 
-	auto s = alloc_struct(backend.heap, struct_layout.second.size, lookup_runtime_type(backend, value.get_type()));
+	auto s = alloc_struct(backend.heap, struct_layout.second.size, lookup_itype(backend, value.get_type()));
 	const auto struct_base_ptr = s->get_data_ptr();
 
 	int member_index = 0;
@@ -178,7 +178,7 @@ static runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t
 			const auto a = to_runtime_value2(backend, e);
 			temp.push_back(a);
 		}
-		auto result = alloc_vector_hamt(backend.heap, &temp[0], temp.size(), lookup_runtime_type(backend, value.get_type()));
+		auto result = alloc_vector_hamt(backend.heap, &temp[0], temp.size(), lookup_itype(backend, value.get_type()));
 		return result;
 	}
 	else{
@@ -236,7 +236,7 @@ static runtime_value_t to_runtime_dict(value_backend_t& backend, const typeid_t:
 	if(is_dict_cppmap(value.get_type())){
 		const auto& v0 = value.get_dict_value();
 
-		auto result = alloc_dict_cppmap(backend.heap, lookup_runtime_type(backend, value.get_type()));
+		auto result = alloc_dict_cppmap(backend.heap, lookup_itype(backend, value.get_type()));
 
 		const auto element_type = value.get_type().get_dict_value_type();
 		auto& m = result.dict_cppmap_ptr->get_map_mut();
@@ -249,7 +249,7 @@ static runtime_value_t to_runtime_dict(value_backend_t& backend, const typeid_t:
 	else if(is_dict_hamt(value.get_type())){
 		const auto& v0 = value.get_dict_value();
 
-		auto result = alloc_dict_hamt(backend.heap, lookup_runtime_type(backend, value.get_type()));
+		auto result = alloc_dict_hamt(backend.heap, lookup_itype(backend, value.get_type()));
 
 		const auto element_type = value.get_type().get_dict_value_type();
 		auto& m = result.dict_hamt_ptr->get_map_mut();

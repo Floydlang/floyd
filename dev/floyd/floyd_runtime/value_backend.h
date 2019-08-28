@@ -64,6 +64,7 @@ const bool k_global_dict_is_hamt = true;
 /*
 	An integer that specifies a unique type a type interner. Use this to specify types in running program.
 	Avoid using floyd::typeid_t
+	It is 1:1 compatible with itype_t. Use itype_t except in binary situations.
 */
 
 typedef int32_t runtime_type_t;
@@ -509,8 +510,8 @@ struct VECTOR_HAMT_T {
 	heap_alloc_64_t alloc;
 };
 
-runtime_value_t alloc_vector_hamt(heap_t& heap, uint64_t allocation_count, uint64_t element_count, runtime_type_t value_type);
-runtime_value_t alloc_vector_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count, runtime_type_t value_type);
+runtime_value_t alloc_vector_hamt(heap_t& heap, uint64_t allocation_count, uint64_t element_count, itype_t value_type);
+runtime_value_t alloc_vector_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count, itype_t value_type);
 void dispose_vector_hamt(const runtime_value_t& vec);
 
 runtime_value_t store_immutable(const runtime_value_t& vec, const uint64_t index, runtime_value_t value);
@@ -544,7 +545,7 @@ struct DICT_CPPMAP_T {
 	heap_alloc_64_t alloc;
 };
 
-runtime_value_t alloc_dict_cppmap(heap_t& heap, runtime_type_t value_type);
+runtime_value_t alloc_dict_cppmap(heap_t& heap, itype_t value_type);
 void dispose_dict_cppmap(runtime_value_t& vec);
 
 
@@ -574,7 +575,7 @@ struct DICT_HAMT_T {
 	heap_alloc_64_t alloc;
 };
 
-runtime_value_t alloc_dict_hamt(heap_t& heap, runtime_type_t value_type);
+runtime_value_t alloc_dict_hamt(heap_t& heap, itype_t value_type);
 void dispose_dict_hamt(runtime_value_t& vec);
 
 
@@ -631,7 +632,7 @@ struct STRUCT_T {
 	heap_alloc_64_t alloc;
 };
 
-STRUCT_T* alloc_struct(heap_t& heap, std::size_t size, runtime_type_t value_type);
+STRUCT_T* alloc_struct(heap_t& heap, std::size_t size, itype_t value_type);
 void dispose_struct(STRUCT_T& v);
 
 
@@ -703,6 +704,7 @@ struct value_backend_t {
 runtime_type_t lookup_runtime_type(const value_backend_t& backend, const typeid_t& type);
 itype_t lookup_itype(const value_backend_t& backend, const typeid_t& type);
 typeid_t lookup_type(const value_backend_t& backend, runtime_type_t itype);
+typeid_t lookup_type(const value_backend_t& backend, itype_t itype);
 
 
 const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, const typeid_t& type);

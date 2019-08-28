@@ -77,7 +77,7 @@ static runtime_value_t floydrt_allocate_vector(floyd_runtime_t* frp, runtime_typ
 		return alloc_vector_ccpvector2(r.backend.heap, element_count, element_count, itype_t(type));
 	}
 	else if(is_vector_hamt(type1)){
-		return alloc_vector_hamt(r.backend.heap, element_count, element_count, type);
+		return alloc_vector_hamt(r.backend.heap, element_count, element_count, itype_t(type));
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -122,7 +122,7 @@ static runtime_value_t floydrt_allocate_vector_fill(floyd_runtime_t* frp, runtim
 		return alloc_vector_ccpvector2(r.backend.heap, element_count, element_count, itype_t(type));
 	}
 	else if(is_vector_hamt(type1)){
-		return alloc_vector_hamt(r.backend.heap, element_count, element_count, type);
+		return alloc_vector_hamt(r.backend.heap, element_count, element_count, itype_t(type));
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -389,10 +389,10 @@ static const runtime_value_t floydrt_allocate_dict(floyd_runtime_t* frp, runtime
 
 	const auto type0 = lookup_type(r.backend, type);
 	if(is_dict_cppmap(type0)){
-		return alloc_dict_cppmap(r.backend.heap, type);
+		return alloc_dict_cppmap(r.backend.heap, itype_t(type));
 	}
 	else if(is_dict_hamt(type0)){
-		return alloc_dict_hamt(r.backend.heap, type);
+		return alloc_dict_hamt(r.backend.heap, itype_t(type));
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -785,7 +785,7 @@ static STRUCT_T* floydrt_allocate_struct(floyd_runtime_t* frp, const runtime_typ
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.backend, type);
-	auto v = alloc_struct(r.backend.heap, size, type);
+	auto v = alloc_struct(r.backend.heap, size, itype_t(type));
 	return v;
 }
 
@@ -898,7 +898,7 @@ static const STRUCT_T* floydrt_update_struct_member(floyd_runtime_t* frp, STRUCT
 	const auto struct_bytes = layout->getSizeInBytes();
 
 	//??? Touches memory twice.
-	auto struct_ptr = alloc_struct(r.backend.heap, struct_bytes, struct_type);
+	auto struct_ptr = alloc_struct(r.backend.heap, struct_bytes, itype_t(struct_type));
 	auto struct_base_ptr = struct_ptr->get_data_ptr();
 	std::memcpy(struct_base_ptr, source_struct_ptr->get_data_ptr(), struct_bytes);
 
