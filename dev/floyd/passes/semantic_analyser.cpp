@@ -2576,9 +2576,7 @@ semantic_ast_t run_semantic_analysis(const unchecked_ast_t& ast){
 		}
 		{
 			QUARK_SCOPED_TRACE("OUTPUT TYPES");
-			for(const auto& e: result._tree._interned_types.interned){
-				QUARK_TRACE_SS(e.first.itype << ": " << typeid_to_compact_string(e.second));
-			}
+			trace_type_interner(result._tree._interned_types);
 		}
 
 		return result;

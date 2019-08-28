@@ -6,7 +6,7 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-const bool k_trace_input_output = true;
+const bool k_trace_input_output = false;
 const bool k_trace_types = k_trace_input_output;
 static const bool k_trace_function_defs = false;
 
@@ -317,7 +317,7 @@ int64_t pack_itype(const llvm_code_generator_t& gen_acc, const typeid_t& type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	return lookup_itype(gen_acc.type_lookup, type).itype;
+	return lookup_itype(gen_acc.type_lookup, type).get_data();
 }
 
 llvm::Constant* generate_itype_constant(const llvm_code_generator_t& gen_acc, const typeid_t& type){
@@ -2699,11 +2699,8 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 		QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast0)));
 	}
 	if(k_trace_types){
-		{
-			QUARK_SCOPED_TRACE("ast0 types");			for(const auto& e: ast0._tree._interned_types.interned){
-				QUARK_TRACE_SS(e.first.itype << ": " << typeid_to_compact_string(e.second));
-			}
-		}
+		QUARK_SCOPED_TRACE("ast0 types");
+		trace_type_interner(ast0._tree._interned_types);
 	}
 
 	auto ast = ast0;

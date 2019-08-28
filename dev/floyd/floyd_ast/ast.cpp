@@ -31,62 +31,75 @@ namespace floyd {
 //??? move out of ast. Needed at runtime
 
 
-type_interner_t::type_interner_t() :
-	struct_next_id(100000000),
-	vector_next_id(200000000),
-	dict_next_id(300000000),
-	function_next_id(400000000)
-{
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_undefined)), typeid_t::make_undefined() });
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_any)), typeid_t::make_any() });
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_void)), typeid_t::make_void() });
+type_interner_t::type_interner_t(){
+	//	Order is designed to match up the interned[] with base_type indexes.
+	interned.push_back(typeid_t::make_undefined());
+	interned.push_back(typeid_t::make_any());
+	interned.push_back(typeid_t::make_void());
 
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_bool)), typeid_t::make_bool() });
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_int)), typeid_t::make_int() });
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_double)), typeid_t::make_double() });
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_string)), typeid_t::make_string() });
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_json)), typeid_t::make_json() });
+	interned.push_back(typeid_t::make_bool());
+	interned.push_back(typeid_t::make_int());
+	interned.push_back(typeid_t::make_double());
+	interned.push_back(typeid_t::make_string());
+	interned.push_back(typeid_t::make_json());
 
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_typeid)), typeid_t::make_typeid() });
+	interned.push_back(typeid_t::make_typeid());
 
 	//	These are complex types and are undefined. We need them to take up space in the interned-vector.
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_struct)), typeid_t::make_undefined() });
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_vector)), typeid_t::make_undefined() });
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_dict)), typeid_t::make_undefined() });
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_function)), typeid_t::make_undefined() });
+	interned.push_back(typeid_t::make_undefined());
+	interned.push_back(typeid_t::make_undefined());
+	interned.push_back(typeid_t::make_undefined());
+	interned.push_back(typeid_t::make_undefined());
 
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(static_cast<int>(base_type::k_unresolved)), typeid_t::make_unresolved_type_identifier("") });
+	interned.push_back(typeid_t::make_unresolved_type_identifier(""));
 
 	QUARK_ASSERT(check_invariant());
 }
 
+bool type_interner_t::check_invariant() const {
+	QUARK_ASSERT(interned.size() < INT_MAX);
 
-bool check_basetype(const type_interner_t& interner, base_type type){
-	const int index = static_cast<int>(type);
-	const auto& i = interner.interned[index];
+	QUARK_ASSERT(interned[(int)base_type::k_undefined] == typeid_t::make_undefined());
+	QUARK_ASSERT(interned[(int)base_type::k_any] == typeid_t::make_any());
+	QUARK_ASSERT(interned[(int)base_type::k_void] == typeid_t::make_void());
 
-	QUARK_ASSERT(i.first.itype == index);
-	QUARK_ASSERT(i.second.get_base_type() == type);
+	QUARK_ASSERT(interned[(int)base_type::k_bool] == typeid_t::make_bool());
+	QUARK_ASSERT(interned[(int)base_type::k_int] == typeid_t::make_int());
+	QUARK_ASSERT(interned[(int)base_type::k_double] == typeid_t::make_double());
+	QUARK_ASSERT(interned[(int)base_type::k_string] == typeid_t::make_string());
+	QUARK_ASSERT(interned[(int)base_type::k_json] == typeid_t::make_json());
+
+	QUARK_ASSERT(interned[(int)base_type::k_typeid] == typeid_t::make_typeid());
+
+	QUARK_ASSERT(interned[(int)base_type::k_struct].is_undefined());
+	QUARK_ASSERT(interned[(int)base_type::k_vector].is_undefined());
+	QUARK_ASSERT(interned[(int)base_type::k_dict].is_undefined());
+	QUARK_ASSERT(interned[(int)base_type::k_function].is_undefined());
+
+	QUARK_ASSERT(interned[(int)base_type::k_unresolved] == typeid_t::make_unresolved_type_identifier(""));
+
+//??? Add other common combinations, like vectors with each atomic type, dict with each atomic type.
 	return true;
 }
 
-bool type_interner_t::check_invariant() const {
-	QUARK_ASSERT(check_basetype(*this, base_type::k_undefined));
-	QUARK_ASSERT(check_basetype(*this, base_type::k_any));
-	QUARK_ASSERT(check_basetype(*this, base_type::k_void));
 
-	QUARK_ASSERT(check_basetype(*this, base_type::k_bool));
-	QUARK_ASSERT(check_basetype(*this, base_type::k_int));
-	QUARK_ASSERT(check_basetype(*this, base_type::k_double));
-	QUARK_ASSERT(check_basetype(*this, base_type::k_string));
-	QUARK_ASSERT(check_basetype(*this, base_type::k_json));
-
-	QUARK_ASSERT(check_basetype(*this, base_type::k_typeid));
-	QUARK_ASSERT(check_basetype(*this, base_type::k_unresolved));
-
-	//!!! We don't register struct, vector, dict and function, since those get explicit types.
-
-	return true;
+static itype_t make_itype_from_parts(int lookup_index, const typeid_t& type){
+	if(type.is_struct()){
+		return itype_t::make_struct(lookup_index);
+	}
+	else if(type.is_vector()){
+		return itype_t::make_vector(lookup_index, type.get_vector_element_type().get_base_type());
+	}
+	else if(type.is_dict()){
+		return itype_t::make_dict(lookup_index, type.get_dict_value_type().get_base_type());
+	}
+	else if(type.is_function()){
+		return itype_t::make_function(lookup_index);
+	}
+	else{
+		const auto bt = type.get_base_type();
+		return itype_t::assemble2((int)bt, bt, base_type::k_undefined);
+	}
 }
 
 static itype_t make_new_itype_recursive(type_interner_t& interner, const typeid_t& type){
@@ -97,104 +110,103 @@ static itype_t make_new_itype_recursive(type_interner_t& interner, const typeid_
 		type_interner_t& interner;
 		const typeid_t& type;
 
-		int32_t operator()(const typeid_t::undefined_t& e) const{
+		itype_t operator()(const typeid_t::undefined_t& e) const{
 			QUARK_ASSERT(false);
 			throw std::exception();
 		}
-		int32_t operator()(const typeid_t::any_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-
-		int32_t operator()(const typeid_t::void_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-		int32_t operator()(const typeid_t::bool_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-		int32_t operator()(const typeid_t::int_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-		int32_t operator()(const typeid_t::double_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-		int32_t operator()(const typeid_t::string_t& e) const{
+		itype_t operator()(const typeid_t::any_t& e) const{
 			QUARK_ASSERT(false);
 			throw std::exception();
 		}
 
-		int32_t operator()(const typeid_t::json_type_t& e) const{
+		itype_t operator()(const typeid_t::void_t& e) const{
 			QUARK_ASSERT(false);
 			throw std::exception();
 		}
-		int32_t operator()(const typeid_t::typeid_type_t& e) const{
+		itype_t operator()(const typeid_t::bool_t& e) const{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+		itype_t operator()(const typeid_t::int_t& e) const{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+		itype_t operator()(const typeid_t::double_t& e) const{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+		itype_t operator()(const typeid_t::string_t& e) const{
 			QUARK_ASSERT(false);
 			throw std::exception();
 		}
 
-		int32_t operator()(const typeid_t::struct_t& e) const{
-			//	Warning: Need to remember struct_next_id since members can add intern other structs and bump struct_next_id.
-			interner.interned.push_back({ itype_t(interner.struct_next_id), type });
-			const auto result = interner.struct_next_id++;
+		itype_t operator()(const typeid_t::json_type_t& e) const{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+		itype_t operator()(const typeid_t::typeid_type_t& e) const{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
 
+		itype_t operator()(const typeid_t::struct_t& e) const{
 			for(const auto& m: e._struct_def->_members){
 				intern_type(interner, m._type);
 			}
-			return result;
+			interner.interned.push_back(type);
+			const auto lookup_index = static_cast<int32_t>(interner.interned.size() - 1);
+			return itype_t::make_struct(lookup_index);
 		}
-		int32_t operator()(const typeid_t::vector_t& e) const{
-			//	Warning: Need to remember vector_next_id since members can add intern other structs and bump vector_next_id.
+		itype_t operator()(const typeid_t::vector_t& e) const{
 			QUARK_ASSERT(e._parts.size() == 1);
 
-			interner.interned.push_back({ itype_t(interner.vector_next_id), type });
-			const auto result = interner.vector_next_id++;
+			const auto element_type = intern_type(interner, e._parts[0]);
 
-			intern_type(interner, e._parts[0]);
-			return result;
+			interner.interned.push_back(type);
+			const auto lookup_index = static_cast<int32_t>(interner.interned.size() - 1);
+			return itype_t::make_vector(lookup_index, element_type.first.get_base_type());
 		}
-		int32_t operator()(const typeid_t::dict_t& e) const{
+		itype_t operator()(const typeid_t::dict_t& e) const{
 			//	Warning: Need to remember dict_next_id since members can add intern other structs and bump dict_next_id.
 			QUARK_ASSERT(e._parts.size() == 1);
 
-			interner.interned.push_back({ itype_t(interner.dict_next_id), type });
-			const auto result = interner.dict_next_id++;
+			const auto element_type = intern_type(interner, e._parts[0]);
 
-			intern_type(interner, e._parts[0]);
-			return result;
+			interner.interned.push_back(type);
+			const auto lookup_index = static_cast<int32_t>(interner.interned.size() - 1);
+			return itype_t::make_dict(lookup_index, element_type.first.get_base_type());
 		}
-		int32_t operator()(const typeid_t::function_t& e) const{
-			//	Warning: Need to remember function_next_id since members can add intern other structs and bump function_next_id.
-			interner.interned.push_back({ itype_t(interner.function_next_id), type });
-			const auto result = interner.function_next_id++;
-
+		itype_t operator()(const typeid_t::function_t& e) const{
 			for(const auto& m: e._parts){
 				intern_type(interner, m);
 			}
-			return result;
+			interner.interned.push_back(type);
+			const auto lookup_index = static_cast<int32_t>(interner.interned.size() - 1);
+			return itype_t::make_function(lookup_index);
 		}
-		int32_t operator()(const typeid_t::unresolved_t& e) const{
+		itype_t operator()(const typeid_t::unresolved_t& e) const{
 			QUARK_ASSERT(false);
 			throw std::exception();
 		}
 	};
-	const auto new_id = std::visit(visitor_t{ interner, type }, type._contents);
+	const auto result = std::visit(visitor_t{ interner, type }, type._contents);
 
 	QUARK_ASSERT(interner.check_invariant());
 
-	return { itype_t(new_id) };
+	return result;
 }
+
+
 
 std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto it = std::find_if(interner.interned.begin(), interner.interned.end(), [&](const std::pair<itype_t, typeid_t>& e){ return e.second == type; });
+	const auto it = std::find_if(interner.interned.begin(), interner.interned.end(), [&](const auto& e){ return e == type; });
 	if(it != interner.interned.end()){
-		return *it;
+		const auto index = it - interner.interned.begin();
+		const auto lookup_index = static_cast<int32_t>(index);
+		return { make_itype_from_parts(lookup_index, type), type };
 	}
 	else{
 		const auto itype = make_new_itype_recursive(interner, type);
@@ -207,9 +219,11 @@ itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto it = std::find_if(interner.interned.begin(), interner.interned.end(), [&](const std::pair<itype_t, typeid_t>& e){ return e.second == type; });
+	const auto it = std::find_if(interner.interned.begin(), interner.interned.end(), [&](const auto& e){ return e == type; });
 	if(it != interner.interned.end()){
-		return it->first;
+		const auto index = it - interner.interned.begin();
+		const auto lookup_index = static_cast<int32_t>(index);
+		return make_itype_from_parts(lookup_index, type);
 	}
 	throw std::exception();
 }
@@ -218,45 +232,54 @@ typeid_t lookup_type(const type_interner_t& interner, const itype_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto it = std::find_if(interner.interned.begin(), interner.interned.end(), [&](const std::pair<itype_t, typeid_t>& e){ return e.first.itype == type.itype; });
-	if(it != interner.interned.end()){
-		return it->second;
+	const auto lookup_index = type.get_lookup_index();
+	QUARK_ASSERT(lookup_index >= 0);
+	QUARK_ASSERT(lookup_index < interner.interned.size());
+
+	const auto& result = interner.interned[lookup_index];
+	return result;
+}
+
+
+void trace_type_interner(const type_interner_t& interner){
+	for(auto i = 0 ; i < interner.interned.size() ; i++){
+		const auto& e = interner.interned[i];
+		QUARK_TRACE_SS("itype_t: " << i << "\t=\ttypeid_t: " << typeid_to_compact_string(e));
 	}
-	throw std::exception();
 }
 
 
 
-QUARK_UNIT_TEST_VIP("type_interner_t()", "type_interner_t()", "Check that built in types work with lookup_itype()", ""){
+QUARK_UNIT_TEST("type_interner_t()", "type_interner_t()", "Check that built in types work with lookup_itype()", ""){
 	const type_interner_t a;
-	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_undefined()) == make_itype(base_type::k_undefined));
-	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_any()) == make_itype(base_type::k_any));
-	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_void()) == make_itype(base_type::k_void));
+	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_undefined()) == itype_t::make_undefined());
+	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_any()) == itype_t::make_any());
+	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_void()) == itype_t::make_void());
 
-	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_bool()) == make_itype(base_type::k_bool));
-	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_int()) == make_itype(base_type::k_int));
-	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_double()) == make_itype(base_type::k_double));
-	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_string()) == make_itype(base_type::k_string));
-	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_json()) == make_itype(base_type::k_json));
+	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_bool()) == itype_t::make_bool());
+	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_int()) == itype_t::make_int());
+	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_double()) == itype_t::make_double());
+	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_string()) == itype_t::make_string());
+	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_json()) == itype_t::make_json());
 
-	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_typeid()) == make_itype(base_type::k_typeid));
-	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_unresolved_type_identifier("")) == make_itype(base_type::k_unresolved));
+	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_typeid()) == itype_t::make_typeid());
+	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_unresolved_type_identifier("")) == itype_t::make_unresolved());
 }
 
-QUARK_UNIT_TEST_VIP("type_interner_t()", "type_interner_t()", "Check that built in types work with lookup_type()", ""){
+QUARK_UNIT_TEST("type_interner_t()", "type_interner_t()", "Check that built in types work with lookup_type()", ""){
 	const type_interner_t a;
-	QUARK_UT_VERIFY(lookup_type(a, make_itype(base_type::k_undefined)) == typeid_t::make_undefined());
-	QUARK_UT_VERIFY(lookup_type(a, make_itype(base_type::k_any)) == typeid_t::make_any());
-	QUARK_UT_VERIFY(lookup_type(a, make_itype(base_type::k_void)) == typeid_t::make_void());
+	QUARK_UT_VERIFY(lookup_type(a, itype_t::make_undefined()) == typeid_t::make_undefined());
+	QUARK_UT_VERIFY(lookup_type(a, itype_t::make_any()) == typeid_t::make_any());
+	QUARK_UT_VERIFY(lookup_type(a, itype_t::make_void()) == typeid_t::make_void());
 
-	QUARK_UT_VERIFY(lookup_type(a, make_itype(base_type::k_bool)) == typeid_t::make_bool());
-	QUARK_UT_VERIFY(lookup_type(a, make_itype(base_type::k_int)) == typeid_t::make_int());
-	QUARK_UT_VERIFY(lookup_type(a, make_itype(base_type::k_double)) == typeid_t::make_double());
-	QUARK_UT_VERIFY(lookup_type(a, make_itype(base_type::k_string)) == typeid_t::make_string());
-	QUARK_UT_VERIFY(lookup_type(a, make_itype(base_type::k_json)) == typeid_t::make_json());
+	QUARK_UT_VERIFY(lookup_type(a, itype_t::make_bool()) == typeid_t::make_bool());
+	QUARK_UT_VERIFY(lookup_type(a, itype_t::make_int()) == typeid_t::make_int());
+	QUARK_UT_VERIFY(lookup_type(a, itype_t::make_double()) == typeid_t::make_double());
+	QUARK_UT_VERIFY(lookup_type(a, itype_t::make_string()) == typeid_t::make_string());
+	QUARK_UT_VERIFY(lookup_type(a, itype_t::make_json()) == typeid_t::make_json());
 
-	QUARK_UT_VERIFY(lookup_type(a, make_itype(base_type::k_typeid)) == typeid_t::make_typeid());
-	QUARK_UT_VERIFY(lookup_type(a, make_itype(base_type::k_unresolved)) == typeid_t::make_unresolved_type_identifier(""));
+	QUARK_UT_VERIFY(lookup_type(a, itype_t::make_typeid()) == typeid_t::make_typeid());
+	QUARK_UT_VERIFY(lookup_type(a, itype_t::make_unresolved()) == typeid_t::make_unresolved_type_identifier(""));
 }
 
 

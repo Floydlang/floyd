@@ -24,9 +24,64 @@ namespace floyd {
 //////////////////////////////////////////////////		itype_t
 
 
-struct itype_t {
-	explicit itype_t(int32_t itype) : itype(itype){}
+/*
+	bits 31 - 28 base_type (4 bits)
+	bits 27 - 24 base_type 2 (4 bits) -- used to tell basetype of vector element or dictionary value.
+	bits 23 - 0 intern_index (24 bits)
+*/
 
+struct itype_t {
+	explicit itype_t(int32_t data) :
+		data(data)
+	{
+		QUARK_ASSERT(check_invariant());
+	}
+
+	static itype_t make_undefined(){
+		return itype_t(assemble((int)base_type::k_undefined, base_type::k_undefined, base_type::k_undefined));
+	}
+	static itype_t make_any(){
+		return itype_t(assemble((int)base_type::k_any, base_type::k_any, base_type::k_undefined));
+	}
+	static itype_t make_void(){
+		return itype_t(assemble((int)base_type::k_void, base_type::k_void, base_type::k_undefined));
+	}
+	static itype_t make_bool(){
+		return itype_t(assemble((int)base_type::k_bool, base_type::k_bool, base_type::k_undefined));
+	}
+	static itype_t make_int(){
+		return itype_t(assemble((int)base_type::k_int, base_type::k_int, base_type::k_undefined));
+	}
+	static itype_t make_double(){
+		return itype_t(assemble((int)base_type::k_double, base_type::k_double, base_type::k_undefined));
+	}
+	static itype_t make_string(){
+		return itype_t(assemble((int)base_type::k_string, base_type::k_string, base_type::k_undefined));
+	}
+	static itype_t make_json(){
+		return itype_t(assemble((int)base_type::k_json, base_type::k_json, base_type::k_undefined));
+	}
+
+	static itype_t make_typeid(){
+		return itype_t(assemble((int)base_type::k_typeid, base_type::k_typeid, base_type::k_undefined));
+	}
+
+	static itype_t make_struct(uint32_t lookup_index){
+		return itype_t(assemble(lookup_index, base_type::k_struct, base_type::k_undefined));
+	}
+
+	static itype_t make_vector(uint32_t lookup_index, base_type element_bt){
+		return itype_t(assemble(lookup_index, base_type::k_vector, element_bt));
+	}
+	static itype_t make_dict(uint32_t lookup_index, base_type value_bt){
+		return itype_t(assemble(lookup_index, base_type::k_dict, value_bt));
+	}
+	static itype_t make_function(uint32_t lookup_index){
+		return itype_t(assemble(lookup_index, base_type::k_function, base_type::k_undefined));
+	}
+	static itype_t make_unresolved(){
+		return itype_t(assemble((int)base_type::k_unresolved, base_type::k_unresolved, base_type::k_undefined));
+	}
 
 	bool check_invariant() const {
 		return true;
@@ -34,46 +89,157 @@ struct itype_t {
 
 
 
+
 	bool is_undefined() const {
-		return itype == (int)base_type::k_string;
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_string;
 	}
+
+
+	bool is_any() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_any;
+	}
+	bool is_void() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_void;
+	}
+	bool is_bool() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_bool;
+	}
+	bool is_int() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_int;
+	}
+	bool is_double() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_double;
+	}
+
 
 	bool is_string() const {
-		return itype == (int)base_type::k_string;
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_string;
+	}
+	bool is_json() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_json;
 	}
 
-	bool is_json() const {
-		return itype == (int)base_type::k_json;
+	bool is_typeid() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_typeid;
 	}
+
+
 
 	bool is_struct() const {
-		return itype >= 100000000 && itype < 200000000;
-	}
+		QUARK_ASSERT(check_invariant());
 
+		return get_base_type() == base_type::k_struct;
+	}
 	bool is_vector() const {
-		return itype >= 200000000 && itype < 300000000;
-	}
+		QUARK_ASSERT(check_invariant());
 
+		return get_base_type() == base_type::k_vector;
+	}
 	bool is_dict() const {
-		return itype >= 300000000 && itype < 400000000;
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_dict;
 	}
+
 	bool is_function() const {
-		return itype >= 400000000;
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_function;
+	}
+
+	bool is_unresolved() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_unresolved;
 	}
 
 
 
+
+	base_type get_base_type() const {
+		QUARK_ASSERT(check_invariant());
+
+		const auto value = (data >> 28) & 15;
+		const auto bt = static_cast<base_type>(value);
+		return bt;
+	}
+
+	base_type get_vector_element_type() const {
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(is_vector());
+
+		const auto value = (data >> 24) & 15;
+		const auto bt = static_cast<base_type>(value);
+		return bt;
+	}
+	base_type get_dict_value_type() const {
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(is_vector());
+
+		const auto value = (data >> 24) & 15;
+		const auto bt = static_cast<base_type>(value);
+		return bt;
+	}
+
+	uint32_t get_lookup_index() const {
+		QUARK_ASSERT(check_invariant());
+
+		return data & 0b00000000'11111111'11111111'11111111;
+	}
+	int32_t get_data() const {
+		QUARK_ASSERT(check_invariant());
+
+		return data;
+	}
+
+	static uint32_t assemble(uint32_t lookup_index, base_type bt1, base_type bt2){
+		const auto a = static_cast<uint32_t>(bt1);
+		const auto b = static_cast<uint32_t>(bt2);
+
+		return (a << 28) | (b << 24) | lookup_index;
+	}
+
+	static itype_t assemble2(uint32_t lookup_index, base_type bt1, base_type bt2){
+		return itype_t(assemble(lookup_index, bt1, bt2));
+	}
 
 	////////////////////////////////	STATE
-	int32_t itype;
+
+	private: uint32_t data;
 };
 
 inline bool operator<(itype_t lhs, itype_t rhs){
-	return lhs.itype < rhs.itype;
+	return lhs.get_data() < rhs.get_data();
 }
 inline bool operator==(itype_t lhs, itype_t rhs){
-	return lhs.itype == rhs.itype;
+	return lhs.get_data() == rhs.get_data();
 }
+
+inline itype_t get_undefined_itype(){
+	return itype_t::make_undefined();
+}
+inline itype_t get_json_itype(){
+	return itype_t::make_json();
+}
+
 
 
 
@@ -95,12 +261,7 @@ struct type_interner_t {
 
 
 	////////////////////////////////	STATE
-	std::vector<std::pair<itype_t, typeid_t>> interned;
-
-	int32_t struct_next_id;
-	int32_t vector_next_id;
-	int32_t dict_next_id;
-	int32_t function_next_id;
+	std::vector<typeid_t> interned;
 };
 
 
@@ -108,23 +269,25 @@ std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid
 itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type);
 typeid_t lookup_type(const type_interner_t& interner, const itype_t& type);
 
+void trace_type_interner(const type_interner_t& interner);
+
 
 
 inline bool is_atomic_type(itype_t type){
-	const auto i = type.itype;
+	const auto bt = type.get_base_type();
 	if(
-		i == (int)base_type::k_undefined
-		|| i == (int)base_type::k_any
-		|| i == (int)base_type::k_void
+		bt == base_type::k_undefined
+		|| bt == base_type::k_any
+		|| bt == base_type::k_void
 
-		|| i == (int)base_type::k_bool
-		|| i == (int)base_type::k_int
-		|| i == (int)base_type::k_double
-		|| i == (int)base_type::k_string
-		|| i == (int)base_type::k_json
+		|| bt == base_type::k_bool
+		|| bt == base_type::k_int
+		|| bt == base_type::k_double
+		|| bt == base_type::k_string
+		|| bt == base_type::k_json
 
-		|| i == (int)base_type::k_typeid
-		|| i == (int)base_type::k_unresolved
+		|| bt == base_type::k_typeid
+		|| bt == base_type::k_unresolved
 	){
 		return true;
 	}
@@ -133,59 +296,19 @@ inline bool is_atomic_type(itype_t type){
 	}
 }
 
-inline bool is_struct(itype_t type){
-	return type.is_struct();
-}
-
-inline bool is_vector(itype_t type){
-	return type.is_vector();
-}
-
-inline bool is_dict(itype_t type){
-	return type.is_dict();
-}
-
-inline bool is_function(itype_t type){
-	return type.is_function();
-}
-
+/*
 inline base_type get_basetype(itype_t itype){
 	if(is_atomic_type(itype)){
 		const auto result = static_cast<base_type>(itype.itype);
 		return result;
 	}
 	else{
-		if(is_struct(itype)){
-			return base_type::k_struct;
-		}
-		else if(is_vector(itype)){
-			return base_type::k_vector;
-		}
-		else if(is_dict(itype)){
-			return base_type::k_dict;
-		}
-		else if(is_function(itype)){
-			return base_type::k_function;
-		}
-		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
+		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
+*/
 
-inline itype_t make_itype(base_type type){
-	const auto value = static_cast<int32_t>(type);
-	return itype_t(value);
-}
-
-inline itype_t get_undefined_itype(){
-	return make_itype(base_type::k_undefined);
-}
-
-inline itype_t get_json_itype(){
-	return make_itype(base_type::k_json);
-}
 
 
 

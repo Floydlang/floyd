@@ -331,7 +331,7 @@ uint64_t size_to_allocation_blocks(std::size_t size){
 
 
 runtime_type_t make_runtime_type(itype_t itype){
-	return runtime_type_t{ itype.itype };
+	return runtime_type_t{ itype.get_data() };
 }
 
 
@@ -376,7 +376,7 @@ runtime_value_t make_runtime_double(double value){
 }
 
 runtime_value_t make_runtime_typeid(itype_t type){
-	return { .typeid_itype = type.itype };
+	return { .typeid_itype = type.get_data() };
 }
 
 runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr){
@@ -642,7 +642,7 @@ QUARK_UNIT_TEST("VECTOR_HAMT_T", "", "", ""){
 	detect_leaks(backend.heap);
 
 	const runtime_value_t a[] = { make_runtime_int(1000), make_runtime_int(2000), make_runtime_int(3000) };
-	auto v = alloc_vector_hamt(backend.heap, a, 3, make_itype(base_type::k_double));
+	auto v = alloc_vector_hamt(backend.heap, a, 3, itype_t::make_double());
 	QUARK_UT_VERIFY(v.vector_hamt_ptr != nullptr);
 
 	QUARK_UT_VERIFY(v.vector_hamt_ptr->get_element_count() == 3);
@@ -862,7 +862,7 @@ void dispose_struct(STRUCT_T& s){
 
 
 bool is_rc_value(const itype_t& type){
-	const auto b = get_basetype(type);
+	const auto b = type.get_base_type();
 	return b == base_type::k_string || b == base_type::k_vector || b == base_type::k_dict || b == base_type::k_struct || b == base_type::k_json;
 }
 
@@ -1034,7 +1034,7 @@ runtime_type_t lookup_runtime_type(const value_backend_t& backend, const typeid_
 
 	for(const auto& e: backend.itype_to_typeid){
 		if(e.second == type){
-			return e.first.itype;
+			return make_runtime_type(e.first);
 		}
 	}
 	throw std::exception();
@@ -1099,7 +1099,7 @@ const std::pair<itype_t, struct_layout_t>& find_struct_layout(const value_backen
 		vec.begin(),
 		vec.end(),
 		[&] (auto& e) {
-			return e.first.itype == type.itype;
+			return e.first == type;
 		}
 	);
 	if(it != vec.end()){
@@ -1118,8 +1118,9 @@ value_backend_t make_test_value_backend(){
 	type_interner_t type_interner;
 
 	std::map<itype_t, typeid_t> itype_to_typeid;
-	for(const auto& e: type_interner.interned){
-		itype_to_typeid.insert( { e.first, e.second } );
+	for(int i = 0 ; i < type_interner.interned.size() ; i++){
+		const auto& e = type_interner.interned[i];
+		itype_to_typeid.insert( { itype_t(i), e } );
 	}
 	return value_backend_t(
 		{},

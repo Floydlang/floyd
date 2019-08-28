@@ -375,7 +375,7 @@ llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const type_intern
 	builder_t builder { context, i, acc };
 
 	for(const auto& e: i.interned){
-		touch_type(builder, e.second);
+		touch_type(builder, e);
 	}
 
 	state = builder.acc;
@@ -414,7 +414,7 @@ const type_entry_t& llvm_type_lookup::find_from_type(const typeid_t& type) const
 const type_entry_t& llvm_type_lookup::find_from_itype(const itype_t& itype) const {
 	QUARK_ASSERT(check_invariant());
 
-	const auto it = std::find_if(state.types.begin(), state.types.end(), [&](const type_entry_t& e){ return e.itype.itype == itype.itype; });
+	const auto it = std::find_if(state.types.begin(), state.types.end(), [&](const type_entry_t& e){ return e.itype == itype; });
 	if(it == state.types.end()){
 		throw std::exception();
 	}
