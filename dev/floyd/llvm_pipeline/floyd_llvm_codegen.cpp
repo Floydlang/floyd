@@ -488,7 +488,7 @@ static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const 
 	auto& context = builder.getContext();
 
 	const auto type = value.get_type();
-	const auto itype = get_exact_llvm_type(gen_acc.gen.type_lookup, type);
+	const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type);
 
 	struct visitor_t {
 		llvm_function_generator_t& gen_acc;
@@ -527,7 +527,7 @@ static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const 
 			//	NOTICE: There is no clean way to embedd a json containing a json-null into the code segment.
 			//	Here we use a nullptr instead of json_t*. This means we have to be prepared for json_t::null AND nullptr.
 			if(json0.is_null()){
-				auto json_type = get_exact_llvm_type(gen_acc.gen.type_lookup, typeid_t::make_json());
+				auto json_type = get_llvm_type_as_arg(gen_acc.gen.type_lookup, typeid_t::make_json());
 				llvm::PointerType* pointer_type = llvm::cast<llvm::PointerType>(json_type);
 				return llvm::ConstantPointerNull::get(pointer_type);
 			}
@@ -573,7 +573,7 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_genera
 	std::vector<resolved_symbol_t> result;
 	for(const auto& e: symbol_table._symbols){
 		const auto type = e.second.get_type();
-		const auto itype = get_exact_llvm_type(gen_acc.gen.type_lookup, type);
+		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type);
 
 		//	Reserve stack slot for each local.
 		llvm::Value* dest = gen_acc.get_builder().CreateAlloca(itype, nullptr, e.first);
@@ -666,7 +666,7 @@ static llvm::Value* generate_get_struct_base_ptr(llvm_function_generator_t& gen_
 		builder.getInt32(1)
 	};
 	auto ptr2_reg = builder.CreateGEP(type, ptr_reg, gep, "");
-	auto final_type2 = get_exact_struct_type(gen_acc.gen.type_lookup, final_type);
+	auto final_type2 = get_exact_struct_type_noptr(gen_acc.gen.type_lookup, final_type);
 	auto ptr3_reg = gen_acc.get_builder().CreateCast(llvm::Instruction::CastOps::BitCast, ptr2_reg, final_type2->getPointerTo(), "");
 	return ptr3_reg;
 }
@@ -696,7 +696,7 @@ static llvm::Value* generate_resolve_member_expression(llvm_function_generator_t
 
 	const auto parent_type =  details.parent_address->get_output_type();
 	if(parent_type.is_struct()){
-		auto& struct_type_llvm = *get_exact_struct_type(gen_acc.gen.type_lookup, parent_type);
+		auto& struct_type_llvm = *get_exact_struct_type_noptr(gen_acc.gen.type_lookup, parent_type);
 
 		const auto& struct_def = details.parent_address->get_output_type().get_struct();
 		int member_index = find_struct_member_index(struct_def, details.member_name);
@@ -1190,7 +1190,7 @@ static llvm::Value* generate_conditional_operator_expression(llvm_function_gener
 	auto& context = builder.getContext();
 
 	const auto result_type = e.get_output_type();
-	const auto result_itype = get_exact_llvm_type(gen_acc.gen.type_lookup, result_type);
+	const auto result_itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, result_type);
 
 	llvm::Value* condition_reg = generate_expression(gen_acc, *conditional.condition);
 
@@ -1514,7 +1514,7 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 
 	const auto element_count = details.elements.size();
 	const auto element_type0 = details.value_type.get_vector_element_type();
-	const auto& element_type1 = *get_exact_llvm_type(gen_acc.gen.type_lookup, element_type0);
+	const auto& element_type1 = *get_llvm_type_as_arg(gen_acc.gen.type_lookup, element_type0);
 
 	const auto element_count_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), element_count);
 	auto vec_type_reg = generate_itype_constant(gen_acc.gen, details.value_type);
@@ -1626,7 +1626,7 @@ static llvm::Value* generate_construct_struct(llvm_function_generator_t& gen_acc
 	const auto element_count = details.elements.size();
 
 	const auto& struct_def = target_type.get_struct();
-	auto& exact_struct_type = *get_exact_struct_type(gen_acc.gen.type_lookup, target_type);
+	auto& exact_struct_type = *get_exact_struct_type_noptr(gen_acc.gen.type_lookup, target_type);
 	QUARK_ASSERT(struct_def._members.size() == element_count);
 
 
@@ -2360,7 +2360,7 @@ std::vector<resolved_symbol_t> generate_function_local_symbols(llvm_function_gen
 	std::vector<resolved_symbol_t> result;
 	for(const auto& e: symbol_table._symbols){
 		const auto type = e.second.get_type();
-		const auto itype = get_exact_llvm_type(gen_acc.gen.type_lookup, type);
+		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type);
 
 		//	Figure out if this symbol is an argument or a local variable.
 		//	Check if we can find an argument with this name => it's an argument.
@@ -2417,7 +2417,7 @@ static llvm::Value* generate_global(llvm_function_generator_t& gen_acc, const st
 	auto& module = *gen_acc.gen.module;
 
 	const auto type0 = symbol.get_type();
-	const auto itype = get_exact_llvm_type(gen_acc.gen.type_lookup, type0);
+	const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type0);
 
 	if(symbol._init.is_undefined()){
 		return generate_global0(module, symbol_name, *itype, nullptr);

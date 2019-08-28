@@ -205,7 +205,7 @@ static function_def_t make_floyd_function_def(const llvm_type_lookup& type_looku
 
 	const auto function_type = function_def._function_type;
 	const auto link_name = encode_floyd_func_link_name(function_def._definition_name);
-	llvm::Type* function_ptr_type = get_exact_llvm_type(type_lookup, function_type);
+	llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
 	const auto function_byvalue_type = deref_ptr(function_ptr_type);
 	return function_def_t{ link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_def, nullptr };
 }
@@ -299,9 +299,7 @@ void trace_function_defs(const std::vector<function_def_t>& defs){
 		line_t( { "", "", "", "", "" }, '-', '|'),
 	};
 
-
 	for(const auto& e: defs){
-
 		const auto f0 = json_to_compact_string(function_def_to_ast_json(e.floyd_fundef));
 		const auto f1 = f0.substr(0, 100);
 		const auto f = f1.size() != f0.size() ? (f1 + "...") : f1;
@@ -309,10 +307,10 @@ void trace_function_defs(const std::vector<function_def_t>& defs){
 		const auto l = line_t {
 			{
 				e.link_name.s,
-				(e.llvm_function_type == nullptr ? "-": "YES"),
-				(e.llvm_codegen_f == nullptr ? "-": "YES"),
+				print_type(e.llvm_function_type),
+				e.llvm_codegen_f != nullptr ? ptr_to_hexstring(e.llvm_codegen_f) : "",
 				f,
-				(e.native_f == nullptr ? "-": "YES"),
+				e.native_f != nullptr ? ptr_to_hexstring(e.native_f) : "",
 			},
 			' ',
 			'|'
@@ -463,7 +461,7 @@ static std::vector<std::pair<itype_t, struct_layout_t>> make_struct_layouts(cons
 
 	for(const auto& e: type_lookup.state.types){
 		if(e.type.is_struct()){
-			auto t2 = get_exact_struct_type(type_lookup, e.type);
+			auto t2 = get_exact_struct_type_noptr(type_lookup, e.type);
 			const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
 
 			const auto struct_bytes = layout->getSizeInBytes();

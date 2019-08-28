@@ -296,20 +296,6 @@ inline bool is_atomic_type(itype_t type){
 	}
 }
 
-/*
-inline base_type get_basetype(itype_t itype){
-	if(is_atomic_type(itype)){
-		const auto result = static_cast<base_type>(itype.itype);
-		return result;
-	}
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-}
-*/
-
-
 
 
 

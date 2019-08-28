@@ -511,7 +511,7 @@ static function_bind_t floydrt_lookup_dict__make(llvm::LLVMContext& context, con
 			make_frp_type(type_lookup),
 			make_generic_dict_type(type_lookup)->getPointerTo(),
 			make_runtime_type_type(type_lookup),
-			get_exact_llvm_type(type_lookup, typeid_t::make_string())
+			get_llvm_type_as_arg(type_lookup, typeid_t::make_string())
 		},
 		false
 	);
@@ -549,7 +549,7 @@ static function_bind_t floydrt_store_dict_mutable__make(llvm::LLVMContext& conte
 			make_frp_type(type_lookup),
 			make_generic_dict_type(type_lookup)->getPointerTo(),
 			make_runtime_type_type(type_lookup),
-			get_exact_llvm_type(type_lookup, typeid_t::make_string()),
+			get_llvm_type_as_arg(type_lookup, typeid_t::make_string()),
 			make_runtime_value_type(type_lookup),
 		},
 		false
@@ -596,7 +596,7 @@ static JSON_T* floydrt_allocate_json(floyd_runtime_t* frp, runtime_value_t arg0_
 
 static function_bind_t floydrt_allocate_json__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		get_exact_llvm_type(type_lookup, typeid_t::make_json()),
+		get_llvm_type_as_arg(type_lookup, typeid_t::make_json()),
 		{
 			make_frp_type(type_lookup),
 			make_runtime_value_type(type_lookup),
@@ -634,7 +634,7 @@ static function_bind_t floydrt_retain_json__make(llvm::LLVMContext& context, con
 		llvm::Type::getVoidTy(context),
 		{
 			make_frp_type(type_lookup),
-			get_exact_llvm_type(type_lookup, typeid_t::make_json()),
+			get_llvm_type_as_arg(type_lookup, typeid_t::make_json()),
 			make_runtime_type_type(type_lookup)
 		},
 		false
@@ -669,7 +669,7 @@ static function_bind_t floydrt_release_json__make(llvm::LLVMContext& context, co
 		llvm::Type::getVoidTy(context),
 		{
 			make_frp_type(type_lookup),
-			get_exact_llvm_type(type_lookup, typeid_t::make_json()),
+			get_llvm_type_as_arg(type_lookup, typeid_t::make_json()),
 			make_runtime_type_type(type_lookup)
 		},
 		false
@@ -716,10 +716,10 @@ static JSON_T* floydrt_lookup_json(floyd_runtime_t* frp, JSON_T* json_ptr, runti
 
 static function_bind_t floydrt_lookup_json__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		get_exact_llvm_type(type_lookup, typeid_t::make_json()),
+		get_llvm_type_as_arg(type_lookup, typeid_t::make_json()),
 		{
 			make_frp_type(type_lookup),
-			get_exact_llvm_type(type_lookup, typeid_t::make_json()),
+			get_llvm_type_as_arg(type_lookup, typeid_t::make_json()),
 			make_runtime_value_type(type_lookup),
 			make_runtime_type_type(type_lookup)
 		},
@@ -749,10 +749,10 @@ static runtime_value_t floydrt_json_to_string(floyd_runtime_t* frp, JSON_T* json
 
 static function_bind_t floydrt_json_to_string__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		get_exact_llvm_type(type_lookup, typeid_t::make_string()),
+		get_llvm_type_as_arg(type_lookup, typeid_t::make_string()),
 		{
 			make_frp_type(type_lookup),
-			get_exact_llvm_type(type_lookup, typeid_t::make_json())
+			get_llvm_type_as_arg(type_lookup, typeid_t::make_json())
 		},
 		false
 	);
@@ -886,7 +886,7 @@ static const STRUCT_T* floydrt_update_struct_member(floyd_runtime_t* frp, STRUCT
 
 	//	Make copy of struct, overwrite member in copy.
 
-	auto& struct_type_llvm = *get_exact_struct_type(r.type_lookup, type0);
+	auto& struct_type_llvm = *get_exact_struct_type_noptr(r.type_lookup, type0);
 
 	const llvm::DataLayout& data_layout = r.ee->getDataLayout();
 	const llvm::StructLayout* layout = data_layout.getStructLayout(&struct_type_llvm);
