@@ -675,7 +675,7 @@ struct value_backend_t {
 	value_backend_t(
 		const std::vector<std::pair<link_name_t, void*>>& native_func_lookup,
 		const std::vector<std::pair<itype_t, struct_layout_t>>& struct_layouts,
-		const std::map<itype_t, typeid_t>& itype_to_typeid
+		const type_interner_t& type_interner
 	);
 
 	bool check_invariant() const {
@@ -688,17 +688,15 @@ struct value_backend_t {
 
 	heap_t heap;
 
-//??? Use type_interner here -- use array lookup to go from itype -> typeid_t.
-//	??? Also go from itype -> struct_layout
-// 	??? also go from itype -> collection element-type without using typeid_t.
+	//	??? Also go from itype -> struct_layout
+	// 	??? also go from itype -> collection element-type without using typeid_t.
 
-	std::map<itype_t, typeid_t> itype_to_typeid;
+	type_interner_t type_interner;
 	std::vector<std::pair<link_name_t, void*>> native_func_lookup;
 	std::vector<std::pair<itype_t, struct_layout_t>> struct_layouts;
 };
 
 
-runtime_type_t lookup_runtime_type(const value_backend_t& backend, const typeid_t& type);
 itype_t lookup_itype(const value_backend_t& backend, const typeid_t& type);
 const typeid_t& lookup_type(const value_backend_t& backend, runtime_type_t type);
 const typeid_t& lookup_type(const value_backend_t& backend, itype_t itype);

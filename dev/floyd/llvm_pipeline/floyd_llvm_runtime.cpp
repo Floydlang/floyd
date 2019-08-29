@@ -480,6 +480,7 @@ static std::vector<std::pair<itype_t, struct_layout_t>> make_struct_layouts(cons
 	return result;
 }
 
+/*
 static std::map<itype_t, typeid_t> make_type_lookup(const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
@@ -491,6 +492,7 @@ static std::map<itype_t, typeid_t> make_type_lookup(const llvm_type_lookup& type
 	}
 	return result;
 }
+*/
 
 #if __APPLE__
 std::string strip_link_name(const std::string& s){
@@ -573,7 +575,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			value_backend_t(
 				collection_native_func_ptrs(*ee1, program_breaks.function_defs),
 				make_struct_layouts(program_breaks.type_lookup, ee1->getDataLayout()),
-				make_type_lookup(program_breaks.type_lookup)
+				program_breaks.type_lookup.state.type_interner
 			),
 			program_breaks.type_lookup,
 			program_breaks.container_def,

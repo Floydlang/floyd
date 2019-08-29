@@ -1014,10 +1014,10 @@ static std::map<itype_t, typeid_t> make_type_lookup(const llvm_type_lookup& type
 value_backend_t::value_backend_t(
 	const std::vector<std::pair<link_name_t, void*>>& native_func_lookup,
 	const std::vector<std::pair<itype_t, struct_layout_t>>& struct_layouts,
-	const std::map<itype_t, typeid_t>& itype_to_typeid
+	const type_interner_t& type_interner
 ) :
 	heap(),
-	itype_to_typeid(itype_to_typeid),
+	type_interner(type_interner),
 	native_func_lookup(native_func_lookup),
 	struct_layouts(struct_layouts)
 {
@@ -1028,28 +1028,11 @@ value_backend_t::value_backend_t(
 
 
 
-runtime_type_t lookup_runtime_type(const value_backend_t& backend, const typeid_t& type){
-	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	for(const auto& e: backend.itype_to_typeid){
-		if(e.second == type){
-			return make_runtime_type(e.first);
-		}
-	}
-	throw std::exception();
-}
-
 itype_t lookup_itype(const value_backend_t& backend, const typeid_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	for(const auto& e: backend.itype_to_typeid){
-		if(e.second == type){
-			return e.first;
-		}
-	}
-	throw std::exception();
+	return lookup_itype(backend.type_interner, type);
 }
 
 const typeid_t& lookup_type(const value_backend_t& backend, runtime_type_t type){
@@ -1061,8 +1044,7 @@ const typeid_t& lookup_type(const value_backend_t& backend, runtime_type_t type)
 const typeid_t& lookup_type(const value_backend_t& backend, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto& type = backend.itype_to_typeid.at(itype);
-	return type;
+	return lookup_type(backend.type_interner, itype);
 }
 
 
@@ -1115,17 +1097,10 @@ const std::pair<itype_t, struct_layout_t>& find_struct_layout(const value_backen
 
 
 value_backend_t make_test_value_backend(){
-	type_interner_t type_interner;
-
-	std::map<itype_t, typeid_t> itype_to_typeid;
-	for(int i = 0 ; i < type_interner.interned.size() ; i++){
-		const auto& e = type_interner.interned[i];
-		itype_to_typeid.insert( { itype_t(i), e } );
-	}
 	return value_backend_t(
 		{},
 		{},
-		itype_to_typeid
+		type_interner_t()
 	);
 }
 

@@ -267,7 +267,7 @@ struct type_interner_t {
 
 std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid_t& type);
 itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type);
-typeid_t lookup_type(const type_interner_t& interner, const itype_t& type);
+const typeid_t& lookup_type(const type_interner_t& interner, const itype_t& type);
 
 void trace_type_interner(const type_interner_t& interner);
 

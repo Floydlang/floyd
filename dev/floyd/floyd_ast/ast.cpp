@@ -228,7 +228,7 @@ itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type){
 	throw std::exception();
 }
 
-typeid_t lookup_type(const type_interner_t& interner, const itype_t& type){
+const typeid_t& lookup_type(const type_interner_t& interner, const itype_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
