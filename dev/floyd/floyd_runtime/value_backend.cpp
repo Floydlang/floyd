@@ -1020,6 +1020,22 @@ value_backend_t::value_backend_t(
 	native_func_lookup(native_func_lookup),
 	struct_layouts(struct_layouts)
 {
+	for(const auto& e: type_interner.interned){
+		if(e.is_vector()){
+			const auto& type = e.get_vector_element_type();
+			const auto itype = lookup_itype(type_interner, type);
+			child_type.push_back(itype);
+		}
+		else if(e.is_dict()){
+			const auto& type = e.get_dict_value_type();
+			const auto itype = lookup_itype(type_interner, type);
+			child_type.push_back(itype);
+		}
+		else{
+			child_type.push_back(itype_t::make_undefined());
+		}
+	}
+
 	QUARK_ASSERT(check_invariant());
 }
 
@@ -1048,15 +1064,12 @@ const typeid_t& lookup_type_ref(const value_backend_t& backend, itype_t itype){
 
 
 
-#if 1
 itype_t lookup_vector_element_itype(const value_backend_t& backend, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(itype.check_invariant());
 	QUARK_ASSERT(itype.is_vector());
 
-	const auto& type = lookup_type_ref(backend, itype);
-	const auto& element_type = type.get_vector_element_type();
-	return lookup_itype(backend, element_type);
+	return backend.child_type[itype.get_lookup_index()];
 }
 
 itype_t lookup_dict_value_itype(const value_backend_t& backend, itype_t itype){
@@ -1064,41 +1077,8 @@ itype_t lookup_dict_value_itype(const value_backend_t& backend, itype_t itype){
 	QUARK_ASSERT(itype.check_invariant());
 	QUARK_ASSERT(itype.is_dict());
 
-	const auto& type = lookup_type_ref(backend, itype);
-	const auto& value_type = type.get_dict_value_type();
-	return lookup_itype(backend, value_type);
+	return backend.child_type[itype.get_lookup_index()];
 }
-#else
-itype_t lookup_vector_element_itype(const value_backend_t& backend, itype_t itype){
-	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(itype.check_invariant());
-	QUARK_ASSERT(itype.is_vector());
-
-	const auto& v2 = itype.get_vector_element_type();
-#if DEBUG
-	const auto& type = lookup_type_ref(backend, itype);
-	const auto& element_type = type.get_vector_element_type();
-	const auto v1 = lookup_itype(backend, element_type);
-	QUARK_ASSERT(v2 == v1);
-#endif
-	return v2;
-}
-
-itype_t lookup_dict_value_itype(const value_backend_t& backend, itype_t itype){
-	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(itype.check_invariant());
-	QUARK_ASSERT(itype.is_dict());
-
-	const auto v2 = itype.get_dict_value_type();
-#if DEBUG
-	const auto& type = lookup_type_ref(backend, itype);
-	const auto value_type = type.get_dict_value_type();
-	const auto v1 = lookup_itype(backend, value_type);
-	QUARK_ASSERT(v2 == v1);
-#endif
-	return v2;
-}
-#endif
 
 
 

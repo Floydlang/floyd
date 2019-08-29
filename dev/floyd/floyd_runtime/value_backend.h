@@ -681,6 +681,7 @@ struct value_backend_t {
 
 	bool check_invariant() const {
 		QUARK_ASSERT(heap.check_invariant());
+		QUARK_ASSERT(child_type.size() == type_interner.interned.size());
 		return true;
 	}
 
@@ -693,6 +694,7 @@ struct value_backend_t {
 	// 	??? also go from itype -> collection element-type without using typeid_t.
 
 	type_interner_t type_interner;
+	std::vector<itype_t> child_type;
 	std::vector<std::pair<link_name_t, void*>> native_func_lookup;
 	std::vector<std::pair<itype_t, struct_layout_t>> struct_layouts;
 };
