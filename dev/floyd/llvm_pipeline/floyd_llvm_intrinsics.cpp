@@ -789,7 +789,9 @@ static runtime_value_t reduce__cppvector(floyd_runtime_t* frp, value_backend_t& 
 		const auto element_value = vec.get_element_ptr()[i];
 		const auto acc2 = (*f)(frp, acc, element_value, context);
 
-		release_deep(backend, acc, itype_t(arg1_type));
+		if(is_rc_value(itype_t(arg1_type))){
+			release_deep2(backend, acc, itype_t(arg1_type));
+		}
 		acc = acc2;
 	}
 	return acc;
@@ -817,7 +819,9 @@ static runtime_value_t reduce__hamt(floyd_runtime_t* frp, value_backend_t& backe
 		const auto element_value = vec.load_element(i);
 		const auto acc2 = (*f)(frp, acc, element_value, context);
 
-		release_deep(backend, acc, itype_t(arg1_type));
+		if(is_rc_value(itype_t(arg1_type))){
+			release_deep2(backend, acc, itype_t(arg1_type));
+		}
 		acc = acc2;
 	}
 	return acc;

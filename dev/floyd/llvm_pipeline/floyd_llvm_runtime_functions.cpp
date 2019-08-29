@@ -184,7 +184,7 @@ static void floydrt_release_vec(floyd_runtime_t* frp, runtime_value_t vec, runti
 	QUARK_ASSERT(type.is_string() || type.is_vector());
 #endif
 
-	release_deep(r.backend, vec, itype_t(type0));
+	release_vec(r.backend, vec, itype_t(type0));
 }
 static void floydrt_release_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
@@ -450,7 +450,7 @@ static void floydrt_release_dict(floyd_runtime_t* frp, runtime_value_t dict, run
 	QUARK_ASSERT(type.is_dict());
 #endif
 
-	release_deep(r.backend, dict, itype_t(type0));
+	release_dict_deep(r.backend, dict, itype_t(type0));
 }
 
 static function_bind_t floydrt_release_dict__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -842,7 +842,7 @@ static void floydrt_release_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_ty
 	QUARK_ASSERT(v != nullptr);
 #endif
 
-	release_deep(r.backend, make_runtime_struct(v), itype_t(type0));
+	release_struct_deep(r.backend, make_runtime_struct(v), itype_t(type0));
 }
 
 static function_bind_t floydrt_release_struct__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
