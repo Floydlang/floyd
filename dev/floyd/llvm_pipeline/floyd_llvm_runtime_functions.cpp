@@ -42,11 +42,11 @@ namespace floyd {
 
 
 //	Creates a new VEC_T with the contents of the string. Caller owns the result.
-static VECTOR_CPPVECTOR_T* floydrt_alloc_kstr(floyd_runtime_t* frp, const char* s, uint64_t size){
+static VECTOR_CARRAY_T* floydrt_alloc_kstr(floyd_runtime_t* frp, const char* s, uint64_t size){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto a = to_runtime_string(r, std::string(s, s + size));
-	return a.vector_cppvector_ptr;
+	return a.vector_carray_ptr;
 }
 
 static function_bind_t floydrt_alloc_kstr__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -72,7 +72,7 @@ static function_bind_t floydrt_alloc_kstr__make(llvm::LLVMContext& context, cons
 static runtime_value_t floydrt_allocate_vector(floyd_runtime_t* frp, runtime_type_t type, uint64_t element_count){
 	auto& r = get_floyd_runtime(frp);
 
-	if(is_vector_cppvector(itype_t(type))){
+	if(is_vector_carray(itype_t(type))){
 		return alloc_vector_ccpvector2(r.backend.heap, element_count, element_count, itype_t(type));
 	}
 	else if(is_vector_hamt(itype_t(type))){
@@ -116,7 +116,7 @@ llvm::Value* generate_allocate_vector(const runtime_functions_t& functions, llvm
 static runtime_value_t floydrt_allocate_vector_fill(floyd_runtime_t* frp, runtime_type_t type, runtime_value_t* elements, uint64_t element_count){
 	auto& r = get_floyd_runtime(frp);
 
-	if(is_vector_cppvector(itype_t(type))){
+	if(is_vector_carray(itype_t(type))){
 		return alloc_vector_ccpvector2(r.backend.heap, element_count, element_count, itype_t(type));
 	}
 	else if(is_vector_hamt(itype_t(type))){
@@ -207,7 +207,7 @@ static runtime_value_t floydrt_load_vector_element(floyd_runtime_t* frp, runtime
 	auto& r = get_floyd_runtime(frp);
 	(void)r;
 
-	if(is_vector_cppvector(itype_t(type))){
+	if(is_vector_carray(itype_t(type))){
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
@@ -244,7 +244,7 @@ static void floydrt_store_vector_element_mutable(floyd_runtime_t* frp, runtime_v
 	auto& r = get_floyd_runtime(frp);
 	(void)r;
 
-	if(is_vector_cppvector(itype_t(type))){
+	if(is_vector_carray(itype_t(type))){
 		QUARK_ASSERT(false);
 	}
 	else if(is_vector_hamt(itype_t(type))){
@@ -285,8 +285,8 @@ static runtime_value_t floydrt_concatunate_vectors(floyd_runtime_t* frp, runtime
 	if(type0.is_string()){
 		return concat_strings(r.backend, lhs, rhs);
 	}
-	else if(is_vector_cppvector(itype_t(type))){
-		return concat_vector_cppvector(r.backend, type0, lhs, rhs);
+	else if(is_vector_carray(itype_t(type))){
+		return concat_vector_carray(r.backend, type0, lhs, rhs);
 	}
 	else if(is_vector_hamt(itype_t(type))){
 		return concat_vector_hamt(r.backend, type0, lhs, rhs);

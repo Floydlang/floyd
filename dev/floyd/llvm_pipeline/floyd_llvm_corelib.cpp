@@ -25,11 +25,11 @@ namespace floyd {
 
 
 struct native_binary_t {
-	VECTOR_CPPVECTOR_T* ascii40;
+	VECTOR_CARRAY_T* ascii40;
 };
 
 struct native_sha1_t {
-	VECTOR_CPPVECTOR_T* ascii40;
+	VECTOR_CARRAY_T* ascii40;
 };
 
 
@@ -121,7 +121,7 @@ static STRUCT_T* llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* 
 
 	const auto& binary = *reinterpret_cast<const native_binary_t*>(binary_ptr->get_data_ptr());
 
-	const auto& s = from_runtime_string(r, make_runtime_vector_cppvector(binary.ascii40));
+	const auto& s = from_runtime_string(r, make_runtime_vector_carray(binary.ascii40));
 	const auto ascii40 = corelib_calc_string_sha1(s);
 
 	const auto a = value_t::make_struct_value(
@@ -162,7 +162,7 @@ static void llvm_corelib__write_text_file(floyd_runtime_t* frp, runtime_value_t 
 
 
 
-static VECTOR_CPPVECTOR_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
+static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
@@ -179,10 +179,10 @@ static VECTOR_CPPVECTOR_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* 
 #endif
 
 	const auto v = to_runtime_value(r, vec2);
-	return v.vector_cppvector_ptr;
+	return v.vector_carray_ptr;
 }
 
-static VECTOR_CPPVECTOR_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
+static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
@@ -199,7 +199,7 @@ static VECTOR_CPPVECTOR_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp
 #endif
 
 	const auto v = to_runtime_value(r, vec2);
-	return v.vector_cppvector_ptr;
+	return v.vector_carray_ptr;
 }
 
 static STRUCT_T* llvm_corelib__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t path0){

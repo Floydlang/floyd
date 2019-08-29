@@ -806,7 +806,7 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 		generate_release(gen_acc, *key_reg, key_type);
 		return result;
 	}
-	else if(is_vector_cppvector(parent_type)){
+	else if(is_vector_carray(parent_type)){
 		QUARK_ASSERT(key_type.is_int());
 
 		const auto element_type0 = parent_type.get_vector_element_type();
@@ -1519,7 +1519,7 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 	const auto element_count_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), element_count);
 	auto vec_type_reg = generate_itype_constant(gen_acc.gen, details.value_type);
 
-	if(is_vector_cppvector(details.value_type)){
+	if(is_vector_carray(details.value_type)){
 /*
 		auto vec_ptr_reg = builder.CreateCall(
 			gen_acc.gen.runtime_functions.floydrt_allocate_vector.llvm_codegen_f,

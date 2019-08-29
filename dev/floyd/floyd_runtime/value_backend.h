@@ -27,7 +27,7 @@ namespace floyd {
 
 struct typeid_t;
 
-struct VECTOR_CPPVECTOR_T;
+struct VECTOR_CARRAY_T;
 struct VECTOR_HAMT_T;
 struct DICT_CPPMAP_T;
 struct DICT_HAMT_T;
@@ -41,7 +41,7 @@ static const bool k_record_allocs = false;
 
 
 enum vector_backend {
-	cppvector,
+	carray,
 	hamt
 };
 
@@ -51,7 +51,7 @@ enum vector_backend {
 //	Future: make this flag a per-vector setting.
 
 #if 0
-const vector_backend k_global_vector_type = vector_backend::cppvector;
+const vector_backend k_global_vector_type = vector_backend::carray;
 #else
 const vector_backend k_global_vector_type = vector_backend::hamt;
 #endif
@@ -278,9 +278,9 @@ union runtime_value_t {
 	double double_value;
 
 	//	Strings are encoded as vector.
-//	VECTOR_CPPVECTOR_T* string_cppvector_ptr;
+//	VECTOR_CARRAY_T* string_carray_ptr;
 
-	VECTOR_CPPVECTOR_T* vector_cppvector_ptr;
+	VECTOR_CARRAY_T* vector_carray_ptr;
 	VECTOR_HAMT_T* vector_hamt_ptr;
 
 	DICT_CPPMAP_T* dict_cppmap_ptr;
@@ -304,7 +304,7 @@ runtime_value_t make_runtime_int(int64_t value);
 runtime_value_t make_runtime_double(double value);
 runtime_value_t make_runtime_typeid(itype_t type);
 runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr);
-runtime_value_t make_runtime_vector_cppvector(VECTOR_CPPVECTOR_T* vector_ptr);
+runtime_value_t make_runtime_vector_carray(VECTOR_CARRAY_T* vector_ptr);
 runtime_value_t make_runtime_vector_hamt(VECTOR_HAMT_T* vector_hamt_ptr);
 runtime_value_t make_runtime_dict_cppmap(DICT_CPPMAP_T* dict_cppmap_ptr);
 runtime_value_t make_runtime_dict_hamt(DICT_HAMT_T* dict_hamt_ptr);
@@ -358,7 +358,7 @@ WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
 
 
 
-////////////////////////////////		VECTOR_CPPVECTOR_T
+////////////////////////////////		VECTOR_CARRAY_T
 
 //?? rename to "C ARRAY"
 /*
@@ -372,8 +372,8 @@ WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
 
 	data[0]: element count
 */
-struct VECTOR_CPPVECTOR_T {
-	~VECTOR_CPPVECTOR_T();
+struct VECTOR_CARRAY_T {
+	~VECTOR_CARRAY_T();
 	bool check_invariant() const;
 
 	inline uint64_t get_element_count() const{
@@ -430,7 +430,7 @@ struct VECTOR_CPPVECTOR_T {
 };
 
 runtime_value_t alloc_vector_ccpvector2(heap_t& heap, uint64_t allocation_count, uint64_t element_count, itype_t value_type);
-void dispose_vector_cppvector(const runtime_value_t& value);
+void dispose_vector_carray(const runtime_value_t& value);
 
 
 
@@ -720,7 +720,7 @@ bool is_rc_value(const typeid_t& type);
 
 
 void retain_value(value_backend_t& backend, runtime_value_t value, itype_t itype);
-void retain_vector_cppvector(value_backend_t& backend, runtime_value_t vec, itype_t itype);
+void retain_vector_carray(value_backend_t& backend, runtime_value_t vec, itype_t itype);
 inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, itype_t itype);
 void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, itype_t itype);
 void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, itype_t itype);
@@ -729,8 +729,8 @@ void retain_struct(value_backend_t& backend, runtime_value_t s, itype_t itype);
 
 void release_value(value_backend_t& backend, runtime_value_t value, itype_t itype);
 
-void release_vector_cppvector_pod(value_backend_t& backend, runtime_value_t vec, itype_t itype);
-void release_vector_cppvector_nonpod(value_backend_t& backend, runtime_value_t vec, itype_t itype);
+void release_vector_carray_pod(value_backend_t& backend, runtime_value_t vec, itype_t itype);
+void release_vector_carray_nonpod(value_backend_t& backend, runtime_value_t vec, itype_t itype);
 inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, itype_t itype);
 inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, itype_t itype);
 
@@ -744,15 +744,15 @@ void release_struct(value_backend_t& backend, runtime_value_t s, itype_t itype);
 
 
 /*
-	vector_cppvector_pod
-	vector_cppvector_rc
+	vector_carray_pod
+	vector_carray_rc
 
 	vector_hamt_pod
 	vector_hamt_rc
 */
 
-inline bool is_vector_cppvector(itype_t t){
-	return t.is_vector() && k_global_vector_type == vector_backend::cppvector;
+inline bool is_vector_carray(itype_t t){
+	return t.is_vector() && k_global_vector_type == vector_backend::carray;
 }
 inline bool is_vector_hamt(itype_t t){
 	return t.is_vector() && k_global_vector_type == vector_backend::hamt;
@@ -765,8 +765,8 @@ inline bool is_dict_hamt(itype_t t){
 	return t.is_dict() && (k_global_dict_is_hamt == true);
 }
 
-inline bool is_vector_cppvector(const typeid_t& t){
-	return t.is_vector() && k_global_vector_type == vector_backend::cppvector;
+inline bool is_vector_carray(const typeid_t& t){
+	return t.is_vector() && k_global_vector_type == vector_backend::carray;
 }
 inline bool is_vector_hamt(const typeid_t& t){
 	return t.is_vector() && k_global_vector_type == vector_backend::hamt;

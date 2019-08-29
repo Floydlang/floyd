@@ -382,8 +382,8 @@ runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr){
 	return { .struct_ptr = struct_ptr };
 }
 
-runtime_value_t make_runtime_vector_cppvector(VECTOR_CPPVECTOR_T* vector_ptr){
-	return { .vector_cppvector_ptr = vector_ptr };
+runtime_value_t make_runtime_vector_carray(VECTOR_CARRAY_T* vector_ptr){
+	return { .vector_carray_ptr = vector_ptr };
 }
 runtime_value_t make_runtime_vector_hamt(VECTOR_HAMT_T* vector_hamt_ptr){
 	return { .vector_hamt_ptr = vector_hamt_ptr };
@@ -404,9 +404,9 @@ runtime_value_t make_runtime_dict_hamt(DICT_HAMT_T* dict_hamt_ptr){
 
 
 uint64_t get_vec_string_size(runtime_value_t str){
-	QUARK_ASSERT(str.vector_cppvector_ptr != nullptr);
+	QUARK_ASSERT(str.vector_carray_ptr != nullptr);
 
-	return str.vector_cppvector_ptr->get_element_count();
+	return str.vector_carray_ptr->get_element_count();
 }
 
 void copy_elements(runtime_value_t dest[], runtime_value_t source[], uint64_t count){
@@ -431,7 +431,7 @@ WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b){
 
 
 
-////////////////////////////////		VECTOR_CPPVECTOR_T
+////////////////////////////////		VECTOR_CARRAY_T
 
 
 
@@ -446,11 +446,11 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
-VECTOR_CPPVECTOR_T::~VECTOR_CPPVECTOR_T(){
+VECTOR_CARRAY_T::~VECTOR_CARRAY_T(){
 	QUARK_ASSERT(check_invariant());
 }
 
-bool VECTOR_CPPVECTOR_T::check_invariant() const {
+bool VECTOR_CARRAY_T::check_invariant() const {
 	QUARK_ASSERT(this->alloc.check_invariant());
 	QUARK_ASSERT(get_debug_info(alloc) == "cppvec");
 	return true;
@@ -462,24 +462,24 @@ runtime_value_t alloc_vector_ccpvector2(heap_t& heap, uint64_t allocation_count,
 	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count, value_type, "cppvec");
 	alloc->data[0] = element_count;
 
-	auto vec = reinterpret_cast<VECTOR_CPPVECTOR_T*>(alloc);
+	auto vec = reinterpret_cast<VECTOR_CARRAY_T*>(alloc);
 
 	QUARK_ASSERT(vec->check_invariant());
 	QUARK_ASSERT(heap.check_invariant());
 
-	return { .vector_cppvector_ptr = vec };
+	return { .vector_carray_ptr = vec };
 }
 
 
-void dispose_vector_cppvector(const runtime_value_t& value){
-	QUARK_ASSERT(sizeof(VECTOR_CPPVECTOR_T) == sizeof(heap_alloc_64_t));
+void dispose_vector_carray(const runtime_value_t& value){
+	QUARK_ASSERT(sizeof(VECTOR_CARRAY_T) == sizeof(heap_alloc_64_t));
 
 	QUARK_ASSERT(value.check_invariant());
-	QUARK_ASSERT(value.vector_cppvector_ptr != nullptr);
-	QUARK_ASSERT(value.vector_cppvector_ptr->check_invariant());
+	QUARK_ASSERT(value.vector_carray_ptr != nullptr);
+	QUARK_ASSERT(value.vector_carray_ptr->check_invariant());
 
-	auto heap = value.vector_cppvector_ptr->alloc.heap;
-	dispose_alloc(value.vector_cppvector_ptr->alloc);
+	auto heap = value.vector_carray_ptr->alloc.heap;
+	dispose_alloc(value.vector_carray_ptr->alloc);
 	QUARK_ASSERT(heap->check_invariant());
 }
 
@@ -489,20 +489,20 @@ void dispose_vector_cppvector(const runtime_value_t& value){
 
 
 
-QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
+QUARK_UNIT_TEST("VECTOR_CARRAY_T", "", "", ""){
 	const auto vec_struct_size1 = sizeof(std::vector<int>);
 	QUARK_UT_VERIFY(vec_struct_size1 == 24);
 }
 
-QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
+QUARK_UNIT_TEST("VECTOR_CARRAY_T", "", "", ""){
 	heap_t heap;
 	detect_leaks(heap);
 
 	auto v = alloc_vector_ccpvector2(heap, 3, 3, get_undefined_itype());
-	QUARK_UT_VERIFY(v.vector_cppvector_ptr != nullptr);
+	QUARK_UT_VERIFY(v.vector_carray_ptr != nullptr);
 
-	if(dec_rc(v.vector_cppvector_ptr->alloc) == 0){
-		dispose_vector_cppvector(v);
+	if(dec_rc(v.vector_carray_ptr->alloc) == 0){
+		dispose_vector_carray(v);
 	}
 
 	QUARK_UT_VERIFY(heap.check_invariant());
@@ -1119,14 +1119,14 @@ value_backend_t make_test_value_backend(){
 
 
 
-void retain_vector_cppvector(value_backend_t& backend, runtime_value_t vec, itype_t itype){
+void retain_vector_carray(value_backend_t& backend, runtime_value_t vec, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(itype.check_invariant());
 	QUARK_ASSERT(is_rc_value(itype));
-	QUARK_ASSERT(is_vector_cppvector(itype) || itype.is_string());
+	QUARK_ASSERT(is_vector_carray(itype) || itype.is_string());
 
-	inc_rc(vec.vector_cppvector_ptr->alloc);
+	inc_rc(vec.vector_carray_ptr->alloc);
 }
 
 
@@ -1170,10 +1170,10 @@ void retain_value(value_backend_t& backend, runtime_value_t value, itype_t itype
 
 	if(is_rc_value(itype)){
 		if(itype.is_string()){
-			retain_vector_cppvector(backend, value, itype);
+			retain_vector_carray(backend, value, itype);
 		}
-		else if(is_vector_cppvector(itype)){
-			retain_vector_cppvector(backend, value, itype);
+		else if(is_vector_carray(itype)){
+			retain_vector_carray(backend, value, itype);
 		}
 		else if(is_vector_hamt(itype)){
 			retain_vector_hamt(backend, value, itype);
@@ -1241,46 +1241,46 @@ void release_dict(value_backend_t& backend, runtime_value_t dict0, itype_t itype
 	}
 }
 
-void release_vector_cppvector_pod(value_backend_t& backend, runtime_value_t vec, itype_t itype){
+void release_vector_carray_pod(value_backend_t& backend, runtime_value_t vec, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(itype.check_invariant());
-	QUARK_ASSERT(itype.is_string() || is_vector_cppvector(itype));
+	QUARK_ASSERT(itype.is_string() || is_vector_carray(itype));
 	QUARK_ASSERT(is_rc_value(lookup_vector_element_itype(backend, itype)) == false);
 
-	if(dec_rc(vec.vector_cppvector_ptr->alloc) == 0){
+	if(dec_rc(vec.vector_carray_ptr->alloc) == 0){
 		//	Release all elements.
 		{
 			const auto element_type = lookup_vector_element_itype(backend, itype);
-			auto element_ptr = vec.vector_cppvector_ptr->get_element_ptr();
-			for(int i = 0 ; i < vec.vector_cppvector_ptr->get_element_count() ; i++){
+			auto element_ptr = vec.vector_carray_ptr->get_element_ptr();
+			for(int i = 0 ; i < vec.vector_carray_ptr->get_element_count() ; i++){
 				const auto& element = element_ptr[i];
 				release_value(backend, element, element_type);
 			}
 		}
-		dispose_vector_cppvector(vec);
+		dispose_vector_carray(vec);
 	}
 }
 
-void release_vector_cppvector_nonpod(value_backend_t& backend, runtime_value_t vec, itype_t itype){
+void release_vector_carray_nonpod(value_backend_t& backend, runtime_value_t vec, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(itype.check_invariant());
-	QUARK_ASSERT(itype.is_string() || is_vector_cppvector(itype));
+	QUARK_ASSERT(itype.is_string() || is_vector_carray(itype));
 	QUARK_ASSERT(is_rc_value(lookup_vector_element_itype(backend, itype)) == true);
 
-	if(dec_rc(vec.vector_cppvector_ptr->alloc) == 0){
+	if(dec_rc(vec.vector_carray_ptr->alloc) == 0){
 		//	Release all elements.
 		{
 			const auto element_type = lookup_vector_element_itype(backend, itype);
 
-			auto element_ptr = vec.vector_cppvector_ptr->get_element_ptr();
-			for(int i = 0 ; i < vec.vector_cppvector_ptr->get_element_count() ; i++){
+			auto element_ptr = vec.vector_carray_ptr->get_element_ptr();
+			for(int i = 0 ; i < vec.vector_carray_ptr->get_element_count() ; i++){
 				const auto& element = element_ptr[i];
 				release_value(backend, element, element_type);
 			}
 		}
-		dispose_vector_cppvector(vec);
+		dispose_vector_carray(vec);
 	}
 }
 
@@ -1304,19 +1304,19 @@ void release_vec(value_backend_t& backend, runtime_value_t vec, itype_t itype){
 	QUARK_ASSERT(itype.is_string() || itype.is_vector());
 
 	if(itype.is_string()){
-		if(dec_rc(vec.vector_cppvector_ptr->alloc) == 0){
+		if(dec_rc(vec.vector_carray_ptr->alloc) == 0){
 			//	String has no elements to release.
 
-			dispose_vector_cppvector(vec);
+			dispose_vector_carray(vec);
 		}
 	}
-	else if(is_vector_cppvector(itype)){
+	else if(is_vector_carray(itype)){
 		const auto element_type = lookup_vector_element_itype(backend, itype);
 		if(is_rc_value(element_type)){
-			release_vector_cppvector_nonpod(backend, vec, itype);
+			release_vector_carray_nonpod(backend, vec, itype);
 		}
 		else{
-			release_vector_cppvector_pod(backend, vec, itype);
+			release_vector_carray_pod(backend, vec, itype);
 		}
 	}
 	else if(is_vector_hamt(itype)){

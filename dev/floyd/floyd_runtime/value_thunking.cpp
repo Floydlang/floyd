@@ -34,7 +34,7 @@ runtime_value_t to_runtime_string2(value_backend_t& backend, const std::string& 
 		char_pos++;
 
 		if(((char_pos & 7) == 0) || (char_pos == s.size())){
-			result.vector_cppvector_ptr->store(element_index, make_runtime_int(static_cast<int64_t>(acc)));
+			result.vector_carray_ptr->store(element_index, make_runtime_int(static_cast<int64_t>(acc)));
 			element_index = element_index + 1;
 			acc = 0;
 		}
@@ -43,19 +43,19 @@ runtime_value_t to_runtime_string2(value_backend_t& backend, const std::string& 
 }
 
 
-QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
+QUARK_UNIT_TEST("VECTOR_CARRAY_T", "", "", ""){
 	auto backend = make_test_value_backend();
 	const auto a = to_runtime_string2(backend, "hello, world!");
 
-	QUARK_UT_VERIFY(a.vector_cppvector_ptr->get_element_count() == 13);
+	QUARK_UT_VERIFY(a.vector_carray_ptr->get_element_count() == 13);
 
 	//	int64_t	'hello, w'
-//	QUARK_UT_VERIFY(a.vector_cppvector_ptr->load_element(0).int_value == 0x68656c6c6f2c2077);
-	QUARK_UT_VERIFY(a.vector_cppvector_ptr->load_element(0).int_value == 0x77202c6f6c6c6568);
+//	QUARK_UT_VERIFY(a.vector_carray_ptr->load_element(0).int_value == 0x68656c6c6f2c2077);
+	QUARK_UT_VERIFY(a.vector_carray_ptr->load_element(0).int_value == 0x77202c6f6c6c6568);
 
 	//int_value	int64_t	'orld!\0\0\0'
-//	QUARK_UT_VERIFY(a.vector_cppvector_ptr->load_element(1).int_value == 0x6f726c6421000000);
-	QUARK_UT_VERIFY(a.vector_cppvector_ptr->load_element(1).int_value == 0x00000021646c726f);
+//	QUARK_UT_VERIFY(a.vector_carray_ptr->load_element(1).int_value == 0x6f726c6421000000);
+	QUARK_UT_VERIFY(a.vector_carray_ptr->load_element(1).int_value == 0x00000021646c726f);
 }
 
 
@@ -63,7 +63,7 @@ QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
 std::string from_runtime_string2(const value_backend_t& backend, runtime_value_t encoded_value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(encoded_value.check_invariant());
-	QUARK_ASSERT(encoded_value.vector_cppvector_ptr != nullptr);
+	QUARK_ASSERT(encoded_value.vector_carray_ptr != nullptr);
 
 	const size_t size = get_vec_string_size(encoded_value);
 
@@ -71,8 +71,8 @@ std::string from_runtime_string2(const value_backend_t& backend, runtime_value_t
 
 	//	Read 8 characters at a time.
 	size_t char_pos = 0;
-	const auto begin0 = encoded_value.vector_cppvector_ptr->begin();
-	const auto end0 = encoded_value.vector_cppvector_ptr->end();
+	const auto begin0 = encoded_value.vector_carray_ptr->begin();
+	const auto end0 = encoded_value.vector_carray_ptr->end();
 	for(auto it = begin0 ; it != end0 ; it++){
 		const size_t copy_chars = std::min(size - char_pos, (size_t)8);
 		const uint64_t element = it->int_value;
@@ -88,7 +88,7 @@ std::string from_runtime_string2(const value_backend_t& backend, runtime_value_t
 	return result;
 }
 
-QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
+QUARK_UNIT_TEST("VECTOR_CARRAY_T", "", "", ""){
 	auto backend = make_test_value_backend();
 	const auto a = to_runtime_string2(backend, "hello, world!");
 
@@ -159,11 +159,11 @@ static runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t
 	const auto count = v0.size();
 
 	const auto itype = lookup_itype(backend, value.get_type());
-	if(is_vector_cppvector(itype)){
+	if(is_vector_carray(itype)){
 		auto result = alloc_vector_ccpvector2(backend.heap, count, count, itype);
 
 		const auto element_type = value.get_type().get_vector_element_type();
-		auto p = result.vector_cppvector_ptr->get_element_ptr();
+		auto p = result.vector_carray_ptr->get_element_ptr();
 		for(int i = 0 ; i < count ; i++){
 			const auto& e = v0[i];
 			const auto a = to_runtime_value2(backend, e);
@@ -195,9 +195,9 @@ static value_t from_runtime_vector(const value_backend_t& backend, const runtime
 	QUARK_ASSERT(type.is_vector());
 
 	const auto itype = lookup_itype(backend, type);
-	if(is_vector_cppvector(itype)){
+	if(is_vector_carray(itype)){
 		const auto element_type = type.get_vector_element_type();
-		const auto vec = encoded_value.vector_cppvector_ptr;
+		const auto vec = encoded_value.vector_carray_ptr;
 
 		std::vector<value_t> elements;
 		const auto count = vec->get_element_count();
