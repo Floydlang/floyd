@@ -1055,7 +1055,7 @@ itype_t lookup_vector_element_itype(const value_backend_t& backend, itype_t ityp
 	QUARK_ASSERT(itype.is_vector());
 
 	const auto& type = lookup_type_ref(backend, itype);
-	const auto element_type = type.get_vector_element_type();
+	const auto& element_type = type.get_vector_element_type();
 	return lookup_itype(backend, element_type);
 }
 
@@ -1065,7 +1065,7 @@ itype_t lookup_dict_value_itype(const value_backend_t& backend, itype_t itype){
 	QUARK_ASSERT(itype.is_dict());
 
 	const auto& type = lookup_type_ref(backend, itype);
-	const auto value_type = type.get_dict_value_type();
+	const auto& value_type = type.get_dict_value_type();
 	return lookup_itype(backend, value_type);
 }
 #else
@@ -1074,10 +1074,10 @@ itype_t lookup_vector_element_itype(const value_backend_t& backend, itype_t ityp
 	QUARK_ASSERT(itype.check_invariant());
 	QUARK_ASSERT(itype.is_vector());
 
-	const auto v2 = itype.get_vector_element_type();
+	const auto& v2 = itype.get_vector_element_type();
 #if DEBUG
 	const auto& type = lookup_type_ref(backend, itype);
-	const auto element_type = type.get_vector_element_type();
+	const auto& element_type = type.get_vector_element_type();
 	const auto v1 = lookup_itype(backend, element_type);
 	QUARK_ASSERT(v2 == v1);
 #endif
