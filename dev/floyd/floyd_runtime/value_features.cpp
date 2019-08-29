@@ -19,7 +19,7 @@ namespace floyd {
 VECTOR_CPPVECTOR_T* unpack_vector_cppvector_arg(const value_backend_t& backend, runtime_value_t arg, runtime_type_t arg_type){
 	QUARK_ASSERT(backend.check_invariant());
 #if DEBUG
-	const auto type = lookup_type(backend, arg_type);
+	const auto& type = lookup_type_ref(backend, arg_type);
 #endif
 	QUARK_ASSERT(type.is_vector());
 	QUARK_ASSERT(arg.vector_cppvector_ptr != nullptr);
@@ -31,7 +31,7 @@ VECTOR_CPPVECTOR_T* unpack_vector_cppvector_arg(const value_backend_t& backend, 
 DICT_CPPMAP_T* unpack_dict_cppmap_arg(const value_backend_t& backend, runtime_value_t arg, runtime_type_t arg_type){
 	QUARK_ASSERT(backend.check_invariant());
 #if DEBUG
-	const auto type = lookup_type(backend, arg_type);
+	const auto& type = lookup_type_ref(backend, arg_type);
 #endif
 	QUARK_ASSERT(type.is_dict());
 	QUARK_ASSERT(arg.dict_cppmap_ptr != nullptr);
@@ -45,7 +45,7 @@ DICT_CPPMAP_T* unpack_dict_cppmap_arg(const value_backend_t& backend, runtime_va
 int compare_values(value_backend_t& backend, int64_t op, const runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto value_type = lookup_type(backend, type);
+	const auto& value_type = lookup_type_ref(backend, type);
 
 	const auto left_value = from_runtime_value2(backend, lhs, value_type);
 	const auto right_value = from_runtime_value2(backend, rhs, value_type);
@@ -86,9 +86,9 @@ int compare_values(value_backend_t& backend, int64_t op, const runtime_type_t ty
 const runtime_value_t update__string(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type0 = lookup_type(backend, arg0_type);
-	const auto type1 = lookup_type(backend, arg1_type);
-	const auto type2 = lookup_type(backend, arg2_type);
+	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type1 = lookup_type_ref(backend, arg1_type);
+	const auto& type2 = lookup_type_ref(backend, arg2_type);
 
 	QUARK_ASSERT(type1.is_int());
 	QUARK_ASSERT(type2.is_int());
@@ -112,9 +112,9 @@ const runtime_value_t update__string(value_backend_t& backend, runtime_value_t a
 const runtime_value_t update__cppvector(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type0 = lookup_type(backend, arg0_type);
-	const auto type1 = lookup_type(backend, arg1_type);
-	const auto type2 = lookup_type(backend, arg2_type);
+	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type1 = lookup_type_ref(backend, arg1_type);
+	const auto& type2 = lookup_type_ref(backend, arg2_type);
 
 	QUARK_ASSERT(type1.is_int());
 
@@ -152,9 +152,9 @@ const runtime_value_t update__cppvector(value_backend_t& backend, runtime_value_
 const runtime_value_t update__vector_hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type0 = lookup_type(backend, arg0_type);
-	const auto type1 = lookup_type(backend, arg1_type);
-	const auto type2 = lookup_type(backend, arg2_type);
+	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type1 = lookup_type_ref(backend, arg1_type);
+	const auto& type2 = lookup_type_ref(backend, arg2_type);
 
 	QUARK_ASSERT(type1.is_int());
 
@@ -182,9 +182,9 @@ const runtime_value_t update__vector_hamt(value_backend_t& backend, runtime_valu
 const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type0 = lookup_type(backend, arg0_type);
-	const auto type1 = lookup_type(backend, arg1_type);
-	const auto type2 = lookup_type(backend, arg2_type);
+	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type1 = lookup_type_ref(backend, arg1_type);
+	const auto& type2 = lookup_type_ref(backend, arg2_type);
 
 	QUARK_ASSERT(type1.is_string());
 
@@ -211,9 +211,9 @@ const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_valu
 const runtime_value_t update__dict_hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type0 = lookup_type(backend, arg0_type);
-	const auto type1 = lookup_type(backend, arg1_type);
-	const auto type2 = lookup_type(backend, arg2_type);
+	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type1 = lookup_type_ref(backend, arg1_type);
+	const auto& type2 = lookup_type_ref(backend, arg2_type);
 
 	QUARK_ASSERT(type1.is_string());
 
@@ -249,7 +249,7 @@ const runtime_value_t subset__string(value_backend_t& backend, runtime_value_t a
 		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
 	}
 
-	const auto type0 = lookup_type(backend, arg0_type);
+	const auto& type0 = lookup_type_ref(backend, arg0_type);
 	const auto value = from_runtime_string2(backend, arg0);
 	const auto len = get_vec_string_size(arg0);
 	const auto end2 = std::min(end, len);
@@ -268,7 +268,7 @@ const runtime_value_t subset__cppvector(value_backend_t& backend, runtime_value_
 		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
 	}
 
-	const auto type0 = lookup_type(backend, arg0_type);
+	const auto& type0 = lookup_type_ref(backend, arg0_type);
 	const auto vec = unpack_vector_cppvector_arg(backend, arg0, arg0_type);
 	const auto end2 = std::min(end, vec->get_element_count());
 	const auto start2 = std::min(start, end2);
@@ -303,7 +303,7 @@ const runtime_value_t subset__hamt(value_backend_t& backend, runtime_value_t arg
 		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
 	}
 
-	const auto type0 = lookup_type(backend, arg0_type);
+	const auto& type0 = lookup_type_ref(backend, arg0_type);
 	const auto& vec = *arg0.vector_hamt_ptr;
 	const auto end2 = std::min(end, vec.get_element_count());
 	const auto start2 = std::min(start, end2);
@@ -355,8 +355,8 @@ const runtime_value_t replace__string(value_backend_t& backend, runtime_value_t 
 	QUARK_ASSERT(backend.check_invariant());
 
 	check_replace_indexes(start, end);
-	const auto type0 = lookup_type(backend, arg0_type);
-	const auto type3 = lookup_type(backend, arg3_type);
+	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type3 = lookup_type_ref(backend, arg3_type);
 
 	QUARK_ASSERT(type3 == type0);
 
@@ -385,8 +385,8 @@ const runtime_value_t replace__cppvector(value_backend_t& backend, runtime_value
 
 	check_replace_indexes(start, end);
 
-	const auto type0 = lookup_type(backend, arg0_type);
-	QUARK_ASSERT(lookup_type(backend, arg3_type) == type0);
+	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	QUARK_ASSERT(lookup_type_ref(backend, arg3_type) == type0);
 
 	const auto element_itype = lookup_vector_element_itype(backend, itype_t(arg0_type));
 
@@ -419,8 +419,8 @@ const runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t ar
 
 	check_replace_indexes(start, end);
 
-	const auto type0 = lookup_type(backend, arg0_type);
-	QUARK_ASSERT(lookup_type(backend, arg3_type) == type0);
+	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	QUARK_ASSERT(lookup_type_ref(backend, arg3_type) == type0);
 
 	const auto element_itype = lookup_vector_element_itype(backend, itype_t(arg0_type));
 
@@ -469,8 +469,8 @@ const runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t ar
 int64_t find__string(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, const runtime_value_t arg1, runtime_type_t arg1_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type0 = lookup_type(backend, arg0_type);
-	const auto type1 = lookup_type(backend, arg1_type);
+	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type1 = lookup_type_ref(backend, arg1_type);
 
 	QUARK_ASSERT(type1.is_string());
 
@@ -483,8 +483,8 @@ int64_t find__string(value_backend_t& backend, runtime_value_t arg0, runtime_typ
 int64_t find__cppvector(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, const runtime_value_t arg1, runtime_type_t arg1_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type0 = lookup_type(backend, arg0_type);
-	const auto type1 = lookup_type(backend, arg1_type);
+	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type1 = lookup_type_ref(backend, arg1_type);
 
 	QUARK_ASSERT(type1 == type0.get_vector_element_type());
 
@@ -509,8 +509,8 @@ int64_t find__cppvector(value_backend_t& backend, runtime_value_t arg0, runtime_
 int64_t find__hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, const runtime_value_t arg1, runtime_type_t arg1_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type0 = lookup_type(backend, arg0_type);
-	const auto type1 = lookup_type(backend, arg1_type);
+	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type1 = lookup_type_ref(backend, arg1_type);
 
 	QUARK_ASSERT(type1 == type0.get_vector_element_type());
 
@@ -538,7 +538,7 @@ int64_t find__hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_
 runtime_value_t get_keys__cppmap_cppvector(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type0 = lookup_type(backend, dict_type);
+	const auto& type0 = lookup_type_ref(backend, dict_type);
 
 	QUARK_ASSERT(type0.is_dict());
 
@@ -561,7 +561,7 @@ runtime_value_t get_keys__cppmap_cppvector(value_backend_t& backend, runtime_val
 runtime_value_t get_keys__cppmap_hamt(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type0 = lookup_type(backend, dict_type);
+	const auto& type0 = lookup_type_ref(backend, dict_type);
 
 	QUARK_ASSERT(type0.is_dict());
 
@@ -586,7 +586,7 @@ runtime_value_t get_keys__cppmap_hamt(value_backend_t& backend, runtime_value_t 
 runtime_value_t get_keys__hamtmap_cppvector(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type0 = lookup_type(backend, dict_type);
+	const auto& type0 = lookup_type_ref(backend, dict_type);
 
 	QUARK_ASSERT(type0.is_dict());
 
@@ -609,7 +609,7 @@ runtime_value_t get_keys__hamtmap_cppvector(value_backend_t& backend, runtime_va
 runtime_value_t get_keys__hamtmap_hamt(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type0 = lookup_type(backend, dict_type);
+	const auto& type0 = lookup_type_ref(backend, dict_type);
 
 	QUARK_ASSERT(type0.is_dict());
 

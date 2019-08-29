@@ -323,3 +323,28 @@ QUARK_UNIT_TEST("","", "", ""){
 	QUARK_TRACE_SS("C");
 }
 
+
+
+	struct test_t {
+		int a;
+	};
+
+	test_t g_test { 46 };
+	test_t& f(){
+		return g_test;
+	}
+
+//	Returning a const ref from function and capturing it using const auto x = f() -- will that make x a reference or a copy?
+//	RESULT: You must capture using auto& or you get a copy!
+QUARK_UNIT_TEST("","", "", ""){
+	QUARK_UT_VERIFY(g_test.a == 46);
+
+	const auto& b = f();
+	QUARK_UT_VERIFY(g_test.a == 46);
+	QUARK_UT_VERIFY(b.a == 46);
+	g_test.a = 1000;
+
+	QUARK_UT_VERIFY(g_test.a == 1000);
+	QUARK_UT_VERIFY(b.a == 1000);
+}
+

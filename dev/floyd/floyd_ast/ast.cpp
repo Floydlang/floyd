@@ -228,17 +228,6 @@ itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type){
 	throw std::exception();
 }
 
-const typeid_t& lookup_type(const type_interner_t& interner, const itype_t& type){
-	QUARK_ASSERT(interner.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	const auto lookup_index = type.get_lookup_index();
-	QUARK_ASSERT(lookup_index >= 0);
-	QUARK_ASSERT(lookup_index < interner.interned.size());
-
-	const auto& result = interner.interned[lookup_index];
-	return result;
-}
 
 
 void trace_type_interner(const type_interner_t& interner){

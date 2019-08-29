@@ -199,7 +199,7 @@ struct itype_t {
 		return bt;
 	}
 
-	uint32_t get_lookup_index() const {
+	inline uint32_t get_lookup_index() const {
 		QUARK_ASSERT(check_invariant());
 
 		return data & 0b00000000'11111111'11111111'11111111;
@@ -267,7 +267,38 @@ struct type_interner_t {
 
 std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid_t& type);
 itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type);
-const typeid_t& lookup_type(const type_interner_t& interner, const itype_t& type);
+inline const typeid_t& lookup_type(const type_interner_t& interner, const itype_t& type);
+
+
+/*
+Do this without using typeid_t at all.
+inline itype_t get_vector_element_type_quick(const type_interner_t& interner, itype_t vec){
+	QUARK_ASSERT(vec.check_invariant());
+	QUARK_ASSERT(vec.is_vector());
+
+	const auto lookup_index = type.get_lookup_index();
+	QUARK_ASSERT(lookup_index >= 0);
+	QUARK_ASSERT(lookup_index < interner.interned.size());
+
+	const auto& result = interner.interned[lookup_index];
+	return result;
+
+
+	const auto value = (data >> 24) & 15;
+	const auto bt = static_cast<base_type>(value);
+	return bt;
+}
+
+inline itype_t get_dict_value_type(const type_interner_t& interner, itype_t vec) const {
+	QUARK_ASSERT(vec.check_invariant());
+	QUARK_ASSERT(vec.is_vector());
+
+	const auto value = (data >> 24) & 15;
+	const auto bt = static_cast<base_type>(value);
+	return bt;
+}
+*/
+
 
 void trace_type_interner(const type_interner_t& interner);
 
@@ -342,6 +373,26 @@ struct unchecked_ast_t {
 	/////////////////////////////		STATE
 	public: general_purpose_ast_t _tree;
 };
+
+
+
+//////////////////////////////////////////////////		INLINES
+
+
+
+//	Used at runtime.
+inline const typeid_t& lookup_type(const type_interner_t& interner, const itype_t& type){
+	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto lookup_index = type.get_lookup_index();
+	QUARK_ASSERT(lookup_index >= 0);
+	QUARK_ASSERT(lookup_index < interner.interned.size());
+
+	const auto& result = interner.interned[lookup_index];
+	return result;
+}
+
 
 }	//	floyd
 

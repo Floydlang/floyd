@@ -33,7 +33,7 @@ namespace floyd {
 static std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value_t arg_value, runtime_type_t arg_type){
 	QUARK_ASSERT(runtime.check_invariant());
 
-	const auto type = lookup_type(runtime.backend, arg_type);
+	const auto& type = lookup_type_ref(runtime.backend, arg_type);
 	const auto value = from_runtime_value(runtime, arg_value, type);
 	const auto a = to_compact_string2(value);
 	return a;
@@ -67,8 +67,8 @@ static void floyd_llvm_intrinsic__assert(floyd_runtime_t* frp, runtime_value_t a
 static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.backend, arg0_type);
-	const auto type1 = lookup_type(r.backend, arg1_type);
+	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
+	const auto& type1 = lookup_type_ref(r.backend, arg1_type);
 
 	QUARK_ASSERT(type0.is_dict());
 	QUARK_ASSERT(type1.is_string());
@@ -129,7 +129,7 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 static runtime_value_t floyd_llvm_intrinsic__get_keys(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.backend, arg0_type);
+	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
 	QUARK_ASSERT(type0.is_dict());
 
 	if(is_dict_cppmap(itype_t(arg0_type))){
@@ -166,8 +166,8 @@ static runtime_value_t floyd_llvm_intrinsic__get_keys(floyd_runtime_t* frp, runt
 static uint32_t floyd_llvm_intrinsic__exists(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.backend, arg0_type);
-	const auto type1 = lookup_type(r.backend, arg1_type);
+	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
+	const auto& type1 = lookup_type_ref(r.backend, arg1_type);
 	QUARK_ASSERT(type0.is_dict());
 
 	if(is_dict_cppmap(itype_t(arg0_type))){
@@ -197,7 +197,7 @@ static uint32_t floyd_llvm_intrinsic__exists(floyd_runtime_t* frp, runtime_value
 static int64_t floyd_llvm_intrinsic__find(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, const runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.backend, arg0_type);
+	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
 	if(type0.is_string()){
 		return find__string(r.backend, arg0_value, arg0_type, arg1_value, arg1_type);
 	}
@@ -239,7 +239,7 @@ static runtime_value_t floyd_llvm_intrinsic__from_json(floyd_runtime_t* frp, JSO
 	QUARK_ASSERT(json_ptr != nullptr);
 
 	const auto& json = json_ptr->get_json();
-	const auto target_type2 = lookup_type(r.backend, target_type);
+	const auto& target_type2 = lookup_type_ref(r.backend, target_type);
 
 	const auto result = unflatten_json_to_specific_type(json, target_type2);
 	const auto result2 = to_runtime_value(r, result);
@@ -264,12 +264,12 @@ typedef runtime_value_t (*MAP_F)(floyd_runtime_t* frp, runtime_value_t arg0_valu
 
 static runtime_value_t map__cppvector(floyd_runtime_t* frp, value_backend_t& backend, runtime_value_t elements_vec, runtime_type_t elements_vec_type, runtime_value_t f_value, runtime_type_t f_value_type, runtime_value_t context_value, runtime_type_t context_value_type){
 
-	const auto type1 = lookup_type(backend, f_value_type);
+	const auto& type1 = lookup_type_ref(backend, f_value_type);
 #if DEBUG
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type0 = lookup_type(backend, elements_vec_type);
-	const auto type2 = lookup_type(backend, context_value_type);
+	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
+	const auto& type2 = lookup_type_ref(backend, context_value_type);
 	QUARK_ASSERT(check_map_func_type(type0, type1, type2));
 
 	const auto e_type = type0.get_vector_element_type();
@@ -290,12 +290,12 @@ static runtime_value_t map__cppvector(floyd_runtime_t* frp, value_backend_t& bac
 
 static runtime_value_t map__hamt(floyd_runtime_t* frp, value_backend_t& backend, runtime_value_t elements_vec, runtime_type_t elements_vec_type, runtime_value_t f_value, runtime_type_t f_value_type, runtime_value_t context_value, runtime_type_t context_value_type){
 
-	const auto type1 = lookup_type(backend, f_value_type);
+	const auto& type1 = lookup_type_ref(backend, f_value_type);
 #if DEBUG
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type0 = lookup_type(backend, elements_vec_type);
-	const auto type2 = lookup_type(backend, context_value_type);
+	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
+	const auto& type2 = lookup_type_ref(backend, context_value_type);
 	QUARK_ASSERT(check_map_func_type(type0, type1, type2));
 
 	const auto e_type = type0.get_vector_element_type();
@@ -342,8 +342,8 @@ static runtime_value_t floyd_llvm_intrinsic__map_string(floyd_runtime_t* frp, ru
 
 	QUARK_ASSERT(check_map_string_func_type(
 		typeid_t::make_string(),
-		lookup_type(r.backend, func_type),
-		lookup_type(r.backend, context_type)
+		lookup_type_ref(r.backend, func_type),
+		lookup_type_ref(r.backend, context_type)
 	));
 
 	const auto f = reinterpret_cast<MAP_STRING_F>(func.function_ptr);
@@ -387,10 +387,10 @@ static runtime_value_t map_dag__cppvector(
 	QUARK_ASSERT(frp != nullptr);
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type0 = lookup_type(backend, arg0_type);
-	const auto type1 = lookup_type(backend, arg1_type);
-	const auto type2 = lookup_type(backend, arg2_type);
-	QUARK_ASSERT(check_map_dag_func_type(type0, type1, type2, lookup_type(backend, context_type)));
+	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type1 = lookup_type_ref(backend, arg1_type);
+	const auto& type2 = lookup_type_ref(backend, arg2_type);
+	QUARK_ASSERT(check_map_dag_func_type(type0, type1, type2, lookup_type_ref(backend, context_type)));
 
 	const auto& elements = arg0_value;
 #if DEBUG
@@ -514,10 +514,10 @@ static runtime_value_t map_dag__hamt(
 	QUARK_ASSERT(frp != nullptr);
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type0 = lookup_type(backend, arg0_type);
-	const auto type1 = lookup_type(backend, arg1_type);
-	const auto type2 = lookup_type(backend, arg2_type);
-	QUARK_ASSERT(check_map_dag_func_type(type0, type1, type2, lookup_type(backend, context_type)));
+	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type1 = lookup_type_ref(backend, arg1_type);
+	const auto& type2 = lookup_type_ref(backend, arg2_type);
+	QUARK_ASSERT(check_map_dag_func_type(type0, type1, type2, lookup_type_ref(backend, context_type)));
 
 	const auto& elements = arg0_value;
 #if DEBUG
@@ -640,7 +640,7 @@ static runtime_value_t floyd_llvm_intrinsic__map_dag(
 ){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.backend, arg0_type);
+	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
 	if(is_vector_cppvector(itype_t(arg0_type))){
 		return map_dag__cppvector(frp, r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type, context, context_type);
 	}
@@ -666,10 +666,10 @@ static runtime_value_t filter__cppvector(floyd_runtime_t* frp, value_backend_t& 
 
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.backend, arg0_type);
-	const auto type1 = lookup_type(r.backend, arg1_type);
-	const auto type2 = lookup_type(r.backend, context_type);
-	const auto return_type = type0;
+	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
+	const auto& type1 = lookup_type_ref(r.backend, arg1_type);
+	const auto& type2 = lookup_type_ref(r.backend, context_type);
+	const auto& return_type = type0;
 
 	QUARK_ASSERT(check_filter_func_type(type0, type1, type2));
 	QUARK_ASSERT(is_vector_cppvector(itype_t(arg0_type)));
@@ -711,10 +711,10 @@ static runtime_value_t filter__hamt(floyd_runtime_t* frp, value_backend_t& backe
 
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.backend, arg0_type);
-	const auto type1 = lookup_type(r.backend, arg1_type);
-	const auto type2 = lookup_type(r.backend, context_type);
-	const auto return_type = type0;
+	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
+	const auto& type1 = lookup_type_ref(r.backend, arg1_type);
+	const auto& type2 = lookup_type_ref(r.backend, context_type);
+	const auto& return_type = type0;
 
 	QUARK_ASSERT(check_filter_func_type(type0, type1, type2));
 	QUARK_ASSERT(is_vector_hamt(itype_t(arg0_type)));
@@ -750,7 +750,7 @@ static runtime_value_t filter__hamt(floyd_runtime_t* frp, value_backend_t& backe
 static runtime_value_t floyd_llvm_intrinsic__filter(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.backend, arg0_type);
+	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
 	if(is_vector_cppvector(itype_t(arg0_type))){
 		return filter__cppvector(frp, r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
 	}
@@ -770,11 +770,11 @@ typedef runtime_value_t (*REDUCE_F)(floyd_runtime_t* frp, runtime_value_t acc_va
 static runtime_value_t reduce__cppvector(floyd_runtime_t* frp, value_backend_t& backend, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type, runtime_value_t context, runtime_type_t context_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type0 = lookup_type(backend, arg0_type);
-	const auto type1 = lookup_type(backend, arg1_type);
-	const auto type2 = lookup_type(backend, arg2_type);
+	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type1 = lookup_type_ref(backend, arg1_type);
+	const auto& type2 = lookup_type_ref(backend, arg2_type);
 
-	QUARK_ASSERT(check_reduce_func_type(type0, type1, type2, lookup_type(backend, context_type)));
+	QUARK_ASSERT(check_reduce_func_type(type0, type1, type2, lookup_type_ref(backend, context_type)));
 	QUARK_ASSERT(is_vector_cppvector(itype_t(arg0_type)));
 
 	const auto& vec = *arg0_value.vector_cppvector_ptr;
@@ -798,11 +798,11 @@ static runtime_value_t reduce__cppvector(floyd_runtime_t* frp, value_backend_t& 
 static runtime_value_t reduce__hamt(floyd_runtime_t* frp, value_backend_t& backend, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type, runtime_value_t context, runtime_type_t context_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type0 = lookup_type(backend, arg0_type);
-	const auto type1 = lookup_type(backend, arg1_type);
-	const auto type2 = lookup_type(backend, arg2_type);
+	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type1 = lookup_type_ref(backend, arg1_type);
+	const auto& type2 = lookup_type_ref(backend, arg2_type);
 
-	QUARK_ASSERT(check_reduce_func_type(type0, type1, type2, lookup_type(backend, context_type)));
+	QUARK_ASSERT(check_reduce_func_type(type0, type1, type2, lookup_type_ref(backend, context_type)));
 	QUARK_ASSERT(is_vector_hamt(itype_t(arg0_type)));
 
 	const auto& vec = *arg0_value.vector_hamt_ptr;
@@ -858,9 +858,9 @@ static runtime_value_t stable_sort__cppvector(
 	QUARK_ASSERT(frp != nullptr);
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type0 = lookup_type(backend, arg0_type);
-	const auto type1 = lookup_type(backend, arg1_type);
-	const auto type2 = lookup_type(backend, arg2_type);
+	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type1 = lookup_type_ref(backend, arg1_type);
+	const auto& type2 = lookup_type_ref(backend, arg2_type);
 
 	QUARK_ASSERT(check_stable_sort_func_type(type0, type1, type2));
 	QUARK_ASSERT(is_vector_cppvector(itype_t(arg0_type)));
@@ -909,9 +909,9 @@ static runtime_value_t stable_sort__hamt(
 	QUARK_ASSERT(frp != nullptr);
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type0 = lookup_type(backend, arg0_type);
-	const auto type1 = lookup_type(backend, arg1_type);
-	const auto type2 = lookup_type(backend, arg2_type);
+	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type1 = lookup_type_ref(backend, arg1_type);
+	const auto& type2 = lookup_type_ref(backend, arg2_type);
 
 	QUARK_ASSERT(check_stable_sort_func_type(type0, type1, type2));
 	QUARK_ASSERT(is_vector_hamt(itype_t(arg0_type)));
@@ -959,7 +959,7 @@ static runtime_value_t floyd_llvm_intrinsic__stable_sort(
 ){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.backend, arg0_type);
+	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
 	if(is_vector_cppvector(itype_t(arg0_type))){
 		return stable_sort__cppvector(frp, r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
 	}
@@ -994,8 +994,8 @@ void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t arg0_valu
 static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.backend, arg0_type);
-	const auto type1 = lookup_type(r.backend, arg1_type);
+	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
+	const auto& type1 = lookup_type_ref(r.backend, arg1_type);
 	const auto return_type = type0;
 	if(type0.is_string()){
 		auto value = from_runtime_string(r, arg0_value);
@@ -1067,8 +1067,8 @@ static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, run
 static const runtime_value_t floyd_llvm_intrinsic__replace(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.backend, arg0_type);
-	const auto type3 = lookup_type(r.backend, arg3_type);
+	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
+	const auto& type3 = lookup_type_ref(r.backend, arg3_type);
 
 	QUARK_ASSERT(type3 == type0);
 
@@ -1118,7 +1118,7 @@ static void floyd_llvm_intrinsic__send(floyd_runtime_t* frp, runtime_value_t pro
 static int64_t floyd_llvm_intrinsic__size(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.backend, arg0_type);
+	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
 
 	if(type0.is_string()){
 		return get_vec_string_size(arg0_value);
@@ -1168,7 +1168,7 @@ static int64_t floyd_llvm_intrinsic__size(floyd_runtime_t* frp, runtime_value_t 
 static const runtime_value_t floyd_llvm_intrinsic__subset(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.backend, arg0_type);
+	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
 	if(type0.is_string()){
 		return subset__string(r.backend, arg0_value, arg0_type, start, end);
 	}
@@ -1190,7 +1190,7 @@ static const runtime_value_t floyd_llvm_intrinsic__subset(floyd_runtime_t* frp, 
 static runtime_value_t floyd_llvm_intrinsic__to_pretty_string(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.backend, arg0_type);
+	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
 	const auto& value = from_runtime_value(r, arg0_value, type0);
 	const auto json = value_to_ast_json(value, json_tags::k_plain);
 	const auto s = json_to_pretty_string(json, 0, pretty_t{ 80, 4 });
@@ -1210,7 +1210,7 @@ static runtime_type_t floyd_llvm_intrinsic__typeof(floyd_runtime_t* frp, runtime
 	auto& r = get_floyd_runtime(frp);
 
 #if DEBUG
-	const auto type0 = lookup_type(r.backend, arg0_type);
+	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
 	QUARK_ASSERT(type0.check_invariant());
 #endif
 	return arg0_type;
@@ -1222,9 +1222,9 @@ static runtime_type_t floyd_llvm_intrinsic__typeof(floyd_runtime_t* frp, runtime
 static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.backend, arg0_type);
-	const auto type1 = lookup_type(r.backend, arg1_type);
-	const auto type2 = lookup_type(r.backend, arg2_type);
+	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
+	const auto& type1 = lookup_type_ref(r.backend, arg1_type);
+	const auto& type2 = lookup_type_ref(r.backend, arg2_type);
 	if(type0.is_string()){
 		return update__string(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
 	}
@@ -1253,7 +1253,7 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 static JSON_T* floyd_llvm_intrinsic__to_json(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.backend, arg0_type);
+	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
 	const auto value0 = from_runtime_value(r, arg0_value, type0);
 	const auto j = value_to_ast_json(value0, json_tags::k_plain);
 	auto result = alloc_json(r.backend.heap, j);

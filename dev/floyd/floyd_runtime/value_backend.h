@@ -698,8 +698,10 @@ struct value_backend_t {
 
 
 itype_t lookup_itype(const value_backend_t& backend, const typeid_t& type);
-const typeid_t& lookup_type(const value_backend_t& backend, runtime_type_t type);
-const typeid_t& lookup_type(const value_backend_t& backend, itype_t itype);
+
+//	WARNING: We are using typeid_t here in the runtime code. This type is slow and allocates memory. Always use const&!
+const typeid_t& lookup_type_ref(const value_backend_t& backend, itype_t itype);
+const typeid_t& lookup_type_ref(const value_backend_t& backend, runtime_type_t type);
 
 itype_t lookup_vector_element_itype(const value_backend_t& backend, itype_t itype);
 itype_t lookup_dict_value_itype(const value_backend_t& backend, itype_t itype);

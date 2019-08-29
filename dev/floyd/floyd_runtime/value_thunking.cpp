@@ -446,8 +446,8 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 			}
 		}
 		value_t operator()(const typeid_t::typeid_type_t& e) const{
-			const auto type1 = lookup_type(backend, encoded_value.typeid_itype);
-			const auto type2 = value_t::make_typeid_value(type1);
+			const auto& type1 = lookup_type_ref(backend, encoded_value.typeid_itype);
+			const auto& type2 = value_t::make_typeid_value(type1);
 			return type2;
 		}
 
