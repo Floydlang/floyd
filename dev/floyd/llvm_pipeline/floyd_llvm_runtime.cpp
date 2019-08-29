@@ -459,19 +459,22 @@ static std::vector<std::pair<itype_t, struct_layout_t>> make_struct_layouts(cons
 
 	std::vector<std::pair<itype_t, struct_layout_t>> result;
 
-	for(const auto& e: type_lookup.state.types){
-		if(e.type.is_struct()){
-			auto t2 = get_exact_struct_type_noptr(type_lookup, e.type);
+	for(int i = 0 ; i < type_lookup.state.types.size() ; i++){
+		const auto& e = type_lookup.state.types[i];
+		const auto& type = type_lookup.state.type_interner.interned[i];
+		if(type.is_struct()){
+			auto t2 = get_exact_struct_type_noptr(type_lookup, type);
 			const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
 
 			const auto struct_bytes = layout->getSizeInBytes();
 			std::vector<size_t> member_offsets;
-			for(int member_index = 0 ; member_index < e.type.get_struct()._members.size() ; member_index++){
+			for(int member_index = 0 ; member_index < type.get_struct()._members.size() ; member_index++){
 				const auto offset = layout->getElementOffset(member_index);
 				member_offsets.push_back(offset);
 			}
 
-			result.push_back( { e.itype, struct_layout_t{ member_offsets, struct_bytes } } );
+			const auto itype = lookup_itype(type_lookup.state.type_interner, type);
+			result.push_back( { itype, struct_layout_t{ member_offsets, struct_bytes } } );
 		}
 	}
 	return result;
@@ -481,8 +484,10 @@ static std::map<itype_t, typeid_t> make_type_lookup(const llvm_type_lookup& type
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	std::map<itype_t, typeid_t> result;
-	for(const auto& e: type_lookup.state.types){
-		result.insert( { e.itype, e.type } );
+	for(int i = 0 ; i < type_lookup.state.types.size() ; i++){
+		const auto& type = type_lookup.state.type_interner.interned[i];
+		const auto itype = lookup_itype(type_lookup.state.type_interner, type);
+		result.insert( { itype, type } );
 	}
 	return result;
 }

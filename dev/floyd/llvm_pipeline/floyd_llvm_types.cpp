@@ -179,13 +179,9 @@ static const type_entry_t& find_type(const builder_t& builder, const typeid_t& t
 	QUARK_ASSERT(builder.acc.type_interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto it = std::find_if(builder.acc.types.begin(), builder.acc.types.end(), [&](const type_entry_t& e){ return e.type == type; });
-	if(it != builder.acc.types.end()){
-		return *it;
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
+	const auto itype = lookup_itype(builder.acc.type_interner, type);
+	const auto index = itype.get_lookup_index();
+	return builder.acc.types[index];
 }
 
 static llvm::Type* get_llvm_type_prefer_generic(const type_entry_t& entry){
@@ -350,7 +346,6 @@ static type_entry_t make_type(const builder_t& builder, const typeid_t& type){
 	QUARK_ASSERT(builder.acc.type_interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto itype = lookup_itype(builder.acc.type_interner, type);
 	const auto llvm_type0 = make_llvm_type(builder, type);
 	const auto llvm_type = pass_as_ptr(type) ? llvm_type0->getPointerTo() : llvm_type0;
 
@@ -364,8 +359,6 @@ static type_entry_t make_type(const builder_t& builder, const typeid_t& type){
 	}
 
 	const auto entry = type_entry_t{
-		itype,
-		type,
 		llvm_type,
 		llvm_generic_type,
 		optional_function_def
@@ -374,27 +367,17 @@ static type_entry_t make_type(const builder_t& builder, const typeid_t& type){
 	return entry;
 }
 
-static type_entry_t touch_type(builder_t& builder, const typeid_t& type){
-	QUARK_ASSERT(builder.acc.type_interner.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	const auto it = std::find_if(builder.acc.types.begin(), builder.acc.types.end(), [&](const type_entry_t& e){ return e.type == type; });
-	if(it != builder.acc.types.end()){
-		return *it;
-	}
-	else{
-		const auto entry = make_type(builder, type);
-		builder.acc.types.push_back(entry);
-		return entry;
-	}
-}
-
 //	Notice: the entries in the type_interner may reference eachother = we need to process recursively.
 llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const type_interner_t& type_interner){
 	QUARK_ASSERT(type_interner.check_invariant());
 
 	state_t acc;
 	acc.type_interner = type_interner;
+
+	//	Make an entry for each entry in type_interner
+	acc.types = std::vector<type_entry_t>(type_interner.interned.size(), type_entry_t());
+
+
 	acc.generic_vec_type = make_generic_vec_type_internal(context);
 	acc.generic_dict_type = make_generic_dict_type_internal(context);
 	acc.json_type = make_json_type_internal(context);
@@ -409,7 +392,13 @@ llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const type_intern
 	builder_t builder { context, acc };
 
 	for(const auto& e: acc.type_interner.interned){
-		touch_type(builder, e);
+		QUARK_ASSERT(builder.acc.type_interner.check_invariant());
+		QUARK_ASSERT(e.check_invariant());
+
+		const auto itype = lookup_itype(builder.acc.type_interner, e);
+		const auto index = itype.get_lookup_index();
+		const auto entry = make_type(builder, e);
+		builder.acc.types[index] = entry;
 	}
 
 	state = builder.acc;
@@ -429,27 +418,25 @@ bool llvm_type_lookup::check_invariant() const {
 	QUARK_ASSERT(state.generic_struct_type != nullptr);
 
 	QUARK_ASSERT(state.wide_return_type != nullptr);
+
+	QUARK_ASSERT(state.type_interner.check_invariant());
+	QUARK_ASSERT(state.type_interner.interned.size() == state.types.size());
 	return true;
 }
 
 const type_entry_t& llvm_type_lookup::find_from_type(const typeid_t& type) const {
 	QUARK_ASSERT(check_invariant());
 
-	const auto it = std::find_if(state.types.begin(), state.types.end(), [&](const type_entry_t& e){ return e.type == type; });
-	if(it == state.types.end()){
-		throw std::exception();
-	}
-	return *it;
+	const auto itype = lookup_itype(state.type_interner, type);
+	const auto index = itype.get_lookup_index();
+	return state.types[index];
 }
 
 const type_entry_t& llvm_type_lookup::find_from_itype(const itype_t& itype) const {
 	QUARK_ASSERT(check_invariant());
 
-	const auto it = std::find_if(state.types.begin(), state.types.end(), [&](const type_entry_t& e){ return e.itype == itype; });
-	if(it == state.types.end()){
-		throw std::exception();
-	}
-	return *it;
+	const auto index = itype.get_lookup_index();
+	return state.types[index];
 }
 
 void trace_llvm_type_lookup(const llvm_type_lookup& type_lookup){
@@ -462,11 +449,13 @@ void trace_llvm_type_lookup(const llvm_type_lookup& type_lookup){
 
 	for(int i = 0 ; i < type_lookup.state.types.size() ; i++){
 		const auto& e = type_lookup.state.types[i];
+		const auto itype = i;
+		const auto type = type_lookup.state.type_interner.interned[i];
 		const auto l = line_t {
 			{
 				std::to_string(i),
-				std::to_string(e.itype.get_lookup_index()),
-				typeid_to_compact_string(e.type),
+				std::to_string(i),
+				typeid_to_compact_string(type),
 				print_type(e.llvm_type_specific),
 				print_type(e.llvm_type_generic),
 				e.optional_function_def != nullptr ? "YES" : ""
@@ -508,16 +497,18 @@ llvm::Type* make_runtime_value_type(const llvm_type_lookup& type_lookup){
 }
 
 
-typeid_t lookup_type(const llvm_type_lookup& type_lookup, const itype_t& type){
+typeid_t lookup_type(const llvm_type_lookup& type_lookup, const itype_t& itype){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	return type_lookup.find_from_itype(type).type;
+	const auto type = lookup_type(type_lookup.state.type_interner, itype);
+	return type;
 }
 
 itype_t lookup_itype(const llvm_type_lookup& type_lookup, const typeid_t& type){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	return type_lookup.find_from_type(type).itype;
+	const auto itype = lookup_itype(type_lookup.state.type_interner, type);
+	return itype;
 }
 
 
