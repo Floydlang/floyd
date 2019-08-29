@@ -355,7 +355,7 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 
 		const auto return_itype = lookup_itype(ee.backend, typeid_t::make_vector(typeid_t::make_string()));
 		if(is_rc_value(return_itype)){
-			release_deep2(ee.backend, main_args4, return_itype);
+			release_value(ee.backend, main_args4, return_itype);
 		}
 		return main_result_int;
 	}

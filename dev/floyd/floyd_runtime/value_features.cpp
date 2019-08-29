@@ -138,7 +138,7 @@ const runtime_value_t update__cppvector(value_backend_t& backend, runtime_value_
 		}
 
 		if(is_rc_value(itype_t(arg0_type))){
-			release_deep2(backend, dest_ptr[index], itype_t(arg0_type));
+			release_value(backend, dest_ptr[index], itype_t(arg0_type));
 		}
 		dest_ptr[index] = arg2;
 	}

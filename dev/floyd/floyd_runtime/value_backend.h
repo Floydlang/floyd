@@ -727,7 +727,7 @@ void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, itype_t it
 void retain_struct(value_backend_t& backend, runtime_value_t s, itype_t itype);
 
 
-void release_deep2(value_backend_t& backend, runtime_value_t value, itype_t itype);
+void release_value(value_backend_t& backend, runtime_value_t value, itype_t itype);
 
 void release_vector_cppvector_pod(value_backend_t& backend, runtime_value_t vec, itype_t itype);
 void release_vector_cppvector_nonpod(value_backend_t& backend, runtime_value_t vec, itype_t itype);
@@ -736,11 +736,11 @@ inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t
 
 void release_vec(value_backend_t& backend, runtime_value_t vec, itype_t itype);
 
-void release_dict_deep(value_backend_t& backend, runtime_value_t dict0, itype_t itype);
+void release_dict(value_backend_t& backend, runtime_value_t dict0, itype_t itype);
 
 
 void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_value_t vec, itype_t itype);
-void release_struct_deep(value_backend_t& backend, runtime_value_t s, itype_t itype);
+void release_struct(value_backend_t& backend, runtime_value_t s, itype_t itype);
 
 
 /*
