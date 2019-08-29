@@ -47,7 +47,7 @@ benchmark-def "Linear veq" {
 
 
 
-benchmark-def "[int] push_back() hamt" {
+benchmark-def "[int] push_back()" {
 	mutable [benchmark_result_t] results = []
 	let instances = [ 0, 1, 2, 31, 32, 33, 100, 1000, 1000000 ]
 	for(instance in 0 ..< size(instances)){
@@ -74,7 +74,7 @@ func [int] fill_int_vec(int count){
 	return v
 }
 
-benchmark-def "[int] lookup() hamt" {
+benchmark-def "[int] lookup()" {
 	mutable [benchmark_result_t] results = []
 	let instances = [ 0, 1, 2, 31, 32, 33, 100, 1000, 1000000 ]
 	for(instance in 0 ..< size(instances)){
@@ -93,11 +93,23 @@ benchmark-def "[int] lookup() hamt" {
 
 
 
-//print(make_benchmark_report(run_benchmarks(get_benchmarks())))
 
+benchmark-def "[int] update()" {
+	mutable [benchmark_result_t] results = []
+	let instances = [ 0, 1, 2, 31, 32, 33, 100, 1000, 1000000 ]
+	for(instance in 0 ..< size(instances)){
+		let count = instances[instance]
+		let [int] v = fill_int_vec(count)
 
-
-
+		let r = benchmark {
+			for(index in 0 ..< count){
+				let b = update(v, index, 404)
+			}
+		}
+		results = push_back(results, benchmark_result_t(r, json( { "Count": count, "Per Element": count > 0 ? r / count : -1 } )))
+	}
+	return results
+}
 
 
 
@@ -272,10 +284,19 @@ benchmark-def "game of life" {
 
 
 let to_run = [
-//	benchmark_id_t("", "[int] push_back() hamt"),
-//	benchmark_id_t("", "[int] lookup() hamt"),
-	benchmark_id_t("", "game of life")
-]
+	benchmark_id_t("", "[int] push_back()"),
+	benchmark_id_t("", "[int] lookup()"),
+	benchmark_id_t("", "[int] update()")
 
-print(make_benchmark_report(run_benchmarks(to_run)))
+//	benchmark_id_t("", "game of life")
+]
+if(0 == 1){
+	print(make_benchmark_report(run_benchmarks(to_run)))
+}
+else{
+	print(make_benchmark_report(run_benchmarks([
+		benchmark_id_t("", "[int] update()")
+	])))
+}
+
 
