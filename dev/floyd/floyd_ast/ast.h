@@ -23,7 +23,7 @@ namespace floyd {
 
 //////////////////////////////////////////////////		itype_t
 
-
+//	IMPORTANT: Collect all used types in a vector so we can use itype_t as an index into it for O(1)
 /*
 	bits 31 - 28 base_type (4 bits)
 	bits 27 - 24 base_type 2 (4 bits) -- used to tell basetype of vector element or dictionary value.

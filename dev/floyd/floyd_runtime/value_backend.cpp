@@ -1366,21 +1366,21 @@ void release_deep(value_backend_t& backend, runtime_value_t value, itype_t itype
 #endif
 
 	if(is_rc_value(itype)){
-		if(type.is_string()){
+		if(itype.is_string()){
 			release_vec_deep(backend, value, itype);
 		}
-		else if(type.is_vector()){
+		else if(itype.is_vector()){
 			release_vec_deep(backend, value, itype);
 		}
-		else if(type.is_dict()){
+		else if(itype.is_dict()){
 			release_dict_deep(backend, value, itype);
 		}
-		else if(type.is_json()){
+		else if(itype.is_json()){
 			if(dec_rc(value.json_ptr->alloc) == 0){
 				dispose_json(*value.json_ptr);
 			}
 		}
-		else if(type.is_struct()){
+		else if(itype.is_struct()){
 			release_struct_deep(backend, value.struct_ptr, itype);
 		}
 		else{
