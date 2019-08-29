@@ -16,6 +16,7 @@
 #include <map>
 #include <mutex>
 #include "ast_value.h"
+#include "type_interner.h"
 #include "ast.h"
 
 #include "quark.h"

@@ -175,6 +175,7 @@
 		2CC9B79F2309FD1D00B195C8 /* value_backend.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC9B79D2309FD1D00B195C8 /* value_backend.cpp */; };
 		2CC9B7A02309FD1D00B195C8 /* value_backend.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC9B79D2309FD1D00B195C8 /* value_backend.cpp */; };
 		2CCA88F522B6B5F100976D8E /* floyd_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CCA88F322B6B5F100976D8E /* floyd_corelib.cpp */; };
+		2CDA9AE22317DC9000231AA8 /* type_interner.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDA9AE02317DC9000231AA8 /* type_interner.cpp */; };
 		2CDFD5C922EA1AD0005B002C /* bytecode_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5C822EA1AD0005B002C /* bytecode_corelib.cpp */; };
 		2CDFD5CA22EA1AD0005B002C /* bytecode_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5C822EA1AD0005B002C /* bytecode_corelib.cpp */; };
 		2CDFD5CD22EA1E1B005B002C /* floyd_llvm_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5CC22EA1E1B005B002C /* floyd_llvm_corelib.cpp */; };
@@ -688,6 +689,8 @@
 		2CCA88F422B6B5F100976D8E /* floyd_corelib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_corelib.h; sourceTree = "<group>"; };
 		2CCC0D222141DCC700788BCB /* immer-master */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "immer-master"; sourceTree = "<group>"; };
 		2CCD83361CBA5BA3006033E4 /* floyd_main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_main.cpp; sourceTree = "<group>"; };
+		2CDA9AE02317DC9000231AA8 /* type_interner.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = type_interner.cpp; sourceTree = "<group>"; };
+		2CDA9AE12317DC9000231AA8 /* type_interner.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = type_interner.h; sourceTree = "<group>"; };
 		2CDFD5C822EA1AD0005B002C /* bytecode_corelib.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = bytecode_corelib.cpp; sourceTree = "<group>"; };
 		2CDFD5CB22EA1AE2005B002C /* bytecode_corelib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bytecode_corelib.h; sourceTree = "<group>"; };
 		2CDFD5CC22EA1E1B005B002C /* floyd_llvm_corelib.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_llvm_corelib.cpp; sourceTree = "<group>"; };
@@ -822,6 +825,8 @@
 				2CB7AA6A2209E51E0011DE4B /* compiler_basics.h */,
 				2C4574D322493DA2008A55B0 /* compiler_helpers.cpp */,
 				2C4574D422493DA2008A55B0 /* compiler_helpers.h */,
+				2CDA9AE02317DC9000231AA8 /* type_interner.cpp */,
+				2CDA9AE12317DC9000231AA8 /* type_interner.h */,
 				2C574E48203107D80035EA62 /* typeid.cpp */,
 				2C574E49203107D80035EA62 /* typeid.h */,
 			);
@@ -1705,6 +1710,7 @@
 				2CE0FE7822EE54B100018A96 /* desugar_pass.cpp in Sources */,
 				2C18044B208B90E900F62480 /* utils.cpp in Sources */,
 				2C3D2D9722EF869B00B808AA /* ast_visitor.cpp in Sources */,
+				2CDA9AE22317DC9000231AA8 /* type_interner.cpp in Sources */,
 				2CB9AFA82315E88300836EC3 /* floyd_llvm_intrinsics.cpp in Sources */,
 				2CDFD5CD22EA1E1B005B002C /* floyd_llvm_corelib.cpp in Sources */,
 				2C02667C2014CAF000A82AD6 /* floyd_test_suite.cpp in Sources */,

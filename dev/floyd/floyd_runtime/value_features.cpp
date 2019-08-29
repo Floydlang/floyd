@@ -9,7 +9,8 @@
 #include "value_features.h"
 
 #include "value_thunking.h"
-#include "ast.h"
+
+#include "expression.h"
 
 
 namespace floyd {
