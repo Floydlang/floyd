@@ -96,7 +96,7 @@ static function_bind_t floydrt_allocate_vector__make(llvm::LLVMContext& context,
 	return { "allocate_vector", function_type, reinterpret_cast<void*>(floydrt_allocate_vector) };
 }
 
-llvm::Value* generate_allocate_vector(const runtime_functions_t& functions, llvm::IRBuilder<>& builder, llvm::Value& frp_reg, llvm::Value& vector_type_reg, int64_t element_count){
+llvm::Value* generate_allocate_vector(const runtime_functions_t& functions, llvm::IRBuilder<>& builder, llvm::Value& frp_reg, llvm::Value& vector_type_reg, int64_t element_count, vector_backend vector_backend){
 	const auto element_count_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(builder.getContext()), element_count);
 
 	return builder.CreateCall(
