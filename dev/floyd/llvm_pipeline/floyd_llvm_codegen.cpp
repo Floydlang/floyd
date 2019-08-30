@@ -1516,17 +1516,10 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 	const auto element_type0 = details.value_type.get_vector_element_type();
 	const auto& element_type1 = *get_llvm_type_as_arg(gen_acc.gen.type_lookup, element_type0);
 
-	const auto element_count_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), element_count);
+//	const auto element_count_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), element_count);
 	auto vec_type_reg = generate_itype_constant(gen_acc.gen, details.value_type);
 
 	if(is_vector_carray(details.value_type)){
-/*
-		auto vec_ptr_reg = builder.CreateCall(
-			gen_acc.gen.runtime_functions.floydrt_allocate_vector.llvm_codegen_f,
-			{ gen_acc.get_callers_fcp(), vec_type_reg, element_count_reg },
-			""
-		);
-*/
 		auto vec_ptr_reg = generate_allocate_vector(gen_acc.gen.runtime_functions, builder, *gen_acc.get_callers_fcp(), *vec_type_reg, element_count);
 
 		auto ptr_reg = generate_get_vec_element_ptr_needs_cast(gen_acc, *vec_ptr_reg);
@@ -1563,7 +1556,8 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 		}
 	}
 	else if(is_vector_hamt(details.value_type)){
-		auto vec_ptr_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_allocate_vector.llvm_codegen_f, { gen_acc.get_callers_fcp(), vec_type_reg, element_count_reg }, "");
+		auto vec_ptr_reg = generate_allocate_vector(gen_acc.gen.runtime_functions, builder,  *gen_acc.get_callers_fcp(), *vec_type_reg, element_count);
+//		auto vec_ptr_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_allocate_vector.llvm_codegen_f, { gen_acc.get_callers_fcp(), vec_type_reg, element_count_reg }, "");
 
 		int element_index = 0;
 		for(const auto& element_value: details.elements){

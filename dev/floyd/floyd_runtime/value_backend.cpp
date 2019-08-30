@@ -315,14 +315,6 @@ int heap_t::count_used() const {
 }
 
 
-uint64_t size_to_allocation_blocks(std::size_t size){
-	const auto r = (size >> 3) + ((size & 7) > 0 ? 1 : 0);
-
-	QUARK_ASSERT((r * sizeof(uint64_t) - size) >= 0);
-	QUARK_ASSERT((r * sizeof(uint64_t) - size) < sizeof(uint64_t));
-
-	return r;
-}
 
 
 ////////////////////////////////	runtime_type_t

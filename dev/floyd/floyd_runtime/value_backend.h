@@ -244,7 +244,7 @@ const void* get_alloc_ptr(const heap_alloc_64_t& alloc);
 void trace_heap(const heap_t& heap);
 void detect_leaks(const heap_t& heap);
 
-uint64_t size_to_allocation_blocks(std::size_t size);
+inline uint64_t size_to_allocation_blocks(std::size_t size);
 
 //	Returns updated RC, no need to atomically read it yourself.
 //	If returned RC is 0, there is no way for any other client to bump it up again.
@@ -860,6 +860,15 @@ inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t
 }
 
 
+
+inline uint64_t size_to_allocation_blocks(std::size_t size){
+	const auto r = (size >> 3) + ((size & 7) > 0 ? 1 : 0);
+
+	QUARK_ASSERT((r * sizeof(uint64_t) - size) >= 0);
+	QUARK_ASSERT((r * sizeof(uint64_t) - size) < sizeof(uint64_t));
+
+	return r;
+}
 
 }	// floyd
 

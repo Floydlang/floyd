@@ -42,11 +42,10 @@ namespace floyd {
 
 
 //	Creates a new VEC_T with the contents of the string. Caller owns the result.
-static VECTOR_CARRAY_T* floydrt_alloc_kstr(floyd_runtime_t* frp, const char* s, uint64_t size){
+static runtime_value_t floydrt_alloc_kstr(floyd_runtime_t* frp, const char* s, uint64_t size){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto a = to_runtime_string(r, std::string(s, s + size));
-	return a.vector_carray_ptr;
+	return alloc_carray_8bit(r.backend, reinterpret_cast<const uint8_t*>(s), size);
 }
 
 static function_bind_t floydrt_alloc_kstr__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){

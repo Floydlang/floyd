@@ -16,30 +16,37 @@ namespace floyd {
 
 
 
-
-runtime_value_t to_runtime_string2(value_backend_t& backend, const std::string& s){
+runtime_value_t alloc_carray_8bit(value_backend_t& backend, const uint8_t data[], std::size_t count){
 	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(data != nullptr || count == 0);
 
-	const auto count = static_cast<uint64_t>(s.size());
-	const auto allocation_count = size_to_allocation_blocks(s.size());
+	const auto allocation_count = size_to_allocation_blocks(count);
 	auto result = alloc_vector_carray(backend.heap, allocation_count, count, itype_t::make_string());
 
 	size_t char_pos = 0;
 	int element_index = 0;
 	uint64_t acc = 0;
-	while(char_pos < s.size()){
-		const uint64_t ch = s[char_pos];
+	while(char_pos < count){
+		const uint64_t ch = data[char_pos];
 		const auto x = (char_pos & 7) * 8;
 		acc = acc | (ch << x);
 		char_pos++;
 
-		if(((char_pos & 7) == 0) || (char_pos == s.size())){
+		if(((char_pos & 7) == 0) || (char_pos == count)){
 			result.vector_carray_ptr->store(element_index, make_runtime_int(static_cast<int64_t>(acc)));
 			element_index = element_index + 1;
 			acc = 0;
 		}
 	}
 	return result;
+}
+
+
+runtime_value_t to_runtime_string2(value_backend_t& backend, const std::string& s){
+	QUARK_ASSERT(backend.check_invariant());
+
+	const uint8_t* p = reinterpret_cast<const uint8_t*>(s.c_str());
+	return alloc_carray_8bit(backend, p, s.size());
 }
 
 
