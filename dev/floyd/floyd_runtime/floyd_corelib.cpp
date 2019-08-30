@@ -22,6 +22,7 @@
 #include <thread>
 #include <chrono>
 #include <set>
+#include <ctime>
 
 namespace floyd {
 
@@ -75,7 +76,7 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 
 
 	func benchmark_id_t get_benchmarks_f(benchmark_def_t def, int c){
-		return benchmark_id_t( "module x", def.name)
+		return benchmark_id_t( "", def.name)
 	}
 
 	func [benchmark_id_t] get_benchmarks(){
@@ -358,21 +359,6 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 	struct vector2_t {
 		double x
 		double y
-	}
-
-
-
-	let color__black = color_t(0.0, 0.0, 0.0, 1.0)
-	let color__white = color_t(1.0, 1.0, 1.0, 1.0)
-
-
-	func color_t add_colors(color_t a, color_t b){
-		return color_t(
-			a.red + b.red,
-			a.green + b.green,
-			a.blue + b.blue,
-			a.alpha + b.alpha
-		)
 	}
 
 

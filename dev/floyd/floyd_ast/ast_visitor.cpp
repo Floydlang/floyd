@@ -76,12 +76,12 @@ static expression_t visit_ast_expression(visit_ast_t& acc, const expression_t& e
 
 			return expression_t::make_call(callee, args, expression._output_type);
 		}
-		expression_t operator()(const expression_t::corecall_t& e) const{
+		expression_t operator()(const expression_t::intrinsic_t& e) const{
 			std::vector<expression_t> args;
 			for(const auto& a: e.args){
 				args.push_back(visit_ast_expression(acc, a));
 			}
-			return expression_t::make_corecall(e.call_name, args, expression._output_type);
+			return expression_t::make_intrinsic(e.call_name, args, expression._output_type);
 		}
 
 

@@ -201,7 +201,7 @@ image make_image(int width, int height){
 		for(auto x = 0 ; x < width ; x++){
 			float s = std::sin(static_cast<float>(M_PI) * 2.0f * (float)x);
 			pixel p(0.5f + s, 0.5f, 0.0f, 1.0f);
-			pixels.push_back(p);
+			pixels = pixels.push_back(p);
 		}
 	}
 	
@@ -246,7 +246,7 @@ void example8(){
 		pixel._red = 1.0f - pixel._red;
 		b._pixels = b._pixels.set(i, pixel);
 	}
-	
+
 	//    Block on worker finishing.
 	image c = future.get();
 	
@@ -265,6 +265,27 @@ QUARK_UNIT_TEST("","", "", ""){
 	example8();
 }
 
+
+/*
+	asserts inside immer:
+
+    relaxed_t* relaxed()
+    {
+        assert(kind() == kind_t::inner);
+        return impl.d.data.inner.relaxed;
+    }
+*/
+
+#if 0
+QUARK_UNIT_TEST("", "", "", ""){
+	immer::vector<int> pixels;
+	pixels = pixels.push_back(600);
+}
+#endif
+
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto a = make_image(700, 700);
+}
 
 static const int k_hardware_thread_count = 8;
 
@@ -300,5 +321,30 @@ QUARK_UNIT_TEST("","", "", ""){
    		QUARK_TRACE_SS("B");
 	}
 	QUARK_TRACE_SS("C");
+}
+
+
+
+	struct test_t {
+		int a;
+	};
+
+	test_t g_test { 46 };
+	test_t& f(){
+		return g_test;
+	}
+
+//	Returning a const ref from function and capturing it using const auto x = f() -- will that make x a reference or a copy?
+//	RESULT: You must capture using auto& or you get a copy!
+QUARK_UNIT_TEST("","", "", ""){
+	QUARK_UT_VERIFY(g_test.a == 46);
+
+	const auto& b = f();
+	QUARK_UT_VERIFY(g_test.a == 46);
+	QUARK_UT_VERIFY(b.a == 46);
+	g_test.a = 1000;
+
+	QUARK_UT_VERIFY(g_test.a == 1000);
+	QUARK_UT_VERIFY(b.a == 1000);
 }
 

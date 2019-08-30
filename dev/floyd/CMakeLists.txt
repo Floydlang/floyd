@@ -17,7 +17,7 @@ ENDIF(MSVC)
 #SET (CMAKE_BUILD_TYPE Release)
 SET (CMAKE_BUILD_TYPE Debug)
 
-include_directories(parts commandline_tool  /usr/include benchmark_internals libs/benchmark/include libs/benchmark/googletest/googlemock/ libs/benchmark/googletest/googlemock/include floyd_runtime floyd_basics floyd_ast bytecode_interpreter  parts/immer-master floyd_parser parts/sha1 llvm_pipeline  .)
+include_directories(passes parts target_commandline_tool  /usr/include target_benchmark_internals libs/benchmark/include libs/benchmark/googletest/googlemock/ libs/benchmark/googletest/googlemock/include floyd_runtime floyd_basics floyd_ast bytecode_interpreter  parts/immer-master floyd_parser parts/sha1 llvm_pipeline  .)
 
 if (MSVC)  # - Microsoft Visual C++
 set (PROJECTNAME_ARCHITECTURE "x64")
@@ -35,8 +35,17 @@ else()
   set (VCPKG_ROOT "${CMAKE_SOURCE_DIR}/../../../vcpkg/")
   set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/../../../vcpkg/scripts/buildsystems/vcpkg.cmake"                                            
     CACHE STRING "")
+  #set(CMAKE_TOOLCHAIN_FILE "C:/work/FloydLang/vcpkg/scripts/buildsystems/vcpkg.cmake"                                            
+  #  CACHE STRING "")
+
     message(" [INFO] VCPKG CMAKE_TOOLCHAIN_FILE = ${CMAKE_TOOLCHAIN_FILE}")
 endif()
+
+find_package(Threads REQUIRED)
+find_package(LLVM  REQUIRED PATHS  "${CMAKE_SOURCE_DIR}/../../../vcpkg/packages/llvm_x64-windows/share/llvm/")
+#find_package(readline REQUIRED)
+
+
 endif(MSVC)
 
 #message(" [INFO] VCPKG CMAKE_TOOLCHAIN_FILE = ${CMAKE_TOOLCHAIN_FILE}")
@@ -65,46 +74,48 @@ set(CMAKE_CXX_FLAGS "-D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACR
 #set(CMAKE_CXX_FLAGS "--closure 1 -std=c++1z -s USE_PTHREADS=1 -Os -s WASM=0 -s ASSERTIONS=1 -s DISABLE_EXCEPTION_CATCHING=0 --bind")
 
 
-set( FLOYD_SOURCES
-benchmark_basics.cpp
-bytecode_interpreter/bytecode_corecalls.cpp
+set(FLOYD_SOURCES
+semantic_ast.cpp
+target_benchmark_internals/benchmark_basics.cpp
+#bytecode_interpreter/bytecode_corecalls.cpp
+bytecode_interpreter/bytecode_intrinsics.cpp
 bytecode_interpreter/bytecode_corelib.cpp
 bytecode_interpreter/bytecode_generator.cpp
 bytecode_interpreter/bytecode_helpers.cpp
 bytecode_interpreter/bytecode_interpreter.cpp
 bytecode_interpreter/floyd_interpreter.cpp
 parts/command_line_parser.cpp
-commandline_tool/floyd_command_line_parser.cpp
-commandline_tool/format_table.cpp
+target_commandline_tool/floyd_command_line_parser.cpp
+target_commandline_tool/format_table.cpp
 #parts/command_line_parser.h
-collect_used_types.cpp
-compiler_helpers.cpp
+passes/collect_used_types.cpp
+floyd_basics/compiler_helpers.cpp
 cpp_experiments.cpp
-desugar_pass.cpp
+passes/desugar_pass.cpp
 #floyd/examples/game_of_life.cpp
 #floyd/examples/process_test1.floyd
 #floyd/examples/test_main.floyd
 floyd_ast/ast.cpp
-floyd_ast/ast_helpers.cpp
+passes/ast_helpers.cpp
 floyd_ast/ast_visitor.cpp
 floyd_ast/expression.cpp
 floyd_ast/statement.cpp
 floyd_basics/ast_value.cpp
 floyd_basics/compiler_basics.cpp
 floyd_basics/typeid.cpp
-commandline_tool/floyd_main.cpp
+target_commandline_tool/floyd_main.cpp
 floyd_parser/floyd_parser.cpp
 floyd_parser/floyd_syntax.cpp
 floyd_parser/parse_expression.cpp
 floyd_parser/parse_statement.cpp
 floyd_parser/parser_primitives.cpp
-commandline_tool/floyd_repl.cpp
+target_commandline_tool/floyd_repl.cpp
 floyd_runtime/floyd_corelib.cpp
 floyd_runtime/floyd_runtime.cpp
 floyd_runtime/variable_length_quantity.cpp
-floyd_test_suite.cpp
-benchmark_internals/interpretator_benchmark.cpp
-issue_regression_tests.cpp
+language_validations/floyd_test_suite.cpp
+target_benchmark_internals/interpretator_benchmark.cpp
+language_validations/issue_regression_tests.cpp
 #libs/benchmark/googletest/googlemock/src/gmock-all.cc
 #libs/benchmark/googletest/googletest/src/gtest-all.cc
 libs/benchmark/src/benchmark.cc
@@ -129,7 +140,12 @@ llvm_pipeline/floyd_llvm_corelib.cpp
 llvm_pipeline/floyd_llvm_helpers.cpp
 llvm_pipeline/floyd_llvm_runtime.cpp
 llvm_pipeline/floyd_llvm_types.cpp
-parse_tree_to_ast_conv.cpp
+llvm_pipeline/floyd_llvm.cpp
+floyd_runtime/value_backend.cpp
+#llvm_pipeline/floyd_llvm_value_thunking.cpp
+floyd_runtime/value_thunking.cpp
+floyd_runtime/value_features.cpp
+passes/parse_tree_to_ast_conv.cpp
 parts/file_handling.cpp
 parts/hardware_caps.cpp
 parts/immutable_ref_value.cpp
@@ -140,10 +156,24 @@ parts/sha1/sha1.cpp
 parts/sha1_class.cpp
 parts/text_parser.cpp
 parts/utils.cpp
-semantic_analyser.cpp
+passes/semantic_analyser.cpp
 software_system.cpp
-test_helpers.cpp
+language_validations/test_helpers.cpp
 )
+
+if (MSVC)  # - Microsoft Visual C++
+set(FLOYD_SOURCES
+${FLOYD_SOURCES}
+parts/hardware_caps_windows.cpp
+)
+else()
+set(FLOYD_SOURCES
+${FLOYD_SOURCES}
+parts/hardware_caps_linux.cpp
+parts/hardware_cacheinfo.cpp
+parts/cpu_features.cpp
+)
+endif()
 
 # llvm-config --cxxflags --ldflags --system-libs --libs engine interpreter
 #
@@ -174,11 +204,11 @@ bytecode_interpreter/bytecode_corelib.cpp
 bytecode_interpreter/bytecode_helpers.cpp
 collect_used_types.cpp
 compiler_helpers.cpp
-benchmark_internals/compressed_vector_benchmark.cpp
+target_benchmark_internals/compressed_vector_benchmark.cpp
 examples/process_test1.floyd
 examples/test_main.floyd
-floyd_ast/ast_helpers.cpp
-benchmark_internals/floyd_benchmark_main.cpp
+passes/ast_helpers.cpp
+target_benchmark_internals/floyd_benchmark_main.cpp
 floyd_runtime/floyd_runtime.cpp
 floyd_runtime/variable_length_quantity.cpp
 libs/benchmark/googletest/googlemock/src/gmock-all.cc
@@ -243,12 +273,15 @@ target_include_directories( floyd
 )
 
 
-IF(MSVC)
+IF(MSVC)   
+
+  link_directories("${CMAKE_SOURCE_DIR}/../../../vcpkg/installed/x64-windows/debug/lib/")
+  #find_library(READLINE_LIBRARY readline)
+
   target_link_libraries( floyd
   ${FLOYD_SPEAK_STATIC_DEPENDENCIES}
-  ${FLOYD_SPEAK_DEPENDENCIES} pthread LTO LLVMMC LLVMLTO Shlwapi)
-  target_link_libraries(floyd )
-  target_link_libraries(floyd  LTO LLVMMC LLVMLTO)
+  ${FLOYD_SPEAK_DEPENDENCIES} ${CMAKE_THREAD_LIBS_INIT} Threads::Threads  LLVMMC LLVMLTO Shlwapi)
+  # ${CMAKE_SOURCE_DIR}/../../../vcpkg/installed/x64-windows/debug/lib/readline.lib
 ELSE()
 target_link_libraries( floyd
 ${FLOYD_SPEAK_STATIC_DEPENDENCIES}

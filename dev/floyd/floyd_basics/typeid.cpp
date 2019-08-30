@@ -597,7 +597,7 @@ std::string typeid_to_compact_string_int(const typeid_t& t){
 	const auto basetype = t.get_base_type();
 
 	if(basetype == floyd::base_type::k_unresolved){
-		return std::string() + "•" + t.get_unresolved() + "•";
+		return std::string() + "unresolved: " + t.get_unresolved();
 	}
 /*
 	else if(basetype == floyd::base_type::k_typeid){
@@ -819,6 +819,18 @@ std::vector<floyd::typeid_t> get_member_types(const std::vector<member_t>& m){
 	}
 	return r;
 }
+
+std::string members_to_string(const std::vector<member_t>& m){
+	std::string result;
+	for(const auto& e: m){
+		const std::string s = std::string("(") + typeid_to_compact_string(e._type) + " " + e._name + std::string(")");
+		result = result + s;
+	}
+
+	//	Remove trailing ',' character, if any.
+	return result == "" ? "" : result.substr(0, result.size() - 1);
+}
+
 
 
 ////////////////////////			typeid_t

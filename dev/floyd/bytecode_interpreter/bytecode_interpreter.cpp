@@ -8,7 +8,7 @@
 
 #include "bytecode_interpreter.h"
 
-#include "bytecode_corecalls.h"
+#include "bytecode_intrinsics.h"
 #include "bytecode_corelib.h"
 #include "text_parser.h"
 #include "ast_value.h"
@@ -528,6 +528,12 @@ bool bc_external_value_t::check_invariant() const{
 
 	QUARK_ASSERT(check_external_deep(_debug_type, this));
 
+	QUARK_ASSERT(_vector_w_external_elements.impl().check_tree());
+	QUARK_ASSERT(_vector_w_inplace_elements.impl().check_tree());
+
+//	QUARK_ASSERT(_dict_w_external_values.impl().check_tree());
+//	QUARK_ASSERT(_dict_w_inplace_values.impl().check_tree());
+
 	const auto encoding = type_to_encoding(_debug_type);
 	if(encoding == value_encoding::k_external__string){
 //				QUARK_ASSERT(_string);
@@ -573,27 +579,38 @@ bool bc_external_value_t::check_invariant() const{
 		QUARK_ASSERT(_dict_w_external_values.size() == 0);
 		QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
 
-//				QUARK_ASSERT(_struct && _struct->check_invariant());
+		for(const auto& e: _struct_members){
+			QUARK_ASSERT(e.check_invariant());
+		}
 	}
 	else if(encoding == value_encoding::k_external__vector){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
-//		QUARK_ASSERT(_vector_w_external_elements.empty());
+
+		for(const auto& e: _vector_w_external_elements){
+			QUARK_ASSERT(e.check_invariant());
+		}
+
 		QUARK_ASSERT(_vector_w_inplace_elements.empty());
 		QUARK_ASSERT(_dict_w_external_values.size() == 0);
 		QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
 	}
+
 	else if(encoding == value_encoding::k_external__vector_pod64){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
 		QUARK_ASSERT(_vector_w_external_elements.empty());
+
 		QUARK_ASSERT(_dict_w_external_values.size() == 0);
 		QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
 	}
+
+	//???	Notice: dicts only have external values right now.
+	//??? remove term "pod64" -- use
 	else if(encoding == value_encoding::k_external__dict){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json == nullptr);
@@ -601,8 +618,12 @@ bool bc_external_value_t::check_invariant() const{
 		QUARK_ASSERT(_struct_members.empty());
 		QUARK_ASSERT(_vector_w_external_elements.empty());
 		QUARK_ASSERT(_vector_w_inplace_elements.empty());
-//				QUARK_ASSERT(_dict_w_external_values.size() == 0);
-//				QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
+
+		for(const auto& e: _dict_w_external_values){
+			QUARK_ASSERT(e.second.check_invariant());
+		}
+		for(const auto& e: _dict_w_inplace_values){
+		}
 	}
 	else if(encoding == value_encoding::k_external__function){
 		QUARK_ASSERT(_string.empty());
@@ -971,6 +992,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_ASSERT(value_object_size >= 8);
 
 	const auto bcvalue_size = sizeof(bc_value_t);
+	(void)bcvalue_size;
 //	QUARK_ASSERT(bcvalue_size == 72);
 
 	struct mockup_value_t {
@@ -2306,9 +2328,9 @@ interpreter_t::interpreter_t(const bc_program_t& program, runtime_handler_i* han
 	const auto start_time = std::chrono::high_resolution_clock::now();
 
 
-	const auto corecalls = bc_get_corecalls();
+	const auto intrinsics = bc_get_intrinsics();
 	const auto corelib_calls = bc_get_corelib_calls();
-	auto host_functions = corecalls;
+	auto host_functions = intrinsics;
 	host_functions.insert(corelib_calls.begin(), corelib_calls.end());
 
 

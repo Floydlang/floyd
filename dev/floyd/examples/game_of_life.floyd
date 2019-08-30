@@ -39,8 +39,8 @@
 
 /* dimensions of the screen */
 
-let BOARD_WIDTH = 79
-let BOARD_HEIGHT = 24
+let BOARD_WIDTH = 12
+let BOARD_HEIGHT = 8
 
 /* set everthing to zero */
 
@@ -139,13 +139,13 @@ func void print_board ([[int]] board) impure {
 func int test_main ([string] args) impure {
 	mutable board = initialize_board ()
 
-	board = update(board, 0 + BOARD_WIDTH / 2, update(board[0 + BOARD_WIDTH / 2], 0 + BOARD_HEIGHT / 2, 120))
-	board = update(board, 1 + BOARD_WIDTH / 2, update(board[1 + BOARD_WIDTH / 2], 1 + BOARD_HEIGHT / 2, 120))
-	board = update(board, 1 + BOARD_WIDTH / 2, update(board[1 + BOARD_WIDTH / 2], 0 + BOARD_HEIGHT / 2, 120))
-	board = update(board, 2 + BOARD_WIDTH / 2, update(board[2 + BOARD_WIDTH / 2], 0 + BOARD_HEIGHT / 2, 120))
-	board = update(board, 2 + BOARD_WIDTH / 2, update(board[2 + BOARD_WIDTH / 2], 1 + BOARD_HEIGHT / 2, 120))
-	board = update(board, 3 + BOARD_WIDTH / 2, update(board[3 + BOARD_WIDTH / 2], 0 + BOARD_HEIGHT / 2, 120))
-	board = update(board, 3 + BOARD_WIDTH / 2, update(board[3 + BOARD_WIDTH / 2], 1 + BOARD_HEIGHT / 2, 120))
+	board = update(board, 0 - 2 + BOARD_WIDTH / 2, update(board[0 - 2 + BOARD_WIDTH / 2], 0 - 1 + BOARD_HEIGHT / 2, 120))
+	board = update(board, 1 - 2 + BOARD_WIDTH / 2, update(board[1 - 2 + BOARD_WIDTH / 2], 1 - 1 + BOARD_HEIGHT / 2, 120))
+	board = update(board, 1 - 2 + BOARD_WIDTH / 2, update(board[1 - 2 + BOARD_WIDTH / 2], 0 - 1 + BOARD_HEIGHT / 2, 120))
+	board = update(board, 2 - 2 + BOARD_WIDTH / 2, update(board[2 - 2 + BOARD_WIDTH / 2], 0 - 1 + BOARD_HEIGHT / 2, 120))
+	board = update(board, 2 - 2 + BOARD_WIDTH / 2, update(board[2 - 2 + BOARD_WIDTH / 2], 1 - 1 + BOARD_HEIGHT / 2, 120))
+	board = update(board, 3 - 2 + BOARD_WIDTH / 2, update(board[3 - 2 + BOARD_WIDTH / 2], 0 - 1 + BOARD_HEIGHT / 2, 120))
+	board = update(board, 3 - 2 + BOARD_WIDTH / 2, update(board[3 - 2 + BOARD_WIDTH / 2], 1 - 1 + BOARD_HEIGHT / 2, 120))
 
 	/* play game of life 5 times */
 

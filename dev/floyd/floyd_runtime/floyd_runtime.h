@@ -25,7 +25,7 @@ struct value_t;
 //////////////////////////////////////		runtime_handler_i
 
 /*
-	This is a callback from the interpreter (really the host functions run from the interpeter)
+	This is a callback from the running Floyd process.
 	that allows the interpreter to indirectly control the outside runtime that hosts the interpreter.
 	FUTURE: Needs neater solution than this.
 */

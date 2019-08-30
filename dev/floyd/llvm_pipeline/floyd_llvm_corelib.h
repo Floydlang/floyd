@@ -14,7 +14,7 @@
 
 namespace floyd {
 
-std::map<std::string, void*> get_corelib_c_function_ptrs();
+std::map<std::string, void*> get_corelib_binds();
 
 }	//	namespace floyd
 

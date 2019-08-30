@@ -10,10 +10,10 @@
 
 #include "floyd_runtime.h"
 
-#include "semantic_analyser.h"
 #include "bytecode_generator.h"
 #include "os_process.h"
 #include "bytecode_helpers.h"
+#include "semantic_ast.h"
 
 #include <thread>
 #include <deque>

@@ -23,9 +23,27 @@
 
 #include <algorithm>
 #include <memory>
+
 #ifndef __APPLE__
-#define	__dead2 __attribute__((__noreturn__))
+	#ifdef _MSC_VER
+		#define	__dead2 
+		#define NO_RETURN __declspec(noreturn)
+		#pragma warning(default:4716)
+	#else
+		#define	__dead2 __attribute__((__noreturn__))
+	#endif
+#else
+	#define NO_RETURN
 #endif
+
+
+/* SB: needed to ignore warnings for unchecked vectors and deprecated functions such as strcpy() */
+#ifdef _MSC_VER
+	#define _CRT_SECURE_NO_WARNINGS
+	#define _SCL_SECURE_NO_WARNINGS
+#endif
+
+
 
 /*
 # QUARK - THE C++ SUPER GLUE
@@ -237,20 +255,12 @@ Add mechanism for unit tests to get to test files.
 */
 
 
-/* SB: needed to ignore warnings for unchecked vectors and deprecated functions such as strcpy() */
-#ifdef _MSC_VER
-#define _CRT_SECURE_NO_WARNINGS
-#define _SCL_SECURE_NO_WARNINGS
-#endif
-
-
 #include <cassert>
 #include <vector>
 #include <string>
 #include <sstream>
 #include <cstring>
 #include <iostream>
-
 
 #ifndef QUARK_ASSERT_ON
 	#define QUARK_ASSERT_ON 1
@@ -362,6 +372,7 @@ void set_runtime(runtime_i* iRuntime);
 
 #if QUARK_ASSERT_ON
 
+	//??? MZ: No need for check for _MSC_VEC -- we have defined __dead2, haven't we?
 	#if _MSC_VER
 		void on_assert_hook(runtime_i* runtime, const source_code_location& location, const char expression[]);
 	#else

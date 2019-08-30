@@ -9,16 +9,10 @@
 #ifndef floyd_llvm_runtime_hpp
 #define floyd_llvm_runtime_hpp
 
-#include "ast_value.h"
-#include "floyd_llvm_helpers.h"
+#include "value_backend.h"
 #include "floyd_llvm_types.h"
-#include "floyd_corelib.h"
-#include "ast.h"
-
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Function.h>
-#include <llvm/IR/Verifier.h>
+#include "value_thunking.h"
+#include <llvm/IR/IRBuilder.h>
 
 #include <string>
 #include <vector>
@@ -30,19 +24,15 @@ namespace llvm {
 //??? make floyd_llvm-namespace. Reduces collisions with byte code interpreter.
 
 namespace floyd {
-	struct semantic_ast_t;
-	struct llvm_ir_program_t;
-	struct runtime_handler_i;
-	struct run_output_t;
+
+struct llvm_ir_program_t;
+struct runtime_handler_i;
+struct run_output_t;
+struct floyd_runtime_t;
+struct llvm_instance_t;
 
 
-////////////////////////////////		function_bind_t
-
-struct function_bind_t {
-	std::string name;
-	llvm::FunctionType* function_type;
-	void* implementation_f;
-};
+static const bool k_trace_process_messaging = false;
 
 
 ////////////////////////////////		llvm_bind_t
@@ -54,6 +44,19 @@ struct llvm_bind_t {
 };
 
 
+
+////////////////////////////////		function_bind_t
+
+
+
+struct function_bind_t {
+	std::string name;
+	llvm::FunctionType* llvm_function_type;
+	void* native_f;
+};
+
+
+
 ////////////////////////////////		function_def_t
 
 
@@ -61,11 +64,16 @@ struct llvm_bind_t {
 struct function_def_t {
 	link_name_t link_name;
 
+	llvm::FunctionType* llvm_function_type;
+
 	//	Only valid during codegen
 	llvm::Function* llvm_codegen_f;
 
 	function_definition_t floyd_fundef;
+	void* native_f;
 };
+
+void trace_function_defs(const std::vector<function_def_t>& defs);
 
 
 
@@ -82,17 +90,18 @@ struct llvm_execution_engine_t {
 	bool check_invariant() const;
 
 
-
 	////////////////////////////////		STATE
 
 	//	Must be first member, checked by LLVM code.
 	uint64_t debug_magic;
 
+	value_backend_t backend;
+	llvm_type_lookup type_lookup;
+
 	container_t container_def;
 
 	llvm_instance_t* instance;
 	std::shared_ptr<llvm::ExecutionEngine> ee;
-	llvm_type_lookup type_lookup;
 	symbol_table_t global_symbols;
 	std::vector<function_def_t> function_defs;
 	public: std::vector<std::string> _print_output;
@@ -100,7 +109,7 @@ struct llvm_execution_engine_t {
 	public: runtime_handler_i* _handler;
 
 	public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
-	public: heap_t heap;
+
 
 	llvm_bind_t main_function;
 	bool inited;
@@ -143,35 +152,53 @@ typedef runtime_value_t (*FLOYD_BENCHMARK_F)(floyd_runtime_t* frp);
 ////////////////////////////////		ENGINE GLOBALS
 
 
+void* get_global_ptr(const llvm_execution_engine_t& ee, const std::string& name);
 
 const function_def_t& find_function_def_from_link_name(const std::vector<function_def_t>& function_defs, const link_name_t& link_name);
 
 std::pair<void*, typeid_t> bind_global(const llvm_execution_engine_t& ee, const std::string& name);
 value_t load_global(const llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& v);
 
+void store_via_ptr(llvm_execution_engine_t& runtime, const typeid_t& member_type, void* value_ptr, const value_t& value);
+
 llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name);
 
 
-llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp);
+inline llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp);
 
 
 ////////////////////////////////		VALUES
 
 
 
-value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type);
-runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t& value);
+inline value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
+	return from_runtime_value2(runtime.backend, encoded_value, type);
+}
 
-std::string from_runtime_string(const llvm_execution_engine_t& r, runtime_value_t encoded_value);
-runtime_value_t to_runtime_string(llvm_execution_engine_t& r, const std::string& s);
+inline runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t& value){
+	return to_runtime_value2(runtime.backend, value);
+}
+
+inline std::string from_runtime_string(const llvm_execution_engine_t& runtime, runtime_value_t encoded_value){
+	return from_runtime_string2(runtime.backend, encoded_value);
+}
+inline runtime_value_t to_runtime_string(llvm_execution_engine_t& runtime, const std::string& s){
+	return to_runtime_string2(runtime.backend, s);
+}
 
 
 ////////////////////////////////		HIGH LEVEL
 
 
 
-//	These are the support function built into the runtime, like RC primitives.
-std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup);
+//	Returns a complete list of all functions: programmed in floyd, runtime functions, init() deinit().
+//	Notice that intrinics area already in the ast_function_defs-list.
+std::vector<function_def_t> make_all_function_defs(
+	llvm::LLVMContext& context,
+	const llvm_type_lookup& type_lookup,
+	const std::vector<floyd::function_definition_t>& ast_function_defs
+);
+
 
 int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const std::vector<std::string>& main_args);
 
@@ -183,14 +210,6 @@ std::unique_ptr<llvm_execution_engine_t> init_program(llvm_ir_program_t& program
 
 //	Calls main() if it exists, else runs the floyd processes. Returns when execution is done.
 run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::string>& main_args);
-
-
-//	Helper that goes directly from source to LLVM IR code.
-std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(llvm_instance_t& instance, const compilation_unit_t& cu);
-
-//	Compiles and runs the program. Returns results.
-run_output_t run_program_helper(const std::string& program_source, const std::string& file, const std::vector<std::string>& main_args);
-
 
 
 
@@ -207,12 +226,21 @@ std::vector<bench_t> filter_benchmarks(const std::vector<bench_t>& b, const std:
 
 
 
-////////////////////////////////		HELPERS
+
+//	Inlines
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
-std::vector<bench_t> collect_benchmarks(const std::string& program_source, const std::string& file);
-std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_source, const std::string& file, const std::vector<std::string>& tests);
+inline llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp){
+	QUARK_ASSERT(frp != nullptr);
+
+	auto ptr = reinterpret_cast<llvm_execution_engine_t*>(frp);
+	QUARK_ASSERT(ptr != nullptr);
+	QUARK_ASSERT(ptr->debug_magic == k_debug_magic);
+	QUARK_ASSERT(ptr->check_invariant());
+	return *ptr;
+}
 
 
 }	//	namespace floyd

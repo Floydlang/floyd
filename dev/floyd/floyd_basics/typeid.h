@@ -91,31 +91,31 @@ std::string typeid_to_compact_string(const typeid_t& t);
 enum class base_type {
 	//	k_undefined is never exposed in code, only used internally in compiler.
 	//	??? Maybe we can use void for this and remove k_undefined?
-	k_undefined,
+	k_undefined = 0,
 
-	//	Used by host functions arguments / returns to tell this is a dynamic value, not static type.
-	k_any,
+	//	Used as function return/args to tell this is a dynamic value, not static type.
+	k_any = 1,
 
 	//	Means no value. Used as return type for print() etc.
-	k_void,
+	k_void = 2,
 
-	k_bool,
-	k_int,
-	k_double,
-	k_string,
-	k_json,
+	k_bool = 3,
+	k_int = 4,
+	k_double = 5,
+	k_string = 6,
+	k_json = 7,
 
 	//	This is a type that specifies any other type at runtime.
-	k_typeid,
+	k_typeid = 8,
 
-	k_struct,
-	k_vector,
-	k_dict,
-	k_function,
+	k_struct = 9,
+	k_vector = 10,
+	k_dict = 11,
+	k_function = 12,
 
 	//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
 	//	Keep the identifier so it can be resolved later.
-	k_unresolved
+	k_unresolved = 13
 };
 
 std::string base_type_to_opcode(const base_type t);
@@ -124,7 +124,31 @@ base_type opcode_to_base_type(const std::string& s);
 void ut_verify(const quark::call_context_t& context, const base_type& result, const base_type& expected);
 
 
+//	Is this type final and has no variations? True for int. False for struct or vector because those needs more definition.
+inline bool is_atomic_type(base_type type){
+	return false
+		|| type == base_type::k_undefined
 
+		|| type == base_type::k_any
+
+		|| type == base_type::k_void
+
+		|| type == base_type::k_bool
+		|| type == base_type::k_int
+		|| type == base_type::k_double
+		|| type == base_type::k_string
+		|| type == base_type::k_json
+
+		|| type == base_type::k_typeid
+
+//		|| type == base_type::k_struct
+//		|| type == base_type::k_vector
+//		|| type == base_type::k_dict
+//		|| type == base_type::k_function
+
+		|| type == base_type::k_unresolved
+	;
+}
 
 
 
@@ -577,7 +601,7 @@ std::string typeid_to_compact_string(const typeid_t& t);
 
 //////////////////////////////////////		dynamic function
 
-//	Dynamic values are "fat" values that also keep their type. This is used right now for Floyd's host functions
+//	Dynamic values are "fat" values that also keep their type. This is used right now for Floyd's instrinsic functions
 //	that accepts many/any type of arguments. Like size().
 //	A dynamic function has one or several arguments of type k_any.
 //	The argument types for k_any arguments must be supplied for each function invocation.
@@ -607,7 +631,7 @@ struct member_t {
 
 std::vector<floyd::typeid_t> get_member_types(const std::vector<member_t>& m);
 
-
+std::string members_to_string(const std::vector<member_t>& m);
 
 
 

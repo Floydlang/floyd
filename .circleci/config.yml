@@ -19,9 +19,13 @@ jobs:
       - run:
            name: Creating Binary Files
            command: 'make'
+      - run:
+           name: floyd Hardware caps
+           command: './floyd hwcaps'
       #- run:
       #     name: floyd Unit Testing
       #     command: './floydut runtests'
+
 
   build-mac:
     macos:
@@ -47,9 +51,12 @@ jobs:
       - run:
            name: Creating Application
            command: 'cd dev && xcodebuild -scheme distributable build'
-      #- run:
-      #     name: floyd Unit Testing
-      #     command: 'build/Release/floydut runtests'
+      - run:
+           name: floyd Hwcaps
+           command: 'ls /Users/distiller/Library/Developer/Xcode/DerivedData &&  cd  /Users/distiller/Library/Developer/Xcode/DerivedData/floyd-*/Build/Products/Release;./floyd hwcaps'
+      - run:
+           name: floyd Unit test
+           command: 'ls /Users/distiller/Library/Developer/Xcode/DerivedData &&  cd  /Users/distiller/Library/Developer/Xcode/DerivedData/floyd-*/Build/Products/Release;./floyd runtests'
       #- run:
       #    name: Compress app  and result for storage
       #    command: zip -r floyd.zip build/Release/floyd.app

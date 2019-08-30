@@ -25,11 +25,11 @@ namespace floyd {
 
 
 struct native_binary_t {
-	VEC_T* ascii40;
+	VECTOR_CARRAY_T* ascii40;
 };
 
 struct native_sha1_t {
-	VEC_T* ascii40;
+	VECTOR_CARRAY_T* ascii40;
 };
 
 
@@ -47,7 +47,7 @@ static runtime_value_t llvm_corelib__make_benchmark_report(floyd_runtime_t* frp,
 
 
 
-static DICT_T* llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
+static DICT_CPPMAP_T* llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
 
 	const std::vector<std::pair<std::string, json_t>> caps = corelib_detect_hardware_caps();
@@ -59,7 +59,7 @@ static DICT_T* llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
 
 	const auto a = value_t::make_dict_value(typeid_t::make_json(), caps_map);
 	auto result = to_runtime_value(r, a);
-	return result.dict_ptr;
+	return result.dict_cppmap_ptr;
 }
 
 runtime_value_t llvm_corelib__make_hardware_caps_report(floyd_runtime_t* frp, runtime_value_t caps0){
@@ -121,7 +121,7 @@ static STRUCT_T* llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* 
 
 	const auto& binary = *reinterpret_cast<const native_binary_t*>(binary_ptr->get_data_ptr());
 
-	const auto& s = from_runtime_string(r, runtime_value_t { .vector_ptr = binary.ascii40 });
+	const auto& s = from_runtime_string(r, make_runtime_vector_carray(binary.ascii40));
 	const auto ascii40 = corelib_calc_string_sha1(s);
 
 	const auto a = value_t::make_struct_value(
@@ -162,7 +162,7 @@ static void llvm_corelib__write_text_file(floyd_runtime_t* frp, runtime_value_t 
 
 
 
-static VEC_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
+static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
@@ -179,10 +179,10 @@ static VEC_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp, runtime_
 #endif
 
 	const auto v = to_runtime_value(r, vec2);
-	return v.vector_ptr;
+	return v.vector_carray_ptr;
 }
 
-static VEC_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
+static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
@@ -199,7 +199,7 @@ static VEC_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, runtime_val
 #endif
 
 	const auto v = to_runtime_value(r, vec2);
-	return v.vector_ptr;
+	return v.vector_carray_ptr;
 }
 
 static STRUCT_T* llvm_corelib__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t path0){
@@ -267,7 +267,7 @@ static void llvm_corelib__rename_fsentry(floyd_runtime_t* frp, runtime_value_t p
 
 
 
-std::map<std::string, void*> get_corelib_c_function_ptrs(){
+std::map<std::string, void*> get_corelib_binds(){
 
 	////////////////////////////////		CORE FUNCTIONS AND HOST FUNCTIONS
 	const std::map<std::string, void*> host_functions_map = {
