@@ -141,7 +141,7 @@ struct write_cache_t {
 
 
 
-#define QUARK_UNIT_TEST QUARK_UNIT_TEST_VIP
+//#define QUARK_UNIT_TEST QUARK_UNIT_TEST_VIP
 
 
 QUARK_UNIT_TEST("", "", "", ""){
