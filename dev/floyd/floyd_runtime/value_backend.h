@@ -429,7 +429,7 @@ struct VECTOR_CARRAY_T {
 	heap_alloc_64_t alloc;
 };
 
-runtime_value_t alloc_vector_ccpvector2(heap_t& heap, uint64_t allocation_count, uint64_t element_count, itype_t value_type);
+runtime_value_t alloc_vector_carray(heap_t& heap, uint64_t allocation_count, uint64_t element_count, itype_t value_type);
 void dispose_vector_carray(const runtime_value_t& value);
 
 

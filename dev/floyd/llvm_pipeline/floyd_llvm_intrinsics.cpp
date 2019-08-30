@@ -280,7 +280,7 @@ static runtime_value_t map__carray(floyd_runtime_t* frp, value_backend_t& backen
 
 	const auto return_type = typeid_t::make_vector(r_type);
 	const auto count = elements_vec.vector_carray_ptr->get_element_count();
-	auto result_vec = alloc_vector_ccpvector2(backend.heap, count, count, lookup_itype(backend, return_type));
+	auto result_vec = alloc_vector_carray(backend.heap, count, count, lookup_itype(backend, return_type));
 	for(int i = 0 ; i < count ; i++){
 		const auto a = (*f)(frp, elements_vec.vector_carray_ptr->get_element_ptr()[i], context_value);
 		result_vec.vector_carray_ptr->get_element_ptr()[i] = a;
@@ -466,7 +466,7 @@ static runtime_value_t map_dag__carray(
 				}
 			}
 
-			auto solved_deps2 = alloc_vector_ccpvector2(backend.heap, solved_deps.size(), solved_deps.size(), lookup_itype(backend, return_type));
+			auto solved_deps2 = alloc_vector_carray(backend.heap, solved_deps.size(), solved_deps.size(), lookup_itype(backend, return_type));
 			for(int i = 0 ; i < solved_deps.size() ; i++){
 				solved_deps2.vector_carray_ptr->store(i, solved_deps[i]);
 			}
@@ -490,7 +490,7 @@ static runtime_value_t map_dag__carray(
 
 	//??? No need to copy all elements -- could store them directly into the VEC_T.
 	const auto count = complete.size();
-	auto result_vec = alloc_vector_ccpvector2(backend.heap, count, count, lookup_itype(backend, return_type));
+	auto result_vec = alloc_vector_carray(backend.heap, count, count, lookup_itype(backend, return_type));
 	for(int i = 0 ; i < count ; i++){
 //		retain_value(r, complete[i], r_type);
 		result_vec.vector_carray_ptr->store(i, complete[i]);
@@ -697,7 +697,7 @@ static runtime_value_t filter__carray(floyd_runtime_t* frp, value_backend_t& bac
 	}
 
 	const auto count2 = acc.size();
-	auto result_vec = alloc_vector_ccpvector2(r.backend.heap, count2, count2, lookup_itype(backend, return_type));
+	auto result_vec = alloc_vector_carray(r.backend.heap, count2, count2, lookup_itype(backend, return_type));
 
 	if(count2 > 0){
 		//	Count > 0 required to get address to first element in acc.
@@ -1021,7 +1021,7 @@ static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, run
 		const auto element_itype = itype_t(arg1_type);
 
 		const auto element_count2 = vs->get_element_count() + 1;
-		auto v2 = alloc_vector_ccpvector2(r.backend.heap, element_count2, element_count2, lookup_itype(r.backend, return_type));
+		auto v2 = alloc_vector_carray(r.backend.heap, element_count2, element_count2, lookup_itype(r.backend, return_type));
 
 		auto dest_ptr = v2.vector_carray_ptr->get_element_ptr();
 		auto source_ptr = vs->get_element_ptr();

@@ -456,7 +456,7 @@ bool VECTOR_CARRAY_T::check_invariant() const {
 	return true;
 }
 
-runtime_value_t alloc_vector_ccpvector2(heap_t& heap, uint64_t allocation_count, uint64_t element_count, itype_t value_type){
+runtime_value_t alloc_vector_carray(heap_t& heap, uint64_t allocation_count, uint64_t element_count, itype_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 
 	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count, value_type, "cppvec");
@@ -498,7 +498,7 @@ QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
 	heap_t heap;
 	detect_leaks(heap);
 
-	auto v = alloc_vector_ccpvector2(heap, 3, 3, get_undefined_itype());
+	auto v = alloc_vector_carray(heap, 3, 3, get_undefined_itype());
 	QUARK_UT_VERIFY(v.vector_carray_ptr != nullptr);
 
 	if(dec_rc(v.vector_carray_ptr->alloc) == 0){

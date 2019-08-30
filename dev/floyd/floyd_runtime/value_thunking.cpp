@@ -22,7 +22,7 @@ runtime_value_t to_runtime_string2(value_backend_t& backend, const std::string& 
 
 	const auto count = static_cast<uint64_t>(s.size());
 	const auto allocation_count = size_to_allocation_blocks(s.size());
-	auto result = alloc_vector_ccpvector2(backend.heap, allocation_count, count, itype_t::make_string());
+	auto result = alloc_vector_carray(backend.heap, allocation_count, count, itype_t::make_string());
 
 	size_t char_pos = 0;
 	int element_index = 0;
@@ -160,7 +160,7 @@ static runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t
 
 	const auto itype = lookup_itype(backend, value.get_type());
 	if(is_vector_carray(itype)){
-		auto result = alloc_vector_ccpvector2(backend.heap, count, count, itype);
+		auto result = alloc_vector_carray(backend.heap, count, count, itype);
 
 		const auto element_type = value.get_type().get_vector_element_type();
 		auto p = result.vector_carray_ptr->get_element_ptr();

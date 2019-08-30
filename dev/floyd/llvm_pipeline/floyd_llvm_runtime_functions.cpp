@@ -73,7 +73,7 @@ static runtime_value_t floydrt_allocate_vector(floyd_runtime_t* frp, runtime_typ
 	auto& r = get_floyd_runtime(frp);
 
 	if(is_vector_carray(itype_t(type))){
-		return alloc_vector_ccpvector2(r.backend.heap, element_count, element_count, itype_t(type));
+		return alloc_vector_carray(r.backend.heap, element_count, element_count, itype_t(type));
 	}
 	else if(is_vector_hamt(itype_t(type))){
 		return alloc_vector_hamt(r.backend.heap, element_count, element_count, itype_t(type));
@@ -117,7 +117,7 @@ static runtime_value_t floydrt_allocate_vector_fill(floyd_runtime_t* frp, runtim
 	auto& r = get_floyd_runtime(frp);
 
 	if(is_vector_carray(itype_t(type))){
-		return alloc_vector_ccpvector2(r.backend.heap, element_count, element_count, itype_t(type));
+		return alloc_vector_carray(r.backend.heap, element_count, element_count, itype_t(type));
 	}
 	else if(is_vector_hamt(itype_t(type))){
 		return alloc_vector_hamt(r.backend.heap, element_count, element_count, itype_t(type));
