@@ -229,7 +229,7 @@ void trace_type_interner(const type_interner_t& interner){
 
 
 
-QUARK_UNIT_TEST("type_interner_t()", "type_interner_t()", "Check that built in types work with lookup_itype()", ""){
+QUARK_TEST("type_interner_t()", "type_interner_t()", "Check that built in types work with lookup_itype()", ""){
 	const type_interner_t a;
 	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_undefined()) == itype_t::make_undefined());
 	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_any()) == itype_t::make_any());
@@ -245,7 +245,7 @@ QUARK_UNIT_TEST("type_interner_t()", "type_interner_t()", "Check that built in t
 	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_unresolved_type_identifier("")) == itype_t::make_unresolved());
 }
 
-QUARK_UNIT_TEST("type_interner_t()", "type_interner_t()", "Check that built in types work with lookup_type()", ""){
+QUARK_TEST("type_interner_t()", "type_interner_t()", "Check that built in types work with lookup_type()", ""){
 	const type_interner_t a;
 	QUARK_UT_VERIFY(lookup_type(a, itype_t::make_undefined()) == typeid_t::make_undefined());
 	QUARK_UT_VERIFY(lookup_type(a, itype_t::make_any()) == typeid_t::make_any());

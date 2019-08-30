@@ -546,7 +546,7 @@ std::string simplify_mem_size(int64_t value){
 	}
 }
 
-QUARK_UNIT_TEST("", "corelib_make_hardware_caps_report()", "", ""){
+QUARK_TEST("", "corelib_make_hardware_caps_report()", "", ""){
 	const auto r = simplify_mem_size(3943120896);
 //	QUARK_UT_VERIFY(r == "4 GB");
 }
@@ -637,7 +637,7 @@ std::string corelib_make_hardware_caps_report(const std::vector<std::pair<std::s
 
 
 
-QUARK_UNIT_TEST("", "corelib_make_hardware_caps_report()", "", ""){
+QUARK_TEST("", "corelib_make_hardware_caps_report()", "", ""){
 	const auto caps = corelib_detect_hardware_caps();
 	const auto r = corelib_make_hardware_caps_report(caps);
 	std::cout << r << std::endl;
@@ -661,7 +661,7 @@ std::string corelib_make_hardware_caps_report_brief(const std::vector<std::pair<
 	return r.str();
 }
 
-QUARK_UNIT_TEST("", "corelib_make_hardware_caps_report_brief()", "", ""){
+QUARK_TEST("", "corelib_make_hardware_caps_report_brief()", "", ""){
 	const std::vector<std::pair<std::string, json_t>> caps = {
 		{ "machdep_cpu_brand_string", json_t("Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz") },
 		{ "logical_processor_count", json_t(8) },
@@ -784,7 +784,7 @@ std::string make_benchmark_report(const std::vector<benchmark_result2_t>& test_r
 }
 
 
-QUARK_UNIT_TEST("", "make_benchmark_report()", "", ""){
+QUARK_TEST("", "make_benchmark_report()", "", ""){
 	const auto test = std::vector<benchmark_result2_t> {
 		benchmark_result2_t { benchmark_id_t{ "", "g" }, benchmark_result_t { 2, json_t::make_object({ { "rate", "===========" }, { "wind", 14 } } ) } },
 		benchmark_result2_t { benchmark_id_t{ "", "abc" }, benchmark_result_t { 2000, json_t("0 elements") } },
@@ -802,7 +802,7 @@ QUARK_UNIT_TEST("", "make_benchmark_report()", "", ""){
 }
 
 //	Generate demo reports
-QUARK_UNIT_TEST("", "make_benchmark_report()", "Demo", ""){
+QUARK_TEST("", "make_benchmark_report()", "Demo", ""){
 	const auto test = std::vector<benchmark_result2_t> {
 		benchmark_result2_t { benchmark_id_t{ "", "pack_png()" }, benchmark_result_t { 1800, json_t::make_object({ { "kb/s", 670000 }, { "out size", 14014 } } ) } },
 		benchmark_result2_t { benchmark_id_t{ "", "pack_png()" }, benchmark_result_t { 2023, json_t("alpha") } },
@@ -1030,12 +1030,12 @@ int64_t corelib__get_time_of_day(){
 	return result;
 }
 
-QUARK_UNIT_TEST("sizeof(int)", "", "", ""){
+QUARK_TEST("sizeof(int)", "", "", ""){
 	QUARK_TRACE(std::to_string(sizeof(int)));
 	QUARK_TRACE(std::to_string(sizeof(int64_t)));
 }
 
-QUARK_UNIT_TEST("get_time_of_day_ms()", "", "", ""){
+QUARK_TEST("get_time_of_day_ms()", "", "", ""){
 	const auto a = std::chrono::high_resolution_clock::now();
 	std::this_thread::sleep_for(std::chrono::milliseconds(7));
 	const auto b = std::chrono::high_resolution_clock::now();

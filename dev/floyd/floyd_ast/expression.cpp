@@ -246,7 +246,7 @@ void trace_function_definition_t(const function_definition_t& def){
 	);
 }
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	
 	const auto a = function_definition_t::make_func(k_no_location, "definition_name", typeid_t::make_function(typeid_t::make_string(), {}, epure::pure), {}, std::make_shared<body_t>());
 	QUARK_UT_VERIFY(a._named_args.empty());
@@ -280,23 +280,23 @@ expression_t::expression_t(const expression_variant_t& contents, const std::shar
 
 
 
-QUARK_UNIT_TEST("expression_t", "expression_to_json()", "literals", ""){
+QUARK_TEST("expression_t", "expression_to_json()", "literals", ""){
 	ut_verify(QUARK_POS, expression_to_json_string(expression_t::make_literal_int(13)), R"(["k", 13, "^int"])");
 }
-QUARK_UNIT_TEST("expression", "expression_to_json()", "literals", ""){
+QUARK_TEST("expression", "expression_to_json()", "literals", ""){
 	ut_verify(QUARK_POS, expression_to_json_string(expression_t::make_literal_string("xyz")), R"(["k", "xyz", "^string"])");
 }
-QUARK_UNIT_TEST("expression", "expression_to_json()", "literals", ""){
+QUARK_TEST("expression", "expression_to_json()", "literals", ""){
 	ut_verify(QUARK_POS, expression_to_json_string(expression_t::make_literal_double(14.0f)), R"(["k", 14, "^double"])");
 }
-QUARK_UNIT_TEST("expression", "expression_to_json()", "literals", ""){
+QUARK_TEST("expression", "expression_to_json()", "literals", ""){
 	ut_verify(QUARK_POS, expression_to_json_string(expression_t::make_literal_bool(true)), R"(["k", true, "^bool"])");
 }
-QUARK_UNIT_TEST("expression", "expression_to_json()", "literals", ""){
+QUARK_TEST("expression", "expression_to_json()", "literals", ""){
 	ut_verify(QUARK_POS, expression_to_json_string(expression_t::make_literal_bool(false)), R"(["k", false, "^bool"])");
 }
 
-QUARK_UNIT_TEST("expression_t", "expression_to_json()", "math2", ""){
+QUARK_TEST("expression_t", "expression_to_json()", "math2", ""){
 	ut_verify(
 		QUARK_POS,
 		expression_to_json_string(
@@ -307,7 +307,7 @@ QUARK_UNIT_TEST("expression_t", "expression_to_json()", "math2", ""){
 	);
 }
 
-QUARK_UNIT_TEST("expression_t", "expression_to_json()", "call", ""){
+QUARK_TEST("expression_t", "expression_to_json()", "call", ""){
 	ut_verify(
 		QUARK_POS,
 		expression_to_json_string(
@@ -324,7 +324,7 @@ QUARK_UNIT_TEST("expression_t", "expression_to_json()", "call", ""){
 	);
 }
 
-QUARK_UNIT_TEST("expression_t", "expression_to_json()", "lookup", ""){
+QUARK_TEST("expression_t", "expression_to_json()", "lookup", ""){
 	ut_verify(QUARK_POS, 
 		expression_to_json_string(
 			expression_t::make_lookup(
@@ -753,7 +753,7 @@ expression_type get_expression_type(const expression_t& e){
 
 
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const auto e = expression_t::make_literal(value_t::make_string("hello"));
 
 	QUARK_ASSERT(e.check_invariant());
@@ -773,7 +773,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const floyd::variable_address_t dummy;
 	const auto copy(dummy);
 	floyd::variable_address_t b;

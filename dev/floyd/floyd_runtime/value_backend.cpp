@@ -159,12 +159,12 @@ heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, itype_t 
 }
 
 
-QUARK_UNIT_TEST("heap_t", "alloc_64()", "", ""){
+QUARK_TEST("heap_t", "alloc_64()", "", ""){
 	heap_t heap;
 	QUARK_UT_VERIFY(heap.check_invariant());
 }
 
-QUARK_UNIT_TEST("heap_t", "alloc_64()", "", ""){
+QUARK_TEST("heap_t", "alloc_64()", "", ""){
 	heap_t heap;
 	auto a = alloc_64(heap, 0, get_undefined_itype(), "test");
 	QUARK_UT_VERIFY(a != nullptr);
@@ -178,7 +178,7 @@ QUARK_UNIT_TEST("heap_t", "alloc_64()", "", ""){
 	release_ref(*a);
 }
 
-QUARK_UNIT_TEST("heap_t", "add_ref()", "", ""){
+QUARK_TEST("heap_t", "add_ref()", "", ""){
 	heap_t heap;
 	auto a = alloc_64(heap, 0, get_undefined_itype(), "test");
 	add_ref(*a);
@@ -189,7 +189,7 @@ QUARK_UNIT_TEST("heap_t", "add_ref()", "", ""){
 	release_ref(*a);
 }
 
-QUARK_UNIT_TEST("heap_t", "release_ref()", "", ""){
+QUARK_TEST("heap_t", "release_ref()", "", ""){
 	heap_t heap;
 	auto a = alloc_64(heap, 0, get_undefined_itype(), "test");
 
@@ -338,14 +338,14 @@ runtime_type_t make_runtime_type(itype_t itype){
 ////////////////////////////////	runtime_value_t
 
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const auto s = sizeof(runtime_value_t);
 	QUARK_UT_VERIFY(s == 8);
 }
 
 
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	auto y = make_runtime_int(8);
 	auto a = make_runtime_int(1234);
 
@@ -435,12 +435,12 @@ WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b){
 
 
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const auto vec_struct_size = sizeof(std::vector<int>);
 	QUARK_UT_VERIFY(vec_struct_size == 24);
 }
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const auto wr_struct_size = sizeof(WIDE_RETURN_T);
 	QUARK_UT_VERIFY(wr_struct_size == 16);
 }
@@ -489,12 +489,12 @@ void dispose_vector_carray(const runtime_value_t& value){
 
 
 
-QUARK_UNIT_TEST("VECTOR_CARRAY_T", "", "", ""){
+QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
 	const auto vec_struct_size1 = sizeof(std::vector<int>);
 	QUARK_UT_VERIFY(vec_struct_size1 == 24);
 }
 
-QUARK_UNIT_TEST("VECTOR_CARRAY_T", "", "", ""){
+QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
 	heap_t heap;
 	detect_leaks(heap);
 
@@ -517,7 +517,7 @@ QUARK_UNIT_TEST("VECTOR_CARRAY_T", "", "", ""){
 
 
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const auto vec_size = sizeof(immer::vector<runtime_value_t>);
 	QUARK_UT_VERIFY(vec_size == 32);
 }
@@ -631,12 +631,12 @@ runtime_value_t push_back_immutable(const runtime_value_t& vec0, runtime_value_t
 
 
 
-QUARK_UNIT_TEST("VECTOR_HAMT_T", "", "", ""){
+QUARK_TEST("VECTOR_HAMT_T", "", "", ""){
 	const auto vec_struct_size2 = sizeof(immer::vector<int>);
 	QUARK_UT_VERIFY(vec_struct_size2 == 32);
 }
 
-QUARK_UNIT_TEST("VECTOR_HAMT_T", "", "", ""){
+QUARK_TEST("VECTOR_HAMT_T", "", "", ""){
 	auto backend = make_test_value_backend();
 	detect_leaks(backend.heap);
 
@@ -666,7 +666,7 @@ QUARK_UNIT_TEST("VECTOR_HAMT_T", "", "", ""){
 
 
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const auto size = sizeof(CPPMAP);
 	QUARK_ASSERT(size == 24);
 }
@@ -723,7 +723,7 @@ void dispose_dict_cppmap(runtime_value_t& d){
 
 
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const auto size = sizeof(HAMT_MAP);
 	QUARK_ASSERT(size == 16);
 }

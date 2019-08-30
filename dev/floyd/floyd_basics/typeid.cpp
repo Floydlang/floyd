@@ -76,50 +76,50 @@ std::string base_type_to_opcode(const base_type t){
 	return "**impossible**";
 }
 
-QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_undefined) == "undef");
 }
-QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_any) == "any");
 }
-QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_void) == "void");
 }
 
-QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_bool) == "bool");
 }
-QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_int) == "int");
 }
-QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_double) == "double");
 }
-QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_string) == "string");
 }
-QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_json) == "json");
 }
 
-QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_typeid) == "typeid");
 }
 
-QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_struct) == "struct");
 }
-QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_vector) == "vector");
 }
-QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_dict) == "dict");
 }
-QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_function) == "func");
 }
 
-QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_unresolved) == "unknown-identifier");
 }
 
@@ -309,101 +309,101 @@ void typeid_t::swap(typeid_t& other){
 }
 
 
-QUARK_UNIT_TESTQ("typeid_t", "make_undefined()"){
+QUARK_TESTQ("typeid_t", "make_undefined()"){
 	ut_verify(QUARK_POS, typeid_t::make_undefined().get_base_type(), base_type::k_undefined);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_undefined()"){
+QUARK_TESTQ("typeid_t", "is_undefined()"){
 	ut_verify_auto(QUARK_POS, typeid_t::make_undefined().is_undefined(), true);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_undefined()"){
+QUARK_TESTQ("typeid_t", "is_undefined()"){
 	ut_verify_auto(QUARK_POS, typeid_t::make_bool().is_undefined(), false);
 }
 
 
-QUARK_UNIT_TESTQ("typeid_t", "make_any()"){
+QUARK_TESTQ("typeid_t", "make_any()"){
 	ut_verify(QUARK_POS, typeid_t::make_any().get_base_type(), base_type::k_any);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_any()"){
+QUARK_TESTQ("typeid_t", "is_any()"){
 	ut_verify_auto(QUARK_POS, typeid_t::make_any().is_any(), true);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_any()"){
+QUARK_TESTQ("typeid_t", "is_any()"){
 	ut_verify_auto(QUARK_POS, typeid_t::make_bool().is_any(), false);
 }
 
 
-QUARK_UNIT_TESTQ("typeid_t", "make_void()"){
+QUARK_TESTQ("typeid_t", "make_void()"){
 	ut_verify(QUARK_POS, typeid_t::make_void().get_base_type(), base_type::k_void);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_void()"){
+QUARK_TESTQ("typeid_t", "is_void()"){
 	ut_verify_auto(QUARK_POS, typeid_t::make_void().is_void(), true);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_void()"){
+QUARK_TESTQ("typeid_t", "is_void()"){
 	ut_verify_auto(QUARK_POS, typeid_t::make_bool().is_void(), false);
 }
 
 
-QUARK_UNIT_TESTQ("typeid_t", "make_bool()"){
+QUARK_TESTQ("typeid_t", "make_bool()"){
 	ut_verify(QUARK_POS, typeid_t::make_bool().get_base_type(), base_type::k_bool);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_bool()"){
+QUARK_TESTQ("typeid_t", "is_bool()"){
 	ut_verify_auto(QUARK_POS, typeid_t::make_bool().is_bool(), true);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_bool()"){
+QUARK_TESTQ("typeid_t", "is_bool()"){
 	ut_verify_auto(QUARK_POS, typeid_t::make_void().is_bool(), false);
 }
 
 
-QUARK_UNIT_TESTQ("typeid_t", "make_int()"){
+QUARK_TESTQ("typeid_t", "make_int()"){
 	ut_verify(QUARK_POS, typeid_t::make_int().get_base_type(), base_type::k_int);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_int()"){
+QUARK_TESTQ("typeid_t", "is_int()"){
 	QUARK_UT_VERIFY(typeid_t::make_int().is_int() == true);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_int()"){
+QUARK_TESTQ("typeid_t", "is_int()"){
 	QUARK_UT_VERIFY(typeid_t::make_bool().is_int() == false);
 }
 
 
-QUARK_UNIT_TESTQ("typeid_t", "make_double()"){
+QUARK_TESTQ("typeid_t", "make_double()"){
 	QUARK_UT_VERIFY(typeid_t::make_double().is_double());
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_double()"){
+QUARK_TESTQ("typeid_t", "is_double()"){
 	QUARK_UT_VERIFY(typeid_t::make_double().is_double() == true);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_double()"){
+QUARK_TESTQ("typeid_t", "is_double()"){
 	QUARK_UT_VERIFY(typeid_t::make_bool().is_double() == false);
 }
 
 
-QUARK_UNIT_TESTQ("typeid_t", "make_string()"){
+QUARK_TESTQ("typeid_t", "make_string()"){
 	QUARK_UT_VERIFY(typeid_t::make_string().get_base_type() == base_type::k_string);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_string()"){
+QUARK_TESTQ("typeid_t", "is_string()"){
 	QUARK_UT_VERIFY(typeid_t::make_string().is_string() == true);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_string()"){
+QUARK_TESTQ("typeid_t", "is_string()"){
 	QUARK_UT_VERIFY(typeid_t::make_bool().is_string() == false);
 }
 
 
-QUARK_UNIT_TESTQ("typeid_t", "make_json()"){
+QUARK_TESTQ("typeid_t", "make_json()"){
 	QUARK_UT_VERIFY(typeid_t::make_json().get_base_type() == base_type::k_json);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_json()"){
+QUARK_TESTQ("typeid_t", "is_json()"){
 	QUARK_UT_VERIFY(typeid_t::make_json().is_json() == true);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_json()"){
+QUARK_TESTQ("typeid_t", "is_json()"){
 	QUARK_UT_VERIFY(typeid_t::make_bool().is_json() == false);
 }
 
 
-QUARK_UNIT_TESTQ("typeid_t", "make_typeid()"){
+QUARK_TESTQ("typeid_t", "make_typeid()"){
 	QUARK_UT_VERIFY(typeid_t::make_typeid().get_base_type() == base_type::k_typeid);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_typeid()"){
+QUARK_TESTQ("typeid_t", "is_typeid()"){
 	QUARK_UT_VERIFY(typeid_t::make_typeid().is_typeid() == true);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_typeid()"){
+QUARK_TESTQ("typeid_t", "is_typeid()"){
 	QUARK_UT_VERIFY(typeid_t::make_bool().is_typeid() == false);
 }
 
@@ -424,28 +424,28 @@ typeid_t make_test_struct_a(){
 	return typeid_t::make_struct2(k_struct_test_members_b);
 }
 
-QUARK_UNIT_TESTQ("typeid_t", "make_struct2()"){
+QUARK_TESTQ("typeid_t", "make_struct2()"){
 	QUARK_UT_VERIFY(typeid_t::make_struct2({}).get_base_type() == base_type::k_struct);
 }
-QUARK_UNIT_TESTQ("typeid_t", "make_struct2()"){
+QUARK_TESTQ("typeid_t", "make_struct2()"){
 	QUARK_UT_VERIFY(make_empty_struct().get_base_type() == base_type::k_struct);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_struct()"){
+QUARK_TESTQ("typeid_t", "is_struct()"){
 	QUARK_UT_VERIFY(make_empty_struct().is_struct() == true);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_struct()"){
+QUARK_TESTQ("typeid_t", "is_struct()"){
 	QUARK_UT_VERIFY(typeid_t::make_bool().is_struct() == false);
 }
 
-QUARK_UNIT_TESTQ("typeid_t", "make_struct2()"){
+QUARK_TESTQ("typeid_t", "make_struct2()"){
 	const auto t = make_test_struct_a();
 	QUARK_UT_VERIFY(t.get_struct() == k_struct_test_members_b);
 }
-QUARK_UNIT_TESTQ("typeid_t", "get_struct()"){
+QUARK_TESTQ("typeid_t", "get_struct()"){
 	const auto t = make_test_struct_a();
 	QUARK_UT_VERIFY(t.get_struct() == k_struct_test_members_b);
 }
-QUARK_UNIT_TESTQ("typeid_t", "get_struct_ref()"){
+QUARK_TESTQ("typeid_t", "get_struct_ref()"){
 	const auto t = make_test_struct_a();
 	QUARK_UT_VERIFY(t.get_struct_ref()->_members == k_struct_test_members_b);
 }
@@ -454,36 +454,36 @@ QUARK_UNIT_TESTQ("typeid_t", "get_struct_ref()"){
 
 
 
-QUARK_UNIT_TESTQ("typeid_t", "make_vector()"){
+QUARK_TESTQ("typeid_t", "make_vector()"){
 	QUARK_UT_VERIFY(typeid_t::make_vector(typeid_t::make_int()).get_base_type() == base_type::k_vector);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_vector()"){
+QUARK_TESTQ("typeid_t", "is_vector()"){
 	QUARK_UT_VERIFY(typeid_t::make_vector(typeid_t::make_int()).is_vector() == true);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_vector()"){
+QUARK_TESTQ("typeid_t", "is_vector()"){
 	QUARK_UT_VERIFY(typeid_t::make_bool().is_vector() == false);
 }
-QUARK_UNIT_TESTQ("typeid_t", "get_vector_element_type()"){
+QUARK_TESTQ("typeid_t", "get_vector_element_type()"){
 	QUARK_UT_VERIFY(typeid_t::make_vector(typeid_t::make_int()).get_vector_element_type().is_int());
 }
-QUARK_UNIT_TESTQ("typeid_t", "get_vector_element_type()"){
+QUARK_TESTQ("typeid_t", "get_vector_element_type()"){
 	QUARK_UT_VERIFY(typeid_t::make_vector(typeid_t::make_string()).get_vector_element_type().is_string());
 }
 
 
-QUARK_UNIT_TESTQ("typeid_t", "make_dict()"){
+QUARK_TESTQ("typeid_t", "make_dict()"){
 	QUARK_UT_VERIFY(typeid_t::make_dict(typeid_t::make_int()).get_base_type() == base_type::k_dict);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_dict()"){
+QUARK_TESTQ("typeid_t", "is_dict()"){
 	QUARK_UT_VERIFY(typeid_t::make_dict(typeid_t::make_int()).is_dict() == true);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_dict()"){
+QUARK_TESTQ("typeid_t", "is_dict()"){
 	QUARK_UT_VERIFY(typeid_t::make_bool().is_dict() == false);
 }
-QUARK_UNIT_TESTQ("typeid_t", "get_dict_value_type()"){
+QUARK_TESTQ("typeid_t", "get_dict_value_type()"){
 	QUARK_UT_VERIFY(typeid_t::make_dict(typeid_t::make_int()).get_dict_value_type().is_int());
 }
-QUARK_UNIT_TESTQ("typeid_t", "get_dict_value_type()"){
+QUARK_TESTQ("typeid_t", "get_dict_value_type()"){
 	QUARK_UT_VERIFY(typeid_t::make_dict(typeid_t::make_string()).get_dict_value_type().is_string());
 }
 
@@ -495,49 +495,49 @@ const auto k_test_function_args_a = std::vector<typeid_t>({
 	{ typeid_t::make_bool() }
 });
 
-QUARK_UNIT_TESTQ("typeid_t", "make_function()"){
+QUARK_TESTQ("typeid_t", "make_function()"){
 	const auto t = typeid_t::make_function(typeid_t::make_void(), {}, epure::pure);
 	QUARK_UT_VERIFY(t.get_base_type() == base_type::k_function);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_function()"){
+QUARK_TESTQ("typeid_t", "is_function()"){
 	const auto t = typeid_t::make_function(typeid_t::make_void(), {}, epure::pure);
 	QUARK_UT_VERIFY(t.is_function() == true);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_function()"){
+QUARK_TESTQ("typeid_t", "is_function()"){
 	QUARK_UT_VERIFY(typeid_t::make_bool().is_function() == false);
 }
-QUARK_UNIT_TESTQ("typeid_t", "get_function_return()"){
+QUARK_TESTQ("typeid_t", "get_function_return()"){
 	const auto t = typeid_t::make_function(typeid_t::make_void(), {}, epure::pure);
 	QUARK_UT_VERIFY(t.get_function_return().is_void());
 }
-QUARK_UNIT_TESTQ("typeid_t", "get_function_return()"){
+QUARK_TESTQ("typeid_t", "get_function_return()"){
 	const auto t = typeid_t::make_function(typeid_t::make_string(), {}, epure::pure);
 	QUARK_UT_VERIFY(t.get_function_return().is_string());
 }
-QUARK_UNIT_TESTQ("typeid_t", "get_function_args()"){
+QUARK_TESTQ("typeid_t", "get_function_args()"){
 	const auto t = typeid_t::make_function(typeid_t::make_void(), k_test_function_args_a, epure::pure);
 	QUARK_UT_VERIFY(t.get_function_args() == k_test_function_args_a);
 }
 
 
-QUARK_UNIT_TESTQ("typeid_t", "make_unresolved_type_identifier()"){
+QUARK_TESTQ("typeid_t", "make_unresolved_type_identifier()"){
 	const auto t = typeid_t::make_unresolved_type_identifier("xyz");
 	QUARK_UT_VERIFY(t.get_base_type() == base_type::k_unresolved);
 }
 
-QUARK_UNIT_TESTQ("typeid_t", "is_unresolved_type_identifier()"){
+QUARK_TESTQ("typeid_t", "is_unresolved_type_identifier()"){
 	const auto t = typeid_t::make_unresolved_type_identifier("xyz");
 	QUARK_UT_VERIFY(t.is_unresolved_type_identifier() == true);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_unresolved_type_identifier()"){
+QUARK_TESTQ("typeid_t", "is_unresolved_type_identifier()"){
 	QUARK_UT_VERIFY(typeid_t::make_bool().is_unresolved_type_identifier() == false);
 }
 
-QUARK_UNIT_TESTQ("typeid_t", "get_unresolved()"){
+QUARK_TESTQ("typeid_t", "get_unresolved()"){
 	const auto t = typeid_t::make_unresolved_type_identifier("xyz");
 	QUARK_UT_VERIFY(t.get_unresolved() == "xyz");
 }
-QUARK_UNIT_TESTQ("typeid_t", "get_unresolved()"){
+QUARK_TESTQ("typeid_t", "get_unresolved()"){
 	const auto t = typeid_t::make_unresolved_type_identifier("123");
 	QUARK_UT_VERIFY(t.get_unresolved() == "123");
 }
@@ -547,39 +547,39 @@ QUARK_UNIT_TESTQ("typeid_t", "get_unresolved()"){
 
 
 
-QUARK_UNIT_TESTQ("typeid_t", "operator==()"){
+QUARK_TESTQ("typeid_t", "operator==()"){
 	const auto a = typeid_t::make_vector(typeid_t::make_int());
 	const auto b = typeid_t::make_vector(typeid_t::make_int());
 	QUARK_UT_VERIFY(a == b);
 }
-QUARK_UNIT_TESTQ("typeid_t", "operator==()"){
+QUARK_TESTQ("typeid_t", "operator==()"){
 	const auto a = typeid_t::make_vector(typeid_t::make_int());
 	const auto b = typeid_t::make_dict(typeid_t::make_int());
 	QUARK_UT_VERIFY((a == b) == false);
 }
-QUARK_UNIT_TESTQ("typeid_t", "operator==()"){
+QUARK_TESTQ("typeid_t", "operator==()"){
 	const auto a = typeid_t::make_vector(typeid_t::make_int());
 	const auto b = typeid_t::make_vector(typeid_t::make_string());
 	QUARK_UT_VERIFY((a == b) == false);
 }
 
 
-QUARK_UNIT_TESTQ("typeid_t", "operator=()"){
+QUARK_TESTQ("typeid_t", "operator=()"){
 	const auto a = typeid_t::make_bool();
 	const auto b = a;
 	QUARK_UT_VERIFY(a == b);
 }
-QUARK_UNIT_TESTQ("typeid_t", "operator=()"){
+QUARK_TESTQ("typeid_t", "operator=()"){
 	const auto a = typeid_t::make_vector(typeid_t::make_int());
 	const auto b = a;
 	QUARK_UT_VERIFY(a == b);
 }
-QUARK_UNIT_TESTQ("typeid_t", "operator=()"){
+QUARK_TESTQ("typeid_t", "operator=()"){
 	const auto a = typeid_t::make_dict(typeid_t::make_int());
 	const auto b = a;
 	QUARK_UT_VERIFY(a == b);
 }
-QUARK_UNIT_TESTQ("typeid_t", "operator=()"){
+QUARK_TESTQ("typeid_t", "operator=()"){
 	const auto a = typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_int(), typeid_t::make_double() }, epure::pure);
 	const auto b = a;
 	QUARK_UT_VERIFY(a == b);
@@ -694,7 +694,7 @@ const std::vector<typeid_str_test_t> make_typeid_str_tests(){
 
 
 #if 0
-OFF_QUARK_UNIT_TEST("typeid_to_ast_json()", "", "", ""){
+OFF_QUARK_TEST("typeid_to_ast_json()", "", "", ""){
 	const auto f = make_typeid_str_tests();
 	for(int i = 0 ; i < f.size() ; i++){
 		QUARK_TRACE(std::to_string(i));
@@ -708,7 +708,7 @@ OFF_QUARK_UNIT_TEST("typeid_to_ast_json()", "", "", ""){
 }
 
 
-OFF_QUARK_UNIT_TEST("typeid_from_ast_json", "", "", ""){
+OFF_QUARK_TEST("typeid_from_ast_json", "", "", ""){
 	const auto f = make_typeid_str_tests();
 	for(int i = 0 ; i < f.size() ; i++){
 		QUARK_TRACE(std::to_string(i));
@@ -723,7 +723,7 @@ OFF_QUARK_UNIT_TEST("typeid_from_ast_json", "", "", ""){
 }
 
 
-OFF_QUARK_UNIT_TEST("typeid_to_compact_string", "", "", ""){
+OFF_QUARK_TEST("typeid_to_compact_string", "", "", ""){
 	const auto f = make_typeid_str_tests();
 	for(int i = 0 ; i < f.size() ; i++){
 		QUARK_TRACE(std::to_string(i));
@@ -863,7 +863,7 @@ bool is_dynamic_function(const typeid_t& function_type){
 
 
 
-QUARK_UNIT_TEST("typeid_t", "operator==()", "", ""){
+QUARK_TEST("typeid_t", "operator==()", "", ""){
 	const auto a = typeid_t::make_function(typeid_t::make_int(), {}, epure::pure);
 	const auto b = typeid_t::make_function(typeid_t::make_int(), {}, epure::pure);
 	QUARK_UT_VERIFY(a == b);

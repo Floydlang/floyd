@@ -97,7 +97,7 @@ machdep.cpu.extfeatures
 }
 
 //	Experiement.
-QUARK_UNIT_TEST("","", "", ""){
+QUARK_TEST("","", "", ""){
 	unsigned num_cpus = std::thread::hardware_concurrency();
 
 //	QUARK_TRACE_SS(num_cpus);

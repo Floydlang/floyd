@@ -37,11 +37,11 @@ std::string quote(const std::string& s){
 	return std::string("\"") + s + "\"";
 }
 
-QUARK_UNIT_TESTQ("quote()", ""){
+QUARK_TESTQ("quote()", ""){
 	QUARK_UT_VERIFY(quote("") == "\"\"");
 }
 
-QUARK_UNIT_TESTQ("quote()", ""){
+QUARK_TESTQ("quote()", ""){
 	QUARK_UT_VERIFY(quote("abc") == "\"abc\"");
 }
 
@@ -69,19 +69,19 @@ vector<string> split_on_chars(const seq_t& s, const string& match_chars){
 	return result;
 }
 
-QUARK_UNIT_TESTQ("split_on_chars()", ""){
+QUARK_TESTQ("split_on_chars()", ""){
 	ut_verify(QUARK_POS, split_on_chars(seq_t(""),"#"), vector<string>{});
 }
-QUARK_UNIT_TESTQ("split_on_chars()", ""){
+QUARK_TESTQ("split_on_chars()", ""){
 	ut_verify(QUARK_POS, split_on_chars(seq_t("#"),"#"), vector<string>{""});
 }
-QUARK_UNIT_TESTQ("split_on_chars()", ""){
+QUARK_TESTQ("split_on_chars()", ""){
 	ut_verify(QUARK_POS, split_on_chars(seq_t("123#"),"#"), vector<string>{"123"});
 }
-QUARK_UNIT_TESTQ("split_on_chars()", ""){
+QUARK_TESTQ("split_on_chars()", ""){
 	ut_verify(QUARK_POS, split_on_chars(seq_t("123#456"),"#"), (vector<string>{"123", "456"}));
 }
-QUARK_UNIT_TESTQ("split_on_chars()", ""){
+QUARK_TESTQ("split_on_chars()", ""){
 	ut_verify(QUARK_POS, split_on_chars(seq_t("a##b"),"#"), (vector<string>{"a", "", "b"}));
 }
 
@@ -100,13 +100,13 @@ std::string concat_strings_with_divider(const std::vector<std::string>& v, const
 	}
 }
 
-QUARK_UNIT_TESTQ("concat_strings_with_divider()", ""){
+QUARK_TESTQ("concat_strings_with_divider()", ""){
 	ut_verify(QUARK_POS, concat_strings_with_divider({""},", "), "");
 }
-QUARK_UNIT_TESTQ("concat_strings_with_divider()", ""){
+QUARK_TESTQ("concat_strings_with_divider()", ""){
 	ut_verify(QUARK_POS, concat_strings_with_divider({"one"},", "), "one");
 }
-QUARK_UNIT_TESTQ("concat_strings_with_divider()", ""){
+QUARK_TESTQ("concat_strings_with_divider()", ""){
 	ut_verify(QUARK_POS, concat_strings_with_divider({"one","two"},", "), "one, two");
 }
 
@@ -135,13 +135,13 @@ std::string float_to_string(float value){
 	return result;
 }
 
-QUARK_UNIT_TESTQ("float_to_string()", ""){
+QUARK_TESTQ("float_to_string()", ""){
 	ut_verify(QUARK_POS, float_to_string(0.0f), "0");
 }
-QUARK_UNIT_TESTQ("float_to_string()", ""){
+QUARK_TESTQ("float_to_string()", ""){
 	ut_verify(QUARK_POS, float_to_string(13.0f), "13");
 }
-QUARK_UNIT_TESTQ("float_to_string()", ""){
+QUARK_TESTQ("float_to_string()", ""){
 	ut_verify(QUARK_POS, float_to_string(13.5f), "13.5");
 }
 
@@ -163,22 +163,22 @@ inline std::string remove_redundant_leading_zeros(const std::string& s){
 	const auto result = s.substr(0, i);
 	return result;
 }
-QUARK_UNIT_TESTQ("remove_redundant_leading_zeros()", ""){
+QUARK_TESTQ("remove_redundant_leading_zeros()", ""){
 	QUARK_UT_VERIFY(remove_redundant_leading_zeros("1.0") == "1.0");
 }
-QUARK_UNIT_TESTQ("remove_redundant_leading_zeros()", ""){
+QUARK_TESTQ("remove_redundant_leading_zeros()", ""){
 	QUARK_UT_VERIFY(remove_redundant_leading_zeros("1.00") == "1.0");
 }
-QUARK_UNIT_TESTQ("remove_redundant_leading_zeros()", ""){
+QUARK_TESTQ("remove_redundant_leading_zeros()", ""){
 	QUARK_UT_VERIFY(remove_redundant_leading_zeros("1.000") == "1.0");
 }
-QUARK_UNIT_TESTQ("remove_redundant_leading_zeros()", ""){
+QUARK_TESTQ("remove_redundant_leading_zeros()", ""){
 	QUARK_UT_VERIFY(remove_redundant_leading_zeros("1.5") == "1.5");
 }
-QUARK_UNIT_TESTQ("remove_redundant_leading_zeros()", ""){
+QUARK_TESTQ("remove_redundant_leading_zeros()", ""){
 	QUARK_UT_VERIFY(remove_redundant_leading_zeros("1.50") == "1.5");
 }
-QUARK_UNIT_TESTQ("remove_redundant_leading_zeros()", ""){
+QUARK_TESTQ("remove_redundant_leading_zeros()", ""){
 	QUARK_UT_VERIFY(remove_redundant_leading_zeros("1.500") == "1.5");
 }
 
@@ -190,19 +190,19 @@ std::string double_to_string_simplify(double value){
 	return result;
 }
 
-QUARK_UNIT_TESTQ("double_to_string_simplify()", ""){
+QUARK_TESTQ("double_to_string_simplify()", ""){
 	ut_verify(QUARK_POS, double_to_string_simplify(0.0), "0");
 }
-QUARK_UNIT_TESTQ("double_to_string_simplify()", ""){
+QUARK_TESTQ("double_to_string_simplify()", ""){
 	ut_verify(QUARK_POS, double_to_string_simplify(1.0), "1");
 }
-QUARK_UNIT_TESTQ("double_to_string_simplify()", ""){
+QUARK_TESTQ("double_to_string_simplify()", ""){
 	ut_verify(QUARK_POS, double_to_string_simplify(13.0), "13");
 }
-QUARK_UNIT_TESTQ("double_to_string_simplify()", ""){
+QUARK_TESTQ("double_to_string_simplify()", ""){
 	ut_verify(QUARK_POS, double_to_string_simplify(13.5), "13.5");
 }
-QUARK_UNIT_TEST("", "double_to_string_simplify()", "", ""){
+QUARK_TEST("", "double_to_string_simplify()", "", ""){
 	ut_verify(QUARK_POS, double_to_string_simplify(1234567890.0), "1.23457e+09");
 }
 
@@ -213,13 +213,13 @@ std::string double_to_string_always_decimals(double value){
 	return result;
 }
 
-QUARK_UNIT_TESTQ("double_to_string_always_decimals()", ""){
+QUARK_TESTQ("double_to_string_always_decimals()", ""){
 	ut_verify(QUARK_POS, double_to_string_always_decimals(0.0), "0.0");
 }
-QUARK_UNIT_TESTQ("double_to_string_always_decimals()", ""){
+QUARK_TESTQ("double_to_string_always_decimals()", ""){
 	ut_verify(QUARK_POS, double_to_string_always_decimals(13.0), "13.0");
 }
-QUARK_UNIT_TESTQ("double_to_string_always_decimals()", ""){
+QUARK_TESTQ("double_to_string_always_decimals()", ""){
 	ut_verify(QUARK_POS, double_to_string_always_decimals(13.5), "13.5");
 }
 
@@ -369,65 +369,65 @@ const char* seq_t::c_str() const{
 }
 
 
-QUARK_UNIT_TESTQ("seq_t()", ""){
+QUARK_TESTQ("seq_t()", ""){
 	seq_t("");
 }
-QUARK_UNIT_TESTQ("seq_t()", ""){
+QUARK_TESTQ("seq_t()", ""){
 	seq_t("hello, world!");
 }
 
 
-QUARK_UNIT_TESTQ("first_char()", ""){
+QUARK_TESTQ("first_char()", ""){
 	QUARK_TEST_VERIFY(seq_t("a").first1_char() == 'a');
 }
-QUARK_UNIT_TESTQ("first_char()", ""){
+QUARK_TESTQ("first_char()", ""){
 	QUARK_TEST_VERIFY(seq_t("abcd").first1_char() == 'a');
 }
 
 
-QUARK_UNIT_TESTQ("first()", ""){
+QUARK_TESTQ("first()", ""){
 	QUARK_TEST_VERIFY(seq_t("").first1() == "");
 }
-QUARK_UNIT_TESTQ("first()", ""){
+QUARK_TESTQ("first()", ""){
 	QUARK_TEST_VERIFY(seq_t("a").first1() == "a");
 }
-QUARK_UNIT_TESTQ("first()", ""){
+QUARK_TESTQ("first()", ""){
 	QUARK_TEST_VERIFY(seq_t("abc").first1() == "a");
 }
 
 
-QUARK_UNIT_TESTQ("first(n)", ""){
+QUARK_TESTQ("first(n)", ""){
 	QUARK_TEST_VERIFY(seq_t("abc").first(0) == "");
 }
-QUARK_UNIT_TESTQ("first(n)", ""){
+QUARK_TESTQ("first(n)", ""){
 	QUARK_TEST_VERIFY(seq_t("").first(0) == "");
 }
-QUARK_UNIT_TESTQ("first(n)", ""){
+QUARK_TESTQ("first(n)", ""){
 	QUARK_TEST_VERIFY(seq_t("").first(3) == "");
 }
-QUARK_UNIT_TESTQ("first(n)", ""){
+QUARK_TESTQ("first(n)", ""){
 	QUARK_TEST_VERIFY(seq_t("abc").first(1) == "a");
 }
-QUARK_UNIT_TESTQ("first(n)", ""){
+QUARK_TESTQ("first(n)", ""){
 	QUARK_TEST_VERIFY(seq_t("abc").first(3) == "abc");
 }
 
 
-QUARK_UNIT_TESTQ("rest()", ""){
+QUARK_TESTQ("rest()", ""){
 	QUARK_TEST_VERIFY(seq_t("abc").rest1().first1() == "b");
 }
-QUARK_UNIT_TESTQ("rest()", ""){
+QUARK_TESTQ("rest()", ""){
 	QUARK_TEST_VERIFY(seq_t("").rest1().first1() == "");
 }
 
 
-QUARK_UNIT_TESTQ("rest(n)", ""){
+QUARK_TESTQ("rest(n)", ""){
 	QUARK_TEST_VERIFY(seq_t("abc").rest(2).first1() == "c");
 }
-QUARK_UNIT_TESTQ("rest(n)", ""){
+QUARK_TESTQ("rest(n)", ""){
 	QUARK_TEST_VERIFY(seq_t("").rest1().first1() == "");
 }
-QUARK_UNIT_TESTQ("rest(n)", ""){
+QUARK_TESTQ("rest(n)", ""){
 	QUARK_TEST_VERIFY(seq_t("abc").rest(100).first(100) == "");
 }
 
@@ -453,23 +453,23 @@ pair<string, seq_t> read_while(const seq_t& p1, const string& chars){
 	return { a, p2 };
 }
 
-QUARK_UNIT_TEST("", "read_while()", "", ""){
+QUARK_TEST("", "read_while()", "", ""){
 	QUARK_TEST_VERIFY((read_while(seq_t(""), k_test_whitespace_chars) == pair<string, seq_t>{ "", seq_t("") }));
 }
 
-QUARK_UNIT_TEST("", "read_while()", "", ""){
+QUARK_TEST("", "read_while()", "", ""){
 	QUARK_TEST_VERIFY((read_while(seq_t("\t"), k_test_whitespace_chars) == pair<string, seq_t>{ "\t", seq_t("") }));
 }
 
-QUARK_UNIT_TEST("", "read_while()", "", ""){
+QUARK_TEST("", "read_while()", "", ""){
 	QUARK_TEST_VERIFY((read_while(seq_t("end\t"), k_test_whitespace_chars) == pair<string, seq_t>{ "", seq_t("end\t") }));
 }
 
-QUARK_UNIT_TEST("", "read_while()", "", ""){
+QUARK_TEST("", "read_while()", "", ""){
 	QUARK_TEST_VERIFY((read_while(seq_t("\nend"), k_test_whitespace_chars) == pair<string, seq_t>{ "\n", seq_t("end") }));
 }
 
-QUARK_UNIT_TEST("", "read_while()", "", ""){
+QUARK_TEST("", "read_while()", "", ""){
 	QUARK_TEST_VERIFY((read_while(seq_t("\n\t\rend"), k_test_whitespace_chars) == pair<string, seq_t>{ "\n\t\r", seq_t("end") }));
 }
 
@@ -497,10 +497,10 @@ pair<string, seq_t> split_at(const seq_t& p1, const string& str){
 	}
 }
 
-QUARK_UNIT_TEST("", "split_at()", "", ""){
+QUARK_TEST("", "split_at()", "", ""){
 	QUARK_TEST_VERIFY((split_at(seq_t("hello123world"), "123") == pair<string, seq_t>{ "hello", seq_t("world") }));
 }
-QUARK_UNIT_TEST("", "split_at()", "", ""){
+QUARK_TEST("", "split_at()", "", ""){
 	QUARK_TEST_VERIFY((split_at(seq_t("hello123world"), "456") == pair<string, seq_t>{ "", seq_t("hello123world") }));
 }
 
@@ -515,7 +515,7 @@ std::pair<bool, seq_t> if_first(const seq_t& p, const std::string& wanted_string
 	}
 }
 
-QUARK_UNIT_TESTQ("if_first()", ""){
+QUARK_TESTQ("if_first()", ""){
 	const auto result = if_first(seq_t("hello, world!"), "hell");
 	const auto expected = std::pair<bool, seq_t>(true, seq_t("o, world!"));
 
@@ -629,37 +629,37 @@ std::pair<std::string, seq_t> read_balanced2(const seq_t& s, const std::string& 
 
 static const string k_test_brackets = "{}()";
 
-QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
+QUARK_TEST("", "read_balanced2()", "", ""){
 	QUARK_TEST_VERIFY((read_balanced2(seq_t("()"), k_test_brackets) == pair<string,seq_t>("()", seq_t(""))));
 }
-QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
+QUARK_TEST("", "read_balanced2()", "", ""){
 	QUARK_TEST_VERIFY(read_balanced2(seq_t("(abc)"), k_test_brackets) == (std::pair<std::string, seq_t>("(abc)", seq_t(""))));
 }
-QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
+QUARK_TEST("", "read_balanced2()", "", ""){
 	QUARK_TEST_VERIFY(read_balanced2(seq_t("(abc)xyz"), k_test_brackets) == (std::pair<std::string, seq_t>("(abc)", seq_t("xyz"))));
 }
-QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
+QUARK_TEST("", "read_balanced2()", "", ""){
 	QUARK_TEST_VERIFY(read_balanced2(seq_t("((abc))xyz"), k_test_brackets) == (std::pair<std::string, seq_t>("((abc))", seq_t("xyz"))));
 }
-QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
+QUARK_TEST("", "read_balanced2()", "", ""){
 	QUARK_TEST_VERIFY(read_balanced2(seq_t("((abc)[])xyz"), k_test_brackets) == (std::pair<std::string, seq_t>("((abc)[])", seq_t("xyz"))));
 }
-QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
+QUARK_TEST("", "read_balanced2()", "", ""){
 	QUARK_TEST_VERIFY(read_balanced2(seq_t("(return 4 < 5;)xxx"), k_test_brackets) == (std::pair<std::string, seq_t>("(return 4 < 5;)", seq_t("xxx"))));
 }
-QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
+QUARK_TEST("", "read_balanced2()", "", ""){
 	QUARK_TEST_VERIFY(read_balanced2(seq_t("{}"), k_test_brackets) == (std::pair<std::string, seq_t>("{}", seq_t(""))));
 }
-QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
+QUARK_TEST("", "read_balanced2()", "", ""){
 	QUARK_TEST_VERIFY(read_balanced2(seq_t("{aaa}bbb"), k_test_brackets) == (std::pair<std::string, seq_t>("{aaa}", seq_t("bbb"))));
 }
-QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
+QUARK_TEST("", "read_balanced2()", "", ""){
 	QUARK_TEST_VERIFY(read_balanced2(seq_t("{return 4 < 5;}xxx"), k_test_brackets) == (std::pair<std::string, seq_t>("{return 4 < 5;}", seq_t("xxx"))));
 }
 //	QUARK_TEST_VERIFY(read_balanced2("{\n\t\t\t\treturn 4 < 5;\n\t\t\t}\n\t\t") == seq("((abc)[])", "xyz"));
 
 
-QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
+QUARK_TEST("", "read_balanced2()", "", ""){
 	QUARK_TEST_VERIFY(read_balanced2(seq_t("(a(b(c(d));\n\t"), "(){}[]") == (std::pair<std::string, seq_t>("", seq_t("(a(b(c(d));\n\t"))));
 }
 

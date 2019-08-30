@@ -65,37 +65,37 @@ static int64_t decode_big_int(const std::string& s){
 	return i;
 }
 
-QUARK_UNIT_TEST("", "encode_big_int()", "", ""){
+QUARK_TEST("", "encode_big_int()", "", ""){
 	QUARK_UT_VERIFY(encode_big_int(0) == (std::pair<std::string, int64_t>("", 0)));
 }
 
-QUARK_UNIT_TEST("", "encode_big_int()", "", ""){
+QUARK_TEST("", "encode_big_int()", "", ""){
 	QUARK_UT_VERIFY(encode_big_int(-1) == (std::pair<std::string, int64_t>("", -1)));
 }
 
-QUARK_UNIT_TEST("", "encode_big_int()", "", ""){
+QUARK_TEST("", "encode_big_int()", "", ""){
 	QUARK_UT_VERIFY(encode_big_int(k_floyd_int64_max) == (std::pair<std::string, int64_t>("9223372036854775807", -1)));
 }
 
-QUARK_UNIT_TEST("", "encode_big_int()", "", ""){
+QUARK_TEST("", "encode_big_int()", "", ""){
 	QUARK_UT_VERIFY(encode_big_int(k_floyd_int64_min) == (std::pair<std::string, int64_t>("-9223372036854775808", -1)));
 }
 
-QUARK_UNIT_TEST("", "encode_big_int()", "", ""){
+QUARK_TEST("", "encode_big_int()", "", ""){
 	QUARK_UT_VERIFY(encode_big_int(k_floyd_int64_max) == (std::pair<std::string, int64_t>("9223372036854775807", -1)));
 }
 
-QUARK_UNIT_TEST("", "encode_big_int()", "", ""){
+QUARK_TEST("", "encode_big_int()", "", ""){
 	QUARK_UT_VERIFY(encode_big_int(MIN_SAFE_INTEGER) == (std::pair<std::string, int64_t>("", MIN_SAFE_INTEGER)));
 }
-QUARK_UNIT_TEST("", "encode_big_int()", "", ""){
+QUARK_TEST("", "encode_big_int()", "", ""){
 	QUARK_UT_VERIFY(encode_big_int(MAX_SAFE_INTEGER) == (std::pair<std::string, int64_t>("", MAX_SAFE_INTEGER)));
 }
 
-QUARK_UNIT_TEST("", "encode_big_int()", "", ""){
+QUARK_TEST("", "encode_big_int()", "", ""){
 	QUARK_UT_VERIFY(encode_big_int(MIN_SAFE_INTEGER - 1) == (std::pair<std::string, int64_t>("-9007199254740992", -1)));
 }
-QUARK_UNIT_TEST("", "encode_big_int()", "", ""){
+QUARK_TEST("", "encode_big_int()", "", ""){
 	QUARK_UT_VERIFY(encode_big_int(MAX_SAFE_INTEGER + 1) == (std::pair<std::string, int64_t>("9007199254740992", -1)));
 }
 
@@ -271,13 +271,13 @@ int compare_string(const std::string& left, const std::string& right){
 	return limit_comparison(result);
 }
 
-QUARK_UNIT_TESTQ("compare_string()", ""){
+QUARK_TESTQ("compare_string()", ""){
 	ut_verify_auto(QUARK_POS, compare_string("", ""), 0);
 }
-QUARK_UNIT_TESTQ("compare_string()", ""){
+QUARK_TESTQ("compare_string()", ""){
 	ut_verify_auto(QUARK_POS, compare_string("aaa", "aaa"), 0);
 }
-QUARK_UNIT_TEST("", "compare_string()", "", ""){
+QUARK_TEST("", "compare_string()", "", ""){
 	ut_verify_auto(QUARK_POS, compare_string("b", "a"), 1);
 }
 
@@ -793,7 +793,7 @@ value_t::value_t(const typeid_t& type, function_id_t function_id) :
 
 //??? swap(), operator=, copy-constructor.
 
-QUARK_UNIT_TESTQ("value_t::make_undefined()", "undef"){
+QUARK_TESTQ("value_t::make_undefined()", "undef"){
 	const auto a = value_t::make_undefined();
 	QUARK_TEST_VERIFY(a.is_undefined());
 	QUARK_TEST_VERIFY(!a.is_any());
@@ -814,7 +814,7 @@ QUARK_UNIT_TESTQ("value_t::make_undefined()", "undef"){
 }
 
 
-QUARK_UNIT_TEST("", "value_t::make_any()", "**dynamic**", ""){
+QUARK_TEST("", "value_t::make_any()", "**dynamic**", ""){
 	const auto a = value_t::make_any();
 	QUARK_TEST_VERIFY(!a.is_undefined());
 	QUARK_TEST_VERIFY(a.is_any());
@@ -835,7 +835,7 @@ QUARK_UNIT_TEST("", "value_t::make_any()", "**dynamic**", ""){
 }
 
 
-QUARK_UNIT_TESTQ("value_t::make_void()", "void"){
+QUARK_TESTQ("value_t::make_void()", "void"){
 	const auto a = value_t::make_void();
 	QUARK_TEST_VERIFY(!a.is_undefined());
 	QUARK_TEST_VERIFY(!a.is_any());
@@ -856,7 +856,7 @@ QUARK_UNIT_TESTQ("value_t::make_void()", "void"){
 }
 
 
-QUARK_UNIT_TESTQ("value_t()", "bool - true"){
+QUARK_TESTQ("value_t()", "bool - true"){
 	const auto a = value_t::make_bool(true);
 	QUARK_TEST_VERIFY(!a.is_undefined());
 	QUARK_TEST_VERIFY(!a.is_any());
@@ -876,7 +876,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - true"){
 	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "bool: true");
 }
 
-QUARK_UNIT_TESTQ("value_t()", "bool - false"){
+QUARK_TESTQ("value_t()", "bool - false"){
 	const auto a = value_t::make_bool(false);
 	QUARK_TEST_VERIFY(!a.is_undefined());
 	QUARK_TEST_VERIFY(!a.is_any());
@@ -897,7 +897,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - false"){
 }
 
 //??? test full range of int64
-QUARK_UNIT_TESTQ("value_t()", "int"){
+QUARK_TESTQ("value_t()", "int"){
 	const auto a = value_t::make_int(13);
 	QUARK_TEST_VERIFY(!a.is_undefined());
 	QUARK_TEST_VERIFY(!a.is_any());
@@ -917,7 +917,7 @@ QUARK_UNIT_TESTQ("value_t()", "int"){
 	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "int: 13");
 }
 
-QUARK_UNIT_TESTQ("value_t()", "double"){
+QUARK_TESTQ("value_t()", "double"){
 	const auto a = value_t::make_double(13.5f);
 	QUARK_TEST_VERIFY(!a.is_undefined());
 	QUARK_TEST_VERIFY(!a.is_any());
@@ -937,7 +937,7 @@ QUARK_UNIT_TESTQ("value_t()", "double"){
 	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "double: 13.5");
 }
 
-QUARK_UNIT_TESTQ("value_t()", "string"){
+QUARK_TESTQ("value_t()", "string"){
 	const auto a = value_t::make_string("xyz");
 	QUARK_TEST_VERIFY(!a.is_undefined());
 	QUARK_TEST_VERIFY(!a.is_any());
@@ -1154,23 +1154,23 @@ json_t value_to_ast_json(const value_t& v, json_tags tags){
 	}
 }
 
-QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
+QUARK_TESTQ("value_to_ast_json()", ""){
 	ut_verify(QUARK_POS, value_to_ast_json(value_t::make_string("hello"), json_tags::k_tag_resolve_state), json_t("hello"));
 }
 
-QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
+QUARK_TESTQ("value_to_ast_json()", ""){
 	ut_verify(QUARK_POS, value_to_ast_json(value_t::make_int(123), json_tags::k_tag_resolve_state), json_t(123.0));
 }
 
-QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
+QUARK_TESTQ("value_to_ast_json()", ""){
 	ut_verify(QUARK_POS, value_to_ast_json(value_t::make_bool(true), json_tags::k_tag_resolve_state), json_t(true));
 }
 
-QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
+QUARK_TESTQ("value_to_ast_json()", ""){
 	ut_verify(QUARK_POS, value_to_ast_json(value_t::make_bool(false), json_tags::k_tag_resolve_state), json_t(false));
 }
 
-QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
+QUARK_TESTQ("value_to_ast_json()", ""){
 	ut_verify(QUARK_POS, value_to_ast_json(value_t::make_undefined(), json_tags::k_tag_resolve_state), json_t());
 }
 

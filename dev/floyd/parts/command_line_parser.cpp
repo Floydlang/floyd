@@ -289,28 +289,28 @@ std::vector<std::string> split_command_line(const std::string& s){
 	return result;
 }
 
-QUARK_UNIT_TEST("", "split_command_line()", "", ""){
+QUARK_TEST("", "split_command_line()", "", ""){
 	const auto result = split_command_line("");
 	QUARK_UT_VERIFY(result == std::vector<std::string>{});
 }
-QUARK_UNIT_TEST("", "split_command_line()", "", ""){
+QUARK_TEST("", "split_command_line()", "", ""){
 	const auto result = split_command_line("  ");
 	QUARK_UT_VERIFY(result == std::vector<std::string>{});
 }
-QUARK_UNIT_TEST("", "split_command_line()", "", ""){
+QUARK_TEST("", "split_command_line()", "", ""){
 	const auto result = split_command_line(" one ");
 	QUARK_UT_VERIFY(result == std::vector<std::string>{ "one" });
 }
-QUARK_UNIT_TEST("", "split_command_line()", "", ""){
+QUARK_TEST("", "split_command_line()", "", ""){
 	const auto result = split_command_line("one two");
 	QUARK_UT_VERIFY((result == std::vector<std::string>{ "one", "two" }));
 }
-QUARK_UNIT_TEST("", "split_command_line()", "", ""){
+QUARK_TEST("", "split_command_line()", "", ""){
 	const auto result = split_command_line("one two     three");
 	QUARK_UT_VERIFY((result == std::vector<std::string>{ "one", "two", "three" }));
 }
 
-QUARK_UNIT_TEST("", "split_command_line()", "", ""){
+QUARK_TEST("", "split_command_line()", "", ""){
 	const auto result = split_command_line(R"(one "hello world"    three)");
 	QUARK_UT_VERIFY((result == std::vector<std::string>{ "one", R"("hello world")", "three" }));
 }
@@ -318,14 +318,14 @@ QUARK_UNIT_TEST("", "split_command_line()", "", ""){
 
 
 
-QUARK_UNIT_TEST("", "parse_command_line_args()", "", ""){
+QUARK_TEST("", "parse_command_line_args()", "", ""){
 	const auto result = parse_command_line_args({ "myapp" }, ":if:lrx");
 	QUARK_UT_VERIFY(result.command == "myapp");
 	QUARK_UT_VERIFY(result.subcommand == "");
 	QUARK_UT_VERIFY(result.flags.empty() && result.extra_arguments.empty());
 }
 
-QUARK_UNIT_TEST("", "parse_command_line_args()", "", ""){
+QUARK_TEST("", "parse_command_line_args()", "", ""){
 	const auto result = parse_command_line_args({ "myapp", "file1.txt" }, ":if:lrx");
 	QUARK_UT_VERIFY(result.command == "myapp");
 	QUARK_UT_VERIFY(result.subcommand == "");
@@ -333,7 +333,7 @@ QUARK_UNIT_TEST("", "parse_command_line_args()", "", ""){
 	QUARK_UT_VERIFY(result.extra_arguments == std::vector<std::string>({"file1.txt"}));
 }
 
-QUARK_UNIT_TEST("", "parse_command_line_args()", "", ""){
+QUARK_TEST("", "parse_command_line_args()", "", ""){
 	const auto result = parse_command_line_args({ "myapp", "-ilr", "-f", "doc.txt" }, ":if:lrx");
 	QUARK_UT_VERIFY(result.command == "myapp");
 	QUARK_UT_VERIFY(result.subcommand == "");
@@ -346,7 +346,7 @@ QUARK_UNIT_TEST("", "parse_command_line_args()", "", ""){
 
 
 //	getopt() uses global state, make sure we can call it several times OK (we reset it).
-QUARK_UNIT_TEST("", "parse_command_line_args()", "", ""){
+QUARK_TEST("", "parse_command_line_args()", "", ""){
 	const auto result = parse_command_line_args({ "myapp", "-ilr", "-f", "doc.txt" }, ":if:lrx");
 	QUARK_UT_VERIFY(result.command == "myapp");
 	QUARK_UT_VERIFY(result.subcommand == "");
@@ -361,7 +361,7 @@ QUARK_UNIT_TEST("", "parse_command_line_args()", "", ""){
 }
 
 
-QUARK_UNIT_TEST("", "parse_command_line_args()", "", ""){
+QUARK_TEST("", "parse_command_line_args()", "", ""){
 	const auto result = parse_command_line_args({ "myapp", "-i", "-f", "doc.txt", "extra_one", "extra_two" }, ":if:lrx");
 	QUARK_UT_VERIFY(result.command == "myapp");
 	QUARK_UT_VERIFY(result.subcommand == "");
@@ -372,14 +372,14 @@ QUARK_UNIT_TEST("", "parse_command_line_args()", "", ""){
 
 
 
-QUARK_UNIT_TEST("", "parse_command_line_args_subcommands()", "", ""){
+QUARK_TEST("", "parse_command_line_args_subcommands()", "", ""){
 	const auto result = parse_command_line_args_subcommands(split_command_line(k_git_command_examples[0]), "");
 	QUARK_UT_VERIFY(result.command == "git");
 	QUARK_UT_VERIFY(result.subcommand == "init");
 	QUARK_UT_VERIFY((result.flags == std::map<std::string, std::string>{}));
 	QUARK_UT_VERIFY((result.extra_arguments == std::vector<std::string>{}));
 }
-QUARK_UNIT_TEST("", "parse_command_line_args_subcommands()", "", ""){
+QUARK_TEST("", "parse_command_line_args_subcommands()", "", ""){
 	const auto result = parse_command_line_args_subcommands(split_command_line(k_git_command_examples[1]), "");
 	QUARK_UT_VERIFY(result.command == "git");
 	QUARK_UT_VERIFY(result.subcommand == "clone");
@@ -387,14 +387,14 @@ QUARK_UNIT_TEST("", "parse_command_line_args_subcommands()", "", ""){
 	QUARK_UT_VERIFY((result.extra_arguments == std::vector<std::string>{ "/path/to/repository" }));
 }
 
-QUARK_UNIT_TEST("", "parse_command_line_args_subcommands()", "", ""){
+QUARK_TEST("", "parse_command_line_args_subcommands()", "", ""){
 	const auto result = parse_command_line_args_subcommands(split_command_line(k_git_command_examples[4]), "");
 	QUARK_UT_VERIFY(result.command == "git");
 	QUARK_UT_VERIFY(result.subcommand == "add");
 	QUARK_UT_VERIFY((result.flags == std::map<std::string, std::string>{}));
 	QUARK_UT_VERIFY((result.extra_arguments == std::vector<std::string>{ "*" }));
 }
-QUARK_UNIT_TEST("", "parse_command_line_args_subcommands()", "", ""){
+QUARK_TEST("", "parse_command_line_args_subcommands()", "", ""){
 	const auto result = parse_command_line_args_subcommands(split_command_line(k_git_command_examples[5]), "");
 	QUARK_UT_VERIFY(result.command == "git");
 	QUARK_UT_VERIFY(result.subcommand == "commit");

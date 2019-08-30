@@ -2334,7 +2334,7 @@ void test__analyse_expression(const statement_t& parent, const expression_t& e, 
 }
 
 
-QUARK_UNIT_TEST("analyse_expression_no_target()", "literal 1234 == 1234", "", "") {
+QUARK_TEST("analyse_expression_no_target()", "literal 1234 == 1234", "", "") {
 	test__analyse_expression(
 		statement_t::make__bind_local(k_no_location, "xyz", typeid_t::make_string(), expression_t::make_literal_string("abc"), statement_t::bind_local_t::mutable_mode::k_immutable),
 		expression_t::make_literal_int(1234),
@@ -2342,7 +2342,7 @@ QUARK_UNIT_TEST("analyse_expression_no_target()", "literal 1234 == 1234", "", ""
 	);
 }
 
-QUARK_UNIT_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
+QUARK_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
 	const unchecked_ast_t ast;
 	const analyser_t interpreter(ast);
 	const auto e3 = analyse_expression_no_target(

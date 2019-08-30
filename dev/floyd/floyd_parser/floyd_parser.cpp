@@ -91,14 +91,14 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& s){
 	}
 }
 
-QUARK_UNIT_TEST("", "parse_statement()", "", ""){
+QUARK_TEST("", "parse_statement()", "", ""){
 	ut_verify(QUARK_POS,
 		parse_statement(seq_t("let int x = 10;")).first,
 		parse_json(seq_t(R"([0, "init-local", "^int", "x", ["k", 10, "^int"]])")).first
 	);
 }
 
-QUARK_UNIT_TEST("", "parse_statement()", "", ""){
+QUARK_TEST("", "parse_statement()", "", ""){
 	ut_verify(QUARK_POS,
 		parse_statement(seq_t("func int f(string name){ return 13; }")).first,
 		parse_json(seq_t(R"(
@@ -119,7 +119,7 @@ QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("", "parse_statement()", "", ""){
+QUARK_TEST("", "parse_statement()", "", ""){
 	ut_verify(QUARK_POS,
 		parse_statement(seq_t("let int x = f(3);")).first,
 		parse_json(seq_t(R"([0, "init-local", "^int", "x", ["call", ["@", "f"], [["k", 3, "^int"]]]])")).first
@@ -185,7 +185,7 @@ parse_result_t parse_statements_bracketted(const seq_t& s){
 	}
 }
 
-QUARK_UNIT_TEST("", "parse_statements_bracketted()", "", ""){
+QUARK_TEST("", "parse_statements_bracketted()", "", ""){
 	ut_verify(QUARK_POS,
 		parse_statement_body(seq_t(" { } ")).parse_tree,
 		parse_json(seq_t(
@@ -195,7 +195,7 @@ QUARK_UNIT_TEST("", "parse_statements_bracketted()", "", ""){
 		)).first
 	);
 }
-QUARK_UNIT_TEST("", "parse_statements_bracketted()", "", ""){
+QUARK_TEST("", "parse_statements_bracketted()", "", ""){
 	ut_verify(QUARK_POS,
 		parse_statement_body(seq_t(" { let int x = 1; let int y = 2; } ")).parse_tree,
 		parse_json(seq_t(
@@ -245,7 +245,7 @@ const std::string k_test_program_0_parserout = R"(
 	]
 )";
 
-QUARK_UNIT_TEST("", "parse_program2()", "k_test_program_0_source", ""){
+QUARK_TEST("", "parse_program2()", "k_test_program_0_source", ""){
 	ut_verify(QUARK_POS,
 		parse_program2(k_test_program_0_source)._value,
 		parse_json(seq_t(k_test_program_0_parserout)).first
@@ -274,7 +274,7 @@ const std::string k_test_program_1_parserout = R"(
 	]
 )";
 
-QUARK_UNIT_TEST("", "parse_program2()", "k_test_program_1_source", ""){
+QUARK_TEST("", "parse_program2()", "k_test_program_1_source", ""){
 	ut_verify(QUARK_POS,
 		parse_program2(k_test_program_1_source)._value,
 		parse_json(seq_t(k_test_program_1_parserout)).first
@@ -330,7 +330,7 @@ const char k_test_program_100_parserout[] = R"(
 	]
 )";
 
-QUARK_UNIT_TEST("", "parse_program2()", "k_test_program_100_source", ""){
+QUARK_TEST("", "parse_program2()", "k_test_program_100_source", ""){
 	ut_verify(QUARK_POS,
 		parse_program2(
 			R"(
@@ -392,8 +392,8 @@ implicit_statement detect_implicit_statement_lookahead(const seq_t& s){
 	}
 }
 
-//#define DETECT_TEST QUARK_UNIT_TEST_VIP
-#define DETECT_TEST QUARK_UNIT_TEST
+//#define DETECT_TEST QUARK_TEST_VIP
+#define DETECT_TEST QUARK_TEST
 
 DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "ERROR"){
 	QUARK_ASSERT(detect_implicit_statement_lookahead(seq_t(R"(	int test = 123 xyz	)")) == implicit_statement::k_error);
@@ -469,7 +469,7 @@ std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s){
 }
 
 /*
-QUARK_UNIT_TEST("", "parse_prefixless_statement()", "", ""){
+QUARK_TEST("", "parse_prefixless_statement()", "", ""){
 	ut_verify(QUARK_POS,
 		parse_prefixless_statement(seq_t("x = f(3);")).first._value,
 		parse_json(seq_t(R"(["init-local", "^int", "x", ["call", ["@", "f"], [["k", 3, "^int"]]]])")).first

@@ -98,47 +98,47 @@ std::pair<std::string, seq_t> skip_whitespace2(const seq_t& s){
 	return p;
 }
 
-QUARK_UNIT_TEST("", "skip_whitespace2()", "", ""){
+QUARK_TEST("", "skip_whitespace2()", "", ""){
 	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("")).second == seq_t(""));
 }
-QUARK_UNIT_TEST("", "skip_whitespace2()", "", ""){
+QUARK_TEST("", "skip_whitespace2()", "", ""){
 	QUARK_TEST_VERIFY(skip_whitespace2(seq_t(" ")).second == seq_t(""));
 }
-QUARK_UNIT_TEST("", "skip_whitespace2(seq_t()", "", ""){
+QUARK_TEST("", "skip_whitespace2(seq_t()", "", ""){
 	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("\t")).second == seq_t(""));
 }
-QUARK_UNIT_TEST("", "skip_whitespace2(seq_t()", "", ""){
+QUARK_TEST("", "skip_whitespace2(seq_t()", "", ""){
 	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("int blob()")).second == seq_t("int blob()"));
 }
-QUARK_UNIT_TEST("", "skip_whitespace2(seq_t()", "", ""){
+QUARK_TEST("", "skip_whitespace2(seq_t()", "", ""){
 	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("\t\t\t int blob()")).second == seq_t("int blob()"));
 }
 
 
-QUARK_UNIT_TEST("", "skip_whitespace2()", "//", ""){
+QUARK_TEST("", "skip_whitespace2()", "//", ""){
 	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("//xyz")).second == seq_t(""));
 }
-QUARK_UNIT_TEST("", "skip_whitespace2()", "//", ""){
+QUARK_TEST("", "skip_whitespace2()", "//", ""){
 	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("//xyz\nabc")).second == seq_t("abc"));
 }
-QUARK_UNIT_TEST("", "skip_whitespace2()", "//", ""){
+QUARK_TEST("", "skip_whitespace2()", "//", ""){
 	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("   \t//xyz \t\n\t abc")).second == seq_t("abc"));
 }
 
-QUARK_UNIT_TEST("", "skip_whitespace2()", "/* */", ""){
+QUARK_TEST("", "skip_whitespace2()", "/* */", ""){
 	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("/**/xyz")).second == seq_t("xyz"));
 }
-QUARK_UNIT_TEST("", "skip_whitespace2()", "/* */", ""){
+QUARK_TEST("", "skip_whitespace2()", "/* */", ""){
 	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("/*abc*/xyz")).second == seq_t("xyz"));
 }
-QUARK_UNIT_TEST("", "skip_whitespace2()", "/* */", ""){
+QUARK_TEST("", "skip_whitespace2()", "/* */", ""){
 	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("/*abc*/xyz")).second == seq_t("xyz"));
 }
-QUARK_UNIT_TEST("", "skip_whitespace2()", "/* */", ""){
+QUARK_TEST("", "skip_whitespace2()", "/* */", ""){
 	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("   \t/*a \tbc*/   \txyz")).second == seq_t("xyz"));
 }
 
-QUARK_UNIT_TEST("", "skip_whitespace2()", "/* */", ""){
+QUARK_TEST("", "skip_whitespace2()", "/* */", ""){
 	try {
 		QUARK_TEST_VERIFY(skip_whitespace2(seq_t("/*xyz")).second == seq_t(""));
 		fail_test(QUARK_POS);
@@ -147,10 +147,10 @@ QUARK_UNIT_TEST("", "skip_whitespace2()", "/* */", ""){
 	}
 }
 
-QUARK_UNIT_TEST("", "skip_whitespace2()", "/* */ -- nested", ""){
+QUARK_TEST("", "skip_whitespace2()", "/* */ -- nested", ""){
 	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("/*/**/*/xyz")).second == seq_t("xyz"));
 }
-QUARK_UNIT_TEST("", "skip_whitespace2()", "/* */ -- nested", ""){
+QUARK_TEST("", "skip_whitespace2()", "/* */ -- nested", ""){
 	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("/*xyz/*abc*/123*/789")).second == seq_t("789"));
 }
 
@@ -159,16 +159,16 @@ bool is_whitespace(char ch){
 	return k_whitespace_chars.find(std::string(1, ch)) != std::string::npos;
 }
 
-QUARK_UNIT_TEST("", "is_whitespace()", "", ""){
+QUARK_TEST("", "is_whitespace()", "", ""){
 	QUARK_TEST_VERIFY(is_whitespace('x') == false);
 }
-QUARK_UNIT_TEST("", "is_whitespace()", "", ""){
+QUARK_TEST("", "is_whitespace()", "", ""){
 	QUARK_TEST_VERIFY(is_whitespace(' ') == true);
 }
-QUARK_UNIT_TEST("", "is_whitespace()", "", ""){
+QUARK_TEST("", "is_whitespace()", "", ""){
 	QUARK_TEST_VERIFY(is_whitespace('\t') == true);
 }
-QUARK_UNIT_TEST("", "is_whitespace()", "", ""){
+QUARK_TEST("", "is_whitespace()", "", ""){
 	QUARK_TEST_VERIFY(is_whitespace('\n') == true);
 }
 
@@ -183,16 +183,16 @@ std::string skip_whitespace_ends(const std::string& s){
 	return a.substr(0, i);
 }
 
-QUARK_UNIT_TEST("", "skip_whitespace_ends()", "", ""){
+QUARK_TEST("", "skip_whitespace_ends()", "", ""){
 	QUARK_TEST_VERIFY(skip_whitespace_ends("") == "");
 }
-QUARK_UNIT_TEST("", "skip_whitespace_ends()", "", ""){
+QUARK_TEST("", "skip_whitespace_ends()", "", ""){
 	QUARK_TEST_VERIFY(skip_whitespace_ends("  a") == "a");
 }
-QUARK_UNIT_TEST("", "skip_whitespace_ends()", "", ""){
+QUARK_TEST("", "skip_whitespace_ends()", "", ""){
 	QUARK_TEST_VERIFY(skip_whitespace_ends("b  ") == "b");
 }
-QUARK_UNIT_TEST("", "skip_whitespace_ends()", "", ""){
+QUARK_TEST("", "skip_whitespace_ends()", "", ""){
 	QUARK_TEST_VERIFY(skip_whitespace_ends("  c  ") == "c");
 }
 
@@ -211,32 +211,32 @@ std::pair<std::string, seq_t> get_balanced(const seq_t& s){
 	return r;
 }
 
-QUARK_UNIT_TEST("", "get_balanced()", "", ""){
+QUARK_TEST("", "get_balanced()", "", ""){
 //	QUARK_TEST_VERIFY(get_balanced("") == seq("", ""));
 	QUARK_TEST_VERIFY(get_balanced(seq_t("()")) == (std::pair<std::string, seq_t>("()", seq_t(""))));
 }
-QUARK_UNIT_TEST("", "get_balanced()", "", ""){
+QUARK_TEST("", "get_balanced()", "", ""){
 	QUARK_TEST_VERIFY(get_balanced(seq_t("(abc)")) == (std::pair<std::string, seq_t>("(abc)", seq_t(""))));
 }
-QUARK_UNIT_TEST("", "get_balanced()", "", ""){
+QUARK_TEST("", "get_balanced()", "", ""){
 	QUARK_TEST_VERIFY(get_balanced(seq_t("(abc)xyz")) == (std::pair<std::string, seq_t>("(abc)", seq_t("xyz"))));
 }
-QUARK_UNIT_TEST("", "get_balanced()", "", ""){
+QUARK_TEST("", "get_balanced()", "", ""){
 	QUARK_TEST_VERIFY(get_balanced(seq_t("((abc))xyz")) == (std::pair<std::string, seq_t>("((abc))", seq_t("xyz"))));
 }
-QUARK_UNIT_TEST("", "get_balanced()", "", ""){
+QUARK_TEST("", "get_balanced()", "", ""){
 	QUARK_TEST_VERIFY(get_balanced(seq_t("((abc)[])xyz")) == (std::pair<std::string, seq_t>("((abc)[])", seq_t("xyz"))));
 }
-QUARK_UNIT_TEST("", "get_balanced()", "", ""){
+QUARK_TEST("", "get_balanced()", "", ""){
 	QUARK_TEST_VERIFY(get_balanced(seq_t("(return 4 < 5;)xxx")) == (std::pair<std::string, seq_t>("(return 4 < 5;)", seq_t("xxx"))));
 }
-QUARK_UNIT_TEST("", "get_balanced()", "", ""){
+QUARK_TEST("", "get_balanced()", "", ""){
 	QUARK_TEST_VERIFY(get_balanced(seq_t("{}")) == (std::pair<std::string, seq_t>("{}", seq_t(""))));
 }
-QUARK_UNIT_TEST("", "get_balanced()", "", ""){
+QUARK_TEST("", "get_balanced()", "", ""){
 	QUARK_TEST_VERIFY(get_balanced(seq_t("{aaa}bbb")) == (std::pair<std::string, seq_t>("{aaa}", seq_t("bbb"))));
 }
-QUARK_UNIT_TEST("", "get_balanced()", "", ""){
+QUARK_TEST("", "get_balanced()", "", ""){
 	QUARK_TEST_VERIFY(get_balanced(seq_t("{return 4 < 5;}xxx")) == (std::pair<std::string, seq_t>("{return 4 < 5;}", seq_t("xxx"))));
 }
 //	QUARK_TEST_VERIFY(get_balanced("{\n\t\t\t\treturn 4 < 5;\n\t\t\t}\n\t\t") == seq("((abc)[])", xyz));
@@ -250,10 +250,10 @@ std::pair<std::string, seq_t> read_enclosed_in_parantheses(const seq_t& pos){
 	return { range2.str(), range.second };
 }
 
-QUARK_UNIT_TEST("", "read_enclosed_in_parantheses()", "", ""){
+QUARK_TEST("", "read_enclosed_in_parantheses()", "", ""){
 	QUARK_UT_VERIFY((	read_enclosed_in_parantheses(seq_t("()xyz")) == std::pair<std::string, seq_t>{"", seq_t("xyz") } 	));
 }
-QUARK_UNIT_TEST("", "read_enclosed_in_parantheses()", "", ""){
+QUARK_TEST("", "read_enclosed_in_parantheses()", "", ""){
 	QUARK_UT_VERIFY((	read_enclosed_in_parantheses(seq_t(" ( abc )xyz")) == std::pair<std::string, seq_t>{" abc ", seq_t("xyz") } 	));
 }
 
@@ -283,7 +283,7 @@ std::pair<std::string, seq_t> read_until_toplevel_match(const seq_t& s, const st
 	}
 }
 
-QUARK_UNIT_TEST("", "read_until_toplevel_match()", "", ""){
+QUARK_TEST("", "read_until_toplevel_match()", "", ""){
 	try {
 		read_until_toplevel_match(seq_t("print(json_to_string(json_to_value(value_to_json(\"cola\"));\n\t"), ";{");
 		fail_test(QUARK_POS);
@@ -320,7 +320,7 @@ std::pair<std::string, seq_t> read_required_identifier(const seq_t& s){
 	return b;
 }
 
-QUARK_UNIT_TEST("read_required_identifier()", "", "", ""){
+QUARK_TEST("read_required_identifier()", "", "", ""){
 	QUARK_TEST_VERIFY(read_required_identifier(seq_t("\thello\txxx")) == (std::pair<std::string, seq_t>("hello", seq_t("\txxx"))));
 }
 
@@ -387,13 +387,13 @@ std::vector<member_t> parse_functiondef_arguments2(const std::string& s, bool re
 	return args;
 }
 
-QUARK_UNIT_TEST("", "parse_functiondef_arguments2()", "", ""){
+QUARK_TEST("", "parse_functiondef_arguments2()", "", ""){
 	QUARK_TEST_VERIFY((		parse_functiondef_arguments2("()", true) == std::vector<member_t>{}		));
 }
-QUARK_UNIT_TEST("", "parse_functiondef_arguments2()", "", ""){
+QUARK_TEST("", "parse_functiondef_arguments2()", "", ""){
 	QUARK_TEST_VERIFY((		parse_functiondef_arguments2("(int a)", true) == std::vector<member_t>{ { typeid_t::make_int(), "a" }}		));
 }
-QUARK_UNIT_TEST("", "parse_functiondef_arguments2()", "", ""){
+QUARK_TEST("", "parse_functiondef_arguments2()", "", ""){
 	QUARK_TEST_VERIFY((		parse_functiondef_arguments2("(int x, string y, double z)", true) == std::vector<member_t>{
 		{ typeid_t::make_int(), "x" },
 		{ typeid_t::make_string(), "y" },
@@ -425,12 +425,12 @@ std::pair<std::vector<member_t>, seq_t> read_function_type_args(const seq_t& s){
 	return { r, args_pos.second };
 }
 
-QUARK_UNIT_TEST("", "read_function_type_args()", "", ""){
+QUARK_TEST("", "read_function_type_args()", "", ""){
 	const auto result = read_function_type_args(seq_t("()"));
 	QUARK_TEST_VERIFY(result.first.empty());
 	QUARK_TEST_VERIFY(result.second.empty());
 }
-QUARK_UNIT_TEST("", "read_function_type_args()", "", ""){
+QUARK_TEST("", "read_function_type_args()", "", ""){
 	const auto result = read_function_type_args(seq_t("(int, double)"));
 	QUARK_TEST_VERIFY(result.first.size() == 2);
 	QUARK_TEST_VERIFY(result.first[0]._type.is_int());
@@ -439,7 +439,7 @@ QUARK_UNIT_TEST("", "read_function_type_args()", "", ""){
 	QUARK_TEST_VERIFY(result.first[1]._name == "");
 	QUARK_TEST_VERIFY(result.second.empty());
 }
-QUARK_UNIT_TEST("", "read_function_type_args()", "", ""){
+QUARK_TEST("", "read_function_type_args()", "", ""){
 	const auto result = read_function_type_args(seq_t("(int x, double y)"));
 	QUARK_TEST_VERIFY(result.first.size() == 2);
 	QUARK_TEST_VERIFY(result.first[0]._type.is_int());
@@ -521,65 +521,65 @@ std::pair<std::shared_ptr<typeid_t>, seq_t> read_type(const seq_t& s){
 	}
 }
 
-QUARK_UNIT_TEST("", "read_type()", "", ""){
+QUARK_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(read_type(seq_t("-3")).first == nullptr);
 }
-QUARK_UNIT_TEST("", "read_type()", "", ""){
+QUARK_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(*read_type(seq_t("undef")).first == typeid_t::make_undefined());
 }
-QUARK_UNIT_TEST("", "read_type()", "", ""){
+QUARK_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(*read_type(seq_t("any")).first == typeid_t::make_any());
 }
-QUARK_UNIT_TEST("", "read_type()", "", ""){
+QUARK_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(*read_type(seq_t("void")).first == typeid_t::make_void());
 }
-QUARK_UNIT_TEST("", "read_type()", "", ""){
+QUARK_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(*read_type(seq_t("bool")).first == typeid_t::make_bool());
 }
-QUARK_UNIT_TEST("", "read_type()", "", ""){
+QUARK_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(*read_type(seq_t("int")).first == typeid_t::make_int());
 }
-QUARK_UNIT_TEST("", "read_type()", "", ""){
+QUARK_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(*read_type(seq_t("double")).first == typeid_t::make_double());
 }
-QUARK_UNIT_TEST("", "read_type()", "", ""){
+QUARK_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(*read_type(seq_t("string")).first == typeid_t::make_string());
 }
-QUARK_UNIT_TEST("", "read_type()", "identifier", ""){
+QUARK_TEST("", "read_type()", "identifier", ""){
 	const auto r = read_type(seq_t("temp"));
 	QUARK_TEST_VERIFY(*r.first ==  typeid_t::make_unresolved_type_identifier("temp"));
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
-QUARK_UNIT_TEST("", "read_type()", "vector", ""){
+QUARK_TEST("", "read_type()", "vector", ""){
 	const auto r = read_type(seq_t("[int]"));
 	QUARK_TEST_VERIFY(	*r.first ==  typeid_t::make_vector(typeid_t::make_int())		);
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
-QUARK_UNIT_TEST("", "read_type()", "vector", ""){
+QUARK_TEST("", "read_type()", "vector", ""){
 	const auto r = read_type(seq_t("[[int]]"));
 	QUARK_TEST_VERIFY(	*r.first ==  typeid_t::make_vector(typeid_t::make_vector(typeid_t::make_int()))		);
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
 
-QUARK_UNIT_TEST("", "read_type()", "dict", ""){
+QUARK_TEST("", "read_type()", "dict", ""){
 	const auto r = read_type(seq_t("[string: int]"));
 	QUARK_TEST_VERIFY(	*r.first ==  typeid_t::make_dict(typeid_t::make_int())		);
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
 
 
-QUARK_UNIT_TEST("", "read_type()", "", ""){
+QUARK_TEST("", "read_type()", "", ""){
 	const auto r = read_type(seq_t("int ()"));
 	QUARK_TEST_VERIFY(*r.first ==  typeid_t::make_function(typeid_t::make_int(), {}, epure::pure));
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
 
-QUARK_UNIT_TEST("", "read_type()", "", ""){
+QUARK_TEST("", "read_type()", "", ""){
 	const auto r = read_type(seq_t("string (double a, double b)"));
 	QUARK_TEST_VERIFY(	*r.first ==  typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_double(), typeid_t::make_double() }, epure::pure)	);
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
-QUARK_UNIT_TEST("", "read_type()", "", ""){
+QUARK_TEST("", "read_type()", "", ""){
 	const auto r = read_type(seq_t("int (double a) ()"));
 
 	QUARK_TEST_VERIFY( *r.first == typeid_t::make_function(
@@ -590,7 +590,7 @@ QUARK_UNIT_TEST("", "read_type()", "", ""){
 	);
 	QUARK_TEST_VERIFY(	r.second == seq_t("") );
 }
-QUARK_UNIT_TEST("", "read_type()", "", ""){
+QUARK_TEST("", "read_type()", "", ""){
 	const auto r = read_type(seq_t("bool (int (double a) b)"));
 
 	QUARK_TEST_VERIFY(
@@ -608,7 +608,7 @@ QUARK_UNIT_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(	r.second == seq_t("") );
 }
 /*
-QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
+QUARK_TEST("", "read_type_identifier()", "", ""){
 	QUARK_TEST_VERIFY(read_type_identifier(seq_t("int (double a) g(int(double b))")).first == "int (double a) g(int(double b))");
 }
 

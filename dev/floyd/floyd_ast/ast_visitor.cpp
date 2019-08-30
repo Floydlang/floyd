@@ -271,7 +271,7 @@ general_purpose_ast_t visit_ast(const general_purpose_ast_t& ast){
 	return result;
 }
 
-QUARK_UNIT_TEST("visit_ast", "visit_ast()", "empty", ""){
+QUARK_TEST("visit_ast", "visit_ast()", "empty", ""){
 	general_purpose_ast_t a;
 	const auto r = visit_ast(a);
 }

@@ -655,15 +655,15 @@ std::vector<int> make_location_lookup(const std::string& source){
 	}
 }
 
-QUARK_UNIT_TEST("", "make_location_lookup()", "", ""){
+QUARK_TEST("", "make_location_lookup()", "", ""){
 	const auto r = make_location_lookup("");
 	QUARK_UT_VERIFY((r == std::vector<int>{ 0 }));
 }
-QUARK_UNIT_TEST("", "make_location_lookup()", "", ""){
+QUARK_TEST("", "make_location_lookup()", "", ""){
 	const auto r = make_location_lookup("aaa");
 	QUARK_UT_VERIFY((r == std::vector<int>{ 0, 3 }));
 }
-QUARK_UNIT_TEST("", "make_location_lookup()", "", ""){
+QUARK_TEST("", "make_location_lookup()", "", ""){
 	const auto r = make_location_lookup("aaa\nbbb\n");
 	QUARK_UT_VERIFY((r == std::vector<int>{ 0, 4, 8 }));
 }
@@ -674,7 +674,7 @@ const std::string cleanup_line_snippet(const std::string& s){
 	const auto line = split.size() > 0 ? split.front() : "";
 	return line;
 }
-QUARK_UNIT_TEST("", "cleanup_line_snippet()", "", ""){
+QUARK_TEST("", "cleanup_line_snippet()", "", ""){
 	ut_verify(QUARK_POS, cleanup_line_snippet(" \tabc\n\a"), "abc");
 }
 
@@ -714,7 +714,7 @@ location2_t find_loc_info(const std::string& program, const std::vector<int>& lo
 	}
 }
 
-QUARK_UNIT_TEST("", "make_location_lookup()", "", ""){
+QUARK_TEST("", "make_location_lookup()", "", ""){
 	const std::vector<int> lookup = { 0, 1, 2, 18, 19, 21 };
 	const std::string program = R"(
 
@@ -822,7 +822,7 @@ json_t make_ast_node(const location_t& location, const std::string& opcode, cons
 	}
 }
 
-QUARK_UNIT_TEST("", "make_ast_node()", "", ""){
+QUARK_TEST("", "make_ast_node()", "", ""){
 	const auto r = make_ast_node(location_t(1234), "def-struct", std::vector<json_t>{});
 
 	ut_verify(QUARK_POS, r, json_t::make_array({ 1234.0, "def-struct" }));

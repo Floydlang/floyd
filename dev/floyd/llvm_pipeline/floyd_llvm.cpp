@@ -66,7 +66,7 @@ std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_sourc
 
 
 
-QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
+QUARK_TEST("", "run_benchmarks()", "", ""){
 	run_benchmarks(
 		R"(
 
@@ -94,7 +94,7 @@ QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
 
 
 
-QUARK_UNIT_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
+QUARK_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
 	const auto cu = floyd::make_compilation_unit_nolib("let int result = 1 + 2 + 3", "myfile.floyd");
 	const auto sem_ast = compile_to_sematic_ast__errors(cu);
 
@@ -109,7 +109,7 @@ QUARK_UNIT_TEST("", "From source: Check that floyd_runtime_init() runs and sets 
 }
 
 //	BROKEN!
-QUARK_UNIT_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
+QUARK_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
 	const auto cu = floyd::make_compilation_unit_nolib("print(5)", "myfile.floyd");
 	const auto sem_ast = compile_to_sematic_ast__errors(cu);
 

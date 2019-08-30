@@ -981,7 +981,7 @@ int get_local_n_pos(int frame_pos, int n){
 
 
 //	Check memory layouts.
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const auto int_size = sizeof(int);
 	QUARK_ASSERT(int_size == 4);
 
@@ -1293,13 +1293,13 @@ int bc_compare_string(const std::string& left, const std::string& right){
 	return compare(std::strcmp(left.c_str(), right.c_str()));
 }
 
-QUARK_UNIT_TEST("bc_compare_string()", "", "", ""){
+QUARK_TEST("bc_compare_string()", "", "", ""){
 	ut_verify_auto(QUARK_POS, bc_compare_string("", ""), 0);
 }
-QUARK_UNIT_TEST("bc_compare_string()", "", "", ""){
+QUARK_TEST("bc_compare_string()", "", "", ""){
 	ut_verify_auto(QUARK_POS, bc_compare_string("aaa", "aaa"), 0);
 }
-QUARK_UNIT_TEST("bc_compare_string()", "", "", ""){
+QUARK_TEST("bc_compare_string()", "", "", ""){
 	ut_verify_auto(QUARK_POS, bc_compare_string("b", "a"), 1);
 }
 
@@ -2366,7 +2366,7 @@ bool interpreter_t::check_invariant() const {
 //////////////////////////////////////////		INSTRUCTIONS
 
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const auto value_size = sizeof(bc_value_t);
 	QUARK_UT_VERIFY(value_size >= 8);
 /*
@@ -2381,7 +2381,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 //	QUARK_UT_VERIFY(sizeof(temp) == 56);
 }
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const auto s = sizeof(bc_value_t);
 	QUARK_UT_VERIFY(s >= 8);
 //	QUARK_UT_VERIFY(s == 16);

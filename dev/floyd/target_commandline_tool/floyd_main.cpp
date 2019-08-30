@@ -220,7 +220,7 @@ static std::string do_user_benchmarks_run_all(const std::string& program_source,
 	return make_benchmark_report(results);
 }
 
-QUARK_UNIT_TEST("", "do_user_benchmarks_run_all()", "", ""){
+QUARK_TEST("", "do_user_benchmarks_run_all()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
 	R"(
@@ -273,7 +273,7 @@ static std::string do_user_benchmarks_run_specified(const std::string& program_s
 }
 
 /*
-QUARK_UNIT_TEST("", "do_user_benchmarks_run_specified()", "", ""){
+QUARK_TEST("", "do_user_benchmarks_run_specified()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
 	R"(
@@ -320,7 +320,7 @@ static std::string do_user_benchmarks_list(const std::string& program_source, co
 	return ss.str();
 }
 
-QUARK_UNIT_TEST("", "do_user_benchmarks_list()", "", ""){
+QUARK_TEST("", "do_user_benchmarks_list()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
 	R"(
@@ -344,7 +344,7 @@ QUARK_UNIT_TEST("", "do_user_benchmarks_list()", "", ""){
 }
 
 
-QUARK_UNIT_TEST("", "do_user_benchmarks_list()", "", ""){
+QUARK_TEST("", "do_user_benchmarks_list()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
 	R"(
@@ -421,7 +421,7 @@ static int do_user_benchmarks(const command_t& command, const command_t::user_be
 	return EXIT_FAILURE;
 }
 
-QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
+QUARK_TEST("", "run_benchmarks()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
 	R"(
@@ -438,7 +438,7 @@ QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
 	QUARK_UT_VERIFY(result[0] == (benchmark_result2_t { benchmark_id_t{ "", "ABC" }, benchmark_result_t { 200, json_t("0 elements") } }));
 }
 
-QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
+QUARK_TEST("", "run_benchmarks()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
 	R"(
@@ -472,7 +472,7 @@ QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
 }
 
 
-QUARK_UNIT_TEST("", "collect_benchmarks()", "", ""){
+QUARK_TEST("", "collect_benchmarks()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
 	R"(
@@ -573,7 +573,7 @@ static int main_internal(int argc, const char * argv[]) {
 }
 
 /*
-QUARK_UNIT_TEST("", "main_internal()", "", ""){
+QUARK_TEST("", "main_internal()", "", ""){
 	const char* args[] = { "floyd", "run", "examples/test_main.floyd" };
 	const auto result = main_internal(3, args);
 	QUARK_UT_VERIFY(result == 0);

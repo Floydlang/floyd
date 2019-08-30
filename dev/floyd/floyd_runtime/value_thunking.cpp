@@ -43,7 +43,7 @@ runtime_value_t to_runtime_string2(value_backend_t& backend, const std::string& 
 }
 
 
-QUARK_UNIT_TEST("VECTOR_CARRAY_T", "", "", ""){
+QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
 	auto backend = make_test_value_backend();
 	const auto a = to_runtime_string2(backend, "hello, world!");
 
@@ -88,7 +88,7 @@ std::string from_runtime_string2(const value_backend_t& backend, runtime_value_t
 	return result;
 }
 
-QUARK_UNIT_TEST("VECTOR_CARRAY_T", "", "", ""){
+QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
 	auto backend = make_test_value_backend();
 	const auto a = to_runtime_string2(backend, "hello, world!");
 

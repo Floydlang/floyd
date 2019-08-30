@@ -18,7 +18,7 @@
 
 
 #define ASSERT(x) QUARK_ASSERT(x)
-#define UNIT_TEST(a, b, c, d) QUARK_UNIT_TEST(a, b, c, d)
+#define UNIT_TEST(a, b, c, d) QUARK_TEST(a, b, c, d)
 #define UT_VERIFY(x) QUARK_UT_VERIFY(x)
 #define TRACE(x) QUARK_TRACE(x)
 

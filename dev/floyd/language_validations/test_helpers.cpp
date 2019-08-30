@@ -41,7 +41,7 @@ static const bool k_run_llvm = true;
 namespace floyd {
 
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const auto double_size = sizeof(double);
 	QUARK_UT_VERIFY(double_size == 8);
 }
@@ -176,7 +176,7 @@ void test_floyd(const quark::call_context_t& context, const compilation_unit_t& 
 	}
 }
 
-QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
+QUARK_TEST("test_helpers", "run_program()", "", ""){
 	test_floyd(
 		QUARK_POS,
 		make_compilation_unit("print(\"Hello, world!\")", "", compilation_unit_mode::k_no_core_lib),
@@ -186,7 +186,7 @@ QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
+QUARK_TEST("test_helpers", "run_program()", "", ""){
 	test_floyd(
 		QUARK_POS,
 		make_compilation_unit("let result = 112", "", compilation_unit_mode::k_no_core_lib),
@@ -195,7 +195,7 @@ QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 		false
 	);
 }
-QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
+QUARK_TEST("test_helpers", "run_program()", "", ""){
 	test_floyd(
 		QUARK_POS,
 		make_compilation_unit("func int main([string] args){ return 1003 }", "", compilation_unit_mode::k_no_core_lib),
@@ -205,7 +205,7 @@ QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 	);
 
 }
-QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
+QUARK_TEST("test_helpers", "run_program()", "", ""){
 	test_floyd(
 		QUARK_POS,
 		make_compilation_unit("print(1) print(234)", "", compilation_unit_mode::k_no_core_lib),

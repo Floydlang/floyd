@@ -141,17 +141,17 @@ struct write_cache_t {
 
 
 
-//#define QUARK_UNIT_TEST QUARK_UNIT_TEST_VIP
+//#define QUARK_TEST QUARK_UNIT_TEST_VIP
 
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const immer::vector<uint64_t> vec;
 
 	const write_cache_t cache(vec);
 	QUARK_UT_VERIFY(cache.size() == 0);
 }
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const immer::vector<uint64_t> vec;
 
 	const write_cache_t cache(vec);
@@ -162,7 +162,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_UT_VERIFY(b.load_element(0) == 1234);
 }
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const immer::vector<uint64_t> vec;
 
 	const write_cache_t cache(vec);
@@ -194,7 +194,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_UT_VERIFY(acc.load_element(15) == 15);
 }
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const immer::vector<uint64_t> vec;
 
 	const write_cache_t cache(vec);

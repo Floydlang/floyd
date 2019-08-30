@@ -22,7 +22,7 @@ using namespace std;
 
 //	"Implicit conversion turns floating-point number into integer: 'double' "
 #if 0
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	double a = 10.0f;
 	double b = 23.3f;
 
@@ -40,7 +40,7 @@ struct test_cpp_value_class_a {
 	}
 };
 
-QUARK_UNIT_TEST("test_cpp_value_class_a", "what is needed for basic operations", "", ""){
+QUARK_TEST("test_cpp_value_class_a", "what is needed for basic operations", "", ""){
 	test_cpp_value_class_a a;
 	test_cpp_value_class_a b = a;
 
@@ -49,7 +49,7 @@ QUARK_UNIT_TEST("test_cpp_value_class_a", "what is needed for basic operations",
 }
 
 
-QUARK_UNIT_TEST("C++ bool", "", "", ""){
+QUARK_TEST("C++ bool", "", "", ""){
 	ut_verify_auto(QUARK_POS, true, true);
 	ut_verify_auto(QUARK_POS, true, !false);
 	ut_verify_auto(QUARK_POS, false, false);
@@ -62,7 +62,7 @@ QUARK_UNIT_TEST("C++ bool", "", "", ""){
 	QUARK_UT_VERIFY(y == false);
 }
 
-QUARK_UNIT_TEST("","", "", ""){
+QUARK_TEST("","", "", ""){
 	const auto size = sizeof(std::make_shared<int>(13));
 	QUARK_UT_VERIFY(size == 16);
 }
@@ -70,7 +70,7 @@ QUARK_UNIT_TEST("","", "", ""){
 
 
 
-QUARK_UNIT_TEST("C++17 variant", "", "", ""){
+QUARK_TEST("C++17 variant", "", "", ""){
     std::variant<int,std::string> foo;
 	
     //Assign a value to the integer member
@@ -95,7 +95,7 @@ struct no_op_equal {
 	private: bool operator==(const no_op_equal& other){return false;};
 };
 
-QUARK_UNIT_TEST("C++17 variant", "operator==", "", ""){
+QUARK_TEST("C++17 variant", "operator==", "", ""){
     std::variant<int, std::string, no_op_equal> a = no_op_equal{ 3.14f };
     std::variant<int, std::string, no_op_equal> b = no_op_equal{ 3.14f };
 	QUARK_UT_VERIFY(a == b);
@@ -131,7 +131,7 @@ struct test_statement_t {
 };
 
 
-QUARK_UNIT_TEST("C++17 variant", "", "", ""){
+QUARK_TEST("C++17 variant", "", "", ""){
 	test_statement_t a{bind_t{"myval", {"1+3"}}, "debug myval = 1+3"};
 
 	const auto s = sizeof(a);
@@ -261,7 +261,7 @@ void example8(){
 //    QUARK_TRACE_SS("Extra storage requried for a + b: inodes: " << extra_inodes << ", leaf nodes: " << extra_leaf_nodes);
 }
 
-QUARK_UNIT_TEST("","", "", ""){
+QUARK_TEST("","", "", ""){
 	example8();
 }
 
@@ -277,13 +277,13 @@ QUARK_UNIT_TEST("","", "", ""){
 */
 
 #if 0
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	immer::vector<int> pixels;
 	pixels = pixels.push_back(600);
 }
 #endif
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const auto a = make_image(700, 700);
 }
 
@@ -314,7 +314,7 @@ struct runtime_t {
 };
 
 
-QUARK_UNIT_TEST("","", "", ""){
+QUARK_TEST("","", "", ""){
    	QUARK_TRACE_SS("A");
 	{
 		runtime_t test_runtime;
@@ -336,7 +336,7 @@ QUARK_UNIT_TEST("","", "", ""){
 
 //	Returning a const ref from function and capturing it using const auto x = f() -- will that make x a reference or a copy?
 //	RESULT: You must capture using auto& or you get a copy!
-QUARK_UNIT_TEST("","", "", ""){
+QUARK_TEST("","", "", ""){
 	QUARK_UT_VERIFY(g_test.a == 46);
 
 	const auto& b = f();

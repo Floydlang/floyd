@@ -586,7 +586,7 @@ static llvm_type_lookup make_basic_interner(llvm::LLVMContext& context){
 static llvm_type_lookup make_basic_interner(llvm::LLVMContext& context);
 
 #if 0
-QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void()", ""){
+QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func void()", ""){
 	llvm::LLVMContext context;
 	const auto interner = make_basic_interner(context);
 	auto module = std::make_unique<llvm::Module>("test", context);
@@ -608,7 +608,7 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void()", ""){
 	QUARK_UT_VERIFY(r.args[0].map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr);
 }
 
-QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func int()", ""){
+QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func int()", ""){
 	llvm::LLVMContext context;
 	auto interner = make_basic_interner(context);
 	auto module = std::make_unique<llvm::Module>("test", context);
@@ -627,7 +627,7 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func int()", ""){
 	QUARK_UT_VERIFY(r.args[0].map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr);
 }
 
-QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""){
+QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""){
 	llvm::LLVMContext context;
 	const auto interner = make_basic_interner(context);
 	auto module = std::make_unique<llvm::Module>("test", context);
@@ -652,7 +652,7 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""
 	QUARK_UT_VERIFY(r.args[1].map_type == llvm_arg_mapping_t::map_type::k_known_value_type);
 }
 
-QUARK_UNIT_TEST
+QUARK_TEST
 ("LLVM Codegen", "map_function_arguments()", "func void(int, DYN, bool)", ""){
 	llvm::LLVMContext context;
 	const auto interner = make_basic_interner(context);

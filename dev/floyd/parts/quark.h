@@ -468,18 +468,18 @@ inline void set_trace(const trace_i* v){
 	#define QUARK_POS quark::call_context_t{::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__)}
 
 	//	The generated function is static and will be stripped in optimized builds (it will not be referenced).
-	#define QUARK_UNIT_TEST(class_under_test, function_under_test, scenario, expected_result) \
+	#define QUARK_TEST(class_under_test, function_under_test, scenario, expected_result) \
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(); \
 		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(cppext_unit_test_), false); \
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
 
 	//	When one or more of these exists, no non_VIP tests are run. Let's you iterate on a broken test quickly and set breakpoints in etc.
-	#define QUARK_UNIT_TEST_VIP(class_under_test, function_under_test, scenario, expected_result) \
+	#define QUARK_TEST_VIP(class_under_test, function_under_test, scenario, expected_result) \
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(); \
 		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(cppext_unit_test_), true); \
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
 
-	#define QUARK_UNIT_TESTQ(function_under_test, scenario) \
+	#define QUARK_TESTQ(function_under_test, scenario) \
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(); \
 		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, "", function_under_test, scenario, "", QUARK_UNIQUE_LABEL(cppext_unit_test_), false); \
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
@@ -585,7 +585,7 @@ inline void ut_verify(const call_context_t& context, const char* result, const s
 #else
 
 	//	The generated function is static and will be stripped in optimized builds (it will not be referenced).
-	#define QUARK_UNIT_TEST(class_under_test, function_under_test, scenario, expected_result) \
+	#define QUARK_TEST(class_under_test, function_under_test, scenario, expected_result) \
 		void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
 
 	#define QUARK_UT_VERIFY(exp)

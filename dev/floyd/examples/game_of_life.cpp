@@ -162,7 +162,7 @@ int test_main (int argc, char *argv[]) {
 	return 0;
 }
 
-QUARK_UNIT_TEST("Basic performance", "Game of life", "", ""){
+QUARK_TEST("Basic performance", "Game of life", "", ""){
 	test_main(0, nullptr);
 }
 

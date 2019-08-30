@@ -111,33 +111,33 @@ std::vector<std::string> string_to_args(const std::string& s){
 	return result;
 }
 
-QUARK_UNIT_TEST("", "string_to_args()", "", ""){
+QUARK_TEST("", "string_to_args()", "", ""){
 	const auto r = string_to_args("");
 	QUARK_UT_VERIFY(r == std::vector<std::string>{});
 }
-QUARK_UNIT_TEST("", "string_to_args()", "", ""){
+QUARK_TEST("", "string_to_args()", "", ""){
 	const auto r = string_to_args("one");
 	QUARK_UT_VERIFY(r == std::vector<std::string>{"one"});
 }
-QUARK_UNIT_TEST("", "string_to_args()", "", ""){
+QUARK_TEST("", "string_to_args()", "", ""){
 	const auto r = string_to_args("one two");
 	QUARK_UT_VERIFY(r == (std::vector<std::string>{"one", "two"}));
 }
 
-QUARK_UNIT_TEST("", "string_to_args()", "", ""){
+QUARK_TEST("", "string_to_args()", "", ""){
 	const auto r = string_to_args(" one two");
 	QUARK_UT_VERIFY(r == (std::vector<std::string>{"one", "two"}));
 }
-QUARK_UNIT_TEST("", "string_to_args()", "", ""){
+QUARK_TEST("", "string_to_args()", "", ""){
 	const auto r = string_to_args("one  two");
 	QUARK_UT_VERIFY(r == (std::vector<std::string>{"one", "two"}));
 }
-QUARK_UNIT_TEST("", "string_to_args()", "", ""){
+QUARK_TEST("", "string_to_args()", "", ""){
 	const auto r = string_to_args("one two ");
 	QUARK_UT_VERIFY(r == (std::vector<std::string>{"one", "two"}));
 }
 
-QUARK_UNIT_TEST("", "string_to_args()", "", ""){
+QUARK_TEST("", "string_to_args()", "", ""){
 	const auto r = string_to_args("one \"two 2\" three ");
 	QUARK_UT_VERIFY(r == (std::vector<std::string>{"one", "two 2", "three"}));
 }
@@ -227,7 +227,7 @@ command_t parse_command(const std::vector<std::string>& args){
 
 //??? test all examples from help
 
-QUARK_UNIT_TEST("", "parse_command()", "floyd xyz", ""){
+QUARK_TEST("", "parse_command()", "floyd xyz", ""){
 	try {
 		parse_command(string_to_args("floyd xyz"));
 		QUARK_UT_VERIFY(true);
@@ -236,7 +236,7 @@ QUARK_UNIT_TEST("", "parse_command()", "floyd xyz", ""){
 	}
 }
 
-QUARK_UNIT_TEST("", "parse_command()", "floyd run", ""){
+QUARK_TEST("", "parse_command()", "floyd run", ""){
 	const auto r = parse_command(string_to_args("floyd run mygame.floyd"));
 	const auto& r2 = std::get<command_t::compile_and_run_t>(r._contents);
 	QUARK_UT_VERIFY(r2.source_path == "mygame.floyd");
@@ -244,7 +244,7 @@ QUARK_UNIT_TEST("", "parse_command()", "floyd run", ""){
 	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
 	QUARK_UT_VERIFY(r2.trace == false);
 }
-QUARK_UNIT_TEST("", "parse_command()", "floyd run", ""){
+QUARK_TEST("", "parse_command()", "floyd run", ""){
 	const auto r = parse_command(string_to_args("floyd run mygame.floyd arg1 arg2"));
 	const auto& r2 = std::get<command_t::compile_and_run_t>(r._contents);
 	QUARK_UT_VERIFY(r2.source_path == "mygame.floyd");
@@ -252,7 +252,7 @@ QUARK_UNIT_TEST("", "parse_command()", "floyd run", ""){
 	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
 	QUARK_UT_VERIFY(r2.trace == false);
 }
-QUARK_UNIT_TEST("", "parse_command()", "floyd run", ""){
+QUARK_TEST("", "parse_command()", "floyd run", ""){
 	const auto r = parse_command(string_to_args("floyd run -b mygame.floyd"));
 	const auto& r2 = std::get<command_t::compile_and_run_t>(r._contents);
 	QUARK_UT_VERIFY(r2.source_path == "mygame.floyd");
@@ -263,13 +263,13 @@ QUARK_UNIT_TEST("", "parse_command()", "floyd run", ""){
 
 
 
-QUARK_UNIT_TEST("", "parse_command()", "floyd compile", ""){
+QUARK_TEST("", "parse_command()", "floyd compile", ""){
 	const auto r = parse_command(string_to_args("floyd compile mygame.floyd"));
 	const auto& r2 = std::get<command_t::compile_to_ast_t>(r._contents);
 	QUARK_UT_VERIFY(r2.source_path == "mygame.floyd");
 	QUARK_UT_VERIFY(r2.trace == false);
 }
-QUARK_UNIT_TEST("", "parse_command()", "floyd compile", ""){
+QUARK_TEST("", "parse_command()", "floyd compile", ""){
 	const auto r = parse_command(string_to_args("floyd compile -t mygame.floyd"));
 	const auto& r2 = std::get<command_t::compile_to_ast_t>(r._contents);
 	QUARK_UT_VERIFY(r2.source_path == "mygame.floyd");
@@ -278,7 +278,7 @@ QUARK_UNIT_TEST("", "parse_command()", "floyd compile", ""){
 
 
 
-QUARK_UNIT_TEST("", "parse_command()", "floyd help", ""){
+QUARK_TEST("", "parse_command()", "floyd help", ""){
 	const auto r = parse_command(string_to_args("floyd help"));
 	std::get<command_t::help_t>(r._contents);
 }
@@ -287,7 +287,7 @@ QUARK_UNIT_TEST("", "parse_command()", "floyd help", ""){
 
 
 
-QUARK_UNIT_TEST("", "parse_command()", "floyd runtests", ""){
+QUARK_TEST("", "parse_command()", "floyd runtests", ""){
 	const auto r = parse_command(string_to_args("floyd runtests"));
 	std::get<command_t::runtests_internals_t>(r._contents);
 }
@@ -295,7 +295,7 @@ QUARK_UNIT_TEST("", "parse_command()", "floyd runtests", ""){
 
 
 
-QUARK_UNIT_TEST("", "parse_command()", "floyd bench mygame.floyd", ""){
+QUARK_TEST("", "parse_command()", "floyd bench mygame.floyd", ""){
 	const auto r = parse_command(string_to_args("floyd bench mygame.floyd"));
 	const auto& r2 = std::get<command_t::user_benchmarks_t>(r._contents);
 	QUARK_UT_VERIFY(r2.mode == command_t::user_benchmarks_t::mode::run_all);
@@ -305,7 +305,7 @@ QUARK_UNIT_TEST("", "parse_command()", "floyd bench mygame.floyd", ""){
 	QUARK_UT_VERIFY(r2.trace == false);
 }
 
-QUARK_UNIT_TEST("", "parse_command()", "floyd bench -t mygame.floyd quicksort1 merge-sort", ""){
+QUARK_TEST("", "parse_command()", "floyd bench -t mygame.floyd quicksort1 merge-sort", ""){
 	const auto r = parse_command(string_to_args("floyd bench -t mygame.floyd quicksort1 \"merge sort\""));
 	const auto& r2 = std::get<command_t::user_benchmarks_t>(r._contents);
 	QUARK_UT_VERIFY(r2.mode == command_t::user_benchmarks_t::mode::run_specified);
@@ -316,7 +316,7 @@ QUARK_UNIT_TEST("", "parse_command()", "floyd bench -t mygame.floyd quicksort1 m
 }
 
 
-QUARK_UNIT_TEST("", "parse_command()", "floyd bench -tl mygame.floyd", ""){
+QUARK_TEST("", "parse_command()", "floyd bench -tl mygame.floyd", ""){
 	const auto r = parse_command(string_to_args("floyd bench -tl mygame.floyd"));
 	const auto& r2 = std::get<command_t::user_benchmarks_t>(r._contents);
 	QUARK_UT_VERIFY(r2.mode == command_t::user_benchmarks_t::mode::list);
@@ -331,7 +331,7 @@ QUARK_UNIT_TEST("", "parse_command()", "floyd bench -tl mygame.floyd", ""){
 
 
 
-QUARK_UNIT_TEST("", "parse_command()", "ld -o output /lib/crt0.o hello.o -lc", ""){
+QUARK_TEST("", "parse_command()", "ld -o output /lib/crt0.o hello.o -lc", ""){
 	const auto r = parse_command_line_args_subcommands(string_to_args("ld -o output /lib/crt0.o hello.o -lc"), "olc");
 	QUARK_UT_VERIFY(r.command == "ld");
 }

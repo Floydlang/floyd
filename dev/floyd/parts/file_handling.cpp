@@ -286,7 +286,7 @@ directories_t GetDirectories(){
 }
 
 
-QUARK_UNIT_TEST("", "GetDirectories()", "", ""){
+QUARK_TEST("", "GetDirectories()", "", ""){
 	const auto temp = GetDirectories();
 
 	QUARK_UT_VERIFY(true)
@@ -381,7 +381,7 @@ process_info_t get_process_info(){
 
 
 
-QUARK_UNIT_TEST("", "get_info()", "", ""){
+QUARK_TEST("", "get_info()", "", ""){
 	const auto temp = get_process_info();
 
 	TFileInfo info;
@@ -441,16 +441,16 @@ std::pair<std::string, std::string> UpDir2(const std::string& path){
 	}
 }
 
-QUARK_UNIT_TEST("", "UpDir2()","", ""){
+QUARK_TEST("", "UpDir2()","", ""){
 	QUARK_UT_VERIFY((UpDir2("/Users/marcus/Desktop/") == std::pair<std::string, std::string>{ "/Users/marcus/", "Desktop" }));
 }
-QUARK_UNIT_TEST("", "UpDir2()","", ""){
+QUARK_TEST("", "UpDir2()","", ""){
 	QUARK_UT_VERIFY((UpDir2("/Users/") == std::pair<std::string, std::string>{ "/", "Users" }));
 }
-QUARK_UNIT_TEST("", "UpDir2()","", ""){
+QUARK_TEST("", "UpDir2()","", ""){
 	QUARK_UT_VERIFY((UpDir2("/") == std::pair<std::string, std::string>{ "", "/" }));
 }
-QUARK_UNIT_TEST("", "UpDir2()","", ""){
+QUARK_TEST("", "UpDir2()","", ""){
 	QUARK_UT_VERIFY((UpDir2("/Users/marcus/original.txt") == std::pair<std::string, std::string>{ "/Users/marcus/", "original.txt" }));
 }
 
@@ -484,16 +484,16 @@ std::pair<std::string, std::string> SplitExtension(const std::string& s){
 	}
 }
 
-QUARK_UNIT_TEST("", "SplitExtension()","", ""){
+QUARK_TEST("", "SplitExtension()","", ""){
 	QUARK_UT_VERIFY((SplitExtension("snare.wav") == std::pair<std::string, std::string>{ "snare", ".wav" }));
 }
-QUARK_UNIT_TEST("", "SplitExtension()","", ""){
+QUARK_TEST("", "SplitExtension()","", ""){
 	QUARK_UT_VERIFY((SplitExtension("snare.drum.wav") == std::pair<std::string, std::string>{ "snare.drum", ".wav" }));
 }
-QUARK_UNIT_TEST("", "SplitExtension()","", ""){
+QUARK_TEST("", "SplitExtension()","", ""){
 	QUARK_UT_VERIFY((SplitExtension("snare") == std::pair<std::string, std::string>{ "snare", "" }));
 }
-QUARK_UNIT_TEST("", "SplitExtension()","", ""){
+QUARK_TEST("", "SplitExtension()","", ""){
 	QUARK_UT_VERIFY((SplitExtension(".wav") == std::pair<std::string, std::string>{ "", ".wav" }));
 }
 
@@ -555,32 +555,32 @@ static void TestSplitPath(const std::string& inPath, const TPathParts& correctPa
 	ASSERT(result.fExtension == correctParts.fExtension);
 }
 
-QUARK_UNIT_TEST("", "TestSplitPath","", ""){
+QUARK_TEST("", "TestSplitPath","", ""){
 	//	Complex.
 	TestSplitPath("/Volumes/MyHD/SomeDir/MyFileName.txt", TPathParts("/Volumes/MyHD/SomeDir/","MyFileName",".txt"));
 }
 
-QUARK_UNIT_TEST("", "TestSplitPath","", ""){
+QUARK_TEST("", "TestSplitPath","", ""){
 	//	Name + extension.
 	TestSplitPath("MyFileName.txt", TPathParts("","MyFileName",".txt"));
 }
 
-QUARK_UNIT_TEST("", "TestSplitPath","", ""){
+QUARK_TEST("", "TestSplitPath","", ""){
 	//	Name
 	TestSplitPath("MyFileName", TPathParts("","MyFileName",""));
 }
 
-QUARK_UNIT_TEST("", "TestSplitPath","", ""){
+QUARK_TEST("", "TestSplitPath","", ""){
 	//	Path + name
 	TestSplitPath("Dir/MyFileName", TPathParts("Dir/","MyFileName",""));
 }
 
-QUARK_UNIT_TEST("", "TestSplitPath","", ""){
+QUARK_TEST("", "TestSplitPath","", ""){
 	//	Path + extension.
 	TestSplitPath("/Volumes/MyHD/SomeDir/.txt", TPathParts("/Volumes/MyHD/SomeDir/","",".txt"));
 }
 
-QUARK_UNIT_TEST("", "TestSplitPath","", ""){
+QUARK_TEST("", "TestSplitPath","", ""){
 	TestSplitPath("/Volumes/MyHD/SomeDir/", TPathParts("/Volumes/MyHD/SomeDir/","",""));
 }
 

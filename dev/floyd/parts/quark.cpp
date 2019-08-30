@@ -62,26 +62,26 @@ void set_runtime(runtime_i* iRuntime){
 #if QUARK_UNIT_TESTS_ON
 
 
-QUARK_UNIT_TESTQ("path_to_name()", ""){
+QUARK_TESTQ("path_to_name()", ""){
 	QUARK_UT_VERIFY(path_to_name("/Users/marcus/Repositories/Floyd/examples/game_of_life2.cpp") == "game_of_life2.cpp");
 }
-QUARK_UNIT_TESTQ("path_to_name()", ""){
+QUARK_TESTQ("path_to_name()", ""){
 	QUARK_UT_VERIFY(path_to_name("game_of_life2.cpp") == "game_of_life2.cpp");
 }
-QUARK_UNIT_TESTQ("path_to_name()", ""){
+QUARK_TESTQ("path_to_name()", ""){
 	QUARK_UT_VERIFY(path_to_name("") == "");
 }
 
 //??? test mixes of string vs char*
 
-QUARK_UNIT_TEST("Quark", "ut_verify()", "", ""){
+QUARK_TEST("Quark", "ut_verify()", "", ""){
 	ut_verify(QUARK_POS, std::string("xyz123"), std::string("xyz123"));
 }
-QUARK_UNIT_TEST("Quark", "ut_verify()", "", ""){
+QUARK_TEST("Quark", "ut_verify()", "", ""){
 	ut_verify(QUARK_POS, "xyz", "xyz");
 }
 /*
-QUARK_UNIT_TEST("Quark", "ut_verify()", "", ""){
+QUARK_TEST("Quark", "ut_verify()", "", ""){
 	try{
 		ut_verify(QUARK_POS, "xyzabc", "xyztbcd");
 		fail_test(QUARK_POS);
@@ -161,7 +161,7 @@ void test_macros(){
 	QUARK_SCOPED_TRACE(std::string("scoped trace") + "std::string version");
 }
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	QUARK_UT_VERIFY(true);
 	QUARK_TEST_VERIFY(true);
 }
