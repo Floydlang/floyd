@@ -18,7 +18,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#ifdef __APPLE__
+
+
+#if QUARK_MAC
 	#include <libproc.h>
 	#include <CoreFoundation/CoreFoundation.h>
 #endif
@@ -293,9 +295,9 @@ QUARK_TEST("", "GetDirectories()", "", ""){
 }
 
 
+#if QUARK_MAC
 
 std::string get_process_path (int process_id){
-#ifdef __APPLE__
 	pid_t pid; int ret;
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
 
@@ -309,15 +311,24 @@ std::string get_process_path (int process_id){
 //		printf("proc %d: %s\n", pid, pathbuf);
 		return std::string(pathbuf);
 	}
-#else
-#ifndef _MSC_VER
-     pid_t pid; int ret;
-	 char pathbuf[512]; /* /proc/<pid>/exe */
-	 snprintf(pathbuf, sizeof(pathbuf), "/proc/%i/exe", pid);
-	 return std::string(pathbuf);
-#endif
-#endif
 }
+
+#elif QUARK_WINDOWS
+
+std::string get_process_path (int process_id){
+	return "???";
+}
+
+#elid QUARK_LINUX
+
+std::string get_process_path (int process_id){
+	pid_t pid; int ret;
+	char pathbuf[512]; /* /proc/<pid>/exe */
+	snprintf(pathbuf, sizeof(pathbuf), "/proc/%i/exe", pid);
+	return std::string(pathbuf);
+}
+
+#endif
 
 
 /*
@@ -345,9 +356,10 @@ std::string MacBundlePath()
 }
 */
 
+
+#if QUARK_MAC
 //??? fix leaks.
 process_info_t get_process_info(){
-#ifdef __APPLE__
 	CFBundleRef mainBundle = CFBundleGetMainBundle();
 	if(mainBundle == nullptr){
 		quark::throw_exception();
@@ -372,14 +384,17 @@ process_info_t get_process_info(){
 	return process_info_t{
 		std::string(path) + "/"
 	};
+}
+
 #else
+
+process_info_t get_process_info(){
 	return process_info_t{
 		std::string("path") + "/"
 	};
-#endif
 }
 
-
+#endif
 
 QUARK_TEST("", "get_info()", "", ""){
 	const auto temp = get_process_info();
@@ -684,7 +699,8 @@ bool GetFileInfo(const std::string& completePath, TFileInfo& outInfo){
 	time_t statusChange = theStat.st_ctime;
 	off_t size = theStat.st_size;
 	result.fModificationDate = MAX(dataChange, statusChange);
-#ifdef __APPLE__
+
+#if QUARK_MAC
 	result.fCreationDate = theStat.st_birthtimespec.tv_sec;
 #endif
 
@@ -978,7 +994,7 @@ std::vector<TDirEntry> GetDirItems(const std::string& inDir){
 	std::vector<TDirEntry> result;
 
 	for(const auto& e: dir_elements){
-#ifdef __APPLE__
+#if QUARK_MAC
 		const std::string name(&e.d_name[0], &e.d_name[e.d_namlen]);
 #else
 		const std::string name(&e.d_name[0], &e.d_name[256]);

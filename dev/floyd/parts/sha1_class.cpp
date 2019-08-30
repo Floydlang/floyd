@@ -12,7 +12,7 @@
 #include "quark.h"
 #include "sha1.h"
 
-#ifdef __APPLE__
+#if QUARK_MAC
      #include <CommonCrypto/CommonDigest.h>
 #endif
 

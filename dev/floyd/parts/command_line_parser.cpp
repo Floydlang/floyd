@@ -29,7 +29,7 @@ std::vector<std::string> args_to_vector(int argc, const char * argv[]){
 	return r;
 }
 
-#ifdef __APPLE__
+#if QUARK_MAC
 std::pair<std::string, std::vector<std::string> > extract_key(const std::vector<std::string>& args, const std::string& key){
 	const auto it = std::find(args.begin(), args.end(), key);
 	if(it != args.end()){

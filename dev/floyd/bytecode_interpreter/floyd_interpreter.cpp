@@ -300,7 +300,7 @@ static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& v
 
 				std::stringstream thread_name;
 				thread_name << std::string() << "process " << process_id << " thread";
-	#ifdef __APPLE__
+	#if QUARK_MAC
 				pthread_setname_np(/*pthread_self(),*/ thread_name.str().c_str());
 	#endif
 

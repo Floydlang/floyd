@@ -433,9 +433,6 @@ bool llvm_execution_engine_t::check_invariant() const {
 	return true;
 }
 
-
-
-//??? Do this onces and store in llvm_execution_engine_t.
 static std::vector<std::pair<link_name_t, void*>> collection_native_func_ptrs(llvm::ExecutionEngine& ee, const std::vector<function_def_t>& function_defs){
 	std::vector<std::pair<link_name_t, void*>> result;
 	for(const auto& e: function_defs){
@@ -484,21 +481,7 @@ static std::vector<std::pair<itype_t, struct_layout_t>> make_struct_layouts(cons
 	return result;
 }
 
-/*
-static std::map<itype_t, typeid_t> make_type_lookup(const llvm_type_lookup& type_lookup){
-	QUARK_ASSERT(type_lookup.check_invariant());
-
-	std::map<itype_t, typeid_t> result;
-	for(int i = 0 ; i < type_lookup.state.types.size() ; i++){
-		const auto& type = type_lookup.state.type_interner.interned[i];
-		const auto itype = lookup_itype(type_lookup.state.type_interner, type);
-		result.insert( { itype, type } );
-	}
-	return result;
-}
-*/
-
-#if __APPLE__
+#if QUARK_MAC
 std::string strip_link_name(const std::string& s){
 	QUARK_ASSERT(s.empty() == false);
 	QUARK_ASSERT(s[0] == '_');
@@ -850,7 +833,7 @@ static std::map<std::string, value_t> run_processes(llvm_execution_engine_t& ee)
 
 				std::stringstream thread_name;
 				thread_name << std::string() << "process " << process_id << " thread";
-	#ifdef __APPLE__
+	#if QUARK_MAC
 				pthread_setname_np(/*pthread_self(),*/ thread_name.str().c_str());
 	#endif
 
