@@ -523,8 +523,6 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 
 	auto ee1 = std::shared_ptr<llvm::ExecutionEngine>(exeEng);
 
-//	auto function_map = make_all_function_binds(instance.context, program_breaks.type_lookup);
-
 	//	LINK. Resolve all unresolved functions.
 	{
 		//	https://stackoverflow.com/questions/33328562/add-mapping-to-c-lambda-from-llvm
