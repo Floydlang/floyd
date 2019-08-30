@@ -37,7 +37,7 @@ struct STRUCT_T;
 static const bool k_record_allocs = false;
 
 #define HEAP_MUTEX 0
-#define ATOMIC_RC 0
+#define ATOMIC_RC 1
 
 
 enum vector_backend {
