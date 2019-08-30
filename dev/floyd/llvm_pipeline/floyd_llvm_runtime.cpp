@@ -44,6 +44,7 @@ namespace floyd {
 
 
 
+////////////////////////////////	BASICS
 
 
 /*
@@ -62,8 +63,7 @@ static floyd_runtime_t* make_runtime_ptr(llvm_execution_engine_t* ee){
 }
 
 
-
-
+////////////////////////////////	CLIENT ACCESS OF RUNNING PROGRAM
 
 
 const function_def_t& find_function_def_from_link_name(const std::vector<function_def_t>& function_defs, const link_name_t& link_name){
@@ -73,11 +73,6 @@ const function_def_t& find_function_def_from_link_name(const std::vector<functio
 	QUARK_ASSERT(it->llvm_codegen_f != nullptr);
 	return *it;
 }
-
-
-
-
-
 
 void* get_global_ptr(const llvm_execution_engine_t& ee, const std::string& name){
 	QUARK_ASSERT(ee.check_invariant());
@@ -164,6 +159,7 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name)
 }
 
 
+////////////////////////////////	INTERNALS FOR EXECUTION ENGINE
 
 
 static std::map<link_name_t, void*> make_all_function_binds(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -863,14 +859,6 @@ run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::str
 		return { 0, result };
 	}
 }
-
-
-
-
-
-
-
-
 
 
 

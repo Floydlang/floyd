@@ -149,12 +149,14 @@ typedef runtime_value_t (*FLOYD_RUNTIME_PROCESS_MESSAGE)(floyd_runtime_t* frp, r
 typedef runtime_value_t (*FLOYD_BENCHMARK_F)(floyd_runtime_t* frp);
 
 
-////////////////////////////////		ENGINE GLOBALS
 
+////////////////////////////////	CLIENT ACCESS OF RUNNING PROGRAM
+
+
+const function_def_t& find_function_def_from_link_name(const std::vector<function_def_t>& function_defs, const link_name_t& link_name);
 
 void* get_global_ptr(const llvm_execution_engine_t& ee, const std::string& name);
 
-const function_def_t& find_function_def_from_link_name(const std::vector<function_def_t>& function_defs, const link_name_t& link_name);
 
 std::pair<void*, typeid_t> bind_global(const llvm_execution_engine_t& ee, const std::string& name);
 value_t load_global(const llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& v);
@@ -165,6 +167,7 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name)
 
 
 inline llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp);
+
 
 
 ////////////////////////////////		VALUES
