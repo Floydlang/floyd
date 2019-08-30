@@ -19,6 +19,9 @@ namespace floyd {
 
 
 
+static const function_def_t& resolve_func(const std::vector<function_def_t>& function_defs, const std::string& name){
+	return find_function_def_from_link_name(function_defs, encode_runtime_func_link_name(name));
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //	RUNTIME FUNCTIONS
@@ -96,14 +99,10 @@ static function_bind_t floydrt_allocate_vector__make(llvm::LLVMContext& context,
 	return { "allocate_vector", function_type, reinterpret_cast<void*>(floydrt_allocate_vector) };
 }
 
-llvm::Value* generate_allocate_vector(const runtime_functions_t& functions, llvm::IRBuilder<>& builder, llvm::Value& frp_reg, llvm::Value& vector_type_reg, int64_t element_count, vector_backend vector_backend){
+llvm::Value* generate_allocate_vector(const std::vector<function_def_t>& defs, llvm::IRBuilder<>& builder, llvm::Value& frp_reg, llvm::Value& vector_type_reg, int64_t element_count, vector_backend vector_backend){
 	const auto element_count_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(builder.getContext()), element_count);
-
-	return builder.CreateCall(
-		functions.floydrt_allocate_vector.llvm_codegen_f,
-		{ &frp_reg, &vector_type_reg, element_count_reg },
-		""
-	);
+	const auto res = resolve_func(defs, "allocate_vector");
+	return builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &vector_type_reg, element_count_reg }, "");
 }
 
 
@@ -1129,9 +1128,6 @@ std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& conte
 ////////////////////////////////		runtime_functions_t
 
 
-static const function_def_t& resolve_func(const std::vector<function_def_t>& function_defs, const std::string& name){
-	return find_function_def_from_link_name(function_defs, encode_runtime_func_link_name(name));
-}
 
 runtime_functions_t::runtime_functions_t(const std::vector<function_def_t>& function_defs) :
 	floydrt_init(resolve_func(function_defs, "init")),
@@ -1139,7 +1135,7 @@ runtime_functions_t::runtime_functions_t(const std::vector<function_def_t>& func
 
 
 	floydrt_alloc_kstr(resolve_func(function_defs, "alloc_kstr")),
-	floydrt_allocate_vector(resolve_func(function_defs, "allocate_vector")),
+//	floydrt_allocate_vector(resolve_func(function_defs, "allocate_vector")),
 	floydrt_allocate_vector_fill(resolve_func(function_defs, "allocate_vector_fill")),
 	floydrt_retain_vec(resolve_func(function_defs, "retain_vec")),
 	floydrt_retain_vector_hamt(resolve_func(function_defs, "retain_vector_hamt")),

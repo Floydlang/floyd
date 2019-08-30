@@ -37,7 +37,7 @@ struct runtime_functions_t {
 	const function_def_t floydrt_deinit;
 
 	const function_def_t floydrt_alloc_kstr;
-	const function_def_t floydrt_allocate_vector;
+//	const function_def_t floydrt_allocate_vector;
 	const function_def_t floydrt_allocate_vector_fill;
 	const function_def_t floydrt_retain_vec;
 	const function_def_t floydrt_retain_vector_hamt;
@@ -73,7 +73,7 @@ struct runtime_functions_t {
 };
 
 
-llvm::Value* generate_allocate_vector(const runtime_functions_t& functions, llvm::IRBuilder<>& builder, llvm::Value& frp_reg, llvm::Value& vector_type_reg, int64_t element_count, vector_backend vector_backend);
+llvm::Value* generate_allocate_vector(const std::vector<function_def_t>& function_defs, llvm::IRBuilder<>& builder, llvm::Value& frp_reg, llvm::Value& vector_type_reg, int64_t element_count, vector_backend vector_backend);
 
 
 
