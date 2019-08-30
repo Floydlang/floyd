@@ -693,6 +693,7 @@ const std::vector<typeid_str_test_t> make_typeid_str_tests(){
 }
 
 
+#if 0
 OFF_QUARK_UNIT_TEST("typeid_to_ast_json()", "", "", ""){
 	const auto f = make_typeid_str_tests();
 	for(int i = 0 ; i < f.size() ; i++){
@@ -734,6 +735,7 @@ OFF_QUARK_UNIT_TEST("typeid_to_compact_string", "", "", ""){
 	}
 	QUARK_TRACE("OK!");
 }
+#endif
 
 
 

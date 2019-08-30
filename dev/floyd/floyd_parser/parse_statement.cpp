@@ -735,6 +735,7 @@ const std::string k_test_protocol0 = R"(
 	}
 )";
 
+#if 0
 OFF_QUARK_UNIT_TEST("parse_protocol_definition_statement", "", "", ""){
 	const auto r = parse_protocol_definition_statement(seq_t(k_test_protocol0));
 
@@ -769,6 +770,8 @@ OFF_QUARK_UNIT_TEST("parse_protocol_definition_statement", "", "", ""){
 	ut_verify(QUARK_POS, r.first, expected);
 	ut_verify(QUARK_POS, r.second.str(), "");
 }
+#endif
+
 #endif
 
 

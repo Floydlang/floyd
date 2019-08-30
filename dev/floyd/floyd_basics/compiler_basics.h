@@ -346,7 +346,7 @@ class compiler_error : public std::runtime_error {
 ////////////////////////////////////////		throw_compiler_error()
 
 
-void throw_compiler_error_nopos(const std::string& message) __dead2;
+void throw_compiler_error_nopos(const std::string& message) QUARK_NO_RETURN;
 inline void throw_compiler_error_nopos(const std::string& message){
 //	location2_t(const std::string& source_file_path, int line_number, int column, std::size_t start, std::size_t end, const std::string& line) :
 	throw compiler_error(k_no_location, location2_t("", 0, 0, 0, 0, "", k_no_location), message);
@@ -354,13 +354,13 @@ inline void throw_compiler_error_nopos(const std::string& message){
 
 
 
-void throw_compiler_error(const location_t& location, const std::string& message) __dead2;
+void throw_compiler_error(const location_t& location, const std::string& message) QUARK_NO_RETURN;
 inline void throw_compiler_error(const location_t& location, const std::string& message){
 //	location2_t(const std::string& source_file_path, int line_number, int column, std::size_t start, std::size_t end, const std::string& line) :
 	throw compiler_error(location, location2_t("", 0, 0, 0, 0, "", k_no_location), message);
 }
 
-void throw_compiler_error(const location2_t& location2, const std::string& message) __dead2;
+void throw_compiler_error(const location2_t& location2, const std::string& message) QUARK_NO_RETURN;
 inline void throw_compiler_error(const location2_t& location2, const std::string& message){
 	throw compiler_error(location2.loc, location2, message);
 }
@@ -381,8 +381,8 @@ std::pair<location2_t, std::string> refine_compiler_error_with_loc2(const compil
 
 
 
-void NOT_IMPLEMENTED_YET() __dead2;
-void UNSUPPORTED() __dead2;
+void NOT_IMPLEMENTED_YET() QUARK_NO_RETURN;
+void UNSUPPORTED() QUARK_NO_RETURN;
 
 
 

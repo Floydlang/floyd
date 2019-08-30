@@ -17,250 +17,42 @@
 	steady::vector<> is a persistent vector class for C++
 */
 
+//	See quark.md for documentation!
 
 #ifndef quark_h
 #define quark_h
 
 #include <algorithm>
 #include <memory>
-
-#ifndef __APPLE__
-	#ifdef _MSC_VER
-		#define	__dead2 
-		#define NO_RETURN __declspec(noreturn)
-		#pragma warning(default:4716)
-	#else
-		#define	__dead2 __attribute__((__noreturn__))
-	#endif
-#else
-	#define NO_RETURN
-#endif
-
-
-/* SB: needed to ignore warnings for unchecked vectors and deprecated functions such as strcpy() */
-#ifdef _MSC_VER
-	#define _CRT_SECURE_NO_WARNINGS
-	#define _SCL_SECURE_NO_WARNINGS
-#endif
-
-
-
-/*
-# QUARK - THE C++ SUPER GLUE
-
-It's problematic in C++ to build code separately then compose them together into bigger programs and libraries.
-Some common low-level infrastructure is missing so the library-maker must make assumptions or decisions that
-really the *user* of the library should control.
-
-How are defects are detected, how do you add and run tests etc?
-
-
-Quark attempts to be the only "library" you need to use in each of your library, then help you compose libraries
-together neatly. Like super glue :-)
-
-Quark is designed to be a policy rather than actual code. These are the primitives that makes up that policy:
-
-	QUARK_ASSERT(x)
-
-	QUARK_TRACE(x)
-	QUARK_TRACE_SS(x)
-	QUARK_SCOPED_TRACE(x)
-
-	QUARK_UNIT_TEST
-	QUARK_TEST_VERIFY(x)
-
-Using quark.h and quark.cpp is very convenient but optional.
-
-
-# CONFIGURATION
-
-Configure quark.h / quark.cpp by settings these flags in your compiler settings:
-
-	#define QUARK_ASSERT_ON true
-	#define QUARK_TRACE_ON true
-	#define QUARK_UNIT_TESTS_ON true
-
-They are independent of each other and any combination is valid! If you don't set them, they default to the above.
-
-See "EVEN MORE INDEPENDENCE" for more advanced possibilities.
-
-
-# ASSERTS - DEFECTS
-
-Assert is used for finding runtime defects. Use QUARK_ASSERT_ON to enable / disable all asserts. You can hook what
-happens when an assert fails - to exit program, throw an exception etc.
-
-QUARK_ASSERT(x)
-When expression x evaluates to false, there is a defect in the code. Compiled-out if QUARK_ASSERT_ON is false.
-
-Examples 1 - check function arguments:
-
-	char* my_strlen(const char* s){
-		QUARK_ASSERT(s != nullptr);
-		...
-	}
-
-Example 2 - detect impossible conditions:
-
-	...
-	if(a == 0){
-	}
-	else if (a == 3){
-	}
-	else {
-		QUARK_ASSERT(false);
-		throw std::logic_error("");	//	Remove missing-return value warning, if any.
-	}
-
-
-# TRACING
-
-Quark has primitives for tracing that can be routed and enabled / disabled. Includes support for indenting the log.
-Use QUARK_TRACE_ON to enable / disable tracing.
-
-QUARK_TRACE(x)
-Trace a C-string
-
-QUARK_TRACE_SS(x)
-Trace a string using stream syntax.
-
-QUARK_SCOPED_TRACE
-Trace a title and opening bracket, then indent everything afterwards until we leave the stack scope.
-
-Examples:
-
-	Example 1 - trace a C string
-
-		QUARK_TRACE("abc");
-
-	Example 2 - trace using stream style code:
-
-		QUARK_TRACE_SS("my value" << 123);
-
-	Example 3 - trace an indented section with a title:
-		{
-			QUARK_SCOPED_TRACE("File contents");
-			QUARK_TRACE("inside 1 ");
-			QUARK_TRACE("inside 2");
-		}
-
-		result:
-			...
-			...
-			File contents
-			{
-				inside 1
-				inside 2
-			}
-			...
-			...
-
-
-# UNIT TESTS
-
-You can easily add a unit test where ever you can define a function. It's possible to interleave the functions with
-the unit tests that excercise the functions. You supply 4 strings to each test like this:
-
-	QUARK_UNIT_TEST(class_under_test, function_under_test, scenario, expected_result){
-	}
-
-In your test you check for failure / success using QUARK_TEST_VERIFY(x).
-Do not use QUARK_ASSERT to check for test failures! You want to run unit tests even when asserts are disabled.
-
-Examples 1 - registering some unit tests
-
-	QUARK_UNIT_TEST("std::list, "list()", "basic construction", "no exceptions"){
-		std::list<int> a;
-	}
-
-	QUARK_UNIT_TEST("std::list, "find()", "empty list", "returns list.end()"){
-		std::list<int> a;
-		std::list<int>::const_iterator found_it = a.find(123);
-		QUARK_TEST_VERIFY(found_it == a.end());
-	}
-
-Running all unit tests:
-	quark::run_tests();
-
-
-# EVEN MORE INDEPENDENCE
-
-If you use (for example) QUARK_ASSERT() in all your code you can later decide in your final program if to
-enable / disbale all asserts and how to handle an assert. This is great.
-
-But an even more flexible solution is to use your own version of the Quark macros for each library, like this:
-
-
-	MY_LIBRARY_ASSERT(x)
-
-	MY_LIBRARY_TRACE(x)
-	MY_LIBRARY_TRACE_SS(x)
-	MY_LIBRARY_SCOPED_TRACE(x)
-
-	MY_LIBRARY_UNIT_TEST
-	MY_LIBRARY_TEST_VERIFY(x)
-
-
-	TETRIS_CLONE_ASSERT(x)
-
-	TETRIS_CLONE_TRACE(x)
-	TETRIS_CLONE_TRACE_SS(x)
-	TETRIS_CLONE_SCOPED_TRACE(x)
-
-	TETRIS_CLONE_UNIT_TEST
-	TETRIS_CLONE_TEST_VERIFY(x)
-
-In your "my library" code you consistently use MY_LIBRARY_ASSERT(x), not QUARK_ASSERT(x).
-
-This allows you to decide in clients to your library how to handle asserts, tracing etc on a per-library level! Or just:
-
-	TETRIS_CLONE_ASSERT(x) QUARK_ASSERT(x)
-	...
-This becomes the chose of the *user* of your code.
-
-
-# TODO - SOMEDAY
-
-Fix so you can put your unit tests inside unnamed namespaces (to make tests internal), like in an internals-namespace.
-
-Add basic exception classes, ala bacteria.
-	steady::not_found
-	steady::call_sequence_error
-	steady::read_error
-	steady::bad_format
-	steady::timeout
-
-Add hook for looking up text strings for easy translation.
-		/	Use 7-bit english text as lookup key.
-		//	Returns localized utf8 text.
-		//	Basic implementations can chose to just return the lookup key.
-		//	addKey is additional characters to use for lookup, but that is not part of the actual returned-text if
-		//	no localization exists.
-		public: virtual std::string runtime_i__lookup_text(const source_code_location& location,
-			const int locale,
-			const char englishLookupKey[],
-			const char addKey[]) = 0;
-
-Add support for design-by-contract:
-	public: virtual void runtime_i__on_dbc_precondition_failed(const char s[]) = 0;
-	public: virtual void runtime_i__on_dbc_postcondition_failed(const char s[]) = 0;
-	public: virtual void runtime_i__on_dbc_invariant_failed(const char s[]) = 0;
-
-Add mechanism for unit tests to get to test files.
-	//	gives you native, absolute path to your modules test-directory.
-	#define UNIT_TEST_PRIVATE_DATA_PATH(moduleUnderTest) OnGetPrivateTestDataPath(get_runtime(), moduleUnderTest, __FILE__)
-	std::string OnGetPrivateTestDataPath(runtime_i* iRuntime, const char module_under_test[], const char source_file_path[]);
-
-	public: virtual std::string icppextension_get_test_data_root(const char iModuleUnderTest[]) = 0;
-*/
-
-
 #include <cassert>
+#include <cstring>
 #include <vector>
 #include <string>
 #include <sstream>
-#include <cstring>
 #include <iostream>
+
+
+////////	DETECTING PLATFORM
+
+//	Make explicit defines for each platforms. Extend with more platforms.
+//	Notice that we always *DEFINE* the macros, but they are 0 or 1. This lets you do logic.
+//	Use only these to detect platform.
+#ifdef __APPLE__
+	#define QUARK_MAC			1
+	#define QUARK_WINDOWS		0
+	#define QUARK_LINUX			0
+#elif _MSC_VER
+	#define QUARK_MAC			0
+	#define QUARK_WINDOWS		1
+	#define QUARK_LINUX			0
+#else
+	#define QUARK_MAC			0
+	#define QUARK_WINDOWS		0
+	#define QUARK_LINUX			1
+#endif
+
+
+////////////////////////////////	SETTING DEFAULTS
 
 #ifndef QUARK_ASSERT_ON
 	#define QUARK_ASSERT_ON 1
@@ -275,16 +67,49 @@ Add mechanism for unit tests to get to test files.
 #endif
 
 
+////////////////////////////////	NO_RETURN
+
+//	NO_RETURN tags a function that it will never return. This avoid compiler warning that caller doesn't return a value.
+
+#if QUARK_MAC
+	#define QUARK_NO_RETURN	__dead2
+#elif QUARK_WINDOWS
+	#define QUARK_NO_RETURN __declspec(noreturn)
+#elif QUARK_LINUX
+	#define	QUARK_NO_RETURN __attribute__((__noreturn__))
+#endif
+
+
+////////////////////////////////	COMPILER FLAGS
+
+
+//	??? This should go into your compiler settings, not be assumed by quark.
+
+#if QUARK_MAC
+#elif QUARK_WINDOWS
+	#pragma warning(default:4716)
+
+	// SB: needed to ignore warnings for unchecked vectors and deprecated functions such as strcpy()
+	#define _CRT_SECURE_NO_WARNINGS
+	#define _SCL_SECURE_NO_WARNINGS
+#elif QUARK_LINUX
+#endif
+
+
+
 namespace quark {
 
 
-void throw_exception() __dead2;
+////////////////////////////////	EXCEPTIONS
+
+
+void throw_exception() QUARK_NO_RETURN;
 inline void throw_exception(){ throw std::exception(); }
 
-void throw_runtime_error(const std::string& s) __dead2;
+void throw_runtime_error(const std::string& s) QUARK_NO_RETURN;
 inline void throw_runtime_error(const std::string& s) { throw std::runtime_error(s); }
 
-void throw_logic_error() __dead2;
+void throw_logic_error() QUARK_NO_RETURN;
 inline void throw_logic_error(){ throw std::logic_error(""); }
 
 
@@ -303,8 +128,7 @@ inline void throw_format(const std::string& noun_type, const std::string& what){
 }
 
 
-//	PRIMITIVES
-//	====================================================================================================================
+////////////////////////////////	PRIMITIVES
 
 
 ////////////////////////////		source_code_location
@@ -330,7 +154,7 @@ struct source_code_location {
 ////////////////////////////		runtime_i
 
 /*
-	Interface class so client can hook-in behaviors for basics like logging and asserts.
+	Interface class so client can hook-in behaviors for logging and asserts.
 */
 
 class runtime_i {
@@ -366,46 +190,33 @@ void set_runtime(runtime_i* iRuntime);
 #define QUARK_UNIQUE_LABEL(prefix) QUARK_UNIQUE_LABEL_INTERNAL(prefix, __LINE__)
 
 
+//	!!!! SET A BREAK POINT HERE USING YOUR DEBUGGER TO INSPECT ANY ASSERTS
+inline void on_problem___put_breakpoint_here(){
+}
+
+
 //	ASSERT SUPPORT
 //	====================================================================================================================
 
 
 #if QUARK_ASSERT_ON
+	inline void on_assert_hook(runtime_i* runtime, const source_code_location& location, const char expression[]){
+		on_problem___put_breakpoint_here();
 
-	//??? MZ: No need for check for _MSC_VEC -- we have defined __dead2, haven't we?
-	#if _MSC_VER
-		void on_assert_hook(runtime_i* runtime, const source_code_location& location, const char expression[]);
-	#else
-		void on_assert_hook(runtime_i* runtime, const source_code_location& location, const char expression[]) __dead2;
-	#endif
+		assert(runtime  != nullptr);
+		assert(expression != nullptr);
+
+		runtime->runtime_i__on_assert(location, expression);
+		exit(-1);
+	}
 
 	#define QUARK_ASSERT(x) if(x){}else {::quark::on_assert_hook(::quark::get_runtime(), quark::source_code_location(__FILE__, __LINE__), QUARK_STRING(x)); }
-
 #else
-
 	#define QUARK_ASSERT(x)
-
 #endif
 
 
-inline void on_problem___put_breakpoint_here(){
-}
 
-#if QUARK_ASSERT_ON
-
-//	!!!! SET A BREAK POINT HERE USING YOUR DEBUGGER TO INSPECT ANY ASSERTS
-
-inline void on_assert_hook(runtime_i* runtime, const source_code_location& location, const char expression[]){
-	on_problem___put_breakpoint_here();
-
-	assert(runtime  != nullptr);
-	assert(expression != nullptr);
-
-	runtime->runtime_i__on_assert(location, expression);
-	exit(-1);
-}
-
-#endif
 
 
 //	TRACE
@@ -413,7 +224,6 @@ inline void on_assert_hook(runtime_i* runtime, const source_code_location& locat
 
 
 ////////////////////////////		trace_i
-
 
 struct trace_i {
 	public: virtual ~trace_i(){};
@@ -530,18 +340,6 @@ inline void set_trace(const trace_i* v){
 		private: const trace_i& _tracer;
 		private: bool _trace_brackets = true;
 	};
-#else
-	struct scoped_trace {
-		scoped_trace(const std::string& s, const trace_i& tracer){
-		}
-
-		~scoped_trace(){
-		}
-	};
-#endif
-
-
-#if QUARK_TRACE_ON
 
 	////////////////////////////		Hook functions.
 	/*
@@ -567,12 +365,22 @@ inline void set_trace(const trace_i* v){
 	#define QUARK_TRACE_SS(x) {std::stringstream ss; ss << x; ::quark::quark_trace_func(ss, quark::get_trace());}
 	#define QUARK_SCOPED_TRACE(s) ::quark::scoped_trace QUARK_UNIQUE_LABEL(scoped_trace) (s, quark::get_trace())
 #else
+	struct scoped_trace {
+		scoped_trace(const std::string& s, const trace_i& tracer){
+		}
+
+		~scoped_trace(){
+		}
+	};
+
 	#define QUARK_TRACE(s)
 	#define QUARK_TRACE_SS(s)
 	#define QUARK_SCOPED_TRACE(s)
 #endif
 
 
+
+	//??? implement
 	inline int get_log_indent(){
 		return 0;
 	}
@@ -680,8 +488,6 @@ inline void set_trace(const trace_i* v){
 	//### Add argument to unit-test functions that can be used / checked in UT_VERIFY().
 	#define QUARK_UT_VERIFY(exp) if(exp){}else{ ::quark::on_unit_test_failed_hook(::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__), QUARK_STRING(exp)); }
 	#define QUARK_TEST_VERIFY QUARK_UT_VERIFY
-//	#define QUARK_UT_COMPARExxxx(result, expected) ut_verify(quark::call_context_t{::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__)}, result, expected)
-//	#define QUARK_UT_COMPARE(result, expected) quark::ut_verify_t(result, expected).go(QUARK_SAMPLE_CONTEXT)
 
 
 struct call_context_t {
@@ -776,46 +582,6 @@ inline void ut_verify(const call_context_t& context, const char* result, const s
 	ut_verify(context, std::string(result), expected);
 }
 
-/*
-template <typename T>
-struct ut_verify_t {
-	ut_verify_t(const char* result, const char* expected) :
-		result(result),
-		expected(expected),
-		context{nullptr, quark::source_code_location{"", 0}}
-	{
-	}
-	ut_verify_t(const std::string& result, const char* expected) :
-		result(result),
-		expected(expected),
-		context{nullptr, quark::source_code_location{"", 0}}
-	{
-	}
-	ut_verify_t(const char* result, const std::string& expected) :
-		result(result),
-		expected(expected),
-		context{nullptr, quark::source_code_location{"", 0}}
-	{
-	}
-
-	ut_verify_t(const T& result, const T& expected) :
-		result(result),
-		expected(expected),
-		context{nullptr, quark::source_code_location{"", 0}}
-	{
-	}
-
-
-	void go(const call_context_t& c){
-//		ut_verify(result, expected);
-	}
-
-	const T result;
-	const T expected;
-	call_context_t context;
-};
-*/
-
 #else
 
 	//	The generated function is static and will be stripped in optimized builds (it will not be referenced).
@@ -824,21 +590,11 @@ struct ut_verify_t {
 
 	#define QUARK_UT_VERIFY(exp)
 	#define QUARK_TEST_VERIFY QUARK_UT_VERIFY
-//	#define QUARK_UT_COMPARE(result, expected)
 
 #endif
 
-
-	#define OFF_QUARK_UNIT_TEST(class_under_test, function_under_test, scenario, expected_result) \
-		void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
-
-	#define OFF_QUARK_UNIT_TEST_VIP(class_under_test, function_under_test, scenario, expected_result) \
-		void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
-
-
 #if QUARK_UNIT_TESTS_ON
 
-//	!!!! SET A BREAK POINT HERE USING YOUR DEBUGGER TO INSPECT ANY ASSERTS
 
 inline void on_unit_test_failed_hook(runtime_i* runtime, const source_code_location& location, const char expression[]){
 	on_problem___put_breakpoint_here();

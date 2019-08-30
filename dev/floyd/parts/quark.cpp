@@ -107,20 +107,6 @@ void ut_verify(const call_context_t& context, const custom_type_t& result, const
 	}
 }
 
-/*bool operator==(const custom_type_t& lhs, const custom_type_t& rhs){
-	return lhs.a == rhs.a && lhs.s == rhs.s;
-}*/
-OFF_QUARK_UNIT_TEST("Quark", "ut_verify()", "", ""){
-	try {
-		const auto result = custom_type_t{ 100, "one hundred" };
-		const auto expected = custom_type_t{ 200, "two hundred" };
-		ut_verify(QUARK_POS, result, expected);
-	}
-	catch(...){
-		//	We should land here.
-	}
-}
-
 #endif
 
 

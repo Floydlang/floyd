@@ -128,7 +128,7 @@ std::int64_t measure_execution_time_ns(std::function<void (void)> func, int coun
 	return duration;
 }
 
-OFF_QUARK_UNIT_TEST("", "measure_execution_time_ns()", "", ""){
+QUARK_UNIT_TEST("quark", "measure_execution_time_ns()", "", ""){
 	const auto t = measure_execution_time_ns(
 		[] { std::cout << "Hello, my Greek friends"; }
 	);
