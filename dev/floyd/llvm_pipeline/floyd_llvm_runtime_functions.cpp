@@ -10,6 +10,7 @@
 
 #include "floyd_llvm_helpers.h"
 #include "floyd_llvm_runtime.h"
+#include "floyd_llvm_codegen.h"
 #include "value_features.h"
 
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
@@ -71,22 +72,12 @@ static function_bind_t floydrt_alloc_kstr__make(llvm::LLVMContext& context, cons
 
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-static runtime_value_t floydrt_allocate_vector(floyd_runtime_t* frp, runtime_type_t type, uint64_t element_count){
+static runtime_value_t floydrt_allocate_vector_carray(floyd_runtime_t* frp, runtime_type_t type, uint64_t element_count){
 	auto& r = get_floyd_runtime(frp);
-
-	if(is_vector_carray(itype_t(type))){
-		return alloc_vector_carray(r.backend.heap, element_count, element_count, itype_t(type));
-	}
-	else if(is_vector_hamt(itype_t(type))){
-		return alloc_vector_hamt(r.backend.heap, element_count, element_count, itype_t(type));
-	}
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
+	return alloc_vector_carray(r.backend.heap, element_count, element_count, itype_t(type));
 }
 
-static function_bind_t floydrt_allocate_vector__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+static function_bind_t floydrt_allocate_vector_carray__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		make_generic_vec_type(type_lookup)->getPointerTo(),
 		{
@@ -96,13 +87,42 @@ static function_bind_t floydrt_allocate_vector__make(llvm::LLVMContext& context,
 		},
 		false
 	);
-	return { "allocate_vector", function_type, reinterpret_cast<void*>(floydrt_allocate_vector) };
+	return { "allocate_vector_carray", function_type, reinterpret_cast<void*>(floydrt_allocate_vector_carray) };
+}
+
+static runtime_value_t floydrt_allocate_vector_hamt(floyd_runtime_t* frp, runtime_type_t type, uint64_t element_count){
+	auto& r = get_floyd_runtime(frp);
+	return alloc_vector_hamt(r.backend.heap, element_count, element_count, itype_t(type));
+}
+
+static function_bind_t floydrt_allocate_vector_hamt__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		make_generic_vec_type(type_lookup)->getPointerTo(),
+		{
+			make_frp_type(type_lookup),
+			make_runtime_type_type(type_lookup),
+			llvm::Type::getInt64Ty(context)
+		},
+		false
+	);
+	return { "allocate_vector_hamt", function_type, reinterpret_cast<void*>(floydrt_allocate_vector_hamt) };
 }
 
 llvm::Value* generate_allocate_vector(const std::vector<function_def_t>& defs, llvm::IRBuilder<>& builder, llvm::Value& frp_reg, llvm::Value& vector_type_reg, int64_t element_count, vector_backend vector_backend){
 	const auto element_count_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(builder.getContext()), element_count);
-	const auto res = resolve_func(defs, "allocate_vector");
-	return builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &vector_type_reg, element_count_reg }, "");
+
+	if(vector_backend == vector_backend::carray){
+		const auto res = resolve_func(defs, "allocate_vector_carray");
+		return builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &vector_type_reg, element_count_reg }, "");
+	}
+	else if(vector_backend == vector_backend::hamt){
+		const auto res = resolve_func(defs, "allocate_vector_hamt");
+		return builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &vector_type_reg, element_count_reg }, "");
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
 }
 
 
@@ -142,11 +162,11 @@ static function_bind_t floydrt_allocate_vector_fill__make(llvm::LLVMContext& con
 
 
 
-////////////////////////////////		floydrt_retain_vec()
+////////////////////////////////		floydrt_retain_vector_carray()
 
 
 
-static void floydrt_retain_vec(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
+static void floydrt_retain_vector_carray(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
@@ -154,7 +174,7 @@ static void floydrt_retain_vec(floyd_runtime_t* frp, runtime_value_t vec, runtim
 	QUARK_ASSERT(is_rc_value(itype_t(type0)));
 #endif
 
-	retain_value(r.backend, vec, itype_t(type0));
+	retain_vector_carray(r.backend, vec, itype_t(type0));
 }
 
 static void floydrt_retain_vector_hamt(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
@@ -167,6 +187,48 @@ static void floydrt_retain_vector_hamt(floyd_runtime_t* frp, runtime_value_t vec
 
 	retain_vector_hamt(r.backend, vec, itype_t(type0));
 }
+
+static function_bind_t floydrt_retain_vector_carray__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	return function_bind_t {
+		"retain_vector_carray",
+		llvm::FunctionType::get(
+			llvm::Type::getVoidTy(context),
+			{
+				make_frp_type(type_lookup),
+				make_generic_vec_type(type_lookup)->getPointerTo(),
+				make_runtime_type_type(type_lookup)
+			},
+			false
+		),
+		reinterpret_cast<void*>(floydrt_retain_vector_carray)
+	};
+}
+
+static function_bind_t floydrt_retain_vector_hamt__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	return function_bind_t {
+		"retain_vector_hamt",
+		llvm::FunctionType::get(
+			llvm::Type::getVoidTy(context),
+			{
+				make_frp_type(type_lookup),
+				make_generic_vec_type(type_lookup)->getPointerTo(),
+				make_runtime_type_type(type_lookup)
+			},
+			false
+		),
+		reinterpret_cast<void*>(floydrt_retain_vector_hamt)
+	};
+}
+
+
+//??? COPY. We need to separate out codegen stuff so we can call them.
+
+
+
+
+
+
+
 
 
 
@@ -1033,35 +1095,12 @@ static function_bind_t floydrt_analyse_benchmark_samples__make(llvm::LLVMContext
 std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	std::vector<function_bind_t> result = {
 		floydrt_alloc_kstr__make(context, type_lookup),
-		floydrt_allocate_vector__make(context, type_lookup),
+		floydrt_allocate_vector_carray__make(context, type_lookup),
+		floydrt_allocate_vector_hamt__make(context, type_lookup),
 		floydrt_allocate_vector_fill__make(context, type_lookup),
 
-		{
-			"retain_vec",
-			llvm::FunctionType::get(
-				llvm::Type::getVoidTy(context),
-				{
-					make_frp_type(type_lookup),
-					make_generic_vec_type(type_lookup)->getPointerTo(),
-					make_runtime_type_type(type_lookup)
-				},
-				false
-			),
-			reinterpret_cast<void*>(floydrt_retain_vec)
-		},
-		{
-			"retain_vector_hamt",
-			llvm::FunctionType::get(
-				llvm::Type::getVoidTy(context),
-				{
-					make_frp_type(type_lookup),
-					make_generic_vec_type(type_lookup)->getPointerTo(),
-					make_runtime_type_type(type_lookup)
-				},
-				false
-			),
-			reinterpret_cast<void*>(floydrt_retain_vector_hamt)
-		},
+		floydrt_retain_vector_carray__make(context, type_lookup),
+		floydrt_retain_vector_hamt__make(context, type_lookup),
 
 		{
 			"release_vec",
@@ -1135,10 +1174,11 @@ runtime_functions_t::runtime_functions_t(const std::vector<function_def_t>& func
 
 
 	floydrt_alloc_kstr(resolve_func(function_defs, "alloc_kstr")),
-//	floydrt_allocate_vector(resolve_func(function_defs, "allocate_vector")),
 	floydrt_allocate_vector_fill(resolve_func(function_defs, "allocate_vector_fill")),
-	floydrt_retain_vec(resolve_func(function_defs, "retain_vec")),
+
+	floydrt_retain_vector_carray(resolve_func(function_defs, "retain_vector_carray")),
 	floydrt_retain_vector_hamt(resolve_func(function_defs, "retain_vector_hamt")),
+
 	floydrt_release_vec(resolve_func(function_defs, "release_vec")),
 	floydrt_release_vector_hamt_pod(resolve_func(function_defs, "release_vector_hamt_pod")),
 	floydrt_load_vector_element(resolve_func(function_defs, "load_vector_element")),

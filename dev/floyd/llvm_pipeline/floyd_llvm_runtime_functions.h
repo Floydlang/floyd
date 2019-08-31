@@ -37,9 +37,8 @@ struct runtime_functions_t {
 	const function_def_t floydrt_deinit;
 
 	const function_def_t floydrt_alloc_kstr;
-//	const function_def_t floydrt_allocate_vector;
 	const function_def_t floydrt_allocate_vector_fill;
-	const function_def_t floydrt_retain_vec;
+	const function_def_t floydrt_retain_vector_carray;
 	const function_def_t floydrt_retain_vector_hamt;
 	const function_def_t floydrt_release_vec;
 	const function_def_t floydrt_release_vector_hamt_pod;

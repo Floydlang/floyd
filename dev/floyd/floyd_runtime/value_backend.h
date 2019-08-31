@@ -719,18 +719,26 @@ bool is_rc_value(const itype_t& type);
 bool is_rc_value(const typeid_t& type);
 
 
+
+
 void retain_value(value_backend_t& backend, runtime_value_t value, itype_t itype);
+
 void retain_vector_carray(value_backend_t& backend, runtime_value_t vec, itype_t itype);
 inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, itype_t itype);
+
 void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, itype_t itype);
 void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, itype_t itype);
+
 void retain_struct(value_backend_t& backend, runtime_value_t s, itype_t itype);
+
+
 
 
 void release_value(value_backend_t& backend, runtime_value_t value, itype_t itype);
 
 void release_vector_carray_pod(value_backend_t& backend, runtime_value_t vec, itype_t itype);
 void release_vector_carray_nonpod(value_backend_t& backend, runtime_value_t vec, itype_t itype);
+
 inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, itype_t itype);
 inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, itype_t itype);
 

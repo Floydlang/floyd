@@ -306,25 +306,11 @@ resolved_symbol_t find_symbol(llvm_code_generator_t& gen_acc, const variable_add
 }
 
 
-typeid_t unpack_itype(const llvm_code_generator_t& gen_acc, int64_t itype){
-	QUARK_ASSERT(gen_acc.check_invariant());
-
-	const itype_t t(static_cast<uint32_t>(itype));
-	return lookup_type(gen_acc.type_lookup,  t);
-}
-
-int64_t pack_itype(const llvm_code_generator_t& gen_acc, const typeid_t& type){
+static llvm::Constant* generate_itype_constant(const llvm_code_generator_t& gen_acc, const typeid_t& type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	return lookup_itype(gen_acc.type_lookup, type).get_data();
-}
-
-llvm::Constant* generate_itype_constant(const llvm_code_generator_t& gen_acc, const typeid_t& type){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	auto itype = pack_itype(gen_acc, type);
+	auto itype = lookup_itype(gen_acc.type_lookup, type).get_data();
 	auto t = make_runtime_type_type(gen_acc.type_lookup);
  	return llvm::ConstantInt::get(t, itype);
 }
@@ -350,7 +336,7 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 					&value_reg,
 					generate_itype_constant(gen_acc.gen, type)
 				};
-				builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_retain_vec.llvm_codegen_f, args, "");
+				builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_retain_vector_carray.llvm_codegen_f, args, "");
 			}
 		}
 		else if(type.is_dict()){
