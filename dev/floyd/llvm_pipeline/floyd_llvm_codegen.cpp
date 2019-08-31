@@ -320,56 +320,16 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 	QUARK_ASSERT(type.check_invariant());
 
 	auto& builder = gen_acc.get_builder();
-	if(is_rc_value(type)){
-		if(type.is_string() || type.is_vector()){
-			if(is_vector_hamt(type)){
-				std::vector<llvm::Value*> args = {
-					gen_acc.get_callers_fcp(),
-					&value_reg,
-					generate_itype_constant(gen_acc.gen, type)
-				};
-				builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_retain_vector_hamt.llvm_codegen_f, args, "");
-			}
-			else{
-				std::vector<llvm::Value*> args = {
-					gen_acc.get_callers_fcp(),
-					&value_reg,
-					generate_itype_constant(gen_acc.gen, type)
-				};
-				builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_retain_vector_carray.llvm_codegen_f, args, "");
-			}
-		}
-		else if(type.is_dict()){
-			std::vector<llvm::Value*> args = {
-				gen_acc.get_callers_fcp(),
-				&value_reg,
-				generate_itype_constant(gen_acc.gen, type)
-			};
-			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_retain_dict.llvm_codegen_f, args, "");
-		}
-		else if(type.is_json()){
-			std::vector<llvm::Value*> args = {
-				gen_acc.get_callers_fcp(),
-				&value_reg,
-				generate_itype_constant(gen_acc.gen, type)
-			};
-			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_retain_json.llvm_codegen_f, args, "");
-		}
-		else if(type.is_struct()){
-			auto generic_vec_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value_reg, get_generic_struct_type(gen_acc.gen.type_lookup)->getPointerTo(), "");
-			std::vector<llvm::Value*> args = {
-				gen_acc.get_callers_fcp(),
-				generic_vec_reg,
-				generate_itype_constant(gen_acc.gen, type)
-			};
-			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_retain_struct.llvm_codegen_f, args, "");
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
-	else{
-	}
+	const auto type_reg = generate_itype_constant(gen_acc.gen, type);
+	generate_retain2(
+		gen_acc.gen.function_defs,
+		builder,
+		gen_acc.gen.type_lookup,
+		*gen_acc.get_callers_fcp(),
+		value_reg,
+		*type_reg,
+		lookup_itype(gen_acc.gen.type_lookup, type)
+	);
 }
 
 void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const typeid_t& type){
