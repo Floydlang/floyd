@@ -297,7 +297,7 @@ void generate_retain2(const std::vector<function_def_t>& defs, llvm::IRBuilder<>
 ////////////////////////////////		floydrt_release_vec()
 
 
-
+//??? only does carray - rename and calls release_vector_carray
 static void floydrt_release_vec(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
@@ -307,6 +307,26 @@ static void floydrt_release_vec(floyd_runtime_t* frp, runtime_value_t vec, runti
 
 	release_vec(r.backend, vec, itype_t(type0));
 }
+
+
+static function_bind_t floydrt_release_vec__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	return function_bind_t{
+		"release_vec",
+		llvm::FunctionType::get(
+			llvm::Type::getVoidTy(context),
+			{
+				make_frp_type(type_lookup),
+				make_generic_vec_type(type_lookup)->getPointerTo(),
+				make_runtime_type_type(type_lookup)
+			},
+			false
+		),
+		reinterpret_cast<void*>(floydrt_release_vec)
+	};
+}
+
+
+
 static void floydrt_release_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
@@ -318,49 +338,27 @@ static void floydrt_release_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_
 	release_vector_hamt_pod(r.backend, vec, itype_t(type0));
 }
 
-
-
-////////////////////////////////		load_vector_element()
-
-
-
-static runtime_value_t floydrt_load_vector_element(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type, uint64_t index){
-	auto& r = get_floyd_runtime(frp);
-	(void)r;
-
-	if(is_vector_carray(itype_t(type))){
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-	else if(is_vector_hamt(itype_t(type))){
-		return vec.vector_hamt_ptr->load_element(index);
-	}
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
+static function_bind_t floydrt_release_vector_hamt_pod__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	return function_bind_t{
+		"release_vector_hamt_pod",
+		llvm::FunctionType::get(
+			llvm::Type::getVoidTy(context),
+			{
+				make_frp_type(type_lookup),
+				make_generic_vec_type(type_lookup)->getPointerTo(),
+				make_runtime_type_type(type_lookup)
+			},
+			false
+		),
+		reinterpret_cast<void*>(floydrt_release_vector_hamt_pod)
+	};
 }
-
-static function_bind_t floydrt_load_vector_element__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
-	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		make_runtime_value_type(type_lookup),
-		{
-			make_frp_type(type_lookup),
-			make_generic_vec_type(type_lookup)->getPointerTo(),
-			make_runtime_type_type(type_lookup),
-			llvm::Type::getInt64Ty(context)
-		},
-		false
-	);
-	return { "load_vector_element", function_type, reinterpret_cast<void*>(floydrt_load_vector_element) };
-}
-
 
 
 ////////////////////////////////		store_vector_element_mutable()
 
 
-
+//??? split into two functions
 static void floydrt_store_vector_element_mutable(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type, uint64_t index, runtime_value_t element){
 	auto& r = get_floyd_runtime(frp);
 	(void)r;
@@ -397,6 +395,7 @@ static function_bind_t floydrt_store_vector_element_mutable__make(llvm::LLVMCont
 
 
 
+//??? split into several functions
 static runtime_value_t floydrt_concatunate_vectors(floyd_runtime_t* frp, runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(lhs.check_invariant());
@@ -462,10 +461,7 @@ static runtime_value_t floydrt_load_vector_element_hamt(floyd_runtime_t* frp, ru
 	auto& r = get_floyd_runtime(frp);
 	(void)r;
 
-#if DEBUG
-	const auto& type0 = lookup_type_ref(r.backend, type);
 	QUARK_ASSERT(is_vector_hamt(itype_t(type)));
-#endif
 
 	return vec.vector_hamt_ptr->load_element(index);
 }
@@ -501,6 +497,7 @@ static function_bind_t floydrt_load_vector_element_hamt__make(llvm::LLVMContext&
 
 
 
+//??? split into several functions
 static const runtime_value_t floydrt_allocate_dict(floyd_runtime_t* frp, runtime_type_t type){
 	auto& r = get_floyd_runtime(frp);
 
@@ -534,6 +531,7 @@ static function_bind_t floydrt_allocate_dict__make(llvm::LLVMContext& context, c
 
 
 
+//??? split into several functions. Already coverd using generate_retain2() (check other retains too!!)
 static void floydrt_retain_dict(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
@@ -562,8 +560,9 @@ static function_bind_t floydrt_retain_dict__make(llvm::LLVMContext& context, con
 
 ////////////////////////////////		floydrt_release_dict()
 
+//??? make generate_release2()
 
-
+//??? split into several functions
 static void floydrt_release_dict(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
@@ -593,6 +592,8 @@ static function_bind_t floydrt_release_dict__make(llvm::LLVMContext& context, co
 
 
 
+//??? split into several functions
+//??? How to avoid creating std::string() each lookup?
 static runtime_value_t floydrt_lookup_dict(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t s){
 	auto& r = get_floyd_runtime(frp);
 
@@ -645,6 +646,7 @@ static function_bind_t floydrt_lookup_dict__make(llvm::LLVMContext& context, con
 
 
 
+//??? split into several functions
 static void floydrt_store_dict_mutable(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t key, runtime_value_t element_value){
 	auto& r = get_floyd_runtime(frp);
 
@@ -704,6 +706,7 @@ static function_bind_t floydrt_store_dict_mutable__make(llvm::LLVMContext& conte
 
 //??? Make named types for all function-argument / return types, like: typedef int16_t* native_json_ptr
 
+//??? Use better storage of JSON!?
 static JSON_T* floydrt_allocate_json(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
@@ -805,7 +808,7 @@ static function_bind_t floydrt_release_json__make(llvm::LLVMContext& context, co
 ////////////////////////////////		lookup_json()
 
 
-
+//??? optimize
 static JSON_T* floydrt_lookup_json(floyd_runtime_t* frp, JSON_T* json_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
@@ -900,7 +903,10 @@ static function_bind_t floydrt_json_to_string__make(llvm::LLVMContext& context, 
 static STRUCT_T* floydrt_allocate_struct(floyd_runtime_t* frp, const runtime_type_t type, uint64_t size){
 	auto& r = get_floyd_runtime(frp);
 
+#if DEBUG
 	const auto& type0 = lookup_type_ref(r.backend, type);
+	QUARK_ASSERT(type0.check_invariant());
+#endif
 	auto v = alloc_struct(r.backend.heap, size, itype_t(type));
 	return v;
 }
@@ -926,6 +932,7 @@ static function_bind_t floydrt_allocate_struct__make(llvm::LLVMContext& context,
 
 static void floydrt_retain_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
+	QUARK_ASSERT(v != nullptr);
 
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
@@ -986,7 +993,6 @@ static function_bind_t floydrt_release_struct__make(llvm::LLVMContext& context, 
 
 
 //??? move to value_features.cpp
-//??? Split all intrinsics into dedicated for each type, even RC/vs simple types.
 //??? optimize for speed. Most things can be precalculated.
 //??? Generate an add_ref-function for each struct type.
 static const STRUCT_T* floydrt_update_struct_member(floyd_runtime_t* frp, STRUCT_T* s, runtime_type_t struct_type, int64_t member_index, runtime_value_t new_value, runtime_type_t new_value_type){
@@ -1076,7 +1082,7 @@ static function_bind_t floydrt_update_struct_member__make(llvm::LLVMContext& con
 
 
 
-
+//??? optimize. It is not used for simple types right now.
 static int8_t floydrt_compare_values(floyd_runtime_t* frp, int64_t op, const runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
 	auto& r = get_floyd_runtime(frp);
 	return (int8_t)compare_values(r.backend, op, type, lhs, rhs);
@@ -1163,35 +1169,9 @@ std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& conte
 		floydrt_retain_vector_carray__make(context, type_lookup),
 		floydrt_retain_vector_hamt__make(context, type_lookup),
 
-		{
-			"release_vec",
-			llvm::FunctionType::get(
-				llvm::Type::getVoidTy(context),
-				{
-					make_frp_type(type_lookup),
-					make_generic_vec_type(type_lookup)->getPointerTo(),
-					make_runtime_type_type(type_lookup)
-				},
-				false
-			),
-			reinterpret_cast<void*>(floydrt_release_vec)
-		},
-		{
-			"release_vector_hamt_pod",
-			llvm::FunctionType::get(
-				llvm::Type::getVoidTy(context),
-				{
-					make_frp_type(type_lookup),
-					make_generic_vec_type(type_lookup)->getPointerTo(),
-					make_runtime_type_type(type_lookup)
-				},
-				false
-			),
-			reinterpret_cast<void*>(floydrt_release_vector_hamt_pod)
-		},
+		floydrt_release_vec__make(context, type_lookup),
+		floydrt_release_vector_hamt_pod__make(context, type_lookup),
 
-
-		floydrt_load_vector_element__make(context, type_lookup),
 		floydrt_store_vector_element_mutable__make(context, type_lookup),
 		floydrt_concatunate_vectors__make(context, type_lookup),
 		floydrt_push_back_hamt_pod__make(context, type_lookup),
@@ -1239,7 +1219,6 @@ runtime_functions_t::runtime_functions_t(const std::vector<function_def_t>& func
 
 	floydrt_release_vec(resolve_func(function_defs, "release_vec")),
 	floydrt_release_vector_hamt_pod(resolve_func(function_defs, "release_vector_hamt_pod")),
-	floydrt_load_vector_element(resolve_func(function_defs, "load_vector_element")),
 	floydrt_store_vector_element_mutable(resolve_func(function_defs, "store_vector_element_mutable")),
 	floydrt_concatunate_vectors(resolve_func(function_defs, "concatunate_vectors")),
 	floydrt_push_back_hamt_pod(resolve_func(function_defs, "push_back_hamt_pod")),
