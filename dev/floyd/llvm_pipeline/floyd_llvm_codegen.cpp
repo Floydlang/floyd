@@ -435,13 +435,11 @@ static llvm::Value* generate_resolve_member_expression(llvm_function_generator_t
 
 	auto& builder = gen_acc.get_builder();
 
-	auto parent_struct_ptr_reg = generate_expression(gen_acc, *details.parent_address);
+	auto struct_ptr_reg = generate_expression(gen_acc, *details.parent_address);
 
 
 	const auto parent_type =  details.parent_address->get_output_type();
 	QUARK_ASSERT(parent_type.is_struct());
-
-	auto& struct_type_llvm = *get_exact_struct_type_noptr(gen_acc.gen.type_lookup, parent_type);
 
 	const auto& struct_def = details.parent_address->get_output_type().get_struct();
 	int member_index = find_struct_member_index(struct_def, details.member_name);
@@ -449,7 +447,8 @@ static llvm::Value* generate_resolve_member_expression(llvm_function_generator_t
 
 	const auto& member_type = struct_def._members[member_index]._type;
 
-	auto base_ptr_reg = generate_get_struct_base_ptr(gen_acc, *parent_struct_ptr_reg, parent_type);
+/*
+	auto base_ptr_reg = generate_get_struct_base_ptr(gen_acc, *struct_ptr_reg, parent_type);
 
 	const auto gep = std::vector<llvm::Value*>{
 		//	Struct array index.
@@ -460,8 +459,11 @@ static llvm::Value* generate_resolve_member_expression(llvm_function_generator_t
 	};
 	llvm::Value* member_ptr_reg = builder.CreateGEP(&struct_type_llvm, base_ptr_reg, gep, "");
 	auto member_value_reg = builder.CreateLoad(member_ptr_reg);
+*/
+
+	auto member_value_reg = generate_load_struct_member(gen_acc, *struct_ptr_reg, parent_type, member_index);
 	generate_retain(gen_acc, *member_value_reg, member_type);
-	generate_release(gen_acc, *parent_struct_ptr_reg, parent_type);
+	generate_release(gen_acc, *struct_ptr_reg, parent_type);
 
 	return member_value_reg;
 }

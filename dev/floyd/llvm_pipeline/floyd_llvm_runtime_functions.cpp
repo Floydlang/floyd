@@ -661,6 +661,33 @@ static std::vector<function_bind_t> floydrt_allocate_struct__make(llvm::LLVMCont
 }
 
 
+////////////////////////////////		generate_load_struct_member()
+
+llvm::Value* generate_load_struct_member(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const typeid_t& struct_type, int member_index){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(struct_type.check_invariant());
+	QUARK_ASSERT(struct_type.is_struct());
+	QUARK_ASSERT(member_index >= 0 && member_index < struct_type.get_struct()._members.size());
+
+	auto& builder = gen_acc.get_builder();
+	auto& struct_type_llvm = *get_exact_struct_type_noptr(gen_acc.gen.type_lookup, struct_type);
+
+	auto base_ptr_reg = generate_get_struct_base_ptr(gen_acc, struct_ptr_reg, struct_type);
+
+	const auto gep = std::vector<llvm::Value*>{
+		//	Struct array index.
+		builder.getInt32(0),
+
+		//	Struct member index.
+		builder.getInt32(member_index)
+	};
+	llvm::Value* member_ptr_reg = builder.CreateGEP(&struct_type_llvm, base_ptr_reg, gep, "");
+	auto member_value_reg = builder.CreateLoad(member_ptr_reg);
+
+	return member_value_reg;
+}
+
+
 
 
 
@@ -682,7 +709,6 @@ static bool is_struct_pod(const struct_definition_t& struct_def){
 }
 
 
-//??? Also factor out struct-member_read from generate_resolve_member_expression(). This file is about working on the value_backend -- but no expresions and AST.
 
 //??? struct_type find_struct_layout() is SLOW right now.
 
