@@ -808,18 +808,6 @@ static function_bind_t floydrt_analyse_benchmark_samples__make(llvm::LLVMContext
 ////////////////////////////////		RETAIN
 
 
-static llvm::FunctionType* make_retain(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, llvm::Type& collection_type){
-	return llvm::FunctionType::get(
-		llvm::Type::getVoidTy(context),
-		{
-			make_frp_type(type_lookup),
-//			make_generic_vec_type(type_lookup)->getPointerTo(),
-			&collection_type,
-			make_runtime_type_type(type_lookup)
-		},
-		false
-	);
-}
 
 static void floydrt_retain_vector_carray(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
@@ -830,13 +818,6 @@ static void floydrt_retain_vector_carray(floyd_runtime_t* frp, runtime_value_t v
 #endif
 
 	retain_vector_carray(r.backend, vec, itype_t(type0));
-}
-
-static function_bind_t floydrt_retain_vector_carray__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
-	return function_bind_t { "retain_vector_carray",
-		make_retain(context, type_lookup, *make_generic_vec_type(type_lookup)->getPointerTo()),
-		reinterpret_cast<void*>(floydrt_retain_vector_carray)
-	};
 }
 
 static void floydrt_retain_vector_hamt(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
@@ -850,14 +831,6 @@ static void floydrt_retain_vector_hamt(floyd_runtime_t* frp, runtime_value_t vec
 	retain_vector_hamt(r.backend, vec, itype_t(type0));
 }
 
-static function_bind_t floydrt_retain_vector_hamt__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
-	return function_bind_t {
-		"retain_vector_hamt",
-		make_retain(context, type_lookup, *make_generic_vec_type(type_lookup)->getPointerTo()),
-		reinterpret_cast<void*>(floydrt_retain_vector_hamt)
-	};
-}
-
 //??? split into several functions. Already coverd using generate_retain2() (check other retains too!!)
 static void floydrt_retain_dict(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
@@ -868,19 +841,6 @@ static void floydrt_retain_dict(floyd_runtime_t* frp, runtime_value_t dict, runt
 #endif
 
 	retain_value(r.backend, dict, itype_t(type0));
-}
-
-static function_bind_t floydrt_retain_dict__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
-	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		llvm::Type::getVoidTy(context),
-		{
-			make_frp_type(type_lookup),
-			make_generic_dict_type(type_lookup)->getPointerTo(),
-			make_runtime_type_type(type_lookup)
-		},
-		false
-	);
-	return { "retain_dict", function_type, reinterpret_cast<void*>(floydrt_retain_dict) };
 }
 
 static void floydrt_retain_json(floyd_runtime_t* frp, JSON_T* json, runtime_type_t type0){
@@ -899,20 +859,6 @@ static void floydrt_retain_json(floyd_runtime_t* frp, JSON_T* json, runtime_type
 	}
 }
 
-static function_bind_t floydrt_retain_json__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
-	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		llvm::Type::getVoidTy(context),
-		{
-			make_frp_type(type_lookup),
-			get_llvm_type_as_arg(type_lookup, typeid_t::make_json()),
-			make_runtime_type_type(type_lookup)
-		},
-		false
-	);
-	return { "retain_json", function_type, reinterpret_cast<void*>(floydrt_retain_json) };
-}
-
-
 static void floydrt_retain_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(v != nullptr);
@@ -924,19 +870,6 @@ static void floydrt_retain_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_typ
 #endif
 
 	retain_struct(r.backend, make_runtime_struct(v), itype_t(type0));
-}
-
-static function_bind_t floydrt_retain_struct__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
-	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		llvm::Type::getVoidTy(context),
-		{
-			make_frp_type(type_lookup),
-			get_generic_struct_type(type_lookup)->getPointerTo(),
-			make_runtime_type_type(type_lookup)
-		},
-		false
-	);
-	return { "retain_struct", function_type, reinterpret_cast<void*>(floydrt_retain_struct) };
 }
 
 void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const typeid_t& type){
@@ -1004,14 +937,25 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 	}
 }
 
+static llvm::FunctionType* make_retain(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, llvm::Type& collection_type){
+	return llvm::FunctionType::get(
+		llvm::Type::getVoidTy(context),
+		{
+			make_frp_type(type_lookup),
+//			make_generic_vec_type(type_lookup)->getPointerTo(),
+			&collection_type,
+			make_runtime_type_type(type_lookup)
+		},
+		false
+	);
+}
 std::vector<function_bind_t> retain_funcs(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	return std::vector<function_bind_t> {
-		floydrt_retain_vector_carray__make(context, type_lookup),
-		floydrt_retain_vector_hamt__make(context, type_lookup),
-		floydrt_retain_dict__make(context, type_lookup),
-
-		floydrt_retain_json__make(context, type_lookup),
-		floydrt_retain_struct__make(context, type_lookup),
+		function_bind_t{ "retain_vector_carray", make_retain(context, type_lookup, *make_generic_vec_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_vector_carray) },
+		function_bind_t{ "retain_vector_hamt", make_retain(context, type_lookup, *make_generic_vec_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_vector_hamt) },
+		function_bind_t{ "retain_dict", make_retain(context, type_lookup, *make_generic_dict_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_dict) },
+		function_bind_t{ "retain_json", make_retain(context, type_lookup, *get_llvm_type_as_arg(type_lookup, typeid_t::make_json())), reinterpret_cast<void*>(floydrt_retain_json) },
+		function_bind_t{ "retain_struct", make_retain(context, type_lookup, *get_generic_struct_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_struct) }
 	};
 }
 
