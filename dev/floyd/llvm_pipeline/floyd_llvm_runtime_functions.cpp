@@ -345,41 +345,46 @@ static function_bind_t floydrt_allocate_dict__make(llvm::LLVMContext& context, c
 
 
 
+//??? optimize
 //??? split into several functions
 //??? How to avoid creating std::string() each lookup?
-static runtime_value_t floydrt_lookup_dict(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t s){
+static runtime_value_t floydrt_lookup_dict_cppmap(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t s){
 	auto& r = get_floyd_runtime(frp);
 
+	QUARK_ASSERT(is_dict_cppmap(itype_t(type)));
+
 	const auto& type0 = lookup_type_ref(r.backend, type);
-	if(is_dict_cppmap(itype_t(type))){
-		const auto& m = dict.dict_cppmap_ptr->get_map();
-		const auto key_string = from_runtime_string(r, s);
-		const auto it = m.find(key_string);
-		if(it == m.end()){
-			throw std::exception();
-		}
-		else{
-			return it->second;
-		}
-	}
-	else if(is_dict_hamt(itype_t(type))){
-		const auto& m = dict.dict_hamt_ptr->get_map();
-		const auto key_string = from_runtime_string(r, s);
-		const auto it = m.find(key_string);
-		if(it == nullptr){
-			throw std::exception();
-		}
-		else{
-			return *it;
-		}
+
+	const auto& m = dict.dict_cppmap_ptr->get_map();
+	const auto key_string = from_runtime_string(r, s);
+	const auto it = m.find(key_string);
+	if(it == m.end()){
+		throw std::exception();
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		return it->second;
 	}
 }
 
-static function_bind_t floydrt_lookup_dict__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+//??? optimize
+static runtime_value_t floydrt_lookup_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t s){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto& type0 = lookup_type_ref(r.backend, type);
+	QUARK_ASSERT(is_dict_hamt(itype_t(type)));
+
+	const auto& m = dict.dict_hamt_ptr->get_map();
+	const auto key_string = from_runtime_string(r, s);
+	const auto it = m.find(key_string);
+	if(it == nullptr){
+		throw std::exception();
+	}
+	else{
+		return *it;
+	}
+}
+
+static function_bind_t floydrt_lookup_dict_cppmap__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		make_runtime_value_type(type_lookup),
 		{
@@ -390,7 +395,20 @@ static function_bind_t floydrt_lookup_dict__make(llvm::LLVMContext& context, con
 		},
 		false
 	);
-	return { "lookup_dict", function_type, reinterpret_cast<void*>(floydrt_lookup_dict) };
+	return { "lookup_dict_cppmap", function_type, reinterpret_cast<void*>(floydrt_lookup_dict_cppmap) };
+}
+static function_bind_t floydrt_lookup_dict_hamt__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		make_runtime_value_type(type_lookup),
+		{
+			make_frp_type(type_lookup),
+			make_generic_dict_type(type_lookup)->getPointerTo(),
+			make_runtime_type_type(type_lookup),
+			get_llvm_type_as_arg(type_lookup, typeid_t::make_string())
+		},
+		false
+	);
+	return { "lookup_dict_hamt", function_type, reinterpret_cast<void*>(floydrt_lookup_dict_hamt) };
 }
 
 
@@ -399,21 +417,41 @@ llvm::Value* generate_lookup_dict(llvm_function_generator_t& gen_acc, llvm::Valu
 	QUARK_ASSERT(dict_type.check_invariant());
 	QUARK_ASSERT(is_dict_cppmap(dict_type) || is_dict_hamt(dict_type));
 
-	const auto element_type0 = dict_type.get_dict_value_type();
-	const auto dict_itype_reg = generate_itype_constant(gen_acc.gen, dict_type);
-	auto& builder = gen_acc.get_builder();
+///????sahre code
+	if(dict_is_hamt == false){
+		const auto element_type0 = dict_type.get_dict_value_type();
+		const auto dict_itype_reg = generate_itype_constant(gen_acc.gen, dict_type);
+		auto& builder = gen_acc.get_builder();
 
-	std::vector<llvm::Value*> args2 = {
-		gen_acc.get_callers_fcp(),
-		&dict_reg,
-		dict_itype_reg,
-		&key_reg
+		std::vector<llvm::Value*> args2 = {
+			gen_acc.get_callers_fcp(),
+			&dict_reg,
+			dict_itype_reg,
+			&key_reg
+		};
+
+		const auto res = resolve_func(gen_acc.gen.function_defs, "lookup_dict_cppmap");
+		auto element_value_uint64_reg = builder.CreateCall(res.llvm_codegen_f, args2, "");
+		auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
+		return result_reg;
+	}
+	else {
+		const auto element_type0 = dict_type.get_dict_value_type();
+		const auto dict_itype_reg = generate_itype_constant(gen_acc.gen, dict_type);
+		auto& builder = gen_acc.get_builder();
+
+		std::vector<llvm::Value*> args2 = {
+			gen_acc.get_callers_fcp(),
+			&dict_reg,
+			dict_itype_reg,
+			&key_reg
+		};
+
+		const auto res = resolve_func(gen_acc.gen.function_defs, "lookup_dict_hamt");
+		auto element_value_uint64_reg = builder.CreateCall(res.llvm_codegen_f, args2, "");
+		auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
+		return result_reg;
 	};
-
-	const auto res = resolve_func(gen_acc.gen.function_defs, "lookup_dict");
-	auto element_value_uint64_reg = builder.CreateCall(res.llvm_codegen_f, args2, "");
-	auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
-	return result_reg;
 }
 
 
@@ -1153,7 +1191,8 @@ std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& conte
 		floydrt_load_vector_element_hamt__make(context, type_lookup),
 
 		floydrt_allocate_dict__make(context, type_lookup),
-		floydrt_lookup_dict__make(context, type_lookup),
+		floydrt_lookup_dict_cppmap__make(context, type_lookup),
+		floydrt_lookup_dict_hamt__make(context, type_lookup),
 		floydrt_store_dict_mutable__make(context, type_lookup),
 
 		floydrt_allocate_json__make(context, type_lookup),
