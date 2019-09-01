@@ -175,26 +175,18 @@ static function_bind_t floydrt_allocate_vector_fill__make(llvm::LLVMContext& con
 
 
 
-////////////////////////////////		store_vector_element_mutable()
+////////////////////////////////		store_vector_element_hamt_mutable()
 
 
-//??? split into two functions
-static void floydrt_store_vector_element_mutable(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type, uint64_t index, runtime_value_t element){
+static void floydrt_store_vector_element_hamt_mutable(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type, uint64_t index, runtime_value_t element){
 	auto& r = get_floyd_runtime(frp);
 	(void)r;
 
-	if(is_vector_carray(itype_t(type))){
-		QUARK_ASSERT(false);
-	}
-	else if(is_vector_hamt(itype_t(type))){
-		vec.vector_hamt_ptr->store_mutate(index, element);
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
+	QUARK_ASSERT(is_vector_hamt(itype_t(type)));
+	vec.vector_hamt_ptr->store_mutate(index, element);
 }
 
-static function_bind_t floydrt_store_vector_element_mutable__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+static function_bind_t floydrt_store_vector_element_hamt_mutable__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
@@ -206,7 +198,7 @@ static function_bind_t floydrt_store_vector_element_mutable__make(llvm::LLVMCont
 		},
 		false
 	);
-	return { "store_vector_element_mutable", function_type, reinterpret_cast<void*>(floydrt_store_vector_element_mutable) };
+	return { "store_vector_element_hamt_mutable", function_type, reinterpret_cast<void*>(floydrt_store_vector_element_hamt_mutable) };
 }
 
 
@@ -1131,7 +1123,7 @@ std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& conte
 		floydrt_allocate_vector_fill__make(context, type_lookup),
 
 
-		floydrt_store_vector_element_mutable__make(context, type_lookup),
+		floydrt_store_vector_element_hamt_mutable__make(context, type_lookup),
 		floydrt_concatunate_vectors__make(context, type_lookup),
 		floydrt_push_back_hamt_pod__make(context, type_lookup),
 		floydrt_load_vector_element_hamt__make(context, type_lookup),
@@ -1174,7 +1166,7 @@ runtime_functions_t::runtime_functions_t(const std::vector<function_def_t>& func
 	floydrt_alloc_kstr(resolve_func(function_defs, "alloc_kstr")),
 	floydrt_allocate_vector_fill(resolve_func(function_defs, "allocate_vector_fill")),
 
-	floydrt_store_vector_element_mutable(resolve_func(function_defs, "store_vector_element_mutable")),
+	floydrt_store_vector_element_hamt_mutable(resolve_func(function_defs, "store_vector_element_hamt_mutable")),
 	floydrt_concatunate_vectors(resolve_func(function_defs, "concatunate_vectors")),
 	floydrt_push_back_hamt_pod(resolve_func(function_defs, "push_back_hamt_pod")),
 	floydrt_load_vector_element_hamt(resolve_func(function_defs, "load_vector_element_hamt")),

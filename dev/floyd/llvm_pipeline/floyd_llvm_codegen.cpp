@@ -1357,7 +1357,7 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 			auto element_value2_reg = generate_cast_to_runtime_value(gen_acc.gen, *element_value_reg, element_type0);
 
 			//	Move ownwership from temp to member element, no need for retain-release.
-			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_store_vector_element_mutable.llvm_codegen_f, { gen_acc.get_callers_fcp(), vec_ptr_reg, vec_type_reg, index_reg, element_value2_reg }, "");
+			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_store_vector_element_hamt_mutable.llvm_codegen_f, { gen_acc.get_callers_fcp(), vec_ptr_reg, vec_type_reg, index_reg, element_value2_reg }, "");
 			element_index++;
 		}
 		return vec_ptr_reg;
