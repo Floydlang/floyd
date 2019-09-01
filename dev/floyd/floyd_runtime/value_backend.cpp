@@ -1002,6 +1002,8 @@ void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t
 
 
 
+
+
 ////////////////////////////////		value_backend_t
 
 

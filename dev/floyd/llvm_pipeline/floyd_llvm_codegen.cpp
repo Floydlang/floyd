@@ -414,38 +414,6 @@ static function_return_mode generate_block(llvm_function_generator_t& gen_acc, c
 }
 
 
-//??? assumes elements are in lineary array (not a HAMT etc):
-//	Returns pointer to first element of data after the alloc64. The returned pointer-type is struct { unit64_t x 8 }, so it needs to be cast to an element-ptr.
-static llvm::Value* generate_get_vec_element_ptr_needs_cast(llvm_function_generator_t& gen_acc, llvm::Value& vec_ptr_reg){
-	QUARK_ASSERT(gen_acc.check_invariant());
-
-	auto& builder = gen_acc.get_builder();
-
-	const auto gep = std::vector<llvm::Value*>{
-		builder.getInt32(1)
-	};
-	auto after_alloc64_ptr_reg = builder.CreateGEP(make_generic_vec_type(gen_acc.gen.type_lookup), &vec_ptr_reg, gep, "");
-	return after_alloc64_ptr_reg;
-}
-
-//	Returns pointer to the first byte of the first struct member.
-static llvm::Value* generate_get_struct_base_ptr(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const typeid_t& final_type){
-	QUARK_ASSERT(gen_acc.check_invariant());
-
-	auto& builder = gen_acc.get_builder();
-
-	auto type = get_generic_struct_type(gen_acc.gen.type_lookup);
-	auto ptr_reg = gen_acc.get_builder().CreateCast(llvm::Instruction::CastOps::BitCast, &struct_ptr_reg, type->getPointerTo(), "");
-
-	const auto gep = std::vector<llvm::Value*>{
-		builder.getInt32(1)
-	};
-	auto ptr2_reg = builder.CreateGEP(type, ptr_reg, gep, "");
-	auto final_type2 = get_exact_struct_type_noptr(gen_acc.gen.type_lookup, final_type);
-	auto ptr3_reg = gen_acc.get_builder().CreateCast(llvm::Instruction::CastOps::BitCast, ptr2_reg, final_type2->getPointerTo(), "");
-	return ptr3_reg;
-}
-
 
 
 
@@ -469,67 +437,44 @@ static llvm::Value* generate_resolve_member_expression(llvm_function_generator_t
 
 	auto parent_struct_ptr_reg = generate_expression(gen_acc, *details.parent_address);
 
+
 	const auto parent_type =  details.parent_address->get_output_type();
-	if(parent_type.is_struct()){
-		auto& struct_type_llvm = *get_exact_struct_type_noptr(gen_acc.gen.type_lookup, parent_type);
+	QUARK_ASSERT(parent_type.is_struct());
 
-		const auto& struct_def = details.parent_address->get_output_type().get_struct();
-		int member_index = find_struct_member_index(struct_def, details.member_name);
-		QUARK_ASSERT(member_index != -1);
+	auto& struct_type_llvm = *get_exact_struct_type_noptr(gen_acc.gen.type_lookup, parent_type);
 
-		const auto& member_type = struct_def._members[member_index]._type;
+	const auto& struct_def = details.parent_address->get_output_type().get_struct();
+	int member_index = find_struct_member_index(struct_def, details.member_name);
+	QUARK_ASSERT(member_index != -1);
 
-		auto base_ptr_reg = generate_get_struct_base_ptr(gen_acc, *parent_struct_ptr_reg, parent_type);
+	const auto& member_type = struct_def._members[member_index]._type;
 
-		const auto gep = std::vector<llvm::Value*>{
-			//	Struct array index.
-			builder.getInt32(0),
+	auto base_ptr_reg = generate_get_struct_base_ptr(gen_acc, *parent_struct_ptr_reg, parent_type);
 
-			//	Struct member index.
-			builder.getInt32(member_index)
-		};
-		llvm::Value* member_ptr_reg = builder.CreateGEP(&struct_type_llvm, base_ptr_reg, gep, "");
-		auto member_value_reg = builder.CreateLoad(member_ptr_reg);
-		generate_retain(gen_acc, *member_value_reg, member_type);
-		generate_release(gen_acc, *parent_struct_ptr_reg, parent_type);
+	const auto gep = std::vector<llvm::Value*>{
+		//	Struct array index.
+		builder.getInt32(0),
 
-		return member_value_reg;
-	}
-	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
-	}
-	return nullptr;
+		//	Struct member index.
+		builder.getInt32(member_index)
+	};
+	llvm::Value* member_ptr_reg = builder.CreateGEP(&struct_type_llvm, base_ptr_reg, gep, "");
+	auto member_value_reg = builder.CreateLoad(member_ptr_reg);
+	generate_retain(gen_acc, *member_value_reg, member_type);
+	generate_release(gen_acc, *parent_struct_ptr_reg, parent_type);
+
+	return member_value_reg;
 }
 
 static llvm::Value* generate_update_member_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::update_member_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	auto& builder = gen_acc.get_builder();
-
 	auto parent_struct_ptr_reg = generate_expression(gen_acc, *details.parent_address);
 	auto new_value_reg = generate_expression(gen_acc, *details.new_value);
 
 	const auto struct_type = details.parent_address->get_output_type();
 	const auto member_type = details.new_value->get_output_type();
-/*
-	auto member_index_reg = llvm::ConstantInt::get(builder.getInt64Ty(), details.member_index);
-
-	std::vector<llvm::Value*> args2 = {
-		gen_acc.get_callers_fcp(),
-
-		parent_struct_ptr_reg,
-		generate_itype_constant(gen_acc.gen, struct_type),
-
-		member_index_reg,
-
-		generate_cast_to_runtime_value(gen_acc.gen, *new_value_reg, member_type),
-		generate_itype_constant(gen_acc.gen, member_type)
-	};
-	auto struct2_ptr_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_update_struct_member.llvm_codegen_f, args2, "");
-*/
-
 	auto struct2_ptr_reg = generate_update_struct_member(gen_acc, *parent_struct_ptr_reg, struct_type, details.member_index, *new_value_reg);
 
 	generate_release(gen_acc, *new_value_reg, member_type);

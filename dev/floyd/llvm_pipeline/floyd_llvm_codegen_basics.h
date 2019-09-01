@@ -170,6 +170,17 @@ llvm::Value* generate_cast_to_runtime_value(llvm_code_generator_t& gen_acc, llvm
 llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& runtime_value_reg, const typeid_t& type);
 
 
+
+
+//??? assumes elements are in lineary array (not a HAMT etc):
+//	Returns pointer to first element of data after the alloc64. The returned pointer-type is struct { unit64_t x 8 }, so it needs to be cast to an element-ptr.
+llvm::Value* generate_get_vec_element_ptr_needs_cast(llvm_function_generator_t& gen_acc, llvm::Value& vec_ptr_reg);
+
+//	Returns pointer to the first byte of the first struct member.
+llvm::Value* generate_get_struct_base_ptr(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const typeid_t& final_type);
+
+
+
 }	//	floyd
 
 #endif /* floyd_llvm_codegen_basics_hpp */
