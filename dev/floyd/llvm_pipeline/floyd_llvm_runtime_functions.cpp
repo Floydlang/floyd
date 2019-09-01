@@ -230,12 +230,13 @@ static function_bind_t floydrt_retain_vector_hamt__make(llvm::LLVMContext& conte
 }
 
 
-//??? COPY. We need to separate out codegen stuff so we can call them.
-
-
-void generate_retain2(const std::vector<function_def_t>& defs, llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& frp_reg, llvm::Value& value_reg, llvm::Value& type_reg, const itype_t& type){
-	QUARK_ASSERT(type_lookup.check_invariant());
+void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const typeid_t& type){
+	QUARK_ASSERT(gen_acc.gen.type_lookup.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
+
+	auto& frp_reg = *gen_acc.get_callers_fcp();
+	auto& type_reg = *generate_itype_constant(gen_acc.gen, type);
+	auto& builder = gen_acc.get_builder();
 
 	if(is_rc_value(type)){
 		if(type.is_string() || type.is_vector()){
@@ -245,7 +246,7 @@ void generate_retain2(const std::vector<function_def_t>& defs, llvm::IRBuilder<>
 					&value_reg,
 					&type_reg
 				};
-				const auto res = resolve_func(defs, "retain_vector_hamt");
+				const auto res = resolve_func(gen_acc.gen.function_defs, "retain_vector_hamt");
 				builder.CreateCall(res.llvm_codegen_f, args, "");
 			}
 			else{
@@ -254,7 +255,7 @@ void generate_retain2(const std::vector<function_def_t>& defs, llvm::IRBuilder<>
 					&value_reg,
 					&type_reg
 				};
-				const auto res = resolve_func(defs, "retain_vector_carray");
+				const auto res = resolve_func(gen_acc.gen.function_defs, "retain_vector_carray");
 				builder.CreateCall(res.llvm_codegen_f, args, "");
 			}
 		}
@@ -264,7 +265,7 @@ void generate_retain2(const std::vector<function_def_t>& defs, llvm::IRBuilder<>
 				&value_reg,
 				&type_reg
 			};
-			const auto res = resolve_func(defs, "retain_dict");
+			const auto res = resolve_func(gen_acc.gen.function_defs, "retain_dict");
 			builder.CreateCall(res.llvm_codegen_f, args, "");
 		}
 		else if(type.is_json()){
@@ -273,17 +274,17 @@ void generate_retain2(const std::vector<function_def_t>& defs, llvm::IRBuilder<>
 				&value_reg,
 				&type_reg
 			};
-			const auto res = resolve_func(defs, "retain_json");
+			const auto res = resolve_func(gen_acc.gen.function_defs, "retain_json");
 			builder.CreateCall(res.llvm_codegen_f, args, "");
 		}
 		else if(type.is_struct()){
-			auto generic_vec_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value_reg, get_generic_struct_type(type_lookup)->getPointerTo(), "");
+			auto generic_vec_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value_reg, get_generic_struct_type(gen_acc.gen.type_lookup)->getPointerTo(), "");
 			std::vector<llvm::Value*> args = {
 				&frp_reg,
 				generic_vec_reg,
 				&type_reg
 			};
-			const auto res = resolve_func(defs, "retain_struct");
+			const auto res = resolve_func(gen_acc.gen.function_defs, "retain_struct");
 			builder.CreateCall(res.llvm_codegen_f, args, "");
 		}
 		else{
@@ -311,7 +312,8 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 					&value_reg,
 					generate_itype_constant(gen_acc.gen, type)
 				};
-				builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_release_vector_hamt_pod.llvm_codegen_f, args);
+				const auto res = resolve_func(gen_acc.gen.function_defs, "release_vector_hamt_pod");
+				builder.CreateCall(res.llvm_codegen_f, args);
 			}
 			else{
 				std::vector<llvm::Value*> args = {
@@ -319,7 +321,8 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 					&value_reg,
 					generate_itype_constant(gen_acc.gen, type)
 				};
-				builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_release_vec.llvm_codegen_f, args);
+				const auto res = resolve_func(gen_acc.gen.function_defs, "release_vector_fallback");
+				builder.CreateCall(res.llvm_codegen_f, args);
 			}
 		}
 		else if(type.is_dict()){
@@ -328,7 +331,8 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 				&value_reg,
 				generate_itype_constant(gen_acc.gen, type)
 			};
-			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_release_dict.llvm_codegen_f, args);
+			const auto res = resolve_func(gen_acc.gen.function_defs, "release_dict");
+			builder.CreateCall(res.llvm_codegen_f, args);
 		}
 		else if(type.is_json()){
 			std::vector<llvm::Value*> args = {
@@ -358,11 +362,11 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 
 
 
-////////////////////////////////		floydrt_release_vec()
+////////////////////////////////		floydrt_release_vector_fallback()
 
 
 //??? only does carray - rename and calls release_vector_carray
-static void floydrt_release_vec(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
+static void floydrt_release_vector_fallback(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
@@ -373,9 +377,9 @@ static void floydrt_release_vec(floyd_runtime_t* frp, runtime_value_t vec, runti
 }
 
 
-static function_bind_t floydrt_release_vec__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+static function_bind_t floydrt_release_vector_fallback__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	return function_bind_t{
-		"release_vec",
+		"release_vector_fallback",
 		llvm::FunctionType::get(
 			llvm::Type::getVoidTy(context),
 			{
@@ -385,7 +389,7 @@ static function_bind_t floydrt_release_vec__make(llvm::LLVMContext& context, con
 			},
 			false
 		),
-		reinterpret_cast<void*>(floydrt_release_vec)
+		reinterpret_cast<void*>(floydrt_release_vector_fallback)
 	};
 }
 
@@ -1233,7 +1237,7 @@ std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& conte
 		floydrt_retain_vector_carray__make(context, type_lookup),
 		floydrt_retain_vector_hamt__make(context, type_lookup),
 
-		floydrt_release_vec__make(context, type_lookup),
+		floydrt_release_vector_fallback__make(context, type_lookup),
 		floydrt_release_vector_hamt_pod__make(context, type_lookup),
 
 		floydrt_store_vector_element_mutable__make(context, type_lookup),
@@ -1281,8 +1285,6 @@ runtime_functions_t::runtime_functions_t(const std::vector<function_def_t>& func
 	floydrt_alloc_kstr(resolve_func(function_defs, "alloc_kstr")),
 	floydrt_allocate_vector_fill(resolve_func(function_defs, "allocate_vector_fill")),
 
-	floydrt_release_vec(resolve_func(function_defs, "release_vec")),
-	floydrt_release_vector_hamt_pod(resolve_func(function_defs, "release_vector_hamt_pod")),
 	floydrt_store_vector_element_mutable(resolve_func(function_defs, "store_vector_element_mutable")),
 	floydrt_concatunate_vectors(resolve_func(function_defs, "concatunate_vectors")),
 	floydrt_push_back_hamt_pod(resolve_func(function_defs, "push_back_hamt_pod")),
@@ -1290,7 +1292,6 @@ runtime_functions_t::runtime_functions_t(const std::vector<function_def_t>& func
 
 
 	floydrt_allocate_dict(resolve_func(function_defs, "allocate_dict")),
-	floydrt_release_dict(resolve_func(function_defs, "release_dict")),
 	floydrt_lookup_dict(resolve_func(function_defs, "lookup_dict")),
 	floydrt_store_dict_mutable(resolve_func(function_defs, "store_dict_mutable")),
 

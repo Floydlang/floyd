@@ -232,24 +232,6 @@ resolved_symbol_t find_symbol(llvm_code_generator_t& gen_acc, const variable_add
 }
 
 
-void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const typeid_t& type){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	auto& builder = gen_acc.get_builder();
-	const auto type_reg = generate_itype_constant(gen_acc.gen, type);
-	generate_retain2(
-		gen_acc.gen.function_defs,
-		builder,
-		gen_acc.gen.type_lookup,
-		*gen_acc.get_callers_fcp(),
-		value_reg,
-		*type_reg,
-		lookup_itype(gen_acc.gen.type_lookup, type)
-	);
-}
-
-
 
 
 

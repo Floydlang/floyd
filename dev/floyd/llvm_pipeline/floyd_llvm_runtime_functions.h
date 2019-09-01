@@ -38,15 +38,12 @@ struct runtime_functions_t {
 
 	const function_def_t floydrt_alloc_kstr;
 	const function_def_t floydrt_allocate_vector_fill;
-	const function_def_t floydrt_release_vec;
-	const function_def_t floydrt_release_vector_hamt_pod;
 	const function_def_t floydrt_store_vector_element_mutable;
 	const function_def_t floydrt_concatunate_vectors;
 	const function_def_t floydrt_push_back_hamt_pod;
 	const function_def_t floydrt_load_vector_element_hamt;
 	
 	const function_def_t floydrt_allocate_dict;
-	const function_def_t floydrt_release_dict;
 	const function_def_t floydrt_lookup_dict;
 	const function_def_t floydrt_store_dict_mutable;
 
@@ -68,9 +65,8 @@ struct runtime_functions_t {
 
 llvm::Value* generate_allocate_vector(const std::vector<function_def_t>& function_defs, llvm::IRBuilder<>& builder, llvm::Value& frp_reg, llvm::Value& vector_type_reg, int64_t element_count, vector_backend vector_backend);
 
-void generate_retain2(const std::vector<function_def_t>& defs, llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& frp_reg, llvm::Value& value_reg, llvm::Value& type_reg, const itype_t& type);
 
-
+void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const typeid_t& type);
 void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const typeid_t& type);
 
 
