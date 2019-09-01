@@ -41,23 +41,9 @@ struct llvm_ir_program_t {
 	llvm_ir_program_t(const llvm_ir_program_t& other) = delete;
 	llvm_ir_program_t& operator=(const llvm_ir_program_t& other) = delete;
 
-	explicit llvm_ir_program_t(llvm_instance_t* instance, std::unique_ptr<llvm::Module>& module2_swap, const llvm_type_lookup& type_lookup, const symbol_table_t& globals, const std::vector<function_def_t>& function_defs) :
-		instance(instance),
-		type_lookup(type_lookup),
-		debug_globals(globals),
-		function_defs(function_defs)
-	{
-		module.swap(module2_swap);
-		QUARK_ASSERT(check_invariant());
-	}
+	explicit llvm_ir_program_t(llvm_instance_t* instance, std::unique_ptr<llvm::Module>& module2_swap, const llvm_type_lookup& type_lookup, const symbol_table_t& globals, const std::vector<function_def_t>& function_defs);
 
-	public: bool check_invariant() const {
-		QUARK_ASSERT(instance != nullptr);
-		QUARK_ASSERT(instance->check_invariant());
-		QUARK_ASSERT(module);
-		QUARK_ASSERT(check_invariant__module(module.get()));
-		return true;
-	}
+	public: bool check_invariant() const;
 
 
 	////////////////////////////////		STATE

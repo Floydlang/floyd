@@ -13,6 +13,7 @@ static const bool k_trace_function_defs = false;
 
 #include "floyd_llvm_codegen.h"
 
+#include "floyd_llvm_codegen_basics.h"
 #include "floyd_llvm_runtime.h"
 #include "floyd_llvm_runtime_functions.h"
 #include "floyd_llvm_helpers.h"
@@ -69,122 +70,47 @@ struct llvm_code_generator_t;
 
 
 
-////////////////////////////////		resolved_symbol_t
 
 
-struct resolved_symbol_t {
-	llvm::Value* value_ptr;
-	std::string debug_str;
-	enum class esymtype { k_global, k_local, k_function_argument } symtype;
 
-	std::string symbol_name;
-	symbol_t symbol;
-};
+
+
+////////////////////////////////		llvm_ir_program_t
 
 
 
 
 
 
-////////////////////////////////		llvm_code_generator_t
 
+llvm_ir_program_t::llvm_ir_program_t(llvm_instance_t* instance, std::unique_ptr<llvm::Module>& module2_swap, const llvm_type_lookup& type_lookup, const symbol_table_t& globals, const std::vector<function_def_t>& function_defs) :
+	instance(instance),
+	type_lookup(type_lookup),
+	debug_globals(globals),
+	function_defs(function_defs)
+{
+	module.swap(module2_swap);
+	QUARK_ASSERT(check_invariant());
+}
 
-struct llvm_code_generator_t {
-	public: llvm_code_generator_t(llvm_instance_t& instance, llvm::Module* module, const type_interner_t& interner, const llvm_type_lookup& type_lookup, const std::vector<function_def_t>& function_defs) :
-		instance(&instance),
-		module(module),
-		builder(instance.context),
-		type_lookup(type_lookup),
-		function_defs(function_defs),
-
-		runtime_functions(function_defs)
-	{
-		QUARK_ASSERT(instance.check_invariant());
-
-		llvm::InitializeNativeTarget();
-		llvm::InitializeNativeTargetAsmPrinter();
-
-		QUARK_ASSERT(check_invariant());
-	}
-
-	public: bool check_invariant() const {
-//		QUARK_ASSERT(scope_path.size() >= 1);
-		QUARK_ASSERT(instance);
-		QUARK_ASSERT(type_lookup.check_invariant());
-		QUARK_ASSERT(instance->check_invariant());
-		QUARK_ASSERT(module);
-		return true;
-	}
-
-	llvm::IRBuilder<>& get_builder(){
-		return builder;
-	}
-
-
-	////////////////////////////////		STATE
-
-	llvm_instance_t* instance;
-	llvm::Module* module;
-	llvm::IRBuilder<> builder;
-	llvm_type_lookup type_lookup;
-	std::vector<function_def_t> function_defs;
-
-	/*
-		variable_address_t::_parent_steps
-			-1: global, uncoditionally.
-			0: current scope. scope_path[scope_path.size() - 1]
-			1: parent scope. scope_path[scope_path.size() - 2]
-			2: parent scope. scope_path[scope_path.size() - 3]
-	*/
-	//	One element for each global symbol in AST. Same indexes as in symbol table.
-	std::vector<std::vector<resolved_symbol_t>> scope_path;
-
-	const runtime_functions_t runtime_functions;
-};
+bool llvm_ir_program_t::check_invariant() const {
+	QUARK_ASSERT(instance != nullptr);
+	QUARK_ASSERT(instance->check_invariant());
+	QUARK_ASSERT(module);
+	QUARK_ASSERT(check_invariant__module(module.get()));
+	return true;
+}
 
 
 
 
-////////////////////////////////		llvm_function_generator_t
 
 
-//	Used while generating a function, which requires more context than llvm_code_generator_t provides.
-//	Notice: uses a REFERENCE to the llvm_code_generator_t so that must outlive the llvm_function_generator_t.
 
-struct llvm_function_generator_t {
-	public: llvm_function_generator_t(llvm_code_generator_t& gen, llvm::Function& emit_f) :
-		gen(gen),
-		emit_f(emit_f),
-		floyd_runtime_ptr_reg(*floyd::get_callers_fcp(gen.type_lookup, emit_f))
-	{
-		QUARK_ASSERT(gen.check_invariant());
-		QUARK_ASSERT(check_emitting_function(gen.type_lookup, emit_f));
-
-		QUARK_ASSERT(check_invariant());
-	}
+////////////////////////////////		BASICS
 
 
-	public: bool check_invariant() const {
-		QUARK_ASSERT(gen.check_invariant());
-		QUARK_ASSERT(check_emitting_function(gen.type_lookup, emit_f));
-		return true;
-	}
 
-	//	??? rename to get_fcp().
-	llvm::Value* get_callers_fcp(){
-		return &floyd_runtime_ptr_reg;
-	}
-
-	llvm::IRBuilder<>& get_builder(){
-		return gen.builder;
-	}
-
-
-	////////////////////////////////		STATE
-	llvm_code_generator_t& gen;
-	llvm::Function& emit_f;
-	llvm::Value& floyd_runtime_ptr_reg;
-};
 
 
 enum class function_return_mode {
@@ -306,15 +232,6 @@ resolved_symbol_t find_symbol(llvm_code_generator_t& gen_acc, const variable_add
 }
 
 
-static llvm::Constant* generate_itype_constant(const llvm_code_generator_t& gen_acc, const typeid_t& type){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	auto itype = lookup_itype(gen_acc.type_lookup, type).get_data();
-	auto t = make_runtime_type_type(gen_acc.type_lookup);
- 	return llvm::ConstantInt::get(t, itype);
-}
-
 void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const typeid_t& type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -332,61 +249,7 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 	);
 }
 
-void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const typeid_t& type){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
 
-	auto& builder = gen_acc.get_builder();
-	if(is_rc_value(type)){
-		if(type.is_string() || type.is_vector()){
-			if(is_vector_hamt(type) && is_rc_value(type.get_vector_element_type()) == false){
-				std::vector<llvm::Value*> args = {
-					gen_acc.get_callers_fcp(),
-					&value_reg,
-					generate_itype_constant(gen_acc.gen, type)
-				};
-				builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_release_vector_hamt_pod.llvm_codegen_f, args);
-			}
-			else{
-				std::vector<llvm::Value*> args = {
-					gen_acc.get_callers_fcp(),
-					&value_reg,
-					generate_itype_constant(gen_acc.gen, type)
-				};
-				builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_release_vec.llvm_codegen_f, args);
-			}
-		}
-		else if(type.is_dict()){
-			std::vector<llvm::Value*> args = {
-				gen_acc.get_callers_fcp(),
-				&value_reg,
-				generate_itype_constant(gen_acc.gen, type)
-			};
-			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_release_dict.llvm_codegen_f, args);
-		}
-		else if(type.is_json()){
-			std::vector<llvm::Value*> args = {
-				gen_acc.get_callers_fcp(),
-				&value_reg,
-				generate_itype_constant(gen_acc.gen, type)
-			};
-			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_release_json.llvm_codegen_f, args);
-		}
-		else if(type.is_struct()){
-			std::vector<llvm::Value*> args = {
-				gen_acc.get_callers_fcp(),
-				&value_reg,
-				generate_itype_constant(gen_acc.gen, type)
-			};
-			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_release_struct.llvm_codegen_f, args);
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
-	else{
-	}
-}
 
 
 

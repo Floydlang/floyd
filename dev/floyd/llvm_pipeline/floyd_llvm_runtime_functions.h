@@ -15,7 +15,7 @@
 namespace floyd {
 
 struct function_bind_t;
-
+struct llvm_function_generator_t;
 
 //	These are the support function built into the runtime, like RC primitives.
 std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup);
@@ -70,6 +70,8 @@ llvm::Value* generate_allocate_vector(const std::vector<function_def_t>& functio
 
 void generate_retain2(const std::vector<function_def_t>& defs, llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& frp_reg, llvm::Value& value_reg, llvm::Value& type_reg, const itype_t& type);
 
+
+void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const typeid_t& type);
 
 
 } // floyd

@@ -11,7 +11,7 @@
 #include "floyd_llvm_helpers.h"
 #include "floyd_llvm_types.h"
 #include "floyd_llvm_runtime.h"
-#include "floyd_llvm_codegen.h"
+#include "floyd_llvm_codegen_basics.h"
 #include "value_features.h"
 
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
@@ -125,6 +125,14 @@ llvm::Value* generate_allocate_vector(const std::vector<function_def_t>& defs, l
 		throw std::exception();
 	}
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -289,6 +297,62 @@ void generate_retain2(const std::vector<function_def_t>& defs, llvm::IRBuilder<>
 
 
 
+
+void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const typeid_t& type){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	auto& builder = gen_acc.get_builder();
+	if(is_rc_value(type)){
+		if(type.is_string() || type.is_vector()){
+			if(is_vector_hamt(type) && is_rc_value(type.get_vector_element_type()) == false){
+				std::vector<llvm::Value*> args = {
+					gen_acc.get_callers_fcp(),
+					&value_reg,
+					generate_itype_constant(gen_acc.gen, type)
+				};
+				builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_release_vector_hamt_pod.llvm_codegen_f, args);
+			}
+			else{
+				std::vector<llvm::Value*> args = {
+					gen_acc.get_callers_fcp(),
+					&value_reg,
+					generate_itype_constant(gen_acc.gen, type)
+				};
+				builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_release_vec.llvm_codegen_f, args);
+			}
+		}
+		else if(type.is_dict()){
+			std::vector<llvm::Value*> args = {
+				gen_acc.get_callers_fcp(),
+				&value_reg,
+				generate_itype_constant(gen_acc.gen, type)
+			};
+			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_release_dict.llvm_codegen_f, args);
+		}
+		else if(type.is_json()){
+			std::vector<llvm::Value*> args = {
+				gen_acc.get_callers_fcp(),
+				&value_reg,
+				generate_itype_constant(gen_acc.gen, type)
+			};
+			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_release_json.llvm_codegen_f, args);
+		}
+		else if(type.is_struct()){
+			std::vector<llvm::Value*> args = {
+				gen_acc.get_callers_fcp(),
+				&value_reg,
+				generate_itype_constant(gen_acc.gen, type)
+			};
+			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_release_struct.llvm_codegen_f, args);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+	else{
+	}
+}
 
 
 
@@ -560,7 +624,7 @@ static function_bind_t floydrt_retain_dict__make(llvm::LLVMContext& context, con
 
 ////////////////////////////////		floydrt_release_dict()
 
-//??? make generate_release2()
+
 
 //??? split into several functions
 static void floydrt_release_dict(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
