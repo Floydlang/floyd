@@ -737,9 +737,32 @@ static std::vector<function_bind_t> floydrt_update_struct_member__make(llvm::LLV
 	return {{ "update_struct_member", function_type, reinterpret_cast<void*>(floydrt_update_struct_member) }};
 }
 
+llvm::Value* generate_update_struct_member(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const typeid_t& struct_type, int member_index, llvm::Value& value_reg){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(struct_type.check_invariant());
+	QUARK_ASSERT(member_index >= 0 && member_index < struct_type.get_struct()._members.size());
 
+	auto& builder = gen_acc.get_builder();
 
+	const auto& struct_def = struct_type.get_struct();
 
+	auto member_index_reg = llvm::ConstantInt::get(builder.getInt64Ty(), member_index);
+	const auto member_type = struct_def._members[member_index]._type;
+
+	std::vector<llvm::Value*> args2 = {
+		gen_acc.get_callers_fcp(),
+
+		&struct_ptr_reg,
+		generate_itype_constant(gen_acc.gen, struct_type),
+
+		member_index_reg,
+
+		generate_cast_to_runtime_value(gen_acc.gen, value_reg, member_type),
+		generate_itype_constant(gen_acc.gen, member_type)
+	};
+	auto result_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_update_struct_member.llvm_codegen_f, args2, "");
+	return result_reg;
+}
 
 
 

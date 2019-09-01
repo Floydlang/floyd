@@ -512,8 +512,9 @@ static llvm::Value* generate_update_member_expression(llvm_function_generator_t&
 	auto new_value_reg = generate_expression(gen_acc, *details.new_value);
 
 	const auto struct_type = details.parent_address->get_output_type();
-	auto member_index_reg = llvm::ConstantInt::get(builder.getInt64Ty(), details.member_index);
 	const auto member_type = details.new_value->get_output_type();
+/*
+	auto member_index_reg = llvm::ConstantInt::get(builder.getInt64Ty(), details.member_index);
 
 	std::vector<llvm::Value*> args2 = {
 		gen_acc.get_callers_fcp(),
@@ -527,6 +528,9 @@ static llvm::Value* generate_update_member_expression(llvm_function_generator_t&
 		generate_itype_constant(gen_acc.gen, member_type)
 	};
 	auto struct2_ptr_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_update_struct_member.llvm_codegen_f, args2, "");
+*/
+
+	auto struct2_ptr_reg = generate_update_struct_member(gen_acc, *parent_struct_ptr_reg, struct_type, details.member_index, *new_value_reg);
 
 	generate_release(gen_acc, *new_value_reg, member_type);
 	generate_release(gen_acc, *parent_struct_ptr_reg, struct_type);
@@ -624,17 +628,7 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 		QUARK_ASSERT(key_type.is_string());
 
 		const auto element_type0 = parent_type.get_dict_value_type();
-		const auto dict_type_reg = generate_itype_constant(gen_acc.gen, parent_type);
-
-/*
-		std::vector<llvm::Value*> args2 = {
-			gen_acc.get_callers_fcp(),
-			parent_reg,
-			dict_type_reg,
-			key_reg
-		};
-		auto element_value_uint64_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_lookup_dict.llvm_codegen_f, args2, "");
-*/		auto element_value_uint64_reg = generate_lookup_dict(gen_acc, *parent_reg, parent_type, *key_reg, is_dict_hamt(parent_type));
+		auto element_value_uint64_reg = generate_lookup_dict(gen_acc, *parent_reg, parent_type, *key_reg, is_dict_hamt(parent_type));
 		auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
 
 		generate_retain(gen_acc, *result_reg, element_type0);
