@@ -44,7 +44,6 @@ struct runtime_functions_t {
 	const function_def_t floydrt_load_vector_element_hamt;
 	
 	const function_def_t floydrt_allocate_dict;
-	const function_def_t floydrt_lookup_dict;
 	const function_def_t floydrt_store_dict_mutable;
 
 	const function_def_t floydrt_allocate_json;

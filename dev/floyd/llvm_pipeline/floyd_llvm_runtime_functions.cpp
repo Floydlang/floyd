@@ -409,7 +409,9 @@ llvm::Value* generate_lookup_dict(llvm_function_generator_t& gen_acc, llvm::Valu
 		dict_itype_reg,
 		&key_reg
 	};
-	auto element_value_uint64_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_lookup_dict.llvm_codegen_f, args2, "");
+
+	const auto res = resolve_func(gen_acc.gen.function_defs, "lookup_dict");
+	auto element_value_uint64_reg = builder.CreateCall(res.llvm_codegen_f, args2, "");
 	auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
 	return result_reg;
 }
@@ -1195,7 +1197,6 @@ runtime_functions_t::runtime_functions_t(const std::vector<function_def_t>& func
 
 
 	floydrt_allocate_dict(resolve_func(function_defs, "allocate_dict")),
-	floydrt_lookup_dict(resolve_func(function_defs, "lookup_dict")),
 	floydrt_store_dict_mutable(resolve_func(function_defs, "store_dict_mutable")),
 
 
