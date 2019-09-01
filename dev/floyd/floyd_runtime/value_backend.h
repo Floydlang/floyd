@@ -752,6 +752,9 @@ inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t
 
 void release_vec(value_backend_t& backend, runtime_value_t vec, itype_t itype);
 
+
+void release_dict_cppmap(value_backend_t& backend, runtime_value_t dict0, itype_t itype);
+void release_dict_hamt(value_backend_t& backend, runtime_value_t dict0, itype_t itype);
 void release_dict(value_backend_t& backend, runtime_value_t dict0, itype_t itype);
 
 

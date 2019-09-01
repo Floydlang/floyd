@@ -695,7 +695,7 @@ llvm::Value* generate_load_struct_member(llvm_function_generator_t& gen_acc, llv
 ////////////////////////////////		floydrt_update_struct_member()
 
 
-//??? Precalc and store in struct_layout_t.
+
 static bool is_struct_pod(const struct_definition_t& struct_def){
 	QUARK_ASSERT(struct_def.check_invariant());
 
@@ -807,7 +807,6 @@ static void generate_store_struct_member_mutate(llvm_function_generator_t& gen_a
 
 	auto& struct_type_llvm = *get_exact_struct_type_noptr(gen_acc.gen.type_lookup, struct_type);
 	auto base_ptr_reg = generate_get_struct_base_ptr(gen_acc, struct_ptr_reg, struct_type);
-	//??? CreateCast? base_ptr_reg
 
 	const auto gep = std::vector<llvm::Value*>{
 		//	Struct array index.
@@ -1203,16 +1202,26 @@ static void floydrt_release_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_val
 }
 
 
-//??? split into several functions
-static void floydrt_release_dict(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
+static void floydrt_release_dict_cppmap(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(type.is_dict());
+	QUARK_ASSERT(is_dict_cppmap(type));
 #endif
 
-	release_dict(r.backend, dict, itype_t(type0));
+	release_dict_cppmap(r.backend, dict, itype_t(type0));
 }
+static void floydrt_release_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
+	auto& r = get_floyd_runtime(frp);
+#if DEBUG
+	const auto& type = lookup_type_ref(r.backend, type0);
+	QUARK_ASSERT(is_dict_hamt(type));
+#endif
+
+	release_dict_hamt(r.backend, dict, itype_t(type0));
+}
+
+
 
 static void floydrt_release_json(floyd_runtime_t* frp, JSON_T* json, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
@@ -1260,7 +1269,8 @@ std::vector<function_bind_t> release_funcs(llvm::LLVMContext& context, const llv
 		function_bind_t{ "release_vector_carray_nonpod", make_release(context, type_lookup, *make_generic_vec_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_vector_carray_nonpod) },
 		function_bind_t{ "release_vector_hamt_pod", make_release(context, type_lookup, *make_generic_vec_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_vector_hamt_pod) },
 		function_bind_t{ "release_vector_hamt_nonpod", make_release(context, type_lookup, *make_generic_vec_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_vector_hamt_nonpod) },
-		function_bind_t{ "release_dict", make_release(context, type_lookup, *make_generic_dict_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_dict) },
+		function_bind_t{ "release_dict_cppmap", make_release(context, type_lookup, *make_generic_dict_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_dict_cppmap) },
+		function_bind_t{ "release_dict_hamt", make_release(context, type_lookup, *make_generic_dict_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_dict_hamt) },
 		function_bind_t{ "release_json", make_release(context, type_lookup, *get_llvm_type_as_arg(type_lookup, typeid_t::make_json())), reinterpret_cast<void*>(floydrt_release_json) },
 		function_bind_t{ "release_struct", make_release(context, type_lookup, *get_generic_struct_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_struct) }
 	};
@@ -1303,8 +1313,17 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 			}
 		}
 		else if(type.is_dict()){
-			const auto res = resolve_func(gen_acc.gen.function_defs, "release_dict");
-			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
+			if(is_dict_cppmap(type)){
+				const auto res = resolve_func(gen_acc.gen.function_defs, "release_dict_cppmap");
+				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
+			}
+			else if(is_dict_hamt(type)){
+				const auto res = resolve_func(gen_acc.gen.function_defs, "release_dict_hamt");
+				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
+			}
+			else{
+				QUARK_ASSERT(false);
+			}
 		}
 		else if(type.is_json()){
 			const auto res = resolve_func(gen_acc.gen.function_defs, "release_json");
@@ -1324,8 +1343,6 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 
 
 
-
-//??? Keep typeid_t for each, then convert to LLVM type. Can't go the other way.
 std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	const std::vector<std::vector<function_bind_t>> result0 = {
 		floydrt_alloc_kstr__make(context, type_lookup),

@@ -1211,46 +1211,67 @@ void retain_value(value_backend_t& backend, runtime_value_t value, itype_t itype
 
 
 
-
-void release_dict(value_backend_t& backend, runtime_value_t dict0, itype_t itype){
+void release_dict_cppmap(value_backend_t& backend, runtime_value_t dict0, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dict0.check_invariant());
 	QUARK_ASSERT(itype.is_dict());
+	QUARK_ASSERT(is_dict_cppmap(itype));
+
+	auto& dict = *dict0.dict_cppmap_ptr;
+	if(dec_rc(dict.alloc) == 0){
+
+		//	Release all elements.
+		const auto element_type2 = lookup_dict_value_itype(backend, itype);
+		if(is_rc_value(element_type2)){
+			auto m = dict.get_map();
+			for(const auto& e: m){
+				release_value(backend, e.second, element_type2);
+			}
+		}
+		dispose_dict_cppmap(dict0);
+	}
+}
+
+void release_dict_hamt(value_backend_t& backend, runtime_value_t dict0, itype_t itype){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(dict0.check_invariant());
+	QUARK_ASSERT(itype.is_dict());
+	QUARK_ASSERT(is_dict_hamt(itype));
+
+	auto& dict = *dict0.dict_hamt_ptr;
+	if(dec_rc(dict.alloc) == 0){
+
+		//	Release all elements.
+		const auto element_type2 = lookup_dict_value_itype(backend, itype);
+		if(is_rc_value(element_type2)){
+			auto m = dict.get_map();
+			for(const auto& e: m){
+				release_value(backend, e.second, element_type2);
+			}
+		}
+		dispose_dict_hamt(dict0);
+	}
+}
+
+void release_dict(value_backend_t& backend, runtime_value_t dict, itype_t itype){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(dict.check_invariant());
+	QUARK_ASSERT(itype.is_dict());
 
 	if(is_dict_cppmap(itype)){
-		auto& dict = *dict0.dict_cppmap_ptr;
-		if(dec_rc(dict.alloc) == 0){
-
-			//	Release all elements.
-			const auto element_type2 = lookup_dict_value_itype(backend, itype);
-			if(is_rc_value(element_type2)){
-				auto m = dict.get_map();
-				for(const auto& e: m){
-					release_value(backend, e.second, element_type2);
-				}
-			}
-			dispose_dict_cppmap(dict0);
-		}
+		release_dict_cppmap(backend, dict, itype);
 	}
 	else if(is_dict_hamt(itype)){
-		auto& dict = *dict0.dict_hamt_ptr;
-		if(dec_rc(dict.alloc) == 0){
-
-			//	Release all elements.
-			const auto element_type2 = lookup_dict_value_itype(backend, itype);
-			if(is_rc_value(element_type2)){
-				auto m = dict.get_map();
-				for(const auto& e: m){
-					release_value(backend, e.second, element_type2);
-				}
-			}
-			dispose_dict_hamt(dict0);
-		}
+		release_dict_hamt(backend, dict, itype);
 	}
 	else{
 		QUARK_ASSERT(false);
 	}
 }
+
+
+
+
 
 void release_vector_carray_pod(value_backend_t& backend, runtime_value_t vec, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
