@@ -669,11 +669,14 @@ static std::vector<function_bind_t> floydrt_allocate_struct__make(llvm::LLVMCont
 
 
 
+
+
 //??? Struct POD doesn't need any RC
 //??? optimize for speed. Most things can be precalculated.
 //??? Generate an add_ref-function for each struct type.
-
 //??? Inline store of new member -- same as generate_resolve_member_expression().
+
+//	Make copy of struct, overwrite member in copy.
 static const STRUCT_T* floydrt_update_struct_member_nonpod(floyd_runtime_t* frp, STRUCT_T* s, runtime_type_t struct_type, int64_t member_index, runtime_value_t new_value, runtime_type_t new_value_type){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(s != nullptr);
@@ -683,37 +686,30 @@ static const STRUCT_T* floydrt_update_struct_member_nonpod(floyd_runtime_t* frp,
 	const auto& new_value_type0 = lookup_type_ref(r.backend, new_value_type);
 	QUARK_ASSERT(type0.is_struct());
 
-	const auto source_struct_ptr = s;
 
+	//??? struct_type find_struct_layout() is SLOW right now.
+	const std::pair<itype_t, struct_layout_t>& struct_layout_info = find_struct_layout(r.backend, itype_t(struct_type));
 
-	const auto& struct_def = type0.get_struct();
-
-	const auto member_value = from_runtime_value(r, new_value, new_value_type0);
-
-	//	Make copy of struct, overwrite member in copy.
-
-	auto& struct_type_llvm = *get_exact_struct_type_noptr(r.type_lookup, type0);
-
-	const llvm::DataLayout& data_layout = r.ee->getDataLayout();
-	const llvm::StructLayout* layout = data_layout.getStructLayout(&struct_type_llvm);
-	const auto struct_bytes = layout->getSizeInBytes();
-
-	auto struct_ptr = alloc_struct_copy(r.backend.heap, reinterpret_cast<const uint64_t*>(source_struct_ptr->get_data_ptr()), struct_bytes, itype_t(struct_type));
+	const auto struct_bytes = struct_layout_info.second.size;
+	auto struct_ptr = alloc_struct_copy(r.backend.heap, reinterpret_cast<const uint64_t*>(s->get_data_ptr()), struct_bytes, itype_t(struct_type));
 	auto struct_base_ptr = struct_ptr->get_data_ptr();
 
-	const auto member_offset = layout->getElementOffset(static_cast<int>(member_index));
+	const auto member_offset = struct_layout_info.second.offsets[member_index];
 	const auto member_ptr0 = reinterpret_cast<void*>(struct_base_ptr + member_offset);
+
+	//	??? Converts to value_t! Slow!
+	const auto member_value = from_runtime_value(r, new_value, new_value_type0);
 	store_via_ptr(r, new_value_type0, member_ptr0, member_value);
 
 	//	Retain every member of new struct.
 	{
 		int i = 0;
+		const auto& struct_def = type0.get_struct();
 		for(const auto& e: struct_def._members){
 			const auto member_itype = lookup_itype(r.backend, e._type);
 			if(is_rc_value(member_itype)){
-				const auto offset = layout->getElementOffset(i);
+				const auto offset = struct_layout_info.second.offsets[i];
 				const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
-
 
 				retain_value(r.backend, *member_ptr, member_itype);
 			}
