@@ -436,23 +436,19 @@ llvm::Value* generate_lookup_dict(llvm_function_generator_t& gen_acc, llvm::Valu
 
 
 
-//??? split into several functions
-static void floydrt_store_dict_mutable(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t key, runtime_value_t element_value){
+static void floydrt_store_dict_mutable_cppmap(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t key, runtime_value_t element_value){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto& type0 = lookup_type_ref(r.backend, type);
-	if(is_dict_cppmap(itype_t(type))){
-		const auto key_string = from_runtime_string(r, key);
-		dict.dict_cppmap_ptr->get_map_mut().insert_or_assign(key_string, element_value);
-	}
-	else if(is_dict_hamt(itype_t(type))){
-		const auto key_string = from_runtime_string(r, key);
-		dict.dict_hamt_ptr->get_map_mut() = dict.dict_hamt_ptr->get_map_mut().set(key_string, element_value);
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
+	QUARK_ASSERT(is_dict_cppmap(itype_t(type)));
+	const auto key_string = from_runtime_string(r, key);
+	dict.dict_cppmap_ptr->get_map_mut().insert_or_assign(key_string, element_value);
+}
+static void floydrt_store_dict_mutable_hamt(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t key, runtime_value_t element_value){
+	auto& r = get_floyd_runtime(frp);
 
+	QUARK_ASSERT(is_dict_hamt(itype_t(type)));
+	const auto key_string = from_runtime_string(r, key);
+	dict.dict_hamt_ptr->get_map_mut() = dict.dict_hamt_ptr->get_map_mut().set(key_string, element_value);
 }
 
 static std::vector<function_bind_t> floydrt_store_dict_mutable__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -467,7 +463,10 @@ static std::vector<function_bind_t> floydrt_store_dict_mutable__make(llvm::LLVMC
 		},
 		false
 	);
-	return {{ "store_dict_mutable", function_type, reinterpret_cast<void*>(floydrt_store_dict_mutable) }};
+	return {
+		{ "store_dict_mutable_cppmap", function_type, reinterpret_cast<void*>(floydrt_store_dict_mutable_cppmap) },
+		{ "store_dict_mutable_hamt", function_type, reinterpret_cast<void*>(floydrt_store_dict_mutable_hamt) }
+	};
 }
 
 void generate_store_dict_mutable(llvm_function_generator_t& gen_acc, llvm::Value& dict_reg, const typeid_t& dict_type, llvm::Value& key_reg, llvm::Value& value_reg, bool dict_is_hamt){
@@ -475,7 +474,7 @@ void generate_store_dict_mutable(llvm_function_generator_t& gen_acc, llvm::Value
 	QUARK_ASSERT(dict_type.check_invariant());
 	QUARK_ASSERT(is_dict_cppmap(dict_type) || is_dict_hamt(dict_type));
 
-	const auto res = resolve_func(gen_acc.gen.function_defs, dict_is_hamt ? "store_dict_mutable" : "store_dict_mutable");
+	const auto res = resolve_func(gen_acc.gen.function_defs, dict_is_hamt ? "store_dict_mutable_hamt" : "store_dict_mutable_cppmap");
 
 	const auto& element_type0 = dict_type.get_dict_value_type();
 	auto& dict_itype_reg = *generate_itype_constant(gen_acc.gen, dict_type);
