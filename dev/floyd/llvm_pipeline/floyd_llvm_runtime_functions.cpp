@@ -366,11 +366,11 @@ static runtime_value_t floydrt_lookup_dict_cppmap(floyd_runtime_t* frp, runtime_
 	}
 }
 
-//??? optimize
+//??? make faster key without creating std::string.
 static runtime_value_t floydrt_lookup_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t s){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto& type0 = lookup_type_ref(r.backend, type);
+//	const auto& type0 = lookup_type_ref(r.backend, type);
 	QUARK_ASSERT(is_dict_hamt(itype_t(type)));
 
 	const auto& m = dict.dict_hamt_ptr->get_map();
@@ -417,41 +417,22 @@ llvm::Value* generate_lookup_dict(llvm_function_generator_t& gen_acc, llvm::Valu
 	QUARK_ASSERT(dict_type.check_invariant());
 	QUARK_ASSERT(is_dict_cppmap(dict_type) || is_dict_hamt(dict_type));
 
-///????sahre code
-	if(dict_is_hamt == false){
-		const auto element_type0 = dict_type.get_dict_value_type();
-		const auto dict_itype_reg = generate_itype_constant(gen_acc.gen, dict_type);
-		auto& builder = gen_acc.get_builder();
+	const auto res = resolve_func(gen_acc.gen.function_defs, dict_is_hamt ? "lookup_dict_hamt" : "lookup_dict_cppmap");
 
-		std::vector<llvm::Value*> args2 = {
-			gen_acc.get_callers_fcp(),
-			&dict_reg,
-			dict_itype_reg,
-			&key_reg
-		};
+	const auto element_type0 = dict_type.get_dict_value_type();
+	const auto dict_itype_reg = generate_itype_constant(gen_acc.gen, dict_type);
+	auto& builder = gen_acc.get_builder();
 
-		const auto res = resolve_func(gen_acc.gen.function_defs, "lookup_dict_cppmap");
-		auto element_value_uint64_reg = builder.CreateCall(res.llvm_codegen_f, args2, "");
-		auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
-		return result_reg;
-	}
-	else {
-		const auto element_type0 = dict_type.get_dict_value_type();
-		const auto dict_itype_reg = generate_itype_constant(gen_acc.gen, dict_type);
-		auto& builder = gen_acc.get_builder();
-
-		std::vector<llvm::Value*> args2 = {
-			gen_acc.get_callers_fcp(),
-			&dict_reg,
-			dict_itype_reg,
-			&key_reg
-		};
-
-		const auto res = resolve_func(gen_acc.gen.function_defs, "lookup_dict_hamt");
-		auto element_value_uint64_reg = builder.CreateCall(res.llvm_codegen_f, args2, "");
-		auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
-		return result_reg;
+	std::vector<llvm::Value*> args2 = {
+		gen_acc.get_callers_fcp(),
+		&dict_reg,
+		dict_itype_reg,
+		&key_reg
 	};
+
+	auto element_value_uint64_reg = builder.CreateCall(res.llvm_codegen_f, args2, "");
+	auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
+	return result_reg;
 }
 
 
