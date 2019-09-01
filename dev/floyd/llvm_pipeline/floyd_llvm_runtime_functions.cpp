@@ -864,7 +864,7 @@ llvm::Value* generate_update_struct_member(llvm_function_generator_t& gen_acc, l
 		return copy_reg;
 	}
 	else{
-		const auto res = resolve_func(gen_acc.gen.function_defs, "update_struct_member_nopod");
+		const auto res = resolve_func(gen_acc.gen.function_defs, "update_struct_member_nonpod");
 
 		std::vector<llvm::Value*> args = {
 			gen_acc.get_callers_fcp(),

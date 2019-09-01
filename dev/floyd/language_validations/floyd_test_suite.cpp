@@ -4577,6 +4577,25 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "access member of nested structs"
 	);
 }
 
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "Update struct member that is a POD", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			struct color { int red int green int blue }
+			struct image { color back color front }
+
+			let a = image(color(1, 2, 3), color(4, 5, 6))
+
+			let b = update(a, front, color(7, 8, 9))
+			print(b)
+
+		)",
+		{ "{back={red=1, green=2, blue=3}, front={red=7, green=8, blue=9}}" }
+	);
+}
+
+
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "return struct from function", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
