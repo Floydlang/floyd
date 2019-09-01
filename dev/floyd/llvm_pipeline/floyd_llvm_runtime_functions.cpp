@@ -109,16 +109,16 @@ static function_bind_t floydrt_allocate_vector_hamt__make(llvm::LLVMContext& con
 	return { "allocate_vector_hamt", function_type, reinterpret_cast<void*>(floydrt_allocate_vector_hamt) };
 }
 
-llvm::Value* generate_allocate_vector(const std::vector<function_def_t>& defs, llvm::IRBuilder<>& builder, llvm::Value& frp_reg, llvm::Value& vector_type_reg, int64_t element_count, vector_backend vector_backend){
+llvm::Value* generate_allocate_vector(const std::vector<function_def_t>& defs, llvm::IRBuilder<>& builder, llvm::Value& frp_reg, llvm::Value& vector_itype_reg, int64_t element_count, vector_backend vector_backend){
 	const auto element_count_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(builder.getContext()), element_count);
 
 	if(vector_backend == vector_backend::carray){
 		const auto res = resolve_func(defs, "allocate_vector_carray");
-		return builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &vector_type_reg, element_count_reg }, "");
+		return builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &vector_itype_reg, element_count_reg }, "");
 	}
 	else if(vector_backend == vector_backend::hamt){
 		const auto res = resolve_func(defs, "allocate_vector_hamt");
-		return builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &vector_type_reg, element_count_reg }, "");
+		return builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &vector_itype_reg, element_count_reg }, "");
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -877,57 +877,39 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 	QUARK_ASSERT(type.check_invariant());
 
 	auto& frp_reg = *gen_acc.get_callers_fcp();
-	auto& type_reg = *generate_itype_constant(gen_acc.gen, type);
+	auto& itype_reg = *generate_itype_constant(gen_acc.gen, type);
 	auto& builder = gen_acc.get_builder();
 
 	if(is_rc_value(type)){
-		if(type.is_string() || type.is_vector()){
-			if(is_vector_hamt(type)){
-				std::vector<llvm::Value*> args = {
-					&frp_reg,
-					&value_reg,
-					&type_reg
-				};
+		if(type.is_string()){
+			const auto res = resolve_func(gen_acc.gen.function_defs, "retain_vector_carray");
+			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
+		}
+		else if(type.is_vector()){
+			if(is_vector_carray(type)){
+				const auto res = resolve_func(gen_acc.gen.function_defs, "retain_vector_carray");
+				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
+			}
+			else if(is_vector_hamt(type)){
 				const auto res = resolve_func(gen_acc.gen.function_defs, "retain_vector_hamt");
-				builder.CreateCall(res.llvm_codegen_f, args, "");
+				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
 			else{
-				std::vector<llvm::Value*> args = {
-					&frp_reg,
-					&value_reg,
-					&type_reg
-				};
-				const auto res = resolve_func(gen_acc.gen.function_defs, "retain_vector_carray");
-				builder.CreateCall(res.llvm_codegen_f, args, "");
+				QUARK_ASSERT(false);
 			}
 		}
 		else if(type.is_dict()){
-			std::vector<llvm::Value*> args = {
-				&frp_reg,
-				&value_reg,
-				&type_reg
-			};
 			const auto res = resolve_func(gen_acc.gen.function_defs, "retain_dict");
-			builder.CreateCall(res.llvm_codegen_f, args, "");
+			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 		}
 		else if(type.is_json()){
-			std::vector<llvm::Value*> args = {
-				&frp_reg,
-				&value_reg,
-				&type_reg
-			};
 			const auto res = resolve_func(gen_acc.gen.function_defs, "retain_json");
-			builder.CreateCall(res.llvm_codegen_f, args, "");
+			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 		}
 		else if(type.is_struct()){
 			auto generic_vec_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value_reg, get_generic_struct_type(gen_acc.gen.type_lookup)->getPointerTo(), "");
-			std::vector<llvm::Value*> args = {
-				&frp_reg,
-				generic_vec_reg,
-				&type_reg
-			};
 			const auto res = resolve_func(gen_acc.gen.function_defs, "retain_struct");
-			builder.CreateCall(res.llvm_codegen_f, args, "");
+			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, generic_vec_reg, &itype_reg }, "");
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -942,7 +924,6 @@ static llvm::FunctionType* make_retain(llvm::LLVMContext& context, const llvm_ty
 		llvm::Type::getVoidTy(context),
 		{
 			make_frp_type(type_lookup),
-//			make_generic_vec_type(type_lookup)->getPointerTo(),
 			&collection_type,
 			make_runtime_type_type(type_lookup)
 		},
@@ -969,15 +950,28 @@ std::vector<function_bind_t> retain_funcs(llvm::LLVMContext& context, const llvm
 
 
 
-//??? Does release_vector_carray AND release_vector_hamt_NONPOD.
-static void floydrt_release_vector_fallback(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
+static void floydrt_release_vector_carray_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(type.is_string() || type.is_vector());
+	QUARK_ASSERT(type.is_string() || is_vector_carray(itype_t(type0)));
+	if(itype_t(type0).is_vector()){
+		QUARK_ASSERT(is_rc_value(lookup_itype(r.backend, type.get_vector_element_type())) == false);
+	}
 #endif
 
-	release_vec(r.backend, vec, itype_t(type0));
+	release_vector_carray_pod(r.backend, vec, itype_t(type0));
+}
+
+static void floydrt_release_vector_carray_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
+	auto& r = get_floyd_runtime(frp);
+#if DEBUG
+	const auto& type = lookup_type_ref(r.backend, type0);
+	QUARK_ASSERT(is_vector_carray(itype_t(type0)));
+	QUARK_ASSERT(is_rc_value(lookup_itype(r.backend, type.get_vector_element_type())) == true);
+#endif
+
+	release_vector_carray_nonpod(r.backend, vec, itype_t(type0));
 }
 
 static void floydrt_release_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
@@ -989,6 +983,17 @@ static void floydrt_release_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_
 #endif
 
 	release_vector_hamt_pod(r.backend, vec, itype_t(type0));
+}
+
+static void floydrt_release_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
+	auto& r = get_floyd_runtime(frp);
+#if DEBUG
+	const auto& type = lookup_type_ref(r.backend, type0);
+	QUARK_ASSERT(is_vector_hamt(itype_t(type0)));
+	QUARK_ASSERT(is_rc_value(lookup_itype(r.backend, type.get_vector_element_type())) == true);
+#endif
+
+	release_vector_hamt_nonpod(r.backend, vec, itype_t(type0));
 }
 
 
@@ -1037,7 +1042,6 @@ static llvm::FunctionType* make_release(llvm::LLVMContext& context, const llvm_t
 		{
 			make_frp_type(type_lookup),
 			&collection_type,
-//			make_generic_vec_type(type_lookup)->getPointerTo(),
 			make_runtime_type_type(type_lookup)
 		},
 		false
@@ -1046,8 +1050,10 @@ static llvm::FunctionType* make_release(llvm::LLVMContext& context, const llvm_t
 
 std::vector<function_bind_t> release_funcs(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	return std::vector<function_bind_t> {
+		function_bind_t{ "release_vector_carray_pod", make_release(context, type_lookup, *make_generic_vec_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_vector_carray_pod) },
+		function_bind_t{ "release_vector_carray_nonpod", make_release(context, type_lookup, *make_generic_vec_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_vector_carray_nonpod) },
 		function_bind_t{ "release_vector_hamt_pod", make_release(context, type_lookup, *make_generic_vec_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_vector_hamt_pod) },
-		function_bind_t{ "release_vector_fallback", make_release(context, type_lookup, *make_generic_vec_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_vector_fallback) },
+		function_bind_t{ "release_vector_hamt_nonpod", make_release(context, type_lookup, *make_generic_vec_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_vector_hamt_nonpod) },
 		function_bind_t{ "release_dict", make_release(context, type_lookup, *make_generic_dict_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_dict) },
 		function_bind_t{ "release_json", make_release(context, type_lookup, *get_llvm_type_as_arg(type_lookup, typeid_t::make_json())), reinterpret_cast<void*>(floydrt_release_json) },
 		function_bind_t{ "release_struct", make_release(context, type_lookup, *get_generic_struct_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_struct) }
@@ -1058,54 +1064,49 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
+	auto& frp_reg = *gen_acc.get_callers_fcp();
+	auto& itype_reg = *generate_itype_constant(gen_acc.gen, type);
 	auto& builder = gen_acc.get_builder();
+
 	if(is_rc_value(type)){
-		if(type.is_string() || type.is_vector()){
-			if(is_vector_hamt(type) && is_rc_value(type.get_vector_element_type()) == false){
-				std::vector<llvm::Value*> args = {
-					gen_acc.get_callers_fcp(),
-					&value_reg,
-					generate_itype_constant(gen_acc.gen, type)
-				};
+		if(type.is_string()){
+			const auto res = resolve_func(gen_acc.gen.function_defs, "release_vector_carray_pod");
+			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
+		}
+		else if(type.is_vector()){
+			const bool is_element_pod = is_rc_value(type.get_vector_element_type()) ? false : true;
+
+			if(is_vector_carray(type) && is_element_pod == true){
+				const auto res = resolve_func(gen_acc.gen.function_defs, "release_vector_carray_pod");
+				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
+			}
+			else if(is_vector_carray(type) && is_element_pod == false){
+				const auto res = resolve_func(gen_acc.gen.function_defs, "release_vector_carray_nonpod");
+				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
+			}
+			else if(is_vector_hamt(type) && is_element_pod == true){
 				const auto res = resolve_func(gen_acc.gen.function_defs, "release_vector_hamt_pod");
-				builder.CreateCall(res.llvm_codegen_f, args);
+				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
+			}
+			else if(is_vector_hamt(type) && is_element_pod == false){
+				const auto res = resolve_func(gen_acc.gen.function_defs, "release_vector_hamt_nonpod");
+				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}
 			else{
-				std::vector<llvm::Value*> args = {
-					gen_acc.get_callers_fcp(),
-					&value_reg,
-					generate_itype_constant(gen_acc.gen, type)
-				};
-				const auto res = resolve_func(gen_acc.gen.function_defs, "release_vector_fallback");
-				builder.CreateCall(res.llvm_codegen_f, args);
+				QUARK_ASSERT(false);
 			}
 		}
 		else if(type.is_dict()){
-			std::vector<llvm::Value*> args = {
-				gen_acc.get_callers_fcp(),
-				&value_reg,
-				generate_itype_constant(gen_acc.gen, type)
-			};
 			const auto res = resolve_func(gen_acc.gen.function_defs, "release_dict");
-			builder.CreateCall(res.llvm_codegen_f, args);
+			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 		}
 		else if(type.is_json()){
-			std::vector<llvm::Value*> args = {
-				gen_acc.get_callers_fcp(),
-				&value_reg,
-				generate_itype_constant(gen_acc.gen, type)
-			};
 			const auto res = resolve_func(gen_acc.gen.function_defs, "release_json");
-			builder.CreateCall(res.llvm_codegen_f, args);
+			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 		}
 		else if(type.is_struct()){
-			std::vector<llvm::Value*> args = {
-				gen_acc.get_callers_fcp(),
-				&value_reg,
-				generate_itype_constant(gen_acc.gen, type)
-			};
 			const auto res = resolve_func(gen_acc.gen.function_defs, "release_struct");
-			builder.CreateCall(res.llvm_codegen_f, args);
+			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -1157,7 +1158,7 @@ std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& conte
 	return result2;
 }
 
-//??? wrap app builder.CreateCalls() makes codegen typesafe too!
+
 
 
 

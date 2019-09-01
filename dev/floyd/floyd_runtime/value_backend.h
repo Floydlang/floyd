@@ -849,6 +849,7 @@ inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t ve
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(itype.check_invariant());
 	QUARK_ASSERT(is_vector_hamt(itype));
+	QUARK_ASSERT(is_rc_value(lookup_vector_element_itype(backend, itype)) == false);
 
 	if(dec_rc(vec.vector_hamt_ptr->alloc) == 0){
 		dispose_vector_hamt(vec);
@@ -860,6 +861,7 @@ inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(itype.check_invariant());
 	QUARK_ASSERT(is_vector_hamt(itype));
+	QUARK_ASSERT(is_rc_value(lookup_vector_element_itype(backend, itype)) == true);
 
 	if(dec_rc(vec.vector_hamt_ptr->alloc) == 0){
 		release_vector_hamt_elements_internal(backend, vec, itype);

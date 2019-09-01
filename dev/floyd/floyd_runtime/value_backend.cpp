@@ -1238,18 +1238,11 @@ void release_vector_carray_pod(value_backend_t& backend, runtime_value_t vec, it
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(itype.check_invariant());
 	QUARK_ASSERT(itype.is_string() || is_vector_carray(itype));
-	QUARK_ASSERT(is_rc_value(lookup_vector_element_itype(backend, itype)) == false);
+	if(itype.is_vector()){
+		QUARK_ASSERT(is_rc_value(lookup_vector_element_itype(backend, itype)) == false);
+	}
 
 	if(dec_rc(vec.vector_carray_ptr->alloc) == 0){
-		//	Release all elements.
-		{
-			const auto element_type = lookup_vector_element_itype(backend, itype);
-			auto element_ptr = vec.vector_carray_ptr->get_element_ptr();
-			for(int i = 0 ; i < vec.vector_carray_ptr->get_element_count() ; i++){
-				const auto& element = element_ptr[i];
-				release_value(backend, element, element_type);
-			}
-		}
 		dispose_vector_carray(vec);
 	}
 }
