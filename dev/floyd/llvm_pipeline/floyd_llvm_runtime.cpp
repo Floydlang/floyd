@@ -507,8 +507,8 @@ std::string strip_link_name(const std::string& s){
 }
 #else
 std::string strip_link_name(const std::string& platform_link_name){
-	QUARK_ASSERT(s.empty() == false);
-	return s;
+	QUARK_ASSERT(platform_link_name.empty() == false);
+	return platform_link_name;
 }
 #endif
 
