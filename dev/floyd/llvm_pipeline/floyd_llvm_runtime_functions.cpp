@@ -672,7 +672,8 @@ static std::vector<function_bind_t> floydrt_allocate_struct__make(llvm::LLVMCont
 //??? Struct POD doesn't need any RC
 //??? optimize for speed. Most things can be precalculated.
 //??? Generate an add_ref-function for each struct type.
-static const STRUCT_T* floydrt_update_struct_member(floyd_runtime_t* frp, STRUCT_T* s, runtime_type_t struct_type, int64_t member_index, runtime_value_t new_value, runtime_type_t new_value_type){
+
+static const STRUCT_T* floydrt_update_struct_member_nonpod(floyd_runtime_t* frp, STRUCT_T* s, runtime_type_t struct_type, int64_t member_index, runtime_value_t new_value, runtime_type_t new_value_type){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(s != nullptr);
 	QUARK_ASSERT(member_index != -1);
@@ -721,6 +722,11 @@ static const STRUCT_T* floydrt_update_struct_member(floyd_runtime_t* frp, STRUCT
 
 	return struct_ptr;
 }
+
+static const STRUCT_T* floydrt_update_struct_member_pod(floyd_runtime_t* frp, STRUCT_T* s, runtime_type_t struct_type, int64_t member_index, runtime_value_t new_value, runtime_type_t new_value_type){
+	return floydrt_update_struct_member_nonpod(frp, s, struct_type, member_index, new_value, new_value_type);
+}
+
 static std::vector<function_bind_t> floydrt_update_struct_member__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		get_generic_struct_type(type_lookup)->getPointerTo(),
@@ -734,7 +740,24 @@ static std::vector<function_bind_t> floydrt_update_struct_member__make(llvm::LLV
 		},
 		false
 	);
-	return {{ "update_struct_member", function_type, reinterpret_cast<void*>(floydrt_update_struct_member) }};
+	return {
+		{ "update_struct_member_pod", function_type, reinterpret_cast<void*>(floydrt_update_struct_member_pod) },
+		{ "update_struct_member_nonpod", function_type, reinterpret_cast<void*>(floydrt_update_struct_member_nonpod) }
+	};
+}
+
+
+//??? Precalc and store in struct_layout_t.
+static bool is_struct_pod(const struct_definition_t& struct_def){
+	QUARK_ASSERT(struct_def.check_invariant());
+
+	for(const auto& e: struct_def._members){
+		const auto& member_type = e._type;
+		if(is_rc_value(member_type)){
+			return false;
+		}
+	}
+	return true;
 }
 
 llvm::Value* generate_update_struct_member(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const typeid_t& struct_type, int member_index, llvm::Value& value_reg){
@@ -749,6 +772,8 @@ llvm::Value* generate_update_struct_member(llvm_function_generator_t& gen_acc, l
 	auto member_index_reg = llvm::ConstantInt::get(builder.getInt64Ty(), member_index);
 	const auto member_type = struct_def._members[member_index]._type;
 
+	const bool pod = is_struct_pod(struct_def);
+
 	std::vector<llvm::Value*> args2 = {
 		gen_acc.get_callers_fcp(),
 
@@ -760,7 +785,10 @@ llvm::Value* generate_update_struct_member(llvm_function_generator_t& gen_acc, l
 		generate_cast_to_runtime_value(gen_acc.gen, value_reg, member_type),
 		generate_itype_constant(gen_acc.gen, member_type)
 	};
-	auto result_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_update_struct_member.llvm_codegen_f, args2, "");
+
+	const std::string n = pod ? "update_struct_member_pod" : "update_struct_member_nopod";
+	const auto res = resolve_func(gen_acc.gen.function_defs, n);
+	auto result_reg = builder.CreateCall(res.llvm_codegen_f, args2, "");
 	return result_reg;
 }
 
@@ -1282,8 +1310,6 @@ runtime_functions_t::runtime_functions_t(const std::vector<function_def_t>& func
 
 
 	floydrt_allocate_struct(resolve_func(function_defs, "allocate_struct")),
-	floydrt_update_struct_member(resolve_func(function_defs, "update_struct_member")),
-
 
 	floydrt_compare_values(resolve_func(function_defs, "compare_values")),
 

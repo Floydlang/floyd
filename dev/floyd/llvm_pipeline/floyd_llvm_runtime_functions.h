@@ -50,7 +50,6 @@ struct runtime_functions_t {
 	const function_def_t floydrt_json_to_string;
 
 	const function_def_t floydrt_allocate_struct;
-	const function_def_t floydrt_update_struct_member;
 
 	const function_def_t floydrt_compare_values;
 
