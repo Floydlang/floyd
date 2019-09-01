@@ -109,22 +109,31 @@ static function_bind_t floydrt_allocate_vector_hamt__make(llvm::LLVMContext& con
 	return { "allocate_vector_hamt", function_type, reinterpret_cast<void*>(floydrt_allocate_vector_hamt) };
 }
 
-//??? use llvm_function_generator_t& gen_acc
-llvm::Value* generate_allocate_vector(const std::vector<function_def_t>& defs, llvm::IRBuilder<>& builder, llvm::Value& frp_reg, llvm::Value& vector_itype_reg, int64_t element_count, vector_backend vector_backend){
+llvm::Value* generate_allocate_vector(llvm_function_generator_t& gen_acc, const typeid_t& vector_type, int64_t element_count, vector_backend vector_backend){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(vector_type.check_invariant());
+	QUARK_ASSERT(element_count >= 0);
+
+	auto& frp_reg = *gen_acc.get_callers_fcp();
+	auto& builder = gen_acc.get_builder();
+
+	const auto vector_itype_reg = generate_itype_constant(gen_acc.gen, vector_type);
 	const auto element_count_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(builder.getContext()), element_count);
 
+	std::string n;
 	if(vector_backend == vector_backend::carray){
-		const auto res = resolve_func(defs, "allocate_vector_carray");
-		return builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &vector_itype_reg, element_count_reg }, "");
+		n = "allocate_vector_carray";
 	}
 	else if(vector_backend == vector_backend::hamt){
-		const auto res = resolve_func(defs, "allocate_vector_hamt");
-		return builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &vector_itype_reg, element_count_reg }, "");
+		n = "allocate_vector_hamt";
 	}
 	else{
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
+
+	const auto res = resolve_func(gen_acc.gen.function_defs, n);
+	return builder.CreateCall(res.llvm_codegen_f, { &frp_reg, vector_itype_reg, element_count_reg }, "");
 }
 
 
@@ -345,15 +354,10 @@ static function_bind_t floydrt_allocate_dict__make(llvm::LLVMContext& context, c
 
 
 
-//??? optimize
-//??? split into several functions
-//??? How to avoid creating std::string() each lookup?
 static runtime_value_t floydrt_lookup_dict_cppmap(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t s){
 	auto& r = get_floyd_runtime(frp);
 
 	QUARK_ASSERT(is_dict_cppmap(itype_t(type)));
-
-	const auto& type0 = lookup_type_ref(r.backend, type);
 
 	const auto& m = dict.dict_cppmap_ptr->get_map();
 	const auto key_string = from_runtime_string(r, s);

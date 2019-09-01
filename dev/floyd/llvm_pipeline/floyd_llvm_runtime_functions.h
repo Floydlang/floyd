@@ -60,7 +60,7 @@ struct runtime_functions_t {
 };
 
 
-llvm::Value* generate_allocate_vector(const std::vector<function_def_t>& function_defs, llvm::IRBuilder<>& builder, llvm::Value& frp_reg, llvm::Value& vector_type_reg, int64_t element_count, vector_backend vector_backend);
+llvm::Value* generate_allocate_vector(llvm_function_generator_t& gen_acc, const typeid_t& vector_type, int64_t element_count, vector_backend vector_backend);
 llvm::Value* generate_lookup_dict(llvm_function_generator_t& gen_acc, llvm::Value& dict_reg, const typeid_t& dict_type, llvm::Value& key_reg, bool dict_is_hamt);
 
 
