@@ -26,4 +26,20 @@ llvm::Constant* generate_itype_constant(const llvm_code_generator_t& gen_acc, co
 
 
 
+llvm::Value* generate_cast_to_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const typeid_t& floyd_type){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(floyd_type.check_invariant());
+
+	auto& builder = gen_acc.get_builder();
+	return generate_cast_to_runtime_value2(builder, gen_acc.type_lookup, value, floyd_type);
+}
+
+llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& runtime_value_reg, const typeid_t& type){
+	auto& builder = gen_acc.get_builder();
+	return generate_cast_from_runtime_value2(builder, gen_acc.type_lookup, runtime_value_reg, type);
+}
+
+
+
+
 }	//	floyd

@@ -184,22 +184,6 @@ std::string print_program(const llvm_ir_program_t& program){
 
 
 
-
-static llvm::Value* generate_cast_to_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const typeid_t& floyd_type){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(floyd_type.check_invariant());
-
-	auto& builder = gen_acc.get_builder();
-	return generate_cast_to_runtime_value2(builder, gen_acc.type_lookup, value, floyd_type);
-}
-
-static llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& runtime_value_reg, const typeid_t& type){
-	auto& builder = gen_acc.get_builder();
-	return generate_cast_from_runtime_value2(builder, gen_acc.type_lookup, runtime_value_reg, type);
-}
-
-
-
 resolved_symbol_t make_resolved_symbol(llvm::Value* value_ptr, std::string debug_str, resolved_symbol_t::esymtype t, const std::string& symbol_name, const symbol_t& symbol){
 	QUARK_ASSERT(value_ptr != nullptr);
 
@@ -642,6 +626,7 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 		const auto element_type0 = parent_type.get_dict_value_type();
 		const auto dict_type_reg = generate_itype_constant(gen_acc.gen, parent_type);
 
+/*
 		std::vector<llvm::Value*> args2 = {
 			gen_acc.get_callers_fcp(),
 			parent_reg,
@@ -649,6 +634,7 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 			key_reg
 		};
 		auto element_value_uint64_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_lookup_dict.llvm_codegen_f, args2, "");
+*/		auto element_value_uint64_reg = generate_lookup_dict(gen_acc, *parent_reg, parent_type, *key_reg, is_dict_hamt(parent_type));
 		auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
 
 		generate_retain(gen_acc, *result_reg, element_type0);

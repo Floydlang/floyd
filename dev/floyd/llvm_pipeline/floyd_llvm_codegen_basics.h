@@ -166,6 +166,10 @@ struct llvm_function_generator_t {
 llvm::Constant* generate_itype_constant(const llvm_code_generator_t& gen_acc, const typeid_t& type);
 
 
+llvm::Value* generate_cast_to_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const typeid_t& floyd_type);
+llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& runtime_value_reg, const typeid_t& type);
+
+
 }	//	floyd
 
 #endif /* floyd_llvm_codegen_basics_hpp */

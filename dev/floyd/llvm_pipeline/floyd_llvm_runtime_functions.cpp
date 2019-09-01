@@ -109,6 +109,7 @@ static function_bind_t floydrt_allocate_vector_hamt__make(llvm::LLVMContext& con
 	return { "allocate_vector_hamt", function_type, reinterpret_cast<void*>(floydrt_allocate_vector_hamt) };
 }
 
+//??? use llvm_function_generator_t& gen_acc
 llvm::Value* generate_allocate_vector(const std::vector<function_def_t>& defs, llvm::IRBuilder<>& builder, llvm::Value& frp_reg, llvm::Value& vector_itype_reg, int64_t element_count, vector_backend vector_backend){
 	const auto element_count_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(builder.getContext()), element_count);
 
@@ -268,7 +269,7 @@ static function_bind_t floydrt_push_back_hamt_pod__make(llvm::LLVMContext& conte
 
 
 
-//??? value_backend never handle RC automatically = no need to make pod/nonpod access to it.
+//	Notice: value_backend never handle RC automatically = no need to make pod/nonpod access to it.
 static runtime_value_t floydrt_load_vector_element_hamt(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type, uint64_t index){
 	auto& r = get_floyd_runtime(frp);
 	(void)r;
@@ -390,6 +391,27 @@ static function_bind_t floydrt_lookup_dict__make(llvm::LLVMContext& context, con
 		false
 	);
 	return { "lookup_dict", function_type, reinterpret_cast<void*>(floydrt_lookup_dict) };
+}
+
+
+llvm::Value* generate_lookup_dict(llvm_function_generator_t& gen_acc, llvm::Value& dict_reg, const typeid_t& dict_type, llvm::Value& key_reg, bool dict_is_hamt){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(dict_type.check_invariant());
+	QUARK_ASSERT(is_dict_cppmap(dict_type) || is_dict_hamt(dict_type));
+
+	const auto element_type0 = dict_type.get_dict_value_type();
+	const auto dict_itype_reg = generate_itype_constant(gen_acc.gen, dict_type);
+	auto& builder = gen_acc.get_builder();
+
+	std::vector<llvm::Value*> args2 = {
+		gen_acc.get_callers_fcp(),
+		&dict_reg,
+		dict_itype_reg,
+		&key_reg
+	};
+	auto element_value_uint64_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_lookup_dict.llvm_codegen_f, args2, "");
+	auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
+	return result_reg;
 }
 
 
