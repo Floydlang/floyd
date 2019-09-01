@@ -48,12 +48,10 @@ struct runtime_functions_t {
 	const function_def_t floydrt_store_dict_mutable;
 
 	const function_def_t floydrt_allocate_json;
-	const function_def_t floydrt_release_json;
 	const function_def_t floydrt_lookup_json;
 	const function_def_t floydrt_json_to_string;
 
 	const function_def_t floydrt_allocate_struct;
-	const function_def_t floydrt_release_struct;
 	const function_def_t floydrt_update_struct_member;
 
 	const function_def_t floydrt_compare_values;

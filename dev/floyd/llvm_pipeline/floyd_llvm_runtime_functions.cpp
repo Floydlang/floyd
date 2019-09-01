@@ -340,7 +340,8 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 				&value_reg,
 				generate_itype_constant(gen_acc.gen, type)
 			};
-			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_release_json.llvm_codegen_f, args);
+			const auto res = resolve_func(gen_acc.gen.function_defs, "release_json");
+			builder.CreateCall(res.llvm_codegen_f, args);
 		}
 		else if(type.is_struct()){
 			std::vector<llvm::Value*> args = {
@@ -348,7 +349,8 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 				&value_reg,
 				generate_itype_constant(gen_acc.gen, type)
 			};
-			builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_release_struct.llvm_codegen_f, args);
+			const auto res = resolve_func(gen_acc.gen.function_defs, "release_struct");
+			builder.CreateCall(res.llvm_codegen_f, args);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -365,7 +367,7 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 ////////////////////////////////		floydrt_release_vector_fallback()
 
 
-//??? only does carray - rename and calls release_vector_carray
+//??? only does carray - rename and calls release_vector_carray. NOT TRUE: does release_vector_hamt_NONPOD.
 static void floydrt_release_vector_fallback(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
@@ -1297,13 +1299,11 @@ runtime_functions_t::runtime_functions_t(const std::vector<function_def_t>& func
 
 
 	floydrt_allocate_json(resolve_func(function_defs, "allocate_json")),
-	floydrt_release_json(resolve_func(function_defs, "release_json")),
 	floydrt_lookup_json(resolve_func(function_defs, "lookup_json")),
 	floydrt_json_to_string(resolve_func(function_defs, "json_to_string")),
 
 
 	floydrt_allocate_struct(resolve_func(function_defs, "allocate_struct")),
-	floydrt_release_struct(resolve_func(function_defs, "release_struct")),
 	floydrt_update_struct_member(resolve_func(function_defs, "update_struct_member")),
 
 
