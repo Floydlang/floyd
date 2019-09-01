@@ -634,6 +634,7 @@ struct STRUCT_T {
 };
 
 STRUCT_T* alloc_struct(heap_t& heap, std::size_t size, itype_t value_type);
+STRUCT_T* alloc_struct_copy(heap_t& heap, const uint64_t data[], std::size_t size, itype_t value_type);
 void dispose_struct(STRUCT_T& v);
 
 

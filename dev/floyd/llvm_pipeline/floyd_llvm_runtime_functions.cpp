@@ -669,6 +669,7 @@ static std::vector<function_bind_t> floydrt_allocate_struct__make(llvm::LLVMCont
 
 
 
+//??? Struct POD doesn't need any RC
 //??? optimize for speed. Most things can be precalculated.
 //??? Generate an add_ref-function for each struct type.
 static const STRUCT_T* floydrt_update_struct_member(floyd_runtime_t* frp, STRUCT_T* s, runtime_type_t struct_type, int64_t member_index, runtime_value_t new_value, runtime_type_t new_value_type){
@@ -695,10 +696,8 @@ static const STRUCT_T* floydrt_update_struct_member(floyd_runtime_t* frp, STRUCT
 	const llvm::StructLayout* layout = data_layout.getStructLayout(&struct_type_llvm);
 	const auto struct_bytes = layout->getSizeInBytes();
 
-	//??? Touches memory twice.
-	auto struct_ptr = alloc_struct(r.backend.heap, struct_bytes, itype_t(struct_type));
+	auto struct_ptr = alloc_struct_copy(r.backend.heap, reinterpret_cast<const uint64_t*>(source_struct_ptr->get_data_ptr()), struct_bytes, itype_t(struct_type));
 	auto struct_base_ptr = struct_ptr->get_data_ptr();
-	std::memcpy(struct_base_ptr, source_struct_ptr->get_data_ptr(), struct_bytes);
 
 	const auto member_offset = layout->getElementOffset(static_cast<int>(member_index));
 	const auto member_ptr0 = reinterpret_cast<void*>(struct_base_ptr + member_offset);

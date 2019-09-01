@@ -831,11 +831,28 @@ bool STRUCT_T::check_invariant() const {
 }
 
 STRUCT_T* alloc_struct(heap_t& heap, std::size_t size, itype_t value_type){
+	QUARK_ASSERT(heap.check_invariant());
+	QUARK_ASSERT(value_type.check_invariant());
+
 	const auto allocation_count = size_to_allocation_blocks(size);
 
 	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count, value_type, "struct");
 
 	auto vec = reinterpret_cast<STRUCT_T*>(alloc);
+	return vec;
+}
+
+STRUCT_T* alloc_struct_copy(heap_t& heap, const uint64_t data[], std::size_t size, itype_t value_type){
+	QUARK_ASSERT(heap.check_invariant());
+	QUARK_ASSERT(data != nullptr);
+	QUARK_ASSERT(value_type.check_invariant());
+
+	const auto allocation_count = size_to_allocation_blocks(size);
+
+	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count, value_type, "struct");
+
+	auto vec = reinterpret_cast<STRUCT_T*>(alloc);
+	std::memcpy(vec->get_data_ptr(), data, size);
 	return vec;
 }
 
