@@ -668,7 +668,21 @@ static std::vector<function_bind_t> floydrt_allocate_struct__make(llvm::LLVMCont
 ////////////////////////////////		floydrt_update_struct_member()
 
 
+//??? Precalc and store in struct_layout_t.
+static bool is_struct_pod(const struct_definition_t& struct_def){
+	QUARK_ASSERT(struct_def.check_invariant());
 
+	for(const auto& e: struct_def._members){
+		const auto& member_type = e._type;
+		if(is_rc_value(member_type)){
+			return false;
+		}
+	}
+	return true;
+}
+
+
+//??? Also factor out struct-member_read from generate_resolve_member_expression(). This file is about working on the value_backend -- but no expresions and AST.
 
 //??? struct_type find_struct_layout() is SLOW right now.
 //??? Struct POD doesn't need any RC
@@ -711,47 +725,52 @@ static const STRUCT_T* floydrt_update_struct_member_nonpod(floyd_runtime_t* frp,
 	return struct_ptr;
 }
 
-static const STRUCT_T* floydrt_update_struct_member_pod(floyd_runtime_t* frp, STRUCT_T* s, runtime_type_t struct_type, int64_t member_index, runtime_value_t new_value, runtime_type_t new_value_type){
-	return floydrt_update_struct_member_nonpod(frp, s, struct_type, member_index, new_value, new_value_type);
+//??? Only need compile-time struct size.!
+static const STRUCT_T* floydrt_copy_struct(floyd_runtime_t* frp, STRUCT_T* s, runtime_type_t struct_type){
+	auto& r = get_floyd_runtime(frp);
+	QUARK_ASSERT(s != nullptr);
+
+	const std::pair<itype_t, struct_layout_t>& struct_layout_info = find_struct_layout(r.backend, itype_t(struct_type));
+	const auto struct_bytes = struct_layout_info.second.size;
+	auto struct_ptr = alloc_struct_copy(r.backend.heap, reinterpret_cast<const uint64_t*>(s->get_data_ptr()), struct_bytes, itype_t(struct_type));
+	return struct_ptr;
 }
 
 static std::vector<function_bind_t> floydrt_update_struct_member__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
-	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		get_generic_struct_type(type_lookup)->getPointerTo(),
-		{
-			make_frp_type(type_lookup),
-			get_generic_struct_type(type_lookup)->getPointerTo(),
-			make_runtime_type_type(type_lookup),
-			llvm::Type::getInt64Ty(context),
-			make_runtime_value_type(type_lookup),
-			make_runtime_type_type(type_lookup)
-		},
-		false
-	);
 	return {
-		{ "update_struct_member_pod", function_type, reinterpret_cast<void*>(floydrt_update_struct_member_pod) },
-		{ "update_struct_member_nonpod", function_type, reinterpret_cast<void*>(floydrt_update_struct_member_nonpod) }
+		{
+			"update_struct_member_nonpod",
+			llvm::FunctionType::get(
+				get_generic_struct_type(type_lookup)->getPointerTo(),
+				{
+					make_frp_type(type_lookup),
+					get_generic_struct_type(type_lookup)->getPointerTo(),
+					make_runtime_type_type(type_lookup),
+					llvm::Type::getInt64Ty(context),
+					make_runtime_value_type(type_lookup),
+					make_runtime_type_type(type_lookup)
+				},
+				false
+			),
+			reinterpret_cast<void*>(floydrt_update_struct_member_nonpod)
+		},
+		{
+			"copy_struct",
+			llvm::FunctionType::get(
+				get_generic_struct_type(type_lookup)->getPointerTo(),
+				{
+					make_frp_type(type_lookup),
+					get_generic_struct_type(type_lookup)->getPointerTo(),
+					make_runtime_type_type(type_lookup)
+				},
+				false
+			),
+			reinterpret_cast<void*>(floydrt_copy_struct)
+		}
 	};
 }
 
-
-//??? Precalc and store in struct_layout_t.
-static bool is_struct_pod(const struct_definition_t& struct_def){
-	QUARK_ASSERT(struct_def.check_invariant());
-
-	for(const auto& e: struct_def._members){
-		const auto& member_type = e._type;
-		if(is_rc_value(member_type)){
-			return false;
-		}
-	}
-	return true;
-}
-
-//??? Also factor out struct-member_read from generate_resolve_member_expression(). This file is about working on the value_backend -- but no expresions and AST.
-
-
-llvm::Value* generate_store_struct_member_mutate(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const typeid_t& struct_type, int member_index, llvm::Value& value_reg){
+static void generate_store_struct_member_mutate(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const typeid_t& struct_type, int member_index, llvm::Value& value_reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(struct_type.check_invariant());
 	QUARK_ASSERT(member_index >= 0 && member_index < struct_type.get_struct()._members.size());
@@ -774,13 +793,8 @@ llvm::Value* generate_store_struct_member_mutate(llvm_function_generator_t& gen_
 		builder.getInt32(member_index)
 	};
 	llvm::Value* member_ptr_reg = builder.CreateGEP(&struct_type_llvm, base_ptr_reg, gep, "");
-	auto member_value_reg = builder.CreateStore(&value_reg, member_ptr_reg);
-
-	return member_value_reg;
+	builder.CreateStore(&value_reg, member_ptr_reg);
 }
-
-
-
 
 llvm::Value* generate_update_struct_member(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const typeid_t& struct_type, int member_index, llvm::Value& value_reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -796,41 +810,38 @@ llvm::Value* generate_update_struct_member(llvm_function_generator_t& gen_acc, l
 
 	const bool pod = is_struct_pod(struct_def);
 
-	std::vector<llvm::Value*> args2 = {
-		gen_acc.get_callers_fcp(),
+	if(pod){
+		const auto res = resolve_func(gen_acc.gen.function_defs, "copy_struct");
 
-		&struct_ptr_reg,
-		generate_itype_constant(gen_acc.gen, struct_type),
+		std::vector<llvm::Value*> args = {
+			gen_acc.get_callers_fcp(),
 
-		member_index_reg,
-
-		generate_cast_to_runtime_value(gen_acc.gen, value_reg, member_type),
-		generate_itype_constant(gen_acc.gen, member_type)
-	};
-
-	const std::string n = pod ? "update_struct_member_pod" : "update_struct_member_nopod";
-	const auto res = resolve_func(gen_acc.gen.function_defs, n);
-	auto copy_reg = builder.CreateCall(res.llvm_codegen_f, args2, "");
-
-	if(false){
-		auto& struct_type_llvm = *get_exact_struct_type_noptr(gen_acc.gen.type_lookup, struct_type);
-		auto base_ptr_reg = generate_get_struct_base_ptr(gen_acc, *copy_reg, struct_type);
-		//??? CreateCast? base_ptr_reg
-
-		const auto gep = std::vector<llvm::Value*>{
-			//	Struct array index.
-			builder.getInt32(0),
-
-			//	Struct member index.
-			builder.getInt32(member_index)
+			&struct_ptr_reg,
+			generate_itype_constant(gen_acc.gen, struct_type),
 		};
-		llvm::Value* member_ptr_reg = builder.CreateGEP(&struct_type_llvm, base_ptr_reg, gep, "");
-		auto member_value_reg = builder.CreateStore(&value_reg, member_ptr_reg);
+		auto copy_reg = builder.CreateCall(res.llvm_codegen_f, args, "");
 
-		return member_value_reg;
+		generate_store_struct_member_mutate(gen_acc, *copy_reg, struct_type, member_index, value_reg);
+
+		return copy_reg;
 	}
+	else{
+		const auto res = resolve_func(gen_acc.gen.function_defs, "update_struct_member_nopod");
 
-	return copy_reg;
+		std::vector<llvm::Value*> args = {
+			gen_acc.get_callers_fcp(),
+
+			&struct_ptr_reg,
+			generate_itype_constant(gen_acc.gen, struct_type),
+
+			member_index_reg,
+			generate_cast_to_runtime_value(gen_acc.gen, value_reg, member_type),
+			generate_itype_constant(gen_acc.gen, member_type)
+		};
+		auto copy_reg = builder.CreateCall(res.llvm_codegen_f, args, "");
+
+		return copy_reg;
+	}
 }
 
 
