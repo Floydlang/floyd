@@ -464,14 +464,17 @@ static std::vector<std::pair<itype_t, struct_layout_t>> make_struct_layouts(cons
 			const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
 
 			const auto struct_bytes = layout->getSizeInBytes();
-			std::vector<size_t> member_offsets;
+			std::vector<member_info_t> member_infos;
 			for(int member_index = 0 ; member_index < type.get_struct()._members.size() ; member_index++){
+				const auto& member = type.get_struct()._members[member_index];
+
 				const auto offset = layout->getElementOffset(member_index);
-				member_offsets.push_back(offset);
+				const auto& itype = lookup_itype(type_lookup, member._type);
+				member_infos.push_back(member_info_t { offset, itype } );
 			}
 
 			const auto itype = lookup_itype(type_lookup.state.type_interner, type);
-			result.push_back( { itype, struct_layout_t{ member_offsets, struct_bytes } } );
+			result.push_back( { itype, struct_layout_t{ member_infos, struct_bytes } } );
 		}
 	}
 	return result;

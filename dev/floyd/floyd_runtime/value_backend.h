@@ -662,8 +662,13 @@ void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t
 ////////////////////////////////		struct_layout_t
 
 
+struct member_info_t {
+	size_t offset;
+	itype_t type;
+};
+
 struct struct_layout_t {
-	std::vector<size_t> offsets;
+	std::vector<member_info_t> members;
 	size_t size;
 };
 
@@ -709,6 +714,8 @@ const typeid_t& lookup_type_ref(const value_backend_t& backend, runtime_type_t t
 
 itype_t lookup_vector_element_itype(const value_backend_t& backend, itype_t itype);
 itype_t lookup_dict_value_itype(const value_backend_t& backend, itype_t itype);
+
+//??? Don't return pair, only struct_layout_t.
 const std::pair<itype_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, itype_t type);
 
 

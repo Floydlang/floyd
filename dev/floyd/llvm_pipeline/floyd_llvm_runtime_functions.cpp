@@ -670,7 +670,7 @@ static std::vector<function_bind_t> floydrt_allocate_struct__make(llvm::LLVMCont
 
 
 
-
+//??? struct_type find_struct_layout() is SLOW right now.
 //??? Struct POD doesn't need any RC
 //??? optimize for speed. Most things can be precalculated.
 //??? Generate an add_ref-function for each struct type.
@@ -682,38 +682,29 @@ static const STRUCT_T* floydrt_update_struct_member_nonpod(floyd_runtime_t* frp,
 	QUARK_ASSERT(s != nullptr);
 	QUARK_ASSERT(member_index != -1);
 
-	const auto& type0 = lookup_type_ref(r.backend, struct_type);
-	const auto& new_value_type0 = lookup_type_ref(r.backend, new_value_type);
-	QUARK_ASSERT(type0.is_struct());
-
-
-	//??? struct_type find_struct_layout() is SLOW right now.
 	const std::pair<itype_t, struct_layout_t>& struct_layout_info = find_struct_layout(r.backend, itype_t(struct_type));
 
 	const auto struct_bytes = struct_layout_info.second.size;
 	auto struct_ptr = alloc_struct_copy(r.backend.heap, reinterpret_cast<const uint64_t*>(s->get_data_ptr()), struct_bytes, itype_t(struct_type));
 	auto struct_base_ptr = struct_ptr->get_data_ptr();
 
-	const auto member_offset = struct_layout_info.second.offsets[member_index];
+	const auto member_offset = struct_layout_info.second.members[member_index].offset;
 	const auto member_ptr0 = reinterpret_cast<void*>(struct_base_ptr + member_offset);
 
 	//	??? Converts to value_t! Slow!
-	const auto member_value = from_runtime_value(r, new_value, new_value_type0);
-	store_via_ptr(r, new_value_type0, member_ptr0, member_value);
+	{
+		const auto& new_value_type0 = lookup_type_ref(r.backend, new_value_type);
+		const auto member_value = from_runtime_value(r, new_value, new_value_type0);
+		store_via_ptr(r, new_value_type0, member_ptr0, member_value);
+	}
 
 	//	Retain every member of new struct.
-	{
-		int i = 0;
-		const auto& struct_def = type0.get_struct();
-		for(const auto& e: struct_def._members){
-			const auto member_itype = lookup_itype(r.backend, e._type);
-			if(is_rc_value(member_itype)){
-				const auto offset = struct_layout_info.second.offsets[i];
-				const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
-
-				retain_value(r.backend, *member_ptr, member_itype);
-			}
-			i++;
+	for(const auto& e: struct_layout_info.second.members){
+		const auto member_itype = e.type;
+		if(is_rc_value(member_itype)){
+			const auto offset = e.offset;
+			const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
+			retain_value(r.backend, *member_ptr, member_itype);
 		}
 	}
 

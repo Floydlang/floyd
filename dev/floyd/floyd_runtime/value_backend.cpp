@@ -1358,7 +1358,7 @@ void release_struct(value_backend_t& backend, runtime_value_t str, itype_t itype
 		for(const auto& e: struct_def._members){
 			const auto member_itype = lookup_itype(backend, e._type);
 			if(is_rc_value(member_itype)){
-				const auto offset = struct_layout.second.offsets[member_index];
+				const auto offset = struct_layout.second.members[member_index].offset;
 				const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
 				release_value(backend, *member_ptr, member_itype);
 			}

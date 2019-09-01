@@ -126,7 +126,7 @@ static runtime_value_t to_runtime_struct(value_backend_t& backend, const typeid_
 	const auto& struct_data = value.get_struct_value();
 
 	for(const auto& e: struct_data->_member_values){
-		const auto offset = struct_layout.second.offsets[member_index];
+		const auto offset = struct_layout.second.members[member_index].offset;
 		const auto member_ptr = reinterpret_cast<void*>(struct_base_ptr + offset);
 		store_via_ptr2(member_ptr, e.get_type(), to_runtime_value2(backend, e));
 		member_index++;
@@ -147,7 +147,7 @@ static value_t from_runtime_struct(const value_backend_t& backend, const runtime
 	std::vector<value_t> members;
 	int member_index = 0;
 	for(const auto& e: struct_def._members){
-		const auto offset = struct_layout.second.offsets[member_index];
+		const auto offset = struct_layout.second.members[member_index].offset;
 		const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
 		const auto member_value = from_runtime_value2(backend, *member_ptr, e._type);
 		members.push_back(member_value);
