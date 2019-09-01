@@ -685,7 +685,7 @@ static bool is_struct_pod(const struct_definition_t& struct_def){
 //??? Also factor out struct-member_read from generate_resolve_member_expression(). This file is about working on the value_backend -- but no expresions and AST.
 
 //??? struct_type find_struct_layout() is SLOW right now.
-//??? Struct POD doesn't need any RC
+
 //??? optimize for speed. Most things can be precalculated.
 //??? Generate an add_ref-function for each struct type.
 //??? Inline store of new member -- same as generate_resolve_member_expression().
@@ -725,14 +725,16 @@ static const STRUCT_T* floydrt_update_struct_member_nonpod(floyd_runtime_t* frp,
 	return struct_ptr;
 }
 
-//??? Only need compile-time struct size.!
-static const STRUCT_T* floydrt_copy_struct(floyd_runtime_t* frp, STRUCT_T* s, runtime_type_t struct_type){
+static const STRUCT_T* floydrt_copy_struct(floyd_runtime_t* frp, STRUCT_T* s, uint64_t struct_size, runtime_type_t struct_type){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(s != nullptr);
-
+	QUARK_ASSERT(struct_size > 0);
+#if DEBUG
 	const std::pair<itype_t, struct_layout_t>& struct_layout_info = find_struct_layout(r.backend, itype_t(struct_type));
-	const auto struct_bytes = struct_layout_info.second.size;
-	auto struct_ptr = alloc_struct_copy(r.backend.heap, reinterpret_cast<const uint64_t*>(s->get_data_ptr()), struct_bytes, itype_t(struct_type));
+	const auto struct_size2 = struct_layout_info.second.size;
+	QUARK_ASSERT(struct_size == struct_size2);
+#endif
+	auto struct_ptr = alloc_struct_copy(r.backend.heap, reinterpret_cast<const uint64_t*>(s->get_data_ptr()), struct_size, itype_t(struct_type));
 	return struct_ptr;
 }
 
@@ -761,6 +763,7 @@ static std::vector<function_bind_t> floydrt_update_struct_member__make(llvm::LLV
 				{
 					make_frp_type(type_lookup),
 					get_generic_struct_type(type_lookup)->getPointerTo(),
+					llvm::Type::getInt64Ty(context),
 					make_runtime_type_type(type_lookup)
 				},
 				false
@@ -813,16 +816,25 @@ llvm::Value* generate_update_struct_member(llvm_function_generator_t& gen_acc, l
 	if(pod){
 		const auto res = resolve_func(gen_acc.gen.function_defs, "copy_struct");
 
+
+		auto& exact_struct_type = *get_exact_struct_type_noptr(gen_acc.gen.type_lookup, struct_type);
+
+		const llvm::DataLayout& data_layout = gen_acc.gen.module->getDataLayout();
+		const llvm::StructLayout* layout = data_layout.getStructLayout(&exact_struct_type);
+		const auto struct_bytes = layout->getSizeInBytes();
+
+
+
+
 		std::vector<llvm::Value*> args = {
 			gen_acc.get_callers_fcp(),
 
 			&struct_ptr_reg,
+			llvm::ConstantInt::get(builder.getInt64Ty(), struct_bytes),
 			generate_itype_constant(gen_acc.gen, struct_type),
 		};
 		auto copy_reg = builder.CreateCall(res.llvm_codegen_f, args, "");
-
 		generate_store_struct_member_mutate(gen_acc, *copy_reg, struct_type, member_index, value_reg);
-
 		return copy_reg;
 	}
 	else{
