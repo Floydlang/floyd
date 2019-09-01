@@ -510,7 +510,6 @@ void generate_store_dict_mutable(llvm_function_generator_t& gen_acc, llvm::Value
 
 ////////////////////////////////		allocate_json()
 
-//??? Make named types for all function-argument / return types, like: typedef int16_t* native_json_ptr
 
 //??? Use better storage of JSON!?
 static JSON_T* floydrt_allocate_json(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
@@ -518,7 +517,6 @@ static JSON_T* floydrt_allocate_json(floyd_runtime_t* frp, runtime_value_t arg0_
 
 	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
 	const auto value = from_runtime_value(r, arg0_value, type0);
-
 	const auto a = value_to_ast_json(value, json_tags::k_plain);
 	auto result = alloc_json(r.backend.heap, a);
 	return result;
@@ -671,7 +669,6 @@ static std::vector<function_bind_t> floydrt_allocate_struct__make(llvm::LLVMCont
 
 
 
-//??? move to value_features.cpp
 //??? optimize for speed. Most things can be precalculated.
 //??? Generate an add_ref-function for each struct type.
 static const STRUCT_T* floydrt_update_struct_member(floyd_runtime_t* frp, STRUCT_T* s, runtime_type_t struct_type, int64_t member_index, runtime_value_t new_value, runtime_type_t new_value_type){
@@ -877,17 +874,32 @@ static void floydrt_retain_vector_hamt(floyd_runtime_t* frp, runtime_value_t vec
 	retain_vector_hamt(r.backend, vec, itype_t(type0));
 }
 
-//??? split into several functions. Already coverd using generate_retain2() (check other retains too!!)
-static void floydrt_retain_dict(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
+
+
+static void floydrt_retain_dict_cppmap(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
 	QUARK_ASSERT(is_rc_value(itype_t(type0)));
 	QUARK_ASSERT(type.is_dict());
+	QUARK_ASSERT(is_dict_cppmap(type));
 #endif
 
-	retain_value(r.backend, dict, itype_t(type0));
+	retain_dict_cppmap(r.backend, dict, itype_t(type0));
 }
+static void floydrt_retain_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
+	auto& r = get_floyd_runtime(frp);
+#if DEBUG
+	const auto& type = lookup_type_ref(r.backend, type0);
+	QUARK_ASSERT(is_rc_value(itype_t(type0)));
+	QUARK_ASSERT(type.is_dict());
+	QUARK_ASSERT(is_dict_hamt(type));
+#endif
+
+	retain_dict_hamt(r.backend, dict, itype_t(type0));
+}
+
+
 
 static void floydrt_retain_json(floyd_runtime_t* frp, JSON_T* json, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
@@ -905,6 +917,7 @@ static void floydrt_retain_json(floyd_runtime_t* frp, JSON_T* json, runtime_type
 	}
 }
 
+
 static void floydrt_retain_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(v != nullptr);
@@ -917,6 +930,8 @@ static void floydrt_retain_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_typ
 
 	retain_struct(r.backend, make_runtime_struct(v), itype_t(type0));
 }
+
+
 
 void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const typeid_t& type){
 	QUARK_ASSERT(gen_acc.gen.type_lookup.check_invariant());
@@ -945,8 +960,17 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 			}
 		}
 		else if(type.is_dict()){
-			const auto res = resolve_func(gen_acc.gen.function_defs, "retain_dict");
-			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
+			if(is_dict_cppmap(type)){
+				const auto res = resolve_func(gen_acc.gen.function_defs, "retain_dict_cppmap");
+				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
+			}
+			else if(is_dict_hamt(type)){
+				const auto res = resolve_func(gen_acc.gen.function_defs, "retain_dict_hamt");
+				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
+			}
+			else{
+				QUARK_ASSERT(false);
+			}
 		}
 		else if(type.is_json()){
 			const auto res = resolve_func(gen_acc.gen.function_defs, "retain_json");
@@ -980,7 +1004,8 @@ std::vector<function_bind_t> retain_funcs(llvm::LLVMContext& context, const llvm
 	return std::vector<function_bind_t> {
 		function_bind_t{ "retain_vector_carray", make_retain(context, type_lookup, *make_generic_vec_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_vector_carray) },
 		function_bind_t{ "retain_vector_hamt", make_retain(context, type_lookup, *make_generic_vec_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_vector_hamt) },
-		function_bind_t{ "retain_dict", make_retain(context, type_lookup, *make_generic_dict_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_dict) },
+		function_bind_t{ "retain_dict_cppmap", make_retain(context, type_lookup, *make_generic_dict_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_dict_cppmap) },
+		function_bind_t{ "retain_dict_hamt", make_retain(context, type_lookup, *make_generic_dict_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_dict_hamt) },
 		function_bind_t{ "retain_json", make_retain(context, type_lookup, *get_llvm_type_as_arg(type_lookup, typeid_t::make_json())), reinterpret_cast<void*>(floydrt_retain_json) },
 		function_bind_t{ "retain_struct", make_retain(context, type_lookup, *get_generic_struct_type(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_struct) }
 	};
