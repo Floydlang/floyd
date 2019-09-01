@@ -171,6 +171,23 @@ static function_bind_t floydrt_allocate_vector_fill__make(llvm::LLVMContext& con
 
 
 
+
+
+static llvm::FunctionType* make_retain_function_type(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	return llvm::FunctionType::get(
+		llvm::Type::getVoidTy(context),
+		{
+			make_frp_type(type_lookup),
+			make_generic_vec_type(type_lookup)->getPointerTo(),
+			make_runtime_type_type(type_lookup)
+		},
+		false
+	);
+}
+
+
+
+
 ////////////////////////////////		floydrt_retain_vector_carray()
 
 
@@ -186,6 +203,17 @@ static void floydrt_retain_vector_carray(floyd_runtime_t* frp, runtime_value_t v
 	retain_vector_carray(r.backend, vec, itype_t(type0));
 }
 
+static function_bind_t floydrt_retain_vector_carray__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	return function_bind_t { "retain_vector_carray",
+		make_retain_function_type(context, type_lookup),
+		reinterpret_cast<void*>(floydrt_retain_vector_carray)
+	};
+}
+
+
+////////////////////////////////		retain_vector_hamt()
+
+
 static void floydrt_retain_vector_hamt(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
@@ -197,34 +225,10 @@ static void floydrt_retain_vector_hamt(floyd_runtime_t* frp, runtime_value_t vec
 	retain_vector_hamt(r.backend, vec, itype_t(type0));
 }
 
-static function_bind_t floydrt_retain_vector_carray__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
-	return function_bind_t {
-		"retain_vector_carray",
-		llvm::FunctionType::get(
-			llvm::Type::getVoidTy(context),
-			{
-				make_frp_type(type_lookup),
-				make_generic_vec_type(type_lookup)->getPointerTo(),
-				make_runtime_type_type(type_lookup)
-			},
-			false
-		),
-		reinterpret_cast<void*>(floydrt_retain_vector_carray)
-	};
-}
-
 static function_bind_t floydrt_retain_vector_hamt__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	return function_bind_t {
 		"retain_vector_hamt",
-		llvm::FunctionType::get(
-			llvm::Type::getVoidTy(context),
-			{
-				make_frp_type(type_lookup),
-				make_generic_vec_type(type_lookup)->getPointerTo(),
-				make_runtime_type_type(type_lookup)
-			},
-			false
-		),
+		make_retain_function_type(context, type_lookup),
 		reinterpret_cast<void*>(floydrt_retain_vector_hamt)
 	};
 }
@@ -367,7 +371,7 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 ////////////////////////////////		floydrt_release_vector_fallback()
 
 
-//??? only does carray - rename and calls release_vector_carray. NOT TRUE: does release_vector_hamt_NONPOD.
+//??? Does release_vector_carray AND release_vector_hamt_NONPOD.
 static void floydrt_release_vector_fallback(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
@@ -382,15 +386,7 @@ static void floydrt_release_vector_fallback(floyd_runtime_t* frp, runtime_value_
 static function_bind_t floydrt_release_vector_fallback__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	return function_bind_t{
 		"release_vector_fallback",
-		llvm::FunctionType::get(
-			llvm::Type::getVoidTy(context),
-			{
-				make_frp_type(type_lookup),
-				make_generic_vec_type(type_lookup)->getPointerTo(),
-				make_runtime_type_type(type_lookup)
-			},
-			false
-		),
+		make_retain_function_type(context, type_lookup),
 		reinterpret_cast<void*>(floydrt_release_vector_fallback)
 	};
 }
@@ -411,15 +407,7 @@ static void floydrt_release_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_
 static function_bind_t floydrt_release_vector_hamt_pod__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	return function_bind_t{
 		"release_vector_hamt_pod",
-		llvm::FunctionType::get(
-			llvm::Type::getVoidTy(context),
-			{
-				make_frp_type(type_lookup),
-				make_generic_vec_type(type_lookup)->getPointerTo(),
-				make_runtime_type_type(type_lookup)
-			},
-			false
-		),
+		make_retain_function_type(context, type_lookup),
 		reinterpret_cast<void*>(floydrt_release_vector_hamt_pod)
 	};
 }
