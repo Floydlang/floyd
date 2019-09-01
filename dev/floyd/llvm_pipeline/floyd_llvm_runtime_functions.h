@@ -44,7 +44,6 @@ struct runtime_functions_t {
 	const function_def_t floydrt_load_vector_element_hamt;
 	
 	const function_def_t floydrt_allocate_dict;
-	const function_def_t floydrt_store_dict_mutable;
 
 	const function_def_t floydrt_allocate_json;
 	const function_def_t floydrt_lookup_json;
@@ -62,6 +61,7 @@ struct runtime_functions_t {
 
 llvm::Value* generate_allocate_vector(llvm_function_generator_t& gen_acc, const typeid_t& vector_type, int64_t element_count, vector_backend vector_backend);
 llvm::Value* generate_lookup_dict(llvm_function_generator_t& gen_acc, llvm::Value& dict_reg, const typeid_t& dict_type, llvm::Value& key_reg, bool dict_is_hamt);
+void generate_store_dict_mutable(llvm_function_generator_t& gen_acc, llvm::Value& dict_reg, const typeid_t& dict_type, llvm::Value& key_reg, llvm::Value& value_reg, bool dict_is_hamt);
 
 
 void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const typeid_t& type);

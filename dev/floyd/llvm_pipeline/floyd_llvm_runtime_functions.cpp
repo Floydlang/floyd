@@ -479,9 +479,26 @@ static function_bind_t floydrt_store_dict_mutable__make(llvm::LLVMContext& conte
 	return { "store_dict_mutable", function_type, reinterpret_cast<void*>(floydrt_store_dict_mutable) };
 }
 
+void generate_store_dict_mutable(llvm_function_generator_t& gen_acc, llvm::Value& dict_reg, const typeid_t& dict_type, llvm::Value& key_reg, llvm::Value& value_reg, bool dict_is_hamt){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(dict_type.check_invariant());
+	QUARK_ASSERT(is_dict_cppmap(dict_type) || is_dict_hamt(dict_type));
 
+	const auto res = resolve_func(gen_acc.gen.function_defs, dict_is_hamt ? "store_dict_mutable" : "store_dict_mutable");
 
+	const auto& element_type0 = dict_type.get_dict_value_type();
+	auto& dict_itype_reg = *generate_itype_constant(gen_acc.gen, dict_type);
+	auto& builder = gen_acc.get_builder();
 
+	std::vector<llvm::Value*> args2 = {
+		gen_acc.get_callers_fcp(),
+		&dict_reg,
+		&dict_itype_reg,
+		&key_reg,
+		generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type0)
+	};
+	builder.CreateCall(res.llvm_codegen_f, args2, "");
+}
 
 
 
@@ -1221,7 +1238,6 @@ runtime_functions_t::runtime_functions_t(const std::vector<function_def_t>& func
 
 
 	floydrt_allocate_dict(resolve_func(function_defs, "allocate_dict")),
-	floydrt_store_dict_mutable(resolve_func(function_defs, "store_dict_mutable")),
 
 
 	floydrt_allocate_json(resolve_func(function_defs, "allocate_json")),

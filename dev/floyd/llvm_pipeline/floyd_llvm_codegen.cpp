@@ -1369,16 +1369,7 @@ static llvm::Value* generate_construct_dict(llvm_function_generator_t& gen_acc, 
 	for(int element_index = 0 ; element_index < count ; element_index++){
 		llvm::Value* key0_reg = generate_expression(gen_acc, details.elements[element_index * 2 + 0]);
 		llvm::Value* element0_reg = generate_expression(gen_acc, details.elements[element_index * 2 + 1]);
-
-		std::vector<llvm::Value*> args2 = {
-			gen_acc.get_callers_fcp(),
-			dict_acc_ptr_reg,
-			generate_itype_constant(gen_acc.gen, details.value_type),
-			key0_reg,
-			generate_cast_to_runtime_value(gen_acc.gen, *element0_reg, element_type0)
-		};
-		builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_store_dict_mutable.llvm_codegen_f, args2, "");
-
+		generate_store_dict_mutable(gen_acc, *dict_acc_ptr_reg, details.value_type, *key0_reg, *element0_reg, k_global_dict_is_hamt);
 		generate_release(gen_acc, *key0_reg, typeid_t::make_string());
 	}
 	return dict_acc_ptr_reg;
