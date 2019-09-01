@@ -729,14 +729,9 @@ static const STRUCT_T* floydrt_update_struct_member_nonpod(floyd_runtime_t* frp,
 	auto struct_base_ptr = struct_ptr->get_data_ptr();
 
 	const auto member_offset = struct_layout_info.second.members[member_index].offset;
-	const auto member_ptr0 = reinterpret_cast<void*>(struct_base_ptr + member_offset);
+	const auto member_ptr0 = reinterpret_cast<runtime_value_t*>(struct_base_ptr + member_offset);
 
-	//	??? Converts to value_t! Slow!
-	{
-		const auto& new_value_type0 = lookup_type_ref(r.backend, new_value_type);
-		const auto member_value = from_runtime_value(r, new_value, new_value_type0);
-		store_via_ptr(r, new_value_type0, member_ptr0, member_value);
-	}
+	*member_ptr0 = new_value;
 
 	//	Retain every member of new struct.
 	for(const auto& e: struct_layout_info.second.members){
