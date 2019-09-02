@@ -404,6 +404,29 @@ json_t make_ast_node(const location_t& location, const std::string& opcode, cons
 
 
 
+
+////////////////////////////////		ENCODE / DECODE LINK NAMES
+
+
+
+//	"hello" => "floydf_hello"
+link_name_t encode_floyd_func_link_name(const std::string& name);
+std::string decode_floyd_func_link_name(const link_name_t& name);
+
+
+//	"hello" => "floyd_runtime_hello"
+link_name_t encode_runtime_func_link_name(const std::string& name);
+std::string decode_runtime_func_link_name(const link_name_t& name);
+
+
+//	"hello" => "floyd_intrinsic_hello"
+link_name_t encode_intrinsic_link_name(const std::string& name);
+std::string decode_intrinsic_link_name(const link_name_t& name);
+
+
+
+
+
 }	// floyd
 
 #endif /* compiler_basics_hpp */

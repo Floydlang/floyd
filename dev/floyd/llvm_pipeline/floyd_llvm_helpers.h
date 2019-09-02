@@ -71,21 +71,6 @@ llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::string& 
 
 
 
-////////////////////////////////		ENCODE / DECODE LLVM LINK NAMES
-
-
-
-//	"hello" => "floydf_hello"
-link_name_t encode_floyd_func_link_name(const std::string& name);
-std::string decode_floyd_func_link_name(const link_name_t& name);
-
-
-//	"hello" => "floydrt_hello"
-link_name_t encode_runtime_func_link_name(const std::string& name);
-std::string decode_runtime_func_link_name(const link_name_t& name);
-
-
-
 
 ////////////////////////////////		VALUES
 

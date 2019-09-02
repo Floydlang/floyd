@@ -829,5 +829,54 @@ QUARK_TEST("", "make_ast_node()", "", ""){
 }
 
 
+
+
+////////////////////////////////		ENCODE / DECODE LINK NAMES
+
+
+
+static const std::string k_floyd_func_link_prefix = "floydf_";
+
+
+link_name_t encode_floyd_func_link_name(const std::string& name){
+	return link_name_t { k_floyd_func_link_prefix + name };
+}
+std::string decode_floyd_func_link_name(const link_name_t& name){
+	const auto left = name.s. substr(0, k_floyd_func_link_prefix.size());
+	const auto right = name.s.substr(k_floyd_func_link_prefix.size(), std::string::npos);
+	QUARK_ASSERT(left == k_floyd_func_link_prefix);
+	return right;
+}
+
+
+
+static const std::string k_runtime_func_link_prefix = "floyd_runtime_";
+
+link_name_t encode_runtime_func_link_name(const std::string& name){
+	return link_name_t { k_runtime_func_link_prefix + name };
+}
+
+std::string decode_runtime_func_link_name(const link_name_t& name){
+	const auto left = name.s.substr(0, k_runtime_func_link_prefix.size());
+	const auto right = name.s.substr(k_runtime_func_link_prefix.size(), std::string::npos);
+	QUARK_ASSERT(left == k_runtime_func_link_prefix);
+	return right;
+}
+
+
+
+static const std::string k_intrinsic_link_prefix = "floyd_intrinsic_";
+
+link_name_t encode_intrinsic_link_name(const std::string& name){
+	return link_name_t { k_intrinsic_link_prefix + name };
+}
+std::string decode_intrinsic_link_name(const link_name_t& name){
+	const auto left = name.s. substr(0, k_intrinsic_link_prefix.size());
+	const auto right = name.s.substr(k_intrinsic_link_prefix.size(), std::string::npos);
+	QUARK_ASSERT(left == k_intrinsic_link_prefix);
+	return right;
+}
+
+
 }	// floyd
 

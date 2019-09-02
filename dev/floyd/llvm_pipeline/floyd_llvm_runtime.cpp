@@ -180,7 +180,7 @@ static std::map<link_name_t, void*> make_all_function_binds(llvm::LLVMContext& c
 	const auto intrinsics0 = get_intrinsic_binds();
 	std::map<link_name_t, void*> intrinsics;
 	for(const auto& e: intrinsics0){
-		intrinsics.insert({ encode_floyd_func_link_name(e.first), e.second });
+		intrinsics.insert({ encode_intrinsic_link_name(e.first), e.second });
 	}
 	function_map.insert(intrinsics.begin(), intrinsics.end());
 
@@ -195,12 +195,12 @@ static std::map<link_name_t, void*> make_all_function_binds(llvm::LLVMContext& c
 	return function_map;
 }
 
-static function_def_t make_floyd_function_def(const llvm_type_lookup& type_lookup, const function_definition_t& function_def){
+static function_def_t make_function_def(const llvm_type_lookup& type_lookup, const function_definition_t& function_def, const link_name_t& link_name){
 	QUARK_ASSERT(type_lookup.check_invariant());
 	QUARK_ASSERT(function_def.check_invariant());
 
 	const auto function_type = function_def._function_type;
-	const auto link_name = encode_floyd_func_link_name(function_def._definition_name);
+//	const auto link_name = encode_floyd_func_link_name(function_def._definition_name);
 	llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
 	const auto function_byvalue_type = deref_ptr(function_ptr_type);
 	return function_def_t{ link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_def, nullptr };
@@ -235,7 +235,7 @@ std::vector<function_def_t> make_all_function_defs(llvm::LLVMContext& context, c
 			const auto function_id = signature._function_id;
 			const auto def0 = function_definition_t::make_intrinsic(k_no_location, signature._function_id.name, signature._function_type, args);
 
-			const auto def = make_floyd_function_def(type_lookup, def0);
+			const auto def = make_function_def(type_lookup, def0, encode_intrinsic_link_name(def0._definition_name));
 			result0.push_back(def);
 		}
 	}
@@ -275,7 +275,7 @@ std::vector<function_def_t> make_all_function_defs(llvm::LLVMContext& context, c
 	//	Make function def for all functions inside the floyd program (floyd source code).
 	{
 		for(const auto& function_def: ast_function_defs){
-			auto def = make_floyd_function_def(type_lookup, function_def);
+			auto def = make_function_def(type_lookup, function_def, encode_floyd_func_link_name(function_def._definition_name));
 			result0.push_back(def);
 		}
 	}
@@ -618,7 +618,7 @@ std::unique_ptr<llvm_execution_engine_t> init_program(llvm_ir_program_t& program
 #if DEBUG
 	{
 		{
-			const auto print_global_ptr_ptr = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(*ee, "floydrt_init");
+			const auto print_global_ptr_ptr = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(*ee, encode_runtime_func_link_name("init").s);
 			QUARK_ASSERT(print_global_ptr_ptr != nullptr);
 			const auto print_ptr = *print_global_ptr_ptr;
 			QUARK_ASSERT(print_ptr != nullptr);

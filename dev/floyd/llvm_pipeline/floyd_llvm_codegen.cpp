@@ -994,7 +994,7 @@ static llvm::Value* generate_call_expression(llvm_function_generator_t& gen_acc,
 		const auto& intrinsic = intrinsic_signatures[load2->address._index];
 
 		const auto name = intrinsic.name;
-		const auto& def = find_function_def_from_link_name(gen_acc.gen.function_defs, encode_floyd_func_link_name(name));
+		const auto& def = find_function_def_from_link_name(gen_acc.gen.function_defs, encode_intrinsic_link_name(name));
 		callee0_reg = def.llvm_codegen_f;
 	}
 	else{

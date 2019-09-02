@@ -498,9 +498,9 @@ QUARK_TEST("", "collect_benchmarks()", "", ""){
 	const auto result = collect_benchmarks(program_source, "mymodule", compilation_unit_mode::k_include_core_lib);
 
 	QUARK_UT_VERIFY(result.size() == 3);
-	QUARK_UT_VERIFY(result[0] == (bench_t{ benchmark_id_t{ "", "abc" }, link_name_t{"floydf_benchmark__abc" } }));
-	QUARK_UT_VERIFY(result[1] == (bench_t{ benchmark_id_t{ "", "def" }, link_name_t{"floydf_benchmark__def" } }));
-	QUARK_UT_VERIFY(result[2] == (bench_t{ benchmark_id_t{ "", "g" }, link_name_t{ "floydf_benchmark__g" } }));
+	QUARK_UT_VERIFY(result[0] == (bench_t{ benchmark_id_t{ "", "abc" }, encode_floyd_func_link_name("benchmark__abc") }));
+	QUARK_UT_VERIFY(result[1] == (bench_t{ benchmark_id_t{ "", "def" }, encode_floyd_func_link_name("benchmark__def") }));
+	QUARK_UT_VERIFY(result[2] == (bench_t{ benchmark_id_t{ "", "g" }, encode_floyd_func_link_name("benchmark__g") }));
 }
 
 
