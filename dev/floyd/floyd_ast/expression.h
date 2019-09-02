@@ -129,10 +129,12 @@ struct variable_address_t {
 		1: previous stack frame
 		2: previous-previous stack frame
 		-1: global stack frame
+		-2: intrinsic
 	*/
 	enum scope_index_t {
 		k_current_scope = 0,
-		k_global_scope = -1
+		k_global_scope = -1,
+		k_intrinsic = -2
 	};
 
 
@@ -146,6 +148,7 @@ struct variable_address_t {
 		return _parent_steps == variable_address_t::k_global_scope && _index == -1;
 	}
 	public: bool check_invariant() const {
+		QUARK_ASSERT(_parent_steps == variable_address_t::k_intrinsic || _parent_steps == variable_address_t::k_global_scope || _parent_steps >= 0);
 		return true;
 	}
 	public: static variable_address_t make_variable_address(int parent_steps, int index){
@@ -179,6 +182,15 @@ struct function_definition_t {
 			function_type,
 			named_args,
 			body
+		};
+	}
+	static function_definition_t make_intrinsic(const location_t& location, const std::string& definition_name, const typeid_t& function_type, const std::vector<member_t>& named_args){
+		return {
+			location,
+			definition_name,
+			function_type,
+			named_args,
+			{}
 		};
 	}
 

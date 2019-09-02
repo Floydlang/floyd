@@ -222,6 +222,24 @@ std::vector<function_def_t> make_all_function_defs(llvm::LLVMContext& context, c
 		}
 	}
 
+	//	Make prototypes for all intrinsics functions, like assert().
+	{
+		const std::vector<intrinsic_signature_t>& intrinsic_signatures = get_intrinsic_signatures();
+		for(const auto& signature: intrinsic_signatures){
+			const auto link_name = encode_runtime_func_link_name(signature.name);
+
+			std::vector<member_t> args;
+			for(const auto& arg_type: signature._function_type.get_function_args()){
+				args.push_back(member_t(arg_type, "dummy"));//??? use "".
+			}
+			const auto function_id = signature._function_id;
+			const auto def0 = function_definition_t::make_intrinsic(k_no_location, signature._function_id.name, signature._function_type, args);
+
+			const auto def = make_floyd_function_def(type_lookup, def0);
+			result0.push_back(def);
+		}
+	}
+
 	//	init()
 	{
 		const auto name = "init";
@@ -255,7 +273,6 @@ std::vector<function_def_t> make_all_function_defs(llvm::LLVMContext& context, c
 	}
 
 	//	Make function def for all functions inside the floyd program (floyd source code).
-	//	This includes intrinsics!
 	{
 		for(const auto& function_def: ast_function_defs){
 			auto def = make_floyd_function_def(type_lookup, function_def);
@@ -267,7 +284,11 @@ std::vector<function_def_t> make_all_function_defs(llvm::LLVMContext& context, c
 		trace_function_defs(result0);
 	}
 
+
+
 	//	Resolve native functions pointers - for built-in C functions like runtime functions and intrinsics.
+
+
 	std::vector<function_def_t> result;
 	const auto binds = make_all_function_binds(context, type_lookup);
 	for(const auto& e: result0){
@@ -597,7 +618,7 @@ std::unique_ptr<llvm_execution_engine_t> init_program(llvm_ir_program_t& program
 #if DEBUG
 	{
 		{
-			const auto print_global_ptr_ptr = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(*ee, "print");
+			const auto print_global_ptr_ptr = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(*ee, "floydrt_init");
 			QUARK_ASSERT(print_global_ptr_ptr != nullptr);
 			const auto print_ptr = *print_global_ptr_ptr;
 			QUARK_ASSERT(print_ptr != nullptr);

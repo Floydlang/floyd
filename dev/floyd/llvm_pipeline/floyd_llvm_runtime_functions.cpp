@@ -1343,6 +1343,11 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 
 
 
+
+
+
+
+
 std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	const std::vector<std::vector<function_bind_t>> result0 = {
 		floydrt_alloc_kstr__make(context, type_lookup),

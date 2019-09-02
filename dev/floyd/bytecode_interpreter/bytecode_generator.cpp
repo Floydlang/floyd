@@ -25,6 +25,7 @@
 #include "bytecode_helpers.h"
 #include "bytecode_interpreter.h"
 #include "floyd_runtime.h"
+#include "compiler_basics.h"
 #include "semantic_ast.h"
 
 #include <cmath>
@@ -223,6 +224,9 @@ reg_t flatten_reg(const reg_t& r, int offset){
 		return reg_t::make_variable_address(0, r._index + offset);
 	}
 	else if(r._parent_steps == variable_address_t::k_global_scope){
+		return r;
+	}
+	else if(r._parent_steps == variable_address_t::k_intrinsic){
 		return r;
 	}
 	else{
@@ -721,16 +725,19 @@ expression_gen_t bcgen_make_fallthrough_intrinsic(bcgenerator_t& gen_acc, const 
 
 	auto body_acc = body;
 
+	//??? Don't call every time!
+	const auto intrinsic_signatures = get_intrinsic_signatures();
 
 	//	Find function
-	const auto& symbols = gen_acc._globals._symbol_table._symbols;
-    const auto it = std::find_if(symbols.begin(), symbols.end(), [&details](const std::pair<std::string, symbol_t>& e) {return (std::string("$") + e.first) == details.call_name; } );
-    QUARK_ASSERT(it != symbols.end());
-	const auto function_type = std::make_shared<typeid_t>(it->second._value_type);
-	int global_index = static_cast<int>(it - symbols.begin());
+    const auto it = std::find_if(intrinsic_signatures.begin(), intrinsic_signatures.end(), [&details](const intrinsic_signature_t& e) { return (std::string("$") + e.name) == details.call_name; } );
+    QUARK_ASSERT(it != intrinsic_signatures.end());
+	const auto function_type = std::make_shared<typeid_t>(it->_function_type);
+
+	const auto index = it - intrinsic_signatures.begin();
+	const auto addr = variable_address_t::make_variable_address(variable_address_t::k_intrinsic, static_cast<int>(index));
 
 	const auto call_details = expression_t::call_t {
-		std::make_shared<expression_t>(expression_t::make_load2(variable_address_t::make_variable_address(variable_address_t::k_global_scope, global_index), function_type)),
+		std::make_shared<expression_t>(expression_t::make_load2(addr, function_type)),
 		details.args
 	};
 
@@ -1066,6 +1073,32 @@ call_setup_t gen_call_setup(bcgenerator_t& gen_acc, const std::vector<typeid_t>&
 }
 
 
+
+static expression_gen_t generate_callee(bcgenerator_t& gen_acc, const expression_t::call_t& details, const bcgen_body_t& body0){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(body0.check_invariant());
+
+	auto body_acc = body0;
+	const auto load2 = std::get_if<expression_t::load2_t>(&details.callee->_expression_variant);
+	if(load2 != nullptr && load2->address._parent_steps == variable_address_t::k_intrinsic){
+		const auto& intrinsic_signatures = get_intrinsic_signatures();
+		QUARK_ASSERT(load2->address._index >= 0 && load2->address._index < intrinsic_signatures.size());
+		const auto& intrinsic = intrinsic_signatures[load2->address._index];
+
+		const auto name = intrinsic.name;
+//		const auto& def = find_function_def_from_link_name(gen_acc.gen.function_defs, encode_floyd_func_link_name(name));
+
+		const auto function_type = details.callee->get_output_type();
+		const auto value = value_t::make_function_value(function_type, function_id_t { name });
+		const auto r = add_local_const(body_acc, value, "temp: intrinsics-" + name);
+		return expression_gen_t { body_acc, r, intern_type(gen_acc, function_type) };
+	}
+	else{
+		return bcgen_expression(gen_acc, {}, *details.callee, body_acc);
+	}
+}
+
+
 /*
 	Handles a call-expression. Output is one of these:
 
@@ -1091,7 +1124,7 @@ static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const vari
 
 	body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_frame_ptr, {}, {}, {} ));
 
-	const auto& callee_expr = bcgen_expression(gen_acc, {}, *details.callee, body_acc);
+	const auto callee_expr = generate_callee(gen_acc, details, body_acc);
 	body_acc = callee_expr._body;
 
 	const auto call_setup = gen_call_setup(gen_acc, function_def_arg_types, &details.args[0], callee_arg_count, body_acc);

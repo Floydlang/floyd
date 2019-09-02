@@ -55,6 +55,7 @@ static std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value
 
 static void floyd_llvm_intrinsic__assert(floyd_runtime_t* frp, runtime_value_t arg){
 	auto& r = get_floyd_runtime(frp);
+
 	QUARK_ASSERT(arg.bool_value == 0 || arg.bool_value == 1);
 
 	bool ok = arg.bool_value == 0 ? false : true;

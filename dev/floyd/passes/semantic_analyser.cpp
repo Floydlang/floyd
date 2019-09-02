@@ -22,7 +22,8 @@
 
 namespace floyd {
 
-static const bool k_trace_io_flag = false;
+static const bool k_trace_input_flag = false;
+static const bool k_trace_output_flag = false;
 
 //???? remove!!
 using namespace std;
@@ -154,8 +155,9 @@ bool does_symbol_exist_shallow(const analyser_t& a, const std::string& s){
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
 const std::pair<std::string, symbol_t>* resolve_symbol_by_address(const analyser_t& a, const variable_address_t& s){
 	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(s.check_invariant());
 
-	const auto env_index = s._parent_steps == -1 ? 0 : a._lexical_scope_stack.size() - s._parent_steps - 1;
+	const auto env_index = s._parent_steps == variable_address_t::k_global_scope ? 0 : a._lexical_scope_stack.size() - s._parent_steps - 1;
 	auto& env = a._lexical_scope_stack[env_index];
 	return &env.symbols._symbols[s._index];
 }
@@ -1387,9 +1389,24 @@ std::pair<analyser_t, expression_t> analyse_load(const analyser_t& a, const stat
 		return {a_acc, expression_t::make_load2(found.second, make_shared<typeid_t>(found.first->_value_type)) };
 	}
 	else{
-		std::stringstream what;
-		what << "Undefined variable \"" << details.variable_name << "\".";
-		throw_compiler_error(parent.location, what.str());
+		const std::vector<intrinsic_signature_t>& intrinsic_signatures = a._imm->intrinsic_signatures;
+
+		const auto it = std::find_if(
+			intrinsic_signatures.begin(),
+			intrinsic_signatures.end(),
+			[&](const intrinsic_signature_t& e) { return e.name == details.variable_name; }
+		);
+		if(it != intrinsic_signatures.end()){
+			const auto index = it - intrinsic_signatures.begin();
+			const auto addr = variable_address_t::make_variable_address(variable_address_t::k_intrinsic, static_cast<int32_t>(index));
+			const auto e2 = expression_t::make_load2(addr, std::make_shared<typeid_t>(it->_function_type));
+			return { a_acc, e2 };
+		}
+		else{
+			std::stringstream what;
+			what << "Undefined variable \"" << details.variable_name << "\".";
+			throw_compiler_error(parent.location, what.str());
+		}
 	}
 }
 
@@ -1891,128 +1908,132 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 
 		//	Detect use of intrinsics.
 		if(callee_expr_load2){
-			const auto found_symbol_ptr = resolve_symbol_by_address(a_acc, callee_expr_load2->address);
-			if(found_symbol_ptr != nullptr){
-				if(found_symbol_ptr->first == make_assert_signature().name){
+			if(callee_expr_load2->address._parent_steps == variable_address_t::k_intrinsic){
+
+				const std::vector<intrinsic_signature_t>& intrinsic_signatures = a0._imm->intrinsic_signatures;
+				const auto index = callee_expr_load2->address._index;
+				QUARK_ASSERT(index >= 0 && index < intrinsic_signatures.size());
+				const auto& sign = intrinsic_signatures[index];
+				const auto& s = sign._function_id.name;
+
+				if(s == make_assert_signature().name){
 					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_assert_signature());
 				}
-				else if(found_symbol_ptr->first == make_to_string_signature().name){
+				else if(s == make_to_string_signature().name){
 					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_to_string_signature());
 				}
-				else if(found_symbol_ptr->first == make_to_pretty_string_signature().name){
+				else if(s == make_to_pretty_string_signature().name){
 					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_to_pretty_string_signature());
 				}
 
-				else if(found_symbol_ptr->first == make_typeof_signature().name){
+				else if(s == make_typeof_signature().name){
 					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_typeof_signature());
 				}
 
-				else if(found_symbol_ptr->first == make_update_signature().name){
+				else if(s == make_update_signature().name){
 					return analyse_intrinsic_update_expression(a_acc, parent, e, details.args);
 				}
-				else if(found_symbol_ptr->first == make_size_signature().name){
+				else if(s == make_size_signature().name){
 					return analyse_intrinsic_size_expression(a_acc, parent, details.args);
 				}
-				else if(found_symbol_ptr->first == make_find_signature().name){
+				else if(s == make_find_signature().name){
 					return analyse_intrinsic_find_expression(a_acc, parent, details.args);
 				}
-				else if(found_symbol_ptr->first == make_exists_signature().name){
+				else if(s == make_exists_signature().name){
 					return analyse_intrinsic_exists_expression(a_acc, parent, details.args);
 				}
-				else if(found_symbol_ptr->first == make_erase_signature().name){
+				else if(s == make_erase_signature().name){
 					return analyse_intrinsic_erase_expression(a_acc, parent, details.args);
 				}
-				else if(found_symbol_ptr->first == make_get_keys_signature().name){
+				else if(s == make_get_keys_signature().name){
 					return analyse_intrinsic_get_keys_expression(a_acc, parent, details.args);
 				}
-				else if(found_symbol_ptr->first == make_push_back_signature().name){
+				else if(s == make_push_back_signature().name){
 					return analyse_intrinsic_push_back_expression(a_acc, parent, details.args);
 				}
-				else if(found_symbol_ptr->first == make_subset_signature().name){
+				else if(s == make_subset_signature().name){
 					return analyse_intrinsic_subset_expression(a_acc, parent, details.args);
 				}
-				else if(found_symbol_ptr->first == make_replace_signature().name){
+				else if(s == make_replace_signature().name){
 					return analyse_intrinsic_replace_expression(a_acc, parent, details.args);
 				}
 
 
-				else if(found_symbol_ptr->first == make_parse_json_script_signature().name){
+				else if(s == make_parse_json_script_signature().name){
 					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_parse_json_script_signature());
 				}
-				else if(found_symbol_ptr->first == make_generate_json_script_signature().name){
+				else if(s == make_generate_json_script_signature().name){
 					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_generate_json_script_signature());
 				}
-				else if(found_symbol_ptr->first == make_to_json_signature().name){
+				else if(s == make_to_json_signature().name){
 					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_to_json_signature());
 				}
-				else if(found_symbol_ptr->first == make_from_json_signature().name){
+				else if(s == make_from_json_signature().name){
 					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_from_json_signature());
 				}
 
-				else if(found_symbol_ptr->first == make_get_json_type_signature().name){
+				else if(s == make_get_json_type_signature().name){
 					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_get_json_type_signature());
 				}
 
 
 
 
-				else if(found_symbol_ptr->first == make_map_signature().name){
+				else if(s == make_map_signature().name){
 					return analyse_intrinsic_map_expression(a_acc, parent, details.args);
 				}
-				else if(found_symbol_ptr->first == make_map_string_signature().name){
+				else if(s == make_map_string_signature().name){
 					return analyse_intrinsic_map_string_expression(a_acc, parent, details.args);
 				}
-				else if(found_symbol_ptr->first == make_map_dag_signature().name){
+				else if(s == make_map_dag_signature().name){
 					return analyse_intrinsic_map_dag_expression(a_acc, parent, details.args);
 				}
-				else if(found_symbol_ptr->first == make_filter_signature().name){
+				else if(s == make_filter_signature().name){
 					return analyse_intrinsic_filter_expression(a_acc, parent, details.args);
 				}
-				else if(found_symbol_ptr->first == make_reduce_signature().name){
+				else if(s == make_reduce_signature().name){
 					return analyse_intrinsic_reduce_expression(a_acc, parent, details.args);
 				}
-				else if(found_symbol_ptr->first == make_stable_sort_signature().name){
+				else if(s == make_stable_sort_signature().name){
 					return analyse_intrinsic_stable_sort_expression(a_acc, parent, details.args);
 				}
 
 
 
 
-				else if(found_symbol_ptr->first == make_print_signature().name){
+				else if(s == make_print_signature().name){
 					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_print_signature());
 				}
-				else if(found_symbol_ptr->first == make_send_signature().name){
+				else if(s == make_send_signature().name){
 					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_send_signature());
 				}
 
 
 
-				else if(found_symbol_ptr->first == make_bw_not_signature().name){
+				else if(s == make_bw_not_signature().name){
 					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_bw_not_signature());
 				}
-				else if(found_symbol_ptr->first == make_bw_and_signature().name){
+				else if(s == make_bw_and_signature().name){
 					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_bw_and_signature());
 				}
-				else if(found_symbol_ptr->first == make_bw_or_signature().name){
+				else if(s == make_bw_or_signature().name){
 					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_bw_or_signature());
 				}
-				else if(found_symbol_ptr->first == make_bw_xor_signature().name){
+				else if(s == make_bw_xor_signature().name){
 					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_bw_xor_signature());
 				}
-				else if(found_symbol_ptr->first == make_bw_shift_left_signature().name){
+				else if(s == make_bw_shift_left_signature().name){
 					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_bw_shift_left_signature());
 				}
-				else if(found_symbol_ptr->first == make_bw_shift_right_signature().name){
+				else if(s == make_bw_shift_right_signature().name){
 					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_bw_shift_right_signature());
 				}
-				else if(found_symbol_ptr->first == make_bw_shift_right_arithmetic_signature().name){
+				else if(s == make_bw_shift_right_arithmetic_signature().name){
 					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_bw_shift_right_arithmetic_signature());
 				}
 
 				else{
 				}
-			}
-			else{
 			}
 		}
 
@@ -2370,6 +2391,7 @@ struct builtins_t {
 };
 
 
+#if 0
 static builtins_t generate_intrinsics(analyser_t& a, const std::vector<intrinsic_signature_t>& intrinsics){
 	std::map<function_id_t, function_definition_t> function_defs;
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
@@ -2379,10 +2401,10 @@ static builtins_t generate_intrinsics(analyser_t& a, const std::vector<intrinsic
 
 		vector<member_t> args;
 		for(const auto& e: signature._function_type.get_function_args()){
-			args.push_back(member_t(e, "dummy"));
+			args.push_back(member_t(e, "dummy"));//??? use "".
 		}
 		const auto function_id = signature._function_id;
-		const auto def = function_definition_t::make_func(k_no_location, signature._function_id.name, signature._function_type, args, {});
+		const auto def = function_definition_t::make_intrinsic(k_no_location, signature._function_id.name, signature._function_type, args);
 		const auto function_value = value_t::make_function_value(signature._function_type, function_id_t { signature.name });
 
 		function_defs.insert({ function_id, def });
@@ -2390,6 +2412,7 @@ static builtins_t generate_intrinsics(analyser_t& a, const std::vector<intrinsic
 	}
 	return builtins_t{ function_defs, symbol_map };
 }
+#endif
 
 static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	/*
@@ -2434,9 +2457,11 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 
 	std::map<function_id_t, function_definition_t> function_defs;
 
+#if 0
 	const auto intrinsics = generate_intrinsics(a, input.intrinsic_signatures);
 	function_defs.insert(intrinsics.function_defs.begin(), intrinsics.function_defs.end());
 	symbol_map.insert(symbol_map.end(), intrinsics.symbol_map.begin(), intrinsics.symbol_map.end());
+#endif
 	return builtins_t{ function_defs, symbol_map };
 }
 
@@ -2449,6 +2474,12 @@ semantic_ast_t analyse(analyser_t& a){
 	////////////////////////////////	Create built-in global symbol map: built in data types, built-in functions (host functions).
 
 	const auto builtins = generate_builtins(a, *a._imm);
+
+
+	for(const auto& e: a._imm->intrinsic_signatures){
+		resolve_type(a, k_no_location, e._function_type);
+	}
+
 
 	std::vector<std::pair<std::string, symbol_t>> symbol_map = builtins.symbol_map;
 	std::map<function_id_t, function_definition_t> function_defs = builtins.function_defs;
@@ -2560,23 +2591,25 @@ static semantic_ast_t run_semantic_analysis0(const unchecked_ast_t& ast){
 semantic_ast_t run_semantic_analysis(const unchecked_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
-	if(k_trace_io_flag){
+	if(k_trace_input_flag || k_trace_output_flag){
 		QUARK_SCOPED_TRACE("run_semantic_analysis()");
 
-		{
+		if(k_trace_input_flag){
 			QUARK_SCOPED_TRACE("INPUT AST");
 			QUARK_TRACE(json_to_pretty_string(gp_ast_to_json(ast._tree)));
 		}
 
 		const auto result = run_semantic_analysis0(ast);
 
-		{
-			QUARK_SCOPED_TRACE("OUTPUT AST");
-			QUARK_TRACE(json_to_pretty_string(gp_ast_to_json(result._tree)));
-		}
-		{
-			QUARK_SCOPED_TRACE("OUTPUT TYPES");
-			trace_type_interner(result._tree._interned_types);
+		if(k_trace_output_flag){
+			{
+				QUARK_SCOPED_TRACE("OUTPUT AST");
+				QUARK_TRACE(json_to_pretty_string(gp_ast_to_json(result._tree)));
+			}
+			{
+				QUARK_SCOPED_TRACE("OUTPUT TYPES");
+				trace_type_interner(result._tree._interned_types);
+			}
 		}
 
 		return result;

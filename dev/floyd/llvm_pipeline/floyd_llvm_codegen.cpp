@@ -193,9 +193,9 @@ resolved_symbol_t make_resolved_symbol(llvm::Value* value_ptr, std::string debug
 resolved_symbol_t find_symbol(llvm_code_generator_t& gen_acc, const variable_address_t& reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(gen_acc.scope_path.size() >= 1);
-	QUARK_ASSERT(reg._parent_steps == -1 || (reg._parent_steps >= 0 && reg._parent_steps < gen_acc.scope_path.size()));
+	QUARK_ASSERT(reg._parent_steps == variable_address_t::k_global_scope || (reg._parent_steps >= 0 && reg._parent_steps < gen_acc.scope_path.size()));
 
-	if(reg._parent_steps == -1){
+	if(reg._parent_steps == variable_address_t::k_global_scope){
 		QUARK_ASSERT(gen_acc.scope_path.size() >= 1);
 
 		const auto& global_scope = gen_acc.scope_path.front();
@@ -973,6 +973,7 @@ static llvm::Value* generate_call_expression(llvm_function_generator_t& gen_acc,
 
 	const auto callee_function_type = details.callee->get_output_type();
 	const auto resolved_call_return_type = e0.get_output_type();
+
 	//	IDEA: Build a complete resolved_function_type: argument types from the actual arguments and return = resolved_call_return_type.
 	//	This lets us select specialisation of calls, like "string push_back(string, int)" vs [bool] push_back([bool], bool)
 
@@ -984,7 +985,22 @@ static llvm::Value* generate_call_expression(llvm_function_generator_t& gen_acc,
 	//	Verify that the actual argument expressions, their count and output types -- all match callee_function_type.
 	QUARK_ASSERT(details.args.size() == callee_function_type.get_function_args().size());
 
-	llvm::Value* callee0_reg = generate_expression(gen_acc, *details.callee);
+
+	llvm::Value* callee0_reg = nullptr;
+	const auto load2 = std::get_if<expression_t::load2_t>(&details.callee->_expression_variant);
+	if(load2 != nullptr && load2->address._parent_steps == variable_address_t::k_intrinsic){
+		const auto& intrinsic_signatures = get_intrinsic_signatures();
+		QUARK_ASSERT(load2->address._index >= 0 && load2->address._index < intrinsic_signatures.size());
+		const auto& intrinsic = intrinsic_signatures[load2->address._index];
+
+		const auto name = intrinsic.name;
+		const auto& def = find_function_def_from_link_name(gen_acc.gen.function_defs, encode_floyd_func_link_name(name));
+		callee0_reg = def.llvm_codegen_f;
+	}
+	else{
+		callee0_reg = generate_expression(gen_acc, *details.callee);
+	}
+
 	// Alternative: alter return type of callee0_reg to match resolved_call_return_type.
 
 	//	Generate code that evaluates all argument expressions.
@@ -1049,8 +1065,30 @@ static llvm::Value* generate_call_expression(llvm_function_generator_t& gen_acc,
 }
 
 
-static llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details);
+//	Generates a call to the global function that implements the intrinsic.
+static llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
 
+	//??? Don't call every time!
+	const auto intrinsic_signatures = get_intrinsic_signatures();
+
+	//	Find function
+    const auto it = std::find_if(intrinsic_signatures.begin(), intrinsic_signatures.end(), [&details](const intrinsic_signature_t& e) { return (std::string("$") + e.name) == details.call_name; } );
+    QUARK_ASSERT(it != intrinsic_signatures.end());
+	const auto function_type = std::make_shared<typeid_t>(it->_function_type);
+
+	const auto index = it - intrinsic_signatures.begin();
+	const auto addr = variable_address_t::make_variable_address(variable_address_t::k_intrinsic, static_cast<int>(index));
+
+	const auto call_details = expression_t::call_t {
+		std::make_shared<expression_t>(expression_t::make_load2(addr, function_type)),
+		details.args
+	};
+
+	const auto e2 = expression_t::make_call(*call_details.callee, call_details.args, std::make_shared<typeid_t>(e.get_output_type()));
+	return generate_call_expression(gen_acc, e2, call_details);
+}
 
 static llvm::Value* generate_push_back_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1076,29 +1114,6 @@ static llvm::Value* generate_push_back_expression(llvm_function_generator_t& gen
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
 }
-
-
-//	Generates a call to the global function that implements the intrinsic.
-static llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-
-	//	Find function
-	const auto& symbols = gen_acc.gen.scope_path[0];
-    const auto it = std::find_if(symbols.begin(), symbols.end(), [&details](const resolved_symbol_t& e) { return (std::string("$") + e.symbol_name) == details.call_name; } );
-    QUARK_ASSERT(it != symbols.end());
-	const auto function_type = std::make_shared<typeid_t>(it->symbol.get_type());
-	int global_index = static_cast<int>(it - symbols.begin());
-
-	const auto call_details = expression_t::call_t {
-		std::make_shared<expression_t>(expression_t::make_load2(variable_address_t::make_variable_address(-1, global_index), function_type)),
-		details.args
-	};
-
-	const auto e2 = expression_t::make_call(*call_details.callee, call_details.args, std::make_shared<typeid_t>(e.get_output_type()));
-	return generate_call_expression(gen_acc, e2, call_details);
-}
-
 
 static llvm::Value* generate_intrinsic_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -2211,7 +2226,7 @@ static void generate_all_floyd_function_bodies(llvm_code_generator_t& gen_acc, c
 
 
 //	Notice: this function fills-in more information in each function_def_t. Make sure you use the output moving on, not the input.
-static std::vector<function_def_t> generate_llvm_function_entry(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<function_def_t>& pass0){
+static std::vector<function_def_t> generate_llvm_function_entries(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<function_def_t>& pass0){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	std::vector<function_def_t> result;
@@ -2360,7 +2375,7 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> gen
 	//	This lets all other code reference them, even if they're not filled up with code yet.
 
 	const auto functions0 = make_all_function_defs(module->getContext(), type_lookup, semantic_ast._tree._function_defs);
-	const auto funcs = generate_llvm_function_entry(*module, type_lookup, functions0);
+	const auto funcs = generate_llvm_function_entries(*module, type_lookup, functions0);
 
 	llvm_code_generator_t gen_acc(instance, module.get(), semantic_ast._tree._interned_types, type_lookup, funcs);
 

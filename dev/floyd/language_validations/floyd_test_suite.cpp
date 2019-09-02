@@ -2713,6 +2713,18 @@ R"___(| MODULE  | TEST  |    DUR|              |
 	);
 }
 
+FLOYD_LANG_PROOF("Floyd test suite", "Call corelib function", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			make_benchmark_report([])
+
+		)"
+	);
+}
+
+
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Example", ""){
 	ut_verify_printout_lib(
 		QUARK_POS,
