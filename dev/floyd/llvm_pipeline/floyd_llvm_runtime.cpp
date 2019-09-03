@@ -234,16 +234,11 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 			//	Skip those intrinsics that have no native function -- those are inlined directly as instructions.
 			const auto bind_it = intrinsics.find(signature.name);
 			if(bind_it != intrinsics.end()){
-				const auto link_name = encode_runtime_func_link_name(signature.name);
-
-				std::vector<member_t> args;
-				for(const auto& arg_type: signature._function_type.get_function_args()){
-					args.push_back(member_t(arg_type, "dummy"));//??? use "".
-				}
-				const auto function_id = signature._function_id;
-				const auto def0 = function_definition_t::make_intrinsic(k_no_location, signature._function_id.name, signature._function_type, args);
-
-				const auto def = make_function_def(type_lookup, def0, encode_intrinsic_link_name(def0._definition_name));
+				const auto link_name = encode_intrinsic_link_name(bind_it->first);
+				const auto function_type = signature._function_type;
+				llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
+				const auto function_byvalue_type = deref_ptr(function_ptr_type);
+				const auto def = function_link_entry_t{ link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, {}, bind_it->second };
 				result0.push_back(def);
 			}
 		}
@@ -590,11 +585,32 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 	//	ee2.ee->DisableSymbolSearching(false);
 	}
 
+	//	NOTICE: LLVM strips out unused functions = not all functions in our link map gets a native function pointer.
+	std::vector<function_link_entry_t> final_link_map;
+	for(const auto& e: program_breaks.function_defs){
+		const auto addr = (void*)ee1->getFunctionAddress(e.link_name.s);
+
+		//??? clean out llvm_codegen_f, which makes no sense now?
+
+#if 0
+		if(e.native_f != nullptr){
+//			QUARK_ASSERT(addr == e.native_f);
+			final_link_map.push_back(e);
+		}
+		else{
+#endif
+			const auto e2 = function_link_entry_t{ e.link_name, e.llvm_function_type, e.llvm_codegen_f, e.function_type_or_undef, e.arg_names_or_empty, addr };
+			final_link_map.push_back(e2);
+
+//		}
+	}
+
+
 	auto ee2 = std::unique_ptr<llvm_execution_engine_t>(
 		new llvm_execution_engine_t{
 			k_debug_magic,
 			value_backend_t(
-				collection_native_func_ptrs(*ee1, program_breaks.function_defs),
+				collection_native_func_ptrs(*ee1, final_link_map),
 				make_struct_layouts(program_breaks.type_lookup, ee1->getDataLayout()),
 				program_breaks.type_lookup.state.type_interner
 			),
@@ -603,7 +619,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			&instance,
 			ee1,
 			program_breaks.debug_globals,
-			program_breaks.function_defs,
+			final_link_map,
 			{},
 			nullptr,
 			start_time,
@@ -616,6 +632,10 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 #if DEBUG
 	check_nulls(*ee2, program_breaks);
 #endif
+
+	if(k_trace_function_link_map){
+		trace_function_link_map(ee2->function_defs);
+	}
 
 //	llvm::WriteBitcodeToFile(exeEng->getVerifyModules(), raw_ostream &Out);
 	return ee2;

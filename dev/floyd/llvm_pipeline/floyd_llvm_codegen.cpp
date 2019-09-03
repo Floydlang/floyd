@@ -8,7 +8,7 @@
 
 const bool k_trace_input_output = false;
 const bool k_trace_types = k_trace_input_output;
-static const bool k_trace_function_link_map = false;
+static const bool k_trace_function_link_map = true;
 
 
 #include "floyd_llvm_codegen.h"
@@ -2424,17 +2424,20 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 
 	auto result0 = generate_module(instance, module_name, ast);
 	auto module = std::move(result0.first);
-	auto funcs = result0.second;
+	auto function_link_map = result0.second;
 
 	const auto type_lookup = llvm_type_lookup(instance.context, ast0._tree._interned_types);
 
-	auto result = std::make_unique<llvm_ir_program_t>(&instance, module, type_lookup, ast._tree._globals._symbol_table, funcs);
+	auto result = std::make_unique<llvm_ir_program_t>(&instance, module, type_lookup, ast._tree._globals._symbol_table, function_link_map);
 
 	result->container_def = ast0._tree._container_def;
 	result->software_system = ast0._tree._software_system;
 
 	if(k_trace_input_output){
 		QUARK_TRACE_SS("result = " << floyd::print_program(*result));
+	}
+	if(k_trace_function_link_map){
+		trace_function_link_map(result->function_defs);
 	}
 	return result;
 }
