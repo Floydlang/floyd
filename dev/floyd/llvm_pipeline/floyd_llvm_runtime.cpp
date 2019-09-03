@@ -217,6 +217,45 @@ static std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMCon
 }
 
 
+static std::vector<function_link_entry_t> make_init_deinit_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	QUARK_ASSERT(type_lookup.check_invariant());
+
+	std::vector<function_link_entry_t> result;
+
+	//	init()
+	{
+		const auto link_name = encode_runtime_func_link_name("init");
+		llvm::FunctionType* function_type = llvm::FunctionType::get(
+			llvm::Type::getInt64Ty(context),
+			{
+				make_frp_type(type_lookup)
+			},
+			false
+		);
+		const auto def = function_link_entry_t{ "runtime", link_name, function_type, nullptr, typeid_t::make_undefined(), {}, nullptr };
+		result.push_back(def);
+	}
+
+	//	deinit()
+	{
+		const auto link_name = encode_runtime_func_link_name("deinit");
+		llvm::FunctionType* function_type = llvm::FunctionType::get(
+			llvm::Type::getInt64Ty(context),
+			{
+				make_frp_type(type_lookup)
+			},
+			false
+		);
+		const auto def = function_link_entry_t{ "runtime", link_name, function_type, nullptr, typeid_t::make_undefined(), {}, nullptr };
+		result.push_back(def);
+	}
+
+	if(k_trace_function_link_map){
+		trace_function_link_map(result);
+	}
+
+	return result;
+}
 
 static std::vector<function_link_entry_t> make_function_link_mapx(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
 	QUARK_ASSERT(type_lookup.check_invariant());
@@ -232,6 +271,7 @@ static std::vector<function_link_entry_t> make_function_link_mapx(llvm::LLVMCont
 	{
 	}
 
+#if 0
 	//	init()
 	{
 		const auto name = "init";
@@ -261,6 +301,7 @@ static std::vector<function_link_entry_t> make_function_link_mapx(llvm::LLVMCont
 		const auto def = function_link_entry_t{ "runtime", link_name, function_type, nullptr, typeid_t::make_undefined(), {}, nullptr };
 		result0.push_back(def);
 	}
+#endif
 
 	//	Make function def for all functions inside the floyd program (floyd source code).
 	{
@@ -320,11 +361,13 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 
 	const auto runtime_functions_link_map = make_runtime_function_link_map(context, type_lookup);
 	const auto intrinsics_link_map = make_intrinsics_link_map(context, type_lookup);
+	const auto init_deinit_link_map = make_init_deinit_link_map(context, type_lookup);
 	const auto other = make_function_link_mapx(context, type_lookup, ast_function_defs);
 
 	std::vector<function_link_entry_t> acc;
 	acc = concat(acc, runtime_functions_link_map);
 	acc = concat(acc, intrinsics_link_map);
+	acc = concat(acc, init_deinit_link_map);
 	acc = concat(acc, other);
 	return acc;
 }
