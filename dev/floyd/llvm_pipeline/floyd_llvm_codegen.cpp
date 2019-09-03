@@ -957,98 +957,6 @@ static llvm::Value* generate_conditional_operator_expression(llvm_function_gener
 	return phiNode;
 }
 
-
-#if 0
-static llvm::Value* generate_call(llvm_function_generator_t& gen_acc, const typeid_t& callee_function_type, llvm::Value& callee_reg, const std::vector<llvm::Value&> args){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(callee_function_type.check_invariant());
-
-	auto& builder = gen_acc.get_builder();
-
-	const auto& llvm_mapping = *gen_acc.gen.type_lookup.find_from_type(callee_function_type).optional_function_def;
-
-	//	Verify that the actual argument expressions, their count and output types -- all match callee_function_type.
-	QUARK_ASSERT(details.args.size() == callee_function_type.get_function_args().size());
-
-
-	llvm::Value* callee0_reg = nullptr;
-	const auto load2 = std::get_if<expression_t::load2_t>(&details.callee->_expression_variant);
-	if(load2 != nullptr && load2->address._parent_steps == variable_address_t::k_intrinsic){
-		const auto& intrinsic_signatures = get_intrinsic_signatures();
-		QUARK_ASSERT(load2->address._index >= 0 && load2->address._index < intrinsic_signatures.size());
-		const auto& intrinsic = intrinsic_signatures[load2->address._index];
-
-		const auto name = intrinsic.name;
-		const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(name));
-		callee0_reg = def.llvm_codegen_f;
-	}
-	else{
-		callee0_reg = generate_expression(gen_acc, *details.callee);
-	}
-
-	//	Generate code that evaluates all argument expressions.
-	std::vector<llvm::Value*> arg_regs;
-
-	std::vector<std::pair<llvm::Value*, typeid_t> > destroy;
-
-	for(const auto& out_arg: llvm_mapping.args){
-		const auto& arg_details = details.args[out_arg.floyd_arg_index];
-
-		if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr){
-			auto f_args = gen_acc.emit_f.args();
-			QUARK_ASSERT((f_args.end() - f_args.begin()) >= 1);
-			auto floyd_context_arg_ptr = f_args.begin();
-			arg_regs.push_back(floyd_context_arg_ptr);
-		}
-		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_known_value_type){
-			llvm::Value* arg2 = generate_expression(gen_acc, arg_details);
-			arg_regs.push_back(arg2);
-			destroy.push_back({ arg2, arg_details.get_output_type() });
-		}
-
-		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_value){
-			llvm::Value* arg2 = generate_expression(gen_acc, arg_details);
-
-			destroy.push_back({ arg2, arg_details.get_output_type() });
-
-			//	Actual type of the argument, as specified inside the call expression. The concrete type for the DYN value for this call.
-			const auto concrete_arg_type = arg_details.get_output_type();
-
-			// We assume that the next arg in the llvm_mapping is the dyn-type and store it too.
-			const auto packed_reg = generate_cast_to_runtime_value(gen_acc.gen, *arg2, concrete_arg_type);
-			arg_regs.push_back(packed_reg);
-			arg_regs.push_back(generate_itype_constant(gen_acc.gen, concrete_arg_type));
-		}
-		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_type){
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
-	QUARK_ASSERT(arg_regs.size() == llvm_mapping.args.size());
-	auto result0_reg = builder.CreateCall(callee0_reg, arg_regs, callee_function_type.get_function_return().is_void() ? "" : "");
-
-	for(const auto& m: destroy){
-		generate_release(gen_acc, *m.first, m.second);
-	}
-	//	Release callee?
-
-
-	//	If the return type is dynamic, cast the returned runtime_value_t to the correct type.
-	//	It must be retained already.
-	llvm::Value* result_reg = result0_reg;
-	if(callee_function_type.get_function_return().is_any()){
-		result_reg = generate_cast_from_runtime_value(gen_acc.gen, *result0_reg, resolved_call_return_type);
-	}
-	else{
-	}
-
-	QUARK_ASSERT(gen_acc.check_invariant());
-	return result_reg;
-}
-#endif
-
-
 //	Call functon type and callee function types are identical, except the callee functiont type can use ANY-types.
 static typeid_t calc_call_expression_function_type(const expression_t& e, const expression_t::call_t& details){
 	QUARK_ASSERT(e.check_invariant());
@@ -1071,8 +979,80 @@ static typeid_t calc_call_expression_function_type(const expression_t& e, const 
 	return resolved_call_function_type;
 }
 
+static llvm::Value* generate_call(llvm_function_generator_t& gen_acc, const typeid_t& callee_function_type, const typeid_t& resolved_function_type, llvm::Value& callee_reg, const std::vector<llvm::Value*> floyd_args){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(callee_function_type.check_invariant());
+	QUARK_ASSERT(resolved_function_type.check_invariant());
+	QUARK_ASSERT(callee_function_type.get_function_args().size() == floyd_args.size());
+
+	auto& builder = gen_acc.get_builder();
+
+	//	Callee, as LLVM function signature. It gets the param #0 runtime pointer and each ANY is expanded to valye/type pairs.
+	const auto& callee_mapping = *gen_acc.gen.type_lookup.find_from_type(callee_function_type).optional_function_def;
+
+	//	Generate code that evaluates all argument expressions.
+	std::vector<llvm::Value*> arg_regs;
+	std::vector<std::pair<llvm::Value*, typeid_t> > destroy;
+
+	for(const auto& out_arg: callee_mapping.args){
+		if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr){
+			auto f_args = gen_acc.emit_f.args();
+			QUARK_ASSERT((f_args.end() - f_args.begin()) >= 1);
+			auto floyd_context_arg_ptr = f_args.begin();
+			arg_regs.push_back(floyd_context_arg_ptr);
+		}
+		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_known_value_type){
+			QUARK_ASSERT(out_arg.floyd_arg_index >= 0 && out_arg.floyd_arg_index < floyd_args.size());
+			auto floyd_arg_reg = floyd_args[out_arg.floyd_arg_index];
+			const auto arg_type = resolved_function_type.get_function_args()[out_arg.floyd_arg_index];
+
+			arg_regs.push_back(floyd_arg_reg);
+			destroy.push_back({ floyd_arg_reg, arg_type });
+		}
+
+		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_value){
+			QUARK_ASSERT(out_arg.floyd_arg_index >= 0 && out_arg.floyd_arg_index < floyd_args.size());
+			auto floyd_arg_reg = floyd_args[out_arg.floyd_arg_index];
+			const auto arg_type = resolved_function_type.get_function_args()[out_arg.floyd_arg_index];
+
+			destroy.push_back({ floyd_arg_reg, arg_type });
+
+			// We assume that the next arg in the callee_mapping is the dyn-type and store it too.
+			const auto packed_reg = generate_cast_to_runtime_value(gen_acc.gen, *floyd_arg_reg, arg_type);
+			arg_regs.push_back(packed_reg);
+			arg_regs.push_back(generate_itype_constant(gen_acc.gen, arg_type));
+		}
+		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_type){
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+	QUARK_ASSERT(arg_regs.size() == callee_mapping.args.size());
+	auto result0_reg = builder.CreateCall(&callee_reg, arg_regs, "");
+
+	for(const auto& m: destroy){
+		generate_release(gen_acc, *m.first, m.second);
+	}
+
+	//	??? Release callee?
+
+
+	//	If the return type is dynamic, cast the returned runtime_value_t to the correct type.
+	//	It must be retained already.
+	llvm::Value* result_reg = result0_reg;
+	if(callee_function_type.get_function_return().is_any()){
+		result_reg = generate_cast_from_runtime_value(gen_acc.gen, *result0_reg, resolved_function_type.get_function_return());
+	}
+	else{
+	}
+
+	QUARK_ASSERT(gen_acc.check_invariant());
+	return result_reg;
+}
+
 /*
-	NOTICES: The function signature for the callee can hold DYNs.
+	NOTICE: The function signature for the callee can hold DYNs.
 	The actual arguments will be explicit types, never DYNs.
 
 	Function signature
@@ -1151,7 +1131,7 @@ static llvm::Value* generate_call_expression(llvm_function_generator_t& gen_acc,
 		}
 	}
 	QUARK_ASSERT(arg_regs.size() == callee_mapping.args.size());
-	auto result0_reg = builder.CreateCall(callee0_reg, arg_regs, callee_function_type.get_function_return().is_void() ? "" : "");
+	auto result0_reg = builder.CreateCall(callee0_reg, arg_regs, "");
 
 	for(const auto& m: destroy){
 		generate_release(gen_acc, *m.first, m.second);
