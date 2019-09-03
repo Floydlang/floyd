@@ -162,78 +162,34 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name)
 ////////////////////////////////	INTERNALS FOR EXECUTION ENGINE
 
 
-static std::map<link_name_t, void*> make_all_function_binds(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
-
-	////////	Functions to support the runtime
-
-	const auto runtime_functions = get_runtime_function_binds(context, type_lookup);
-	std::map<link_name_t, void*> runtime_functions_map;
-	for(const auto& e: runtime_functions){
-		const auto link_name = encode_runtime_func_link_name(e.name);
-		const auto e2 = std::pair<link_name_t, void*>(link_name, e.native_f);
-		runtime_functions_map.insert(e2);
-	}
-
-	std::map<link_name_t, void*> function_map = runtime_functions_map;
-
-
-	////////	intrinsics
-
-	const auto intrinsics0 = get_intrinsic_binds();
-	std::map<link_name_t, void*> intrinsics;
-	for(const auto& e: intrinsics0){
-		intrinsics.insert({ encode_intrinsic_link_name(e.first), e.second });
-	}
-	function_map.insert(intrinsics.begin(), intrinsics.end());
-
-
-
-	////////	Corelib
-
-	const auto corelib_function_map0 = get_corelib_binds();
-	std::map<link_name_t, void*> corelib_function_map;
-	for(const auto& e: corelib_function_map0){
-		corelib_function_map.insert({ encode_floyd_func_link_name(e.first), e.second });
-	}
-	function_map.insert(corelib_function_map.begin(), corelib_function_map.end());
-
-	return function_map;
-}
-
-static function_link_entry_t make_function_def(const llvm_type_lookup& type_lookup, const function_definition_t& function_def, const link_name_t& link_name){
-	QUARK_ASSERT(type_lookup.check_invariant());
-	QUARK_ASSERT(function_def.check_invariant());
-
-	const auto function_type = function_def._function_type;
-	llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
-	const auto function_byvalue_type = deref_ptr(function_ptr_type);
-	return function_link_entry_t{ link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, function_def._named_args, nullptr };
-}
 
 std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
+	const auto runtime_function_binds = get_runtime_function_binds(context, type_lookup);
+	const auto& intrinsic_signatures = get_intrinsic_signatures();
+	const auto intrinsic_binds = get_intrinsic_binds();
+
+
 	std::vector<function_link_entry_t> result0;
 
-	//	Make prototypes for all runtime functions, like floydrt_retain_vec().
+	//	Make link entries for all runtime functions, like floydrt_retain_vec().
+	//	These have no floyd-style function type, only llvm function type, since they use parameters not expressable with typeid_t.
 	{
-		const auto runtime_functions = get_runtime_function_binds(context, type_lookup);
-		for(const auto& e: runtime_functions){
+		for(const auto& e: runtime_function_binds){
 			const auto link_name = encode_runtime_func_link_name(e.name);
 			const auto def = function_link_entry_t{ link_name, e.llvm_function_type, nullptr, typeid_t::make_undefined(), {}, e.native_f };
 			result0.push_back(def);
 		}
 	}
 
-	//	Make prototypes for all intrinsics functions, like assert().
+	//	Make link entries for all intrinsics functions, like assert().
 	{
-		const std::vector<intrinsic_signature_t>& intrinsic_signatures = get_intrinsic_signatures();
-		const auto intrinsics = get_intrinsic_binds();
 		for(const auto& signature: intrinsic_signatures){
 
 			//	Skip those intrinsics that have no native function -- those are inlined directly as instructions.
-			const auto bind_it = intrinsics.find(signature.name);
-			if(bind_it != intrinsics.end()){
+			const auto bind_it = intrinsic_binds.find(signature.name);
+			if(bind_it != intrinsic_binds.end()){
 				const auto link_name = encode_intrinsic_link_name(bind_it->first);
 				const auto function_type = signature._function_type;
 				llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
@@ -277,7 +233,11 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 	//	Make function def for all functions inside the floyd program (floyd source code).
 	{
 		for(const auto& function_def: ast_function_defs){
-			auto def = make_function_def(type_lookup, function_def, encode_floyd_func_link_name(function_def._definition_name));
+			const auto link_name = encode_floyd_func_link_name(function_def._definition_name);
+			const auto function_type = function_def._function_type;
+			llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
+			const auto function_byvalue_type = deref_ptr(function_ptr_type);
+			const auto def = function_link_entry_t{ link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, function_def._named_args, nullptr };
 			result0.push_back(def);
 		}
 	}
@@ -291,8 +251,41 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 	//	Resolve native functions pointers - for built-in C functions like runtime functions and intrinsics.
 
 
+	std::map<link_name_t, void*> binds;
+	{
+		////////	Functions to support the runtime
+
+		std::map<link_name_t, void*> runtime_functions_map;
+		for(const auto& e: runtime_function_binds){
+			const auto link_name = encode_runtime_func_link_name(e.name);
+			const auto e2 = std::pair<link_name_t, void*>(link_name, e.native_f);
+			runtime_functions_map.insert(e2);
+		}
+
+		binds = runtime_functions_map;
+
+
+		////////	intrinsics
+
+		std::map<link_name_t, void*> intrinsics_binds2;
+		for(const auto& e: intrinsic_binds){
+			intrinsics_binds2.insert({ encode_intrinsic_link_name(e.first), e.second });
+		}
+		binds.insert(intrinsics_binds2.begin(), intrinsics_binds2.end());
+
+
+
+		////////	Corelib
+
+		const auto corelib_function_map0 = get_corelib_binds();
+		std::map<link_name_t, void*> corelib_function_map;
+		for(const auto& e: corelib_function_map0){
+			corelib_function_map.insert({ encode_floyd_func_link_name(e.first), e.second });
+		}
+		binds.insert(corelib_function_map.begin(), corelib_function_map.end());
+	}
+
 	std::vector<function_link_entry_t> result;
-	const auto binds = make_all_function_binds(context, type_lookup);
 	for(const auto& e: result0){
 		const auto it = binds.find(e.link_name);
 		if(it != binds.end()){
