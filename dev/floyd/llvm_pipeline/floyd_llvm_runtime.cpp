@@ -175,7 +175,7 @@ static std::vector<function_link_entry_t> make_runtime_function_link_map(llvm::L
 	std::vector<function_link_entry_t> result;
 	for(const auto& e: runtime_function_binds){
 		const auto link_name = encode_runtime_func_link_name(e.name);
-		const auto def = function_link_entry_t{ link_name, e.llvm_function_type, nullptr, typeid_t::make_undefined(), {}, e.native_f };
+		const auto def = function_link_entry_t{ "runtime", link_name, e.llvm_function_type, nullptr, typeid_t::make_undefined(), {}, e.native_f };
 		result.push_back(def);
 	}
 
@@ -204,7 +204,7 @@ static std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMCon
 			const auto function_type = signature._function_type;
 			llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
 			const auto function_byvalue_type = deref_ptr(function_ptr_type);
-			const auto def = function_link_entry_t{ link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, {}, bind_it->second };
+			const auto def = function_link_entry_t{ "intrinsic", link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, {}, bind_it->second };
 			result.push_back(def);
 		}
 	}
@@ -243,7 +243,7 @@ static std::vector<function_link_entry_t> make_function_link_mapx(llvm::LLVMCont
 			},
 			false
 		);
-		const auto def = function_link_entry_t{ link_name, function_type, nullptr, typeid_t::make_undefined(), {}, nullptr };
+		const auto def = function_link_entry_t{ "runtime", link_name, function_type, nullptr, typeid_t::make_undefined(), {}, nullptr };
 		result0.push_back(def);
 	}
 
@@ -258,7 +258,7 @@ static std::vector<function_link_entry_t> make_function_link_mapx(llvm::LLVMCont
 			},
 			false
 		);
-		const auto def = function_link_entry_t{ link_name, function_type, nullptr, typeid_t::make_undefined(), {}, nullptr };
+		const auto def = function_link_entry_t{ "runtime", link_name, function_type, nullptr, typeid_t::make_undefined(), {}, nullptr };
 		result0.push_back(def);
 	}
 
@@ -269,7 +269,7 @@ static std::vector<function_link_entry_t> make_function_link_mapx(llvm::LLVMCont
 			const auto function_type = function_def._function_type;
 			llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
 			const auto function_byvalue_type = deref_ptr(function_ptr_type);
-			const auto def = function_link_entry_t{ link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, function_def._named_args, nullptr };
+			const auto def = function_link_entry_t{ "program", link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, function_def._named_args, nullptr };
 			result0.push_back(def);
 		}
 	}
@@ -298,7 +298,7 @@ static std::vector<function_link_entry_t> make_function_link_mapx(llvm::LLVMCont
 	for(const auto& e: result0){
 		const auto it = binds0.find(e.link_name);
 		if(it != binds0.end()){
-			const auto def2 = function_link_entry_t{ e.link_name, e.llvm_function_type, e.llvm_codegen_f, e.function_type_or_undef, e.arg_names_or_empty, it->second };
+			const auto def2 = function_link_entry_t{ e.module, e.link_name, e.llvm_function_type, e.llvm_codegen_f, e.function_type_or_undef, e.arg_names_or_empty, it->second };
 			result.push_back(def2);
 		}
 		else{
@@ -332,8 +332,8 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 
 void trace_function_link_map(const std::vector<function_link_entry_t>& defs){
 	std::vector<line_t> table = {
-		line_t( { "LINK-NAME", "LLVM_FUNCTION_TYPE", "LLVM_CODEGEN_F", "FUNCTION TYPE", "ARG NAMES", "NATIVE_F" }, ' ', '|'),
-		line_t( { "", "", "", "", "", "" }, '-', '|'),
+		line_t( { "LINK-NAME", "MODULE", "LLVM_FUNCTION_TYPE", "LLVM_CODEGEN_F", "FUNCTION TYPE", "ARG NAMES", "NATIVE_F" }, ' ', '|'),
+		line_t( { "", "", "", "", "", "", "" }, '-', '|'),
 	};
 
 	for(const auto& e: defs){
@@ -352,6 +352,7 @@ void trace_function_link_map(const std::vector<function_link_entry_t>& defs){
 		const auto l = line_t {
 			{
 				e.link_name.s,
+				e.module,
 				print_type(e.llvm_function_type),
 				e.llvm_codegen_f != nullptr ? ptr_to_hexstring(e.llvm_codegen_f) : "",
 				f,
@@ -364,10 +365,10 @@ void trace_function_link_map(const std::vector<function_link_entry_t>& defs){
 		table.push_back(l);
 	}
 
-	table.push_back(line_t( { "", "", "", "", "", "" }, '-', '|'));
+	table.push_back(line_t( { "", "", "", "", "", "", "" }, '-', '|'));
 
 	const auto default_column = column_t{ 0, -1, 0 };
-	const auto columns0 = std::vector<column_t>{ default_column, default_column, default_column, default_column, default_column, default_column };
+	const auto columns0 = std::vector<column_t>(table[0].columns.size(), default_column);
 	const auto columns = fit_columns(columns0, table);
 	const auto r = generate_table(table, columns);
 
@@ -617,7 +618,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 		}
 		else{
 #endif
-			const auto e2 = function_link_entry_t{ e.link_name, e.llvm_function_type, e.llvm_codegen_f, e.function_type_or_undef, e.arg_names_or_empty, addr };
+			const auto e2 = function_link_entry_t{ e.module, e.link_name, e.llvm_function_type, e.llvm_codegen_f, e.function_type_or_undef, e.arg_names_or_empty, addr };
 			final_link_map.push_back(e2);
 
 //		}

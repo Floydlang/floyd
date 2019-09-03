@@ -2263,7 +2263,7 @@ static std::vector<function_link_entry_t> generate_function_nodes(llvm::Module& 
 		QUARK_ASSERT(check_invariant__function(f));
 		QUARK_ASSERT(check_invariant__module(&module));
 
-		result.push_back(function_link_entry_t{ e.link_name, e.llvm_function_type, f, e.function_type_or_undef, e.arg_names_or_empty, e.native_f });
+		result.push_back(function_link_entry_t{ e.module, e.link_name, e.llvm_function_type, f, e.function_type_or_undef, e.arg_names_or_empty, e.native_f });
 	}
 	if(k_trace_function_link_map){
 		trace_function_link_map(result);
