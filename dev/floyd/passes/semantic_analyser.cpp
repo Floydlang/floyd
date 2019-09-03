@@ -1836,6 +1836,8 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 /*
 	FUNCTION CALLS, INTRINSICS
 
+	TERMINOLOGY
+
 	"call" = the expression that wants to make a call. It needs to tell will callee (the target function value) it wants to call. It includes arguments to pass to the call.
 
 	"callee" (plural callees)
@@ -1847,7 +1849,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 
 	The call will either match 100% or, if the callee has any-type as return and/or arguments, then the call will have *more* type info than callee.
 
-	After semantic analysis has run (or any of the analys_*() functions returns an expression), then the actual types of all call arguments/returns are 100% known.
+	After semantic analysis has run (or any of the analys_*() functions returns an expression), then the actual types (arguments and return) of all call expressions are 100% known.
 
 	callee:						void print(any)
 	BEFORE call expression:		print(13)
