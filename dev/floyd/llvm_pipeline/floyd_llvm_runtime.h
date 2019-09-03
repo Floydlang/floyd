@@ -69,11 +69,28 @@ struct function_link_entry_t {
 	//	Only valid during codegen
 	llvm::Function* llvm_codegen_f;
 
+#if 1
 	function_definition_t floyd_fundef;
+#else
+	typeid_t function_type_or_undef;
+	std::vector<std::string> arg_names_or_empty;
+	typeid_t function_def_name_or_blank;
+#endif
+
 	void* native_f;
 };
 
 void trace_function_defs(const std::vector<function_link_entry_t>& defs);
+
+
+
+////////////////////////////////		function_link_entry1_t
+
+//	link_name, llvm_function_type and floyd_fundef are known. We don't have 
+struct function_link_entry1_t {
+	function_link_entry_t entry;
+};
+
 
 
 
@@ -195,7 +212,6 @@ inline runtime_value_t to_runtime_string(llvm_execution_engine_t& runtime, const
 
 
 //	Returns a complete list of all functions: programmed in floyd, runtime functions, init() deinit().
-//	Notice that intrinics area already in the ast_function_defs-list.
 std::vector<function_link_entry_t> make_function_link_map1(
 	llvm::LLVMContext& context,
 	const llvm_type_lookup& type_lookup,

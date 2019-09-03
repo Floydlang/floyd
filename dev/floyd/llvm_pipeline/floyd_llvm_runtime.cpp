@@ -222,7 +222,7 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 		for(const auto& e: runtime_functions){
 			const auto link_name = encode_runtime_func_link_name(e.name);
 			const auto def0 = function_definition_t::make_func(k_no_location, e.name, typeid_t::make_void(), {}, {});
-			const auto def = function_link_entry_t{ link_name, e.llvm_function_type, nullptr, def0, nullptr };
+			const auto def = function_link_entry_t{ link_name, e.llvm_function_type, nullptr, def0, e.native_f };
 			result0.push_back(def);
 		}
 	}
