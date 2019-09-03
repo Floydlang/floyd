@@ -172,6 +172,7 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 
 
 	std::vector<function_link_entry_t> result0;
+	std::map<link_name_t, void*> binds0;
 
 	//	Make link entries for all runtime functions, like floydrt_retain_vec().
 	//	These have no floyd-style function type, only llvm function type, since they use parameters not expressable with typeid_t.
@@ -251,7 +252,6 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 	//	Resolve native functions pointers - for built-in C functions like runtime functions and intrinsics.
 
 
-	std::map<link_name_t, void*> binds;
 	{
 		////////	Functions to support the runtime
 
@@ -262,7 +262,7 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 			runtime_functions_map.insert(e2);
 		}
 
-		binds = runtime_functions_map;
+		binds0 = runtime_functions_map;
 
 
 		////////	intrinsics
@@ -271,7 +271,7 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 		for(const auto& e: intrinsic_binds){
 			intrinsics_binds2.insert({ encode_intrinsic_link_name(e.first), e.second });
 		}
-		binds.insert(intrinsics_binds2.begin(), intrinsics_binds2.end());
+		binds0.insert(intrinsics_binds2.begin(), intrinsics_binds2.end());
 
 
 
@@ -282,13 +282,13 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 		for(const auto& e: corelib_function_map0){
 			corelib_function_map.insert({ encode_floyd_func_link_name(e.first), e.second });
 		}
-		binds.insert(corelib_function_map.begin(), corelib_function_map.end());
+		binds0.insert(corelib_function_map.begin(), corelib_function_map.end());
 	}
 
 	std::vector<function_link_entry_t> result;
 	for(const auto& e: result0){
-		const auto it = binds.find(e.link_name);
-		if(it != binds.end()){
+		const auto it = binds0.find(e.link_name);
+		if(it != binds0.end()){
 			const auto def2 = function_link_entry_t{ e.link_name, e.llvm_function_type, e.llvm_codegen_f, e.function_type_or_undef, e.arg_names_or_empty, it->second };
 			result.push_back(def2);
 		}
