@@ -49,7 +49,7 @@ llvm::Value* generate_get_vec_element_ptr_needs_cast(llvm_function_generator_t& 
 	const auto gep = std::vector<llvm::Value*>{
 		builder.getInt32(1)
 	};
-	auto after_alloc64_ptr_reg = builder.CreateGEP(make_generic_vec_type(gen_acc.gen.type_lookup), &vec_ptr_reg, gep, "");
+	auto after_alloc64_ptr_reg = builder.CreateGEP(make_generic_vec_type_byvalue(gen_acc.gen.type_lookup), &vec_ptr_reg, gep, "");
 	return after_alloc64_ptr_reg;
 }
 
@@ -58,14 +58,14 @@ llvm::Value* generate_get_struct_base_ptr(llvm_function_generator_t& gen_acc, ll
 
 	auto& builder = gen_acc.get_builder();
 
-	auto type = get_generic_struct_type(gen_acc.gen.type_lookup);
+	auto type = get_generic_struct_type_byvalue(gen_acc.gen.type_lookup);
 	auto ptr_reg = gen_acc.get_builder().CreateCast(llvm::Instruction::CastOps::BitCast, &struct_ptr_reg, type->getPointerTo(), "");
 
 	const auto gep = std::vector<llvm::Value*>{
 		builder.getInt32(1)
 	};
 	auto ptr2_reg = builder.CreateGEP(type, ptr_reg, gep, "");
-	auto final_type2 = get_exact_struct_type_noptr(gen_acc.gen.type_lookup, final_type);
+	auto final_type2 = get_exact_struct_type_byvalue(gen_acc.gen.type_lookup, final_type);
 	auto ptr3_reg = gen_acc.get_builder().CreateCast(llvm::Instruction::CastOps::BitCast, ptr2_reg, final_type2->getPointerTo(), "");
 	return ptr3_reg;
 }

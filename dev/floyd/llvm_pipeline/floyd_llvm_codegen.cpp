@@ -1342,7 +1342,7 @@ static llvm::Value* generate_construct_struct(llvm_function_generator_t& gen_acc
 	const auto element_count = details.elements.size();
 
 	const auto& struct_def = target_type.get_struct();
-	auto& exact_struct_type = *get_exact_struct_type_noptr(gen_acc.gen.type_lookup, target_type);
+	auto& exact_struct_type = *get_exact_struct_type_byvalue(gen_acc.gen.type_lookup, target_type);
 	QUARK_ASSERT(struct_def._members.size() == element_count);
 
 

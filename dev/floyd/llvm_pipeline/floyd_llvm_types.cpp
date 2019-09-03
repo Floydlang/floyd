@@ -513,7 +513,7 @@ itype_t lookup_itype(const llvm_type_lookup& type_lookup, const typeid_t& type){
 
 
 
-llvm::StructType* get_exact_struct_type_noptr(const llvm_type_lookup& i, const typeid_t& type){
+llvm::StructType* get_exact_struct_type_byvalue(const llvm_type_lookup& i, const typeid_t& type){
 	QUARK_ASSERT(i.check_invariant());
 	QUARK_ASSERT(type.is_struct());
 
@@ -536,25 +536,36 @@ llvm::Type* get_llvm_type_as_arg(const llvm_type_lookup& i, const typeid_t& type
 	}
 }
 
-llvm::Type* make_generic_vec_type(const llvm_type_lookup& type_lookup){
+
+llvm::FunctionType* get_llvm_function_type(const llvm_type_lookup& type_lookup, const typeid_t& type){
+	QUARK_ASSERT(type_lookup.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	auto t = get_llvm_type_as_arg(type_lookup, type);
+	return llvm::cast<llvm::FunctionType>(t);
+}
+
+
+
+llvm::Type* make_generic_vec_type_byvalue(const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	return type_lookup.state.generic_vec_type;
 }
 
-llvm::Type* make_generic_dict_type(const llvm_type_lookup& type_lookup){
+llvm::Type* make_generic_dict_type_byvalue(const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	return type_lookup.state.generic_dict_type;
 }
 
-llvm::Type* make_json_type(const llvm_type_lookup& type_lookup){
+llvm::Type* make_json_type_byvalue(const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	return type_lookup.state.json_type;
 }
 
-llvm::Type* get_generic_struct_type(const llvm_type_lookup& type_lookup){
+llvm::Type* get_generic_struct_type_byvalue(const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	return type_lookup.state.generic_struct_type;

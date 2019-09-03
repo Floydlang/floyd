@@ -176,7 +176,9 @@ static std::map<link_name_t, void*> make_all_function_binds(llvm::LLVMContext& c
 
 	std::map<link_name_t, void*> function_map = runtime_functions_map;
 
+
 	////////	intrinsics
+
 	const auto intrinsics0 = get_intrinsic_binds();
 	std::map<link_name_t, void*> intrinsics;
 	for(const auto& e: intrinsics0){
@@ -184,7 +186,10 @@ static std::map<link_name_t, void*> make_all_function_binds(llvm::LLVMContext& c
 	}
 	function_map.insert(intrinsics.begin(), intrinsics.end());
 
+
+
 	////////	Corelib
+
 	const auto corelib_function_map0 = get_corelib_binds();
 	std::map<link_name_t, void*> corelib_function_map;
 	for(const auto& e: corelib_function_map0){
@@ -481,7 +486,7 @@ static std::vector<std::pair<itype_t, struct_layout_t>> make_struct_layouts(cons
 		const auto& e = type_lookup.state.types[i];
 		const auto& type = type_lookup.state.type_interner.interned[i];
 		if(type.is_struct()){
-			auto t2 = get_exact_struct_type_noptr(type_lookup, type);
+			auto t2 = get_exact_struct_type_byvalue(type_lookup, type);
 			const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
 
 			const auto struct_bytes = layout->getSizeInBytes();
