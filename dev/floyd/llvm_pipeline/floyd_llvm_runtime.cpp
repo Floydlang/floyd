@@ -165,46 +165,18 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name)
 
 
 
+//	Make link entries for all runtime functions, like floydrt_retain_vec().
+//	These have no floyd-style function type, only llvm function type, since they use parameters not expressable with typeid_t.
 static std::vector<function_link_entry_t> make_runtime_function_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	const auto runtime_function_binds = get_runtime_function_binds(context, type_lookup);
 
-	std::vector<function_link_entry_t> result0;
-	std::map<link_name_t, void*> binds0;
-
-	//	Make link entries for all runtime functions, like floydrt_retain_vec().
-	//	These have no floyd-style function type, only llvm function type, since they use parameters not expressable with typeid_t.
-	{
-		for(const auto& e: runtime_function_binds){
-			const auto link_name = encode_runtime_func_link_name(e.name);
-			const auto def = function_link_entry_t{ link_name, e.llvm_function_type, nullptr, typeid_t::make_undefined(), {}, e.native_f };
-			result0.push_back(def);
-		}
-	}
-
-	//	Resolve native functions pointers - for built-in C functions like runtime functions and intrinsics.
-	{
-		std::map<link_name_t, void*> runtime_functions_map;
-		for(const auto& e: runtime_function_binds){
-			const auto link_name = encode_runtime_func_link_name(e.name);
-			const auto e2 = std::pair<link_name_t, void*>(link_name, e.native_f);
-			runtime_functions_map.insert(e2);
-		}
-
-		binds0 = runtime_functions_map;
-	}
-
 	std::vector<function_link_entry_t> result;
-	for(const auto& e: result0){
-		const auto it = binds0.find(e.link_name);
-		if(it != binds0.end()){
-			const auto def2 = function_link_entry_t{ e.link_name, e.llvm_function_type, e.llvm_codegen_f, e.function_type_or_undef, e.arg_names_or_empty, it->second };
-			result.push_back(def2);
-		}
-		else{
-			result.push_back(e);
-		}
+	for(const auto& e: runtime_function_binds){
+		const auto link_name = encode_runtime_func_link_name(e.name);
+		const auto def = function_link_entry_t{ link_name, e.llvm_function_type, nullptr, typeid_t::make_undefined(), {}, e.native_f };
+		result.push_back(def);
 	}
 
 	if(k_trace_function_link_map){
