@@ -8,7 +8,7 @@
 
 const bool k_trace_input_output = false;
 const bool k_trace_types = k_trace_input_output;
-static const bool k_trace_function_link_map = true;
+static const bool k_trace_function_link_map = false;
 
 
 #include "floyd_llvm_codegen.h"

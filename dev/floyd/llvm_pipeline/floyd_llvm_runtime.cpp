@@ -6,7 +6,7 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-static const bool k_trace_function_link_map = true;
+static const bool k_trace_function_link_map = false;
 
 #include "floyd_llvm_runtime.h"
 
