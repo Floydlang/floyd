@@ -186,14 +186,42 @@ static std::vector<function_link_entry_t> make_runtime_function_link_map(llvm::L
 	return result;
 }
 
+//	Make link entries for all intrinsics functions, like assert().
+static std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	QUARK_ASSERT(type_lookup.check_invariant());
+
+	const auto& intrinsic_signatures = get_intrinsic_signatures();
+	const auto intrinsic_binds = get_intrinsic_binds();
+
+	std::vector<function_link_entry_t> result;
+
+	for(const auto& signature: intrinsic_signatures){
+
+		//	Skip those intrinsics that have no native function -- those are inlined directly as instructions.
+		const auto bind_it = intrinsic_binds.find(signature.name);
+		if(bind_it != intrinsic_binds.end()){
+			const auto link_name = encode_intrinsic_link_name(bind_it->first);
+			const auto function_type = signature._function_type;
+			llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
+			const auto function_byvalue_type = deref_ptr(function_ptr_type);
+			const auto def = function_link_entry_t{ link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, {}, bind_it->second };
+			result.push_back(def);
+		}
+	}
+
+	if(k_trace_function_link_map){
+		trace_function_link_map(result);
+	}
+
+	return result;
+}
+
 
 
 static std::vector<function_link_entry_t> make_function_link_mapx(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	const auto runtime_function_binds = get_runtime_function_binds(context, type_lookup);
-	const auto& intrinsic_signatures = get_intrinsic_signatures();
-	const auto intrinsic_binds = get_intrinsic_binds();
 
 
 	std::vector<function_link_entry_t> result0;
@@ -202,23 +230,6 @@ static std::vector<function_link_entry_t> make_function_link_mapx(llvm::LLVMCont
 	//	Make link entries for all runtime functions, like floydrt_retain_vec().
 	//	These have no floyd-style function type, only llvm function type, since they use parameters not expressable with typeid_t.
 	{
-	}
-
-	//	Make link entries for all intrinsics functions, like assert().
-	{
-		for(const auto& signature: intrinsic_signatures){
-
-			//	Skip those intrinsics that have no native function -- those are inlined directly as instructions.
-			const auto bind_it = intrinsic_binds.find(signature.name);
-			if(bind_it != intrinsic_binds.end()){
-				const auto link_name = encode_intrinsic_link_name(bind_it->first);
-				const auto function_type = signature._function_type;
-				llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
-				const auto function_byvalue_type = deref_ptr(function_ptr_type);
-				const auto def = function_link_entry_t{ link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, {}, bind_it->second };
-				result0.push_back(def);
-			}
-		}
 	}
 
 	//	init()
@@ -273,18 +284,6 @@ static std::vector<function_link_entry_t> make_function_link_mapx(llvm::LLVMCont
 
 
 	{
-		////////	Functions to support the runtime
-
-		////////	intrinsics
-
-		std::map<link_name_t, void*> intrinsics_binds2;
-		for(const auto& e: intrinsic_binds){
-			intrinsics_binds2.insert({ encode_intrinsic_link_name(e.first), e.second });
-		}
-		binds0.insert(intrinsics_binds2.begin(), intrinsics_binds2.end());
-
-
-
 		////////	Corelib
 
 		const auto corelib_function_map0 = get_corelib_binds();
@@ -320,13 +319,13 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	const auto runtime_functions_link_map = make_runtime_function_link_map(context, type_lookup);
+	const auto intrinsics_link_map = make_intrinsics_link_map(context, type_lookup);
 	const auto other = make_function_link_mapx(context, type_lookup, ast_function_defs);
-
 
 	std::vector<function_link_entry_t> acc;
 	acc = concat(acc, runtime_functions_link_map);
+	acc = concat(acc, intrinsics_link_map);
 	acc = concat(acc, other);
-
 	return acc;
 }
 
