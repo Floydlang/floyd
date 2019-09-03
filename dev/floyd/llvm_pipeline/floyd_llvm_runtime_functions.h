@@ -28,33 +28,33 @@ std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& conte
 
 
 struct runtime_functions_t {
-	runtime_functions_t(const std::vector<function_def_t>& function_defs);
+	runtime_functions_t(const std::vector<function_link_entry_t>& function_defs);
 
 
 	////////////////////////////////		STATE
 
-	const function_def_t floydrt_init;
-	const function_def_t floydrt_deinit;
+	const function_link_entry_t floydrt_init;
+	const function_link_entry_t floydrt_deinit;
 
-	const function_def_t floydrt_alloc_kstr;
-	const function_def_t floydrt_allocate_vector_fill;
-	const function_def_t floydrt_store_vector_element_hamt_mutable;
-	const function_def_t floydrt_concatunate_vectors;
-	const function_def_t floydrt_push_back_hamt_pod;
-	const function_def_t floydrt_load_vector_element_hamt;
+	const function_link_entry_t floydrt_alloc_kstr;
+	const function_link_entry_t floydrt_allocate_vector_fill;
+	const function_link_entry_t floydrt_store_vector_element_hamt_mutable;
+	const function_link_entry_t floydrt_concatunate_vectors;
+	const function_link_entry_t floydrt_push_back_hamt_pod;
+	const function_link_entry_t floydrt_load_vector_element_hamt;
 	
-	const function_def_t floydrt_allocate_dict;
+	const function_link_entry_t floydrt_allocate_dict;
 
-	const function_def_t floydrt_allocate_json;
-	const function_def_t floydrt_lookup_json;
-	const function_def_t floydrt_json_to_string;
+	const function_link_entry_t floydrt_allocate_json;
+	const function_link_entry_t floydrt_lookup_json;
+	const function_link_entry_t floydrt_json_to_string;
 
-	const function_def_t floydrt_allocate_struct;
+	const function_link_entry_t floydrt_allocate_struct;
 
-	const function_def_t floydrt_compare_values;
+	const function_link_entry_t floydrt_compare_values;
 
-	const function_def_t floydrt_get_profile_time;
-	const function_def_t floydrt_analyse_benchmark_samples;
+	const function_link_entry_t floydrt_get_profile_time;
+	const function_link_entry_t floydrt_analyse_benchmark_samples;
 };
 
 

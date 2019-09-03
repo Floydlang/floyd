@@ -21,7 +21,7 @@ namespace floyd {
 
 
 
-static const function_def_t& resolve_func(const std::vector<function_def_t>& function_defs, const std::string& name){
+static const function_link_entry_t& resolve_func(const std::vector<function_link_entry_t>& function_defs, const std::string& name){
 	return find_function_def_from_link_name(function_defs, encode_runtime_func_link_name(name));
 }
 
@@ -1394,7 +1394,7 @@ std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& conte
 
 
 
-runtime_functions_t::runtime_functions_t(const std::vector<function_def_t>& function_defs) :
+runtime_functions_t::runtime_functions_t(const std::vector<function_link_entry_t>& function_defs) :
 	floydrt_init(resolve_func(function_defs, "init")),
 	floydrt_deinit(resolve_func(function_defs, "deinit")),
 

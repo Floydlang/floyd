@@ -57,11 +57,11 @@ struct function_bind_t {
 
 
 
-////////////////////////////////		function_def_t
+////////////////////////////////		function_link_entry_t
 
 
 
-struct function_def_t {
+struct function_link_entry_t {
 	link_name_t link_name;
 
 	llvm::FunctionType* llvm_function_type;
@@ -73,7 +73,7 @@ struct function_def_t {
 	void* native_f;
 };
 
-void trace_function_defs(const std::vector<function_def_t>& defs);
+void trace_function_defs(const std::vector<function_link_entry_t>& defs);
 
 
 
@@ -103,7 +103,7 @@ struct llvm_execution_engine_t {
 	llvm_instance_t* instance;
 	std::shared_ptr<llvm::ExecutionEngine> ee;
 	symbol_table_t global_symbols;
-	std::vector<function_def_t> function_defs;
+	std::vector<function_link_entry_t> function_defs;
 	public: std::vector<std::string> _print_output;
 
 	public: runtime_handler_i* _handler;
@@ -153,7 +153,7 @@ typedef runtime_value_t (*FLOYD_BENCHMARK_F)(floyd_runtime_t* frp);
 ////////////////////////////////	CLIENT ACCESS OF RUNNING PROGRAM
 
 
-const function_def_t& find_function_def_from_link_name(const std::vector<function_def_t>& function_defs, const link_name_t& link_name);
+const function_link_entry_t& find_function_def_from_link_name(const std::vector<function_link_entry_t>& function_defs, const link_name_t& link_name);
 
 void* get_global_ptr(const llvm_execution_engine_t& ee, const std::string& name);
 
@@ -196,7 +196,7 @@ inline runtime_value_t to_runtime_string(llvm_execution_engine_t& runtime, const
 
 //	Returns a complete list of all functions: programmed in floyd, runtime functions, init() deinit().
 //	Notice that intrinics area already in the ast_function_defs-list.
-std::vector<function_def_t> make_all_function_defs(
+std::vector<function_link_entry_t> make_all_function_defs(
 	llvm::LLVMContext& context,
 	const llvm_type_lookup& type_lookup,
 	const std::vector<floyd::function_definition_t>& ast_function_defs

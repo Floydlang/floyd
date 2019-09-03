@@ -83,7 +83,7 @@ struct llvm_code_generator_t;
 
 
 
-llvm_ir_program_t::llvm_ir_program_t(llvm_instance_t* instance, std::unique_ptr<llvm::Module>& module2_swap, const llvm_type_lookup& type_lookup, const symbol_table_t& globals, const std::vector<function_def_t>& function_defs) :
+llvm_ir_program_t::llvm_ir_program_t(llvm_instance_t* instance, std::unique_ptr<llvm::Module>& module2_swap, const llvm_type_lookup& type_lookup, const symbol_table_t& globals, const std::vector<function_link_entry_t>& function_defs) :
 	instance(instance),
 	type_lookup(type_lookup),
 	debug_globals(globals),
@@ -2225,11 +2225,11 @@ static void generate_all_floyd_function_bodies(llvm_code_generator_t& gen_acc, c
 }
 
 
-//	Notice: this function fills-in more information in each function_def_t. Make sure you use the output moving on, not the input.
-static std::vector<function_def_t> generate_llvm_function_entries(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<function_def_t>& pass0){
+//	Notice: this function fills-in more information in each function_link_entry_t. Make sure you use the output moving on, not the input.
+static std::vector<function_link_entry_t> generate_llvm_function_entries(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<function_link_entry_t>& pass0){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	std::vector<function_def_t> result;
+	std::vector<function_link_entry_t> result;
 	for(const auto& e: pass0){
 		auto existing_f = module.getFunction(e.link_name.s);
 		QUARK_ASSERT(existing_f == nullptr);
@@ -2262,7 +2262,7 @@ static std::vector<function_def_t> generate_llvm_function_entries(llvm::Module& 
 		QUARK_ASSERT(check_invariant__function(f));
 		QUARK_ASSERT(check_invariant__module(&module));
 
-		result.push_back(function_def_t{ e.link_name, e.llvm_function_type, f, e.floyd_fundef, e.native_f });
+		result.push_back(function_link_entry_t{ e.link_name, e.llvm_function_type, f, e.floyd_fundef, e.native_f });
 	}
 	if(k_trace_function_defs){
 		trace_function_defs(result);
@@ -2362,7 +2362,7 @@ static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const 
 
 
 
-static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> generate_module(llvm_instance_t& instance, const std::string& module_name, const semantic_ast_t& semantic_ast){
+static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_link_entry_t>> generate_module(llvm_instance_t& instance, const std::string& module_name, const semantic_ast_t& semantic_ast){
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(semantic_ast.check_invariant());
 

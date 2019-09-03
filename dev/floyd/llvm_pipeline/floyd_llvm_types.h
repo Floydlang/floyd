@@ -68,6 +68,7 @@ struct llvm_arg_mapping_t {
 ////////////////////////////////		llvm_function_def_t
 
 //	Describes a complete LLVM function signature.
+// ??? rename llvm_function_type_t
 
 struct llvm_function_def_t {
 	bool check_invariant() const {

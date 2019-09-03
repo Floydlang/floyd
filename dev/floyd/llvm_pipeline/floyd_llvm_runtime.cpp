@@ -66,8 +66,8 @@ static floyd_runtime_t* make_runtime_ptr(llvm_execution_engine_t* ee){
 ////////////////////////////////	CLIENT ACCESS OF RUNNING PROGRAM
 
 
-const function_def_t& find_function_def_from_link_name(const std::vector<function_def_t>& function_defs, const link_name_t& link_name){
-	auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_def_t& e) { return e.link_name == link_name; } );
+const function_link_entry_t& find_function_def_from_link_name(const std::vector<function_link_entry_t>& function_defs, const link_name_t& link_name){
+	auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_link_entry_t& e) { return e.link_name == link_name; } );
 	QUARK_ASSERT(it != function_defs.end());
 
 	QUARK_ASSERT(it->llvm_codegen_f != nullptr);
@@ -200,7 +200,7 @@ static std::map<link_name_t, void*> make_all_function_binds(llvm::LLVMContext& c
 	return function_map;
 }
 
-static function_def_t make_function_def(const llvm_type_lookup& type_lookup, const function_definition_t& function_def, const link_name_t& link_name){
+static function_link_entry_t make_function_def(const llvm_type_lookup& type_lookup, const function_definition_t& function_def, const link_name_t& link_name){
 	QUARK_ASSERT(type_lookup.check_invariant());
 	QUARK_ASSERT(function_def.check_invariant());
 
@@ -208,13 +208,13 @@ static function_def_t make_function_def(const llvm_type_lookup& type_lookup, con
 //	const auto link_name = encode_floyd_func_link_name(function_def._definition_name);
 	llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
 	const auto function_byvalue_type = deref_ptr(function_ptr_type);
-	return function_def_t{ link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_def, nullptr };
+	return function_link_entry_t{ link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_def, nullptr };
 }
 
-std::vector<function_def_t> make_all_function_defs(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
+std::vector<function_link_entry_t> make_all_function_defs(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	std::vector<function_def_t> result0;
+	std::vector<function_link_entry_t> result0;
 
 	//	Make prototypes for all runtime functions, like floydrt_retain_vec().
 	{
@@ -222,7 +222,7 @@ std::vector<function_def_t> make_all_function_defs(llvm::LLVMContext& context, c
 		for(const auto& e: runtime_functions){
 			const auto link_name = encode_runtime_func_link_name(e.name);
 			const auto def0 = function_definition_t::make_func(k_no_location, e.name, typeid_t::make_void(), {}, {});
-			const auto def = function_def_t{ link_name, e.llvm_function_type, nullptr, def0, nullptr };
+			const auto def = function_link_entry_t{ link_name, e.llvm_function_type, nullptr, def0, nullptr };
 			result0.push_back(def);
 		}
 	}
@@ -257,7 +257,7 @@ std::vector<function_def_t> make_all_function_defs(llvm::LLVMContext& context, c
 			false
 		);
 		const auto def0 = function_definition_t::make_func(k_no_location, name, typeid_t::make_void(), {}, {});
-		const auto def = function_def_t{ link_name, function_type, nullptr, def0, nullptr };
+		const auto def = function_link_entry_t{ link_name, function_type, nullptr, def0, nullptr };
 		result0.push_back(def);
 	}
 
@@ -273,7 +273,7 @@ std::vector<function_def_t> make_all_function_defs(llvm::LLVMContext& context, c
 			false
 		);
 		const auto def0 = function_definition_t::make_func(k_no_location, name, typeid_t::make_void(), {}, {});
-		const auto def = function_def_t{ link_name, function_type, nullptr, def0, nullptr };
+		const auto def = function_link_entry_t{ link_name, function_type, nullptr, def0, nullptr };
 		result0.push_back(def);
 	}
 
@@ -294,12 +294,12 @@ std::vector<function_def_t> make_all_function_defs(llvm::LLVMContext& context, c
 	//	Resolve native functions pointers - for built-in C functions like runtime functions and intrinsics.
 
 
-	std::vector<function_def_t> result;
+	std::vector<function_link_entry_t> result;
 	const auto binds = make_all_function_binds(context, type_lookup);
 	for(const auto& e: result0){
 		const auto it = binds.find(e.link_name);
 		if(it != binds.end()){
-			const auto def2 = function_def_t{ e.link_name, e.llvm_function_type, e.llvm_codegen_f, e.floyd_fundef, it->second };
+			const auto def2 = function_link_entry_t{ e.link_name, e.llvm_function_type, e.llvm_codegen_f, e.floyd_fundef, it->second };
 			result.push_back(def2);
 		}
 		else{
@@ -315,7 +315,7 @@ std::vector<function_def_t> make_all_function_defs(llvm::LLVMContext& context, c
 }
 
 
-void trace_function_defs(const std::vector<function_def_t>& defs){
+void trace_function_defs(const std::vector<function_link_entry_t>& defs){
 	std::vector<line_t> table = {
 		line_t( { "LINK-NAME", "LLVM_FUNCTION_TYPE", "LLVM_CODEGEN_F", "FLOYD_FUNDEF", "NATIVE_F" }, ' ', '|'),
 		line_t( { "", "", "", "", "" }, '-', '|'),
@@ -455,7 +455,7 @@ bool llvm_execution_engine_t::check_invariant() const {
 	return true;
 }
 
-static std::vector<std::pair<link_name_t, void*>> collection_native_func_ptrs(llvm::ExecutionEngine& ee, const std::vector<function_def_t>& function_defs){
+static std::vector<std::pair<link_name_t, void*>> collection_native_func_ptrs(llvm::ExecutionEngine& ee, const std::vector<function_link_entry_t>& function_defs){
 	std::vector<std::pair<link_name_t, void*>> result;
 	for(const auto& e: function_defs){
 		const auto f = (void*)ee.getFunctionAddress(e.link_name.s);
@@ -559,7 +559,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			const auto s2 = strip_link_name(s);
 
 			const auto& function_defs = program_breaks.function_defs;
-			const auto it = std::find_if(function_defs.begin(), function_defs.end(), [&](const function_def_t& def){ return def.link_name.s == s2; });
+			const auto it = std::find_if(function_defs.begin(), function_defs.end(), [&](const function_link_entry_t& def){ return def.link_name.s == s2; });
 			if(it != function_defs.end() && it->native_f != nullptr){
 				return it->native_f;
 			}
