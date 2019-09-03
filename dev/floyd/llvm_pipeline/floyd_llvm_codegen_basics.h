@@ -65,14 +65,14 @@ struct resolved_symbol_t {
 
 
 struct llvm_code_generator_t {
-	public: llvm_code_generator_t(llvm_instance_t& instance, llvm::Module* module, const type_interner_t& interner, const llvm_type_lookup& type_lookup, const std::vector<function_link_entry_t>& function_defs) :
+	public: llvm_code_generator_t(llvm_instance_t& instance, llvm::Module* module, const type_interner_t& interner, const llvm_type_lookup& type_lookup, const std::vector<function_link_entry_t>& link_map2) :
 		instance(&instance),
 		module(module),
 		builder(instance.context),
 		type_lookup(type_lookup),
-		function_defs(function_defs),
+		link_map2(link_map2),
 
-		runtime_functions(function_defs)
+		runtime_functions(link_map2)
 	{
 		QUARK_ASSERT(instance.check_invariant());
 
@@ -102,7 +102,7 @@ struct llvm_code_generator_t {
 	llvm::Module* module;
 	llvm::IRBuilder<> builder;
 	llvm_type_lookup type_lookup;
-	std::vector<function_link_entry_t> function_defs;
+	std::vector<function_link_entry_t> link_map2;
 
 	/*
 		variable_address_t::_parent_steps

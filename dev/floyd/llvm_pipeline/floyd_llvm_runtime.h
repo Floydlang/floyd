@@ -196,7 +196,7 @@ inline runtime_value_t to_runtime_string(llvm_execution_engine_t& runtime, const
 
 //	Returns a complete list of all functions: programmed in floyd, runtime functions, init() deinit().
 //	Notice that intrinics area already in the ast_function_defs-list.
-std::vector<function_link_entry_t> make_all_function_defs(
+std::vector<function_link_entry_t> make_function_link_map1(
 	llvm::LLVMContext& context,
 	const llvm_type_lookup& type_lookup,
 	const std::vector<floyd::function_definition_t>& ast_function_defs

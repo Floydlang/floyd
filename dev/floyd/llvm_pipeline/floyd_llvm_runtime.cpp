@@ -211,7 +211,7 @@ static function_link_entry_t make_function_def(const llvm_type_lookup& type_look
 	return function_link_entry_t{ link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_def, nullptr };
 }
 
-std::vector<function_link_entry_t> make_all_function_defs(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
+std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	std::vector<function_link_entry_t> result0;

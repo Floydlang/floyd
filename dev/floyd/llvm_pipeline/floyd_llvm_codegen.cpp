@@ -325,7 +325,7 @@ static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const 
 		}
 		llvm::Value* operator()(const typeid_t::function_t& e2) const{
 			const auto function_id = value.get_function_value();
-			for(const auto& e: gen_acc.gen.function_defs){
+			for(const auto& e: gen_acc.gen.link_map2){
 				if(e.floyd_fundef._definition_name == function_id.name){
 					return e.llvm_codegen_f;
 				}
@@ -994,7 +994,7 @@ static llvm::Value* generate_call_expression(llvm_function_generator_t& gen_acc,
 		const auto& intrinsic = intrinsic_signatures[load2->address._index];
 
 		const auto name = intrinsic.name;
-		const auto& def = find_function_def_from_link_name(gen_acc.gen.function_defs, encode_intrinsic_link_name(name));
+		const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map2, encode_intrinsic_link_name(name));
 		callee0_reg = def.llvm_codegen_f;
 	}
 	else{
@@ -2226,11 +2226,11 @@ static void generate_all_floyd_function_bodies(llvm_code_generator_t& gen_acc, c
 
 
 //	Notice: this function fills-in more information in each function_link_entry_t. Make sure you use the output moving on, not the input.
-static std::vector<function_link_entry_t> generate_llvm_function_entries(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<function_link_entry_t>& pass0){
+static std::vector<function_link_entry_t> generate_llvm_function_entries_link_map2(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<function_link_entry_t>& link_map1){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	std::vector<function_link_entry_t> result;
-	for(const auto& e: pass0){
+	for(const auto& e: link_map1){
 		auto existing_f = module.getFunction(e.link_name.s);
 		QUARK_ASSERT(existing_f == nullptr);
 
@@ -2374,10 +2374,10 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_link_entry_
 	//	Generate all LLVM nodes: functions (without implementation) and globals.
 	//	This lets all other code reference them, even if they're not filled up with code yet.
 
-	const auto functions0 = make_all_function_defs(module->getContext(), type_lookup, semantic_ast._tree._function_defs);
-	const auto funcs = generate_llvm_function_entries(*module, type_lookup, functions0);
+	const auto link_map1 = make_function_link_map1(module->getContext(), type_lookup, semantic_ast._tree._function_defs);
+	const auto link_map2 = generate_llvm_function_entries_link_map2(*module, type_lookup, link_map1);
 
-	llvm_code_generator_t gen_acc(instance, module.get(), semantic_ast._tree._interned_types, type_lookup, funcs);
+	auto gen_acc = llvm_code_generator_t(instance, module.get(), semantic_ast._tree._interned_types, type_lookup, link_map2);
 
 	//	Global variables.
 	{
@@ -2402,7 +2402,7 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_link_entry_
 		generate_floyd_runtime_deinit(gen_acc, semantic_ast._tree._globals);
 	}
 
-	return { std::move(module), gen_acc.function_defs };
+	return { std::move(module), gen_acc.link_map2 };
 }
 
 
