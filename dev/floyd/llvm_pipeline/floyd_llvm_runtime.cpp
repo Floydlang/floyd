@@ -6,7 +6,7 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-static const bool k_trace_function_defs = false;
+static const bool k_trace_function_link_map = true;
 
 #include "floyd_llvm_runtime.h"
 
@@ -142,7 +142,7 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name)
 	const auto f = get_function_ptr(ee, name);
 	if(f != nullptr){
 		const auto def = find_function_def_from_link_name(ee.function_defs, name);
-		const auto function_type = def.floyd_fundef._function_type;
+		const auto function_type = def.function_type_or_undef;
 		return llvm_bind_t {
 			name,
 			f,
@@ -205,10 +205,9 @@ static function_link_entry_t make_function_def(const llvm_type_lookup& type_look
 	QUARK_ASSERT(function_def.check_invariant());
 
 	const auto function_type = function_def._function_type;
-//	const auto link_name = encode_floyd_func_link_name(function_def._definition_name);
 	llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
 	const auto function_byvalue_type = deref_ptr(function_ptr_type);
-	return function_link_entry_t{ link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_def, nullptr };
+	return function_link_entry_t{ link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, function_def._named_args, nullptr };
 }
 
 std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
@@ -221,8 +220,7 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 		const auto runtime_functions = get_runtime_function_binds(context, type_lookup);
 		for(const auto& e: runtime_functions){
 			const auto link_name = encode_runtime_func_link_name(e.name);
-			const auto def0 = function_definition_t::make_func(k_no_location, e.name, typeid_t::make_void(), {}, {});
-			const auto def = function_link_entry_t{ link_name, e.llvm_function_type, nullptr, def0, e.native_f };
+			const auto def = function_link_entry_t{ link_name, e.llvm_function_type, nullptr, typeid_t::make_undefined(), {}, e.native_f };
 			result0.push_back(def);
 		}
 	}
@@ -230,18 +228,24 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 	//	Make prototypes for all intrinsics functions, like assert().
 	{
 		const std::vector<intrinsic_signature_t>& intrinsic_signatures = get_intrinsic_signatures();
+		const auto intrinsics = get_intrinsic_binds();
 		for(const auto& signature: intrinsic_signatures){
-			const auto link_name = encode_runtime_func_link_name(signature.name);
 
-			std::vector<member_t> args;
-			for(const auto& arg_type: signature._function_type.get_function_args()){
-				args.push_back(member_t(arg_type, "dummy"));//??? use "".
+			//	Skip those intrinsics that have no native function -- those are inlined directly as instructions.
+			const auto bind_it = intrinsics.find(signature.name);
+			if(bind_it != intrinsics.end()){
+				const auto link_name = encode_runtime_func_link_name(signature.name);
+
+				std::vector<member_t> args;
+				for(const auto& arg_type: signature._function_type.get_function_args()){
+					args.push_back(member_t(arg_type, "dummy"));//??? use "".
+				}
+				const auto function_id = signature._function_id;
+				const auto def0 = function_definition_t::make_intrinsic(k_no_location, signature._function_id.name, signature._function_type, args);
+
+				const auto def = make_function_def(type_lookup, def0, encode_intrinsic_link_name(def0._definition_name));
+				result0.push_back(def);
 			}
-			const auto function_id = signature._function_id;
-			const auto def0 = function_definition_t::make_intrinsic(k_no_location, signature._function_id.name, signature._function_type, args);
-
-			const auto def = make_function_def(type_lookup, def0, encode_intrinsic_link_name(def0._definition_name));
-			result0.push_back(def);
 		}
 	}
 
@@ -256,8 +260,7 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 			},
 			false
 		);
-		const auto def0 = function_definition_t::make_func(k_no_location, name, typeid_t::make_void(), {}, {});
-		const auto def = function_link_entry_t{ link_name, function_type, nullptr, def0, nullptr };
+		const auto def = function_link_entry_t{ link_name, function_type, nullptr, typeid_t::make_undefined(), {}, nullptr };
 		result0.push_back(def);
 	}
 
@@ -272,8 +275,7 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 			},
 			false
 		);
-		const auto def0 = function_definition_t::make_func(k_no_location, name, typeid_t::make_void(), {}, {});
-		const auto def = function_link_entry_t{ link_name, function_type, nullptr, def0, nullptr };
+		const auto def = function_link_entry_t{ link_name, function_type, nullptr, typeid_t::make_undefined(), {}, nullptr };
 		result0.push_back(def);
 	}
 
@@ -285,8 +287,8 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 		}
 	}
 
-	if(k_trace_function_defs){
-		trace_function_defs(result0);
+	if(k_trace_function_link_map){
+		trace_function_link_map(result0);
 	}
 
 
@@ -299,7 +301,7 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 	for(const auto& e: result0){
 		const auto it = binds.find(e.link_name);
 		if(it != binds.end()){
-			const auto def2 = function_link_entry_t{ e.link_name, e.llvm_function_type, e.llvm_codegen_f, e.floyd_fundef, it->second };
+			const auto def2 = function_link_entry_t{ e.link_name, e.llvm_function_type, e.llvm_codegen_f, e.function_type_or_undef, e.arg_names_or_empty, it->second };
 			result.push_back(def2);
 		}
 		else{
@@ -307,22 +309,30 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 		}
 	}
 
-	if(k_trace_function_defs){
-		trace_function_defs(result);
+	if(k_trace_function_link_map){
+		trace_function_link_map(result);
 	}
 
 	return result;
 }
 
 
-void trace_function_defs(const std::vector<function_link_entry_t>& defs){
+void trace_function_link_map(const std::vector<function_link_entry_t>& defs){
 	std::vector<line_t> table = {
-		line_t( { "LINK-NAME", "LLVM_FUNCTION_TYPE", "LLVM_CODEGEN_F", "FLOYD_FUNDEF", "NATIVE_F" }, ' ', '|'),
-		line_t( { "", "", "", "", "" }, '-', '|'),
+		line_t( { "LINK-NAME", "LLVM_FUNCTION_TYPE", "LLVM_CODEGEN_F", "FUNCTION TYPE", "ARG NAMES", "NATIVE_F" }, ' ', '|'),
+		line_t( { "", "", "", "", "", "" }, '-', '|'),
 	};
 
 	for(const auto& e: defs){
-		const auto f0 = json_to_compact_string(function_def_to_ast_json(e.floyd_fundef));
+		const auto f0 = e.function_type_or_undef.is_undefined() ? "" : json_to_compact_string(typeid_to_compact_string(e.function_type_or_undef));
+
+		std::string arg_names;
+		for(const auto& m: e.arg_names_or_empty){
+			arg_names = m._name + ",";
+		}
+		arg_names = arg_names.empty() ? "" : arg_names.substr(0, arg_names.size() - 1);
+
+
 		const auto f1 = f0.substr(0, 100);
 		const auto f = f1.size() != f0.size() ? (f1 + "...") : f1;
 
@@ -332,6 +342,7 @@ void trace_function_defs(const std::vector<function_link_entry_t>& defs){
 				print_type(e.llvm_function_type),
 				e.llvm_codegen_f != nullptr ? ptr_to_hexstring(e.llvm_codegen_f) : "",
 				f,
+				arg_names,
 				e.native_f != nullptr ? ptr_to_hexstring(e.native_f) : "",
 			},
 			' ',
@@ -340,10 +351,10 @@ void trace_function_defs(const std::vector<function_link_entry_t>& defs){
 		table.push_back(l);
 	}
 
-	table.push_back(line_t( { "", "", "", "", "" }, '-', '|'));
+	table.push_back(line_t( { "", "", "", "", "", "" }, '-', '|'));
 
 	const auto default_column = column_t{ 0, -1, 0 };
-	const auto columns0 = std::vector<column_t>{ default_column, default_column, default_column, default_column, default_column };
+	const auto columns0 = std::vector<column_t>{ default_column, default_column, default_column, default_column, default_column, default_column };
 	const auto columns = fit_columns(columns0, table);
 	const auto r = generate_table(table, columns);
 
@@ -527,8 +538,8 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(program_breaks.check_invariant());
 
-	if(k_trace_function_defs){
-		trace_function_defs(program_breaks.function_defs);
+	if(k_trace_function_link_map){
+		trace_function_link_map(program_breaks.function_defs);
 	}
 
 	std::string collectedErrors;

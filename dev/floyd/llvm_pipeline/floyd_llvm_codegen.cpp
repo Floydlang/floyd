@@ -8,7 +8,7 @@
 
 const bool k_trace_input_output = false;
 const bool k_trace_types = k_trace_input_output;
-static const bool k_trace_function_defs = false;
+static const bool k_trace_function_link_map = false;
 
 
 #include "floyd_llvm_codegen.h"
@@ -2225,16 +2225,14 @@ static void generate_all_floyd_function_bodies(llvm_code_generator_t& gen_acc, c
 	}
 }
 
-
-//	Notice: this function fills-in more information in each function_link_entry_t. Make sure you use the output moving on, not the input.
-static std::vector<function_link_entry_t> generate_llvm_function_entries_link_map2(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<function_link_entry_t>& link_map1){
+//	Generate LLVM function nodes and add them in returned link map.
+static std::vector<function_link_entry_t> generate_function_nodes(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<function_link_entry_t>& link_map1){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	std::vector<function_link_entry_t> result;
 	for(const auto& e: link_map1){
 		auto existing_f = module.getFunction(e.link_name.s);
 		QUARK_ASSERT(existing_f == nullptr);
-
 
 		auto f0 = module.getOrInsertFunction(e.link_name.s, e.llvm_function_type);
 		auto f = llvm::cast<llvm::Function>(f0);
@@ -2243,30 +2241,32 @@ static std::vector<function_link_entry_t> generate_llvm_function_entries_link_ma
 		QUARK_ASSERT(check_invariant__module(&module));
 
 		//	Set names for all function defintion's arguments - makes IR easier to read.
-		const auto unnamed_mapping_ptr = type_lookup.find_from_type(e.floyd_fundef._function_type).optional_function_def;
-		if(unnamed_mapping_ptr != nullptr){
-			const auto named_mapping = name_args(*unnamed_mapping_ptr, e.floyd_fundef._named_args);
+		if(e.function_type_or_undef.is_undefined() == false && e.arg_names_or_empty.empty() == false){
+			const auto unnamed_mapping_ptr = type_lookup.find_from_type(e.function_type_or_undef).optional_function_def;
+			if(unnamed_mapping_ptr != nullptr){
+				const auto named_mapping = name_args(*unnamed_mapping_ptr, e.arg_names_or_empty);
 
-			auto f_args = f->args();
-			const auto f_arg_count = f_args.end() - f_args.begin();
-			QUARK_ASSERT(f_arg_count == named_mapping.args.size());
+				auto f_args = f->args();
+				const auto f_arg_count = f_args.end() - f_args.begin();
+				QUARK_ASSERT(f_arg_count == named_mapping.args.size());
 
-			int index = 0;
-			for(auto& a: f_args){
-				const auto& m = named_mapping.args[index];
-				const auto name = m.floyd_name;
-				a.setName(name);
-				index++;
+				int index = 0;
+				for(auto& a: f_args){
+					const auto& m = named_mapping.args[index];
+					const auto name = m.floyd_name;
+					a.setName(name);
+					index++;
+				}
 			}
 		}
 
 		QUARK_ASSERT(check_invariant__function(f));
 		QUARK_ASSERT(check_invariant__module(&module));
 
-		result.push_back(function_link_entry_t{ e.link_name, e.llvm_function_type, f, e.floyd_fundef, e.native_f });
+		result.push_back(function_link_entry_t{ e.link_name, e.llvm_function_type, f, e.function_type_or_undef, e.arg_names_or_empty, e.native_f });
 	}
-	if(k_trace_function_defs){
-		trace_function_defs(result);
+	if(k_trace_function_link_map){
+		trace_function_link_map(result);
 	}
 	return result;
 }
@@ -2376,7 +2376,7 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_link_entry_
 	//	This lets all other code reference them, even if they're not filled up with code yet.
 
 	const auto link_map1 = make_function_link_map1(module->getContext(), type_lookup, semantic_ast._tree._function_defs);
-	const auto link_map2 = generate_llvm_function_entries_link_map2(*module, type_lookup, link_map1);
+	const auto link_map2 = generate_function_nodes(*module, type_lookup, link_map1);
 
 	auto gen_acc = llvm_code_generator_t(instance, module.get(), semantic_ast._tree._interned_types, type_lookup, link_map2);
 

@@ -69,18 +69,15 @@ struct function_link_entry_t {
 	//	Only valid during codegen
 	llvm::Function* llvm_codegen_f;
 
-#if 1
-	function_definition_t floyd_fundef;
-#else
 	typeid_t function_type_or_undef;
-	std::vector<std::string> arg_names_or_empty;
-	typeid_t function_def_name_or_blank;
-#endif
+
+	//??? better to use vector<string>
+	std::vector<member_t> arg_names_or_empty;
 
 	void* native_f;
 };
 
-void trace_function_defs(const std::vector<function_link_entry_t>& defs);
+void trace_function_link_map(const std::vector<function_link_entry_t>& defs);
 
 
 
