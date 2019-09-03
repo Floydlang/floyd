@@ -1088,30 +1088,11 @@ static llvm::Value* generate_call_expression(llvm_function_generator_t& gen_acc,
 		callee0_reg = generate_expression(gen_acc, *details.callee);
 	}
 
-	//	Callee, as LLVM function signature. It gets the param #0 runtime pointer and each ANY is expanded to valye/type pairs.
-	const auto& callee_mapping = *gen_acc.gen.type_lookup.find_from_type(callee_function_type).optional_function_def;
 	std::vector<llvm::Value*> floyd_args;
-	for(const auto& out_arg: callee_mapping.args){
-		if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr){
-		}
-		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_known_value_type){
-			const auto& arg_details = details.args[out_arg.floyd_arg_index];
-			llvm::Value* arg2 = generate_expression(gen_acc, arg_details);
-			floyd_args.push_back(arg2);
-		}
-
-		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_value){
-			const auto& arg_details = details.args[out_arg.floyd_arg_index];
-			llvm::Value* arg2 = generate_expression(gen_acc, arg_details);
-			floyd_args.push_back(arg2);
-		}
-		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_type){
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
+	for(const auto& e: details.args){
+		llvm::Value* arg_value = generate_expression(gen_acc, e);
+		floyd_args.push_back(arg_value);
 	}
-
 	return generate_floyd_call(gen_acc, callee_function_type, resolved_function_type, *callee0_reg, floyd_args);
 }
 
