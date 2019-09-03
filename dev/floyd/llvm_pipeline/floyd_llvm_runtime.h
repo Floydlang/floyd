@@ -85,7 +85,7 @@ void trace_function_link_map(const std::vector<function_link_entry_t>& defs);
 ////////////////////////////////		function_link_entry1_t
 
 //	link_name, llvm_function_type and floyd_fundef are known. We don't have 
-struct function_link_entry1_t {
+struct function_link_entry_compile_time_t {
 	function_link_entry_t entry;
 };
 

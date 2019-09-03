@@ -325,7 +325,7 @@ static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const 
 		}
 		llvm::Value* operator()(const typeid_t::function_t& e2) const{
 			const auto function_id = value.get_function_value();
-			for(const auto& e: gen_acc.gen.link_map2){
+			for(const auto& e: gen_acc.gen.link_map){
 				const auto link_name = encode_floyd_func_link_name(function_id.name);
 				if(e.link_name == link_name){
 					return e.llvm_codegen_f;
@@ -995,7 +995,7 @@ static llvm::Value* generate_call_expression(llvm_function_generator_t& gen_acc,
 		const auto& intrinsic = intrinsic_signatures[load2->address._index];
 
 		const auto name = intrinsic.name;
-		const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map2, encode_intrinsic_link_name(name));
+		const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(name));
 		callee0_reg = def.llvm_codegen_f;
 	}
 	else{
@@ -2403,7 +2403,7 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_link_entry_
 		generate_floyd_runtime_deinit(gen_acc, semantic_ast._tree._globals);
 	}
 
-	return { std::move(module), gen_acc.link_map2 };
+	return { std::move(module), gen_acc.link_map };
 }
 
 
