@@ -1094,10 +1094,12 @@ static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, run
 	}
 }
 
+//??? remove _function_id from intrinsic_signature_t
+
 static runtime_value_t floydrt_push_back_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_value_t element){
 	return push_back_immutable(vec, element);
 }
-//??? return many specialisations
+
 static std::vector<function_bind_t> floydrt_push_back__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		make_generic_vec_type_byvalue(type_lookup)->getPointerTo(),
@@ -1108,7 +1110,11 @@ static std::vector<function_bind_t> floydrt_push_back__make(llvm::LLVMContext& c
 		},
 		false
 	);
-	return {{ "push_back_hamt_pod", function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_pod) }};
+
+	return {
+		function_bind_t{ "push_back", (llvm::FunctionType*)deref_ptr(get_llvm_type_as_arg(type_lookup, make_push_back_signature()._function_type)), reinterpret_cast<void*>(floyd_llvm_intrinsic__push_back) },
+		function_bind_t{ "push_back_hamt_pod", function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_pod) }
+	};
 }
 
 llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, const typeid_t& resolved_call_type, llvm::Value& collection_reg, const typeid_t& collection_type, llvm::Value& value_reg){
@@ -1379,7 +1385,7 @@ static std::map<std::string, void*> get_intrinsic_binds(){
 		{ "exists", reinterpret_cast<void *>(&floyd_llvm_intrinsic__exists) },
 		{ "erase", reinterpret_cast<void *>(&floyd_llvm_intrinsic__erase) },
 		{ "get_keys", reinterpret_cast<void *>(&floyd_llvm_intrinsic__get_keys) },
-		{ "push_back", reinterpret_cast<void *>(&floyd_llvm_intrinsic__push_back) },
+//		{ "push_back", reinterpret_cast<void *>(&floyd_llvm_intrinsic__push_back) },
 		{ "subset", reinterpret_cast<void *>(&floyd_llvm_intrinsic__subset) },
 		{ "replace", reinterpret_cast<void *>(&floyd_llvm_intrinsic__replace) },
 
@@ -1415,11 +1421,17 @@ static std::map<std::string, void*> get_intrinsic_binds(){
 
 
 std::vector<function_link_entry_t> make_entries(const std::vector<function_bind_t>& binds){
+	const auto& intrinsic_signatures = get_intrinsic_signatures();
+
 	std::vector<function_link_entry_t> result;
-	for(const auto& e: binds){
-		const auto link_name = encode_intrinsic_link_name(e.name);
-		const auto function_byvalue_type = e.llvm_function_type;
-		const auto def = function_link_entry_t{ "intrinsic", link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, typeid_t::make_undefined(), {}, e.native_f };
+	for(const auto& bind: binds){
+		auto signature_it = std::find_if(intrinsic_signatures.begin(), intrinsic_signatures.end(), [&] (const intrinsic_signature_t& m) { return m.name == bind.name; } );
+		const auto function_type = signature_it != intrinsic_signatures.end() ? signature_it->_function_type : typeid_t::make_undefined(); 
+
+		const auto link_name = encode_intrinsic_link_name(bind.name);
+
+		QUARK_ASSERT(bind.llvm_function_type != nullptr);
+		const auto def = function_link_entry_t{ "intrinsic", link_name, bind.llvm_function_type, nullptr, typeid_t::make_undefined(), {}, bind.native_f };
 		result.push_back(def);
 	}
 	return result;
