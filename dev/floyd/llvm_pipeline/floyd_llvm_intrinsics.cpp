@@ -1064,9 +1064,6 @@ void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t arg0_valu
 
 
 //??? Expensive to push_back since all elements in vector needs their RC bumped!
-
-//??? optimize prio 1
-//??? check type at compile time, not runtime.
 // Could specialize further, for vector_hamt<string>, vector_hamt<vector<x>> etc. But it's probably better to inline push_back() instead.
 
 static runtime_value_t push_back__string(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
@@ -1620,6 +1617,112 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 	throw std::exception();
 }
 
+llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, const typeid_t& resolved_call_type, llvm::Value& collection_reg, const typeid_t& collection_type, llvm::Value& index_reg, llvm::Value& value_reg){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(collection_type.check_invariant());
+
+	auto& builder = gen_acc.get_builder();
+
+	const auto signature = make_update_signature();
+	const auto callee_function_type = signature._function_type;
+
+#if 0
+	if(collection_type.is_string()){
+		const auto vector_itype_reg = generate_itype_constant(gen_acc.gen, collection_type);
+		const auto packed_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, typeid_t::make_int());
+		const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("update__string"));
+		auto vec_ptr_reg = builder.CreateCall(
+			res.llvm_codegen_f,
+			{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
+			""
+		);
+		return vec_ptr_reg;
+	}
+	else if(collection_type.is_vector()){
+		const auto element_type = collection_type.get_vector_element_type();
+		const auto vector_itype_reg = generate_itype_constant(gen_acc.gen, collection_type);
+		const auto packed_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
+
+		if(is_vector_carray(collection_type)){
+			if(is_rc_value(collection_type.get_vector_element_type()) == true){
+				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("update_carray_nonpod"));
+				auto vec_ptr_reg = builder.CreateCall(
+					res.llvm_codegen_f,
+					{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
+					""
+				);
+				return vec_ptr_reg;
+			}
+			else{
+				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("update_carray_pod"));
+				auto vec_ptr_reg = builder.CreateCall(
+					res.llvm_codegen_f,
+					{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
+					""
+				);
+				return vec_ptr_reg;
+			}
+		}
+		else if(is_vector_hamt(collection_type)){
+			if(is_rc_value(collection_type.get_vector_element_type()) == true){
+				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("update_hamt_nonpod"));
+				auto vec_ptr_reg = builder.CreateCall(
+					res.llvm_codegen_f,
+					{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
+					""
+				);
+				return vec_ptr_reg;
+			}
+			else{
+				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("update_hamt_pod"));
+				auto vec_ptr_reg = builder.CreateCall(
+					res.llvm_codegen_f,
+					{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
+					""
+				);
+				return vec_ptr_reg;
+			}
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
+//			return generate_floyd_call(gen_acc, callee_function_type, resolved_call_type, *def.llvm_codegen_f, { &collection_reg, &value_reg });
+		}
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+#endif
+
+	const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(signature.name));
+	return generate_floyd_call(gen_acc, callee_function_type, resolved_call_type, *def.llvm_codegen_f, { &collection_reg, &index_reg, &value_reg });
+}
+
+static std::vector<function_bind_t> floydrt_update__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		make_generic_vec_type_byvalue(type_lookup)->getPointerTo(),
+		{
+			make_frp_type(type_lookup),
+			make_generic_vec_type_byvalue(type_lookup)->getPointerTo(),
+			make_runtime_type_type(type_lookup),
+			llvm::Type::getInt64Ty(context),
+			make_runtime_value_type(type_lookup)
+		},
+		false
+	);
+	return {
+		function_bind_t{ "update", make_intrinsic_llvm_function_type(type_lookup, make_update_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__update) }
+/*
+		function_bind_t{ "push_back__string", function_type, reinterpret_cast<void*>(push_back__string) },
+		function_bind_t{ "push_back_carray_pod", function_type, reinterpret_cast<void*>(floydrt_push_back_carray_pod) },
+		function_bind_t{ "push_back_carray_nonpod", function_type, reinterpret_cast<void*>(floydrt_push_back_carray_nonpod) },
+		function_bind_t{ "push_back_hamt_pod", function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_pod) },
+		function_bind_t{ "push_back_hamt_nonpod", function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_nonpod) }
+*/
+
+	};
+}
 
 
 /////////////////////////////////////////		to_json()
@@ -1653,7 +1756,7 @@ static std::map<std::string, void*> get_intrinsic_binds(){
 		{ "to_pretty_string", reinterpret_cast<void *>(&floyd_llvm_intrinsic__to_pretty_string) },
 		{ "typeof", reinterpret_cast<void *>(&floyd_llvm_intrinsic__typeof) },
 
-		{ "update", reinterpret_cast<void *>(&floyd_llvm_intrinsic__update) },
+//		{ "update", reinterpret_cast<void *>(&floyd_llvm_intrinsic__update) },
 //		{ "size", reinterpret_cast<void *>(&floyd_llvm_intrinsic__size) },
 		{ "find", reinterpret_cast<void *>(&floyd_llvm_intrinsic__find) },
 		{ "exists", reinterpret_cast<void *>(&floyd_llvm_intrinsic__exists) },
@@ -1732,6 +1835,7 @@ std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& c
 
 	result = concat(result, make_entries(floydrt_push_back__make(context, type_lookup)));
 	result = concat(result, make_entries(floydrt_size__make(context, type_lookup)));
+	result = concat(result, make_entries(floydrt_update__make(context, type_lookup)));
 
 	if(k_trace_function_link_map){
 		trace_function_link_map(result);
