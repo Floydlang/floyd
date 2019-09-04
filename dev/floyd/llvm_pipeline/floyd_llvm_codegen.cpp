@@ -17,6 +17,7 @@ static const bool k_trace_function_link_map = false;
 #include "floyd_llvm_runtime.h"
 #include "floyd_llvm_runtime_functions.h"
 #include "floyd_llvm_helpers.h"
+#include "compiler_basics.h"
 
 #include "ast_value.h"
 
@@ -972,10 +973,6 @@ static typeid_t calc_call_expression_function_type(const expression_t& e, const 
 	//	Verify that the actual argument expressions, their count and output types -- all match callee_function_type.
 	QUARK_ASSERT(details.args.size() == callee_function_type.get_function_args().size());
 
-	if(callee_function_type != resolved_call_function_type){
-		QUARK_ASSERT(true);
-	}
-
 	return resolved_call_function_type;
 }
 
@@ -1093,7 +1090,7 @@ static llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& ge
 	const auto intrinsic_signatures = get_intrinsic_signatures();
 
 	//	Find function
-    const auto it = std::find_if(intrinsic_signatures.begin(), intrinsic_signatures.end(), [&details](const intrinsic_signature_t& e) { return (std::string("$") + e.name) == details.call_name; } );
+    const auto it = std::find_if(intrinsic_signatures.begin(), intrinsic_signatures.end(), [&details](const intrinsic_signature_t& e) { return get_intrinsic_opcode(e) == details.call_name; } );
     QUARK_ASSERT(it != intrinsic_signatures.end());
 	const auto callee_function_type = it->_function_type;
 
@@ -1103,10 +1100,6 @@ static llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& ge
 
 	//	Verify that the actual argument expressions, their count and output types -- all match callee_function_type.
 	QUARK_ASSERT(details.args.size() == callee_function_type.get_function_args().size());
-
-	if(callee_function_type != resolved_call_function_type){
-		QUARK_ASSERT(true);
-	}
 
 	const auto name = it->_function_id.name;
 	const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(name));

@@ -729,7 +729,7 @@ expression_gen_t bcgen_make_fallthrough_intrinsic(bcgenerator_t& gen_acc, const 
 	const auto intrinsic_signatures = get_intrinsic_signatures();
 
 	//	Find function
-    const auto it = std::find_if(intrinsic_signatures.begin(), intrinsic_signatures.end(), [&details](const intrinsic_signature_t& e) { return (std::string("$") + e.name) == details.call_name; } );
+    const auto it = std::find_if(intrinsic_signatures.begin(), intrinsic_signatures.end(), [&details](const intrinsic_signature_t& e) { return get_intrinsic_opcode(e) == details.call_name; } );
     QUARK_ASSERT(it != intrinsic_signatures.end());
 	const auto function_type = std::make_shared<typeid_t>(it->_function_type);
 
