@@ -1261,12 +1261,6 @@ static std::vector<specialization_t> make_push_back_specializations(llvm::LLVMCo
 	};
 }
 
-static std::vector<function_bind_t> floydrt_push_back__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
-	const auto temp = make_push_back_specializations(context, type_lookup);
-	return mapf<function_bind_t>(temp, [](auto& e){ return e.bind; });
-}
-
-
 llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, const typeid_t& resolved_call_type, llvm::Value& collection_reg, const typeid_t& collection_type, llvm::Value& value_reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(collection_type.check_invariant());
@@ -1878,6 +1872,11 @@ std::vector<function_link_entry_t> make_entries(const std::vector<function_bind_
 	return result;
 }
 
+static std::vector<function_link_entry_t> make_entries2(const std::vector<specialization_t>& specializations){
+	const auto binds = mapf<function_bind_t>(specializations, [](auto& e){ return e.bind; });
+	return make_entries(binds);
+}
+
 std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
@@ -1897,7 +1896,7 @@ std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& c
 		result.push_back(def);
 	}
 
-	result = concat(result, make_entries(floydrt_push_back__make(context, type_lookup)));
+	result = concat(result, make_entries2(make_push_back_specializations(context, type_lookup)));
 	result = concat(result, make_entries(floydrt_size__make(context, type_lookup)));
 	result = concat(result, make_entries(floydrt_update__make(context, type_lookup)));
 
