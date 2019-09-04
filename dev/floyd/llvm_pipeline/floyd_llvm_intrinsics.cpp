@@ -1389,6 +1389,8 @@ static int64_t size_json(floyd_runtime_t* frp, runtime_value_t collection, runti
 	return floyd_llvm_intrinsic__size(frp, collection, collection_type);
 }
 
+// IDEA: add floyd types for size() etc.
+
 static std::vector<function_bind_t> floydrt_size__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type1 = llvm::FunctionType::get(
 		llvm::Type::getInt64Ty(context),
@@ -1741,7 +1743,7 @@ std::vector<function_link_entry_t> make_entries(const std::vector<function_bind_
 		const auto link_name = encode_intrinsic_link_name(bind.name);
 
 		QUARK_ASSERT(bind.llvm_function_type != nullptr);
-		const auto def = function_link_entry_t{ "intrinsic", link_name, bind.llvm_function_type, nullptr, typeid_t::make_undefined(), {}, bind.native_f };
+		const auto def = function_link_entry_t{ "intrinsic", link_name, bind.llvm_function_type, nullptr, function_type, {}, bind.native_f };
 		result.push_back(def);
 	}
 	return result;
