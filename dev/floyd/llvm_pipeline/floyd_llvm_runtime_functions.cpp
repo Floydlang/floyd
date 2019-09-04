@@ -248,27 +248,6 @@ static std::vector<function_bind_t> floydrt_concatunate_vectors__make(llvm::LLVM
 
 
 
-//??? replaced already
-static runtime_value_t floydrt_push_back_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_value_t element){
-	return push_back_immutable(vec, element);
-}
-
-static std::vector<function_bind_t> floydrt_push_back__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
-	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		make_generic_vec_type_byvalue(type_lookup)->getPointerTo(),
-		{
-			make_frp_type(type_lookup),
-			make_generic_vec_type_byvalue(type_lookup)->getPointerTo(),
-			make_runtime_value_type(type_lookup)
-		},
-		false
-	);
-	return {{ "push_back_hamt_pod", function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_pod) }};
-}
-
-
-
-
 //	Notice: value_backend never handle RC automatically = no need to make pod/nonpod access to it.
 static runtime_value_t floydrt_load_vector_element_hamt(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type, uint64_t index){
 	auto& r = get_floyd_runtime(frp);
@@ -1356,7 +1335,6 @@ std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& conte
 
 		floydrt_store_vector_element_mutable__make(context, type_lookup),
 		floydrt_concatunate_vectors__make(context, type_lookup),
-		floydrt_push_back__make(context, type_lookup),
 		floydrt_load_vector_element__make(context, type_lookup),
 
 		floydrt_allocate_dict__make(context, type_lookup),
@@ -1404,7 +1382,6 @@ runtime_functions_t::runtime_functions_t(const std::vector<function_link_entry_t
 
 	floydrt_store_vector_element_hamt_mutable(resolve_func(function_defs, "store_vector_element_hamt_mutable")),
 	floydrt_concatunate_vectors(resolve_func(function_defs, "concatunate_vectors")),
-	floydrt_push_back_hamt_pod(resolve_func(function_defs, "push_back_hamt_pod")),
 	floydrt_load_vector_element_hamt(resolve_func(function_defs, "load_vector_element_hamt")),
 
 

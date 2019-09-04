@@ -17,7 +17,10 @@ namespace floyd {
 
 struct llvm_function_generator_t;
 
-std::map<std::string, void*> get_intrinsic_binds();
+
+//	Make link entries for all intrinsics functions, like assert() including optimized specialisations.
+std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup);
+
 
 llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, const typeid_t& resolved_call_type, llvm::Value& collection_reg, const typeid_t& collection_type, llvm::Value& value_reg);
 

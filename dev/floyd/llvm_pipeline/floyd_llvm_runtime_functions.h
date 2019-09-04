@@ -40,7 +40,6 @@ struct runtime_functions_t {
 	const function_link_entry_t floydrt_allocate_vector_fill;
 	const function_link_entry_t floydrt_store_vector_element_hamt_mutable;
 	const function_link_entry_t floydrt_concatunate_vectors;
-	const function_link_entry_t floydrt_push_back_hamt_pod;
 	const function_link_entry_t floydrt_load_vector_element_hamt;
 	
 	const function_link_entry_t floydrt_allocate_dict;

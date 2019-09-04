@@ -21,6 +21,7 @@
 namespace floyd {
 
 
+static const bool k_trace_function_link_map = false;
 
 
 
@@ -1093,6 +1094,23 @@ static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, run
 	}
 }
 
+static runtime_value_t floydrt_push_back_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_value_t element){
+	return push_back_immutable(vec, element);
+}
+//??? return many specialisations
+static std::vector<function_bind_t> floydrt_push_back__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		make_generic_vec_type_byvalue(type_lookup)->getPointerTo(),
+		{
+			make_frp_type(type_lookup),
+			make_generic_vec_type_byvalue(type_lookup)->getPointerTo(),
+			make_runtime_value_type(type_lookup)
+		},
+		false
+	);
+	return {{ "push_back_hamt_pod", function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_pod) }};
+}
+
 llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, const typeid_t& resolved_call_type, llvm::Value& collection_reg, const typeid_t& collection_type, llvm::Value& value_reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(collection_type.check_invariant());
@@ -1112,9 +1130,9 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 
 		if(is_vector_hamt(collection_type) && is_rc_value(collection_type.get_vector_element_type()) == false){
 			const auto packed_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
-
+			const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("push_back_hamt_pod"));
 			auto vec_ptr_reg = builder.CreateCall(
-				gen_acc.gen.runtime_functions.floydrt_push_back_hamt_pod.llvm_codegen_f,
+				res.llvm_codegen_f,
 				{ gen_acc.get_callers_fcp(), &collection_reg, packed_reg },
 				""
 			);
@@ -1347,13 +1365,9 @@ static JSON_T* floyd_llvm_intrinsic__to_json(floyd_runtime_t* frp, runtime_value
 
 
 
-std::map<std::string, void*> get_intrinsic_binds(){
+static std::map<std::string, void*> get_intrinsic_binds(){
 
-	////////////////////////////////		CORE FUNCTIONS AND HOST FUNCTIONS
-	const std::map<std::string, void*> host_functions_map = {
-
-		////////////////////////////////		INTRINSICS
-
+	const std::map<std::string, void*> binds = {
 		{ "assert", reinterpret_cast<void *>(&floyd_llvm_intrinsic__assert) },
 		{ "to_string", reinterpret_cast<void *>(&floyd_llvm_intrinsic__to_string) },
 		{ "to_pretty_string", reinterpret_cast<void *>(&floyd_llvm_intrinsic__to_pretty_string) },
@@ -1377,7 +1391,7 @@ std::map<std::string, void*> get_intrinsic_binds(){
 		{ "get_json_type", reinterpret_cast<void *>(&floyd_llvm_intrinsic__get_json_type) },
 
 		{ "map", reinterpret_cast<void *>(&floyd_llvm_intrinsic__map) },
-		{ "map_string", reinterpret_cast<void *>(&floyd_llvm_intrinsic__map_string) },
+//		{ "map_string", reinterpret_cast<void *>(&floyd_llvm_intrinsic__map_string) },
 		{ "map_dag", reinterpret_cast<void *>(&floyd_llvm_intrinsic__map_dag) },
 		{ "filter", reinterpret_cast<void *>(&floyd_llvm_intrinsic__filter) },
 		{ "reduce", reinterpret_cast<void *>(&floyd_llvm_intrinsic__reduce) },
@@ -1396,7 +1410,76 @@ std::map<std::string, void*> get_intrinsic_binds(){
 		{ "bw_shift_right_arithmetic", reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy) },
 */
 	};
-	return host_functions_map;
+	return binds;
 }
+
+#if 0
+std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	QUARK_ASSERT(type_lookup.check_invariant());
+
+	const auto& intrinsic_signatures = get_intrinsic_signatures();
+	const auto intrinsic_binds = get_intrinsic_binds();
+
+	std::vector<function_link_entry_t> result;
+
+	for(const auto& signature: intrinsic_signatures){
+
+		//	Skip those intrinsics that have no native function -- those are inlined directly as instructions.
+		const auto bind_it = intrinsic_binds.find(signature.name);
+		if(bind_it != intrinsic_binds.end()){
+			const auto link_name = encode_intrinsic_link_name(bind_it->first);
+			const auto function_type = signature._function_type;
+			llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
+			const auto function_byvalue_type = deref_ptr(function_ptr_type);
+			const auto def = function_link_entry_t{ "intrinsic", link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, {}, bind_it->second };
+			result.push_back(def);
+		}
+	}
+
+	if(k_trace_function_link_map){
+		trace_function_link_map(result);
+	}
+
+	return result;
+}
+#endif
+
+
+std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	QUARK_ASSERT(type_lookup.check_invariant());
+
+	const auto& intrinsic_signatures = get_intrinsic_signatures();
+	const auto binds = get_intrinsic_binds();
+
+	std::vector<function_link_entry_t> result;
+	for(const auto& bind: binds){
+		auto signature_it = std::find_if(intrinsic_signatures.begin(), intrinsic_signatures.end(), [&] (const intrinsic_signature_t& e) { return e.name == bind.first; } );
+		QUARK_ASSERT(signature_it != intrinsic_signatures.end());
+
+		const auto link_name = encode_intrinsic_link_name(bind.first);
+		const auto function_type = signature_it->_function_type;
+		llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
+		const auto function_byvalue_type = deref_ptr(function_ptr_type);
+		const auto def = function_link_entry_t{ "intrinsic", link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, {}, bind.second };
+		result.push_back(def);
+	}
+
+	{
+		const std::vector<function_bind_t> x = floydrt_push_back__make(context, type_lookup);
+		const auto link_name = encode_intrinsic_link_name(x[0].name);
+		const auto function_byvalue_type = x[0].llvm_function_type;
+		const auto def = function_link_entry_t{ "intrinsic", link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, typeid_t::make_undefined(), {}, x[0].native_f };
+		result.push_back(def);
+	}
+
+
+
+	if(k_trace_function_link_map){
+		trace_function_link_map(result);
+	}
+
+	return result;
+}
+
 
 } // floyd

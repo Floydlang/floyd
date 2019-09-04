@@ -186,36 +186,6 @@ static std::vector<function_link_entry_t> make_runtime_function_link_map(llvm::L
 	return result;
 }
 
-//	Make link entries for all intrinsics functions, like assert().
-static std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
-	QUARK_ASSERT(type_lookup.check_invariant());
-
-	const auto& intrinsic_signatures = get_intrinsic_signatures();
-	const auto intrinsic_binds = get_intrinsic_binds();
-
-	std::vector<function_link_entry_t> result;
-
-	for(const auto& signature: intrinsic_signatures){
-
-		//	Skip those intrinsics that have no native function -- those are inlined directly as instructions.
-		const auto bind_it = intrinsic_binds.find(signature.name);
-		if(bind_it != intrinsic_binds.end()){
-			const auto link_name = encode_intrinsic_link_name(bind_it->first);
-			const auto function_type = signature._function_type;
-			llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
-			const auto function_byvalue_type = deref_ptr(function_ptr_type);
-			const auto def = function_link_entry_t{ "intrinsic", link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, {}, bind_it->second };
-			result.push_back(def);
-		}
-	}
-
-	if(k_trace_function_link_map){
-		trace_function_link_map(result);
-	}
-
-	return result;
-}
-
 static std::vector<function_link_entry_t> make_init_deinit_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
