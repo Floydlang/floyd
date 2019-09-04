@@ -1036,9 +1036,10 @@ llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& gen_acc, 
 
 	const auto resolved_call_function_type = calc_resolved_function_type(e, callee_function_type, details.args);
 
-	const auto name = it->_function_id.name;
+	const auto name = it->name;
 	const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(name));
 	auto callee_reg = def.llvm_codegen_f;
+	QUARK_ASSERT(callee_reg != nullptr);
 
 	std::vector<llvm::Value*> floyd_args;
 	for(const auto& m: details.args){

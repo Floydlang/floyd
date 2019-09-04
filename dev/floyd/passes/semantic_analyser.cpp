@@ -1916,7 +1916,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 				const auto index = callee_expr_load2->address._index;
 				QUARK_ASSERT(index >= 0 && index < intrinsic_signatures.size());
 				const auto& sign = intrinsic_signatures[index];
-				const auto& s = sign._function_id.name;
+				const auto& s = sign.name;
 
 				if(s == make_assert_signature().name){
 					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_assert_signature());

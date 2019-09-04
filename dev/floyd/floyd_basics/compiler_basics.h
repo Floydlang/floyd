@@ -170,7 +170,6 @@ const std::string k_global_benchmark_registry = "benchmark_registry";
 
 struct intrinsic_signature_t {
 	std::string name;
-	function_id_t _function_id;//??? name + _function_id seems redundant
 	floyd::typeid_t _function_type;
 };
 std::string get_intrinsic_opcode(const intrinsic_signature_t& signature);

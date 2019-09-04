@@ -43,6 +43,9 @@ static std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value
 
 
 
+static llvm::FunctionType* make_intrinsic_llvm_function_type(const llvm_type_lookup& type_lookup, const intrinsic_signature_t& signature){
+	return (llvm::FunctionType*)deref_ptr(get_llvm_type_as_arg(type_lookup, signature._function_type));
+}
 
 
 
@@ -1094,8 +1097,6 @@ static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, run
 	}
 }
 
-//??? remove _function_id from intrinsic_signature_t
-
 static runtime_value_t floydrt_push_back_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_value_t element){
 	return push_back_immutable(vec, element);
 }
@@ -1112,7 +1113,7 @@ static std::vector<function_bind_t> floydrt_push_back__make(llvm::LLVMContext& c
 	);
 
 	return {
-		function_bind_t{ "push_back", (llvm::FunctionType*)deref_ptr(get_llvm_type_as_arg(type_lookup, make_push_back_signature()._function_type)), reinterpret_cast<void*>(floyd_llvm_intrinsic__push_back) },
+		function_bind_t{ "push_back", make_intrinsic_llvm_function_type(type_lookup, make_push_back_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__push_back) },
 		function_bind_t{ "push_back_hamt_pod", function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_pod) }
 	};
 }

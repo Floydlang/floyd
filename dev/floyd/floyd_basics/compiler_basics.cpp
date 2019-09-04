@@ -97,7 +97,7 @@ static intrinsic_signature_t make_intrinsic(
 	const std::string& name,
 	floyd::typeid_t function_type
 ){
-	return { name, function_id_t { name }, function_type };
+	return { name, function_type };
 }
 
 
@@ -231,9 +231,8 @@ bool check_map_func_type(const typeid_t& elements, const typeid_t& f, const type
 
 //	string map_string(string s, func int(int e, C context) f, C context)
 intrinsic_signature_t make_map_string_signature(){
-	return {
+	return make_intrinsic(
 		"map_string",
-		{"1034"},
 		typeid_t::make_function(
 			typeid_t::make_string(),
 			{
@@ -243,7 +242,7 @@ intrinsic_signature_t make_map_string_signature(){
 			},
 			epure::pure
 		)
-	};
+	);
 }
 
 typeid_t harden_map_string_func_type(const typeid_t& resolved_call_type){
