@@ -1024,6 +1024,11 @@ void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t arg0_valu
 
 
 
+
+////////////////////////////////	push_back()
+
+
+
 //??? optimize prio 1
 //??? check type at compile time, not runtime.
 
@@ -1181,6 +1186,11 @@ static const runtime_value_t floyd_llvm_intrinsic__replace(floyd_runtime_t* frp,
 		UNSUPPORTED();
 	}
 }
+
+
+
+
+////////////////////////////////	parse_json_script()
 
 
 
