@@ -1031,7 +1031,6 @@ void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t arg0_valu
 
 //??? optimize prio 1
 //??? check type at compile time, not runtime.
-
 static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
@@ -1108,7 +1107,9 @@ static runtime_value_t floydrt_push_back_hamt_pod(floyd_runtime_t* frp, runtime_
 	return push_back_immutable(vec, element);
 }
 
+
 //??? Expensive to push_back since all elements in vector needs their RC bumped!
+// Could specialize further, for vector_hamt<string>, vector_hamt<vector<x>> etc. But it's probably better to inline push_back() instead.
 static runtime_value_t floydrt_push_back_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
 #if DEBUG
 	auto& r = get_floyd_runtime(frp);
