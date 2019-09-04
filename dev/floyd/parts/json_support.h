@@ -283,7 +283,7 @@ struct json_t {
 		return _type == k_string;
 	}
 
-	const std::string get_string() const {
+	const std::string& get_string() const {
 		QUARK_ASSERT(check_invariant());
 
 		if(!is_string()){
