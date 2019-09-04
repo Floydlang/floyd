@@ -1102,6 +1102,20 @@ static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, run
 	}
 }
 
+static runtime_value_t push_back__string(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
+	auto& r = get_floyd_runtime(frp);
+
+#if DEBUG
+	const auto& type0 = lookup_type_ref(r.backend, vec_type);
+	QUARK_ASSERT(type0 == typeid_t::make_string());
+#endif
+
+	auto value = from_runtime_string(r, vec);
+	value.push_back((char)element.int_value);
+	const auto result2 = to_runtime_string(r, value);
+	return result2;
+}
+
 static runtime_value_t floydrt_push_back_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
 #if DEBUG
 	auto& r = get_floyd_runtime(frp);
@@ -1141,6 +1155,7 @@ static std::vector<function_bind_t> floydrt_push_back__make(llvm::LLVMContext& c
 
 	return {
 		function_bind_t{ "push_back", make_intrinsic_llvm_function_type(type_lookup, make_push_back_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__push_back) },
+		function_bind_t{ "push_back__string", function_type, reinterpret_cast<void*>(push_back__string) },
 		function_bind_t{ "push_back_hamt_pod", function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_pod) },
 		function_bind_t{ "push_back_hamt_nonpod", function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_nonpod) }
 	};
@@ -1158,7 +1173,15 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 	const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(push_back_signature.name));
 
 	if(collection_type.is_string()){
-		return generate_floyd_call(gen_acc, callee_function_type, resolved_call_type, *def.llvm_codegen_f, { &collection_reg, &value_reg });
+		const auto vector_itype_reg = generate_itype_constant(gen_acc.gen, collection_type);
+		const auto packed_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, typeid_t::make_int());
+		const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("push_back__string"));
+		auto vec_ptr_reg = builder.CreateCall(
+			res.llvm_codegen_f,
+			{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
+			""
+		);
+		return vec_ptr_reg;
 	}
 	else if(collection_type.is_vector()){
 		const auto element_type = collection_type.get_vector_element_type();
