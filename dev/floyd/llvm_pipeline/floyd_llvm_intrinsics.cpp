@@ -1433,7 +1433,7 @@ static int64_t size_json(floyd_runtime_t* frp, runtime_value_t collection, runti
 
 // IDEA: add floyd types for size() etc.
 
-static std::vector<function_bind_t> floydrt_size__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+static std::vector<specialization_t> make_size_specializations(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type1 = llvm::FunctionType::get(
 		llvm::Type::getInt64Ty(context),
 		{
@@ -1462,16 +1462,20 @@ static std::vector<function_bind_t> floydrt_size__make(llvm::LLVMContext& contex
 		false
 	);
 	return {
-//		function_bind_t{ "size", make_intrinsic_llvm_function_type(type_lookup, make_size_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__size) },
-		function_bind_t{ "size__string", function_type1, reinterpret_cast<void*>(size__string) },
+//		specialization_t { eresolved_type::k_string,					{ "size", make_intrinsic_llvm_function_type(type_lookup, make_size_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__size) },
+		specialization_t { eresolved_type::k_string,					{ "size__string", function_type1, reinterpret_cast<void*>(size__string) } },
 
-		function_bind_t{ "size_vector_carray", function_type1, reinterpret_cast<void*>(size_vector_carray) },
-		function_bind_t{ "size_vector_hamt", function_type1, reinterpret_cast<void*>(size_vector_hamt) },
+		specialization_t { eresolved_type::k_vector_carray_pod,			{ "size_vector_carray", function_type1, reinterpret_cast<void*>(size_vector_carray) } },
+		specialization_t { eresolved_type::k_vector_carray_nonpod,		{ "size_vector_carray", function_type1, reinterpret_cast<void*>(size_vector_carray) } },
+		specialization_t { eresolved_type::k_vector_hamt_pod,			{ "size_vector_hamt", function_type1, reinterpret_cast<void*>(size_vector_hamt) } },
+		specialization_t { eresolved_type::k_vector_hamt_nonpod,		{ "size_vector_hamt", function_type1, reinterpret_cast<void*>(size_vector_hamt) } },
 
-		function_bind_t{ "size_dict_cppmap", function_type2, reinterpret_cast<void*>(size_dict_cppmap) },
-		function_bind_t{ "size_dict_hamt", function_type2, reinterpret_cast<void*>(size_dict_hamt) },
+		specialization_t { eresolved_type::k_dict_cppmap_pod,			{ "size_dict_cppmap", function_type2, reinterpret_cast<void*>(size_dict_cppmap) } },
+		specialization_t { eresolved_type::k_dict_cppmap_nonpod,		{ "size_dict_cppmap", function_type2, reinterpret_cast<void*>(size_dict_cppmap) } },
+		specialization_t { eresolved_type::k_dict_hamt_pod,				{ "size_dict_hamt", function_type2, reinterpret_cast<void*>(size_dict_hamt) } },
+		specialization_t { eresolved_type::k_dict_hamt_nonpod,			{ "size_dict_hamt", function_type2, reinterpret_cast<void*>(size_dict_hamt) } },
 
-		function_bind_t{ "size_json", function_type3, reinterpret_cast<void*>(size_json) }
+		specialization_t { eresolved_type::k_json,						{ "size_json", function_type3, reinterpret_cast<void*>(size_json) } }
 	};
 }
 
@@ -1854,7 +1858,7 @@ static std::map<std::string, void*> get_intrinsic_binds(){
 	return binds;
 }
 
-
+//	Skips duplicates.
 std::vector<function_link_entry_t> make_entries(const std::vector<function_bind_t>& binds){
 	const auto& intrinsic_signatures = get_intrinsic_signatures();
 
@@ -1864,10 +1868,13 @@ std::vector<function_link_entry_t> make_entries(const std::vector<function_bind_
 		const auto function_type = signature_it != intrinsic_signatures.end() ? signature_it->_function_type : typeid_t::make_undefined(); 
 
 		const auto link_name = encode_intrinsic_link_name(bind.name);
+		const auto exists_it = std::find_if(result.begin(), result.end(), [&](const function_link_entry_t& e){ return e.link_name == link_name; });
 
-		QUARK_ASSERT(bind.llvm_function_type != nullptr);
-		const auto def = function_link_entry_t{ "intrinsic", link_name, bind.llvm_function_type, nullptr, function_type, {}, bind.native_f };
-		result.push_back(def);
+		if(exists_it == result.end()){
+			QUARK_ASSERT(bind.llvm_function_type != nullptr);
+			const auto def = function_link_entry_t{ "intrinsic", link_name, bind.llvm_function_type, nullptr, function_type, {}, bind.native_f };
+			result.push_back(def);
+		}
 	}
 	return result;
 }
@@ -1897,7 +1904,7 @@ std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& c
 	}
 
 	result = concat(result, make_entries2(make_push_back_specializations(context, type_lookup)));
-	result = concat(result, make_entries(floydrt_size__make(context, type_lookup)));
+	result = concat(result, make_entries2(make_size_specializations(context, type_lookup)));
 	result = concat(result, make_entries(floydrt_update__make(context, type_lookup)));
 
 	if(k_trace_function_link_map){
