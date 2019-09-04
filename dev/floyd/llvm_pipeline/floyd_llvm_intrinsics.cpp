@@ -26,12 +26,6 @@ static const bool k_trace_function_link_map = false;
 
 
 
-
-////////////////////////////////	HELPERS FOR RUNTIME CALLBACKS
-
-
-
-
 static std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value_t arg_value, runtime_type_t arg_type){
 	QUARK_ASSERT(runtime.check_invariant());
 
@@ -41,20 +35,13 @@ static std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value
 	return a;
 }
 
-
-
 static llvm::FunctionType* make_intrinsic_llvm_function_type(const llvm_type_lookup& type_lookup, const intrinsic_signature_t& signature){
 	return (llvm::FunctionType*)deref_ptr(get_llvm_type_as_arg(type_lookup, signature._function_type));
 }
 
 
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	INTRINSICS
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
+/////////////////////////////////////////		assert()
 
 
 
@@ -69,6 +56,12 @@ static void floyd_llvm_intrinsic__assert(floyd_runtime_t* frp, runtime_value_t a
 		quark::throw_runtime_error("Floyd assertion failed.");
 	}
 }
+
+
+
+/////////////////////////////////////////		erase()
+
+
 
 //??? optimize prio 1
 static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
@@ -130,6 +123,8 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 
 
 
+/////////////////////////////////////////		get_keys()
+
 
 
 //??? optimize prio 1
@@ -170,6 +165,12 @@ static runtime_value_t floyd_llvm_intrinsic__get_keys(floyd_runtime_t* frp, runt
 	}
 }
 
+
+
+/////////////////////////////////////////		exists()
+
+
+
 //??? optimize prio 1
 //??? kill unpack_dict_cppmap_arg()
 static uint32_t floyd_llvm_intrinsic__exists(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
@@ -203,6 +204,10 @@ static uint32_t floyd_llvm_intrinsic__exists(floyd_runtime_t* frp, runtime_value
 
 
 
+/////////////////////////////////////////		find()
+
+
+
 //??? optimize prio 1
 static int64_t floyd_llvm_intrinsic__find(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, const runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
@@ -223,6 +228,12 @@ static int64_t floyd_llvm_intrinsic__find(floyd_runtime_t* frp, runtime_value_t 
 	}
 }
 
+
+
+/////////////////////////////////////////		get_json_type()
+
+
+
 static int64_t floyd_llvm_intrinsic__get_json_type(floyd_runtime_t* frp, JSON_T* json_ptr){
 	auto& r = get_floyd_runtime(frp);
 	(void)r;
@@ -234,6 +245,11 @@ static int64_t floyd_llvm_intrinsic__get_json_type(floyd_runtime_t* frp, JSON_T*
 }
 
 
+
+/////////////////////////////////////////		generate_json_script()
+
+
+
 static runtime_value_t floyd_llvm_intrinsic__generate_json_script(floyd_runtime_t* frp, JSON_T* json_ptr){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(json_ptr != nullptr);
@@ -243,6 +259,12 @@ static runtime_value_t floyd_llvm_intrinsic__generate_json_script(floyd_runtime_
 	const std::string s = json_to_compact_string(json);
 	return to_runtime_string(r, s);
 }
+
+
+
+/////////////////////////////////////////		from_json()
+
+
 
 static runtime_value_t floyd_llvm_intrinsic__from_json(floyd_runtime_t* frp, JSON_T* json_ptr, runtime_type_t target_type){
 	auto& r = get_floyd_runtime(frp);
@@ -259,6 +281,7 @@ static runtime_value_t floyd_llvm_intrinsic__from_json(floyd_runtime_t* frp, JSO
 
 
 
+/////////////////////////////////////////		map()
 
 
 
@@ -344,6 +367,12 @@ static runtime_value_t floyd_llvm_intrinsic__map(floyd_runtime_t* frp, runtime_v
 
 
 
+
+/////////////////////////////////////////		map_string()
+
+
+
+
 //??? Can mutate the acc string internally.
 
 typedef runtime_value_t (*MAP_STRING_F)(floyd_runtime_t* frp, runtime_value_t s, runtime_value_t context);
@@ -377,6 +406,7 @@ static runtime_value_t floyd_llvm_intrinsic__map_string(floyd_runtime_t* frp, ru
 
 
 
+/////////////////////////////////////////		map_dag()
 
 
 // [R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
@@ -669,7 +699,7 @@ static runtime_value_t floyd_llvm_intrinsic__map_dag(
 
 
 
-
+/////////////////////////////////////////		filter()
 
 
 
@@ -782,6 +812,10 @@ static runtime_value_t floyd_llvm_intrinsic__filter(floyd_runtime_t* frp, runtim
 
 
 
+/////////////////////////////////////////		reduce()
+
+
+
 typedef runtime_value_t (*REDUCE_F)(floyd_runtime_t* frp, runtime_value_t acc_value, runtime_value_t element_value, runtime_value_t context);
 
 //??? optimize prio 1
@@ -866,6 +900,7 @@ static runtime_value_t floyd_llvm_intrinsic__reduce(floyd_runtime_t* frp, runtim
 }
 
 
+/////////////////////////////////////////		stable_sort()
 
 
 
@@ -1007,7 +1042,7 @@ static runtime_value_t floyd_llvm_intrinsic__stable_sort(
 
 
 
-
+/////////////////////////////////////////		print()
 
 
 
@@ -1024,8 +1059,8 @@ void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t arg0_valu
 
 
 
-
 ////////////////////////////////	push_back()
+
 
 
 //??? Expensive to push_back since all elements in vector needs their RC bumped!
@@ -1263,6 +1298,10 @@ static JSON_T* floyd_llvm_intrinsic__parse_json_script(floyd_runtime_t* frp, run
 	return result;
 }
 
+
+/////////////////////////////////////////		send()
+
+
 //??? optimize prio 2
 
 static void floyd_llvm_intrinsic__send(floyd_runtime_t* frp, runtime_value_t process_id0, const JSON_T* message_json_ptr){
@@ -1472,6 +1511,7 @@ llvm::Value* generate_instrinsic_size(llvm_function_generator_t& gen_acc, const 
 
 
 
+/////////////////////////////////////////		subset()
 
 
 //??? optimize prio 1
@@ -1497,6 +1537,7 @@ static const runtime_value_t floyd_llvm_intrinsic__subset(floyd_runtime_t* frp, 
 }
 
 
+/////////////////////////////////////////		to_pretty_string()
 
 
 static runtime_value_t floyd_llvm_intrinsic__to_pretty_string(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
@@ -1509,6 +1550,12 @@ static runtime_value_t floyd_llvm_intrinsic__to_pretty_string(floyd_runtime_t* f
 	return to_runtime_string(r, s);
 }
 
+
+
+/////////////////////////////////////////		to_string()
+
+
+
 //??? optimize prio 2
 static runtime_value_t floyd_llvm_intrinsic__to_string(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
@@ -1516,6 +1563,10 @@ static runtime_value_t floyd_llvm_intrinsic__to_string(floyd_runtime_t* frp, run
 	const auto s = gen_to_string(r, arg0_value, arg0_type);
 	return to_runtime_string(r, s);
 }
+
+
+
+/////////////////////////////////////////		typeof()
 
 
 
@@ -1528,6 +1579,10 @@ static runtime_type_t floyd_llvm_intrinsic__typeof(floyd_runtime_t* frp, runtime
 #endif
 	return arg0_type;
 }
+
+
+
+/////////////////////////////////////////		update()
 
 
 
@@ -1564,6 +1619,12 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 	}
 	throw std::exception();
 }
+
+
+
+/////////////////////////////////////////		to_json()
+
+
 
 static JSON_T* floyd_llvm_intrinsic__to_json(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
