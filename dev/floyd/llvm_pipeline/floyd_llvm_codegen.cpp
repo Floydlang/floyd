@@ -1062,6 +1062,18 @@ static llvm::Value* generate_push_back_expression(llvm_function_generator_t& gen
 	return generate_instrinsic_push_back(gen_acc, resolved_call_type, *vector_reg, collection_type, *element_reg);
 }
 
+static llvm::Value* generate_size_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	const auto collection_type = details.args[0].get_output_type();
+	QUARK_ASSERT(collection_type.is_vector() || collection_type.is_string() || collection_type.is_dict() || collection_type.is_json());
+
+	const auto resolved_call_type = calc_resolved_function_type(e, make_size_signature()._function_type, details.args);
+	auto collection_reg = generate_expression(gen_acc, details.args[0]);
+	return generate_instrinsic_size(gen_acc, resolved_call_type, *collection_reg, collection_type);
+}
+
 static llvm::Value* generate_intrinsic_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -1084,7 +1096,7 @@ static llvm::Value* generate_intrinsic_expression(llvm_function_generator_t& gen
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
 	else if(details.call_name == get_intrinsic_opcode(make_size_signature())){
-		return generate_fallthrough_intrinsic(gen_acc, e, details);
+		return generate_size_expression(gen_acc, e, details);
 	}
 	else if(details.call_name == get_intrinsic_opcode(make_find_signature())){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
@@ -2322,6 +2334,9 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_link_entry_
 	//	This lets all other code reference them, even if they're not filled up with code yet.
 
 	const auto link_map1 = make_function_link_map1(module->getContext(), type_lookup, semantic_ast._tree._function_defs);
+	if(k_trace_function_link_map){
+		trace_function_link_map(link_map1);
+	}
 	const auto link_map2 = generate_function_nodes(*module, type_lookup, link_map1);
 
 	auto gen_acc = llvm_code_generator_t(instance, module.get(), semantic_ast._tree._interned_types, type_lookup, link_map2);
