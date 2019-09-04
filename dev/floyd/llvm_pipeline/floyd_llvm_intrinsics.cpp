@@ -1431,8 +1431,6 @@ static int64_t size_json(floyd_runtime_t* frp, runtime_value_t collection, runti
 	}
 }
 
-// IDEA: add floyd types for size() etc.
-
 static std::vector<specialization_t> make_size_specializations(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type1 = llvm::FunctionType::get(
 		llvm::Type::getInt64Ty(context),
@@ -1485,86 +1483,20 @@ llvm::Value* generate_instrinsic_size(llvm_function_generator_t& gen_acc, const 
 
 	auto& builder = gen_acc.get_builder();
 
-	const auto signature = make_size_signature();
-	const auto callee_function_type = signature._function_type;
+	const auto temp = make_size_specializations(builder.getContext(), gen_acc.gen.type_lookup);
 
-	const auto collection_itype = generate_itype_constant(gen_acc.gen, collection_type);
-
-	if(collection_type.is_string()){
-		const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("size__string"));
-		auto vec_ptr_reg = builder.CreateCall(
-			res.llvm_codegen_f,
-			{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype },
-			""
-		);
-		return vec_ptr_reg;
-	}
-
-	//??? Use lookup thing instead of huge if-else.Use typeid_t-matching.
-	else if(collection_type.is_vector()){
-		const auto element_type = collection_type.get_vector_element_type();
-
-		if(is_vector_carray(collection_type)){
-			const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("size_vector_carray"));
-			auto vec_ptr_reg = builder.CreateCall(
-				res.llvm_codegen_f,
-				{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype },
-				""
-			);
-			return vec_ptr_reg;
-		}
-		else if(is_vector_hamt(collection_type)){
-			const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("size_vector_hamt"));
-			auto vec_ptr_reg = builder.CreateCall(
-				res.llvm_codegen_f,
-				{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype },
-				""
-			);
-			return vec_ptr_reg;
-		}
-		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-	}
-	else if(collection_type.is_dict()){
-		if(is_dict_cppmap(collection_type)){
-			const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("size_dict_cppmap"));
-			auto vec_ptr_reg = builder.CreateCall(
-				res.llvm_codegen_f,
-				{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype },
-				""
-			);
-			return vec_ptr_reg;
-		}
-		else if(is_dict_hamt(collection_type)){
-			const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("size_dict_hamt"));
-			auto vec_ptr_reg = builder.CreateCall(
-				res.llvm_codegen_f,
-				{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype },
-				""
-			);
-			return vec_ptr_reg;
-		}
-		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-	}
-	else if(collection_type.is_json()){
-		const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("size_json"));
-		auto vec_ptr_reg = builder.CreateCall(
-			res.llvm_codegen_f,
-			{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype },
-			""
-		);
-		return vec_ptr_reg;
-	}
-
-	else{
+	const auto it = std::find_if(temp.begin(), temp.end(), [&](const specialization_t& s) { return matches_specialization(s.arg0_required_type, collection_type); });
+	if(it == temp.end()){
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
+	const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(it->bind.name));
+	const auto collection_itype = generate_itype_constant(gen_acc.gen, collection_type);
+	return builder.CreateCall(
+		res.llvm_codegen_f,
+		{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype },
+		""
+	);
 }
 
 
