@@ -268,7 +268,7 @@ static runtime_value_t floyd_llvm_intrinsic__from_json(floyd_runtime_t* frp, JSO
 typedef runtime_value_t (*MAP_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value);
 
 //??? Use C++ template to generate these two functions.
-//??? optimize prio 1
+//??? optimize prio 0
 static runtime_value_t map__carray(floyd_runtime_t* frp, value_backend_t& backend, runtime_value_t elements_vec, runtime_type_t elements_vec_type, runtime_value_t f_value, runtime_type_t f_value_type, runtime_value_t context_value, runtime_type_t context_value_type){
 
 	const auto& type1 = lookup_type_ref(backend, f_value_type);
@@ -296,7 +296,7 @@ static runtime_value_t map__carray(floyd_runtime_t* frp, value_backend_t& backen
 }
 
 //??? Use C++ template to generate these two functions.
-//??? optimize prio 1
+//??? optimize prio 0
 static runtime_value_t map__hamt(floyd_runtime_t* frp, value_backend_t& backend, runtime_value_t elements_vec, runtime_type_t elements_vec_type, runtime_value_t f_value, runtime_type_t f_value_type, runtime_value_t context_value, runtime_type_t context_value_type){
 
 	const auto& type1 = lookup_type_ref(backend, f_value_type);
@@ -324,7 +324,7 @@ static runtime_value_t map__hamt(floyd_runtime_t* frp, value_backend_t& backend,
 	return result_vec;
 }
 
-//??? optimize prio 1: check type at compile time, not runtime.
+//??? optimize prio 0: check type at compile time, not runtime.
 
 //	[R] map([E] elements, func R (E e, C context) f, C context)
 static runtime_value_t floyd_llvm_intrinsic__map(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
@@ -1034,61 +1034,6 @@ void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t arg0_valu
 //??? check type at compile time, not runtime.
 // Could specialize further, for vector_hamt<string>, vector_hamt<vector<x>> etc. But it's probably better to inline push_back() instead.
 
-/*
-static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
-	auto& r = get_floyd_runtime(frp);
-
-	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
-	const auto& type1 = lookup_type_ref(r.backend, arg1_type);
-	const auto return_type = type0;
-	if(type0.is_string()){
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-	else if(is_vector_carray(itype_t(arg0_type))){
-		const auto vs = unpack_vector_carray_arg(r.backend, arg0_value, arg0_type);
-
-		QUARK_ASSERT(type1 == type0.get_vector_element_type());
-		QUARK_ASSERT(is_vector_carray(itype_t(arg0_type)));
-
-		const auto element = arg1_value;
-		const auto element_type = type1;
-		const auto element_itype = itype_t(arg1_type);
-
-		const auto element_count2 = vs->get_element_count() + 1;
-		auto v2 = alloc_vector_carray(r.backend.heap, element_count2, element_count2, lookup_itype(r.backend, return_type));
-
-		auto dest_ptr = v2.vector_carray_ptr->get_element_ptr();
-		auto source_ptr = vs->get_element_ptr();
-
-		if(is_rc_value(element_itype)){
-			retain_value(r.backend, element, itype_t(arg1_type));
-
-			for(int i = 0 ; i < vs->get_element_count() ; i++){
-				retain_value(r.backend, source_ptr[i], itype_t(arg1_type));
-				dest_ptr[i] = source_ptr[i];
-			}
-			dest_ptr[vs->get_element_count()] = element;
-		}
-		else{
-			for(int i = 0 ; i < vs->get_element_count() ; i++){
-				dest_ptr[i] = source_ptr[i];
-			}
-			dest_ptr[vs->get_element_count()] = element;
-		}
-		return v2;
-	}
-	else if(is_vector_hamt(itype_t(arg0_type))){
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-	else{
-		//	No other types allowed.
-		UNSUPPORTED();
-	}
-}
-*/
-
 static runtime_value_t push_back__string(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
 	auto& r = get_floyd_runtime(frp);
 
@@ -1335,7 +1280,7 @@ static void floyd_llvm_intrinsic__send(floyd_runtime_t* frp, runtime_value_t pro
 	r._handler->on_send(process_id, message_json);
 }
 
-//??? optimize prio 1
+//??? optimize prio 0
 //??? check type at compile time, not runtime.
 static int64_t floyd_llvm_intrinsic__size(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
@@ -1442,7 +1387,7 @@ static runtime_type_t floyd_llvm_intrinsic__typeof(floyd_runtime_t* frp, runtime
 
 
 
-//??? optimize prio 1
+//??? optimize prio 0
 //??? check type at compile time, not runtime.
 
 static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
