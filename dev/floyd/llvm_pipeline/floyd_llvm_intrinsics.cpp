@@ -1296,7 +1296,8 @@ static int64_t floyd_llvm_intrinsic__size(floyd_runtime_t* frp, runtime_value_t 
 	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
 
 	if(type0.is_string()){
-		return get_vec_string_size(arg0_value);
+		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 	else if(type0.is_json()){
 		const auto& json = arg0_value.json_ptr->get_json();
@@ -1336,25 +1337,20 @@ static int64_t floyd_llvm_intrinsic__size(floyd_runtime_t* frp, runtime_value_t 
 	}
 }
 
-
-static runtime_value_t floydrt_size_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
-#if DEBUG
+static int64_t size__string(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type){
 	auto& r = get_floyd_runtime(frp);
+
+#if DEBUG
+	const auto& type0 = lookup_type_ref(r.backend, vec_type);
+	QUARK_ASSERT(type0 == typeid_t::make_string());
 #endif
 
-	runtime_value_t vec2 = push_back_immutable(vec, element);
-	itype_t element_itype = lookup_vector_element_itype(r.backend, itype_t(vec_type));
-
-	for(int i = 0 ; i < vec2.vector_hamt_ptr->get_element_count() ; i++){
-		const auto& value = vec2.vector_hamt_ptr->load_element(i);
-		retain_value(r.backend, value, element_itype);
-	}
-	return vec2;
+	return vec.vector_carray_ptr->get_element_count();
 }
 
 static std::vector<function_bind_t> floydrt_size__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		make_generic_vec_type_byvalue(type_lookup)->getPointerTo(),
+		llvm::Type::getInt64Ty(context),
 		{
 			make_frp_type(type_lookup),
 			make_generic_vec_type_byvalue(type_lookup)->getPointerTo(),
@@ -1363,9 +1359,9 @@ static std::vector<function_bind_t> floydrt_size__make(llvm::LLVMContext& contex
 		false
 	);
 	return {
-		function_bind_t{ "size", make_intrinsic_llvm_function_type(type_lookup, make_size_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__size) }
+		function_bind_t{ "size", make_intrinsic_llvm_function_type(type_lookup, make_size_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__size) },
+		function_bind_t{ "size__string", function_type, reinterpret_cast<void*>(size__string) }
 /*
-		function_bind_t{ "size__string", function_type, reinterpret_cast<void*>(size__string) },
 		function_bind_t{ "size_carray_pod", function_type, reinterpret_cast<void*>(floydrt_size_carray_pod) },
 		function_bind_t{ "size_carray_nonpod", function_type, reinterpret_cast<void*>(floydrt_size_carray_nonpod) },
 		function_bind_t{ "size_hamt_pod", function_type, reinterpret_cast<void*>(floydrt_size_hamt_pod) },
@@ -1383,21 +1379,17 @@ llvm::Value* generate_instrinsic_size(llvm_function_generator_t& gen_acc, const 
 	const auto signature = make_size_signature();
 	const auto callee_function_type = signature._function_type;
 
-	const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(signature.name));
-	return generate_floyd_call(gen_acc, callee_function_type, resolved_call_type, *def.llvm_codegen_f, { &collection_reg });
-
-#if 0
 	if(collection_type.is_string()){
 		const auto vector_itype_reg = generate_itype_constant(gen_acc.gen, collection_type);
-		const auto packed_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, typeid_t::make_int());
-		const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("push_back__string"));
+		const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("size__string"));
 		auto vec_ptr_reg = builder.CreateCall(
 			res.llvm_codegen_f,
-			{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
+			{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg },
 			""
 		);
 		return vec_ptr_reg;
 	}
+#if 0
 	else if(collection_type.is_vector()){
 		const auto element_type = collection_type.get_vector_element_type();
 		const auto vector_itype_reg = generate_itype_constant(gen_acc.gen, collection_type);
@@ -1455,6 +1447,8 @@ llvm::Value* generate_instrinsic_size(llvm_function_generator_t& gen_acc, const 
 	}
 #endif
 
+	const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(signature.name));
+	return generate_floyd_call(gen_acc, callee_function_type, resolved_call_type, *def.llvm_codegen_f, { &collection_reg });
 }
 
 
