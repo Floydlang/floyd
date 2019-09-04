@@ -1039,13 +1039,8 @@ static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, run
 	const auto& type1 = lookup_type_ref(r.backend, arg1_type);
 	const auto return_type = type0;
 	if(type0.is_string()){
-		auto value = from_runtime_string(r, arg0_value);
-
-		QUARK_ASSERT(type1.is_int());
-
-		value.push_back((char)arg1_value.int_value);
-		const auto result2 = to_runtime_string(r, value);
-		return result2;
+		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 	else if(is_vector_carray(itype_t(arg0_type))){
 		const auto vs = unpack_vector_carray_arg(r.backend, arg0_value, arg0_type);
@@ -1081,20 +1076,8 @@ static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, run
 		return v2;
 	}
 	else if(is_vector_hamt(itype_t(arg0_type))){
-		QUARK_ASSERT(type1 == type0.get_vector_element_type());
-
-		const auto element_type = type1;
-		const auto element_itype = itype_t(arg1_type);
-
-		runtime_value_t vec2 = push_back_immutable(arg0_value, arg1_value);
-
-		if(is_rc_value(element_itype)){
-			for(int i = 0 ; i < vec2.vector_hamt_ptr->get_element_count() ; i++){
-				const auto& value = vec2.vector_hamt_ptr->load_element(i);
-				retain_value(r.backend, value, itype_t(arg1_type));
-			}
-		}
-		return vec2;
+		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 	else{
 		//	No other types allowed.
