@@ -41,6 +41,103 @@ static llvm::FunctionType* make_intrinsic_llvm_function_type(const llvm_type_loo
 
 
 
+/////////////////////////////////////////		specialization_t
+
+
+/*
+POD VS NONPOD
+
+								return		arg0		arg1		arg2
+	------------------------------------------------------------------------------------------------
+	update()					any			any			any			any
+
+	update_string()				string		string		int			int
+	update_vector_carray()		vec<T>		vec<T>		int			T
+	update_vector_hamt()		vec<T>		vec<T>		int			T
+
+	update_dict_cppmap()		dict<T>		dict<T>		string		T
+	update_dict_hamt()			dict<T>		dict<T>		string		T
+*/
+
+enum class eresolved_type {
+	k_string,
+
+	k_vector_carray_pod,
+	k_vector_carray_nonpod,
+	k_vector_hamt_pod,
+	k_vector_hamt_nonpod,
+
+	k_dict_cppmap_pod,
+	k_dict_cppmap_nonpod,
+
+	k_dict_hamt_pod,
+	k_dict_hamt_nonpod,
+
+	k_json
+};
+
+struct specialization_t {
+	std::string func_name;
+	void* native_v;
+	llvm::FunctionType* function_type;
+	eresolved_type arg0_required_type;
+};
+
+static bool matches_specialization(eresolved_type wanted, const typeid_t& arg0_type){
+	if(arg0_type.is_string()){
+		return wanted == eresolved_type::k_string;
+	}
+	else if(is_vector_carray(arg0_type)){
+		const auto is_rc = is_rc_value(arg0_type.get_vector_element_type());
+		if(is_rc){
+			return wanted == eresolved_type::k_vector_carray_nonpod;
+		}
+		else{
+			return wanted == eresolved_type::k_vector_carray_pod;
+		}
+	}
+	else if(is_vector_hamt(arg0_type)){
+		const auto is_rc = is_rc_value(arg0_type.get_vector_element_type());
+		if(is_rc){
+			return wanted == eresolved_type::k_vector_hamt_nonpod;
+		}
+		else{
+			return wanted == eresolved_type::k_vector_hamt_pod;
+		}
+	}
+
+	else if(is_dict_cppmap(arg0_type)){
+		const auto is_rc = is_rc_value(arg0_type.get_dict_value_type());
+		if(is_rc){
+			return wanted == eresolved_type::k_dict_cppmap_nonpod;
+		}
+		else{
+			return wanted == eresolved_type::k_dict_cppmap_pod;
+		}
+	}
+	else if(is_dict_hamt(arg0_type)){
+		const auto is_rc = is_rc_value(arg0_type.get_dict_value_type());
+		if(is_rc){
+			return wanted == eresolved_type::k_dict_hamt_nonpod;
+		}
+		else{
+			return wanted == eresolved_type::k_dict_hamt_pod;
+		}
+	}
+
+	else if(arg0_type.is_json()){
+		return wanted == eresolved_type::k_json;
+	}
+
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+
+
+
 /////////////////////////////////////////		assert()
 
 
@@ -1165,6 +1262,7 @@ static std::vector<function_bind_t> floydrt_push_back__make(llvm::LLVMContext& c
 	};
 }
 
+
 llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, const typeid_t& resolved_call_type, llvm::Value& collection_reg, const typeid_t& collection_type, llvm::Value& value_reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(collection_type.check_invariant());
@@ -1193,44 +1291,22 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 		const auto packed_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
 
 		if(is_vector_carray(collection_type)){
-			if(is_rc_value(collection_type.get_vector_element_type()) == true){
-				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("push_back_carray_nonpod"));
-				auto vec_ptr_reg = builder.CreateCall(
-					res.llvm_codegen_f,
-					{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
-					""
-				);
-				return vec_ptr_reg;
-			}
-			else{
-				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("push_back_carray_pod"));
-				auto vec_ptr_reg = builder.CreateCall(
-					res.llvm_codegen_f,
-					{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
-					""
-				);
-				return vec_ptr_reg;
-			}
+			const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(is_rc_value(collection_type.get_vector_element_type()) ? "push_back_carray_nonpod" : "push_back_carray_pod"));
+			auto vec_ptr_reg = builder.CreateCall(
+				res.llvm_codegen_f,
+				{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
+				""
+			);
+			return vec_ptr_reg;
 		}
 		else if(is_vector_hamt(collection_type)){
-			if(is_rc_value(collection_type.get_vector_element_type()) == true){
-				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("push_back_hamt_nonpod"));
-				auto vec_ptr_reg = builder.CreateCall(
-					res.llvm_codegen_f,
-					{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
-					""
-				);
-				return vec_ptr_reg;
-			}
-			else{
-				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("push_back_hamt_pod"));
-				auto vec_ptr_reg = builder.CreateCall(
-					res.llvm_codegen_f,
-					{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
-					""
-				);
-				return vec_ptr_reg;
-			}
+			const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(is_rc_value(collection_type.get_vector_element_type()) ? "push_back_hamt_nonpod" : "push_back_hamt_pod"));
+			auto vec_ptr_reg = builder.CreateCall(
+				res.llvm_codegen_f,
+				{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
+				""
+			);
+			return vec_ptr_reg;
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -1580,6 +1656,7 @@ static runtime_type_t floyd_llvm_intrinsic__typeof(floyd_runtime_t* frp, runtime
 
 
 /////////////////////////////////////////		update()
+
 
 
 

@@ -43,6 +43,12 @@ bool is_floyd_literal(const typeid_t& type);
 bool is_preinitliteral(const typeid_t& type);
 
 
+enum class epod_type {
+	pod,
+	nonpod
+};
+
+
 ////////////////////////////////////////		main() init() and message handler
 
 
