@@ -1057,6 +1057,8 @@ static llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, cons
 	NOTICE: The function signature for the callee can hold DYNs.
 	The actual arguments will be explicit types, never DYNs.
 
+	Callee type can include ANY-arguments. Check the resolved call expression's types to know the types.
+
 	Function signature
 	- In call's callee signature
 	- In call's actual arguments types and output type.
@@ -1069,33 +1071,18 @@ static llvm::Value* generate_call_expression(llvm_function_generator_t& gen_acc,
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e0.check_invariant());
 
-	//	Callee type can include ANY-arguments. Check the resolved call expression's types to know the types.
 	const auto callee_function_type = details.callee->get_output_type();
 	const auto resolved_function_type = calc_call_expression_function_type(e0, details);
 
-	llvm::Value* callee0_reg = nullptr;
-	const auto load2 = std::get_if<expression_t::load2_t>(&details.callee->_expression_variant);
-	if(load2 != nullptr && load2->address._parent_steps == variable_address_t::k_intrinsic){
-		const auto& intrinsic_signatures = get_intrinsic_signatures();
-		QUARK_ASSERT(load2->address._index >= 0 && load2->address._index < intrinsic_signatures.size());
-		const auto& intrinsic = intrinsic_signatures[load2->address._index];
-
-		const auto name = intrinsic.name;
-		const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(name));
-		callee0_reg = def.llvm_codegen_f;
-	}
-	else{
-		callee0_reg = generate_expression(gen_acc, *details.callee);
-	}
+	auto callee_reg = generate_expression(gen_acc, *details.callee);
 
 	std::vector<llvm::Value*> floyd_args;
 	for(const auto& e: details.args){
 		llvm::Value* arg_value = generate_expression(gen_acc, e);
 		floyd_args.push_back(arg_value);
 	}
-	return generate_floyd_call(gen_acc, callee_function_type, resolved_function_type, *callee0_reg, floyd_args);
+	return generate_floyd_call(gen_acc, callee_function_type, resolved_function_type, *callee_reg, floyd_args);
 }
-
 
 //	Generates a call to the global function that implements the intrinsic.
 static llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
@@ -1108,19 +1095,31 @@ static llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& ge
 	//	Find function
     const auto it = std::find_if(intrinsic_signatures.begin(), intrinsic_signatures.end(), [&details](const intrinsic_signature_t& e) { return (std::string("$") + e.name) == details.call_name; } );
     QUARK_ASSERT(it != intrinsic_signatures.end());
-	const auto function_type = std::make_shared<typeid_t>(it->_function_type);
+	const auto callee_function_type = it->_function_type;
 
-	const auto index = it - intrinsic_signatures.begin();
-	const auto addr = variable_address_t::make_variable_address(variable_address_t::k_intrinsic, static_cast<int>(index));
+	const auto resolved_call_return_type = e.get_output_type();
+	const auto resolved_call_arguments = mapf<typeid_t>(details.args, [](auto& e){ return e.get_output_type(); });
+	const auto resolved_call_function_type = typeid_t::make_function(resolved_call_return_type, resolved_call_arguments, callee_function_type.get_function_pure());
 
-	const auto call_details = expression_t::call_t {
-		std::make_shared<expression_t>(expression_t::make_load2(addr, function_type)),
-		details.args
-	};
+	//	Verify that the actual argument expressions, their count and output types -- all match callee_function_type.
+	QUARK_ASSERT(details.args.size() == callee_function_type.get_function_args().size());
 
-	const auto e2 = expression_t::make_call(*call_details.callee, call_details.args, std::make_shared<typeid_t>(e.get_output_type()));
-	return generate_call_expression(gen_acc, e2, call_details);
+	if(callee_function_type != resolved_call_function_type){
+		QUARK_ASSERT(true);
+	}
+
+	const auto name = it->_function_id.name;
+	const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(name));
+	auto callee_reg = def.llvm_codegen_f;
+
+	std::vector<llvm::Value*> floyd_args;
+	for(const auto& m: details.args){
+		llvm::Value* arg_value = generate_expression(gen_acc, m);
+		floyd_args.push_back(arg_value);
+	}
+	return generate_floyd_call(gen_acc, callee_function_type, resolved_call_function_type, *callee_reg, floyd_args);
 }
+
 
 static llvm::Value* generate_push_back_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
