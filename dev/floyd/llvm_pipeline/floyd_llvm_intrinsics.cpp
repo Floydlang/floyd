@@ -1413,6 +1413,18 @@ static std::map<std::string, void*> get_intrinsic_binds(){
 	return binds;
 }
 
+
+std::vector<function_link_entry_t> make_entries(const std::vector<function_bind_t>& binds){
+	std::vector<function_link_entry_t> result;
+	for(const auto& e: binds){
+		const auto link_name = encode_intrinsic_link_name(e.name);
+		const auto function_byvalue_type = e.llvm_function_type;
+		const auto def = function_link_entry_t{ "intrinsic", link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, typeid_t::make_undefined(), {}, e.native_f };
+		result.push_back(def);
+	}
+	return result;
+}
+
 std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
@@ -1432,15 +1444,7 @@ std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& c
 		result.push_back(def);
 	}
 
-	{
-		const std::vector<function_bind_t> x = floydrt_push_back__make(context, type_lookup);
-		for(const auto& e: x){
-			const auto link_name = encode_intrinsic_link_name(e.name);
-			const auto function_byvalue_type = e.llvm_function_type;
-			const auto def = function_link_entry_t{ "intrinsic", link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, typeid_t::make_undefined(), {}, e.native_f };
-			result.push_back(def);
-		}
-	}
+	result = concat(result, make_entries(floydrt_push_back__make(context, type_lookup)));
 
 	if(k_trace_function_link_map){
 		trace_function_link_map(result);
