@@ -65,6 +65,7 @@ static void floyd_llvm_intrinsic__assert(floyd_runtime_t* frp, runtime_value_t a
 	}
 }
 
+//??? optimize prio 1
 static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
@@ -126,6 +127,7 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 
 
 
+//??? optimize prio 1
 //??? We need to figure out the return type *again*, knowledge we have already in semast.
 static runtime_value_t floyd_llvm_intrinsic__get_keys(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
@@ -163,6 +165,7 @@ static runtime_value_t floyd_llvm_intrinsic__get_keys(floyd_runtime_t* frp, runt
 	}
 }
 
+//??? optimize prio 1
 //??? kill unpack_dict_cppmap_arg()
 static uint32_t floyd_llvm_intrinsic__exists(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
@@ -195,6 +198,7 @@ static uint32_t floyd_llvm_intrinsic__exists(floyd_runtime_t* frp, runtime_value
 
 
 
+//??? optimize prio 1
 static int64_t floyd_llvm_intrinsic__find(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, const runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
@@ -248,11 +252,6 @@ static runtime_value_t floyd_llvm_intrinsic__from_json(floyd_runtime_t* frp, JSO
 }
 
 
-//??? No need to call lookup_type() to check which basic type it is!
-
-
-
-
 
 
 
@@ -263,6 +262,8 @@ static runtime_value_t floyd_llvm_intrinsic__from_json(floyd_runtime_t* frp, JSO
 
 typedef runtime_value_t (*MAP_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value);
 
+//??? Use C++ template to generate these two functions.
+//??? optimize prio 1
 static runtime_value_t map__carray(floyd_runtime_t* frp, value_backend_t& backend, runtime_value_t elements_vec, runtime_type_t elements_vec_type, runtime_value_t f_value, runtime_type_t f_value_type, runtime_value_t context_value, runtime_type_t context_value_type){
 
 	const auto& type1 = lookup_type_ref(backend, f_value_type);
@@ -289,6 +290,8 @@ static runtime_value_t map__carray(floyd_runtime_t* frp, value_backend_t& backen
 	return result_vec;
 }
 
+//??? Use C++ template to generate these two functions.
+//??? optimize prio 1
 static runtime_value_t map__hamt(floyd_runtime_t* frp, value_backend_t& backend, runtime_value_t elements_vec, runtime_type_t elements_vec_type, runtime_value_t f_value, runtime_type_t f_value_type, runtime_value_t context_value, runtime_type_t context_value_type){
 
 	const auto& type1 = lookup_type_ref(backend, f_value_type);
@@ -315,6 +318,8 @@ static runtime_value_t map__hamt(floyd_runtime_t* frp, value_backend_t& backend,
 	}
 	return result_vec;
 }
+
+//??? optimize prio 1: check type at compile time, not runtime.
 
 //	[R] map([E] elements, func R (E e, C context) f, C context)
 static runtime_value_t floyd_llvm_intrinsic__map(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
@@ -373,6 +378,7 @@ static runtime_value_t floyd_llvm_intrinsic__map_string(floyd_runtime_t* frp, ru
 
 typedef runtime_value_t (*map_dag_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value, runtime_value_t context);
 
+//??? optimize prio 2
 static runtime_value_t map_dag__carray(
 	floyd_runtime_t* frp,
 	value_backend_t& backend,
@@ -500,6 +506,7 @@ static runtime_value_t map_dag__carray(
 	return result_vec;
 }
 
+//??? optimize prio 2
 static runtime_value_t map_dag__hamt(
 	floyd_runtime_t* frp,
 	value_backend_t& backend,
@@ -628,6 +635,7 @@ static runtime_value_t map_dag__hamt(
 	return result_vec;
 }
 
+//??? optimize prio 1: check type at compile time, not runtime.
 static runtime_value_t floyd_llvm_intrinsic__map_dag(
 	floyd_runtime_t* frp,
 	runtime_value_t arg0_value,
@@ -662,6 +670,7 @@ static runtime_value_t floyd_llvm_intrinsic__map_dag(
 
 typedef runtime_value_t (*FILTER_F)(floyd_runtime_t* frp, runtime_value_t element_value, runtime_value_t context);
 
+//??? optimize prio 1
 static runtime_value_t filter__carray(floyd_runtime_t* frp, value_backend_t& backend, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t context, runtime_type_t context_type){
 	QUARK_ASSERT(backend.check_invariant());
 
@@ -707,6 +716,7 @@ static runtime_value_t filter__carray(floyd_runtime_t* frp, value_backend_t& bac
 	return result_vec;
 }
 
+//??? optimize prio 1
 static runtime_value_t filter__hamt(floyd_runtime_t* frp, value_backend_t& backend, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t context, runtime_type_t context_type){
 	QUARK_ASSERT(backend.check_invariant());
 
@@ -747,6 +757,7 @@ static runtime_value_t filter__hamt(floyd_runtime_t* frp, value_backend_t& backe
 	return result_vec;
 }
 
+//??? optimize prio 1: check type at compile time, not runtime.
 //	[E] filter([E] elements, func bool (E e, C context) f, C context)
 static runtime_value_t floyd_llvm_intrinsic__filter(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
 	auto& r = get_floyd_runtime(frp);
@@ -768,6 +779,7 @@ static runtime_value_t floyd_llvm_intrinsic__filter(floyd_runtime_t* frp, runtim
 
 typedef runtime_value_t (*REDUCE_F)(floyd_runtime_t* frp, runtime_value_t acc_value, runtime_value_t element_value, runtime_value_t context);
 
+//??? optimize prio 1
 static runtime_value_t reduce__carray(floyd_runtime_t* frp, value_backend_t& backend, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type, runtime_value_t context, runtime_type_t context_type){
 	QUARK_ASSERT(backend.check_invariant());
 
@@ -798,6 +810,7 @@ static runtime_value_t reduce__carray(floyd_runtime_t* frp, value_backend_t& bac
 	return acc;
 }
 
+//??? optimize prio 1
 static runtime_value_t reduce__hamt(floyd_runtime_t* frp, value_backend_t& backend, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type, runtime_value_t context, runtime_type_t context_type){
 	QUARK_ASSERT(backend.check_invariant());
 
@@ -829,6 +842,9 @@ static runtime_value_t reduce__hamt(floyd_runtime_t* frp, value_backend_t& backe
 }
 
 //	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
+
+//??? optimize prio 1
+//??? check type at compile time, not runtime.
 static runtime_value_t floyd_llvm_intrinsic__reduce(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type, runtime_value_t context, runtime_type_t context_type){
 	auto& r = get_floyd_runtime(frp);
 
@@ -849,6 +865,8 @@ static runtime_value_t floyd_llvm_intrinsic__reduce(floyd_runtime_t* frp, runtim
 
 
 typedef uint8_t (*stable_sort_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value, runtime_value_t arg2_value);
+
+//??? optimize prio 1
 
 static runtime_value_t stable_sort__carray(
 	floyd_runtime_t* frp,
@@ -900,6 +918,8 @@ static runtime_value_t stable_sort__carray(
 	const auto result = to_runtime_value2(backend, value_t::make_vector_value(type0.get_vector_element_type(), mutate_inplace_elements));
 	return result;
 }
+
+//??? optimize prio 1
 
 static runtime_value_t stable_sort__hamt(
 	floyd_runtime_t* frp,
@@ -953,6 +973,9 @@ static runtime_value_t stable_sort__hamt(
 }
 
 //	[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
+
+//??? optimize prio 1
+//??? check type at compile time, not runtime.
 static runtime_value_t floyd_llvm_intrinsic__stable_sort(
 	floyd_runtime_t* frp,
 	runtime_value_t arg0_value,
@@ -983,6 +1006,7 @@ static runtime_value_t floyd_llvm_intrinsic__stable_sort(
 
 
 
+//??? optimize prio 2
 
 void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
@@ -995,6 +1019,8 @@ void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t arg0_valu
 
 
 
+//??? optimize prio 1
+//??? check type at compile time, not runtime.
 
 static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
@@ -1068,6 +1094,8 @@ static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, run
 
 
 
+//??? optimize prio 1
+//??? check type at compile time, not runtime.
 
 static const runtime_value_t floyd_llvm_intrinsic__replace(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
 	auto& r = get_floyd_runtime(frp);
@@ -1105,6 +1133,8 @@ static JSON_T* floyd_llvm_intrinsic__parse_json_script(floyd_runtime_t* frp, run
 	return result;
 }
 
+//??? optimize prio 2
+
 static void floyd_llvm_intrinsic__send(floyd_runtime_t* frp, runtime_value_t process_id0, const JSON_T* message_json_ptr){
 	auto& r = get_floyd_runtime(frp);
 
@@ -1120,6 +1150,8 @@ static void floyd_llvm_intrinsic__send(floyd_runtime_t* frp, runtime_value_t pro
 	r._handler->on_send(process_id, message_json);
 }
 
+//??? optimize prio 1
+//??? check type at compile time, not runtime.
 static int64_t floyd_llvm_intrinsic__size(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
@@ -1168,7 +1200,8 @@ static int64_t floyd_llvm_intrinsic__size(floyd_runtime_t* frp, runtime_value_t 
 
 
 
-
+//??? optimize prio 1
+//??? check type at compile time, not runtime.
 
 static const runtime_value_t floyd_llvm_intrinsic__subset(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
 	auto& r = get_floyd_runtime(frp);
@@ -1202,6 +1235,7 @@ static runtime_value_t floyd_llvm_intrinsic__to_pretty_string(floyd_runtime_t* f
 	return to_runtime_string(r, s);
 }
 
+//??? optimize prio 2
 static runtime_value_t floyd_llvm_intrinsic__to_string(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
@@ -1223,6 +1257,8 @@ static runtime_type_t floyd_llvm_intrinsic__typeof(floyd_runtime_t* frp, runtime
 
 
 
+//??? optimize prio 1
+//??? check type at compile time, not runtime.
 
 static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
 	auto& r = get_floyd_runtime(frp);
