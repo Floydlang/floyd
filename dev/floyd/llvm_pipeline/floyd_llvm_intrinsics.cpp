@@ -1413,38 +1413,6 @@ static std::map<std::string, void*> get_intrinsic_binds(){
 	return binds;
 }
 
-#if 0
-std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
-	QUARK_ASSERT(type_lookup.check_invariant());
-
-	const auto& intrinsic_signatures = get_intrinsic_signatures();
-	const auto intrinsic_binds = get_intrinsic_binds();
-
-	std::vector<function_link_entry_t> result;
-
-	for(const auto& signature: intrinsic_signatures){
-
-		//	Skip those intrinsics that have no native function -- those are inlined directly as instructions.
-		const auto bind_it = intrinsic_binds.find(signature.name);
-		if(bind_it != intrinsic_binds.end()){
-			const auto link_name = encode_intrinsic_link_name(bind_it->first);
-			const auto function_type = signature._function_type;
-			llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
-			const auto function_byvalue_type = deref_ptr(function_ptr_type);
-			const auto def = function_link_entry_t{ "intrinsic", link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, {}, bind_it->second };
-			result.push_back(def);
-		}
-	}
-
-	if(k_trace_function_link_map){
-		trace_function_link_map(result);
-	}
-
-	return result;
-}
-#endif
-
-
 std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
@@ -1466,13 +1434,13 @@ std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& c
 
 	{
 		const std::vector<function_bind_t> x = floydrt_push_back__make(context, type_lookup);
-		const auto link_name = encode_intrinsic_link_name(x[0].name);
-		const auto function_byvalue_type = x[0].llvm_function_type;
-		const auto def = function_link_entry_t{ "intrinsic", link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, typeid_t::make_undefined(), {}, x[0].native_f };
-		result.push_back(def);
+		for(const auto& e: x){
+			const auto link_name = encode_intrinsic_link_name(e.name);
+			const auto function_byvalue_type = e.llvm_function_type;
+			const auto def = function_link_entry_t{ "intrinsic", link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, typeid_t::make_undefined(), {}, e.native_f };
+			result.push_back(def);
+		}
 	}
-
-
 
 	if(k_trace_function_link_map){
 		trace_function_link_map(result);
