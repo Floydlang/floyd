@@ -180,6 +180,9 @@ llvm::Value* generate_get_vec_element_ptr_needs_cast(llvm_function_generator_t& 
 llvm::Value* generate_get_struct_base_ptr(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const typeid_t& final_type);
 
 
+//	Adds argument #0 which is floyd's secret runtime context.
+//	Supports ANY-types by passing TWO arguments: the value then the itype of the value.
+llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, const typeid_t& callee_function_type, const typeid_t& resolved_function_type, llvm::Value& callee_reg, const std::vector<llvm::Value*> floyd_args);
 
 }	//	floyd
 

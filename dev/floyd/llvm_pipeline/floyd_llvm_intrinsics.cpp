@@ -11,6 +11,7 @@
 
 #include "floyd_llvm_helpers.h"
 #include "floyd_llvm_runtime.h"
+#include "floyd_llvm_codegen_basics.h"
 #include "value_features.h"
 #include "floyd_runtime.h"
 #include "text_parser.h"
@@ -1092,6 +1093,42 @@ static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, run
 	}
 }
 
+llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, const typeid_t& resolved_call_type, llvm::Value& collection_reg, const typeid_t& collection_type, llvm::Value& value_reg){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(collection_type.check_invariant());
+
+	auto& builder = gen_acc.get_builder();
+
+	const auto push_back_signature = make_push_back_signature();
+	const auto callee_function_type = push_back_signature._function_type;
+
+	const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(push_back_signature.name));
+
+	if(collection_type.is_string()){
+		return generate_floyd_call(gen_acc, callee_function_type, resolved_call_type, *def.llvm_codegen_f, { &collection_reg, &value_reg });
+	}
+	else if(collection_type.is_vector()){
+		const auto element_type = collection_type.get_vector_element_type();
+
+		if(is_vector_hamt(collection_type) && is_rc_value(collection_type.get_vector_element_type()) == false){
+			const auto packed_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
+
+			auto vec_ptr_reg = builder.CreateCall(
+				gen_acc.gen.runtime_functions.floydrt_push_back_hamt_pod.llvm_codegen_f,
+				{ gen_acc.get_callers_fcp(), &collection_reg, packed_reg },
+				""
+			);
+			return vec_ptr_reg;
+		}
+		else{
+			return generate_floyd_call(gen_acc, callee_function_type, resolved_call_type, *def.llvm_codegen_f, { &collection_reg, &value_reg });
+		}
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
 
 
 //??? optimize prio 1
