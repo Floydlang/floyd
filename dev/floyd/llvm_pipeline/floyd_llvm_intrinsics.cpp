@@ -1028,9 +1028,13 @@ void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t arg0_valu
 ////////////////////////////////	push_back()
 
 
+//??? Expensive to push_back since all elements in vector needs their RC bumped!
 
 //??? optimize prio 1
 //??? check type at compile time, not runtime.
+// Could specialize further, for vector_hamt<string>, vector_hamt<vector<x>> etc. But it's probably better to inline push_back() instead.
+
+/*
 static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
@@ -1083,6 +1087,7 @@ static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, run
 		UNSUPPORTED();
 	}
 }
+*/
 
 static runtime_value_t push_back__string(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
 	auto& r = get_floyd_runtime(frp);
@@ -1098,6 +1103,46 @@ static runtime_value_t push_back__string(floyd_runtime_t* frp, runtime_value_t v
 	return result2;
 }
 
+//??? use memcpy()
+static runtime_value_t floydrt_push_back_carray_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
+#if DEBUG
+	auto& r = get_floyd_runtime(frp);
+	(void)r;
+#endif
+
+	const auto element_count = vec.vector_carray_ptr->get_element_count();
+	auto source_ptr = vec.vector_carray_ptr->get_element_ptr();
+
+	auto v2 = alloc_vector_carray(r.backend.heap, element_count + 1, element_count + 1, itype_t(vec_type));
+	auto dest_ptr = v2.vector_carray_ptr->get_element_ptr();
+	for(int i = 0 ; i < element_count ; i++){
+		dest_ptr[i] = source_ptr[i];
+	}
+	dest_ptr[element_count] = element;
+	return v2;
+}
+
+static runtime_value_t floydrt_push_back_carray_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
+#if DEBUG
+	auto& r = get_floyd_runtime(frp);
+#endif
+
+	itype_t element_itype = lookup_vector_element_itype(r.backend, itype_t(vec_type));
+	const auto element_count = vec.vector_carray_ptr->get_element_count();
+	auto source_ptr = vec.vector_carray_ptr->get_element_ptr();
+
+	auto v2 = alloc_vector_carray(r.backend.heap, element_count + 1, element_count + 1, itype_t(vec_type));
+	auto dest_ptr = v2.vector_carray_ptr->get_element_ptr();
+	for(int i = 0 ; i < element_count ; i++){
+		dest_ptr[i] = source_ptr[i];
+		retain_value(r.backend, dest_ptr[i], element_itype);
+	}
+	dest_ptr[element_count] = element;
+	retain_value(r.backend, dest_ptr[element_count], element_itype);
+
+	return v2;
+}
+
 static runtime_value_t floydrt_push_back_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
 #if DEBUG
 	auto& r = get_floyd_runtime(frp);
@@ -1107,9 +1152,6 @@ static runtime_value_t floydrt_push_back_hamt_pod(floyd_runtime_t* frp, runtime_
 	return push_back_immutable(vec, element);
 }
 
-
-//??? Expensive to push_back since all elements in vector needs their RC bumped!
-// Could specialize further, for vector_hamt<string>, vector_hamt<vector<x>> etc. But it's probably better to inline push_back() instead.
 static runtime_value_t floydrt_push_back_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
 #if DEBUG
 	auto& r = get_floyd_runtime(frp);
@@ -1136,10 +1178,11 @@ static std::vector<function_bind_t> floydrt_push_back__make(llvm::LLVMContext& c
 		},
 		false
 	);
-
 	return {
-		function_bind_t{ "push_back", make_intrinsic_llvm_function_type(type_lookup, make_push_back_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__push_back) },
+//		function_bind_t{ "push_back", make_intrinsic_llvm_function_type(type_lookup, make_push_back_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__push_back) },
 		function_bind_t{ "push_back__string", function_type, reinterpret_cast<void*>(push_back__string) },
+		function_bind_t{ "push_back_carray_pod", function_type, reinterpret_cast<void*>(floydrt_push_back_carray_pod) },
+		function_bind_t{ "push_back_carray_nonpod", function_type, reinterpret_cast<void*>(floydrt_push_back_carray_nonpod) },
 		function_bind_t{ "push_back_hamt_pod", function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_pod) },
 		function_bind_t{ "push_back_hamt_nonpod", function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_nonpod) }
 	};
@@ -1154,7 +1197,7 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 	const auto push_back_signature = make_push_back_signature();
 	const auto callee_function_type = push_back_signature._function_type;
 
-	const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(push_back_signature.name));
+//	const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(push_back_signature.name));
 
 	if(collection_type.is_string()){
 		const auto vector_itype_reg = generate_itype_constant(gen_acc.gen, collection_type);
@@ -1170,10 +1213,30 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 	else if(collection_type.is_vector()){
 		const auto element_type = collection_type.get_vector_element_type();
 		const auto vector_itype_reg = generate_itype_constant(gen_acc.gen, collection_type);
+		const auto packed_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
 
-		if(is_vector_hamt(collection_type)){
+		if(is_vector_carray(collection_type)){
 			if(is_rc_value(collection_type.get_vector_element_type()) == true){
-				const auto packed_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
+				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("push_back_carray_nonpod"));
+				auto vec_ptr_reg = builder.CreateCall(
+					res.llvm_codegen_f,
+					{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
+					""
+				);
+				return vec_ptr_reg;
+			}
+			else{
+				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("push_back_carray_pod"));
+				auto vec_ptr_reg = builder.CreateCall(
+					res.llvm_codegen_f,
+					{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
+					""
+				);
+				return vec_ptr_reg;
+			}
+		}
+		else if(is_vector_hamt(collection_type)){
+			if(is_rc_value(collection_type.get_vector_element_type()) == true){
 				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("push_back_hamt_nonpod"));
 				auto vec_ptr_reg = builder.CreateCall(
 					res.llvm_codegen_f,
@@ -1183,7 +1246,6 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 				return vec_ptr_reg;
 			}
 			else{
-				const auto packed_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
 				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("push_back_hamt_pod"));
 				auto vec_ptr_reg = builder.CreateCall(
 					res.llvm_codegen_f,
@@ -1194,7 +1256,9 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 			}
 		}
 		else{
-			return generate_floyd_call(gen_acc, callee_function_type, resolved_call_type, *def.llvm_codegen_f, { &collection_reg, &value_reg });
+			QUARK_ASSERT(false);
+			throw std::exception();
+//			return generate_floyd_call(gen_acc, callee_function_type, resolved_call_type, *def.llvm_codegen_f, { &collection_reg, &value_reg });
 		}
 	}
 	else{
@@ -1202,6 +1266,12 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 		throw std::exception();
 	}
 }
+
+
+
+
+////////////////////////////////	replace()
+
 
 
 //??? optimize prio 1
