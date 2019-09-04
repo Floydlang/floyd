@@ -1102,8 +1102,29 @@ static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, run
 	}
 }
 
-static runtime_value_t floydrt_push_back_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_value_t element){
+static runtime_value_t floydrt_push_back_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
+#if DEBUG
+	auto& r = get_floyd_runtime(frp);
+	(void)r;
+#endif
+
 	return push_back_immutable(vec, element);
+}
+
+//??? Expensive to push_back since all elements in vector needs their RC bumped!
+static runtime_value_t floydrt_push_back_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
+#if DEBUG
+	auto& r = get_floyd_runtime(frp);
+#endif
+
+	runtime_value_t vec2 = push_back_immutable(vec, element);
+	itype_t element_itype = lookup_vector_element_itype(r.backend, itype_t(vec_type));
+
+	for(int i = 0 ; i < vec2.vector_hamt_ptr->get_element_count() ; i++){
+		const auto& value = vec2.vector_hamt_ptr->load_element(i);
+		retain_value(r.backend, value, element_itype);
+	}
+	return vec2;
 }
 
 static std::vector<function_bind_t> floydrt_push_back__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -1112,6 +1133,7 @@ static std::vector<function_bind_t> floydrt_push_back__make(llvm::LLVMContext& c
 		{
 			make_frp_type(type_lookup),
 			make_generic_vec_type_byvalue(type_lookup)->getPointerTo(),
+			make_runtime_type_type(type_lookup),
 			make_runtime_value_type(type_lookup)
 		},
 		false
@@ -1119,7 +1141,8 @@ static std::vector<function_bind_t> floydrt_push_back__make(llvm::LLVMContext& c
 
 	return {
 		function_bind_t{ "push_back", make_intrinsic_llvm_function_type(type_lookup, make_push_back_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__push_back) },
-		function_bind_t{ "push_back_hamt_pod", function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_pod) }
+		function_bind_t{ "push_back_hamt_pod", function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_pod) },
+		function_bind_t{ "push_back_hamt_nonpod", function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_nonpod) }
 	};
 }
 
@@ -1139,16 +1162,29 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 	}
 	else if(collection_type.is_vector()){
 		const auto element_type = collection_type.get_vector_element_type();
+		const auto vector_itype_reg = generate_itype_constant(gen_acc.gen, collection_type);
 
-		if(is_vector_hamt(collection_type) && is_rc_value(collection_type.get_vector_element_type()) == false){
-			const auto packed_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
-			const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("push_back_hamt_pod"));
-			auto vec_ptr_reg = builder.CreateCall(
-				res.llvm_codegen_f,
-				{ gen_acc.get_callers_fcp(), &collection_reg, packed_reg },
-				""
-			);
-			return vec_ptr_reg;
+		if(is_vector_hamt(collection_type)){
+			if(is_rc_value(collection_type.get_vector_element_type()) == true){
+				const auto packed_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
+				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("push_back_hamt_nonpod"));
+				auto vec_ptr_reg = builder.CreateCall(
+					res.llvm_codegen_f,
+					{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
+					""
+				);
+				return vec_ptr_reg;
+			}
+			else{
+				const auto packed_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
+				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("push_back_hamt_pod"));
+				auto vec_ptr_reg = builder.CreateCall(
+					res.llvm_codegen_f,
+					{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
+					""
+				);
+				return vec_ptr_reg;
+			}
 		}
 		else{
 			return generate_floyd_call(gen_acc, callee_function_type, resolved_call_type, *def.llvm_codegen_f, { &collection_reg, &value_reg });
