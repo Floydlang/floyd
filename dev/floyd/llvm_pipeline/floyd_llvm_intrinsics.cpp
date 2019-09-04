@@ -1348,8 +1348,49 @@ static int64_t size__string(floyd_runtime_t* frp, runtime_value_t vec, runtime_t
 	return vec.vector_carray_ptr->get_element_count();
 }
 
+static int64_t size_vector_carray_pod(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type){
+	auto& r = get_floyd_runtime(frp);
+	return floyd_llvm_intrinsic__size(frp, collection, collection_type);
+}
+static int64_t size_vector_carray_nonpod(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type){
+	auto& r = get_floyd_runtime(frp);
+	return floyd_llvm_intrinsic__size(frp, collection, collection_type);
+}
+static int64_t size_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type){
+	auto& r = get_floyd_runtime(frp);
+	return floyd_llvm_intrinsic__size(frp, collection, collection_type);
+}
+static int64_t size_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type){
+	auto& r = get_floyd_runtime(frp);
+	return floyd_llvm_intrinsic__size(frp, collection, collection_type);
+}
+
+
+static int64_t size_dict_cppmap_pod(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type){
+	auto& r = get_floyd_runtime(frp);
+	return floyd_llvm_intrinsic__size(frp, collection, collection_type);
+}
+static int64_t size_dict_cppmap_nonpod(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type){
+	auto& r = get_floyd_runtime(frp);
+	return floyd_llvm_intrinsic__size(frp, collection, collection_type);
+}
+
+static int64_t size_dict_hamt_pod(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type){
+	auto& r = get_floyd_runtime(frp);
+	return floyd_llvm_intrinsic__size(frp, collection, collection_type);
+}
+static int64_t size_dict_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type){
+	auto& r = get_floyd_runtime(frp);
+	return floyd_llvm_intrinsic__size(frp, collection, collection_type);
+}
+
+static int64_t size_json(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type){
+	auto& r = get_floyd_runtime(frp);
+	return floyd_llvm_intrinsic__size(frp, collection, collection_type);
+}
+
 static std::vector<function_bind_t> floydrt_size__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
-	llvm::FunctionType* function_type = llvm::FunctionType::get(
+	llvm::FunctionType* function_type1 = llvm::FunctionType::get(
 		llvm::Type::getInt64Ty(context),
 		{
 			make_frp_type(type_lookup),
@@ -1358,15 +1399,39 @@ static std::vector<function_bind_t> floydrt_size__make(llvm::LLVMContext& contex
 		},
 		false
 	);
+	llvm::FunctionType* function_type2 = llvm::FunctionType::get(
+		llvm::Type::getInt64Ty(context),
+		{
+			make_frp_type(type_lookup),
+			make_generic_dict_type_byvalue(type_lookup)->getPointerTo(),
+			make_runtime_type_type(type_lookup)
+		},
+		false
+	);
+	llvm::FunctionType* function_type3 = llvm::FunctionType::get(
+		llvm::Type::getInt64Ty(context),
+		{
+			make_frp_type(type_lookup),
+			make_json_type_byvalue(type_lookup)->getPointerTo(),
+			make_runtime_type_type(type_lookup)
+		},
+		false
+	);
 	return {
-		function_bind_t{ "size", make_intrinsic_llvm_function_type(type_lookup, make_size_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__size) },
-		function_bind_t{ "size__string", function_type, reinterpret_cast<void*>(size__string) }
-/*
-		function_bind_t{ "size_carray_pod", function_type, reinterpret_cast<void*>(floydrt_size_carray_pod) },
-		function_bind_t{ "size_carray_nonpod", function_type, reinterpret_cast<void*>(floydrt_size_carray_nonpod) },
-		function_bind_t{ "size_hamt_pod", function_type, reinterpret_cast<void*>(floydrt_size_hamt_pod) },
-		function_bind_t{ "size_hamt_nonpod", function_type, reinterpret_cast<void*>(floydrt_size_hamt_nonpod) }
-*/
+//		function_bind_t{ "size", make_intrinsic_llvm_function_type(type_lookup, make_size_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__size) },
+		function_bind_t{ "size__string", function_type1, reinterpret_cast<void*>(size__string) },
+
+		function_bind_t{ "size_vector_carray_pod", function_type1, reinterpret_cast<void*>(size_vector_carray_pod) },
+		function_bind_t{ "size_vector_carray_nonpod", function_type1, reinterpret_cast<void*>(size_vector_carray_nonpod) },
+		function_bind_t{ "size_vector_hamt_pod", function_type1, reinterpret_cast<void*>(size_vector_hamt_pod) },
+		function_bind_t{ "size_vector_hamt_nonpod", function_type1, reinterpret_cast<void*>(size_vector_hamt_nonpod) },
+
+		function_bind_t{ "size_dict_cppmap_pod", function_type2, reinterpret_cast<void*>(size_dict_cppmap_pod) },
+		function_bind_t{ "size_dict_cppmap_nonpod", function_type2, reinterpret_cast<void*>(size_dict_cppmap_nonpod) },
+		function_bind_t{ "size_dict_hamt_pod", function_type2, reinterpret_cast<void*>(size_dict_hamt_pod) },
+		function_bind_t{ "size_dict_hamt_nonpod", function_type2, reinterpret_cast<void*>(size_dict_hamt_nonpod) },
+
+		function_bind_t{ "size_json", function_type3, reinterpret_cast<void*>(size_json) }
 	};
 }
 
@@ -1379,37 +1444,37 @@ llvm::Value* generate_instrinsic_size(llvm_function_generator_t& gen_acc, const 
 	const auto signature = make_size_signature();
 	const auto callee_function_type = signature._function_type;
 
+	const auto collection_itype = generate_itype_constant(gen_acc.gen, collection_type);
+
 	if(collection_type.is_string()){
-		const auto vector_itype_reg = generate_itype_constant(gen_acc.gen, collection_type);
 		const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("size__string"));
 		auto vec_ptr_reg = builder.CreateCall(
 			res.llvm_codegen_f,
-			{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg },
+			{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype },
 			""
 		);
 		return vec_ptr_reg;
 	}
-#if 0
+
+	//??? Use lookup thing instead of huge if-else.Use typeid_t-matching.
 	else if(collection_type.is_vector()){
 		const auto element_type = collection_type.get_vector_element_type();
-		const auto vector_itype_reg = generate_itype_constant(gen_acc.gen, collection_type);
-		const auto packed_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
 
 		if(is_vector_carray(collection_type)){
 			if(is_rc_value(collection_type.get_vector_element_type()) == true){
-				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("push_back_carray_nonpod"));
+				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("size_vector_carray_nonpod"));
 				auto vec_ptr_reg = builder.CreateCall(
 					res.llvm_codegen_f,
-					{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
+					{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype },
 					""
 				);
 				return vec_ptr_reg;
 			}
 			else{
-				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("push_back_carray_pod"));
+				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("size_vector_carray_pod"));
 				auto vec_ptr_reg = builder.CreateCall(
 					res.llvm_codegen_f,
-					{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
+					{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype },
 					""
 				);
 				return vec_ptr_reg;
@@ -1417,19 +1482,19 @@ llvm::Value* generate_instrinsic_size(llvm_function_generator_t& gen_acc, const 
 		}
 		else if(is_vector_hamt(collection_type)){
 			if(is_rc_value(collection_type.get_vector_element_type()) == true){
-				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("push_back_hamt_nonpod"));
+				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("size_vector_hamt_nonpod"));
 				auto vec_ptr_reg = builder.CreateCall(
 					res.llvm_codegen_f,
-					{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
+					{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype },
 					""
 				);
 				return vec_ptr_reg;
 			}
 			else{
-				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("push_back_hamt_pod"));
+				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("size_vector_hamt_pod"));
 				auto vec_ptr_reg = builder.CreateCall(
 					res.llvm_codegen_f,
-					{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
+					{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype },
 					""
 				);
 				return vec_ptr_reg;
@@ -1438,17 +1503,68 @@ llvm::Value* generate_instrinsic_size(llvm_function_generator_t& gen_acc, const 
 		else{
 			QUARK_ASSERT(false);
 			throw std::exception();
-			return generate_floyd_call(gen_acc, callee_function_type, resolved_call_type, *def.llvm_codegen_f, { &collection_reg, &value_reg });
 		}
 	}
+	else if(collection_type.is_dict()){
+		if(is_dict_cppmap(collection_type)){
+			if(is_rc_value(collection_type.get_dict_value_type()) == true){
+				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("size_dict_cppmap_nonpod"));
+				auto vec_ptr_reg = builder.CreateCall(
+					res.llvm_codegen_f,
+					{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype },
+					""
+				);
+				return vec_ptr_reg;
+			}
+			else{
+				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("size_dict_cppmap_pod"));
+				auto vec_ptr_reg = builder.CreateCall(
+					res.llvm_codegen_f,
+					{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype },
+					""
+				);
+				return vec_ptr_reg;
+			}
+		}
+		else if(is_dict_hamt(collection_type)){
+			if(is_rc_value(collection_type.get_dict_value_type()) == true){
+				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("size_dict_hamt_nonpod"));
+				auto vec_ptr_reg = builder.CreateCall(
+					res.llvm_codegen_f,
+					{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype },
+					""
+				);
+				return vec_ptr_reg;
+			}
+			else{
+				const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("size_dict_hamt_pod"));
+				auto vec_ptr_reg = builder.CreateCall(
+					res.llvm_codegen_f,
+					{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype },
+					""
+				);
+				return vec_ptr_reg;
+			}
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+	}
+	else if(collection_type.is_json()){
+		const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name("size_json"));
+		auto vec_ptr_reg = builder.CreateCall(
+			res.llvm_codegen_f,
+			{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype },
+			""
+		);
+		return vec_ptr_reg;
+	}
+
 	else{
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
-#endif
-
-	const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(signature.name));
-	return generate_floyd_call(gen_acc, callee_function_type, resolved_call_type, *def.llvm_codegen_f, { &collection_reg });
 }
 
 
