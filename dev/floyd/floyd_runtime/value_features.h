@@ -27,64 +27,36 @@ int compare_values(value_backend_t& backend, int64_t op, const runtime_type_t ty
 
 
 
-inline const runtime_value_t update__string(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type);
+inline const runtime_value_t update__string(value_backend_t& backend, runtime_value_t s, runtime_value_t index, runtime_value_t value);
 
-inline const runtime_value_t update__string(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type){
-	QUARK_ASSERT(backend.check_invariant());
+const runtime_value_t update__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
 
-#if DEBUG
-	const auto& type0 = lookup_type_ref(backend, arg0_type);
-	const auto& type1 = lookup_type_ref(backend, arg1_type);
-	const auto& type2 = lookup_type_ref(backend, arg2_type);
+const runtime_value_t update__vector_hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
 
-	QUARK_ASSERT(type1.is_int());
-	QUARK_ASSERT(type2.is_int());
-#endif
-
-	const auto str = from_runtime_string2(backend, arg0);
-	const auto index = arg1.int_value;
-	const auto new_char = (char)arg2.int_value;
-
-	const auto len = str.size();
-
-	if(index < 0 || index >= len){
-		quark::throw_runtime_error("Position argument to update() is outside collection span.");
-	}
-
-	auto result = str;
-	result[index] = new_char;
-	const auto result2 = to_runtime_string2(backend, result);
-	return result2;
-}
-
-const runtime_value_t update__carray(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type);
-
-const runtime_value_t update__vector_hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type);
-
-const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type);
-const runtime_value_t update__dict_hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type);
+const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
+const runtime_value_t update__dict_hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
 
 
 
 
-const runtime_value_t subset__string(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, uint64_t start, uint64_t end);
-const runtime_value_t subset__carray(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, uint64_t start, uint64_t end);
-const runtime_value_t subset__hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, uint64_t start, uint64_t end);
+const runtime_value_t subset__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end);
+const runtime_value_t subset__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end);
+const runtime_value_t subset__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end);
 
 
 
 
-const runtime_value_t replace__string(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, size_t start, size_t end, runtime_value_t arg3_value, runtime_type_t arg3_type);
-const runtime_value_t replace__carray(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, size_t start, size_t end, runtime_value_t arg3_value, runtime_type_t arg3_type);
-const runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, size_t start, size_t end, runtime_value_t arg3_value, runtime_type_t arg3_type);
+const runtime_value_t replace__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t arg3_value, runtime_type_t arg3_type);
+const runtime_value_t replace__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t arg3_value, runtime_type_t arg3_type);
+const runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t arg3_value, runtime_type_t arg3_type);
 
 
 
 
 
-int64_t find__string(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, const runtime_value_t arg1, runtime_type_t arg1_type);
-int64_t find__carray(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, const runtime_value_t arg1, runtime_type_t arg1_type);
-int64_t find__hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, const runtime_value_t arg1, runtime_type_t arg1_type);
+int64_t find__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t arg1, runtime_type_t arg1_type);
+int64_t find__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t arg1, runtime_type_t arg1_type);
+int64_t find__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t arg1, runtime_type_t arg1_type);
 
 
 ///??? Split into two passes so we don't get 2 x 2. Generate code mixup? Have one function with two checks?
@@ -103,6 +75,31 @@ int64_t analyse_samples(const int64_t* samples, int64_t count);
 runtime_value_t concat_strings(value_backend_t& backend, const runtime_value_t& lhs, const runtime_value_t& rhs);
 runtime_value_t concat_vector_carray(value_backend_t& backend, const itype_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs);
 runtime_value_t concat_vector_hamt(value_backend_t& backend, const itype_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs);
+
+
+
+/////////////////////////////////////////		INLINES
+
+
+
+inline const runtime_value_t update__string(value_backend_t& backend, runtime_value_t s, runtime_value_t index, runtime_value_t value){
+	QUARK_ASSERT(backend.check_invariant());
+
+	const auto str = from_runtime_string2(backend, s);
+	const auto i = index.int_value;
+	const auto new_char = (char)value.int_value;
+
+	const auto len = str.size();
+
+	if(i < 0 || i >= len){
+		quark::throw_runtime_error("Position argument to update() is outside collection span.");
+	}
+
+	auto result = str;
+	result[i] = new_char;
+	const auto result2 = to_runtime_string2(backend, result);
+	return result2;
+}
 
 
 }	// floyd

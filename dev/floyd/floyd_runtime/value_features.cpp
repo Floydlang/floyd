@@ -85,18 +85,18 @@ int compare_values(value_backend_t& backend, int64_t op, const runtime_type_t ty
 
 
 
-const runtime_value_t update__carray(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type){
+const runtime_value_t update__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto& type0 = lookup_type_ref(backend, arg0_type);
-	const auto& type1 = lookup_type_ref(backend, arg1_type);
-	const auto& type2 = lookup_type_ref(backend, arg2_type);
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	const auto& type1 = lookup_type_ref(backend, key_type);
+	const auto& type2 = lookup_type_ref(backend, value_type);
 
 	QUARK_ASSERT(type1.is_int());
 
-	const auto vec = unpack_vector_carray_arg(backend, arg0, arg0_type);
-	const auto index = arg1.int_value;
-	const auto element_itype = lookup_vector_element_itype(backend, itype_t(arg0_type));
+	const auto vec = unpack_vector_carray_arg(backend, coll_value, coll_type);
+	const auto index = key_value.int_value;
+	const auto element_itype = lookup_vector_element_itype(backend, itype_t(coll_type));
 
 	if(index < 0 || index >= vec->get_element_count()){
 		quark::throw_runtime_error("Position argument to update() is outside collection span.");
@@ -106,46 +106,46 @@ const runtime_value_t update__carray(value_backend_t& backend, runtime_value_t a
 	auto dest_ptr = result.vector_carray_ptr->get_element_ptr();
 	auto source_ptr = vec->get_element_ptr();
 	if(is_rc_value(element_itype)){
-		retain_value(backend, arg2, element_itype);
+		retain_value(backend, value, element_itype);
 		for(int i = 0 ; i < result.vector_carray_ptr->get_element_count() ; i++){
 			retain_value(backend, source_ptr[i], element_itype);
 			dest_ptr[i] = source_ptr[i];
 		}
 
-		if(is_rc_value(itype_t(arg0_type))){
-			release_value(backend, dest_ptr[index], itype_t(arg0_type));
+		if(is_rc_value(itype_t(coll_type))){
+			release_value(backend, dest_ptr[index], itype_t(coll_type));
 		}
-		dest_ptr[index] = arg2;
+		dest_ptr[index] = value;
 	}
 	else{
 		for(int i = 0 ; i < result.vector_carray_ptr->get_element_count() ; i++){
 			dest_ptr[i] = source_ptr[i];
 		}
-		dest_ptr[index] = arg2;
+		dest_ptr[index] = value;
 	}
 
 	return result;
 }
 
-const runtime_value_t update__vector_hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type){
+const runtime_value_t update__vector_hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto& type0 = lookup_type_ref(backend, arg0_type);
-	const auto& type1 = lookup_type_ref(backend, arg1_type);
-	const auto& type2 = lookup_type_ref(backend, arg2_type);
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	const auto& type1 = lookup_type_ref(backend, key_type);
+	const auto& type2 = lookup_type_ref(backend, value_type);
 
 	QUARK_ASSERT(type1.is_int());
 
-	const auto vec = arg0.vector_hamt_ptr;
-	const auto index = arg1.int_value;
-	const auto element_itype = lookup_vector_element_itype(backend, itype_t(arg0_type));
+	const auto vec = coll_value.vector_hamt_ptr;
+	const auto index = key_value.int_value;
+	const auto element_itype = lookup_vector_element_itype(backend, itype_t(coll_type));
 
 	if(index < 0 || index >= vec->get_element_count()){
 		quark::throw_runtime_error("Position argument to update() is outside collection span.");
 	}
 
 	if(is_rc_value(element_itype)){
-		const auto result = store_immutable(arg0, index, arg2);
+		const auto result = store_immutable(coll_value, index, value);
 		for(int i = 0 ; i < result.vector_hamt_ptr->get_element_count() ; i++){
 			auto v = result.vector_hamt_ptr->load_element(i);
 			retain_value(backend, v, element_itype);
@@ -153,29 +153,28 @@ const runtime_value_t update__vector_hamt(value_backend_t& backend, runtime_valu
 		return result;
 	}
 	else{
-		return store_immutable(arg0, index, arg2);
+		return store_immutable(coll_value, index, value);
 	}
 }
 
-const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type){
+const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto& type0 = lookup_type_ref(backend, arg0_type);
-	const auto& type1 = lookup_type_ref(backend, arg1_type);
-	const auto& type2 = lookup_type_ref(backend, arg2_type);
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	const auto& type1 = lookup_type_ref(backend, key_type);
+	const auto& type2 = lookup_type_ref(backend, value_type);
 
 	QUARK_ASSERT(type1.is_string());
 
-	const auto key = from_runtime_string2(backend, arg1);
-	const auto dict = unpack_dict_cppmap_arg(backend, arg0, arg0_type);
-	const auto value_type = type0.get_dict_value_type();
-	const auto value_itype = lookup_itype(backend, value_type);
+	const auto key = from_runtime_string2(backend, key_value);
+	const auto dict = unpack_dict_cppmap_arg(backend, coll_value, coll_type);
+	const auto value_itype = lookup_itype(backend, type0.get_dict_value_type());
 
 	//	Deep copy dict.
-	auto dict2 = alloc_dict_cppmap(backend.heap, itype_t(arg0_type));
+	auto dict2 = alloc_dict_cppmap(backend.heap, itype_t(coll_type));
 	dict2.dict_cppmap_ptr->get_map_mut() = dict->get_map();
 
-	dict2.dict_cppmap_ptr->get_map_mut().insert_or_assign(key, arg2);
+	dict2.dict_cppmap_ptr->get_map_mut().insert_or_assign(key, value);
 
 	if(is_rc_value(value_itype)){
 		for(const auto& e: dict2.dict_cppmap_ptr->get_map()){
@@ -186,25 +185,24 @@ const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_valu
 	return dict2;
 }
 
-const runtime_value_t update__dict_hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type){
+const runtime_value_t update__dict_hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto& type0 = lookup_type_ref(backend, arg0_type);
-	const auto& type1 = lookup_type_ref(backend, arg1_type);
-	const auto& type2 = lookup_type_ref(backend, arg2_type);
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	const auto& type1 = lookup_type_ref(backend, key_type);
+	const auto& type2 = lookup_type_ref(backend, value_type);
 
 	QUARK_ASSERT(type1.is_string());
 
-	const auto key = from_runtime_string2(backend, arg1);
-	const auto dict = arg0.dict_hamt_ptr;
-	const auto value_type = type0.get_dict_value_type();
-	const auto value_itype = lookup_itype(backend, value_type);
+	const auto key = from_runtime_string2(backend, key_value);
+	const auto dict = coll_value.dict_hamt_ptr;
+	const auto value_itype = lookup_itype(backend, type0.get_dict_value_type());
 
 	//	Deep copy dict.
-	auto dict2 = alloc_dict_hamt(backend.heap, itype_t(arg1_type));
+	auto dict2 = alloc_dict_hamt(backend.heap, itype_t(key_type));
 	dict2.dict_hamt_ptr->get_map_mut() = dict->get_map();
 
-	dict2.dict_hamt_ptr->get_map_mut() = dict2.dict_hamt_ptr->get_map_mut().set(key, arg2);
+	dict2.dict_hamt_ptr->get_map_mut() = dict2.dict_hamt_ptr->get_map_mut().set(key, value);
 
 	if(is_rc_value(value_itype)){
 		for(const auto& e: dict2.dict_hamt_ptr->get_map()){
@@ -220,16 +218,16 @@ const runtime_value_t update__dict_hamt(value_backend_t& backend, runtime_value_
 
 
 
-const runtime_value_t subset__string(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, uint64_t start, uint64_t end){
+const runtime_value_t subset__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end){
 	QUARK_ASSERT(backend.check_invariant());
 
 	if(start < 0 || end < 0){
 		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
 	}
 
-	const auto& type0 = lookup_type_ref(backend, arg0_type);
-	const auto value = from_runtime_string2(backend, arg0);
-	const auto len = get_vec_string_size(arg0);
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	const auto value = from_runtime_string2(backend, coll_value);
+	const auto len = get_vec_string_size(coll_value);
 	const auto end2 = std::min(end, len);
 	const auto start2 = std::min(start, end2);
 	const auto len2 = end2 - start2;
@@ -239,15 +237,15 @@ const runtime_value_t subset__string(value_backend_t& backend, runtime_value_t a
 	return result;
 }
 
-const runtime_value_t subset__carray(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, uint64_t start, uint64_t end){
+const runtime_value_t subset__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end){
 	QUARK_ASSERT(backend.check_invariant());
 
 	if(start < 0 || end < 0){
 		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
 	}
 
-	const auto& type0 = lookup_type_ref(backend, arg0_type);
-	const auto vec = unpack_vector_carray_arg(backend, arg0, arg0_type);
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	const auto vec = unpack_vector_carray_arg(backend, coll_value, coll_type);
 	const auto end2 = std::min(end, vec->get_element_count());
 	const auto start2 = std::min(start, end2);
 	const auto len2 = end2 - start2;
@@ -255,7 +253,7 @@ const runtime_value_t subset__carray(value_backend_t& backend, runtime_value_t a
 		throw std::exception();
 	}
 
-	const auto element_itype = lookup_vector_element_itype(backend, itype_t(arg0_type));
+	const auto element_itype = lookup_vector_element_itype(backend, itype_t(coll_type));
 
 	auto vec2 = alloc_vector_carray(backend.heap, len2, len2, lookup_itype(backend, type0));
 	if(is_rc_value(element_itype)){
@@ -274,15 +272,15 @@ const runtime_value_t subset__carray(value_backend_t& backend, runtime_value_t a
 	return vec2;
 }
 
-const runtime_value_t subset__hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, uint64_t start, uint64_t end){
+const runtime_value_t subset__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end){
 	QUARK_ASSERT(backend.check_invariant());
 
 	if(start < 0 || end < 0){
 		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
 	}
 
-	const auto& type0 = lookup_type_ref(backend, arg0_type);
-	const auto& vec = *arg0.vector_hamt_ptr;
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	const auto& vec = *coll_value.vector_hamt_ptr;
 	const auto end2 = std::min(end, vec.get_element_count());
 	const auto start2 = std::min(start, end2);
 	const auto len2 = end2 - start2;
@@ -290,9 +288,9 @@ const runtime_value_t subset__hamt(value_backend_t& backend, runtime_value_t arg
 		throw std::exception();
 	}
 
-	const auto element_itype = lookup_vector_element_itype(backend, itype_t(arg0_type));
+	const auto element_itype = lookup_vector_element_itype(backend, itype_t(coll_type));
 
-	auto vec2 = alloc_vector_hamt(backend.heap, len2, len2, itype_t(arg0_type));
+	auto vec2 = alloc_vector_hamt(backend.heap, len2, len2, itype_t(coll_type));
 	if(is_rc_value(element_itype)){
 		for(int i = 0 ; i < len2 ; i++){
 			const auto& value = vec.load_element(start2 + i);
@@ -329,16 +327,16 @@ static void check_replace_indexes(std::size_t start, std::size_t end){
 	}
 }
 
-const runtime_value_t replace__string(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, size_t start, size_t end, runtime_value_t arg3, runtime_type_t arg3_type){
+const runtime_value_t replace__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t arg3, runtime_type_t arg3_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	check_replace_indexes(start, end);
-	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type0 = lookup_type_ref(backend, coll_type);
 	const auto& type3 = lookup_type_ref(backend, arg3_type);
 
 	QUARK_ASSERT(type3 == type0);
 
-	const auto s = from_runtime_string2(backend, arg0);
+	const auto s = from_runtime_string2(backend, coll_value);
 	const auto replace = from_runtime_string2(backend, arg3);
 
 	auto s_len = s.size();
@@ -358,17 +356,17 @@ const runtime_value_t replace__string(value_backend_t& backend, runtime_value_t 
 	return result2;
 }
 
-const runtime_value_t replace__carray(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, size_t start, size_t end, runtime_value_t arg3, runtime_type_t arg3_type){
+const runtime_value_t replace__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t arg3, runtime_type_t arg3_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	check_replace_indexes(start, end);
 
-	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type0 = lookup_type_ref(backend, coll_type);
 	QUARK_ASSERT(lookup_type_ref(backend, arg3_type) == type0);
 
-	const auto element_itype = lookup_vector_element_itype(backend, itype_t(arg0_type));
+	const auto element_itype = lookup_vector_element_itype(backend, itype_t(coll_type));
 
-	const auto vec = unpack_vector_carray_arg(backend, arg0, arg0_type);
+	const auto vec = unpack_vector_carray_arg(backend, coll_value, coll_type);
 	const auto replace_vec = unpack_vector_carray_arg(backend, arg3, arg3_type);
 
 	auto end2 = std::min(end, (size_t)vec->get_element_count());
@@ -392,17 +390,17 @@ const runtime_value_t replace__carray(value_backend_t& backend, runtime_value_t 
 
 	return vec2;
 }
-const runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, size_t start, size_t end, runtime_value_t arg3, runtime_type_t arg3_type){
+const runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t arg3, runtime_type_t arg3_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	check_replace_indexes(start, end);
 
-	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type0 = lookup_type_ref(backend, coll_type);
 	QUARK_ASSERT(lookup_type_ref(backend, arg3_type) == type0);
 
-	const auto element_itype = lookup_vector_element_itype(backend, itype_t(arg0_type));
+	const auto element_itype = lookup_vector_element_itype(backend, itype_t(coll_type));
 
-	const auto& vec = *arg0.vector_hamt_ptr;
+	const auto& vec = *coll_value.vector_hamt_ptr;
 	const auto& replace_vec = *arg3.vector_hamt_ptr;
 
 	auto end2 = std::min(end, (size_t)vec.get_element_count());
@@ -413,7 +411,7 @@ const runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t ar
 	const auto section3_len = vec.get_element_count() - end2;
 
 	const auto len2 = section1_len + section2_len + section3_len;
-	auto vec2 = alloc_vector_hamt(backend.heap, len2, len2, itype_t(arg0_type));
+	auto vec2 = alloc_vector_hamt(backend.heap, len2, len2, itype_t(coll_type));
 	for(size_t i = 0 ; i < section1_len ; i++){
 		const auto& value = vec.load_element(0 + i);
 		vec2.vector_hamt_ptr->store_mutate(0 + i, value);
@@ -444,29 +442,29 @@ const runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t ar
 
 
 
-int64_t find__string(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, const runtime_value_t arg1, runtime_type_t arg1_type){
+int64_t find__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t arg1, runtime_type_t arg1_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type0 = lookup_type_ref(backend, coll_type);
 	const auto& type1 = lookup_type_ref(backend, arg1_type);
 
 	QUARK_ASSERT(type1.is_string());
 
-	const auto str = from_runtime_string2(backend, arg0);
+	const auto str = from_runtime_string2(backend, coll_value);
 	const auto wanted2 = from_runtime_string2(backend, arg1);
 	const auto pos = str.find(wanted2);
 	const auto result = pos == std::string::npos ? -1 : static_cast<int64_t>(pos);
 	return result;
 }
-int64_t find__carray(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, const runtime_value_t arg1, runtime_type_t arg1_type){
+int64_t find__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t arg1, runtime_type_t arg1_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type0 = lookup_type_ref(backend, coll_type);
 	const auto& type1 = lookup_type_ref(backend, arg1_type);
 
 	QUARK_ASSERT(type1 == type0.get_vector_element_type());
 
-	const auto vec = unpack_vector_carray_arg(backend, arg0, arg0_type);
+	const auto vec = unpack_vector_carray_arg(backend, coll_value, coll_type);
 
 //		auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_def_t& e) { return e.def_name == function_name; } );
 	const auto it = std::find_if(
@@ -484,15 +482,15 @@ int64_t find__carray(value_backend_t& backend, runtime_value_t arg0, runtime_typ
 		return pos;
 	}
 }
-int64_t find__hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, const runtime_value_t arg1, runtime_type_t arg1_type){
+int64_t find__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t arg1, runtime_type_t arg1_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto& type0 = lookup_type_ref(backend, arg0_type);
+	const auto& type0 = lookup_type_ref(backend, coll_type);
 	const auto& type1 = lookup_type_ref(backend, arg1_type);
 
 	QUARK_ASSERT(type1 == type0.get_vector_element_type());
 
-	const auto& vec = *arg0.vector_hamt_ptr;
+	const auto& vec = *coll_value.vector_hamt_ptr;
 	QUARK_ASSERT(vec.check_invariant());
 
 	const auto count = vec.get_element_count();

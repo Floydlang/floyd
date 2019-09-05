@@ -1578,45 +1578,54 @@ static runtime_type_t floyd_llvm_intrinsic__typeof(floyd_runtime_t* frp, runtime
 
 //??? optimize prio 0
 
-static const runtime_value_t update_string(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+static const runtime_value_t update_string(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
-	return update__string(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+#if DEBUG
+	const auto& type0 = lookup_type_ref(r.backend, coll_type);
+	const auto& type1 = lookup_type_ref(r.backend, key_type);
+	const auto& type2 = lookup_type_ref(r.backend, value_type);
+
+	QUARK_ASSERT(type0.is_string());
+	QUARK_ASSERT(type1.is_int());
+	QUARK_ASSERT(type2.is_int());
+#endif
+	return update__string(r.backend, coll_value, key_value, value);
 }
 
 
-static const runtime_value_t update_vector_carray_pod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+static const runtime_value_t update_vector_carray_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
-	return update__carray(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+	return update__carray(r.backend, coll_value, coll_type, key_value, key_type, value, value_type);
 }
-static const runtime_value_t update_vector_carray_nonpod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+static const runtime_value_t update_vector_carray_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
-	return update__carray(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+	return update__carray(r.backend, coll_value, coll_type, key_value, key_type, value, value_type);
 }
-static const runtime_value_t update_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+static const runtime_value_t update_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
-	return update__vector_hamt(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+	return update__vector_hamt(r.backend, coll_value, coll_type, key_value, key_type, value, value_type);
 }
-static const runtime_value_t update_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+static const runtime_value_t update_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
-	return update__vector_hamt(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+	return update__vector_hamt(r.backend, coll_value, coll_type, key_value, key_type, value, value_type);
 }
 
 
-static const runtime_value_t update_dict_cppmap_pod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+static const runtime_value_t update_dict_cppmap_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
-	return update__dict_cppmap(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+	return update__dict_cppmap(r.backend, coll_value, coll_type, key_value, key_type, value, value_type);
 }
-static const runtime_value_t update_dict_cppmap_nonpod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+static const runtime_value_t update_dict_cppmap_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
-	return update__dict_cppmap(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+	return update__dict_cppmap(r.backend, coll_value, coll_type, key_value, key_type, value, value_type);
 }
-static const runtime_value_t update_dict_hamt_pod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+static const runtime_value_t update_dict_hamt_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
-	return update__dict_hamt(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+	return update__dict_hamt(r.backend, coll_value, coll_type, key_value, key_type, value, value_type);
 }
-static const runtime_value_t update_dict_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+static const runtime_value_t update_dict_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
-	return update__dict_hamt(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+	return update__dict_hamt(r.backend, coll_value, coll_type, key_value, key_type, value, value_type);
 }
 
 static std::vector<specialization_t> make_update_specializations(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
