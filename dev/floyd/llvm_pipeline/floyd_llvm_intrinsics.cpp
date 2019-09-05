@@ -1590,6 +1590,9 @@ static const runtime_value_t update_string(floyd_runtime_t* frp, runtime_value_t
 	const auto& type1 = lookup_type_ref(r.backend, key_type);
 	const auto& type2 = lookup_type_ref(r.backend, value_type);
 
+	QUARK_ASSERT(type0.check_invariant());
+	QUARK_ASSERT(type1.check_invariant());
+	QUARK_ASSERT(type2.check_invariant());
 	QUARK_ASSERT(type0.is_string());
 	QUARK_ASSERT(type1.is_int());
 	QUARK_ASSERT(type2.is_int());
@@ -1600,19 +1603,67 @@ static const runtime_value_t update_string(floyd_runtime_t* frp, runtime_value_t
 
 static const runtime_value_t update_vector_carray_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
-	return update__carray(r.backend, coll_value, coll_type, key_value, key_type, value, value_type);
+
+#if DEBUG
+	const auto& type0 = lookup_type_ref(r.backend, coll_type);
+	const auto& type1 = lookup_type_ref(r.backend, key_type);
+	const auto& type2 = lookup_type_ref(r.backend, value_type);
+
+	QUARK_ASSERT(type0.check_invariant());
+	QUARK_ASSERT(type1.check_invariant());
+	QUARK_ASSERT(type2.check_invariant());
+	QUARK_ASSERT(type1.is_int());
+#endif
+
+	return update__vector_carray(r.backend, coll_value, coll_type, key_value, value);
 }
 static const runtime_value_t update_vector_carray_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
-	return update__carray(r.backend, coll_value, coll_type, key_value, key_type, value, value_type);
+
+#if DEBUG
+	const auto& type0 = lookup_type_ref(r.backend, coll_type);
+	const auto& type1 = lookup_type_ref(r.backend, key_type);
+	const auto& type2 = lookup_type_ref(r.backend, value_type);
+
+	QUARK_ASSERT(type0.check_invariant());
+	QUARK_ASSERT(type1.check_invariant());
+	QUARK_ASSERT(type2.check_invariant());
+	QUARK_ASSERT(type1.is_int());
+#endif
+
+	return update__vector_carray(r.backend, coll_value, coll_type, key_value, value);
 }
 static const runtime_value_t update_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
-	return update__vector_hamt(r.backend, coll_value, coll_type, key_value, key_type, value, value_type);
+
+#if DEBUG
+	const auto& type0 = lookup_type_ref(r.backend, coll_type);
+	const auto& type1 = lookup_type_ref(r.backend, key_type);
+	const auto& type2 = lookup_type_ref(r.backend, value_type);
+
+	QUARK_ASSERT(type0.check_invariant());
+	QUARK_ASSERT(type1.check_invariant());
+	QUARK_ASSERT(type2.check_invariant());
+	QUARK_ASSERT(type1.is_int());
+#endif
+
+	return update__vector_hamt(r.backend, coll_value, coll_type, key_value, value);
 }
 static const runtime_value_t update_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
-	return update__vector_hamt(r.backend, coll_value, coll_type, key_value, key_type, value, value_type);
+
+#if DEBUG
+	const auto& type0 = lookup_type_ref(r.backend, coll_type);
+	const auto& type1 = lookup_type_ref(r.backend, key_type);
+	const auto& type2 = lookup_type_ref(r.backend, value_type);
+
+	QUARK_ASSERT(type0.check_invariant());
+	QUARK_ASSERT(type1.check_invariant());
+	QUARK_ASSERT(type2.check_invariant());
+	QUARK_ASSERT(type1.is_int());
+#endif
+
+	return update__vector_hamt(r.backend, coll_value, coll_type, key_value, value);
 }
 
 

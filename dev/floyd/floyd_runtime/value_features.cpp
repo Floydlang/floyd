@@ -85,24 +85,18 @@ int compare_values(value_backend_t& backend, int64_t op, const runtime_type_t ty
 
 
 
-const runtime_value_t update__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
+const runtime_value_t update__vector_carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto& type0 = lookup_type_ref(backend, coll_type);
-	const auto& type1 = lookup_type_ref(backend, key_type);
-	const auto& type2 = lookup_type_ref(backend, value_type);
-
-	QUARK_ASSERT(type1.is_int());
-
 	const auto vec = unpack_vector_carray_arg(backend, coll_value, coll_type);
-	const auto index = key_value.int_value;
+	const auto index2 = index.int_value;
 	const auto element_itype = lookup_vector_element_itype(backend, itype_t(coll_type));
 
-	if(index < 0 || index >= vec->get_element_count()){
+	if(index2 < 0 || index2 >= vec->get_element_count()){
 		quark::throw_runtime_error("Position argument to update() is outside collection span.");
 	}
 
-	auto result = alloc_vector_carray(backend.heap, vec->get_element_count(), vec->get_element_count(), lookup_itype(backend, type0));
+	auto result = alloc_vector_carray(backend.heap, vec->get_element_count(), vec->get_element_count(), itype_t(coll_type));
 	auto dest_ptr = result.vector_carray_ptr->get_element_ptr();
 	auto source_ptr = vec->get_element_ptr();
 	if(is_rc_value(element_itype)){
@@ -113,49 +107,20 @@ const runtime_value_t update__carray(value_backend_t& backend, runtime_value_t c
 		}
 
 		if(is_rc_value(itype_t(coll_type))){
-			release_value(backend, dest_ptr[index], itype_t(coll_type));
+			release_value(backend, dest_ptr[index2], itype_t(coll_type));
 		}
-		dest_ptr[index] = value;
+		dest_ptr[index2] = value;
 	}
 	else{
 		for(int i = 0 ; i < result.vector_carray_ptr->get_element_count() ; i++){
 			dest_ptr[i] = source_ptr[i];
 		}
-		dest_ptr[index] = value;
+		dest_ptr[index2] = value;
 	}
 
 	return result;
 }
 
-const runtime_value_t update__vector_hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
-	QUARK_ASSERT(backend.check_invariant());
-
-	const auto& type0 = lookup_type_ref(backend, coll_type);
-	const auto& type1 = lookup_type_ref(backend, key_type);
-	const auto& type2 = lookup_type_ref(backend, value_type);
-
-	QUARK_ASSERT(type1.is_int());
-
-	const auto vec = coll_value.vector_hamt_ptr;
-	const auto index = key_value.int_value;
-	const auto element_itype = lookup_vector_element_itype(backend, itype_t(coll_type));
-
-	if(index < 0 || index >= vec->get_element_count()){
-		quark::throw_runtime_error("Position argument to update() is outside collection span.");
-	}
-
-	if(is_rc_value(element_itype)){
-		const auto result = store_immutable(coll_value, index, value);
-		for(int i = 0 ; i < result.vector_hamt_ptr->get_element_count() ; i++){
-			auto v = result.vector_hamt_ptr->load_element(i);
-			retain_value(backend, v, element_itype);
-		}
-		return result;
-	}
-	else{
-		return store_immutable(coll_value, index, value);
-	}
-}
 
 const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	QUARK_ASSERT(backend.check_invariant());
