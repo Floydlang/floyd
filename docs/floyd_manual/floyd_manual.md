@@ -1902,7 +1902,7 @@ Use [] to look up values using a key. It throws an exception is the key not foun
 | update() | DICTIONARY update(DICTIONARY s, string key, ELEMENT new_element) | Changes one element of the dictionary and returns a new dictionary
 | size() | int size(DICTIONARY s) | Returns the number of elements in the dictionary. Returns 0 if the dictionary is empty
 | exists() | bool exists(DICTIONARY s, string key) | Returns true if the key is found
-| erase() | DICTIONARY push_back(DICTIONARY s, string key) | Erases the value from the dictionary, returns a new dictionary
+| erase() | DICTIONARY erase(DICTIONARY s, string key) | Erases the value from the dictionary, returns a new dictionary
 | get_keys() | [ELEMENT] get_keys(DICTIONARY s) | Returns a vector with all the string keys of the dictionary. Order is undefined
 
 
