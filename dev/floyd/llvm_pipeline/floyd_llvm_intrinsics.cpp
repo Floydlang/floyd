@@ -1278,20 +1278,20 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 
 	if(collection_type.is_string()){
 		const auto vector_itype_reg = generate_itype_constant(gen_acc.gen, collection_type);
-		const auto packed_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, typeid_t::make_int());
+		const auto packed_value_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, typeid_t::make_int());
 		return builder.CreateCall(
 			res.llvm_codegen_f,
-			{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
+			{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_value_reg },
 			""
 		);
 	}
 	else if(collection_type.is_vector()){
 		const auto element_type = collection_type.get_vector_element_type();
 		const auto vector_itype_reg = generate_itype_constant(gen_acc.gen, collection_type);
-		const auto packed_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
+		const auto packed_value_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
 		return builder.CreateCall(
 			res.llvm_codegen_f,
-			{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_reg },
+			{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_value_reg },
 			""
 		);
 	}
@@ -1484,7 +1484,6 @@ llvm::Value* generate_instrinsic_size(llvm_function_generator_t& gen_acc, const 
 	auto& builder = gen_acc.get_builder();
 
 	const auto temp = make_size_specializations(builder.getContext(), gen_acc.gen.type_lookup);
-
 	const auto it = std::find_if(temp.begin(), temp.end(), [&](const specialization_t& s) { return matches_specialization(s.arg0_required_type, collection_type); });
 	if(it == temp.end()){
 		QUARK_ASSERT(false);
@@ -1608,34 +1607,137 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 	throw std::exception();
 }
 
+static const runtime_value_t update_string(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+	return floyd_llvm_intrinsic__update(frp, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+}
+
+
+static const runtime_value_t update_vector_carray_pod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+	return floyd_llvm_intrinsic__update(frp, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+}
+static const runtime_value_t update_vector_carray_nonpod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+	return floyd_llvm_intrinsic__update(frp, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+}
+static const runtime_value_t update_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+	return floyd_llvm_intrinsic__update(frp, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+}
+static const runtime_value_t update_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+	return floyd_llvm_intrinsic__update(frp, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+}
+
+
+static const runtime_value_t update_dict_cppmap_pod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+	return floyd_llvm_intrinsic__update(frp, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+}
+static const runtime_value_t update_dict_cppmap_nonpod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+	return floyd_llvm_intrinsic__update(frp, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+}
+static const runtime_value_t update_dict_hamt_pod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+	return floyd_llvm_intrinsic__update(frp, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+}
+static const runtime_value_t update_dict_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+	return floyd_llvm_intrinsic__update(frp, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+}
+
 static std::vector<specialization_t> make_update_specializations(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
-	llvm::FunctionType* function_type = llvm::FunctionType::get(
+	llvm::FunctionType* function_type1 = llvm::FunctionType::get(
 		make_generic_vec_type_byvalue(type_lookup)->getPointerTo(),
 		{
 			make_frp_type(type_lookup),
+
 			make_generic_vec_type_byvalue(type_lookup)->getPointerTo(),
 			make_runtime_type_type(type_lookup),
+
 			llvm::Type::getInt64Ty(context),
-			make_runtime_value_type(type_lookup)
+			make_runtime_type_type(type_lookup),
+
+			make_runtime_value_type(type_lookup),
+			make_runtime_type_type(type_lookup),
+		},
+		false
+	);
+	llvm::FunctionType* function_type2 = llvm::FunctionType::get(
+		make_generic_dict_type_byvalue(type_lookup)->getPointerTo(),
+		{
+			make_frp_type(type_lookup),
+
+			make_generic_dict_type_byvalue(type_lookup)->getPointerTo(),
+			make_runtime_type_type(type_lookup),
+
+			make_generic_vec_type_byvalue(type_lookup)->getPointerTo(),
+			make_runtime_type_type(type_lookup),
+
+			make_runtime_value_type(type_lookup),
+			make_runtime_type_type(type_lookup)
 		},
 		false
 	);
 	return {
-		specialization_t{ eresolved_type::k_string, { "update", make_intrinsic_llvm_function_type(type_lookup, make_update_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__update) } }
+//		specialization_t{ eresolved_type::k_string, { "update", make_intrinsic_llvm_function_type(type_lookup, make_update_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__update) } }
+		specialization_t { eresolved_type::k_string,					{ "update__string", function_type1, reinterpret_cast<void*>(update_string) } },
+
+		specialization_t { eresolved_type::k_vector_carray_pod,			{ "update_vector_carray", function_type1, reinterpret_cast<void*>(update_vector_carray_pod) } },
+		specialization_t { eresolved_type::k_vector_carray_nonpod,		{ "update_vector_carray", function_type1, reinterpret_cast<void*>(update_vector_carray_nonpod) } },
+		specialization_t { eresolved_type::k_vector_hamt_pod,			{ "update_vector_hamt", function_type1, reinterpret_cast<void*>(update_vector_hamt_pod) } },
+		specialization_t { eresolved_type::k_vector_hamt_nonpod,		{ "update_vector_hamt", function_type1, reinterpret_cast<void*>(update_vector_hamt_nonpod) } },
+
+		specialization_t { eresolved_type::k_dict_cppmap_pod,			{ "update_dict_cppmap", function_type2, reinterpret_cast<void*>(update_dict_cppmap_pod) } },
+		specialization_t { eresolved_type::k_dict_cppmap_nonpod,		{ "update_dict_cppmap", function_type2, reinterpret_cast<void*>(update_dict_cppmap_nonpod) } },
+		specialization_t { eresolved_type::k_dict_hamt_pod,				{ "update_dict_hamt", function_type2, reinterpret_cast<void*>(update_dict_hamt_pod) } },
+		specialization_t { eresolved_type::k_dict_hamt_nonpod,			{ "update_dict_hamt", function_type2, reinterpret_cast<void*>(update_dict_hamt_nonpod) } },
 	};
 }
 
-llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, const typeid_t& resolved_call_type, llvm::Value& collection_reg, const typeid_t& collection_type, llvm::Value& index_reg, llvm::Value& value_reg){
-	QUARK_ASSERT(gen_acc.check_invariant());
+llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, const typeid_t& resolved_call_type, llvm::Value& collection_reg, const typeid_t& collection_type, llvm::Value& key_reg, llvm::Value& value_reg){
 	QUARK_ASSERT(collection_type.check_invariant());
 
 	auto& builder = gen_acc.get_builder();
 
-	const auto signature = make_update_signature();
-	const auto callee_function_type = signature._function_type;
+	const auto temp = make_update_specializations(builder.getContext(), gen_acc.gen.type_lookup);
+	const auto it = std::find_if(temp.begin(), temp.end(), [&](const specialization_t& s) { return matches_specialization(s.arg0_required_type, collection_type); });
+	if(it == temp.end()){
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+	const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(it->bind.name));
+	const auto collection_itype = generate_itype_constant(gen_acc.gen, collection_type);
 
-	const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(signature.name));
-	return generate_floyd_call(gen_acc, callee_function_type, resolved_call_type, *def.llvm_codegen_f, { &collection_reg, &index_reg, &value_reg });
+	if(collection_type.is_string()){
+		const auto key_itype = generate_itype_constant(gen_acc.gen, typeid_t::make_int());
+		const auto value_itype = generate_itype_constant(gen_acc.gen, typeid_t::make_int());
+		return builder.CreateCall(
+			res.llvm_codegen_f,
+			{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype, &key_reg, key_itype, &value_reg, value_itype },
+			""
+		);
+	}
+	else if(collection_type.is_vector()){
+		const auto key_itype = generate_itype_constant(gen_acc.gen, typeid_t::make_int());
+		const auto element_type = collection_type.get_vector_element_type();
+
+		const auto packed_value_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
+		const auto value_itype = generate_itype_constant(gen_acc.gen, element_type);
+		return builder.CreateCall(
+			res.llvm_codegen_f,
+			{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype, &key_reg, key_itype, packed_value_reg, value_itype },
+			""
+		);
+	}
+	else if(collection_type.is_dict()){
+		const auto key_itype = generate_itype_constant(gen_acc.gen, typeid_t::make_string());
+		const auto element_type = collection_type.get_dict_value_type();
+		const auto value_itype = generate_itype_constant(gen_acc.gen, element_type);
+		const auto packed_value_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
+		return builder.CreateCall(
+			res.llvm_codegen_f,
+			{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype, &key_reg, key_itype, packed_value_reg, value_itype },
+			""
+		);
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
 }
 
 
