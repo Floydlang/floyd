@@ -84,31 +84,6 @@ int compare_values(value_backend_t& backend, int64_t op, const runtime_type_t ty
 
 
 
-const runtime_value_t update__string(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type){
-	QUARK_ASSERT(backend.check_invariant());
-
-	const auto& type0 = lookup_type_ref(backend, arg0_type);
-	const auto& type1 = lookup_type_ref(backend, arg1_type);
-	const auto& type2 = lookup_type_ref(backend, arg2_type);
-
-	QUARK_ASSERT(type1.is_int());
-	QUARK_ASSERT(type2.is_int());
-
-	const auto str = from_runtime_string2(backend, arg0);
-	const auto index = arg1.int_value;
-	const auto new_char = (char)arg2.int_value;
-
-	const auto len = str.size();
-
-	if(index < 0 || index >= len){
-		quark::throw_runtime_error("Position argument to update() is outside collection span.");
-	}
-
-	auto result = str;
-	result[index] = new_char;
-	const auto result2 = to_runtime_string2(backend, result);
-	return result2;
-}
 
 const runtime_value_t update__carray(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type){
 	QUARK_ASSERT(backend.check_invariant());

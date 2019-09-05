@@ -1577,66 +1577,46 @@ static runtime_type_t floyd_llvm_intrinsic__typeof(floyd_runtime_t* frp, runtime
 
 
 //??? optimize prio 0
-//??? check type at compile time, not runtime.
-
-static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
-	auto& r = get_floyd_runtime(frp);
-
-	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
-	const auto& type1 = lookup_type_ref(r.backend, arg1_type);
-	const auto& type2 = lookup_type_ref(r.backend, arg2_type);
-	if(type0.is_string()){
-		return update__string(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
-	}
-	else if(is_vector_carray(itype_t(arg0_type))){
-		return update__carray(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
-	}
-	else if(is_vector_hamt(itype_t(arg0_type))){
-		return update__vector_hamt(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
-	}
-	else if(is_dict_cppmap(itype_t(arg0_type))){
-		return update__dict_cppmap(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
-	}
-	else if(is_dict_hamt(itype_t(arg0_type))){
-		return update__dict_hamt(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
-	}
-	else{
-		//	No other types allowed.
-		UNSUPPORTED();
-	}
-	throw std::exception();
-}
 
 static const runtime_value_t update_string(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
-	return floyd_llvm_intrinsic__update(frp, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+	auto& r = get_floyd_runtime(frp);
+	return update__string(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
 }
 
 
 static const runtime_value_t update_vector_carray_pod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
-	return floyd_llvm_intrinsic__update(frp, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+	auto& r = get_floyd_runtime(frp);
+	return update__carray(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
 }
 static const runtime_value_t update_vector_carray_nonpod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
-	return floyd_llvm_intrinsic__update(frp, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+	auto& r = get_floyd_runtime(frp);
+	return update__carray(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
 }
 static const runtime_value_t update_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
-	return floyd_llvm_intrinsic__update(frp, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+	auto& r = get_floyd_runtime(frp);
+	return update__vector_hamt(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
 }
 static const runtime_value_t update_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
-	return floyd_llvm_intrinsic__update(frp, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+	auto& r = get_floyd_runtime(frp);
+	return update__vector_hamt(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
 }
 
 
 static const runtime_value_t update_dict_cppmap_pod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
-	return floyd_llvm_intrinsic__update(frp, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+	auto& r = get_floyd_runtime(frp);
+	return update__dict_cppmap(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
 }
 static const runtime_value_t update_dict_cppmap_nonpod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
-	return floyd_llvm_intrinsic__update(frp, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+	auto& r = get_floyd_runtime(frp);
+	return update__dict_cppmap(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
 }
 static const runtime_value_t update_dict_hamt_pod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
-	return floyd_llvm_intrinsic__update(frp, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+	auto& r = get_floyd_runtime(frp);
+	return update__dict_hamt(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
 }
 static const runtime_value_t update_dict_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
-	return floyd_llvm_intrinsic__update(frp, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+	auto& r = get_floyd_runtime(frp);
+	return update__dict_hamt(r.backend, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
 }
 
 static std::vector<specialization_t> make_update_specializations(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
