@@ -27,7 +27,7 @@ int compare_values(value_backend_t& backend, int64_t op, const runtime_type_t ty
 
 
 
-inline const runtime_value_t update__string(value_backend_t& backend, runtime_value_t s, runtime_value_t index, runtime_value_t value);
+inline const runtime_value_t update__string(value_backend_t& backend, runtime_value_t s, runtime_value_t key_value, runtime_value_t value);
 
 const runtime_value_t update__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
 
@@ -46,17 +46,17 @@ const runtime_value_t subset__hamt(value_backend_t& backend, runtime_value_t col
 
 
 
-const runtime_value_t replace__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t arg3_value, runtime_type_t arg3_type);
-const runtime_value_t replace__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t arg3_value, runtime_type_t arg3_type);
-const runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t arg3_value, runtime_type_t arg3_type);
+const runtime_value_t replace__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t replacement_value, runtime_type_t replacement_type);
+const runtime_value_t replace__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t replacement_value, runtime_type_t replacement_type);
+const runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t replacement_value, runtime_type_t replacement_type);
 
 
 
 
 
-int64_t find__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t arg1, runtime_type_t arg1_type);
-int64_t find__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t arg1, runtime_type_t arg1_type);
-int64_t find__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t arg1, runtime_type_t arg1_type);
+int64_t find__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type);
+int64_t find__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type);
+int64_t find__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type);
 
 
 ///??? Split into two passes so we don't get 2 x 2. Generate code mixup? Have one function with two checks?
@@ -82,11 +82,11 @@ runtime_value_t concat_vector_hamt(value_backend_t& backend, const itype_t& type
 
 
 
-inline const runtime_value_t update__string(value_backend_t& backend, runtime_value_t s, runtime_value_t index, runtime_value_t value){
+inline const runtime_value_t update__string(value_backend_t& backend, runtime_value_t s, runtime_value_t key_value, runtime_value_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto str = from_runtime_string2(backend, s);
-	const auto i = index.int_value;
+	const auto i = key_value.int_value;
 	const auto new_char = (char)value.int_value;
 
 	const auto len = str.size();
