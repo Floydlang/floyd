@@ -396,18 +396,16 @@ static runtime_value_t floyd_llvm_intrinsic__from_json(floyd_runtime_t* frp, JSO
 
 
 //??? Use C++ template to generate these two functions.
-//??? optimize prio 0
-//??? Record all types at compile time, provide as arguments here.
-//??? Does map impl work with nonpods?
 typedef runtime_value_t (*MAP_F)(floyd_runtime_t* frp, runtime_value_t e_value, runtime_value_t context_value);
 
-static runtime_value_t map__carray(floyd_runtime_t* frp, runtime_value_t elements_vec, runtime_type_t elements_vec_type, runtime_value_t f_value, runtime_type_t f_type, runtime_value_t context_value, runtime_type_t context_type){
+static runtime_value_t map__carray(floyd_runtime_t* frp, runtime_value_t elements_vec, runtime_type_t elements_vec_type, runtime_value_t f_value, runtime_type_t f_type, runtime_value_t context_value, runtime_type_t context_type, runtime_type_t result_vec_type){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.backend;
 
-	const auto& type1 = lookup_type_ref(backend, f_type);
-#if DEBUG
 	QUARK_ASSERT(backend.check_invariant());
+
+#if DEBUG
+	const auto& type1 = lookup_type_ref(backend, f_type);
 
 	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
 	const auto& type2 = lookup_type_ref(backend, context_type);
@@ -416,26 +414,26 @@ static runtime_value_t map__carray(floyd_runtime_t* frp, runtime_value_t element
 	const auto e_type = type0.get_vector_element_type();
 	const auto f_arg_types = type1.get_function_args();
 #endif
-	const auto r_type = type1.get_function_return();
+
 	const auto f = reinterpret_cast<MAP_F>(f_value.function_ptr);
 
-	const auto return_type = typeid_t::make_vector(r_type);
 	const auto count = elements_vec.vector_carray_ptr->get_element_count();
-	auto result_vec = alloc_vector_carray(backend.heap, count, count, lookup_itype(backend, return_type));
+	auto result_vec = alloc_vector_carray(backend.heap, count, count, itype_t(result_vec_type));
 	for(int i = 0 ; i < count ; i++){
 		const auto a = (*f)(frp, elements_vec.vector_carray_ptr->get_element_ptr()[i], context_value);
 		result_vec.vector_carray_ptr->get_element_ptr()[i] = a;
 	}
 	return result_vec;
 }
-
-static runtime_value_t map__hamt(floyd_runtime_t* frp, runtime_value_t elements_vec, runtime_type_t elements_vec_type, runtime_value_t f_value, runtime_type_t f_type, runtime_value_t context_value, runtime_type_t context_type){
+//??? Update 1 element in a big hamt will copy the entire hamt, inc RC on all elements in hamt2. This is not needed since most of hamt is shared. Cheaper if we build in RC for leaf in the hamt itself.
+//??? Use batching to speed up hamt creation. Add 32 nodes at a time. Also faster read iteration.
+static runtime_value_t map__hamt(floyd_runtime_t* frp, runtime_value_t elements_vec, runtime_type_t elements_vec_type, runtime_value_t f_value, runtime_type_t f_type, runtime_value_t context_value, runtime_type_t context_type, runtime_type_t result_vec_type){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.backend;
-
-	const auto& type1 = lookup_type_ref(backend, f_type);
-#if DEBUG
 	QUARK_ASSERT(backend.check_invariant());
+
+#if DEBUG
+	const auto& type1 = lookup_type_ref(backend, f_type);
 
 	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
 	const auto& type2 = lookup_type_ref(backend, context_type);
@@ -444,12 +442,11 @@ static runtime_value_t map__hamt(floyd_runtime_t* frp, runtime_value_t elements_
 	const auto e_type = type0.get_vector_element_type();
 	const auto f_arg_types = type1.get_function_args();
 #endif
-	const auto r_type = type1.get_function_return();
+
 	const auto f = reinterpret_cast<MAP_F>(f_value.function_ptr);
 
-	const auto return_type = typeid_t::make_vector(r_type);
 	const auto count = elements_vec.vector_hamt_ptr->get_element_count();
-	auto result_vec = alloc_vector_hamt(backend.heap, count, count, lookup_itype(backend, return_type));
+	auto result_vec = alloc_vector_hamt(backend.heap, count, count, itype_t(result_vec_type));
 	for(int i = 0 ; i < count ; i++){
 		const auto& element = elements_vec.vector_hamt_ptr->load_element(i);
 		const auto a = (*f)(frp, element, context_value);
@@ -472,6 +469,8 @@ static std::vector<specialization_t> make_map_specializations(llvm::LLVMContext&
 			make_runtime_type_type(type_lookup),
 
 			make_runtime_value_type(type_lookup),
+			make_runtime_type_type(type_lookup),
+
 			make_runtime_type_type(type_lookup)
 		},
 		false
@@ -484,13 +483,23 @@ static std::vector<specialization_t> make_map_specializations(llvm::LLVMContext&
 	};
 }
 
-llvm::Value* generate_instrinsic_map(llvm_function_generator_t& gen_acc, const typeid_t& resolved_call_type, llvm::Value& elements_vec_reg, const typeid_t& elements_vec_type, llvm::Value& f_reg, const typeid_t& f_type, llvm::Value& context_reg, const typeid_t& context_type){
+llvm::Value* generate_instrinsic_map(
+	llvm_function_generator_t& gen_acc,
+	const typeid_t& resolved_call_type,
+	llvm::Value& elements_vec_reg,
+	const typeid_t& elements_vec_type,
+	llvm::Value& f_reg,
+	const typeid_t& f_type,
+	llvm::Value& context_reg,
+	const typeid_t& context_type)
+{
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(elements_vec_type.check_invariant());
 
 	auto& builder = gen_acc.get_builder();
 	const auto res = lookup_link_map(gen_acc.gen.link_map, make_map_specializations(builder.getContext(), gen_acc.gen.type_lookup), elements_vec_type);
 
+	const auto result_vec_type = resolved_call_type.get_function_return();
 	return builder.CreateCall(
 		res.llvm_codegen_f,
 		{
@@ -503,7 +512,9 @@ llvm::Value* generate_instrinsic_map(llvm_function_generator_t& gen_acc, const t
 			generate_itype_constant(gen_acc.gen, f_type),
 
 			generate_cast_to_runtime_value(gen_acc.gen, context_reg, context_type),
-			generate_itype_constant(gen_acc.gen, context_type)
+			generate_itype_constant(gen_acc.gen, context_type),
+
+			generate_itype_constant(gen_acc.gen, result_vec_type)
 		},
 		""
 	);
