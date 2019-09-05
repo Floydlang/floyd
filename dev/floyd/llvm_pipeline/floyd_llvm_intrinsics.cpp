@@ -1146,10 +1146,10 @@ static runtime_value_t floyd_llvm_intrinsic__stable_sort(
 
 //??? optimize prio 2
 
-void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto s = gen_to_string(r, arg0_value, arg0_type);
+	const auto s = gen_to_string(r, value, value_type);
 	printf("%s\n", s.c_str());
 	r._print_output.push_back(s);
 }
@@ -1534,12 +1534,12 @@ static const runtime_value_t floyd_llvm_intrinsic__subset(floyd_runtime_t* frp, 
 /////////////////////////////////////////		to_pretty_string()
 
 
-static runtime_value_t floyd_llvm_intrinsic__to_pretty_string(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+static runtime_value_t floyd_llvm_intrinsic__to_pretty_string(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
-	const auto& value = from_runtime_value(r, arg0_value, type0);
-	const auto json = value_to_ast_json(value, json_tags::k_plain);
+	const auto& type0 = lookup_type_ref(r.backend, value_type);
+	const auto& value2 = from_runtime_value(r, value, type0);
+	const auto json = value_to_ast_json(value2, json_tags::k_plain);
 	const auto s = json_to_pretty_string(json, 0, pretty_t{ 80, 4 });
 	return to_runtime_string(r, s);
 }
@@ -1551,10 +1551,10 @@ static runtime_value_t floyd_llvm_intrinsic__to_pretty_string(floyd_runtime_t* f
 
 
 //??? optimize prio 2
-static runtime_value_t floyd_llvm_intrinsic__to_string(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+static runtime_value_t floyd_llvm_intrinsic__to_string(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto s = gen_to_string(r, arg0_value, arg0_type);
+	const auto s = gen_to_string(r, value, value_type);
 	return to_runtime_string(r, s);
 }
 
@@ -1564,14 +1564,14 @@ static runtime_value_t floyd_llvm_intrinsic__to_string(floyd_runtime_t* frp, run
 
 
 
-static runtime_type_t floyd_llvm_intrinsic__typeof(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+static runtime_type_t floyd_llvm_intrinsic__typeof(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
 
 #if DEBUG
-	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
+	const auto& type0 = lookup_type_ref(r.backend, value_type);
 	QUARK_ASSERT(type0.check_invariant());
 #endif
-	return arg0_type;
+	return value_type;
 }
 
 
@@ -1740,11 +1740,11 @@ llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, cons
 
 
 
-static JSON_T* floyd_llvm_intrinsic__to_json(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+static JSON_T* floyd_llvm_intrinsic__to_json(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
-	const auto value0 = from_runtime_value(r, arg0_value, type0);
+	const auto& type0 = lookup_type_ref(r.backend, value_type);
+	const auto value0 = from_runtime_value(r, value, type0);
 	const auto j = value_to_ast_json(value0, json_tags::k_plain);
 	auto result = alloc_json(r.backend.heap, j);
 	return result;
