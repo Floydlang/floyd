@@ -1075,21 +1075,6 @@ const typeid_t& lookup_type_ref(const value_backend_t& backend, itype_t itype){
 
 
 
-itype_t lookup_vector_element_itype(const value_backend_t& backend, itype_t itype){
-	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(itype.check_invariant());
-	QUARK_ASSERT(itype.is_vector());
-
-	return backend.child_type[itype.get_lookup_index()];
-}
-
-itype_t lookup_dict_value_itype(const value_backend_t& backend, itype_t itype){
-	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(itype.check_invariant());
-	QUARK_ASSERT(itype.is_dict());
-
-	return backend.child_type[itype.get_lookup_index()];
-}
 
 
 

@@ -1647,7 +1647,7 @@ static const runtime_value_t update_vector_hamt_pod(floyd_runtime_t* frp, runtim
 	QUARK_ASSERT(type1.is_int());
 #endif
 
-	return update__vector_hamt(r.backend, coll_value, coll_type, key_value, value);
+	return update__vector_hamt_pod(r.backend, coll_value, coll_type, key_value, value);
 }
 static const runtime_value_t update_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
@@ -1663,7 +1663,7 @@ static const runtime_value_t update_vector_hamt_nonpod(floyd_runtime_t* frp, run
 	QUARK_ASSERT(type1.is_int());
 #endif
 
-	return update__vector_hamt(r.backend, coll_value, coll_type, key_value, value);
+	return update__vector_hamt_nonpod(r.backend, coll_value, coll_type, key_value, value);
 }
 
 

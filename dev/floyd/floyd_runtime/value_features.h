@@ -30,8 +30,8 @@ int compare_values(value_backend_t& backend, int64_t op, const runtime_type_t ty
 inline const runtime_value_t update__string(value_backend_t& backend, runtime_value_t s, runtime_value_t key_value, runtime_value_t value);
 
 const runtime_value_t update__vector_carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value);
-
-inline const runtime_value_t update__vector_hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value, runtime_type_t value_type);
+inline const runtime_value_t update__vector_hamt_pod(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value, runtime_type_t value_type);
+inline const runtime_value_t update__vector_hamt_nonpod(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value, runtime_type_t value_type);
 
 const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_value_t value);
 const runtime_value_t update__dict_hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_value_t value);
@@ -81,7 +81,7 @@ runtime_value_t concat_vector_hamt(value_backend_t& backend, const itype_t& type
 /////////////////////////////////////////		INLINES
 
 
-
+//??? optimize by copying alloc64_t directly, then overwrite 1 character.
 inline const runtime_value_t update__string(value_backend_t& backend, runtime_value_t s, runtime_value_t key_value, runtime_value_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
@@ -101,31 +101,35 @@ inline const runtime_value_t update__string(value_backend_t& backend, runtime_va
 	return result2;
 }
 
-inline const runtime_value_t update__vector_hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value){
+inline const runtime_value_t update__vector_hamt_pod(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto vec = coll_value.vector_hamt_ptr;
 	const auto i = index.int_value;
+	if(i < 0 || i >= vec->get_element_count()){
+		quark::throw_runtime_error("Position argument to update() is outside collection span.");
+	}
+	return store_immutable(coll_value, i, value);
+}
+inline const runtime_value_t update__vector_hamt_nonpod(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value){
+	QUARK_ASSERT(backend.check_invariant());
 
-	//??? compile time.
-	const auto element_itype = lookup_vector_element_itype(backend, itype_t(coll_type));
-
+	const auto vec = coll_value.vector_hamt_ptr;
+	const auto i = index.int_value;
 	if(i < 0 || i >= vec->get_element_count()){
 		quark::throw_runtime_error("Position argument to update() is outside collection span.");
 	}
 
-	//??? compile time.
-	if(is_rc_value(element_itype)){
-		const auto result = store_immutable(coll_value, i, value);
-		for(int x = 0 ; x < result.vector_hamt_ptr->get_element_count() ; x++){
-			auto v = result.vector_hamt_ptr->load_element(x);
-			retain_value(backend, v, element_itype);
-		}
-		return result;
+	//??? compile time. Provide as a constaint integer arg
+	const auto element_itype = lookup_vector_element_itype(backend, itype_t(coll_type));
+
+	const auto result = store_immutable(coll_value, i, value);
+
+	for(int x = 0 ; x < result.vector_hamt_ptr->get_element_count() ; x++){
+		auto v = result.vector_hamt_ptr->load_element(x);
+		retain_value(backend, v, element_itype);
 	}
-	else{
-		return store_immutable(coll_value, i, value);
-	}
+	return result;
 }
 
 

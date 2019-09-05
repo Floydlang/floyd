@@ -712,8 +712,8 @@ itype_t lookup_itype(const value_backend_t& backend, const typeid_t& type);
 const typeid_t& lookup_type_ref(const value_backend_t& backend, itype_t itype);
 const typeid_t& lookup_type_ref(const value_backend_t& backend, runtime_type_t type);
 
-itype_t lookup_vector_element_itype(const value_backend_t& backend, itype_t itype);
-itype_t lookup_dict_value_itype(const value_backend_t& backend, itype_t itype);
+inline itype_t lookup_vector_element_itype(const value_backend_t& backend, itype_t itype);
+inline itype_t lookup_dict_value_itype(const value_backend_t& backend, itype_t itype);
 
 //??? Don't return pair, only struct_layout_t.
 const std::pair<itype_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, itype_t type);
@@ -889,6 +889,25 @@ inline uint64_t size_to_allocation_blocks(std::size_t size){
 	QUARK_ASSERT((r * sizeof(uint64_t) - size) < sizeof(uint64_t));
 
 	return r;
+}
+
+
+
+
+inline itype_t lookup_vector_element_itype(const value_backend_t& backend, itype_t itype){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(itype.check_invariant());
+	QUARK_ASSERT(itype.is_vector());
+
+	return backend.child_type[itype.get_lookup_index()];
+}
+
+inline itype_t lookup_dict_value_itype(const value_backend_t& backend, itype_t itype){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(itype.check_invariant());
+	QUARK_ASSERT(itype.is_dict());
+
+	return backend.child_type[itype.get_lookup_index()];
 }
 
 }	// floyd
