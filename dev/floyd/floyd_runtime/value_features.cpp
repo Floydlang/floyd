@@ -122,17 +122,16 @@ const runtime_value_t update__vector_carray(value_backend_t& backend, runtime_va
 }
 
 
-const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
+const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_value_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
+	//??? move to compile time
 	const auto& type0 = lookup_type_ref(backend, coll_type);
-	const auto& type1 = lookup_type_ref(backend, key_type);
-	const auto& type2 = lookup_type_ref(backend, value_type);
-
-	QUARK_ASSERT(type1.is_string());
 
 	const auto key = from_runtime_string2(backend, key_value);
 	const auto dict = unpack_dict_cppmap_arg(backend, coll_value, coll_type);
+
+	//??? compile time
 	const auto value_itype = lookup_itype(backend, type0.get_dict_value_type());
 
 	//	Deep copy dict.
@@ -150,21 +149,20 @@ const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_valu
 	return dict2;
 }
 
-const runtime_value_t update__dict_hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
+const runtime_value_t update__dict_hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_value_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
+	//??? move to compile time
 	const auto& type0 = lookup_type_ref(backend, coll_type);
-	const auto& type1 = lookup_type_ref(backend, key_type);
-	const auto& type2 = lookup_type_ref(backend, value_type);
-
-	QUARK_ASSERT(type1.is_string());
 
 	const auto key = from_runtime_string2(backend, key_value);
 	const auto dict = coll_value.dict_hamt_ptr;
+
+	//??? compile time
 	const auto value_itype = lookup_itype(backend, type0.get_dict_value_type());
 
 	//	Deep copy dict.
-	auto dict2 = alloc_dict_hamt(backend.heap, itype_t(key_type));
+	auto dict2 = alloc_dict_hamt(backend.heap, itype_t(coll_type));
 	dict2.dict_hamt_ptr->get_map_mut() = dict->get_map();
 
 	dict2.dict_hamt_ptr->get_map_mut() = dict2.dict_hamt_ptr->get_map_mut().set(key, value);
