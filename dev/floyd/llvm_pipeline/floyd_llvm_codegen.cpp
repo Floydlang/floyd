@@ -1077,7 +1077,7 @@ static llvm::Value* generate_size_expression(llvm_function_generator_t& gen_acc,
 static llvm::Value* generate_update_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
-	QUARK_ASSERT(e.get_output_type().is_vector() || e.get_output_type().is_string() || e.get_output_type().is_dict());
+	QUARK_ASSERT(e.get_output_type().is_vector() || e.get_output_type().is_string() || e.get_output_type().is_dict());
 
 	const auto resolved_call_type = calc_resolved_function_type(e, make_update_signature()._function_type, details.args);
 	const auto collection_type = details.args[0].get_output_type();
@@ -1085,6 +1085,25 @@ static llvm::Value* generate_update_expression(llvm_function_generator_t& gen_ac
 	auto index_reg = generate_expression(gen_acc, details.args[1]);
 	auto element_reg = generate_expression(gen_acc, details.args[2]);
 	return generate_instrinsic_update(gen_acc, resolved_call_type, *vector_reg, collection_type, *index_reg, *element_reg);
+}
+
+static llvm::Value* generate_map_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(e.get_output_type().is_vector());
+
+	const auto resolved_call_type = calc_resolved_function_type(e, make_update_signature()._function_type, details.args);
+
+	auto vector_reg = generate_expression(gen_acc, details.args[0]);
+	const auto collection_type = details.args[0].get_output_type();
+
+	auto f_reg = generate_expression(gen_acc, details.args[1]);
+	auto f_type = details.args[1].get_output_type();
+
+	auto context_reg = generate_expression(gen_acc, details.args[2]);
+	auto context_type = details.args[2].get_output_type();
+
+	return generate_instrinsic_map(gen_acc, resolved_call_type, *vector_reg, collection_type, *f_reg, f_type, *context_reg, context_type);
 }
 
 
@@ -1155,7 +1174,7 @@ static llvm::Value* generate_intrinsic_expression(llvm_function_generator_t& gen
 
 
 	else if(details.call_name == get_intrinsic_opcode(make_map_signature())){
-		return generate_fallthrough_intrinsic(gen_acc, e, details);
+		return generate_map_expression(gen_acc, e, details);
 	}
 	else if(details.call_name == get_intrinsic_opcode(make_map_string_signature())){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);

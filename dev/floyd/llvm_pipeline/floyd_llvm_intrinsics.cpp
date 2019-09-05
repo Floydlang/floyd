@@ -136,6 +136,19 @@ static bool matches_specialization(eresolved_type wanted, const typeid_t& arg_ty
 
 
 
+static const function_link_entry_t& lookup_link_map(const std::vector<function_link_entry_t>& link_map, const std::vector<specialization_t>& specialisations, const typeid_t& type){
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto it = std::find_if(specialisations.begin(), specialisations.end(), [&](const specialization_t& s) { return matches_specialization(s.required_arg_type, type); });
+	if(it == specialisations.end()){
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+	const auto& res = find_function_def_from_link_name(link_map, encode_intrinsic_link_name(it->bind.name));
+	return res;
+}
+
+
 /////////////////////////////////////////		assert()
 
 
@@ -382,13 +395,15 @@ static runtime_value_t floyd_llvm_intrinsic__from_json(floyd_runtime_t* frp, JSO
 
 
 
-//??? Record all types at compile time, provide as arguments here.
-
-typedef runtime_value_t (*MAP_F)(floyd_runtime_t* frp, runtime_value_t e_value, runtime_value_t context_value);
-
 //??? Use C++ template to generate these two functions.
 //??? optimize prio 0
-static runtime_value_t map__carray(floyd_runtime_t* frp, value_backend_t& backend, runtime_value_t elements_vec, runtime_type_t elements_vec_type, runtime_value_t f_value, runtime_type_t f_type, runtime_value_t context_value, runtime_type_t context_type){
+//??? Record all types at compile time, provide as arguments here.
+//??? Does map impl work with nonpods?
+typedef runtime_value_t (*MAP_F)(floyd_runtime_t* frp, runtime_value_t e_value, runtime_value_t context_value);
+
+static runtime_value_t map__carray(floyd_runtime_t* frp, runtime_value_t elements_vec, runtime_type_t elements_vec_type, runtime_value_t f_value, runtime_type_t f_type, runtime_value_t context_value, runtime_type_t context_type){
+	auto& r = get_floyd_runtime(frp);
+	auto& backend = r.backend;
 
 	const auto& type1 = lookup_type_ref(backend, f_type);
 #if DEBUG
@@ -414,9 +429,9 @@ static runtime_value_t map__carray(floyd_runtime_t* frp, value_backend_t& backen
 	return result_vec;
 }
 
-//??? Use C++ template to generate these two functions.
-//??? optimize prio 0
-static runtime_value_t map__hamt(floyd_runtime_t* frp, value_backend_t& backend, runtime_value_t elements_vec, runtime_type_t elements_vec_type, runtime_value_t f_value, runtime_type_t f_type, runtime_value_t context_value, runtime_type_t context_type){
+static runtime_value_t map__hamt(floyd_runtime_t* frp, runtime_value_t elements_vec, runtime_type_t elements_vec_type, runtime_value_t f_value, runtime_type_t f_type, runtime_value_t context_value, runtime_type_t context_type){
+	auto& r = get_floyd_runtime(frp);
+	auto& backend = r.backend;
 
 	const auto& type1 = lookup_type_ref(backend, f_type);
 #if DEBUG
@@ -443,23 +458,57 @@ static runtime_value_t map__hamt(floyd_runtime_t* frp, value_backend_t& backend,
 	return result_vec;
 }
 
-//??? optimize prio 0: check type at compile time, not runtime.
-
 //	[R] map([E] elements, func R (E e, C context) f, C context)
-static runtime_value_t floyd_llvm_intrinsic__map(floyd_runtime_t* frp, runtime_value_t elements_vec, runtime_type_t elements_vec_type, runtime_value_t f_value, runtime_type_t f_type, runtime_value_t context_value, runtime_type_t context_type){
-	auto& r = get_floyd_runtime(frp);
+static std::vector<specialization_t> make_map_specializations(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		make_generic_vec_type_byvalue(type_lookup)->getPointerTo(),
+		{
+			make_frp_type(type_lookup),
 
-	if(is_vector_carray(itype_t(elements_vec_type))){
-		return map__carray(frp, r.backend, elements_vec, elements_vec_type, f_value, f_type, context_value, context_type);
-	}
-	else if(is_vector_hamt(itype_t(elements_vec_type))){
-		return map__hamt(frp, r.backend, elements_vec, elements_vec_type, f_value, f_type, context_value, context_type);
-	}
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
+			make_generic_vec_type_byvalue(type_lookup)->getPointerTo(),
+			make_runtime_type_type(type_lookup),
+
+			make_runtime_value_type(type_lookup),
+			make_runtime_type_type(type_lookup),
+
+			make_runtime_value_type(type_lookup),
+			make_runtime_type_type(type_lookup)
+		},
+		false
+	);
+	return {
+		specialization_t { eresolved_type::k_vector_carray_pod,		{ "map_carray_pod", function_type, reinterpret_cast<void*>(map__carray) } },
+		specialization_t { eresolved_type::k_vector_carray_nonpod,	{ "map_carray_nonpod", function_type, reinterpret_cast<void*>(map__carray) } },
+		specialization_t { eresolved_type::k_vector_hamt_pod,		{ "map_hamt_pod", function_type, reinterpret_cast<void*>(map__hamt) } },
+		specialization_t { eresolved_type::k_vector_hamt_nonpod, 	{ "map_hamt_nonpod", function_type, reinterpret_cast<void*>(map__hamt) } }
+	};
 }
+
+llvm::Value* generate_instrinsic_map(llvm_function_generator_t& gen_acc, const typeid_t& resolved_call_type, llvm::Value& elements_vec_reg, const typeid_t& elements_vec_type, llvm::Value& f_reg, const typeid_t& f_type, llvm::Value& context_reg, const typeid_t& context_type){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(elements_vec_type.check_invariant());
+
+	auto& builder = gen_acc.get_builder();
+	const auto res = lookup_link_map(gen_acc.gen.link_map, make_map_specializations(builder.getContext(), gen_acc.gen.type_lookup), elements_vec_type);
+
+	return builder.CreateCall(
+		res.llvm_codegen_f,
+		{
+			gen_acc.get_callers_fcp(),
+
+			&elements_vec_reg,
+			generate_itype_constant(gen_acc.gen, elements_vec_type),
+
+			generate_cast_to_runtime_value(gen_acc.gen, f_reg, f_type),
+			generate_itype_constant(gen_acc.gen, f_type),
+
+			generate_cast_to_runtime_value(gen_acc.gen, context_reg, context_type),
+			generate_itype_constant(gen_acc.gen, context_type)
+		},
+		""
+	);
+}
+
 
 
 
@@ -1269,15 +1318,7 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 	QUARK_ASSERT(collection_type.check_invariant());
 
 	auto& builder = gen_acc.get_builder();
-
-	const auto temp = make_push_back_specializations(builder.getContext(), gen_acc.gen.type_lookup);
-
-	const auto it = std::find_if(temp.begin(), temp.end(), [&](const specialization_t& s) { return matches_specialization(s.required_arg_type, collection_type); });
-	if(it == temp.end()){
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-	const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(it->bind.name));
+	const auto res = lookup_link_map(gen_acc.gen.link_map, make_push_back_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
 
 	if(collection_type.is_string()){
 		const auto vector_itype_reg = generate_itype_constant(gen_acc.gen, collection_type);
@@ -1487,13 +1528,7 @@ llvm::Value* generate_instrinsic_size(llvm_function_generator_t& gen_acc, const 
 
 	auto& builder = gen_acc.get_builder();
 
-	const auto temp = make_size_specializations(builder.getContext(), gen_acc.gen.type_lookup);
-	const auto it = std::find_if(temp.begin(), temp.end(), [&](const specialization_t& s) { return matches_specialization(s.required_arg_type, collection_type); });
-	if(it == temp.end()){
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-	const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(it->bind.name));
+	const auto res = lookup_link_map(gen_acc.gen.link_map, make_size_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
 	const auto collection_itype = generate_itype_constant(gen_acc.gen, collection_type);
 	return builder.CreateCall(
 		res.llvm_codegen_f,
@@ -1782,13 +1817,7 @@ llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, cons
 
 	auto& builder = gen_acc.get_builder();
 
-	const auto temp = make_update_specializations(builder.getContext(), gen_acc.gen.type_lookup);
-	const auto it = std::find_if(temp.begin(), temp.end(), [&](const specialization_t& s) { return matches_specialization(s.required_arg_type, collection_type); });
-	if(it == temp.end()){
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-	const auto res = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(it->bind.name));
+	const auto res = lookup_link_map(gen_acc.gen.link_map, make_update_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
 	const auto collection_itype = generate_itype_constant(gen_acc.gen, collection_type);
 
 	if(collection_type.is_string()){
@@ -1879,7 +1908,7 @@ static std::map<std::string, void*> get_intrinsic_binds(){
 
 		{ "get_json_type", reinterpret_cast<void *>(&floyd_llvm_intrinsic__get_json_type) },
 
-		{ "map", reinterpret_cast<void *>(&floyd_llvm_intrinsic__map) },
+//		{ "map", reinterpret_cast<void *>(&floyd_llvm_intrinsic__map) },
 //		{ "map_string", reinterpret_cast<void *>(&floyd_llvm_intrinsic__map_string) },
 		{ "map_dag", reinterpret_cast<void *>(&floyd_llvm_intrinsic__map_dag) },
 		{ "filter", reinterpret_cast<void *>(&floyd_llvm_intrinsic__filter) },
@@ -1950,6 +1979,7 @@ std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& c
 	result = concat(result, make_entries2(make_push_back_specializations(context, type_lookup)));
 	result = concat(result, make_entries2(make_size_specializations(context, type_lookup)));
 	result = concat(result, make_entries2(make_update_specializations(context, type_lookup)));
+	result = concat(result, make_entries2(make_map_specializations(context, type_lookup)));
 
 	if(k_trace_function_link_map){
 		trace_function_link_map(result);
