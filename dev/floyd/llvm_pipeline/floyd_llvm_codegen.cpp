@@ -49,6 +49,33 @@ static const bool k_trace_function_link_map = false;
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/IR/DataLayout.h>
 
+#include "llvm/Support/TargetRegistry.h"
+
+
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/Optional.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/Instructions.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Verifier.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Host.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/TargetRegistry.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Target/TargetOptions.h"
+
+
+
 #include "llvm/Bitcode/BitstreamWriter.h"
 
 #include <map>
@@ -2354,19 +2381,57 @@ static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const 
 }
 
 
+llvm::TargetMachine* setup_module(std::unique_ptr<llvm::Module>& module){
+	llvm::InitializeAllTargetInfos();
+	llvm::InitializeAllTargets();
+	llvm::InitializeAllTargetMCs();
+	llvm::InitializeAllAsmParsers();
+	llvm::InitializeAllAsmPrinters();
 
-static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_link_entry_t>> generate_module(llvm_instance_t& instance, const std::string& module_name, const semantic_ast_t& semantic_ast){
+	auto TargetTriple = llvm::sys::getDefaultTargetTriple();
+
+	std::string Error;
+	auto Target = llvm::TargetRegistry::lookupTarget(TargetTriple, Error);
+
+	// Print an error and exit if we couldn't find the requested target.
+	// This generally occurs if we've forgotten to initialise the
+	// TargetRegistry or we have a bogus target triple.
+	if (!Target) {
+		throw std::exception();
+	}
+
+	auto CPU = "generic";
+	auto Features = "";
+
+	llvm::TargetOptions opt;
+	auto RM = llvm::Optional<llvm::Reloc::Model>();
+	auto TargetMachine = Target->createTargetMachine(TargetTriple, CPU, Features, opt, RM);
+
+	auto data_layout = TargetMachine->createDataLayout();
+	module->setTargetTriple(TargetTriple);
+	module->setDataLayout(data_layout);
+	return TargetMachine;
+}
+
+
+struct module_output_t {
+	std::unique_ptr<llvm::Module> module;
+	std::vector<function_link_entry_t> link_map;
+	llvm::TargetMachine* target_machine;
+};
+
+static module_output_t generate_module(llvm_instance_t& instance, const std::string& module_name, const semantic_ast_t& semantic_ast){
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(semantic_ast.check_invariant());
 
 	//	Module must sit in a unique_ptr<> because llvm::EngineBuilder needs that.
 	auto module = std::make_unique<llvm::Module>(module_name.c_str(), instance.context);
+	auto target_machine = setup_module(module);
 
 	llvm_type_lookup type_lookup(instance.context, semantic_ast._tree._interned_types);
 
-	//	Generate all LLVM nodes: functions (without implementation) and globals.
+	//	Generate all LLVM function nodes: functions (without implementation) and globals.
 	//	This lets all other code reference them, even if they're not filled up with code yet.
-
 	const auto link_map1 = make_function_link_map1(module->getContext(), type_lookup, semantic_ast._tree._function_defs);
 	if(k_trace_function_link_map){
 		trace_function_link_map(link_map1);
@@ -2398,9 +2463,32 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_link_entry_
 		generate_floyd_runtime_deinit(gen_acc, semantic_ast._tree._globals);
 	}
 
-	return { std::move(module), gen_acc.link_map };
+	return module_output_t{ std::move(module), gen_acc.link_map, target_machine };
 }
 
+
+int write_object_file(std::unique_ptr<llvm::Module>& module, llvm::TargetMachine& target_machine){
+	auto Filename = "output.o";
+
+	std::error_code EC;
+	llvm::raw_fd_ostream dest(Filename, EC, llvm::sys::fs::OF_None);
+	if (EC) {
+		llvm::errs() << "Could not open file: " << EC.message();
+		return 1;
+	}
+
+	llvm::legacy::PassManager pass;
+	auto FileType = llvm::TargetMachine::CGFT_ObjectFile;
+
+	if (target_machine.addPassesToEmitFile(pass, dest, nullptr, FileType)) {
+		llvm::errs() << "TargetMachine can't emit a file of this type";
+		return 1;
+	}
+
+	pass.run(*module);
+	dest.flush();
+	return 0;
+}
 
 
 std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& instance, const semantic_ast_t& ast0, const std::string& module_name){
@@ -2417,13 +2505,17 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 
 	auto ast = ast0;
 
+	llvm::InitializeNativeTarget();
+	llvm::InitializeNativeTargetAsmPrinter();
+	llvm::InitializeNativeTargetAsmParser();
+
 	auto result0 = generate_module(instance, module_name, ast);
-	auto module = std::move(result0.first);
-	auto function_link_map = result0.second;
+	auto module = std::move(result0.module);
+//	write_object_file(module, *result0.target_machine);
 
 	const auto type_lookup = llvm_type_lookup(instance.context, ast0._tree._interned_types);
 
-	auto result = std::make_unique<llvm_ir_program_t>(&instance, module, type_lookup, ast._tree._globals._symbol_table, function_link_map);
+	auto result = std::make_unique<llvm_ir_program_t>(&instance, module, type_lookup, ast._tree._globals._symbol_table, result0.link_map);
 
 	result->container_def = ast0._tree._container_def;
 	result->software_system = ast0._tree._software_system;

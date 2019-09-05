@@ -76,9 +76,6 @@ struct llvm_code_generator_t {
 	{
 		QUARK_ASSERT(instance.check_invariant());
 
-		llvm::InitializeNativeTarget();
-		llvm::InitializeNativeTargetAsmPrinter();
-
 		QUARK_ASSERT(check_invariant());
 	}
 
