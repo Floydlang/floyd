@@ -2381,43 +2381,10 @@ static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const 
 }
 
 
-llvm::TargetMachine* setup_module(std::unique_ptr<llvm::Module>& module){
-	llvm::InitializeAllTargetInfos();
-	llvm::InitializeAllTargets();
-	llvm::InitializeAllTargetMCs();
-	llvm::InitializeAllAsmParsers();
-	llvm::InitializeAllAsmPrinters();
-
-	auto TargetTriple = llvm::sys::getDefaultTargetTriple();
-
-	std::string Error;
-	auto Target = llvm::TargetRegistry::lookupTarget(TargetTriple, Error);
-
-	// Print an error and exit if we couldn't find the requested target.
-	// This generally occurs if we've forgotten to initialise the
-	// TargetRegistry or we have a bogus target triple.
-	if (!Target) {
-		throw std::exception();
-	}
-
-	auto CPU = "generic";
-	auto Features = "";
-
-	llvm::TargetOptions opt;
-	auto RM = llvm::Optional<llvm::Reloc::Model>();
-	auto TargetMachine = Target->createTargetMachine(TargetTriple, CPU, Features, opt, RM);
-
-	auto data_layout = TargetMachine->createDataLayout();
-	module->setTargetTriple(TargetTriple);
-	module->setDataLayout(data_layout);
-	return TargetMachine;
-}
-
 
 struct module_output_t {
 	std::unique_ptr<llvm::Module> module;
 	std::vector<function_link_entry_t> link_map;
-	llvm::TargetMachine* target_machine;
 };
 
 static module_output_t generate_module(llvm_instance_t& instance, const std::string& module_name, const semantic_ast_t& semantic_ast){
@@ -2426,7 +2393,10 @@ static module_output_t generate_module(llvm_instance_t& instance, const std::str
 
 	//	Module must sit in a unique_ptr<> because llvm::EngineBuilder needs that.
 	auto module = std::make_unique<llvm::Module>(module_name.c_str(), instance.context);
-	auto target_machine = setup_module(module);
+	auto data_layout = instance.target.target_machine->createDataLayout();
+	module->setTargetTriple(instance.target.target_triple);
+	module->setDataLayout(data_layout);
+
 
 	llvm_type_lookup type_lookup(instance.context, semantic_ast._tree._interned_types);
 
@@ -2463,32 +2433,50 @@ static module_output_t generate_module(llvm_instance_t& instance, const std::str
 		generate_floyd_runtime_deinit(gen_acc, semantic_ast._tree._globals);
 	}
 
-	return module_output_t{ std::move(module), gen_acc.link_map, target_machine };
+	return module_output_t{ std::move(module), gen_acc.link_map };
 }
 
 
-int write_object_file(std::unique_ptr<llvm::Module>& module, llvm::TargetMachine& target_machine){
-	auto Filename = "output.o";
-
-	std::error_code EC;
-	llvm::raw_fd_ostream dest(Filename, EC, llvm::sys::fs::OF_None);
-	if (EC) {
-		llvm::errs() << "Could not open file: " << EC.message();
-		return 1;
-	}
+static std::vector<uint8_t> write_object_file(llvm::Module& module, llvm::TargetMachine& target_machine){
+//	std::string stream_backstore;
+//	llvm::raw_string_ostream stream(stream_backstore);
+//		f->print(stream2);
 
 	llvm::legacy::PassManager pass;
-	auto FileType = llvm::TargetMachine::CGFT_ObjectFile;
+//	auto FileType = llvm::TargetMachine::CGFT_ObjectFile;
+	auto FileType = llvm::TargetMachine::CGFT_AssemblyFile;
 
-	if (target_machine.addPassesToEmitFile(pass, dest, nullptr, FileType)) {
+	llvm::SmallVector<char, 0> ObjBufferSV;
+	llvm::raw_svector_ostream ObjStream(ObjBufferSV);
+
+//	BOS = make_unique<llvm::raw_svector_ostream>(Buffer);
+//	OS = BOS.get();
+
+/*
+  if ((FileType != TargetMachine::CGFT_AssemblyFile &&
+         !Out->os().supportsSeeking()) ||
+        CompileTwice) {
+      BOS = make_unique<raw_svector_ostream>(Buffer);
+      OS = BOS.get();
+}
+*/
+
+	if (target_machine.addPassesToEmitFile(pass, ObjStream, nullptr, FileType)) {
 		llvm::errs() << "TargetMachine can't emit a file of this type";
-		return 1;
+		throw std::exception();
 	}
 
-	pass.run(*module);
-	dest.flush();
-	return 0;
+	pass.run(module);
+//	stream.flush();
+
+//	return stream.str();
+	return std::vector<uint8_t>(ObjBufferSV.begin(), ObjBufferSV.end());
 }
+
+std::vector<uint8_t> write_object_file(llvm_ir_program_t& program, llvm::TargetMachine& target_machine){
+	return write_object_file(*program.module, target_machine);
+}
+
 
 
 std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& instance, const semantic_ast_t& ast0, const std::string& module_name){

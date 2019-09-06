@@ -12,6 +12,7 @@
 #include "value_backend.h"
 
 #include <llvm/IR/IRBuilder.h>
+#include "llvm/Target/TargetMachine.h"
 
 
 
@@ -22,14 +23,36 @@ struct llvm_type_lookup;
 struct link_name_t;
 struct value_backend_t;
 
+
+struct target_t {
+	std::string target_triple;
+	llvm::TargetMachine* target_machine;
+
+
+	////////////////////////////////	STATE
+
+	bool check_invariant() const;
+};
+
+target_t make_default_target();
+
+
+
 //	Must LLVMContext be kept while using the execution engine? Yes!
 struct llvm_instance_t {
-	bool check_invariant() const {
-		return true;
-	}
+	llvm_instance_t();
+
+	bool check_invariant() const;
+
+
+	////////////////////////////////	STATE
 
 	llvm::LLVMContext context;
+	target_t target;
 };
+
+
+
 
 
 bool check_invariant__function(const llvm::Function* f);

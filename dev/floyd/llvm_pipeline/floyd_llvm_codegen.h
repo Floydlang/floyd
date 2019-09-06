@@ -19,6 +19,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Verifier.h>
+#include "llvm/Target/TargetMachine.h"
 
 #include <string>
 
@@ -64,6 +65,8 @@ struct llvm_ir_program_t {
 
 //	Converts the semantic AST to LLVM IR code.
 std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& instance, const semantic_ast_t& ast, const std::string& module_name);
+
+std::vector<uint8_t> write_object_file(llvm_ir_program_t& program, llvm::TargetMachine& target_machine);
 
 
 

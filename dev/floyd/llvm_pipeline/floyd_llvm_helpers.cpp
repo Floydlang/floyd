@@ -10,6 +10,11 @@
 
 #include <llvm/IR/Verifier.h>
 
+#include "llvm/Support/TargetRegistry.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Target/TargetOptions.h"
+
 #include <string>
 #include <vector>
 
@@ -20,6 +25,64 @@
 
 
 namespace floyd {
+
+
+bool target_t::check_invariant() const{
+	QUARK_ASSERT(target_machine != nullptr);
+	return true;
+}
+
+
+
+llvm_instance_t::llvm_instance_t(){
+	llvm::InitializeAllTargetInfos();
+	llvm::InitializeAllTargets();
+	llvm::InitializeAllTargetMCs();
+	llvm::InitializeAllAsmParsers();
+	llvm::InitializeAllAsmPrinters();
+
+	target = make_default_target();
+
+	QUARK_ASSERT(check_invariant());
+}
+
+bool llvm_instance_t::check_invariant() const {
+	QUARK_ASSERT(target.check_invariant());
+	return true;
+}
+
+
+
+
+
+target_t make_default_target(){
+	auto TargetTriple = llvm::sys::getDefaultTargetTriple();
+
+	std::string Error;
+	auto Target = llvm::TargetRegistry::lookupTarget(TargetTriple, Error);
+
+	// This generally occurs if we've forgotten to initialise the
+	// TargetRegistry or we have a bogus target triple.
+	if (!Target) {
+		throw std::exception();
+	}
+
+	auto CPU = "generic";
+	auto Features = "";
+
+	llvm::TargetOptions opt;
+	auto RM = llvm::Optional<llvm::Reloc::Model>();
+	auto TargetMachine = Target->createTargetMachine(TargetTriple, CPU, Features, opt, RM);
+
+	//	Cannot copy DataLayout or put in shared_ptr.
+//	auto data_layout = TargetMachine->createDataLayout();
+	return target_t { TargetTriple, TargetMachine };
+}
+
+
+
+
+
 
 
 /*
