@@ -13,9 +13,12 @@
 #include <string>
 
 #include "floyd_interpreter.h"
+#include "floyd_parser.h"
 
 #include "floyd_llvm.h"
 #include "floyd_llvm_runtime.h"
+#include "floyd_llvm_helpers.h"
+#include "floyd_llvm_codegen.h"
 
 #include "ast_value.h"
 #include "json_support.h"
@@ -166,16 +169,94 @@ void floyd_quark_runtime::runtime_i__on_unit_test_failed(const quark::source_cod
 
 
 
-
-static int do_compile_command(const command_t& command, const command_t::compile_to_ast_t& command2){
-	const auto source = read_text_file(command2.source_path);
-	const auto cu = floyd::make_compilation_unit_lib(source, command2.source_path);
-	const auto ast = floyd::compile_to_sematic_ast__errors(cu);
-	const auto json = semantic_ast_to_json(ast);
-	std::cout << json_to_pretty_string(json);
-	std::cout << std::endl;
-	return EXIT_SUCCESS;
+//	If dest_path is empty, print to stdout
+void output_result(const std::string& dest_path, const std::string& s){
+	if(dest_path == ""){
+		std::cout << s << std::endl;
+	}
+	else{
+		SaveFile(dest_path, reinterpret_cast<const uint8_t*>(&s[0]), s.size());
+	}
 }
+
+
+/*
+enum class eoutput_type {
+	parse_tree,
+	ast,
+	ir,
+	object_file
+};
+*/
+static int do_compile_command(const command_t& command, const command_t::compile_t& command2){
+	const std::string base_path = "";
+
+	if(command2.source_paths.size() != 1){
+		throw std::runtime_error("Provide one source file to compile.");
+	}
+	const std::string source_path = command2.source_paths[0];
+
+	const auto source = read_text_file(source_path);
+	const auto cu = floyd::make_compilation_unit_lib(source, source_path);
+
+	if(command2.output_type == eoutput_type::parse_tree){
+		const auto parse_tree = parse_program__errors(cu);
+		const auto out = json_to_pretty_string(parse_tree._value);
+		output_result(command2.dest_path, out);
+		return EXIT_SUCCESS;
+	}
+	if(command2.output_type == eoutput_type::ast){
+		const auto ast = floyd::compile_to_sematic_ast__errors(cu);
+		const auto json = semantic_ast_to_json(ast);
+		const auto out = json_to_pretty_string(json);
+		output_result(command2.dest_path, out);
+		return EXIT_SUCCESS;
+	}
+	if(command2.output_type == eoutput_type::ir){
+		if(command2.backend == ebackend::bytecode){
+			throw std::runtime_error("Operation not implemented for byte code interpreter.");
+		}
+		else if(command2.backend == ebackend::llvm){
+			const auto ast = floyd::compile_to_sematic_ast__errors(cu);
+			llvm_instance_t llvm_instance;
+			std::unique_ptr<llvm_ir_program_t> llvm_program = generate_llvm_ir_program(llvm_instance, ast, "");
+			const auto ir_code = write_ir_file(*llvm_program, llvm_instance.target);
+			output_result(command2.dest_path, ir_code);
+			return EXIT_SUCCESS;
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+	}
+	if(command2.output_type == eoutput_type::object_file){
+		if(command2.backend == ebackend::bytecode){
+			throw std::runtime_error("Operation not implemented for byte code interpreter.");
+		}
+		else if(command2.backend == ebackend::llvm){
+			const auto ast = floyd::compile_to_sematic_ast__errors(cu);
+			llvm_instance_t llvm_instance;
+			std::unique_ptr<llvm_ir_program_t> llvm_program = generate_llvm_ir_program(llvm_instance, ast, "");
+			const auto object_file = write_object_file(*llvm_program, llvm_instance.target);
+	
+
+			const auto path = command2.dest_path == "" ? (base_path + "out.o") : command2.dest_path;
+			SaveFile(path, &object_file[0], object_file.size());
+			return EXIT_SUCCESS;
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+
+////////////////////////////////	do_run()
 
 
 static int do_run(const command_t& command, const command_t::compile_and_run_t& command2){
@@ -209,6 +290,9 @@ static int do_run(const command_t& command, const command_t::compile_and_run_t& 
 	}
 }
 
+
+
+////////////////////////////////	do_user_benchmarks_run_all()
 
 //??? Only compile once!
 
@@ -261,6 +345,7 @@ QUARK_TEST("", "do_user_benchmarks_run_all()", "", ""){
 */
 }
 
+////////////////////////////////	do_user_benchmarks_run_specified()
 
 
 static std::string do_user_benchmarks_run_specified(const std::string& program_source, const std::string& source_path, const std::vector<std::string>& tests){
@@ -527,7 +612,7 @@ static int do_command(const command_t& command){
 			return do_run(command, command2);
 		}
 
-		int operator()(const command_t::compile_to_ast_t& command2) const{
+		int operator()(const command_t::compile_t& command2) const{
 			return do_compile_command(command, command2);
 		}
 
@@ -553,7 +638,7 @@ static int do_command(const command_t& command){
 static int main_internal(int argc, const char * argv[]) {
 	const auto args = args_to_vector(argc, argv);
 	try{
-		const auto command = parse_command(args);
+		const auto command = parse_floyd_command_line(args);
 		const int result = do_command(command);
 		return result;
 	}

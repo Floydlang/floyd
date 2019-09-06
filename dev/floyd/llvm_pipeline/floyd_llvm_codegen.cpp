@@ -2437,25 +2437,33 @@ static module_output_t generate_module(llvm_instance_t& instance, const std::str
 }
 
 
-static std::vector<uint8_t> write_object_file(llvm::Module& module, llvm::TargetMachine& target_machine){
+static std::vector<uint8_t> write_object_file(llvm::Module& module, const target_t& target, llvm::TargetMachine::CodeGenFileType type){
+	QUARK_ASSERT(target.check_invariant());
+
 	llvm::legacy::PassManager pass;
-//	auto FileType = llvm::TargetMachine::CGFT_ObjectFile;
-	auto FileType = llvm::TargetMachine::CGFT_AssemblyFile;
 
-	llvm::SmallVector<char, 0> ObjBufferSV;
-	llvm::raw_svector_ostream ObjStream(ObjBufferSV);
+	llvm::SmallVector<char, 0> stream_vec;
+	llvm::raw_svector_ostream s(stream_vec);
 
-	if (target_machine.addPassesToEmitFile(pass, ObjStream, nullptr, FileType)) {
+	if (target.target_machine->addPassesToEmitFile(pass, s, nullptr, type)) {
 		llvm::errs() << "TargetMachine can't emit a file of this type";
 		throw std::exception();
 	}
 
 	pass.run(module);
-	return std::vector<uint8_t>(ObjBufferSV.begin(), ObjBufferSV.end());
+	return std::vector<uint8_t>(stream_vec.begin(), stream_vec.end());
 }
 
-std::vector<uint8_t> write_object_file(llvm_ir_program_t& program, llvm::TargetMachine& target_machine){
-	return write_object_file(*program.module, target_machine);
+std::vector<uint8_t> write_object_file(llvm_ir_program_t& program, const target_t& target){
+	QUARK_ASSERT(target.check_invariant());
+
+	return write_object_file(*program.module, target, llvm::TargetMachine::CGFT_ObjectFile);
+}
+std::string write_ir_file(llvm_ir_program_t& program, const target_t& target){
+	QUARK_ASSERT(target.check_invariant());
+
+	const auto a = write_object_file(*program.module, target, llvm::TargetMachine::CGFT_AssemblyFile);
+	return std::string(a.begin(), a.end());
 }
 
 

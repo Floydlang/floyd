@@ -914,7 +914,7 @@
 				2CB30737214ACF09007D2732 /* software_system.cpp */,
 				2CB30738214ACF09007D2732 /* software_system.h */,
 				2C6CDA9122FD9108008F65C7 /* target_benchmark_internals */,
-				2C6CDA8E22FD9079008F65C7 /* target_commandline_tool */,
+				2C6CDA8E22FD9079008F65C7 /* target_tool */,
 			);
 			path = floyd;
 			sourceTree = SOURCE_ROOT;
@@ -1512,7 +1512,7 @@
 			path = src;
 			sourceTree = "<group>";
 		};
-		2C6CDA8E22FD9079008F65C7 /* target_commandline_tool */ = {
+		2C6CDA8E22FD9079008F65C7 /* target_tool */ = {
 			isa = PBXGroup;
 			children = (
 				2C6CDA9322FD92FD008F65C7 /* floyd_command_line_parser.cpp */,
@@ -1523,7 +1523,7 @@
 				2C4DA09023035A0100190C37 /* format_table.cpp */,
 				2C4DA09123035A0100190C37 /* format_table.h */,
 			);
-			path = target_commandline_tool;
+			path = target_tool;
 			sourceTree = "<group>";
 		};
 		2C6CDA9122FD9108008F65C7 /* target_benchmark_internals */ = {

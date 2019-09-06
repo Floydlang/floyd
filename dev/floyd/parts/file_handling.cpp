@@ -854,8 +854,7 @@ void MakeDirectoriesDeep(const std::string& path){
 }
 
 void SaveFile(const std::string& inFileName, const std::uint8_t data[], std::size_t byteCount){
-	TRACE_INDENT("SaveFile()");
-	TRACE("Byte count: " + std::to_string(byteCount));
+	TRACE_INDENT(std::string() + "SaveFile() " + inFileName + ", bytes: " + std::to_string(byteCount));
 
 	TPathParts split = SplitPath(inFileName);
 

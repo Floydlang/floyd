@@ -159,19 +159,31 @@ Floyd generates native machine code but also comes with a bytecode interpreter.
 <a id="13-command-line-tool"></a>
 ## 1.3 COMMAND LINE TOOL
 
-|COMMAND		  	| MEANING
-|:---				|:---	
-| floyd help								| Show built in help for command line tool
-| floyd run mygame.floyd [arg1 arg2]		| compile and run the floyd program "mygame.floyd" using native exection
-| floyd run -t mygame.floyd					| -t turns on tracing, which shows compilation steps
-| floyd compile mygame.floyd				| compile the floyd program "mygame.floyd" to an AST, in JSON format
-| floyd bench mygame.floyd					| Runs all benchmarks, as defined by benchmark-def statements in Floyd program
-| floyd bench mygame.floyd rle game_loop	| Runs specified benchmarks "rle" and "game_loop"
-| floyd bench -l mygame.floyd				| Returns list of benchmarks
-| floyd hwcaps								| Outputs hardware capabilities
-| floyd runtests							| Runs Floyd built internal unit tests
-| Flag t									| Verbose tracing
-| Flag b									| Use Floyd's bytecode backend (compiler, bytecode ISA and interpreter) rather than the default, LLVM
+Usage:
+
+||COMMAND		  	| MEANING
+|:---|:---				|:---	
+|help		| floyd help								| Show built in help for command line tool
+|run		| floyd run mygame.floyd [arg1 arg2]		| compile and run the floyd program "mygame.floyd" using native exection
+|run		| floyd run -t mygame.floyd					| -t turns on tracing, which shows compilation steps
+|compile	| floyd compile mygame.floyd				| compile the floyd program "mygame.floyd" to a native object file, output to stdout
+|compile	| floyd compile mygame.floyd mylib.floyd	| compile the floyd program "mygame.floyd" and "mylib.floyd" to one native object file, output to stdout
+|compile	| floyd compile mygame.floyd -o test		| compile the floyd program "mygame.floyd" to a native object file .o, called "test.o"
+|bench		| floyd bench mygame.floyd					| Runs all benchmarks, as defined by benchmark-def statements in Floyd program
+|bench		| floyd bench mygame.floyd rle game_loop	| Runs specified benchmarks "rle" and "game_loop"
+|bench		| floyd bench -l mygame.floyd				| Returns list of benchmarks
+|hwcaps		| floyd hwcaps								| Outputs hardware capabilities
+|runtests	| floyd runtests							| Runs Floyd built internal unit tests
+
+Flags:
+
+|FLAG	| MEANING
+|:---	|:---	
+| t		| Verbose tracing
+| p		| Output parse tree as a JSON
+| a		| Output Abstract syntax tree (AST) as a JSON
+| i		| Output intermediate representation (IR / ASM) as assembly
+| b		| Use Floyd's bytecode backend (compiler, bytecode ISA and interpreter) rather than the default, LLVM
 
 
 
