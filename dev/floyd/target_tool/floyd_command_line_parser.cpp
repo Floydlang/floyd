@@ -35,10 +35,7 @@ floyd bench "img_lib:Linear veq" "img_lib:Smart tiling" "blur:blur1" "blur:b2"
 */
 
 std::string get_help(){
-
 	std::stringstream ss;
-//	 ss << x; ::quark::quark_trace_func(ss, quark::get_trace());}
-
 
 ss << "Floyd Programming Language MIT."
 <<
@@ -64,7 +61,8 @@ FLAGS
 | i     | Output intermediate representation (IR / ASM) as assembly
 | b     | Use Floyd's bytecode backend (compiler, bytecode ISA and interpreter) rather than the default, LLVM
 )___";
-return ss.str();
+
+	return ss.str();
 }
 
 #if 0
