@@ -2438,10 +2438,6 @@ static module_output_t generate_module(llvm_instance_t& instance, const std::str
 
 
 static std::vector<uint8_t> write_object_file(llvm::Module& module, llvm::TargetMachine& target_machine){
-//	std::string stream_backstore;
-//	llvm::raw_string_ostream stream(stream_backstore);
-//		f->print(stream2);
-
 	llvm::legacy::PassManager pass;
 //	auto FileType = llvm::TargetMachine::CGFT_ObjectFile;
 	auto FileType = llvm::TargetMachine::CGFT_AssemblyFile;
@@ -2449,27 +2445,12 @@ static std::vector<uint8_t> write_object_file(llvm::Module& module, llvm::Target
 	llvm::SmallVector<char, 0> ObjBufferSV;
 	llvm::raw_svector_ostream ObjStream(ObjBufferSV);
 
-//	BOS = make_unique<llvm::raw_svector_ostream>(Buffer);
-//	OS = BOS.get();
-
-/*
-  if ((FileType != TargetMachine::CGFT_AssemblyFile &&
-         !Out->os().supportsSeeking()) ||
-        CompileTwice) {
-      BOS = make_unique<raw_svector_ostream>(Buffer);
-      OS = BOS.get();
-}
-*/
-
 	if (target_machine.addPassesToEmitFile(pass, ObjStream, nullptr, FileType)) {
 		llvm::errs() << "TargetMachine can't emit a file of this type";
 		throw std::exception();
 	}
 
 	pass.run(module);
-//	stream.flush();
-
-//	return stream.str();
 	return std::vector<uint8_t>(ObjBufferSV.begin(), ObjBufferSV.end());
 }
 
