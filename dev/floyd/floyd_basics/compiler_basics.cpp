@@ -20,6 +20,11 @@ const location_t k_no_location(std::numeric_limits<std::size_t>::max());
 
 
 
+config_t make_default_config(){
+	return config_t { vector_backend::hamt, dict_backend::hamt, true } ;
+}
+ 
+
 
 
 std::vector<benchmark_result2_t> unpack_vec_benchmark_result2_t(const value_t& value){

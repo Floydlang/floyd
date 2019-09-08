@@ -22,11 +22,6 @@ namespace floyd {
 
 
 
-config_t make_default_config(){
-	return config_t { vector_backend::hamt, dict_backend::hamt } ;
-}
- 
-
 
 #if 0
 void save_page(const std::string &url){
@@ -63,7 +58,7 @@ void trace_heap(const heap_t& heap){
 	if(false){
 		QUARK_SCOPED_TRACE("HEAP");
 
-		if(k_record_allocs){
+		if(heap.record_allocs_flag){
 #if HEAP_MUTEX
 			std::lock_guard<std::recursive_mutex> guard(*heap.alloc_records_mutex);
 #endif
@@ -153,7 +148,7 @@ heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, itype_t 
 	auto alloc = new (alloc0) heap_alloc_64_t(&heap, allocation_word_count, debug_value_type, debug_string);
 	QUARK_ASSERT(alloc->rc == 1);
 	QUARK_ASSERT(alloc->check_invariant());
-	if(k_record_allocs){
+	if(heap.record_allocs_flag){
 		heap.alloc_records.push_back({ alloc });
 	}
 
@@ -164,12 +159,12 @@ heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, itype_t 
 
 
 QUARK_TEST("heap_t", "alloc_64()", "", ""){
-	heap_t heap;
+	heap_t heap(false);
 	QUARK_UT_VERIFY(heap.check_invariant());
 }
 
 QUARK_TEST("heap_t", "alloc_64()", "", ""){
-	heap_t heap;
+	heap_t heap(false);
 	auto a = alloc_64(heap, 0, get_undefined_itype(), "test");
 	QUARK_UT_VERIFY(a != nullptr);
 	QUARK_UT_VERIFY(a->check_invariant());
@@ -183,7 +178,7 @@ QUARK_TEST("heap_t", "alloc_64()", "", ""){
 }
 
 QUARK_TEST("heap_t", "add_ref()", "", ""){
-	heap_t heap;
+	heap_t heap(false);
 	auto a = alloc_64(heap, 0, get_undefined_itype(), "test");
 	add_ref(*a);
 	QUARK_UT_VERIFY(a->rc == 2);
@@ -193,7 +188,7 @@ QUARK_TEST("heap_t", "add_ref()", "", ""){
 }
 
 QUARK_TEST("heap_t", "release_ref()", "", ""){
-	heap_t heap;
+	heap_t heap(false);
 	auto a = alloc_64(heap, 0, get_undefined_itype(), "test");
 
 	QUARK_UT_VERIFY(a->rc == 1);
@@ -248,7 +243,7 @@ void dispose_alloc(heap_alloc_64_t& alloc){
 	std::lock_guard<std::recursive_mutex> guard(*alloc.heap->alloc_records_mutex);
 #endif
 
-	if(k_record_allocs){
+	if(alloc.heap->record_allocs_flag){
 		auto it = std::find_if(alloc.heap->alloc_records.begin(), alloc.heap->alloc_records.end(), [&](heap_rec_t& e){ return e.alloc_ptr == &alloc; });
 		QUARK_ASSERT(it != alloc.heap->alloc_records.end());
 
@@ -307,7 +302,7 @@ int heap_t::count_used() const {
 #if HEAP_MUTEX
 	std::lock_guard<std::recursive_mutex> guard(*alloc_records_mutex);
 #endif
-	if(k_record_allocs){
+	if(record_allocs_flag){
 		for(const auto& e: alloc_records){
 			if(e.alloc_ptr->rc){
 				result = result + 1;
@@ -493,7 +488,7 @@ QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
 }
 
 QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
-	heap_t heap;
+	heap_t heap(false);
 	detect_leaks(heap);
 
 	auto v = alloc_vector_carray(heap, 3, 3, get_undefined_itype());
@@ -1033,7 +1028,7 @@ value_backend_t::value_backend_t(
 	const type_interner_t& type_interner,
 	const config_t& config
 ) :
-	heap(),
+	heap(config.trace_allocs),
 	type_interner(type_interner),
 	native_func_lookup(native_func_lookup),
 	struct_layouts(struct_layouts),

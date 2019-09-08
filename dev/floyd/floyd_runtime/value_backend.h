@@ -49,27 +49,6 @@ struct json_t;
 namespace floyd {
 
 
-enum class vector_backend {
-	carray,
-	hamt
-};
-enum class dict_backend {
-	cppmap,
-	hamt
-};
-
-struct config_t {
-	bool check_invariant() const {
-		return true;
-	}
-
-
-	vector_backend vector_backend_mode;
-	dict_backend dict_backend_mode;
-};
-
-
-config_t make_default_config();
 
 
 
@@ -78,10 +57,6 @@ config_t make_default_config();
 
 #define HEAP_MUTEX 0
 #define ATOMIC_RC 1
-
-
-
-static const bool k_record_allocs = false;
 
 
 
@@ -132,9 +107,10 @@ struct heap_rec_t {
 static const uint64_t HEAP_MAGIC = 0xf00d1234;
 
 struct heap_t {
-	heap_t() :
+	heap_t(bool record_allocs_flag) :
 		magic(0xf00d1234),
-		allocation_id_generator(1000000)
+		allocation_id_generator(1000000),
+		record_allocs_flag(record_allocs_flag)
 	{
 #if HEAP_MUTEX
 		alloc_records_mutex = std::make_shared<std::recursive_mutex>();
@@ -153,6 +129,7 @@ struct heap_t {
 	std::vector<heap_rec_t> alloc_records;
 
 	uint64_t allocation_id_generator;
+	bool record_allocs_flag;
 };
 
 

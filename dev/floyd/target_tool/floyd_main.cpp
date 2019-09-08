@@ -166,6 +166,17 @@ void floyd_quark_runtime::runtime_i__on_unit_test_failed(const quark::source_cod
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
 ////////////////////////////////	BENCHMARKS
 
 

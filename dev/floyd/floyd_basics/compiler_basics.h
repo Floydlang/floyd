@@ -336,6 +336,82 @@ struct compilation_unit_t {
 
 
 
+
+////////////////////////////////////////		config_t
+
+
+
+enum class vector_backend {
+	carray,
+	hamt
+};
+enum class dict_backend {
+	cppmap,
+	hamt
+};
+
+struct config_t {
+	bool check_invariant() const {
+		return true;
+	}
+
+
+	vector_backend vector_backend_mode;
+	dict_backend dict_backend_mode;
+	bool trace_allocs;
+};
+
+
+config_t make_default_config();
+
+
+
+////////////////////////////////////////		compilation_task_t
+
+
+/*
+Optimization level
+Flags controlling how much optimization should be performed.
+
+-O<arg>, -O (equivalent to -O2), --optimize, --optimize=<arg>
+-Ofast<arg>
+Debug information generation
+Flags controlling how much and what kind of debug information should be generated.
+
+Kind and level of debug information
+-g, --debug, --debug=<arg>
+
+OPTIONS:
+  Choose optimization level:
+    -g          - No optimizations, enable debugging
+    -O1         - Enable trivial optimizations
+    -O2         - Enable default optimizations
+    -O3         - Enable expensive optimizations
+  -f            - Enable binary output on terminals
+  -help         - display available options (-help-hidden for more)
+  -o <filename> - Specify output filename
+  -quiet        - Don't print informational messages
+*/
+
+enum class optimization_level {
+	g_no_optimizations_enable_debugging,
+	O1_enable_trivial_optimizations,
+	O2_enable_default_optimizations,
+	O3_enable_expensive_optimizations
+//	Ofast
+};
+
+struct compilation_task_t {
+	compilation_unit_t cu;
+
+	config_t config;
+	optimization_level optimization_level;
+};
+
+
+
+
+
 ////////////////////////////////////////		compiler_error
 
 
