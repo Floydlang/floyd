@@ -19,6 +19,7 @@
 namespace floyd {
 
 struct compilation_unit_t;
+struct config_t;
 
 
 
@@ -35,7 +36,7 @@ bool operator==(const test_report_t& lhs, const test_report_t& rhs);
 
 void ut_verify_report(const quark::call_context_t& context, const test_report_t& result, const test_report_t& expected);
 
-void test_floyd(const quark::call_context_t& context, const compilation_unit_t& cu, const std::vector<std::string>& main_args, const test_report_t& expected, bool check_printout);
+void test_floyd(const quark::call_context_t& context, const compilation_unit_t& cu, const config_t& config, const std::vector<std::string>& main_args, const test_report_t& expected, bool check_printout);
 
 
 

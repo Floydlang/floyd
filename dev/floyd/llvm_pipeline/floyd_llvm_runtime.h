@@ -124,6 +124,7 @@ struct llvm_execution_engine_t {
 
 	llvm_bind_t main_function;
 	bool inited;
+	config_t config;
 };
 
 

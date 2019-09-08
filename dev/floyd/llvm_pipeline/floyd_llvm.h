@@ -17,16 +17,17 @@
 
 namespace floyd {
 
+struct config_t;
 struct bench_t;
 struct run_output_t;
 struct benchmark_result2_t;
 
 
 //	Compiles and runs the program. Returns results.
-run_output_t run_program_helper(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const std::vector<std::string>& main_args);
+run_output_t run_program_helper(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const config_t& config, const std::vector<std::string>& main_args);
 
-std::vector<bench_t> collect_benchmarks(const std::string& program_source, const std::string& file, compilation_unit_mode mode);
-std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const std::vector<std::string>& tests);
+std::vector<bench_t> collect_benchmarks(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const config_t& config);
+std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const config_t& config, const std::vector<std::string>& tests);
 
 }	// floyd
 

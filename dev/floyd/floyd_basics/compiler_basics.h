@@ -324,6 +324,11 @@ location_t unpack_loc2(const json_t& s);
 
 
 struct compilation_unit_t {
+	bool check_invariant() const {
+		return true;
+	}
+
+
 	std::string prefix_source;
 	std::string program_text;
 	std::string source_file_path;

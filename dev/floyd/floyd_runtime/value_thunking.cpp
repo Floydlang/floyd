@@ -166,7 +166,7 @@ static runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t
 	const auto count = v0.size();
 
 	const auto itype = lookup_itype(backend, value.get_type());
-	if(is_vector_carray(itype)){
+	if(is_vector_carray(backend.config, itype)){
 		auto result = alloc_vector_carray(backend.heap, count, count, itype);
 
 		const auto element_type = value.get_type().get_vector_element_type();
@@ -179,7 +179,7 @@ static runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t
 		}
 		return result;
 	}
-	else if(is_vector_hamt(itype)){
+	else if(is_vector_hamt(backend.config, itype)){
 		std::vector<runtime_value_t> temp;
 		for(int i = 0 ; i < count ; i++){
 			const auto& e = v0[i];
@@ -202,7 +202,7 @@ static value_t from_runtime_vector(const value_backend_t& backend, const runtime
 	QUARK_ASSERT(type.is_vector());
 
 	const auto itype = lookup_itype(backend, type);
-	if(is_vector_carray(itype)){
+	if(is_vector_carray(backend.config, itype)){
 		const auto element_type = type.get_vector_element_type();
 		const auto vec = encoded_value.vector_carray_ptr;
 
@@ -217,7 +217,7 @@ static value_t from_runtime_vector(const value_backend_t& backend, const runtime
 		const auto val = value_t::make_vector_value(element_type, elements);
 		return val;
 	}
-	else if(is_vector_hamt(itype)){
+	else if(is_vector_hamt(backend.config, itype)){
 		const auto element_type = type.get_vector_element_type();
 		const auto vec = encoded_value.vector_hamt_ptr;
 
@@ -243,7 +243,7 @@ static runtime_value_t to_runtime_dict(value_backend_t& backend, const typeid_t:
 	QUARK_ASSERT(value.get_type().is_dict());
 
 	const auto itype = lookup_itype(backend, value.get_type());
-	if(is_dict_cppmap(itype)){
+	if(is_dict_cppmap(backend.config, itype)){
 		const auto& v0 = value.get_dict_value();
 
 		auto result = alloc_dict_cppmap(backend.heap, itype);
@@ -256,7 +256,7 @@ static runtime_value_t to_runtime_dict(value_backend_t& backend, const typeid_t:
 		}
 		return result;
 	}
-	else if(is_dict_hamt(itype)){
+	else if(is_dict_hamt(backend.config, itype)){
 		const auto& v0 = value.get_dict_value();
 
 		auto result = alloc_dict_hamt(backend.heap, lookup_itype(backend, value.get_type()));
@@ -281,7 +281,7 @@ static value_t from_runtime_dict(const value_backend_t& backend, const runtime_v
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto itype = lookup_itype(backend, type);
-	if(is_dict_cppmap(itype)){
+	if(is_dict_cppmap(backend.config, itype)){
 		const auto value_type = type.get_dict_value_type();
 		const auto dict = encoded_value.dict_cppmap_ptr;
 
@@ -294,7 +294,7 @@ static value_t from_runtime_dict(const value_backend_t& backend, const runtime_v
 		const auto val = value_t::make_dict_value(type, values);
 		return val;
 	}
-	else if(is_dict_hamt(itype)){
+	else if(is_dict_hamt(backend.config, itype)){
 		const auto value_type = type.get_dict_value_type();
 		const auto dict = encoded_value.dict_hamt_ptr;
 

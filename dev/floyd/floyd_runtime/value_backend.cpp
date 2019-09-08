@@ -22,6 +22,10 @@ namespace floyd {
 
 
 
+config_t make_default_config(){
+	return config_t { vector_backend::hamt, dict_backend::hamt } ;
+}
+ 
 
 
 #if 0
@@ -1026,13 +1030,17 @@ static std::map<itype_t, typeid_t> make_type_lookup(const llvm_type_lookup& type
 value_backend_t::value_backend_t(
 	const std::vector<std::pair<link_name_t, void*>>& native_func_lookup,
 	const std::vector<std::pair<itype_t, struct_layout_t>>& struct_layouts,
-	const type_interner_t& type_interner
+	const type_interner_t& type_interner,
+	const config_t& config
 ) :
 	heap(),
 	type_interner(type_interner),
 	native_func_lookup(native_func_lookup),
-	struct_layouts(struct_layouts)
+	struct_layouts(struct_layouts),
+	config(config)
 {
+	QUARK_ASSERT(config.check_invariant());
+
 	for(const auto& e: type_interner.interned){
 		if(e.is_vector()){
 			const auto& type = e.get_vector_element_type();
@@ -1111,7 +1119,8 @@ value_backend_t make_test_value_backend(){
 	return value_backend_t(
 		{},
 		{},
-		type_interner_t()
+		type_interner_t(),
+		make_default_config()
 	);
 }
 
@@ -1122,7 +1131,7 @@ void retain_vector_carray(value_backend_t& backend, runtime_value_t vec, itype_t
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(itype.check_invariant());
 	QUARK_ASSERT(is_rc_value(itype));
-	QUARK_ASSERT(is_vector_carray(itype) || itype.is_string());
+	QUARK_ASSERT(is_vector_carray(backend.config, itype) || itype.is_string());
 
 	inc_rc(vec.vector_carray_ptr->alloc);
 }
@@ -1134,7 +1143,7 @@ void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, itype_t 
 	QUARK_ASSERT(dict.check_invariant());
 	QUARK_ASSERT(itype.check_invariant());
 	QUARK_ASSERT(is_rc_value(itype));
-	QUARK_ASSERT(is_dict_cppmap(itype));
+	QUARK_ASSERT(is_dict_cppmap(backend.config, itype));
 
 	inc_rc(dict.dict_cppmap_ptr->alloc);
 }
@@ -1143,7 +1152,7 @@ void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, itype_t it
 	QUARK_ASSERT(dict.check_invariant());
 	QUARK_ASSERT(itype.check_invariant());
 	QUARK_ASSERT(is_rc_value(itype));
-	QUARK_ASSERT(is_dict_hamt(itype));
+	QUARK_ASSERT(is_dict_hamt(backend.config, itype));
 
 	inc_rc(dict.dict_hamt_ptr->alloc);
 }
@@ -1170,16 +1179,16 @@ void retain_value(value_backend_t& backend, runtime_value_t value, itype_t itype
 		if(itype.is_string()){
 			retain_vector_carray(backend, value, itype);
 		}
-		else if(is_vector_carray(itype)){
+		else if(is_vector_carray(backend.config, itype)){
 			retain_vector_carray(backend, value, itype);
 		}
-		else if(is_vector_hamt(itype)){
+		else if(is_vector_hamt(backend.config, itype)){
 			retain_vector_hamt(backend, value, itype);
 		}
-		else if(is_dict_cppmap(itype)){
+		else if(is_dict_cppmap(backend.config, itype)){
 			retain_dict_cppmap(backend, value, itype);
 		}
-		else if(is_dict_hamt(itype)){
+		else if(is_dict_hamt(backend.config, itype)){
 			retain_dict_hamt(backend, value, itype);
 		}
 		else if(itype.is_json()){
@@ -1202,7 +1211,7 @@ void release_dict_cppmap(value_backend_t& backend, runtime_value_t dict0, itype_
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dict0.check_invariant());
 	QUARK_ASSERT(itype.is_dict());
-	QUARK_ASSERT(is_dict_cppmap(itype));
+	QUARK_ASSERT(is_dict_cppmap(backend.config, itype));
 
 	auto& dict = *dict0.dict_cppmap_ptr;
 	if(dec_rc(dict.alloc) == 0){
@@ -1223,7 +1232,7 @@ void release_dict_hamt(value_backend_t& backend, runtime_value_t dict0, itype_t 
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dict0.check_invariant());
 	QUARK_ASSERT(itype.is_dict());
-	QUARK_ASSERT(is_dict_hamt(itype));
+	QUARK_ASSERT(is_dict_hamt(backend.config, itype));
 
 	auto& dict = *dict0.dict_hamt_ptr;
 	if(dec_rc(dict.alloc) == 0){
@@ -1245,10 +1254,10 @@ void release_dict(value_backend_t& backend, runtime_value_t dict, itype_t itype)
 	QUARK_ASSERT(dict.check_invariant());
 	QUARK_ASSERT(itype.is_dict());
 
-	if(is_dict_cppmap(itype)){
+	if(is_dict_cppmap(backend.config, itype)){
 		release_dict_cppmap(backend, dict, itype);
 	}
-	else if(is_dict_hamt(itype)){
+	else if(is_dict_hamt(backend.config, itype)){
 		release_dict_hamt(backend, dict, itype);
 	}
 	else{
@@ -1264,7 +1273,7 @@ void release_vector_carray_pod(value_backend_t& backend, runtime_value_t vec, it
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(itype.check_invariant());
-	QUARK_ASSERT(itype.is_string() || is_vector_carray(itype));
+	QUARK_ASSERT(itype.is_string() || is_vector_carray(backend.config, itype));
 	if(itype.is_vector()){
 		QUARK_ASSERT(is_rc_value(lookup_vector_element_itype(backend, itype)) == false);
 	}
@@ -1278,7 +1287,7 @@ void release_vector_carray_nonpod(value_backend_t& backend, runtime_value_t vec,
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(itype.check_invariant());
-	QUARK_ASSERT(itype.is_string() || is_vector_carray(itype));
+	QUARK_ASSERT(itype.is_string() || is_vector_carray(backend.config, itype));
 	QUARK_ASSERT(is_rc_value(lookup_vector_element_itype(backend, itype)) == true);
 
 	if(dec_rc(vec.vector_carray_ptr->alloc) == 0){
@@ -1300,7 +1309,7 @@ void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_val
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(itype.check_invariant());
-	QUARK_ASSERT(is_vector_hamt(itype));
+	QUARK_ASSERT(is_vector_hamt(backend.config, itype));
 
 	const auto element_type = lookup_vector_element_itype(backend, itype);
 	for(int i = 0 ; i < vec.vector_hamt_ptr->get_element_count() ; i++){
@@ -1322,7 +1331,7 @@ void release_vec(value_backend_t& backend, runtime_value_t vec, itype_t itype){
 			dispose_vector_carray(vec);
 		}
 	}
-	else if(is_vector_carray(itype)){
+	else if(is_vector_carray(backend.config, itype)){
 		const auto element_type = lookup_vector_element_itype(backend, itype);
 		if(is_rc_value(element_type)){
 			release_vector_carray_nonpod(backend, vec, itype);
@@ -1331,7 +1340,7 @@ void release_vec(value_backend_t& backend, runtime_value_t vec, itype_t itype){
 			release_vector_carray_pod(backend, vec, itype);
 		}
 	}
-	else if(is_vector_hamt(itype)){
+	else if(is_vector_hamt(backend.config, itype)){
 		const auto element_type = lookup_vector_element_itype(backend, itype);
 		if(is_rc_value(element_type)){
 			release_vector_hamt_nonpod(backend, vec, itype);

@@ -114,12 +114,15 @@ struct llvm_code_generator_t;
 
 
 
-llvm_ir_program_t::llvm_ir_program_t(llvm_instance_t* instance, std::unique_ptr<llvm::Module>& module2_swap, const llvm_type_lookup& type_lookup, const symbol_table_t& globals, const std::vector<function_link_entry_t>& function_defs) :
+llvm_ir_program_t::llvm_ir_program_t(llvm_instance_t* instance, std::unique_ptr<llvm::Module>& module2_swap, const llvm_type_lookup& type_lookup, const symbol_table_t& globals, const std::vector<function_link_entry_t>& function_defs, const config_t& config) :
 	instance(instance),
 	type_lookup(type_lookup),
 	debug_globals(globals),
-	function_defs(function_defs)
+	function_defs(function_defs),
+	config(config)
 {
+	QUARK_ASSERT(config.check_invariant());
+
 	module.swap(module2_swap);
 	QUARK_ASSERT(check_invariant());
 }
@@ -129,6 +132,7 @@ bool llvm_ir_program_t::check_invariant() const {
 	QUARK_ASSERT(instance->check_invariant());
 	QUARK_ASSERT(module);
 	QUARK_ASSERT(check_invariant__module(module.get()));
+	QUARK_ASSERT(config.check_invariant());
 	return true;
 }
 
@@ -564,7 +568,7 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 		generate_release(gen_acc, *key_reg, key_type);
 		return result;
 	}
-	else if(is_vector_carray(parent_type)){
+	else if(is_vector_carray(gen_acc.gen.config, parent_type)){
 		QUARK_ASSERT(key_type.is_int());
 
 		const auto element_type0 = parent_type.get_vector_element_type();
@@ -582,7 +586,7 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 
 		return result_reg;
 	}
-	else if(is_vector_hamt(parent_type)){
+	else if(is_vector_hamt(gen_acc.gen.config, parent_type)){
 		QUARK_ASSERT(key_type.is_int());
 
 		const auto element_type0 = parent_type.get_vector_element_type();
@@ -603,11 +607,12 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 
 		return result_reg;
 	}
-	else if(is_dict_cppmap(parent_type) || is_dict_hamt(parent_type)){
+	else if(is_dict_cppmap(gen_acc.gen.config, parent_type) || is_dict_hamt(gen_acc.gen.config, parent_type)){
 		QUARK_ASSERT(key_type.is_string());
 
 		const auto element_type0 = parent_type.get_dict_value_type();
-		auto element_value_uint64_reg = generate_lookup_dict(gen_acc, *parent_reg, parent_type, *key_reg, is_dict_hamt(parent_type));
+		const auto dict_mode = is_dict_hamt(gen_acc.gen.config, parent_type) ? dict_backend::hamt : dict_backend::cppmap;
+		auto element_value_uint64_reg = generate_lookup_dict(gen_acc, *parent_reg, parent_type, *key_reg, dict_mode);
 		auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
 
 		generate_retain(gen_acc, *result_reg, element_type0);
@@ -1272,7 +1277,7 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 	const auto& element_type1 = *get_llvm_type_as_arg(gen_acc.gen.type_lookup, element_type0);
 	auto vec_type_reg = generate_itype_constant(gen_acc.gen, details.value_type);
 
-	if(is_vector_carray(details.value_type)){
+	if(is_vector_carray(gen_acc.gen.config, details.value_type)){
 		auto vec_ptr_reg = generate_allocate_vector(gen_acc, details.value_type, element_count, vector_backend::carray);
 
 		auto ptr_reg = generate_get_vec_element_ptr_needs_cast(gen_acc, *vec_ptr_reg);
@@ -1308,10 +1313,8 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 			return vec_ptr_reg;
 		}
 	}
-	else if(is_vector_hamt(details.value_type)){
+	else if(is_vector_hamt(gen_acc.gen.config, details.value_type)){
 		auto vec_ptr_reg = generate_allocate_vector(gen_acc, details.value_type, element_count, vector_backend::hamt);
-//		auto vec_ptr_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_allocate_vector.llvm_codegen_f, { gen_acc.get_callers_fcp(), vec_type_reg, element_count_reg }, "");
-
 		int element_index = 0;
 		for(const auto& element_value: details.elements){
 			auto index_reg = generate_constant(gen_acc, value_t::make_int(element_index));
@@ -1347,7 +1350,7 @@ static llvm::Value* generate_construct_dict(llvm_function_generator_t& gen_acc, 
 	for(int element_index = 0 ; element_index < count ; element_index++){
 		llvm::Value* key0_reg = generate_expression(gen_acc, details.elements[element_index * 2 + 0]);
 		llvm::Value* element0_reg = generate_expression(gen_acc, details.elements[element_index * 2 + 1]);
-		generate_store_dict_mutable(gen_acc, *dict_acc_ptr_reg, details.value_type, *key0_reg, *element0_reg, k_global_dict_is_hamt);
+		generate_store_dict_mutable(gen_acc, *dict_acc_ptr_reg, details.value_type, *key0_reg, *element0_reg, gen_acc.gen.config.dict_backend_mode);
 		generate_release(gen_acc, *key0_reg, typeid_t::make_string());
 	}
 	return dict_acc_ptr_reg;
@@ -2389,9 +2392,10 @@ struct module_output_t {
 	std::vector<function_link_entry_t> link_map;
 };
 
-static module_output_t generate_module(llvm_instance_t& instance, const std::string& module_name, const semantic_ast_t& semantic_ast){
+static module_output_t generate_module(llvm_instance_t& instance, const std::string& module_name, const semantic_ast_t& semantic_ast, const config_t& config){
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(semantic_ast.check_invariant());
+	QUARK_ASSERT(config.check_invariant());
 
 	//	Module must sit in a unique_ptr<> because llvm::EngineBuilder needs that.
 	auto module = std::make_unique<llvm::Module>(module_name.c_str(), instance.context);
@@ -2410,7 +2414,7 @@ static module_output_t generate_module(llvm_instance_t& instance, const std::str
 	}
 	const auto link_map2 = generate_function_nodes(*module, type_lookup, link_map1);
 
-	auto gen_acc = llvm_code_generator_t(instance, module.get(), semantic_ast._tree._interned_types, type_lookup, link_map2);
+	auto gen_acc = llvm_code_generator_t(instance, module.get(), semantic_ast._tree._interned_types, type_lookup, link_map2, config);
 
 	//	Global variables.
 	{
@@ -2469,9 +2473,10 @@ std::string write_ir_file(llvm_ir_program_t& program, const target_t& target){
 	return std::string(a.begin(), a.end());
 }
 
-std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& instance, const semantic_ast_t& ast0, const std::string& module_name){
+std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& instance, const semantic_ast_t& ast0, const std::string& module_name, const config_t& config){
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(ast0.check_invariant());
+	QUARK_ASSERT(config.check_invariant());
 
 	if(k_trace_input_output){
 		QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast0)));
@@ -2487,14 +2492,14 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 	llvm::InitializeNativeTargetAsmPrinter();
 	llvm::InitializeNativeTargetAsmParser();
 
-	auto result0 = generate_module(instance, module_name, ast);
+	auto result0 = generate_module(instance, module_name, ast, config);
 	auto module = std::move(result0.module);
 	optimize_module_mutating(*module);
 //	write_object_file(module, *result0.target_machine);
 
 	const auto type_lookup = llvm_type_lookup(instance.context, ast0._tree._interned_types);
 
-	auto result = std::make_unique<llvm_ir_program_t>(&instance, module, type_lookup, ast._tree._globals._symbol_table, result0.link_map);
+	auto result = std::make_unique<llvm_ir_program_t>(&instance, module, type_lookup, ast._tree._globals._symbol_table, result0.link_map, config);
 
 	result->container_def = ast0._tree._container_def;
 	result->software_system = ast0._tree._software_system;
