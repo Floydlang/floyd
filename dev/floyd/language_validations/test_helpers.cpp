@@ -130,8 +130,7 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const s
 		const auto run_output = run_program(*ee, main_args);
 
 		const auto result_global0 = bind_global(*ee, "result");
-		const auto x = value_t();
-		const auto result_global = load_global(*ee, result_global0);
+		const auto result_global = result_global0.first != nullptr ? load_global(*ee, result_global0) : value_t();
 
 		return test_report_t{ result_global, run_output, ee->_print_output, "" };
 	}

@@ -66,7 +66,6 @@
 	#define QUARK_UNIT_TESTS_ON 1
 #endif
 
-#define QUARK_UNIT_TESTS_ON 1
 
 
 ////////////////////////////////	NO_RETURN

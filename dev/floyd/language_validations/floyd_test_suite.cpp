@@ -100,12 +100,11 @@ static value_t make_double_vec(const std::vector<double>& elements){
 	return value_t::make_vector_value(typeid_t::make_double(), elements2);
 }
 
-
-/*
-FLOYD_LANG_PROOF("NOP", "See if we leak memory", "", ""){
+#if 0
+FLOYD_LANG_PROOF_VIP("NOP", "See if we leak memory", "", ""){
     usleep(11 * 1000000);
 }
-*/
+#endif
 
 
 #if RUN_LANG_BASIC_TESTS1
