@@ -7006,3 +7006,32 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict hamt performance()", "", ""){
 
 #endif	//	RUN_EXAMPLE_AND_DOCS_TESTS
 
+
+
+
+
+
+
+
+
+/*
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "OPTIMZATION SETTINGS" "Fibonacci 10", "", ""){
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"(
+
+			func int fibonacci(int n) {
+				if (n <= 1){
+					return n
+				}
+				return fibonacci(n - 2) + fibonacci(n - 1)
+			}
+
+			for (i in 0...10) {
+				print(fibonacci(i))
+			}
+
+		)"
+	);
+}
+*/

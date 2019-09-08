@@ -788,67 +788,71 @@ void RenameEntry(const std::string& path, const std::string& n){
 void MakeDirectoriesDeep(const std::string& path){
 	TRACE_INDENT("MakeDirectoriesDeep()");
 
-	//??? Hack! I'm confused how you specify a directory in Mac OS X!!! There is sometimes an ending slash too much.
-	std::string temp = path;
-	{
-//		if(temp.back()=='/')
-		if(temp[temp.size() - 1] == '/'){
-			temp = std::string(&temp[0], &temp[temp.size() - 1]);
-		}
+	if(path == ""){
 	}
+	else {
+		//??? Hack! I'm confused how you specify a directory in Mac OS X!!! There is sometimes an ending slash too much.
+		std::string temp = path;
+		{
+	//		if(temp.back()=='/')
+			if(temp[temp.size() - 1] == '/'){
+				temp = std::string(&temp[0], &temp[temp.size() - 1]);
+			}
+		}
 
-#if defined(_WIN32)
-	int error = _mkdir(temp.c_str());
-#else
-	int error = ::mkdir(temp.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-#endif
-	if(error != 0){
-		const auto err = get_error();
-		if(err == EEXIST){
-			return;
-		}
-		else if(err == EFAULT){
-			quark::throw_exception();
-		}
-		else if(err == EACCES){
-			quark::throw_exception();
-		}
-		else if(err == ENAMETOOLONG){
-			quark::throw_exception();
-		}
-		else if(err == ENOENT){
-			if(temp.size() > 2){
-				//	Make the path to the parent dir first.
-				TPathParts split = SplitPath(temp);
-				MakeDirectoriesDeep(split.fPath);
+	#if defined(_WIN32)
+		int error = _mkdir(temp.c_str());
+	#else
+		int error = ::mkdir(temp.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	#endif
+		if(error != 0){
+			const auto err = get_error();
+			if(err == EEXIST){
+				return;
+			}
+			else if(err == EFAULT){
+				quark::throw_exception();
+			}
+			else if(err == EACCES){
+				quark::throw_exception();
+			}
+			else if(err == ENAMETOOLONG){
+				quark::throw_exception();
+			}
+			else if(err == ENOENT){
+				if(temp.size() > 2){
+					//	Make the path to the parent dir first.
+					TPathParts split = SplitPath(temp);
+					MakeDirectoriesDeep(split.fPath);
 
-				//	Now try again making the sub directory.
-				MakeDirectoriesDeep(temp);
+					//	Now try again making the sub directory.
+					MakeDirectoriesDeep(temp);
+				}
+				else{
+					quark::throw_exception();
+				}
+			}
+			else if(err == ENOTDIR){
+				quark::throw_exception();
+			}
+			else if(err == ENOMEM){
+				quark::throw_exception();
+			}
+			else if(err == EROFS){
+				quark::throw_exception();
+			}
+			else if(err == ELOOP){
+				quark::throw_exception();
+			}
+			else if(err == ENOSPC){
+				quark::throw_exception();
+			}
+			else if(err == ENOSPC){
+				quark::throw_exception();
 			}
 			else{
 				quark::throw_exception();
 			}
-		}
-		else if(err == ENOTDIR){
-			quark::throw_exception();
-		}
-		else if(err == ENOMEM){
-			quark::throw_exception();
-		}
-		else if(err == EROFS){
-			quark::throw_exception();
-		}
-		else if(err == ELOOP){
-			quark::throw_exception();
-		}
-		else if(err == ENOSPC){
-			quark::throw_exception();
-		}
-		else if(err == ENOSPC){
-			quark::throw_exception();
-		}
-		else{
-			quark::throw_exception();
 		}
 	}
 }

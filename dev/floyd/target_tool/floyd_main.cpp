@@ -653,6 +653,7 @@ static int main_internal(int argc, const char * argv[]) {
 	const auto args = args_to_vector(argc, argv);
 	try{
 		const auto command = parse_floyd_command_line(args);
+		const auto wd = get_working_dir();
 		const int result = do_command(command);
 		return result;
 	}
