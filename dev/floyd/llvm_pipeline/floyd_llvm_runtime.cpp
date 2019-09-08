@@ -471,7 +471,6 @@ static std::vector<std::pair<itype_t, struct_layout_t>> make_struct_layouts(cons
 	std::vector<std::pair<itype_t, struct_layout_t>> result;
 
 	for(int i = 0 ; i < type_lookup.state.types.size() ; i++){
-		const auto& e = type_lookup.state.types[i];
 		const auto& type = type_lookup.state.type_interner.interned[i];
 		if(type.is_struct()){
 			auto t2 = get_exact_struct_type_byvalue(type_lookup, type);
@@ -510,7 +509,7 @@ std::string strip_link_name(const std::string& platform_link_name){
 
 
 
-//	Destroys program, can only run it once!
+//	Destroys program, can only called once!
 static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks){
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(program_breaks.check_invariant());
@@ -572,19 +571,9 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 	for(const auto& e: program_breaks.function_defs){
 		const auto addr = (void*)ee1->getFunctionAddress(e.link_name.s);
 
-		//??? clean out llvm_codegen_f, which makes no sense now?
-
-#if 0
-		if(e.native_f != nullptr){
-//			QUARK_ASSERT(addr == e.native_f);
-			final_link_map.push_back(e);
-		}
-		else{
-#endif
-			const auto e2 = function_link_entry_t{ e.module, e.link_name, e.llvm_function_type, e.llvm_codegen_f, e.function_type_or_undef, e.arg_names_or_empty, addr };
-			final_link_map.push_back(e2);
-
-//		}
+		//??? null llvm_codegen_f pointer, which makes no sense now?
+		const auto e2 = function_link_entry_t{ e.module, e.link_name, e.llvm_function_type, e.llvm_codegen_f, e.function_type_or_undef, e.arg_names_or_empty, addr };
+		final_link_map.push_back(e2);
 	}
 
 
@@ -619,13 +608,12 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 		trace_function_link_map(ee2->function_defs);
 	}
 
-//	llvm::WriteBitcodeToFile(exeEng->getVerifyModules(), raw_ostream &Out);
 	return ee2;
 }
 
 //	Destroys program, can only run it once!
 //	Automatically runs floyd_runtime_init() to execute Floyd's global functions and initialize global constants.
-std::unique_ptr<llvm_execution_engine_t> init_program(llvm_ir_program_t& program_breaks){
+std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& program_breaks){
 	QUARK_ASSERT(program_breaks.check_invariant());
 
 	auto ee = make_engine_no_init(*program_breaks.instance, program_breaks);

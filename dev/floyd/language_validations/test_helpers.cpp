@@ -126,7 +126,7 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const s
 		llvm_instance_t llvm_instance;
 		auto exe = generate_llvm_ir_program(llvm_instance, semast, "");
 
-		auto ee = init_program(*exe);
+		auto ee = init_llvm_jit(*exe);
 		const auto run_output = run_program(*ee, main_args);
 
 		const auto result_global0 = bind_global(*ee, "result");

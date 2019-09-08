@@ -84,6 +84,7 @@
 		2C4DA0942306EA7600190C37 /* benchmarks.floyd in Sources */ = {isa = PBXBuildFile; fileRef = 2C4DA0932306EA7600190C37 /* benchmarks.floyd */; };
 		2C4DA0952306EB3C00190C37 /* benchmarks.floyd in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2C4DA0932306EA7600190C37 /* benchmarks.floyd */; };
 		2C4F355F1D4794CD0061CA93 /* ast_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4F355D1D4794CD0061CA93 /* ast_value.cpp */; };
+		2C52AF7423253AC400506D60 /* floyd_llvm_optimization.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C52AF7223253AC400506D60 /* floyd_llvm_optimization.cpp */; };
 		2C530C3021EDF23F00F962FB /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C530C2E21EA1DBE00F962FB /* CoreFoundation.framework */; };
 		2C530C3121EE0D0300F962FB /* libncurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CBF330C202143BD0030AE98 /* libncurses.tbd */; };
 		2C5372B9207A9EBA00647AD1 /* bytecode_interpreter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5372B8207A9EBA00647AD1 /* bytecode_interpreter.cpp */; };
@@ -291,6 +292,8 @@
 		2C4DA0932306EA7600190C37 /* benchmarks.floyd */ = {isa = PBXFileReference; lastKnownFileType = text; path = benchmarks.floyd; sourceTree = "<group>"; };
 		2C4F355D1D4794CD0061CA93 /* ast_value.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ast_value.cpp; sourceTree = "<group>"; };
 		2C4F355E1D4794CD0061CA93 /* ast_value.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ast_value.h; sourceTree = "<group>"; };
+		2C52AF7223253AC400506D60 /* floyd_llvm_optimization.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_llvm_optimization.cpp; sourceTree = "<group>"; };
+		2C52AF7323253AC400506D60 /* floyd_llvm_optimization.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_llvm_optimization.h; sourceTree = "<group>"; };
 		2C530C2E21EA1DBE00F962FB /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		2C5372B7207A9EAD00647AD1 /* bytecode_interpreter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bytecode_interpreter.h; sourceTree = "<group>"; };
 		2C5372B8207A9EBA00647AD1 /* bytecode_interpreter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = bytecode_interpreter.cpp; sourceTree = "<group>"; };
@@ -781,6 +784,8 @@
 				2C3DE25522665E7E00807701 /* floyd_llvm_helpers.h */,
 				2CB9AFA62315E88300836EC3 /* floyd_llvm_intrinsics.cpp */,
 				2CB9AFA72315E88300836EC3 /* floyd_llvm_intrinsics.h */,
+				2C52AF7223253AC400506D60 /* floyd_llvm_optimization.cpp */,
+				2C52AF7323253AC400506D60 /* floyd_llvm_optimization.h */,
 				2C687D3622691406003AC7CE /* floyd_llvm_readme.md */,
 				2CB9AFA32315E2C400836EC3 /* floyd_llvm_runtime_functions.cpp */,
 				2CB9AFA42315E2C400836EC3 /* floyd_llvm_runtime_functions.h */,
@@ -1719,6 +1724,7 @@
 				2C18044D208B90E900F62480 /* text_parser.cpp in Sources */,
 				2CB7AA6B2209E51E0011DE4B /* compiler_basics.cpp in Sources */,
 				2CC0B3E322248EBD00C9D584 /* test_helpers.cpp in Sources */,
+				2C52AF7423253AC400506D60 /* floyd_llvm_optimization.cpp in Sources */,
 				2CE0FE7822EE54B100018A96 /* desugar_pass.cpp in Sources */,
 				2C18044B208B90E900F62480 /* utils.cpp in Sources */,
 				2C3D2D9722EF869B00B808AA /* ast_visitor.cpp in Sources */,

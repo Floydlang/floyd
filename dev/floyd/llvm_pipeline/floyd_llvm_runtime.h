@@ -218,7 +218,7 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 
 
 //	Calls init() and will perform deinit() when engine is destructed later.
-std::unique_ptr<llvm_execution_engine_t> init_program(llvm_ir_program_t& program);
+std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& program);
 
 
 //	Calls main() if it exists, else runs the floyd processes. Returns when execution is done.
