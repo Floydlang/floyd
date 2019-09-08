@@ -2495,7 +2495,7 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 	auto result0 = generate_module(instance, module_name, ast, config);
 	auto module = std::move(result0.module);
 
-//	optimize_module_mutating(instance, module);
+	optimize_module_mutating(instance, module);
 //	write_object_file(module, *result0.target_machine);
 
 	const auto type_lookup = llvm_type_lookup(instance.context, ast0._tree._interned_types);

@@ -585,10 +585,6 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 
 	SMDiagnostic Err;
 
-	Context.setDiscardValueNames(DiscardValueNames);
-	if (!DisableDITypeMap)
-		Context.enableDebugTypeODRUniquing();
-
 /*
 	// Load the input module...
 	std::unique_ptr<Module> M =
@@ -608,73 +604,34 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 	}
 
 	// If we are supposed to override the target triple or data layout, do so now.
-	if (!TargetTriple.empty())
-		M->setTargetTriple(Triple::normalize(TargetTriple));
+//	if (!TargetTriple.empty())
+//		M->setTargetTriple(Triple::normalize(TargetTriple));
 
 	// Immediately run the verifier to catch any problems before starting up the
 	// pass pipelines.  Otherwise we can crash on broken code during
 	// doInitialization().
-	if (true && verifyModule(*M, &errs())) {
+	if (verifyModule(*M, &errs())) {
 		errs() << "error: input module is broken!\n";
 		throw std::exception();
 	}
 
 	// Figure out what stream we are supposed to write to...
 	std::unique_ptr<ToolOutputFile> Out;
-	std::unique_ptr<ToolOutputFile> ThinLinkOut;
-	if (NoOutput) {
-		if (!OutputFilename.empty())
-			errs() << "WARNING: The -o (output filename) option is ignored when\n"
-								"the --disable-output option is used.\n";
-	} else {
-		// Default to standard output.
-		if (OutputFilename.empty())
-			OutputFilename = "-";
-
-		std::error_code EC;
-		Out.reset(new ToolOutputFile(OutputFilename, EC, sys::fs::OF_None));
-		if (EC) {
-			errs() << EC.message() << '\n';
-			throw std::exception();
-		}
-
-		if (!ThinLinkBitcodeFile.empty()) {
-			ThinLinkOut.reset(
-					new ToolOutputFile(ThinLinkBitcodeFile, EC, sys::fs::OF_None));
-			if (EC) {
-				errs() << EC.message() << '\n';
-				throw std::exception();
-			}
-		}
-	}
 
 	Triple ModuleTriple(M->getTargetTriple());
-	std::string CPUStr, FeaturesStr;
-	TargetMachine *Machine = nullptr;
+	TargetMachine *Machine = instance.target.target_machine;
+
+	std::string CPUStr = Machine->getTargetCPU();
+	std::string FeaturesStr = Machine->getTargetFeatureString();
 	const TargetOptions Options = InitTargetOptionsFromCodeGenFlags();
 
-	if (ModuleTriple.getArch()) {
-		CPUStr = getCPUStr();
-		FeaturesStr = getFeaturesStr();
-		Machine = GetTargetMachine(ModuleTriple, CPUStr, FeaturesStr, Options);
-	} else if (ModuleTriple.getArchName() != "unknown" && ModuleTriple.getArchName() != "") {
-		errs() << "" << ": unrecognized architecture '"
-					 << ModuleTriple.getArchName() << "' provided.\n";
-		throw std::exception();
-	}
 
-	std::unique_ptr<TargetMachine> TM(Machine);
+	TargetMachine* TM = Machine;
 
 	// Override function attributes based on CPUStr, FeaturesStr, and command line
 	// flags.
 	setFunctionAttributes(CPUStr, FeaturesStr, *M);
 
-	// If the output is set to be emitted to standard out, and standard out is a
-	// console, print out a warning message and refuse to do it.  We don't
-	// impress anyone by spewing tons of binary goo to a terminal.
-	if (!Force && !NoOutput && !AnalyzeOnly && !OutputAssembly)
-		if (CheckBitcodeOutputToConsole(Out->os(), !Quiet))
-			NoOutput = true;
 
 	if (OutputThinLTOBC)
 		M->addModuleFlag(Module::Error, "EnableSplitLTOUnit", SplitLTOUnit);
@@ -730,7 +687,7 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 */
 
 	std::unique_ptr<legacy::FunctionPassManager> FPasses;
-	if (OptLevelO0 || OptLevelO1 || OptLevelO2 || OptLevelOs || OptLevelOz ||
+	if (true || OptLevelO0 || OptLevelO1 || OptLevelO2 || OptLevelOs || OptLevelOz ||
 			OptLevelO3) {
 		FPasses.reset(new legacy::FunctionPassManager(M.get()));
 		FPasses->add(createTargetTransformInfoWrapperPass(
@@ -763,6 +720,7 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 		Passes.add(TPC);
 	}
 
+/*
 	// Create a new optimization pass for each one specified on the command line
 	for (unsigned i = 0; i < PassList.size(); ++i) {
 		if (StandardLinkOpts &&
@@ -817,6 +775,7 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 			Passes.add(
 					createPrintModulePass(errs(), "", PreserveAssemblyUseListOrder));
 	}
+*/
 
 	if (StandardLinkOpts) {
 		AddStandardLinkPasses(Passes);
@@ -824,22 +783,23 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 	}
 
 	if (OptLevelO0)
-		AddOptimizationPasses(Passes, *FPasses, TM.get(), 0, 0);
+		AddOptimizationPasses(Passes, *FPasses, TM, 0, 0);
 
 	if (OptLevelO1)
-		AddOptimizationPasses(Passes, *FPasses, TM.get(), 1, 0);
+		AddOptimizationPasses(Passes, *FPasses, TM, 1, 0);
 
 	if (OptLevelO2)
-		AddOptimizationPasses(Passes, *FPasses, TM.get(), 2, 0);
+		AddOptimizationPasses(Passes, *FPasses, TM, 2, 0);
 
 	if (OptLevelOs)
-		AddOptimizationPasses(Passes, *FPasses, TM.get(), 2, 1);
+		AddOptimizationPasses(Passes, *FPasses, TM, 2, 1);
 
 	if (OptLevelOz)
-		AddOptimizationPasses(Passes, *FPasses, TM.get(), 2, 2);
+		AddOptimizationPasses(Passes, *FPasses, TM, 2, 2);
 
-	if (OptLevelO3)
-		AddOptimizationPasses(Passes, *FPasses, TM.get(), 3, 0);
+	//???
+	if (true || OptLevelO3)
+		AddOptimizationPasses(Passes, *FPasses, TM, 3, 0);
 
 	if (FPasses) {
 		FPasses->doInitialization();
@@ -849,54 +809,11 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 	}
 
 	// Check that the module is well formed on completion of optimization
-	if (!NoVerify && !VerifyEach)
-		Passes.add(createVerifierPass());
+	Passes.add(createVerifierPass());
 
-/*
-	if (AddOneTimeDebugifyPasses)
-		Passes.add(createCheckDebugifyModulePass(false));
 
-*/
-
-	// In run twice mode, we want to make sure the output is bit-by-bit
-	// equivalent if we run the pass manager again, so setup two buffers and
-	// a stream to write to them. Note that llc does something similar and it
-	// may be worth to abstract this out in the future.
-	SmallVector<char, 0> Buffer;
-	SmallVector<char, 0> FirstRunBuffer;
-	std::unique_ptr<raw_svector_ostream> BOS;
-	raw_ostream *OS = nullptr;
-
-	// Write bitcode or assembly to the output as the last step...
-	if (!NoOutput && !AnalyzeOnly) {
-		assert(Out);
-		OS = &Out->os();
-		if (RunTwice) {
-			BOS = std::make_unique<raw_svector_ostream>(Buffer);
-			OS = BOS.get();
-		}
-		if (OutputAssembly) {
-			if (EmitSummaryIndex)
-				report_fatal_error("Text output is incompatible with -module-summary");
-			if (EmitModuleHash)
-				report_fatal_error("Text output is incompatible with -module-hash");
-			Passes.add(createPrintModulePass(*OS, "", PreserveAssemblyUseListOrder));
-		} else if (OutputThinLTOBC)
-			Passes.add(createWriteThinLTOBitcodePass(
-					*OS, ThinLinkOut ? &ThinLinkOut->os() : nullptr));
-		else
-			Passes.add(createBitcodeWriterPass(*OS, PreserveBitcodeUseListOrder,
-																				 EmitSummaryIndex, EmitModuleHash));
-	}
-
-	// Before executing passes, print the final values of the LLVM options.
-	cl::PrintOptionValues();
-
-		// Now that we have all of the passes ready, run them.
-		Passes.run(*M);
-
-	if (ThinLinkOut)
-		ThinLinkOut->keep();
+	// Now that we have all of the passes ready, run them.
+	Passes.run(*M);
 }
 
 
