@@ -265,6 +265,8 @@ void dispose_alloc(heap_alloc_64_t& alloc){
 	alloc.heap = reinterpret_cast<heap_t*>(0xdeadbeef'00000005);
 	alloc.debug_info = "disposed alloc";
 #endif
+
+	std::free(&alloc);
 }
 
 

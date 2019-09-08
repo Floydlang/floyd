@@ -35,9 +35,7 @@ bool trace_on = QUARK_TRACE_ON;
 bool unit_tests_on = QUARK_UNIT_TESTS_ON;
 
 
-#if QUARK_UNIT_TESTS_ON
-	unit_test_registry* unit_test_rec::_registry_instance = nullptr;
-#endif
+unit_test_registry* unit_test_rec::registry_instance = nullptr;
 
 
 namespace {

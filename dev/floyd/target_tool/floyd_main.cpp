@@ -45,8 +45,9 @@ using namespace floyd;
 
 bool g_trace_on = true;
 
-
 void run_tests(){
+
+#if QUARK_UNIT_TESTS_ON
 	//	Cherry-picked list of files who's tests we run first.
 	//	Ideally you should run the test for the lowest level source first.
 	quark::run_tests(
@@ -87,6 +88,7 @@ void run_tests(){
 		},
 		g_trace_on ? false: true
 	);
+#endif
 }
 
 

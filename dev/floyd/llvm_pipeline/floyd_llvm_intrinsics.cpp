@@ -1240,8 +1240,8 @@ static runtime_value_t push_back__string(floyd_runtime_t* frp, runtime_value_t v
 
 //??? use memcpy()
 static runtime_value_t floydrt_push_back_carray_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
-#if DEBUG
 	auto& r = get_floyd_runtime(frp);
+#if DEBUG
 	(void)r;
 #endif
 
@@ -1258,9 +1258,7 @@ static runtime_value_t floydrt_push_back_carray_pod(floyd_runtime_t* frp, runtim
 }
 
 static runtime_value_t floydrt_push_back_carray_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
-#if DEBUG
 	auto& r = get_floyd_runtime(frp);
-#endif
 
 	itype_t element_itype = lookup_vector_element_itype(r.backend, itype_t(vec_type));
 	const auto element_count = vec.vector_carray_ptr->get_element_count();
@@ -1288,9 +1286,7 @@ static runtime_value_t floydrt_push_back_hamt_pod(floyd_runtime_t* frp, runtime_
 }
 
 static runtime_value_t floydrt_push_back_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
-#if DEBUG
 	auto& r = get_floyd_runtime(frp);
-#endif
 
 	runtime_value_t vec2 = push_back_immutable(vec, element);
 	itype_t element_itype = lookup_vector_element_itype(r.backend, itype_t(vec_type));

@@ -10,6 +10,7 @@
 
 #include "test_helpers.h"
 #include "floyd_corelib.h"
+#include "unistd.h"
 
 using namespace floyd;
 
@@ -98,6 +99,13 @@ static value_t make_double_vec(const std::vector<double>& elements){
 
 	return value_t::make_vector_value(typeid_t::make_double(), elements2);
 }
+
+
+/*
+FLOYD_LANG_PROOF("NOP", "See if we leak memory", "", ""){
+    usleep(11 * 1000000);
+}
+*/
 
 
 #if RUN_LANG_BASIC_TESTS1

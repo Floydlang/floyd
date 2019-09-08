@@ -66,6 +66,8 @@
 	#define QUARK_UNIT_TESTS_ON 1
 #endif
 
+#define QUARK_UNIT_TESTS_ON 1
+
 
 ////////////////////////////////	NO_RETURN
 
@@ -390,7 +392,10 @@ inline void set_trace(const trace_i* v){
 //	====================================================================================================================
 
 
-#if QUARK_UNIT_TESTS_ON
+struct call_context_t {
+	runtime_i* runtime;
+	source_code_location location;
+};
 
 	typedef void (*unit_test_function)();
 
@@ -443,18 +448,21 @@ inline void set_trace(const trace_i* v){
 	struct unit_test_rec {
 		unit_test_rec(const std::string& source_file, int source_line, const std::string& p1, const std::string& p2, const std::string& p3, const std::string& p4, unit_test_function f, bool vip){
 			unit_test_def test(source_file, source_line, p1, p2, p3, p4, f, vip);
-			if(!_registry_instance){
-				_registry_instance = new unit_test_registry();
+			if(!registry_instance){
+				registry_instance = new unit_test_registry();
 			}
-			_registry_instance->_tests.push_back(test);
+			registry_instance->_tests.push_back(test);
 		}
 
 
 		////////////////		State.
 
 		//	!!! Singleton. ### lose this.
-		static unit_test_registry* _registry_instance;
+		static unit_test_registry* registry_instance;
 	};
+
+
+#if QUARK_UNIT_TESTS_ON
 
 
 	////////////////////////////		Hooks
@@ -465,24 +473,23 @@ inline void set_trace(const trace_i* v){
 
 	////////////////////////////		Macros used by client code
 
-	#define QUARK_POS quark::call_context_t{::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__)}
 
 	//	The generated function is static and will be stripped in optimized builds (it will not be referenced).
 	#define QUARK_TEST(class_under_test, function_under_test, scenario, expected_result) \
-		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(); \
-		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(cppext_unit_test_), false); \
-		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
+		static void QUARK_UNIQUE_LABEL(quark_test_f_)(); \
+		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(quark_test_f_), false); \
+		static void QUARK_UNIQUE_LABEL(quark_test_f_)()
 
 	//	When one or more of these exists, no non_VIP tests are run. Let's you iterate on a broken test quickly and set breakpoints in etc.
 	#define QUARK_TEST_VIP(class_under_test, function_under_test, scenario, expected_result) \
-		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(); \
-		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(cppext_unit_test_), true); \
-		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
+		static void QUARK_UNIQUE_LABEL(quark_test_f_)(); \
+		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(quark_test_f_), true); \
+		static void QUARK_UNIQUE_LABEL(quark_test_f_)()
 
 	#define QUARK_TESTQ(function_under_test, scenario) \
-		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(); \
-		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, "", function_under_test, scenario, "", QUARK_UNIQUE_LABEL(cppext_unit_test_), false); \
-		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
+		static void QUARK_UNIQUE_LABEL(quark_test_f_)(); \
+		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, "", function_under_test, scenario, "", QUARK_UNIQUE_LABEL(quark_test_f_), false); \
+		static void QUARK_UNIQUE_LABEL(quark_test_f_)()
 
 
 	//### Add argument to unit-test functions that can be used / checked in UT_VERIFY().
@@ -490,10 +497,6 @@ inline void set_trace(const trace_i* v){
 	#define QUARK_TEST_VERIFY QUARK_UT_VERIFY
 
 
-struct call_context_t {
-	runtime_i* runtime;
-	source_code_location location;
-};
 
 inline void fail_test(const call_context_t& context){
 	::quark::on_unit_test_failed_hook(
@@ -571,7 +574,6 @@ inline void ut_verify(const quark::call_context_t& context, const std::vector<st
 }
 
 
-//	Special function to support using string literals, like 	QUARK_ut_verify("xyz", "12345")
 inline void ut_verify(const call_context_t& context, const char* result, const char* expected){
 	ut_verify(context, std::string(result), std::string(expected));
 }
@@ -586,12 +588,38 @@ inline void ut_verify(const call_context_t& context, const char* result, const s
 
 	//	The generated function is static and will be stripped in optimized builds (it will not be referenced).
 	#define QUARK_TEST(class_under_test, function_under_test, scenario, expected_result) \
-		void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
+		static void QUARK_UNIQUE_LABEL(quark_test_f_)()
+
+	#define QUARK_TESTQ(function_under_test, scenario) \
+		static void QUARK_UNIQUE_LABEL(quark_test_f_)()
 
 	#define QUARK_UT_VERIFY(exp)
 	#define QUARK_TEST_VERIFY QUARK_UT_VERIFY
 
+
+inline void fail_test(const call_context_t& context){
+}
+
+template <typename T> void ut_verify_auto(const quark::call_context_t& context, const T& result, const T& expected){
+}
+
+inline void ut_verify(const quark::call_context_t& context, const std::string& result, const std::string& expected){
+}
+inline void ut_verify(const quark::call_context_t& context, const std::vector<std::string>& result, const std::vector<std::string>& expected){
+}
+
+
+inline void ut_verify(const call_context_t& context, const char* result, const char* expected){
+}
+inline void ut_verify(const call_context_t& context, const std::string& result, const char* expected){
+}
+inline void ut_verify(const call_context_t& context, const char* result, const std::string& expected){
+}
+
 #endif
+
+	#define QUARK_POS quark::call_context_t{::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__)}
+
 
 #if QUARK_UNIT_TESTS_ON
 
@@ -784,8 +812,8 @@ inline void run_tests(const unit_test_registry& registry, const std::vector<std:
 }
 
 inline void run_tests(const std::vector<std::string>& source_file_order, bool oneline){
-	QUARK_ASSERT(unit_test_rec::_registry_instance != nullptr);
-	run_tests(*unit_test_rec::_registry_instance, source_file_order, oneline);
+	QUARK_ASSERT(unit_test_rec::registry_instance != nullptr);
+	run_tests(*unit_test_rec::registry_instance, source_file_order, oneline);
 }
 
 #endif
