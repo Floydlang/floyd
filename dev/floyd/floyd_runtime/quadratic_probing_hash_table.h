@@ -39,6 +39,7 @@ struct quadratic_probing_hash_table_t {
 
 	void insert(const kv_t& kv){
 		const auto hash0 = std::hash<std::string>{}(kv.key);
+		(void)hash0;
 	}
 
 

@@ -188,18 +188,20 @@ struct heap_alloc_64_t {
 	static const size_t k_data_bytes = sizeof(uint64_t) * k_data_elements;
 
 
-	heap_alloc_64_t(heap_t* heap, uint64_t allocation_word_count, itype_t debug_value_type, const char debug_string[]) :
+	heap_alloc_64_t(heap_t* heap0, uint64_t allocation_word_count, itype_t debug_value_type, const char debug_string[]) :
 		rc(1),
 		magic(ALLOC_64_MAGIC),
 		allocation_word_count(allocation_word_count),
-		heap(heap)
+		heap(heap0)
 #if DEBUG
 		,
 		debug_value_type(debug_value_type)
 #endif
 		,alloc_id(heap->allocation_id_generator++)
 	{
-		QUARK_ASSERT(heap != nullptr);
+		QUARK_ASSERT(heap0 != nullptr);
+		assert(heap0 != nullptr);
+		QUARK_ASSERT(heap0->check_invariant());
 		QUARK_ASSERT(debug_string != nullptr && strlen(debug_string) < sizeof(debug_info));
 
 		data[0] = 0x00000000'00000000;
@@ -820,6 +822,7 @@ value_backend_t make_test_value_backend();
 
 
 inline int32_t dec_rc(const heap_alloc_64_t& alloc){
+	assert(alloc.heap != nullptr);
 	QUARK_ASSERT(alloc.check_invariant());
 
 #if ATOMIC_RC

@@ -186,7 +186,6 @@ QUARK_TEST("heap_t", "add_ref()", "", ""){
 
 	//	Must release alloc or heap will detect leakage.
 	release_ref(*a);
-	release_ref(*a);
 }
 
 QUARK_TEST("heap_t", "release_ref()", "", ""){
@@ -227,6 +226,7 @@ const void* get_alloc_ptr(const heap_alloc_64_t& alloc){
 bool heap_alloc_64_t::check_invariant() const{
 	QUARK_ASSERT(magic == ALLOC_64_MAGIC);
 	QUARK_ASSERT(heap != nullptr);
+	assert(heap != nullptr);
 	QUARK_ASSERT(heap->magic == HEAP_MAGIC);
 
 //	auto it = std::find_if(heap->alloc_records.begin(), heap->alloc_records.end(), [&](heap_rec_t& e){ return e.alloc_ptr == this; });

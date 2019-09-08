@@ -449,7 +449,6 @@ void trace_llvm_type_lookup(const llvm_type_lookup& type_lookup){
 
 	for(int i = 0 ; i < type_lookup.state.types.size() ; i++){
 		const auto& e = type_lookup.state.types[i];
-		const auto itype = i;
 		const auto type = type_lookup.state.type_interner.interned[i];
 		const auto l = line_t {
 			{
