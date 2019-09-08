@@ -526,28 +526,25 @@ static TargetMachine* GetTargetMachine(Triple TheTriple, StringRef CPUStr,
 																				getCodeModel(), GetCodeGenOptLevel());
 }
 
-#ifdef LINK_POLLY_INTO_TOOLS
-namespace polly {
-//void initializePollyPasses(llvm::PassRegistry &Registry);
-}
-#endif
 
 
-int xxxxx_main(int argc, char **argv) {
-	InitLLVM X(argc, argv);
+namespace floyd {
 
-	// Enable debug stream buffering.
-	EnableDebugBuffering = true;
 
-	LLVMContext Context;
+void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::Module>& module){
+	QUARK_TRACE(print_module(*module));
 
+	auto& Context = instance.context;
+	std::unique_ptr<Module>& M = module;
+/*
 	InitializeAllTargets();
 	InitializeAllTargetMCs();
 	InitializeAllAsmPrinters();
 	InitializeAllAsmParsers();
+*/
 
 	// Initialize passes
-	PassRegistry &Registry = *PassRegistry::getPassRegistry();
+	PassRegistry& Registry = *PassRegistry::getPassRegistry();
 	initializeCore(Registry);
 	initializeCoroutines(Registry);
 	initializeScalarOpts(Registry);
@@ -585,17 +582,6 @@ int xxxxx_main(int argc, char **argv) {
 	initializeWriteBitcodePassPass(Registry);
 //???  initializeHardwareLoopsPass(Registry);
 
-#ifdef LINK_POLLY_INTO_TOOLS
-//	polly::initializePollyPasses(Registry);
-#endif
-
-	cl::ParseCommandLineOptions(argc, argv,
-		"llvm .bc -> .bc modular optimizer and analysis printer\n");
-
-	if (AnalyzeOnly && NoOutput) {
-		errs() << argv[0] << ": analyze mode conflicts with no-output mode.\n";
-		return 1;
-	}
 
 	SMDiagnostic Err;
 
@@ -604,25 +590,10 @@ int xxxxx_main(int argc, char **argv) {
 		Context.enableDebugTypeODRUniquing();
 
 /*
-	Expected<std::unique_ptr<ToolOutputFile>> RemarksFileOrErr =
-			setupOptimizationRemarks(Context, RemarksFilename, RemarksPasses,
-															 RemarksFormat, RemarksWithHotness,
-															 RemarksHotnessThreshold);
-	if (Error E = RemarksFileOrErr.takeError()) {
-		errs() << toString(std::move(E)) << '\n';
-		return 1;
-	}
-	std::unique_ptr<ToolOutputFile> RemarksFile = std::move(*RemarksFileOrErr);
-*/
-
 	// Load the input module...
 	std::unique_ptr<Module> M =
 			parseIRFile(InputFilename, Err, Context, !NoVerify, ClDataLayout);
-
-	if (!M) {
-		Err.print(argv[0], errs());
-		return 1;
-	}
+*/
 
 	// Strip debug info before running the verifier.
 	if (StripDebug)
@@ -643,10 +614,9 @@ int xxxxx_main(int argc, char **argv) {
 	// Immediately run the verifier to catch any problems before starting up the
 	// pass pipelines.  Otherwise we can crash on broken code during
 	// doInitialization().
-	if (!NoVerify && verifyModule(*M, &errs())) {
-		errs() << argv[0] << ": " << InputFilename
-					 << ": error: input module is broken!\n";
-		return 1;
+	if (true && verifyModule(*M, &errs())) {
+		errs() << "error: input module is broken!\n";
+		throw std::exception();
 	}
 
 	// Figure out what stream we are supposed to write to...
@@ -665,7 +635,7 @@ int xxxxx_main(int argc, char **argv) {
 		Out.reset(new ToolOutputFile(OutputFilename, EC, sys::fs::OF_None));
 		if (EC) {
 			errs() << EC.message() << '\n';
-			return 1;
+			throw std::exception();
 		}
 
 		if (!ThinLinkBitcodeFile.empty()) {
@@ -673,7 +643,7 @@ int xxxxx_main(int argc, char **argv) {
 					new ToolOutputFile(ThinLinkBitcodeFile, EC, sys::fs::OF_None));
 			if (EC) {
 				errs() << EC.message() << '\n';
-				return 1;
+				throw std::exception();
 			}
 		}
 	}
@@ -687,11 +657,10 @@ int xxxxx_main(int argc, char **argv) {
 		CPUStr = getCPUStr();
 		FeaturesStr = getFeaturesStr();
 		Machine = GetTargetMachine(ModuleTriple, CPUStr, FeaturesStr, Options);
-	} else if (ModuleTriple.getArchName() != "unknown" &&
-						 ModuleTriple.getArchName() != "") {
-		errs() << argv[0] << ": unrecognized architecture '"
+	} else if (ModuleTriple.getArchName() != "unknown" && ModuleTriple.getArchName() != "") {
+		errs() << "" << ": unrecognized architecture '"
 					 << ModuleTriple.getArchName() << "' provided.\n";
-		return 1;
+		throw std::exception();
 	}
 
 	std::unique_ptr<TargetMachine> TM(Machine);
@@ -837,36 +806,12 @@ int xxxxx_main(int argc, char **argv) {
 		if (PassInf->getNormalCtor())
 			P = PassInf->getNormalCtor()();
 		else
-			errs() << argv[0] << ": cannot create pass: "
+			errs() << "" << ": cannot create pass: "
 						 << PassInf->getPassName() << "\n";
 		if (P) {
 			PassKind Kind = P->getPassKind();
 			addPass(Passes, P);
-
-/*
-			if (AnalyzeOnly) {
-				switch (Kind) {
-				case PT_BasicBlock:
-					Passes.add(createBasicBlockPassPrinter(PassInf, Out->os(), Quiet));
-					break;
-				case PT_Region:
-					Passes.add(createRegionPassPrinter(PassInf, Out->os(), Quiet));
-					break;
-				case PT_Loop:
-					Passes.add(createLoopPassPrinter(PassInf, Out->os(), Quiet));
-					break;
-				case PT_Function:
-					Passes.add(createFunctionPassPrinter(PassInf, Out->os(), Quiet));
-					break;
-				case PT_CallGraphSCC:
-					Passes.add(createCallGraphPassPrinter(PassInf, Out->os(), Quiet));
-					break;
-				default:
-					Passes.add(createModulePassPrinter(PassInf, Out->os(), Quiet));
-					break;
-				}
-			}
-*/    }
+		}
 
 		if (PrintEachXForm)
 			Passes.add(
@@ -947,62 +892,12 @@ int xxxxx_main(int argc, char **argv) {
 	// Before executing passes, print the final values of the LLVM options.
 	cl::PrintOptionValues();
 
-	if (!RunTwice) {
 		// Now that we have all of the passes ready, run them.
 		Passes.run(*M);
-	} else {
-		// If requested, run all passes twice with the same pass manager to catch
-		// bugs caused by persistent state in the passes.
-		std::unique_ptr<Module> M2(CloneModule(*M));
-		// Run all passes on the original module first, so the second run processes
-		// the clone to catch CloneModule bugs.
-		Passes.run(*M);
-		FirstRunBuffer = Buffer;
-		Buffer.clear();
-
-		Passes.run(*M2);
-
-		// Compare the two outputs and make sure they're the same
-		assert(Out);
-		if (Buffer.size() != FirstRunBuffer.size() ||
-				(memcmp(Buffer.data(), FirstRunBuffer.data(), Buffer.size()) != 0)) {
-			errs()
-					<< "Running the pass manager twice changed the output.\n"
-						 "Writing the result of the second run to the specified output.\n"
-						 "To generate the one-run comparison binary, just run without\n"
-						 "the compile-twice option\n";
-			Out->os() << BOS->str();
-			Out->keep();
-/*
-			if (RemarksFile)
-				RemarksFile->keep();
-*/
-			return 1;
-		}
-		Out->os() << BOS->str();
-	}
-
-	if (DebugifyEach && !DebugifyExport.empty())
-//    exportDebugifyStats(DebugifyExport, Passes.getDebugifyStatsMap());
-
-	// Declare success.
-	if (!NoOutput || PrintBreakpoints)
-		Out->keep();
-
-/*
-	if (RemarksFile)
-		RemarksFile->keep();
-*/
 
 	if (ThinLinkOut)
 		ThinLinkOut->keep();
-
-	return 0;
 }
-
-
-
-
 
 
 /*
@@ -1050,17 +945,6 @@ fpm->doFinalization();
 
 */
 
-
-namespace floyd {
-
-
-
-
-void optimize_module_mutating(llvm::Module& module){
-//	QUARK_TRACE(print_module(module));
-
-//	QUARK_TRACE(print_module(module));
-}
 
 } // floyd
 
