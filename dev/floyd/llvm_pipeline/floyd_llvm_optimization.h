@@ -15,12 +15,13 @@ namespace llvm {
 
 #include <memory>
 
+#include "compiler_basics.h"
 
 namespace floyd {
 
 struct llvm_instance_t;
 
-void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::Module>& module);
+void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::Module>& module, eoptimization_level optimization_level);
 
 } // floyd
 

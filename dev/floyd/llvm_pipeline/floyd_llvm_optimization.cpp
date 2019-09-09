@@ -107,86 +107,19 @@ using namespace llvm;
 
 
 
-// The OptimizationList is automatically populated with registered Passes by the
-// PassNameParser.
-//
-static cl::list<const PassInfo*, bool, PassNameParser>
-PassList(cl::desc("Optimizations available:"));
 
-// This flag specifies a textual description of the optimization pass pipeline
-// to run over the module. This flag switches opt to use the new pass manager
-// infrastructure, completely disabling all of the flags specific to the old
-// pass management.
-static cl::opt<std::string> PassPipeline(
-		"passes",
-		cl::desc("A textual description of the pass pipeline for optimizing"),
-		cl::Hidden);
+// LTO = Link time optimizations
+// PGO = profile guided optimization
+// SLP Vectorizer (Apr 2013): Stands for superword-level paralellism
 
-// Other command line options...
-//
-static cl::opt<std::string>
-InputFilename(cl::Positional, cl::desc("<input bitcode file>"),
-		cl::init("-"), cl::value_desc("filename"));
 
-static cl::opt<std::string>
-OutputFilename("o", cl::desc("Override output filename"),
-							 cl::value_desc("filename"));
+const bool DisableInline = false;
 
-static cl::opt<bool>
-Force("f", cl::desc("Enable binary output on terminals"));
+const bool DisableOptimizations = false;
 
-static cl::opt<bool>
-PrintEachXForm("p", cl::desc("Print module after each transformation"));
+const bool StandardLinkOpts = true;	//	("Include the standard link time optimizations"));
 
-static cl::opt<bool>
-NoOutput("disable-output",
-				 cl::desc("Do not write result bitcode file"), cl::Hidden);
-
-static cl::opt<bool>
-OutputAssembly("S", cl::desc("Write output as LLVM assembly"));
-
-static cl::opt<bool>
-		OutputThinLTOBC("thinlto-bc",
-										cl::desc("Write output as ThinLTO-ready bitcode"));
-
-static cl::opt<bool>
-		SplitLTOUnit("thinlto-split-lto-unit",
-								 cl::desc("Enable splitting of a ThinLTO LTOUnit"));
-
-static cl::opt<std::string> ThinLinkBitcodeFile(
-		"thin-link-bitcode-file", cl::value_desc("filename"),
-		cl::desc(
-				"A file in which to write minimized bitcode for the thin link only"));
-
-static cl::opt<bool>
-NoVerify("disable-verify", cl::desc("Do not run the verifier"), cl::Hidden);
-
-static cl::opt<bool>
-VerifyEach("verify-each", cl::desc("Verify after each transform"));
-
-static cl::opt<bool>
-		DisableDITypeMap("disable-debug-info-type-map",
-										 cl::desc("Don't use a uniquing type map for debug info"));
-
-static cl::opt<bool>
-StripDebug("strip-debug",
-					 cl::desc("Strip debugger symbol info from translation unit"));
-
-static cl::opt<bool>
-		StripNamedMetadata("strip-named-metadata",
-											 cl::desc("Strip module-level named metadata"));
-
-static cl::opt<bool> DisableInline("disable-inlining",
-																	 cl::desc("Do not run the inliner pass"));
-
-static cl::opt<bool>
-DisableOptimizations("disable-opt",
-										 cl::desc("Do not run any optimization passes"));
-
-static cl::opt<bool>
-StandardLinkOpts("std-link-opts",
-								 cl::desc("Include the standard link time optimizations"));
-
+/*
 static cl::opt<bool>
 OptLevelO0("O0",
 	cl::desc("Optimization level 0. Similar to clang -O0"));
@@ -210,150 +143,23 @@ OptLevelOz("Oz",
 static cl::opt<bool>
 OptLevelO3("O3",
 					 cl::desc("Optimization level 3. Similar to clang -O3"));
+*/
 
-static cl::opt<unsigned>
-CodeGenOptLevel("codegen-opt-level",
-								cl::desc("Override optimization level for codegen hooks"));
+const bool DisableLoopUnrolling = false;	//	desc("Disable loop unrolling in all relevant passes"),
 
-static cl::opt<std::string>
-TargetTriple("mtriple", cl::desc("Override target triple for module"));
+// cl::desc("Disable the slp vectorization pass"),
+const bool DisableSLPVectorization = false;
 
-static cl::opt<bool>
-DisableLoopUnrolling("disable-loop-unrolling",
-										 cl::desc("Disable loop unrolling in all relevant passes"),
-										 cl::init(false));
+const bool DisableSimplifyLibCalls = false;
 
-static cl::opt<bool>
-DisableSLPVectorization("disable-slp-vectorization",
-												cl::desc("Disable the slp vectorization pass"),
-												cl::init(false));
 
-static cl::opt<bool> EmitSummaryIndex("module-summary",
-																			cl::desc("Emit module summary index"),
-																			cl::init(false));
+const bool EnableDebugify = false;
+const bool DebugifyEach = false;
 
-static cl::opt<bool> EmitModuleHash("module-hash", cl::desc("Emit module hash"),
-																		cl::init(false));
 
-static cl::opt<bool>
-DisableSimplifyLibCalls("disable-simplify-libcalls",
-												cl::desc("Disable simplify-libcalls"));
+const bool Coroutines = false;
 
-static cl::opt<bool>
-Quiet("q", cl::desc("Obsolete option"), cl::Hidden);
 
-static cl::alias
-QuietA("quiet", cl::desc("Alias for -q"), cl::aliasopt(Quiet));
-
-static cl::opt<bool>
-AnalyzeOnly("analyze", cl::desc("Only perform analysis, no optimization"));
-
-static cl::opt<bool> EnableDebugify(
-		"enable-debugify",
-		cl::desc(
-				"Start the pipeline with debugify and end it with check-debugify"));
-
-static cl::opt<bool> DebugifyEach(
-		"debugify-each",
-		cl::desc(
-				"Start each pass with debugify and end it with check-debugify"));
-
-static cl::opt<std::string>
-		DebugifyExport("debugify-export",
-									 cl::desc("Export per-pass debugify statistics to this file"),
-									 cl::value_desc("filename"), cl::init(""));
-
-static cl::opt<bool>
-PrintBreakpoints("print-breakpoints-for-testing",
-								 cl::desc("Print select breakpoints location for testing"));
-
-static cl::opt<std::string> ClDataLayout("data-layout",
-																				 cl::desc("data layout string to use"),
-																				 cl::value_desc("layout-string"),
-																				 cl::init(""));
-
-static cl::opt<bool> PreserveBitcodeUseListOrder(
-		"preserve-bc-uselistorder",
-		cl::desc("Preserve use-list order when writing LLVM bitcode."),
-		cl::init(true), cl::Hidden);
-
-static cl::opt<bool> PreserveAssemblyUseListOrder(
-		"preserve-ll-uselistorder",
-		cl::desc("Preserve use-list order when writing LLVM assembly."),
-		cl::init(false), cl::Hidden);
-
-static cl::opt<bool>
-		RunTwice("run-twice",
-						 cl::desc("Run all passes twice, re-using the same pass manager."),
-						 cl::init(false), cl::Hidden);
-
-static cl::opt<bool> DiscardValueNames(
-		"discard-value-names",
-		cl::desc("Discard names from Value (other than GlobalValue)."),
-		cl::init(false), cl::Hidden);
-
-static cl::opt<bool> Coroutines(
-	"enable-coroutines",
-	cl::desc("Enable coroutine passes."),
-	cl::init(false), cl::Hidden);
-
-static cl::opt<bool> RemarksWithHotness(
-		"pass-remarks-with-hotness",
-		cl::desc("With PGO, include profile count in optimization remarks"),
-		cl::Hidden);
-
-static cl::opt<unsigned>
-		RemarksHotnessThreshold("pass-remarks-hotness-threshold",
-														cl::desc("Minimum profile count required for "
-																		 "an optimization remark to be output"),
-														cl::Hidden);
-
-static cl::opt<std::string>
-		RemarksFilename("pass-remarks-output",
-										cl::desc("Output filename for pass remarks"),
-										cl::value_desc("filename"));
-
-static cl::opt<std::string>
-		RemarksPasses("pass-remarks-filter",
-									cl::desc("Only record optimization remarks from passes whose "
-													 "names match the given regular expression"),
-									cl::value_desc("regex"));
-
-static cl::opt<std::string> RemarksFormat(
-		"pass-remarks-format",
-		cl::desc("The format used for serializing remarks (default: YAML)"),
-		cl::value_desc("format"), cl::init("yaml"));
-
-#if 0
-cl::opt<PGOKind>
-		PGOKindFlag("pgo-kind", cl::init(NoPGO), cl::Hidden,
-								cl::desc("The kind of profile guided optimization"),
-								cl::values(clEnumValN(NoPGO, "nopgo", "Do not use PGO."),
-													 clEnumValN(InstrGen, "pgo-instr-gen-pipeline",
-																			"Instrument the IR to generate profile."),
-													 clEnumValN(InstrUse, "pgo-instr-use-pipeline",
-																			"Use instrumented profile to guide PGO."),
-													 clEnumValN(SampleUse, "pgo-sample-use-pipeline",
-																			"Use sampled profile to guide PGO.")));
-cl::opt<std::string> ProfileFile("profile-file",
-																 cl::desc("Path to the profile."), cl::Hidden);
-
-cl::opt<CSPGOKind> CSPGOKindFlag(
-		"cspgo-kind", cl::init(NoCSPGO), cl::Hidden,
-		cl::desc("The kind of context sensitive profile guided optimization"),
-		cl::values(
-				clEnumValN(NoCSPGO, "nocspgo", "Do not use CSPGO."),
-				clEnumValN(
-						CSInstrGen, "cspgo-instr-gen-pipeline",
-						"Instrument (context sensitive) the IR to generate profile."),
-				clEnumValN(
-						CSInstrUse, "cspgo-instr-use-pipeline",
-						"Use instrumented (context sensitive) profile to guide PGO.")));
-cl::opt<std::string> CSProfileGenFile(
-		"cs-profilegen-file",
-		cl::desc("Path to the instrumented context sensitive profile."),
-		cl::Hidden);
-#endif
 
 class OptCustomPassManager : public legacy::PassManager {
 //  DebugifyStatsMap DIStatsMap;
@@ -402,7 +208,7 @@ static inline void addPass(legacy::PassManagerBase &PM, Pass *P) {
 	PM.add(P);
 
 	// If we are verifying all of the intermediate steps, add the verifier...
-	if (VerifyEach)
+	if (false)
 		PM.add(createVerifierPass());
 }
 
@@ -414,8 +220,7 @@ static void AddOptimizationPasses(legacy::PassManagerBase &MPM,
 																	legacy::FunctionPassManager &FPM,
 																	TargetMachine *TM, unsigned OptLevel,
 																	unsigned SizeLevel) {
-	if (!NoVerify || VerifyEach)
-		FPM.add(createVerifierPass()); // Verify that input is correct
+	FPM.add(createVerifierPass()); // Verify that input is correct
 
 	PassManagerBuilder Builder;
 	Builder.OptLevel = OptLevel;
@@ -428,8 +233,7 @@ static void AddOptimizationPasses(legacy::PassManagerBase &MPM,
 	} else {
 		Builder.Inliner = createAlwaysInlinerLegacyPass();
 	}
-	Builder.DisableUnrollLoops = (DisableLoopUnrolling.getNumOccurrences() > 0) ?
-															 DisableLoopUnrolling : OptLevel == 0;
+	Builder.DisableUnrollLoops = DisableLoopUnrolling ? DisableLoopUnrolling : OptLevel == 0;
 
 	// Check if vectorization is explicitly disabled via -vectorize-loops=false.
 	// The flag enables vectorization in the LoopVectorize pass, it is on by
@@ -493,45 +297,14 @@ static void AddStandardLinkPasses(legacy::PassManagerBase &PM) {
 	Builder.populateLTOPassManager(PM);
 }
 
-//===----------------------------------------------------------------------===//
-// CodeGen-related helper functions.
-//
 
-static CodeGenOpt::Level GetCodeGenOptLevel() {
-	if (CodeGenOptLevel.getNumOccurrences())
-		return static_cast<CodeGenOpt::Level>(unsigned(CodeGenOptLevel));
-	if (OptLevelO1)
-		return CodeGenOpt::Less;
-	if (OptLevelO2)
-		return CodeGenOpt::Default;
-	if (OptLevelO3)
-		return CodeGenOpt::Aggressive;
-	return CodeGenOpt::None;
-}
-
-// Returns the TargetMachine instance or zero if no triple is provided.
-static TargetMachine* GetTargetMachine(Triple TheTriple, StringRef CPUStr,
-																			 StringRef FeaturesStr,
-																			 const TargetOptions &Options) {
-	std::string Error;
-	const Target *TheTarget = TargetRegistry::lookupTarget(MArch, TheTriple,
-																												 Error);
-	// Some modules don't specify a triple, and this is okay.
-	if (!TheTarget) {
-		return nullptr;
-	}
-
-	return TheTarget->createTargetMachine(TheTriple.getTriple(), CPUStr,
-																				FeaturesStr, Options, getRelocModel(),
-																				getCodeModel(), GetCodeGenOptLevel());
-}
 
 
 
 namespace floyd {
 
 
-void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::Module>& module){
+void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::Module>& module, eoptimization_level optimization_level){
 	QUARK_TRACE(print_module(*module));
 
 	auto& Context = instance.context;
@@ -591,17 +364,11 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 			parseIRFile(InputFilename, Err, Context, !NoVerify, ClDataLayout);
 */
 
+	const bool StripDebug = false;
 	// Strip debug info before running the verifier.
 	if (StripDebug)
 		StripDebugInfo(*M);
 
-	// Erase module-level named metadata, if requested.
-	if (StripNamedMetadata) {
-		while (!M->named_metadata_empty()) {
-			NamedMDNode *NMD = &*M->named_metadata_begin();
-			M->eraseNamedMetadata(NMD);
-		}
-	}
 
 	// If we are supposed to override the target triple or data layout, do so now.
 //	if (!TargetTriple.empty())
@@ -633,37 +400,6 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 	setFunctionAttributes(CPUStr, FeaturesStr, *M);
 
 
-	if (OutputThinLTOBC)
-		M->addModuleFlag(Module::Error, "EnableSplitLTOUnit", SplitLTOUnit);
-
-/*
-
-	if (PassPipeline.getNumOccurrences() > 0) {
-		OutputKind OK = OK_NoOutput;
-		if (!NoOutput)
-			OK = OutputAssembly
-							 ? OK_OutputAssembly
-							 : (OutputThinLTOBC ? OK_OutputThinLTOBitcode : OK_OutputBitcode);
-
-		VerifierKind VK = VK_VerifyInAndOut;
-		if (NoVerify)
-			VK = VK_NoVerifier;
-		else if (VerifyEach)
-			VK = VK_VerifyEachPass;
-
-		// The user has asked to use the new pass manager and provided a pipeline
-		// string. Hand off the rest of the functionality to the new code for that
-		// layer.
-		return runPassPipeline(argv[0], *M, TM.get(), Out.get(), ThinLinkOut.get(),
-													 RemarksFile.get(), PassPipeline, OK, VK,
-													 PreserveAssemblyUseListOrder,
-													 PreserveBitcodeUseListOrder, EmitSummaryIndex,
-													 EmitModuleHash, EnableDebugify)
-							 ? 0
-							 : 1;
-	}
-*/
-
 	// Create a PassManager to hold and optimize the collection of passes we are
 	// about to build.
 	OptCustomPassManager Passes;
@@ -687,32 +423,12 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 */
 
 	std::unique_ptr<legacy::FunctionPassManager> FPasses;
-	if (true || OptLevelO0 || OptLevelO1 || OptLevelO2 || OptLevelOs || OptLevelOz ||
-			OptLevelO3) {
+	if (true /*|| OptLevelO0 || OptLevelO1 || OptLevelO2 || OptLevelOs || OptLevelOz || OptLevelO3*/) {
 		FPasses.reset(new legacy::FunctionPassManager(M.get()));
 		FPasses->add(createTargetTransformInfoWrapperPass(
 				TM ? TM->getTargetIRAnalysis() : TargetIRAnalysis()));
 	}
 
-/*
-	if (PrintBreakpoints) {
-		// Default to standard output.
-		if (!Out) {
-			if (OutputFilename.empty())
-				OutputFilename = "-";
-
-			std::error_code EC;
-			Out = std::make_unique<ToolOutputFile>(OutputFilename, EC,
-																							sys::fs::OF_None);
-			if (EC) {
-				errs() << EC.message() << '\n';
-				return 1;
-			}
-		}
-		Passes.add(createBreakpointPrinter(Out->os()));
-		NoOutput = true;
-	}
-*/
 	if (TM) {
 		// FIXME: We should dyn_cast this when supported.
 		auto &LTM = static_cast<LLVMTargetMachine &>(*TM);
@@ -779,26 +495,27 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 
 	if (StandardLinkOpts) {
 		AddStandardLinkPasses(Passes);
-		StandardLinkOpts = false;
 	}
 
-	if (OptLevelO0)
+	if (optimization_level == eoptimization_level::g_no_optimizations_enable_debugging)
 		AddOptimizationPasses(Passes, *FPasses, TM, 0, 0);
 
-	if (OptLevelO1)
+	if (optimization_level == eoptimization_level::O1_enable_trivial_optimizations)
 		AddOptimizationPasses(Passes, *FPasses, TM, 1, 0);
 
-	if (OptLevelO2)
+	if (optimization_level == eoptimization_level::O2_enable_default_optimizations)
 		AddOptimizationPasses(Passes, *FPasses, TM, 2, 0);
 
+/*
 	if (OptLevelOs)
 		AddOptimizationPasses(Passes, *FPasses, TM, 2, 1);
 
 	if (OptLevelOz)
 		AddOptimizationPasses(Passes, *FPasses, TM, 2, 2);
+*/
 
 	//???
-	if (true || OptLevelO3)
+	if (optimization_level == eoptimization_level::O3_enable_expensive_optimizations)
 		AddOptimizationPasses(Passes, *FPasses, TM, 3, 0);
 
 	if (FPasses) {

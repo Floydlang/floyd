@@ -2473,7 +2473,7 @@ std::string write_ir_file(llvm_ir_program_t& program, const target_t& target){
 	return std::string(a.begin(), a.end());
 }
 
-std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& instance, const semantic_ast_t& ast0, const std::string& module_name, const config_t& config){
+std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& instance, const semantic_ast_t& ast0, const std::string& module_name, const config_t& config, eoptimization_level optimization_level){
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(ast0.check_invariant());
 	QUARK_ASSERT(config.check_invariant());
@@ -2495,7 +2495,7 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 	auto result0 = generate_module(instance, module_name, ast, config);
 	auto module = std::move(result0.module);
 
-	optimize_module_mutating(instance, module);
+	optimize_module_mutating(instance, module, optimization_level);
 //	write_object_file(module, *result0.target_machine);
 
 	const auto type_lookup = llvm_type_lookup(instance.context, ast0._tree._interned_types);

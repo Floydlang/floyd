@@ -393,7 +393,7 @@ OPTIONS:
   -quiet        - Don't print informational messages
 */
 
-enum class optimization_level {
+enum class eoptimization_level {
 	g_no_optimizations_enable_debugging,
 	O1_enable_trivial_optimizations,
 	O2_enable_default_optimizations,
@@ -405,7 +405,7 @@ struct compilation_task_t {
 	compilation_unit_t cu;
 
 	config_t config;
-	optimization_level optimization_level;
+	eoptimization_level optimization_level;
 };
 
 
