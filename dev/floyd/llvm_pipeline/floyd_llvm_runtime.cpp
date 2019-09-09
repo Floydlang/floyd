@@ -584,7 +584,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 				collection_native_func_ptrs(*ee1, final_link_map),
 				make_struct_layouts(program_breaks.type_lookup, ee1->getDataLayout()),
 				program_breaks.type_lookup.state.type_interner,
-				program_breaks.config
+				program_breaks.settings.config
 			),
 			program_breaks.type_lookup,
 			program_breaks.container_def,
@@ -597,7 +597,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			start_time,
 			llvm_bind_t{ link_name_t {}, nullptr, typeid_t::make_undefined() },
 			false,
-			program_breaks.config
+			program_breaks.settings.config
 		}
 	);
 	QUARK_ASSERT(ee2->check_invariant());

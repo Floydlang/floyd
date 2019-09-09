@@ -42,7 +42,7 @@ struct llvm_ir_program_t {
 	llvm_ir_program_t(const llvm_ir_program_t& other) = delete;
 	llvm_ir_program_t& operator=(const llvm_ir_program_t& other) = delete;
 
-	explicit llvm_ir_program_t(llvm_instance_t* instance, std::unique_ptr<llvm::Module>& module2_swap, const llvm_type_lookup& type_lookup, const symbol_table_t& globals, const std::vector<function_link_entry_t>& function_defs, const config_t& config);
+	explicit llvm_ir_program_t(llvm_instance_t* instance, std::unique_ptr<llvm::Module>& module2_swap, const llvm_type_lookup& type_lookup, const symbol_table_t& globals, const std::vector<function_link_entry_t>& function_defs, const compiler_settings_t& settings);
 
 	public: bool check_invariant() const;
 
@@ -60,12 +60,12 @@ struct llvm_ir_program_t {
 
 	container_t container_def;
 	software_system_t software_system;
-	config_t config;
+	compiler_settings_t settings;
 };
 
 
 //	Converts the semantic AST to LLVM IR code.
-std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& instance, const semantic_ast_t& ast, const std::string& module_name, const config_t& config, eoptimization_level optimization_level);
+std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& instance, const semantic_ast_t& ast, const std::string& module_name, const compiler_settings_t& settings);
 
 std::vector<uint8_t> write_object_file(llvm_ir_program_t& program, const target_t& target);
 std::string write_ir_file(llvm_ir_program_t& program, const target_t& target);

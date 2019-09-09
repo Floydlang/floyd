@@ -65,7 +65,7 @@ struct resolved_symbol_t {
 
 
 struct llvm_code_generator_t {
-	public: llvm_code_generator_t(llvm_instance_t& i, llvm::Module* module, const type_interner_t& interner, const llvm_type_lookup& type_lookup, const std::vector<function_link_entry_t>& link_map, const config_t& config) :
+	public: llvm_code_generator_t(llvm_instance_t& i, llvm::Module* module, const type_interner_t& interner, const llvm_type_lookup& type_lookup, const std::vector<function_link_entry_t>& link_map, const compiler_settings_t& settings) :
 		instance(&i),
 		module(module),
 		builder(i.context),
@@ -73,7 +73,7 @@ struct llvm_code_generator_t {
 		link_map(link_map),
 
 		runtime_functions(link_map),
-		config(config)
+		settings(settings)
 	{
 		QUARK_ASSERT(i.check_invariant());
 
@@ -87,7 +87,7 @@ struct llvm_code_generator_t {
 		QUARK_ASSERT(type_lookup.check_invariant());
 		QUARK_ASSERT(instance->check_invariant());
 		QUARK_ASSERT(module);
-		QUARK_ASSERT(config.check_invariant());
+		QUARK_ASSERT(settings.check_invariant());
 		return true;
 	}
 
@@ -115,7 +115,7 @@ struct llvm_code_generator_t {
 	std::vector<std::vector<resolved_symbol_t>> scope_path;
 
 	const runtime_functions_t runtime_functions;
-	config_t config;
+	compiler_settings_t settings;
 };
 
 

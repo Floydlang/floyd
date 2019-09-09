@@ -232,7 +232,7 @@ static int do_compile_command(const command_t& command, const command_t::compile
 		else if(command2.backend == ebackend::llvm){
 			const auto ast = floyd::compile_to_sematic_ast__errors(cu);
 			llvm_instance_t llvm_instance;
-			std::unique_ptr<llvm_ir_program_t> llvm_program = generate_llvm_ir_program(llvm_instance, ast, "", make_default_config(), eoptimization_level::g_no_optimizations_enable_debugging);
+			std::unique_ptr<llvm_ir_program_t> llvm_program = generate_llvm_ir_program(llvm_instance, ast, "", make_default_compiler_settings());
 			const auto ir_code = write_ir_file(*llvm_program, llvm_instance.target);
 			output_result(command2.dest_path, ir_code);
 			return EXIT_SUCCESS;
@@ -249,7 +249,7 @@ static int do_compile_command(const command_t& command, const command_t::compile
 		else if(command2.backend == ebackend::llvm){
 			const auto ast = floyd::compile_to_sematic_ast__errors(cu);
 			llvm_instance_t llvm_instance;
-			std::unique_ptr<llvm_ir_program_t> llvm_program = generate_llvm_ir_program(llvm_instance, ast, "", make_default_config(), eoptimization_level::g_no_optimizations_enable_debugging);
+			std::unique_ptr<llvm_ir_program_t> llvm_program = generate_llvm_ir_program(llvm_instance, ast, "", make_default_compiler_settings());
 			const auto object_file = write_object_file(*llvm_program, llvm_instance.target);
 	
 
@@ -278,7 +278,7 @@ static int do_run(const command_t& command, const command_t::compile_and_run_t& 
 	const auto source = read_text_file(command2.source_path);
 
 	if(command2.backend == ebackend::llvm){
-		const auto run_results = floyd::run_program_helper(source, command2.source_path, compilation_unit_mode::k_include_core_lib, make_default_config(), eoptimization_level::g_no_optimizations_enable_debugging, command2.floyd_main_args);
+		const auto run_results = floyd::run_program_helper(source, command2.source_path, compilation_unit_mode::k_include_core_lib, make_default_compiler_settings(), command2.floyd_main_args);
 		if(run_results.process_results.empty()){
 			return static_cast<int>(run_results.main_result);
 		}
@@ -310,10 +310,9 @@ static int do_run(const command_t& command, const command_t::compile_and_run_t& 
 //??? Only compile once!
 
 static std::string do_user_benchmarks_run_all(const std::string& program_source, const std::string& source_path){
-	const auto config = make_default_config();
-	const auto b = collect_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib, config, eoptimization_level::g_no_optimizations_enable_debugging);
+	const auto b = collect_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib, make_default_compiler_settings());
 	const auto b2 = mapf<std::string>(b, [](const bench_t& e){ return e.benchmark_id.test; });
-	const auto results = run_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib, config, eoptimization_level::g_no_optimizations_enable_debugging, b2);
+	const auto results = run_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib, make_default_compiler_settings(), b2);
 
 	return make_benchmark_report(results);
 }
@@ -363,10 +362,10 @@ QUARK_TEST("", "do_user_benchmarks_run_all()", "", ""){
 
 
 static std::string do_user_benchmarks_run_specified(const std::string& program_source, const std::string& source_path, const std::vector<std::string>& tests){
-	const auto b = collect_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib, make_default_config(), eoptimization_level::g_no_optimizations_enable_debugging);
+	const auto b = collect_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib, make_default_compiler_settings());
 	const auto c = filter_benchmarks(b, tests);
 	const auto b2 = mapf<std::string>(c, [](const bench_t& e){ return e.benchmark_id.test; });
-	const auto results = run_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib, make_default_config(), eoptimization_level::g_no_optimizations_enable_debugging, b2);
+	const auto results = run_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib, make_default_compiler_settings(), b2);
 
 	return make_benchmark_report(results);
 }
@@ -408,7 +407,7 @@ QUARK_TEST("", "do_user_benchmarks_run_specified()", "", ""){
 
 
 static std::string do_user_benchmarks_list(const std::string& program_source, const std::string& source_path){
-	const auto b = collect_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib, make_default_config(), eoptimization_level::g_no_optimizations_enable_debugging);
+	const auto b = collect_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib, make_default_compiler_settings());
 
 	std::stringstream ss;
 
@@ -531,7 +530,7 @@ QUARK_TEST("", "run_benchmarks()", "", ""){
 
 	)";
 
-	const auto result = run_benchmarks(program_source, "module1", compilation_unit_mode::k_include_core_lib, make_default_config(), eoptimization_level::g_no_optimizations_enable_debugging, { "ABC" });
+	const auto result = run_benchmarks(program_source, "module1", compilation_unit_mode::k_include_core_lib, make_default_compiler_settings(), { "ABC" });
 
 	QUARK_UT_VERIFY(result.size() == 1);
 	QUARK_UT_VERIFY(result[0] == (benchmark_result2_t { benchmark_id_t{ "", "ABC" }, benchmark_result_t { 200, json_t("0 elements") } }));
@@ -560,7 +559,7 @@ QUARK_TEST("", "run_benchmarks()", "", ""){
 
 	)";
 
-	const auto result = run_benchmarks(program_source, "", compilation_unit_mode::k_include_core_lib, make_default_config(), eoptimization_level::g_no_optimizations_enable_debugging, { "abc", "def", "g" });
+	const auto result = run_benchmarks(program_source, "", compilation_unit_mode::k_include_core_lib, make_default_compiler_settings(), { "abc", "def", "g" });
 
 	QUARK_UT_VERIFY(result.size() == 5);
 	QUARK_UT_VERIFY(result[0] == (benchmark_result2_t { benchmark_id_t{ "", "abc" }, benchmark_result_t { 200, json_t("0 elements") } }));
@@ -594,7 +593,7 @@ QUARK_TEST("", "collect_benchmarks()", "", ""){
 
 	)";
 
-	const auto result = collect_benchmarks(program_source, "mymodule", compilation_unit_mode::k_include_core_lib, make_default_config(), eoptimization_level::g_no_optimizations_enable_debugging);
+	const auto result = collect_benchmarks(program_source, "mymodule", compilation_unit_mode::k_include_core_lib, make_default_compiler_settings());
 
 	QUARK_UT_VERIFY(result.size() == 3);
 	QUARK_UT_VERIFY(result[0] == (bench_t{ benchmark_id_t{ "", "abc" }, encode_floyd_func_link_name("benchmark__abc") }));

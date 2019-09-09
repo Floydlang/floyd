@@ -158,9 +158,9 @@ static const function_link_entry_t& lookup_link_map(const config_t& config, cons
 static void floyd_llvm_intrinsic__assert(floyd_runtime_t* frp, runtime_value_t arg){
 	auto& r = get_floyd_runtime(frp);
 
-	QUARK_ASSERT(arg.bool_value == 0 || arg.bool_value == 1);
+//	QUARK_ASSERT(arg.bool_value == 0 || arg.bool_value == 1);
 
-	bool ok = arg.bool_value == 0 ? false : true;
+	bool ok = (arg.bool_value & 0x01) == 0 ? false : true;
 	if(!ok){
 		r._print_output.push_back("Assertion failed.");
 		quark::throw_runtime_error("Floyd assertion failed.");
@@ -499,7 +499,7 @@ llvm::Value* generate_instrinsic_map(
 	QUARK_ASSERT(elements_vec_type.check_invariant());
 
 	auto& builder = gen_acc.get_builder();
-	const auto res = lookup_link_map(gen_acc.gen.config, gen_acc.gen.link_map, make_map_specializations(builder.getContext(), gen_acc.gen.type_lookup), elements_vec_type);
+	const auto res = lookup_link_map(gen_acc.gen.settings.config, gen_acc.gen.link_map, make_map_specializations(builder.getContext(), gen_acc.gen.type_lookup), elements_vec_type);
 
 	const auto result_vec_type = resolved_call_type.get_function_return();
 	return builder.CreateCall(
@@ -1327,7 +1327,7 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 	QUARK_ASSERT(collection_type.check_invariant());
 
 	auto& builder = gen_acc.get_builder();
-	const auto res = lookup_link_map(gen_acc.gen.config, gen_acc.gen.link_map, make_push_back_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
+	const auto res = lookup_link_map(gen_acc.gen.settings.config, gen_acc.gen.link_map, make_push_back_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
 
 	if(collection_type.is_string()){
 		const auto vector_itype_reg = generate_itype_constant(gen_acc.gen, collection_type);
@@ -1537,7 +1537,7 @@ llvm::Value* generate_instrinsic_size(llvm_function_generator_t& gen_acc, const 
 
 	auto& builder = gen_acc.get_builder();
 
-	const auto res = lookup_link_map(gen_acc.gen.config, gen_acc.gen.link_map, make_size_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
+	const auto res = lookup_link_map(gen_acc.gen.settings.config, gen_acc.gen.link_map, make_size_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
 	const auto collection_itype = generate_itype_constant(gen_acc.gen, collection_type);
 	return builder.CreateCall(
 		res.llvm_codegen_f,
@@ -1826,7 +1826,7 @@ llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, cons
 
 	auto& builder = gen_acc.get_builder();
 
-	const auto res = lookup_link_map(gen_acc.gen.config, gen_acc.gen.link_map, make_update_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
+	const auto res = lookup_link_map(gen_acc.gen.settings.config, gen_acc.gen.link_map, make_update_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
 	const auto collection_itype = generate_itype_constant(gen_acc.gen, collection_type);
 
 	if(collection_type.is_string()){

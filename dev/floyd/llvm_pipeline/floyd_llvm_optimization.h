@@ -21,7 +21,7 @@ namespace floyd {
 
 struct llvm_instance_t;
 
-void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::Module>& module, eoptimization_level optimization_level);
+void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::Module>& module, const compiler_settings_t& settings);
 
 } // floyd
 

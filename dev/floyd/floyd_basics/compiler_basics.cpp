@@ -24,6 +24,10 @@ config_t make_default_config(){
 	return config_t { vector_backend::hamt, dict_backend::hamt, false } ;
 }
  
+compiler_settings_t make_default_compiler_settings(){
+	return { make_default_config(), eoptimization_level::g_no_optimizations_enable_debugging };
+}
+
 
 
 

@@ -121,13 +121,13 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 }
 
 
-static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const config_t& config, eoptimization_level optimization_level, const std::vector<std::string>& main_args){
+static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const compiler_settings_t& settings, const std::vector<std::string>& main_args){
 	QUARK_ASSERT(semast.check_invariant());
-	QUARK_ASSERT(config.check_invariant());
+	QUARK_ASSERT(settings.check_invariant());
 
 	try {
 		llvm_instance_t llvm_instance;
-		auto exe = generate_llvm_ir_program(llvm_instance, semast, "", config, optimization_level);
+		auto exe = generate_llvm_ir_program(llvm_instance, semast, "", settings);
 
 		auto ee = init_llvm_jit(*exe);
 		const auto run_output = run_program(*ee, main_args);
@@ -145,9 +145,9 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 	}
 }
 
-void test_floyd(const quark::call_context_t& context, const compilation_unit_t& cu, const config_t& config, eoptimization_level optimization_level, const std::vector<std::string>& main_args, const test_report_t& expected, bool check_printout){
+void test_floyd(const quark::call_context_t& context, const compilation_unit_t& cu, const compiler_settings_t& settings, const std::vector<std::string>& main_args, const test_report_t& expected, bool check_printout){
 	QUARK_ASSERT(cu.check_invariant());
-	QUARK_ASSERT(config.check_invariant());
+	QUARK_ASSERT(settings.check_invariant());
 
 	semantic_ast_t semast( {} );
 
@@ -173,7 +173,7 @@ void test_floyd(const quark::call_context_t& context, const compilation_unit_t& 
 	}
 
 	if(k_run_llvm){
-		const auto llvm_report = run_test_program_llvm(semast, config, optimization_level, main_args);
+		const auto llvm_report = run_test_program_llvm(semast, settings, main_args);
 
 		if(compare(llvm_report, expected, check_printout) == false){
 			QUARK_SCOPED_TRACE("LLVM JIT FAILURE");
@@ -187,8 +187,7 @@ QUARK_TEST("test_helpers", "run_program()", "", ""){
 	test_floyd(
 		QUARK_POS,
 		make_compilation_unit("print(\"Hello, world!\")", "", compilation_unit_mode::k_no_core_lib),
-		make_default_config(),
-		eoptimization_level::g_no_optimizations_enable_debugging,
+		make_default_compiler_settings(),
 		{},
 		check_printout( { "Hello, world!" } ),
 		true
@@ -199,8 +198,7 @@ QUARK_TEST("test_helpers", "run_program()", "", ""){
 	test_floyd(
 		QUARK_POS,
 		make_compilation_unit("let result = 112", "", compilation_unit_mode::k_no_core_lib),
-		make_default_config(),
-		eoptimization_level::g_no_optimizations_enable_debugging,
+		make_default_compiler_settings(),
 		{},
 		test_report_t{ value_t::make_int(112), run_output_t( k_default_main_result, {}), {}, "" },
 		false
@@ -210,8 +208,7 @@ QUARK_TEST("test_helpers", "run_program()", "", ""){
 	test_floyd(
 		QUARK_POS,
 		make_compilation_unit("func int main([string] args){ return 1003 }", "", compilation_unit_mode::k_no_core_lib),
-		make_default_config(),
-		eoptimization_level::g_no_optimizations_enable_debugging,
+		make_default_compiler_settings(),
 		{ "a", "b" },
 		test_report_t{ value_t::make_undefined(), run_output_t(1003, {}), { }, "" },
 		false
@@ -222,8 +219,7 @@ QUARK_TEST("test_helpers", "run_program()", "", ""){
 	test_floyd(
 		QUARK_POS,
 		make_compilation_unit("print(1) print(234)", "", compilation_unit_mode::k_no_core_lib),
-		make_default_config(),
-		eoptimization_level::g_no_optimizations_enable_debugging,
+		make_default_compiler_settings(),
 		{},
 		test_report_t{ value_t::make_undefined(), run_output_t(k_default_main_result, {}), {"1", "234" }, "" },
 		false
@@ -237,39 +233,39 @@ QUARK_TEST("test_helpers", "run_program()", "", ""){
 
 
 void ut_verify_global_result_lib(const quark::call_context_t& context, const std::string& program, const value_t& expected_result){
-	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_include_core_lib), make_default_config(), eoptimization_level::g_no_optimizations_enable_debugging, {}, check_result(expected_result), false);
+	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_include_core_lib), make_default_compiler_settings(), {}, check_result(expected_result), false);
 }
 
 void ut_verify_global_result_nolib(const quark::call_context_t& context, const std::string& program, const value_t& expected_result){
-	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), make_default_config(), eoptimization_level::g_no_optimizations_enable_debugging, {}, check_result(expected_result), false);
+	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), make_default_compiler_settings(), {}, check_result(expected_result), false);
 }
 
 
 void ut_verify_printout_lib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& printout){
-	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_include_core_lib), make_default_config(), eoptimization_level::g_no_optimizations_enable_debugging, {}, check_printout(printout), true);
+	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_include_core_lib), make_default_compiler_settings(), {}, check_printout(printout), true);
 }
 void ut_verify_printout_nolib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& printout){
-	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), make_default_config(), eoptimization_level::g_no_optimizations_enable_debugging, {}, check_printout(printout), true);
+	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), make_default_compiler_settings(), {}, check_printout(printout), true);
 }
 
 
 
 void ut_run_closed_nolib(const quark::call_context_t& context, const std::string& program){
-	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), make_default_config(), eoptimization_level::g_no_optimizations_enable_debugging, {}, check_nothing(), false);
+	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), make_default_compiler_settings(), {}, check_nothing(), false);
 }
 void ut_run_closed_lib(const quark::call_context_t& context, const std::string& program){
-	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_include_core_lib), make_default_config(), eoptimization_level::g_no_optimizations_enable_debugging, {}, check_nothing(), false);
+	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_include_core_lib), make_default_compiler_settings(), {}, check_nothing(), false);
 }
 
 
 
 void ut_verify_mainfunc_return_nolib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& args, int64_t expected_return){
-	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), make_default_config(), eoptimization_level::g_no_optimizations_enable_debugging, {}, check_main_return(expected_return), true);
+	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), make_default_compiler_settings(), {}, check_main_return(expected_return), true);
 }
 
 
 void ut_verify_exception_nolib(const quark::call_context_t& context, const std::string& program, const std::string& expected_what){
-	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), make_default_config(), eoptimization_level::g_no_optimizations_enable_debugging, {}, check_exception(expected_what), false);
+	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), make_default_compiler_settings(), {}, check_exception(expected_what), false);
 }
 
 

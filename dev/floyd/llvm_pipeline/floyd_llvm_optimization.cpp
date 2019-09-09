@@ -6,6 +6,9 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
+static const bool k_trace_before = false;
+static const bool k_trace_after = false;
+
 #include "floyd_llvm_optimization.h"
 
 
@@ -304,10 +307,11 @@ static void AddStandardLinkPasses(legacy::PassManagerBase &PM) {
 namespace floyd {
 
 
-void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::Module>& module, eoptimization_level optimization_level){
-	QUARK_TRACE(print_module(*module));
+void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::Module>& module, const compiler_settings_t& settings){
+	if(k_trace_before){
+		QUARK_TRACE(print_module(*module));
+	}
 
-	auto& Context = instance.context;
 	std::unique_ptr<Module>& M = module;
 /*
 	InitializeAllTargets();
@@ -497,13 +501,13 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 		AddStandardLinkPasses(Passes);
 	}
 
-	if (optimization_level == eoptimization_level::g_no_optimizations_enable_debugging)
+	if (settings.optimization_level == eoptimization_level::g_no_optimizations_enable_debugging)
 		AddOptimizationPasses(Passes, *FPasses, TM, 0, 0);
 
-	if (optimization_level == eoptimization_level::O1_enable_trivial_optimizations)
+	if (settings.optimization_level == eoptimization_level::O1_enable_trivial_optimizations)
 		AddOptimizationPasses(Passes, *FPasses, TM, 1, 0);
 
-	if (optimization_level == eoptimization_level::O2_enable_default_optimizations)
+	if (settings.optimization_level == eoptimization_level::O2_enable_default_optimizations)
 		AddOptimizationPasses(Passes, *FPasses, TM, 2, 0);
 
 /*
@@ -515,7 +519,7 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 */
 
 	//???
-	if (optimization_level == eoptimization_level::O3_enable_expensive_optimizations)
+	if (settings.optimization_level == eoptimization_level::O3_enable_expensive_optimizations)
 		AddOptimizationPasses(Passes, *FPasses, TM, 3, 0);
 
 	if (FPasses) {
@@ -531,6 +535,10 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 
 	// Now that we have all of the passes ready, run them.
 	Passes.run(*M);
+
+	if(k_trace_after){
+		QUARK_TRACE(print_module(*module));
+	}
 }
 
 

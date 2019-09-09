@@ -389,7 +389,7 @@ static std::vector<function_bind_t> floydrt_lookup_dict_hamt__make(llvm::LLVMCon
 llvm::Value* generate_lookup_dict(llvm_function_generator_t& gen_acc, llvm::Value& dict_reg, const typeid_t& dict_type, llvm::Value& key_reg, dict_backend dict_mode){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(dict_type.check_invariant());
-	QUARK_ASSERT(is_dict_cppmap(gen_acc.gen.config, dict_type) || is_dict_hamt(gen_acc.gen.config, dict_type));
+	QUARK_ASSERT(is_dict_cppmap(gen_acc.gen.settings.config, dict_type) || is_dict_hamt(gen_acc.gen.settings.config, dict_type));
 
 	const auto res = resolve_func(gen_acc.gen.link_map, dict_mode == dict_backend::hamt ? "lookup_dict_hamt" : "lookup_dict_cppmap");
 
@@ -451,7 +451,7 @@ static std::vector<function_bind_t> floydrt_store_dict_mutable__make(llvm::LLVMC
 void generate_store_dict_mutable(llvm_function_generator_t& gen_acc, llvm::Value& dict_reg, const typeid_t& dict_type, llvm::Value& key_reg, llvm::Value& value_reg, dict_backend dict_mode){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(dict_type.check_invariant());
-	QUARK_ASSERT(is_dict_cppmap(gen_acc.gen.config, dict_type) || is_dict_hamt(gen_acc.gen.config, dict_type));
+	QUARK_ASSERT(is_dict_cppmap(gen_acc.gen.settings.config, dict_type) || is_dict_hamt(gen_acc.gen.settings.config, dict_type));
 
 	const auto res = resolve_func(gen_acc.gen.link_map, dict_mode == dict_backend::hamt ? "store_dict_mutable_hamt" : "store_dict_mutable_cppmap");
 
@@ -1060,11 +1060,11 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 		}
 		else if(type.is_vector()){
-			if(is_vector_carray(gen_acc.gen.config, type)){
+			if(is_vector_carray(gen_acc.gen.settings.config, type)){
 				const auto res = resolve_func(gen_acc.gen.link_map, "retain_vector_carray");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
-			else if(is_vector_hamt(gen_acc.gen.config, type)){
+			else if(is_vector_hamt(gen_acc.gen.settings.config, type)){
 				const auto res = resolve_func(gen_acc.gen.link_map, "retain_vector_hamt");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
@@ -1073,11 +1073,11 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 			}
 		}
 		else if(type.is_dict()){
-			if(is_dict_cppmap(gen_acc.gen.config, type)){
+			if(is_dict_cppmap(gen_acc.gen.settings.config, type)){
 				const auto res = resolve_func(gen_acc.gen.link_map, "retain_dict_cppmap");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
-			else if(is_dict_hamt(gen_acc.gen.config, type)){
+			else if(is_dict_hamt(gen_acc.gen.settings.config, type)){
 				const auto res = resolve_func(gen_acc.gen.link_map, "retain_dict_hamt");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
@@ -1271,19 +1271,19 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 		else if(type.is_vector()){
 			const bool is_element_pod = is_rc_value(type.get_vector_element_type()) ? false : true;
 
-			if(is_vector_carray(gen_acc.gen.config, type) && is_element_pod == true){
+			if(is_vector_carray(gen_acc.gen.settings.config, type) && is_element_pod == true){
 				const auto res = resolve_func(gen_acc.gen.link_map, "release_vector_carray_pod");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}
-			else if(is_vector_carray(gen_acc.gen.config, type) && is_element_pod == false){
+			else if(is_vector_carray(gen_acc.gen.settings.config, type) && is_element_pod == false){
 				const auto res = resolve_func(gen_acc.gen.link_map, "release_vector_carray_nonpod");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}
-			else if(is_vector_hamt(gen_acc.gen.config, type) && is_element_pod == true){
+			else if(is_vector_hamt(gen_acc.gen.settings.config, type) && is_element_pod == true){
 				const auto res = resolve_func(gen_acc.gen.link_map, "release_vector_hamt_pod");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}
-			else if(is_vector_hamt(gen_acc.gen.config, type) && is_element_pod == false){
+			else if(is_vector_hamt(gen_acc.gen.settings.config, type) && is_element_pod == false){
 				const auto res = resolve_func(gen_acc.gen.link_map, "release_vector_hamt_nonpod");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}
@@ -1292,11 +1292,11 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 			}
 		}
 		else if(type.is_dict()){
-			if(is_dict_cppmap(gen_acc.gen.config, type)){
+			if(is_dict_cppmap(gen_acc.gen.settings.config, type)){
 				const auto res = resolve_func(gen_acc.gen.link_map, "release_dict_cppmap");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}
-			else if(is_dict_hamt(gen_acc.gen.config, type)){
+			else if(is_dict_hamt(gen_acc.gen.settings.config, type)){
 				const auto res = resolve_func(gen_acc.gen.link_map, "release_dict_hamt");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}

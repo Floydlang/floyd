@@ -366,7 +366,7 @@ config_t make_default_config();
 
 
 
-////////////////////////////////////////		compilation_task_t
+////////////////////////////////////////		compiler_settings_t
 
 
 /*
@@ -401,11 +401,29 @@ enum class eoptimization_level {
 //	Ofast
 };
 
-struct compilation_task_t {
-	compilation_unit_t cu;
+struct compiler_settings_t {
+	bool check_invariant() const {
+		return true;
+	}
+
 
 	config_t config;
 	eoptimization_level optimization_level;
+};
+
+compiler_settings_t make_default_compiler_settings();
+
+
+
+////////////////////////////////////////		compilation_task_t
+
+//	All inputs requires to compile one translation unit.
+
+
+struct compilation_task_t {
+	compilation_unit_t cu;
+
+	compiler_settings_t compiler_settings;
 };
 
 
