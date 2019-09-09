@@ -14,11 +14,33 @@
 #include <vector>
 #include <map>
 
-////////////////////////////		COMMAND LINE ARGUMENTS
+
+////////////////////////////		HELPERS
 
 
 std::vector<std::string> args_to_vector(int argc, const char * argv[]);
 std::vector<std::string> split_command_line(const std::string& s);
+
+
+
+////////////////////////////		COMMAND LINE ARGUMENTS
+
+
+struct flag_info_t {
+	enum class etype {
+		simple_flag,
+		flag_with_parameter,
+		unknown_flag,
+		flag_missing_parameter
+	};
+	etype type;
+	std::string parameter;
+};
+
+inline bool operator==(const flag_info_t& lhs, const flag_info_t& rhs){
+	return lhs.type == rhs.type && lhs.parameter == rhs.parameter;
+}
+
 
 //	Flags: x: means x supports parameter.
 struct command_line_args_t {
@@ -26,14 +48,16 @@ struct command_line_args_t {
 	std::string subcommand;
 
 	//	Key: flag character, value: parameter or ""
-	std::map<std::string, std::string> flags;
+	std::map<std::string, flag_info_t> flags;
 
 
 	//	Extra arguments, after the flags have been parsed.
 	std::vector<std::string> extra_arguments;
 };
 
-command_line_args_t parse_command_line_args(const std::vector<std::string>& args, const std::string& flags);
+
+
+
 
 /*
 	Example:
@@ -48,11 +72,13 @@ command_line_args_t parse_command_line_args(const std::vector<std::string>& args
 
 	flags: specify each flag character to support, like "xit" to support -x, -i, -t.
 	Parser supports merged flags, like -xi
+	Supports flags with arguments, like -a:hello
 
 	Does NOT support long flags, like --key. Future: use getopt_long()
-	Supports flags with arguments, like -a:hello
 */
-command_line_args_t parse_command_line_args_subcommands(const std::vector<std::string>& args, const std::string& flags);
+
+command_line_args_t parse_command_line_args(const std::vector<std::string>& args, const std::string& flags);
+command_line_args_t parse_command_line_args_subcommand(const std::vector<std::string>& args, const std::string& flags);
 
 
 

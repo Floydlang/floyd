@@ -8,6 +8,7 @@
 
 #include "floyd_command_line_parser.h"
 
+#include "compiler_basics.h"
 #include "file_handling.h"
 #include "text_parser.h"
 #include "quark.h"
@@ -60,6 +61,10 @@ FLAGS
 | a     | Output Abstract syntax tree (AST) as a JSON
 | i     | Output intermediate representation (IR / ASM) as assembly
 | b     | Use Floyd's bytecode backend (compiler, bytecode ISA and interpreter) rather than the default, LLVM
+| g     | Compiler with debug info, no optimizations
+| -O1   | Enable trivial optimizations
+| -O2   | Enable default optimizations
+| -O3   | Enable expensive optimizations
 )___";
 
 	return ss.str();
@@ -213,6 +218,90 @@ eoutput_type get_output_type(const command_line_args_t& args){
 }
 
 
+const std::string k_flags = "tlpaiogO:";
+
+
+struct compile_more_t {
+	std::vector<std::string> source_paths;
+	std::string output_path;
+	compiler_settings_t compiler_settings;
+};
+
+static eoptimization_level get_optimization_level(const std::map<std::string, flag_info_t>& flags){
+	if(flags.find("g") != flags.end()){
+		return eoptimization_level::g_no_optimizations_enable_debugging;
+	}
+	else{
+		const auto it = flags.find("O");
+		if(it != flags.end()){
+			if(it->second == flag_info_t { flag_info_t::etype::flag_with_parameter, "1"} ){
+				return eoptimization_level::O1_enable_trivial_optimizations;
+			}
+			else if(it->second == flag_info_t { flag_info_t::etype::flag_with_parameter, "2"} ){
+				return eoptimization_level::O2_enable_default_optimizations;
+			}
+			else if(it->second == flag_info_t { flag_info_t::etype::flag_with_parameter, "3"} ){
+				return eoptimization_level::O3_enable_expensive_optimizations;
+			}
+			else{
+				throw std::exception();
+			}
+		}
+		else{
+			return eoptimization_level::O2_enable_default_optimizations;
+		}
+	}
+}
+
+compile_more_t parse_floyd_compile_command_more(const command_line_args_t& command_line_args){
+	if(command_line_args.extra_arguments.size() == 0){
+		throw std::runtime_error("Command requires source file name.");
+	}
+
+	const auto optimization_level0 = get_optimization_level(command_line_args.flags);
+
+	const auto floyd_args = command_line_args.extra_arguments;
+
+	std::vector<std::string> source_paths;
+	int index = 0;
+	while(index < floyd_args.size() && floyd_args[index].substr(0, 1) != "-"){
+		const auto s = floyd_args[index];
+		source_paths.push_back(s);
+		index++;
+	}
+
+	if(index < floyd_args.size()){
+		if(floyd_args[index].substr(0, 2) == "-o"){
+		}
+		else{
+			throw std::runtime_error("Unexpected parameters: \"" + floyd_args[index] + "\".");
+		}
+		index++;
+	}
+
+	std::string output_path;
+	if(index < floyd_args.size()){
+		const auto s = floyd_args[index];
+		if(s.substr(0, 1) == "-"){
+			throw std::runtime_error("Unexpected flag \"" + s + "\" after source files.");
+		}
+		output_path = s;
+		index++;
+	}
+	if(index < floyd_args.size()){
+		throw std::runtime_error("Unexpected parameters at end of command line: \"" + floyd_args[index] + "\".");
+	}
+
+	if(source_paths.size() == 0){
+		throw std::runtime_error("No source file provided.");
+	}
+
+	const auto compiler_settings = compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, optimization_level0 };
+	return compile_more_t { source_paths, output_path, compiler_settings };
+}
+
+
+
 command_t parse_floyd_command_line(const std::vector<std::string>& args){
 #if DEBUG && 0
 	for(const auto& e: args){
@@ -220,11 +309,11 @@ command_t parse_floyd_command_line(const std::vector<std::string>& args){
 	}
 #endif
 
-	const auto command_line_args = parse_command_line_args_subcommands(args, "tlpaio");
+	const auto command_line_args = parse_command_line_args_subcommand(args, k_flags);
 	const auto path_parts = SplitPath(command_line_args.command);
 	QUARK_ASSERT(path_parts.fName == "floyd" || path_parts.fName == "floydut");
-	const bool trace_on = command_line_args.flags.find("t") != command_line_args.flags.end() ? true : false;
-	const bool bytecode_on = command_line_args.flags.find("b") != command_line_args.flags.end() ? true : false;
+	const bool trace_on = command_line_args.flags.find("t") != command_line_args.flags.end();
+	const bool bytecode_on = command_line_args.flags.find("b") != command_line_args.flags.end();
 	const ebackend backend = bytecode_on ? ebackend::bytecode : ebackend::llvm;
 	const eoutput_type output_type = get_output_type(command_line_args);
 
@@ -248,47 +337,8 @@ command_t parse_floyd_command_line(const std::vector<std::string>& args){
 		return command_t { command_t::compile_and_run_t { source_path, args2, backend, trace_on } };
 	}
 	else if(command_line_args.subcommand == "compile"){
-		if(command_line_args.extra_arguments.size() == 0){
-			throw std::runtime_error("Command requires source file name.");
-		}
-
-		const auto floyd_args = command_line_args.extra_arguments;
-
-		std::vector<std::string> source_paths;
-		int index = 0;
-		while(index < floyd_args.size() && floyd_args[index].substr(0, 1) != "-"){
-			const auto s = floyd_args[index];
-			source_paths.push_back(s);
-			index++;
-		}
-
-		if(index < floyd_args.size()){
-			if(floyd_args[index].substr(0, 2) == "-o"){
-			}
-			else{
-				throw std::runtime_error("Unexpected parameters: \"" + floyd_args[index] + "\".");
-			}
-			index++;
-		}
-
-		std::string output_path;
-		if(index < floyd_args.size()){
-			const auto s = floyd_args[index];
-			if(s.substr(0, 1) == "-"){
-				throw std::runtime_error("Unexpected flag \"" + s + "\" after source files.");
-			}
-			output_path = s;
-			index++;
-		}
-		if(index < floyd_args.size()){
-			throw std::runtime_error("Unexpected parameters at end of command line: \"" + floyd_args[index] + "\".");
-		}
-
-		if(source_paths.size() == 0){
-			throw std::runtime_error("No source file provided.");
-		}
-
-		return command_t { command_t::compile_t { source_paths, output_path, output_type, backend, trace_on } };
+		const auto a = parse_floyd_compile_command_more(command_line_args);
+		return command_t { command_t::compile_t { a.source_paths, a.output_path, output_type, backend, a.compiler_settings, trace_on } };
 	}
 	else if(command_line_args.subcommand == "bench"){
 		if(command_line_args.extra_arguments.size() == 0){
@@ -299,7 +349,7 @@ command_t parse_floyd_command_line(const std::vector<std::string>& args){
 		const auto source_path = floyd_args[0];
 		const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
 
-		const bool list_mode = command_line_args.flags.find("l") != command_line_args.flags.end() ? true : false;
+		const bool list_mode = command_line_args.flags.find("l") != command_line_args.flags.end();
 		if(list_mode){
 			return command_t { command_t::user_benchmarks_t { command_t::user_benchmarks_t::mode::list, source_path, args2, backend, trace_on } };
 		}
@@ -390,6 +440,7 @@ QUARK_TEST("", "parse_floyd_command_line()", "floyd compile", ""){
 	QUARK_UT_VERIFY(r2.dest_path == "");
 	QUARK_UT_VERIFY(r2.output_type == eoutput_type::object_file);
 	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_UT_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O2_enable_default_optimizations }));
 	QUARK_UT_VERIFY(r2.trace == false);
 }
 QUARK_TEST("", "parse_floyd_command_line()", "floyd compile", ""){
@@ -399,6 +450,7 @@ QUARK_TEST("", "parse_floyd_command_line()", "floyd compile", ""){
 	QUARK_UT_VERIFY(r2.dest_path == "");
 	QUARK_UT_VERIFY(r2.output_type == eoutput_type::object_file);
 	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_UT_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O2_enable_default_optimizations }));
 	QUARK_UT_VERIFY(r2.trace == true);
 }
 
@@ -409,6 +461,7 @@ QUARK_TEST("", "parse_floyd_command_line()", "floyd compile", ""){
 	QUARK_UT_VERIFY(r2.dest_path == "");
 	QUARK_UT_VERIFY(r2.output_type == eoutput_type::parse_tree);
 	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_UT_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O2_enable_default_optimizations }));
 	QUARK_UT_VERIFY(r2.trace == false);
 }
 
@@ -419,6 +472,7 @@ QUARK_TEST("", "parse_floyd_command_line()", "floyd compile", ""){
 	QUARK_UT_VERIFY(r2.dest_path == "");
 	QUARK_UT_VERIFY(r2.output_type == eoutput_type::ast);
 	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_UT_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O2_enable_default_optimizations }));
 	QUARK_UT_VERIFY(r2.trace == false);
 }
 QUARK_TEST("", "parse_floyd_command_line()", "floyd compile", ""){
@@ -428,6 +482,7 @@ QUARK_TEST("", "parse_floyd_command_line()", "floyd compile", ""){
 	QUARK_UT_VERIFY(r2.dest_path == "");
 	QUARK_UT_VERIFY(r2.output_type == eoutput_type::ir);
 	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_UT_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O2_enable_default_optimizations }));
 	QUARK_UT_VERIFY(r2.trace == false);
 }
 QUARK_TEST("", "parse_floyd_command_line()", "floyd compile", ""){
@@ -437,6 +492,7 @@ QUARK_TEST("", "parse_floyd_command_line()", "floyd compile", ""){
 	QUARK_UT_VERIFY(r2.dest_path == "");
 	QUARK_UT_VERIFY(r2.output_type == eoutput_type::parse_tree);
 	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_UT_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O2_enable_default_optimizations }));
 	QUARK_UT_VERIFY(r2.trace == true);
 }
 
@@ -447,6 +503,7 @@ QUARK_TEST("", "parse_floyd_command_line()", "floyd compile", ""){
 	QUARK_UT_VERIFY(r2.dest_path == "")
 	QUARK_UT_VERIFY(r2.output_type == eoutput_type::object_file);
 	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_UT_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O2_enable_default_optimizations }));
 	QUARK_UT_VERIFY(r2.trace == false);
 }
 
@@ -457,8 +514,68 @@ QUARK_TEST("", "parse_floyd_command_line()", "floyd compile", ""){
 	QUARK_UT_VERIFY(r2.dest_path == "outdir/outfile")
 	QUARK_UT_VERIFY(r2.output_type == eoutput_type::object_file);
 	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_UT_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O2_enable_default_optimizations }));
 	QUARK_UT_VERIFY(r2.trace == false);
 }
+
+QUARK_TEST("", "parse_floyd_command_line()", "floyd compile", ""){
+	const auto r = parse_floyd_command_line(string_to_args("floyd compile -ig mygame.floyd"));
+	const auto& r2 = std::get<command_t::compile_t>(r._contents);
+	QUARK_UT_VERIFY(r2.source_paths == std::vector<std::string>{ "mygame.floyd"});
+	QUARK_UT_VERIFY(r2.dest_path == "");
+	QUARK_UT_VERIFY(r2.output_type == eoutput_type::ir);
+	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_UT_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::g_no_optimizations_enable_debugging }));
+	QUARK_UT_VERIFY(r2.trace == false);
+}
+
+QUARK_TEST("", "parse_floyd_command_line()", "floyd compile", ""){
+	const auto r = parse_floyd_command_line(string_to_args("floyd compile -i -O1 mygame.floyd"));
+	const auto& r2 = std::get<command_t::compile_t>(r._contents);
+	QUARK_UT_VERIFY(r2.source_paths == std::vector<std::string>{ "mygame.floyd"});
+	QUARK_UT_VERIFY(r2.dest_path == "");
+	QUARK_UT_VERIFY(r2.output_type == eoutput_type::ir);
+	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_UT_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O1_enable_trivial_optimizations }));
+	QUARK_UT_VERIFY(r2.trace == false);
+}
+
+QUARK_TEST("", "parse_floyd_command_line()", "floyd compile", ""){
+	const auto r = parse_floyd_command_line(string_to_args("floyd compile -i -O2 mygame.floyd"));
+	const auto& r2 = std::get<command_t::compile_t>(r._contents);
+	QUARK_UT_VERIFY(r2.source_paths == std::vector<std::string>{ "mygame.floyd"});
+	QUARK_UT_VERIFY(r2.dest_path == "");
+	QUARK_UT_VERIFY(r2.output_type == eoutput_type::ir);
+	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_UT_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O2_enable_default_optimizations }));
+	QUARK_UT_VERIFY(r2.trace == false);
+}
+
+QUARK_TEST("", "parse_floyd_command_line()", "floyd compile", ""){
+	const auto r = parse_floyd_command_line(string_to_args("floyd compile -i -O3 mygame.floyd"));
+	const auto& r2 = std::get<command_t::compile_t>(r._contents);
+	QUARK_UT_VERIFY(r2.source_paths == std::vector<std::string>{ "mygame.floyd"});
+	QUARK_UT_VERIFY(r2.dest_path == "");
+	QUARK_UT_VERIFY(r2.output_type == eoutput_type::ir);
+	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_UT_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O3_enable_expensive_optimizations }));
+	QUARK_UT_VERIFY(r2.trace == false);
+}
+
+QUARK_TEST_VIP("", "parse_floyd_command_line()", "floyd compile", ""){
+	const auto r = parse_floyd_command_line(string_to_args("floyd compile -i -O3 a.txt b.txt -o c.txt"));
+	const auto& r2 = std::get<command_t::compile_t>(r._contents);
+	QUARK_UT_VERIFY(r2.source_paths == (std::vector<std::string>{ "a.txt", "b.txt" }) );
+	QUARK_UT_VERIFY(r2.dest_path == "c.txt");
+	QUARK_UT_VERIFY(r2.output_type == eoutput_type::ir);
+	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_UT_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O3_enable_expensive_optimizations }));
+	QUARK_UT_VERIFY(r2.trace == false);
+}
+
+
+
+
 
 
 
@@ -516,18 +633,18 @@ QUARK_TEST("", "parse_floyd_command_line()", "floyd bench -tl mygame.floyd", "")
 //	Test real-world complicated command line
 
 QUARK_TEST("", "parse_floyd_command_line()", "ld -o output /lib/crt0.o hello.o -lc", ""){
-	const auto r = parse_command_line_args_subcommands(string_to_args("ld -o output /lib/crt0.o hello.o -lc"), "olc");
+	const auto r = parse_command_line_args(string_to_args("ld -o output /lib/crt0.o hello.o -lc"), "olc");
 	QUARK_UT_VERIFY(r.command == "ld");
-	QUARK_UT_VERIFY(r.subcommand == "-o");
-	QUARK_UT_VERIFY(r.flags.empty());
+	QUARK_UT_VERIFY(r.subcommand == "");
+	QUARK_UT_VERIFY(r.flags.find("o")->second == (flag_info_t { flag_info_t::etype::simple_flag, ""}) );
 	QUARK_UT_VERIFY(r.extra_arguments == (std::vector<std::string> { "output", "/lib/crt0.o", "hello.o", "-lc" }) );
 }
 
 QUARK_TEST("", "parse_floyd_command_line()", "ld -o3 output /lib/crt0.o hello.o -lc", ""){
-	const auto r = parse_command_line_args_subcommands(string_to_args("ld -o3 output /lib/crt0.o hello.o -lc"), "olc");
+	const auto r = parse_command_line_args(string_to_args("ld -o3 output /lib/crt0.o hello.o -lc"), "o:lc");
 	QUARK_UT_VERIFY(r.command == "ld");
-	QUARK_UT_VERIFY(r.subcommand == "-o3");
-	QUARK_UT_VERIFY(r.flags.empty());
+	QUARK_UT_VERIFY(r.subcommand == "");
+	QUARK_UT_VERIFY(r.flags.find("o")->second == (flag_info_t { flag_info_t::etype::flag_with_parameter, "3"}) );
 	QUARK_UT_VERIFY(r.extra_arguments == (std::vector<std::string> { "output", "/lib/crt0.o", "hello.o", "-lc" }) );
 }
 

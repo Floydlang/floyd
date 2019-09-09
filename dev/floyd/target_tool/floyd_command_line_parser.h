@@ -11,6 +11,7 @@
 #define floyd_command_line_parser_hpp
 
 #include "command_line_parser.h"
+#include "compiler_basics.h"
 
 #include <vector>
 #include <string>
@@ -56,6 +57,7 @@ struct command_t {
 		std::string dest_path;
 		eoutput_type output_type;
 		ebackend backend;
+		compiler_settings_t compiler_settings;
 		bool trace;
 	};
 

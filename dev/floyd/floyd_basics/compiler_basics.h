@@ -361,6 +361,12 @@ struct config_t {
 	bool trace_allocs;
 };
 
+inline bool operator==(const config_t& lhs, const config_t& rhs){
+	QUARK_ASSERT(lhs.check_invariant());
+	QUARK_ASSERT(rhs.check_invariant());
+	return lhs.vector_backend_mode == rhs.vector_backend_mode && lhs.dict_backend_mode == rhs.dict_backend_mode && lhs.trace_allocs == rhs.trace_allocs;
+}
+
 
 config_t make_default_config();
 
@@ -412,6 +418,12 @@ struct compiler_settings_t {
 };
 
 compiler_settings_t make_default_compiler_settings();
+
+inline bool operator==(const compiler_settings_t& lhs, const compiler_settings_t& rhs){
+	QUARK_ASSERT(lhs.check_invariant());
+	QUARK_ASSERT(rhs.check_invariant());
+	return lhs.config == rhs.config && lhs.optimization_level == rhs.optimization_level;
+}
 
 
 
