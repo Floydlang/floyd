@@ -57,16 +57,20 @@ USAGE
 
 FLAGS
 
-| -t    | Verbose tracing
-| -p    | Output parse tree as a JSON
-| -a    | Output Abstract syntax tree (AST) as a JSON
-| -i    | Output intermediate representation (IR / ASM) as assembly
-| -b    | Use Floyd's bytecode backend instead of default LLVM
-| -g    | Compiler with debug info, no optimizations
-| -O1   | Enable trivial optimizations
-| -O2   | Enable default optimizations
-| -O3   | Enable expensive optimizations
-| -l    | floyd bench returns a list of all benchmarks
+| -t       | Verbose tracing
+| -p       | Output parse tree as a JSON
+| -a       | Output Abstract syntax tree (AST) as a JSON
+| -i       | Output intermediate representation (IR / ASM) as assembly
+| -b       | Use Floyd's bytecode backend instead of default LLVM
+| -g       | Compiler with debug info, no optimizations
+| -O1      | Enable trivial optimizations
+| -O2      | Enable default optimizations
+| -O3      | Enable expensive optimizations
+| -l       | floyd bench returns a list of all benchmarks
+| -vcarray | Force vectors to use carray backend
+| -vhamt   | Force vectors to use HAMT backend (this is default)
+| -dcppmap | Force dictionaries to use c++ map as backend
+| -dhamt   | Force dictionaries to use HAMT backend (this is default)
 
 MORE EXAMPLES
 
@@ -226,7 +230,7 @@ eoutput_type get_output_type(const command_line_args_t& args){
 }
 
 
-const std::string k_flags = "tlpaiogO:";
+const std::string k_flags = "tlpaiogO:v:d:";
 
 
 struct compile_more_t {
@@ -260,10 +264,47 @@ static eoptimization_level get_optimization_level(const std::map<std::string, fl
 		}
 	}
 }
+static vector_backend get_vector_backend(const std::map<std::string, flag_info_t>& flags){
+	const auto it = flags.find("v");
+	if(it != flags.end()){
+		if(it->second == flag_info_t { flag_info_t::etype::flag_with_parameter, "hamt"} ){
+			return vector_backend::hamt;
+		}
+		else if(it->second == flag_info_t { flag_info_t::etype::flag_with_parameter, "carray"} ){
+			return vector_backend::carray;
+		}
+		else{
+			throw std::exception();
+		}
+	}
+	else{
+		return vector_backend::hamt;
+	}
+}
+static dict_backend get_dict_backend(const std::map<std::string, flag_info_t>& flags){
+	const auto it = flags.find("d");
+	if(it != flags.end()){
+		if(it->second == flag_info_t { flag_info_t::etype::flag_with_parameter, "hamt"} ){
+			return dict_backend::hamt;
+		}
+		else if(it->second == flag_info_t { flag_info_t::etype::flag_with_parameter, "cppmap"} ){
+			return dict_backend::cppmap;
+		}
+		else{
+			throw std::exception();
+		}
+	}
+	else{
+		return dict_backend::hamt;
+	}
+}
 
 static compiler_settings_t get_compiler_settings(const std::map<std::string, flag_info_t>& flags){
 	const auto optimization_level = get_optimization_level(flags);
-	return compiler_settings_t { { vector_backend::hamt, dict_backend::hamt, false }, optimization_level }; 
+	const auto vector_backend = get_vector_backend(flags);
+	const auto dict_backend = get_dict_backend(flags);
+
+	return compiler_settings_t { { vector_backend, dict_backend, false }, optimization_level }; 
 }
 
 compile_more_t parse_floyd_compile_command_more(const command_line_args_t& command_line_args){
@@ -576,7 +617,7 @@ QUARK_TEST("", "parse_floyd_command_line()", "floyd compile", ""){
 	QUARK_UT_VERIFY(r2.trace == false);
 }
 
-QUARK_TEST_VIP("", "parse_floyd_command_line()", "floyd compile", ""){
+QUARK_TEST("", "parse_floyd_command_line()", "floyd compile", ""){
 	const auto r = parse_floyd_command_line(string_to_args("floyd compile -i -O3 a.txt b.txt -o c.txt"));
 	const auto& r2 = std::get<command_t::compile_t>(r._contents);
 	QUARK_UT_VERIFY(r2.source_paths == (std::vector<std::string>{ "a.txt", "b.txt" }) );
@@ -588,6 +629,17 @@ QUARK_TEST_VIP("", "parse_floyd_command_line()", "floyd compile", ""){
 }
 
 
+
+QUARK_TEST("", "parse_floyd_command_line()", "floyd compile", ""){
+	const auto r = parse_floyd_command_line(string_to_args("floyd compile -vcarray -dcppmap mygame.floyd"));
+	const auto& r2 = std::get<command_t::compile_t>(r._contents);
+	QUARK_UT_VERIFY(r2.source_paths == std::vector<std::string>{ "mygame.floyd" });
+	QUARK_UT_VERIFY(r2.dest_path == "");
+	QUARK_UT_VERIFY(r2.output_type == eoutput_type::object_file);
+	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_UT_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::carray, dict_backend::cppmap, false }, eoptimization_level::O2_enable_default_optimizations }));
+	QUARK_UT_VERIFY(r2.trace == false);
+}
 
 
 

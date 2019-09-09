@@ -179,18 +179,22 @@ Flags:
 
 |FLAG	| MEANING
 |:---	|:---	
-| -t    | Verbose tracing
-| -p    | Output parse tree as a JSON
-| -a    | Output Abstract syntax tree (AST) as a JSON
-| -i    | Output intermediate representation (IR / ASM) as assembly
-| -b    | Use Floyd's bytecode backend instead of default LLVM
-| -g    | Compiler with debug info, no optimizations
-| -O1   | Enable trivial optimizations
-| -O2   | Enable default optimizations
-| -O3   | Enable expensive optimizations
-| -l    | floyd bench returns a list of all benchmarks
+| -t       | Verbose tracing
+| -p       | Output parse tree as a JSON
+| -a       | Output Abstract syntax tree (AST) as a JSON
+| -i       | Output intermediate representation (IR / ASM) as assembly
+| -b       | Use Floyd's bytecode backend instead of default LLVM
+| -g       | Compiler with debug info, no optimizations
+| -O1      | Enable trivial optimizations
+| -O2      | Enable default optimizations
+| -O3      | Enable expensive optimizations
+| -l       | floyd bench returns a list of all benchmarks
+| -vcarray | Force vectors to use carray backend
+| -vhamt   | Force vectors to use HAMT backend (this is default)
+| -dcppmap | Force dictionaries to use c++ map as backend
+| -dhamt   | Force dictionaries to use HAMT backend (this is default)
 
-#####MORE EXAMPLES
+##### MORE EXAMPLES
 
 Compile "examples/fibonacci.floyd" to LLVM IR code, disable optimization, write to file "a.ir"
 
