@@ -163,27 +163,38 @@ Usage:
 
 ||COMMAND		  	| MEANING
 |:---|:---				|:---	
-|help		| floyd help								| Show built in help for command line tool
-|run		| floyd run mygame.floyd [arg1 arg2]		| compile and run the floyd program "mygame.floyd" using native exection
-|run		| floyd run -t mygame.floyd					| -t turns on tracing, which shows compilation steps
-|compile	| floyd compile mygame.floyd				| compile the floyd program "mygame.floyd" to a native object file, output to stdout
-|compile	| floyd compile mygame.floyd mylib.floyd	| compile the floyd program "mygame.floyd" and "mylib.floyd" to one native object file, output to stdout
-|compile	| floyd compile mygame.floyd -o test		| compile the floyd program "mygame.floyd" to a native object file .o, called "test.o"
-|bench		| floyd bench mygame.floyd					| Runs all benchmarks, as defined by benchmark-def statements in Floyd program
-|bench		| floyd bench mygame.floyd rle game_loop	| Runs specified benchmarks "rle" and "game_loop"
-|bench		| floyd bench -l mygame.floyd				| Returns list of benchmarks
-|hwcaps		| floyd hwcaps								| Outputs hardware capabilities
-|runtests	| floyd runtests							| Runs Floyd built internal unit tests
+|help     | floyd help                         | Show built in help for command line tool
+|run      | floyd run game.floyd [arg1 arg2]   | compile and run the floyd program "game.floyd" using native execution. arg1 and arg2 are inputs to your main()
+|run      | floyd run -t mygame.floyd          | -t turns on tracing, which shows compilation steps
+|compile  | floyd compile mygame.floyd         | compile the floyd program "mygame.floyd" to a native object file, output to stdout
+|compile  | floyd compile game.floyd myl.floyd | compile the floyd program "game.floyd" and "myl.floyd" to one native object file, output to stdout
+|compile  | floyd compile game.floyd -o test.o | compile the floyd program "game.floyd" to a native object file .o, called "test.o"
+|bench    | floyd bench mygame.floyd           | Runs all benchmarks, as defined by benchmark-def statements in Floyd program
+|bench    | floyd bench game.floyd rle game_lp | Runs specified benchmarks: "rle" and "game_lp"
+|bench    | floyd bench -l mygame.floyd        | Returns list of benchmarks
+|hwcaps   | floyd hwcaps                       | Outputs hardware capabilities
+|runtests | floyd runtests                     | Runs Floyd built internal unit tests
 
 Flags:
 
 |FLAG	| MEANING
 |:---	|:---	
-| t		| Verbose tracing
-| p		| Output parse tree as a JSON
-| a		| Output Abstract syntax tree (AST) as a JSON
-| i		| Output intermediate representation (IR / ASM) as assembly
-| b		| Use Floyd's bytecode backend (compiler, bytecode ISA and interpreter) rather than the default, LLVM
+| -t    | Verbose tracing
+| -p    | Output parse tree as a JSON
+| -a    | Output Abstract syntax tree (AST) as a JSON
+| -i    | Output intermediate representation (IR / ASM) as assembly
+| -b    | Use Floyd's bytecode backend instead of default LLVM
+| -g    | Compiler with debug info, no optimizations
+| -O1   | Enable trivial optimizations
+| -O2   | Enable default optimizations
+| -O3   | Enable expensive optimizations
+| -l    | floyd bench returns a list of all benchmarks
+
+#####MORE EXAMPLES
+
+Compile "examples/fibonacci.floyd" to LLVM IR code, disable optimization, write to file "a.ir"
+
+>	floyd compile -i -g examples/fibonacci.floyd -o a.ir
 
 
 

@@ -42,6 +42,7 @@ struct command_t {
 		std::string source_path;
 		std::vector<std::string> floyd_main_args;
 		ebackend backend;
+		compiler_settings_t compiler_settings;
 		bool trace;
 	};
 
@@ -72,6 +73,7 @@ struct command_t {
 		std::string source_path;
 		std::vector<std::string> optional_benchmark_keys;
 		ebackend backend;
+		compiler_settings_t compiler_settings;
 		bool trace;
 	};
 

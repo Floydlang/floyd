@@ -162,6 +162,7 @@ const bool DebugifyEach = false;
 
 const bool Coroutines = false;
 
+const bool StripDebug = false;
 
 
 class OptCustomPassManager : public legacy::PassManager {
@@ -359,24 +360,11 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 	initializeWriteBitcodePassPass(Registry);
 //???  initializeHardwareLoopsPass(Registry);
 
-
 	SMDiagnostic Err;
 
-/*
-	// Load the input module...
-	std::unique_ptr<Module> M =
-			parseIRFile(InputFilename, Err, Context, !NoVerify, ClDataLayout);
-*/
-
-	const bool StripDebug = false;
 	// Strip debug info before running the verifier.
 	if (StripDebug)
 		StripDebugInfo(*M);
-
-
-	// If we are supposed to override the target triple or data layout, do so now.
-//	if (!TargetTriple.empty())
-//		M->setTargetTriple(Triple::normalize(TargetTriple));
 
 	// Immediately run the verifier to catch any problems before starting up the
 	// pass pipelines.  Otherwise we can crash on broken code during
@@ -386,16 +374,12 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 		throw std::exception();
 	}
 
-	// Figure out what stream we are supposed to write to...
-	std::unique_ptr<ToolOutputFile> Out;
-
 	Triple ModuleTriple(M->getTargetTriple());
 	TargetMachine *Machine = instance.target.target_machine;
 
 	std::string CPUStr = Machine->getTargetCPU();
 	std::string FeaturesStr = Machine->getTargetFeatureString();
 	const TargetOptions Options = InitTargetOptionsFromCodeGenFlags();
-
 
 	TargetMachine* TM = Machine;
 
@@ -407,7 +391,6 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 	// Create a PassManager to hold and optimize the collection of passes we are
 	// about to build.
 	OptCustomPassManager Passes;
-	bool AddOneTimeDebugifyPasses = EnableDebugify && !DebugifyEach;
 
 	// Add an appropriate TargetLibraryInfo pass for the module's triple.
 	TargetLibraryInfoImpl TLII(ModuleTriple);
@@ -418,13 +401,7 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 	Passes.add(new TargetLibraryInfoWrapperPass(TLII));
 
 	// Add internal analysis passes from the target machine.
-	Passes.add(createTargetTransformInfoWrapperPass(TM ? TM->getTargetIRAnalysis()
-																										 : TargetIRAnalysis()));
-
-/*
-	if (AddOneTimeDebugifyPasses)
-		Passes.add(createDebugifyModulePass());
-*/
+	Passes.add(createTargetTransformInfoWrapperPass(TM ? TM->getTargetIRAnalysis() : TargetIRAnalysis()));
 
 	std::unique_ptr<legacy::FunctionPassManager> FPasses;
 	if (true /*|| OptLevelO0 || OptLevelO1 || OptLevelO2 || OptLevelOs || OptLevelOz || OptLevelO3*/) {
@@ -509,7 +486,6 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 
 	if (settings.optimization_level == eoptimization_level::O2_enable_default_optimizations)
 		AddOptimizationPasses(Passes, *FPasses, TM, 2, 0);
-
 /*
 	if (OptLevelOs)
 		AddOptimizationPasses(Passes, *FPasses, TM, 2, 1);
@@ -517,10 +493,9 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 	if (OptLevelOz)
 		AddOptimizationPasses(Passes, *FPasses, TM, 2, 2);
 */
-
-	//???
 	if (settings.optimization_level == eoptimization_level::O3_enable_expensive_optimizations)
 		AddOptimizationPasses(Passes, *FPasses, TM, 3, 0);
+
 
 	if (FPasses) {
 		FPasses->doInitialization();
