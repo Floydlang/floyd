@@ -146,7 +146,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "Define variable", "Error: No initial assig
 			mutable string row
 
 		)",
-		R"___(Expected '=' character. Line: 3 "mutable string row")___"
+		R"___([Syntax] Expected '=' character. Line: 3 "mutable string row")___"
 	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Define variable", "Error: assign to immutable local", "exception"){
@@ -541,7 +541,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "int range", "Init with unsigned literal", 
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		"let int result = 618446744073709551615",
-		R"___(Integer literal "618446744073709551615" larger than maxium allowed, which is 18446744073709551615 aka 0x7fffffff'ffffffff - maxium for an unsigned 64-bit integer. Line: 1 "let int result = 618446744073709551615")___"
+		R"___([Syntax] Integer literal "618446744073709551615" larger than maxium allowed, which is 18446744073709551615 aka 0x7fffffff'ffffffff - maxium for an unsigned 64-bit integer. Line: 1 "let int result = 618446744073709551615")___"
 	);
 }
 
@@ -639,7 +639,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "-true", "") {
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "Forgot let or mutable", "", "Exception"){
-	ut_verify_exception_nolib(QUARK_POS, "int test = 123", "Use 'mutable' or 'let' syntax. Line: 1 \"int test = 123\"");
+	ut_verify_exception_nolib(QUARK_POS, "int test = 123", "[Syntax] Use 'mutable' or 'let' syntax. Line: 1 \"int test = 123\"");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "Access variable", "Access undefined variable", "exception"){
@@ -4743,7 +4743,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "mutate struct member using = won
 			print(b)
 
 		)",
-		R"___(Expected constant or identifier. Line: 5 "let b = a.green = 3")___"
+		R"___([Syntax] Expected constant or identifier. Line: 5 "let b = a.green = 3")___"
 	);
 }
 
@@ -6309,12 +6309,12 @@ FLOYD_LANG_PROOF("Floyd test suite", "rename_fsentry()", "", ""){
 
 
 FLOYD_LANG_PROOF("Parser error", "", "", ""){
-	ut_verify_exception_nolib(QUARK_POS, R"(		£		)", R"___(Illegal characters. Line: 1 "£")___");
+	ut_verify_exception_nolib(QUARK_POS, R"(		£		)", R"___([Syntax] Illegal characters. Line: 1 "£")___");
 }
 
 
 FLOYD_LANG_PROOF("Parser error", "", "", ""){
-	ut_verify_exception_nolib(QUARK_POS, R"(		{ let a = 10		)", R"___(Block is missing end bracket '}'. Line: 1 "{ let a = 10")___");
+	ut_verify_exception_nolib(QUARK_POS, R"(		{ let a = 10		)", R"___([Syntax] Block is missing end bracket '}'. Line: 1 "{ let a = 10")___");
 }
 
 FLOYD_LANG_PROOF("Parser error", "", "", ""){
@@ -6325,7 +6325,7 @@ FLOYD_LANG_PROOF("Parser error", "", "", ""){
 			[ 100, 200 }
 
 		)",
-		R"___(Unexpected char "}" in bounded list [ ]! Line: 3 "[ 100, 200 }")___"
+		R"___([Syntax] Unexpected char "}" in bounded list [ ]! Line: 3 "[ 100, 200 }")___"
 	);
 }
 
@@ -6337,7 +6337,7 @@ FLOYD_LANG_PROOF("Parser error", "", "", ""){
 			x = { "a": 100 ]
 
 		)",
-		R"___(Unexpected char "]" in bounded list { }! Line: 3 "x = { "a": 100 ]")___"
+		R"___([Syntax] Unexpected char "]" in bounded list { }! Line: 3 "x = { "a": 100 ]")___"
 	);
 }
 
@@ -6346,7 +6346,7 @@ FLOYD_LANG_PROOF("Parser error", "", "", ""){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"("abc\)",
-		R"___(Incomplete escape sequence in string literal: "abc"! Line: 1 ""abc\")___"
+		R"___([Syntax] Incomplete escape sequence in string literal: "abc"! Line: 1 ""abc\")___"
 	);
 }
 

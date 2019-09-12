@@ -20,7 +20,7 @@ R"(for (i in 1..5) {
   print(i)
 }
 )",
-		R"(For loop has illegal range syntax. Line: 1 "for (i in 1..5) {")"
+		R"___([Syntax] For loop has illegal range syntax. Line: 1 "for (i in 1..5) {")___"
 	);
 }
 

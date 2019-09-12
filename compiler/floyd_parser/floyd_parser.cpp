@@ -218,18 +218,25 @@ void check_illegal_chars(const seq_t& p){
 }
 
 parse_tree_t parse_program2(const std::string& program){
-	const auto pos = seq_t(program);
-	check_illegal_chars(pos);
+	try {
+		const auto pos = seq_t(program);
+		check_illegal_chars(pos);
 
-	const auto statements_pos = parse_statements_no_brackets(pos);
-	const auto p = parse_tree_t{ statements_pos.parse_tree };
+		const auto statements_pos = parse_statements_no_brackets(pos);
+		const auto p = parse_tree_t{ statements_pos.parse_tree };
 
-	if(k_trace_parse_tree_flag){
-		QUARK_SCOPED_TRACE("Parser tree output");
-		QUARK_TRACE(json_to_pretty_string(p._value));
+		if(k_trace_parse_tree_flag){
+			QUARK_SCOPED_TRACE("Parser tree output");
+			QUARK_TRACE(json_to_pretty_string(p._value));
+		}
+
+		return p;
 	}
-
-	return p;
+	catch(const compiler_error& e){
+		const auto what = e.what();
+		const auto what2 = std::string("[Syntax] ") + what;
+		throw compiler_error(e.location, e.location2, what2);
+	}
 }
 
 const std::string k_test_program_0_source = "func int main(){ return 3; }";
@@ -368,7 +375,7 @@ bool is_identifier_and_equal(const seq_t& s){
 	}
 }
 
-implicit_statement detect_implicit_statement_lookahead(const seq_t& s){
+static implicit_statement detect_implicit_statement_lookahead(const seq_t& s){
 	if(is_identifier_and_equal(s)){
 		return implicit_statement::k_assign;
 	}
