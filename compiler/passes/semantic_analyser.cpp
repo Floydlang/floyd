@@ -167,7 +167,7 @@ const std::pair<std::string, symbol_t>* resolve_symbol_by_address(const analyser
 /////////////////////////////////////////			RESOLVE typeid_t::unresolved_t USING LEXICAL SCOPE PATH
 
 
-typeid_t resolve_type_internal(analyser_t& acc, const location_t& loc, const typeid_t& type){
+static typeid_t resolve_type_internal(analyser_t& acc, const location_t& loc, const typeid_t& type){
 	QUARK_ASSERT(acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -256,6 +256,17 @@ typeid_t resolve_type_internal(analyser_t& acc, const location_t& loc, const typ
 
 typeid_t resolve_type(analyser_t& acc, const location_t& loc, const typeid_t& type){
 	const auto result = resolve_type_internal(acc, loc, type);
+/*
+	catch(const compiler_error& e){
+		std::stringstream what;
+		what << "Argument 2 must be a typeid literal.";
+		throw_compiler_error(parent.location, what.str());
+	}
+	catch(...){
+		
+	}
+*/
+
 	if(check_types_resolved(result) == false){
 		throw_compiler_error(loc, "Cannot resolve type");
 	}

@@ -64,6 +64,10 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "compile"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "run"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -80,11 +84,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-g"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-O1"
@@ -96,6 +100,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "examples/fibonacci.floyd"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "/Users/marcus/Desktop/adventure.floyd"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -108,7 +116,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o g.ir"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>

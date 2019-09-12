@@ -1,6 +1,114 @@
 
 print("Welcome to the the dungeon!")
 
+//	Player is encoded as an object sitting somewhere in the world, usually in a room.
+
+struct object_t {
+	string name
+
+	bool is_player
+
+	//	The object cannot be moved or carried
+	bool fixed
+
+	//	Notice. Even if player can't put something inside (for example), there can still be objects inside.
+	bool player_can_put_inside
+	bool player_can_put_ontop
+	bool player_can_put_behind
+	bool player_can_put_under
+
+/*
+	[object_t] inside
+	[object_t] ontop
+	[object_t] behind
+	[object_t] under
+*/
+}
+
+let null_object = object_t("", false, false,	false, false, false, false)
+
+func object_t make_player(){
+	return object_t(
+		"player",
+		true,
+		false,
+
+		false, false, false, false
+	)
+}
+func object_t make_obj()
+
+struct room_t {
+	string name
+	string short_description
+	string long_description
+//	[string: string] exits
+	[object_t] objects_in_room
+}
+
+struct world_t {
+	[string: room_t] rooms
+}
 
 
-print("You are in a small clearing in a pine forest. It's sunny and birds are singing.")
+//			,
+//			{ "north": "forest1" },
+//			{ make_obj(), make_obj() }
+
+let init_world = world_t(
+	{
+		"forest0":
+		room_t (
+			"Small clearing",
+			"You are in a small clearing.",
+			"You are in a small clearing in a pine forest. It's sunny and birds are singing.",
+			[]
+		),
+
+		"forest1":
+		room_t (
+			"Forest path",
+			"You are on the muddy path.",
+			"This is a muddy path heading north-sound. Further south the forest opens up.",
+			[ make_player() ]
+		)
+	}
+)
+
+struct world_change_t {
+	string message
+	world_t new_world
+}
+
+struct player_loc_t {
+	object_t player
+	string room_id
+	int slot_index
+}
+
+func player_loc_t find_player(world_t world){
+	let room_k = get_keys(world.rooms)
+	for(r in 0 ..< size(room_k)) {
+		let room = world.rooms[room_k[r]]
+		for(i in 0 ..< size(room.objects_in_room)) {
+			let o = room.objects_in_room[i]
+			if (o.is_player) {
+				return player_loc_t(o, room_k[r], i)
+			}
+		}
+	}
+	return player_loc_t(null_object, "", -1)
+}
+
+func string action_look(world_t world){
+	let player_loc = find_player(world)
+
+	assert(player_loc.player.name == "player")
+	assert(player_loc.room_id != "" && player_loc.slot_index != -1)
+
+	return world.rooms[player_loc.room_id].long_description
+}
+
+
+let world = init_world
+print("You look around: " + action_look(world))
