@@ -175,6 +175,7 @@
 		2CC0B3E022248E3E00C9D584 /* issue_regression_tests.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC0B3DF22248E3E00C9D584 /* issue_regression_tests.cpp */; };
 		2CC0B3E322248EBD00C9D584 /* test_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC0B3E122248EBD00C9D584 /* test_helpers.cpp */; };
 		2CC34CC121EF8882000F3CB6 /* floyd_repl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC34CBF21EF8882000F3CB6 /* floyd_repl.cpp */; };
+		2CC88E65232AA0530029C638 /* adventure.floyd in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2CC88E64232AA0300029C638 /* adventure.floyd */; };
 		2CC9B79F2309FD1D00B195C8 /* value_backend.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC9B79D2309FD1D00B195C8 /* value_backend.cpp */; };
 		2CC9B7A02309FD1D00B195C8 /* value_backend.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC9B79D2309FD1D00B195C8 /* value_backend.cpp */; };
 		2CCA88F522B6B5F100976D8E /* floyd_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CCA88F322B6B5F100976D8E /* floyd_corelib.cpp */; };
@@ -198,6 +199,7 @@
 			dstPath = examples;
 			dstSubfolderSpec = 6;
 			files = (
+				2CC88E65232AA0530029C638 /* adventure.floyd in Copy Files - examples */,
 				2C2FB296232A9F1B006105E4 /* process_test1.floyd in Copy Files - examples */,
 				2C2FB297232A9F1B006105E4 /* hello_world.floyd in Copy Files - examples */,
 				2C2FB298232A9F1B006105E4 /* benchmarks.floyd in Copy Files - examples */,
@@ -713,6 +715,7 @@
 		2CC0B3E222248EBD00C9D584 /* test_helpers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = test_helpers.h; sourceTree = "<group>"; };
 		2CC34CBF21EF8882000F3CB6 /* floyd_repl.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_repl.cpp; sourceTree = "<group>"; };
 		2CC34CC021EF8882000F3CB6 /* floyd_repl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_repl.h; sourceTree = "<group>"; };
+		2CC88E64232AA0300029C638 /* adventure.floyd */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = adventure.floyd; sourceTree = "<group>"; };
 		2CC9B79D2309FD1D00B195C8 /* value_backend.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = value_backend.cpp; sourceTree = "<group>"; };
 		2CC9B79E2309FD1D00B195C8 /* value_backend.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = value_backend.h; sourceTree = "<group>"; };
 		2CCA88F322B6B5F100976D8E /* floyd_corelib.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_corelib.cpp; sourceTree = "<group>"; };
@@ -906,10 +909,10 @@
 				2C1D84DF1CA765A90042F0A8 /* compiler */,
 				2C2FB271232A9CFF006105E4 /* docs */,
 				2C2FB28C232A9CFF006105E4 /* examples */,
-				2C2FB29E232A9F35006105E4 /* utilities */,
 				2CBF330B202143BC0030AE98 /* Frameworks */,
 				2C1D84DE1CA765A90042F0A8 /* Products */,
 				2C182F1F220B17780003FC1F /* README.md */,
+				2C2FB29E232A9F35006105E4 /* utilities */,
 			);
 			sourceTree = "<group>";
 		};
@@ -949,16 +952,16 @@
 		2C2FB271232A9CFF006105E4 /* docs */ = {
 			isa = PBXGroup;
 			children = (
-				2C2FB272232A9CFF006105E4 /* floyd_preso.key */,
-				2C2FB273232A9CFF006105E4 /* floyd_logo_banner.png */,
-				2C2FB274232A9CFF006105E4 /* README.md */,
-				2C2FB275232A9CFF006105E4 /* floyd_logo1.png */,
 				2C2FB276232A9CFF006105E4 /* _config.yml */,
-				2C2FB277232A9CFF006105E4 /* floyd_snippets.png */,
-				2C2FB278232A9CFF006105E4 /* floyd_quick_reference.png */,
 				2C2FB279232A9CFF006105E4 /* floyd_container_example.png */,
-				2C2FB27A232A9CFF006105E4 /* floyd_optimization.png */,
+				2C2FB273232A9CFF006105E4 /* floyd_logo_banner.png */,
+				2C2FB275232A9CFF006105E4 /* floyd_logo1.png */,
 				2C2FB27B232A9CFF006105E4 /* floyd_manual */,
+				2C2FB27A232A9CFF006105E4 /* floyd_optimization.png */,
+				2C2FB272232A9CFF006105E4 /* floyd_preso.key */,
+				2C2FB278232A9CFF006105E4 /* floyd_quick_reference.png */,
+				2C2FB277232A9CFF006105E4 /* floyd_snippets.png */,
+				2C2FB274232A9CFF006105E4 /* README.md */,
 			);
 			path = docs;
 			sourceTree = "<group>";
@@ -966,22 +969,22 @@
 		2C2FB27B232A9CFF006105E4 /* floyd_manual */ = {
 			isa = PBXGroup;
 			children = (
-				2C2FB27C232A9CFF006105E4 /* floyd_systems_vst.png */,
-				2C2FB27D232A9CFF006105E4 /* floyd_pacman.png */,
-				2C2FB27E232A9CFF006105E4 /* floyd_systems_level2_diagram.png */,
-				2C2FB27F232A9CFF006105E4 /* floyd_logo_banner.png */,
-				2C2FB280232A9CFF006105E4 /* floyd_systems_software_system.png */,
-				2C2FB281232A9CFF006105E4 /* floyd_sys_example.png */,
-				2C2FB282232A9CFF006105E4 /* floyd_systems_level4_diagram.png */,
-				2C2FB283232A9CFF006105E4 /* floyd_systems_level1_diagram.png */,
-				2C2FB284232A9CFF006105E4 /* floyd_process.png */,
-				2C2FB285232A9CFF006105E4 /* floyd_systems_1st_person_shooter.png */,
 				2C2FB286232A9CFF006105E4 /* cache_system.png */,
-				2C2FB287232A9CFF006105E4 /* floyd_systems_level3_diagram.png */,
-				2C2FB288232A9CFF006105E4 /* floyd_quick_reference.png */,
-				2C2FB289232A9CFF006105E4 /* floyd_container_example.png */,
 				2C2FB28A232A9CFF006105E4 /* cpu_overview.png */,
+				2C2FB289232A9CFF006105E4 /* floyd_container_example.png */,
+				2C2FB27F232A9CFF006105E4 /* floyd_logo_banner.png */,
 				2C2FB28B232A9CFF006105E4 /* floyd_manual.md */,
+				2C2FB27D232A9CFF006105E4 /* floyd_pacman.png */,
+				2C2FB284232A9CFF006105E4 /* floyd_process.png */,
+				2C2FB288232A9CFF006105E4 /* floyd_quick_reference.png */,
+				2C2FB281232A9CFF006105E4 /* floyd_sys_example.png */,
+				2C2FB285232A9CFF006105E4 /* floyd_systems_1st_person_shooter.png */,
+				2C2FB283232A9CFF006105E4 /* floyd_systems_level1_diagram.png */,
+				2C2FB27E232A9CFF006105E4 /* floyd_systems_level2_diagram.png */,
+				2C2FB287232A9CFF006105E4 /* floyd_systems_level3_diagram.png */,
+				2C2FB282232A9CFF006105E4 /* floyd_systems_level4_diagram.png */,
+				2C2FB280232A9CFF006105E4 /* floyd_systems_software_system.png */,
+				2C2FB27C232A9CFF006105E4 /* floyd_systems_vst.png */,
 			);
 			path = floyd_manual;
 			sourceTree = "<group>";
@@ -989,14 +992,15 @@
 		2C2FB28C232A9CFF006105E4 /* examples */ = {
 			isa = PBXGroup;
 			children = (
-				2C2FB28D232A9CFF006105E4 /* process_test1.floyd */,
-				2C2FB28E232A9CFF006105E4 /* hello_world.floyd */,
+				2CC88E64232AA0300029C638 /* adventure.floyd */,
 				2C2FB28F232A9CFF006105E4 /* benchmarks.floyd */,
-				2C2FB290232A9CFF006105E4 /* test_main.floyd */,
-				2C2FB291232A9CFF006105E4 /* game_of_life.cpp */,
-				2C2FB292232A9CFF006105E4 /* test.json */,
 				2C2FB293232A9CFF006105E4 /* fibonacci.floyd */,
+				2C2FB291232A9CFF006105E4 /* game_of_life.cpp */,
 				2C2FB294232A9CFF006105E4 /* game_of_life.floyd */,
+				2C2FB28E232A9CFF006105E4 /* hello_world.floyd */,
+				2C2FB28D232A9CFF006105E4 /* process_test1.floyd */,
+				2C2FB290232A9CFF006105E4 /* test_main.floyd */,
+				2C2FB292232A9CFF006105E4 /* test.json */,
 			);
 			path = examples;
 			sourceTree = "<group>";
