@@ -17,7 +17,7 @@ ENDIF(MSVC)
 #SET (CMAKE_BUILD_TYPE Release)
 SET (CMAKE_BUILD_TYPE Debug)
 
-include_directories(passes parts target_commandline_tool  /usr/include target_benchmark_internals libs/benchmark/include libs/benchmark/googletest/googlemock/ libs/benchmark/googletest/googlemock/include libs/benchmark/googletest/googletest/include/ floyd_runtime floyd_basics floyd_ast bytecode_interpreter  parts/immer-master floyd_parser parts/sha1 llvm_pipeline  .)
+include_directories(passes parts target_tool  /usr/include target_benchmark_internals libs/benchmark/include libs/benchmark/googletest/googlemock/ libs/benchmark/googletest/googlemock/include libs/benchmark/googletest/googletest/include/ floyd_runtime floyd_basics floyd_ast bytecode_interpreter  parts/immer-master floyd_parser parts/sha1 llvm_pipeline  .)
 
 if (MSVC)  # - Microsoft Visual C++
 set (PROJECTNAME_ARCHITECTURE "x64")
@@ -82,10 +82,10 @@ bytecode_interpreter/bytecode_interpreter.cpp
 bytecode_interpreter/bytecode_intrinsics.cpp
 bytecode_interpreter/floyd_interpreter.cpp
 cpp_experiments.cpp
-examples/benchmarks.floyd
-examples/game_of_life.cpp
-examples/process_test1.floyd
-examples/test_main.floyd
+#examples/benchmarks.floyd
+#examples/game_of_life.cpp
+#examples/process_test1.floyd
+#examples/test_main.floyd
 floyd_ast/ast.cpp
 floyd_ast/ast_visitor.cpp
 floyd_ast/expression.cpp
@@ -132,9 +132,11 @@ libs/benchmark/src/sysinfo.cc
 libs/benchmark/src/timers.cc
 llvm_pipeline/floyd_llvm.cpp
 llvm_pipeline/floyd_llvm_codegen.cpp
+llvm_pipeline/floyd_llvm_codegen_basics.cpp
 llvm_pipeline/floyd_llvm_corelib.cpp
 llvm_pipeline/floyd_llvm_helpers.cpp
 llvm_pipeline/floyd_llvm_intrinsics.cpp
+llvm_pipeline/floyd_llvm_optimization.cpp
 llvm_pipeline/floyd_llvm_runtime.cpp
 llvm_pipeline/floyd_llvm_runtime_functions.cpp
 llvm_pipeline/floyd_llvm_types.cpp
@@ -161,10 +163,10 @@ software_system.cpp
 target_benchmark_internals/benchmark_basics.cpp
 target_benchmark_internals/compressed_vector_benchmark.cpp
 target_benchmark_internals/interpretator_benchmark.cpp
-target_commandline_tool/floyd_command_line_parser.cpp
-target_commandline_tool/floyd_main.cpp
-target_commandline_tool/floyd_repl.cpp
-target_commandline_tool/format_table.cpp
+target_tool/floyd_command_line_parser.cpp
+target_tool/floyd_main.cpp
+target_tool/floyd_repl.cpp
+target_tool/format_table.cpp
 )
 
 if (MSVC)  # - Microsoft Visual C++
@@ -287,7 +289,7 @@ target_benchmark_internals/benchmark_soundsystem.cpp
 target_benchmark_internals/compressed_vector_benchmark.cpp
 target_benchmark_internals/floyd_benchmark_main.cpp
 target_benchmark_internals/interpretator_benchmark.cpp
-target_commandline_tool/format_table.cpp
+target_tool/format_table.cpp
 )
 
 ##
