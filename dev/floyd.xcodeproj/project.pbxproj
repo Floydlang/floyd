@@ -245,7 +245,7 @@
 		2C18048B208B947C00F62480 /* expression.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = expression.h; sourceTree = "<group>"; };
 		2C18048C208B947C00F62480 /* statement.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = statement.cpp; sourceTree = "<group>"; };
 		2C18048D208B947C00F62480 /* statement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = statement.h; sourceTree = "<group>"; };
-		2C182F1F220B17780003FC1F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		2C182F1F220B17780003FC1F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = compiler/README.md; sourceTree = "<group>"; };
 		2C1CEFD2231415AE00DE9A77 /* benchmark_soundsystem.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = benchmark_soundsystem.cpp; sourceTree = "<group>"; };
 		2C1CEFD3231415AE00DE9A77 /* benchmark_soundsystem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = benchmark_soundsystem.h; sourceTree = "<group>"; };
 		2C1CEFD5231415FB00DE9A77 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
