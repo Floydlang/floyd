@@ -255,22 +255,25 @@ static typeid_t resolve_type_internal(analyser_t& acc, const location_t& loc, co
 }
 
 typeid_t resolve_type(analyser_t& acc, const location_t& loc, const typeid_t& type){
-	const auto result = resolve_type_internal(acc, loc, type);
-/*
+	try {
+		const auto result = resolve_type_internal(acc, loc, type);
+
+		if(check_types_resolved(result) == false){
+			throw_compiler_error(loc, "Cannot resolve type");
+		}
+		return result;
+	}
 	catch(const compiler_error& e){
-		std::stringstream what;
-		what << "Argument 2 must be a typeid literal.";
-		throw_compiler_error(parent.location, what.str());
+		throw;
+	}
+	catch(const std::exception& e){
+		throw_compiler_error(loc, e.what());
 	}
 	catch(...){
-		
+		std::stringstream what;
+		what << "Argument 2 must be a typeid literal.";
+		throw_compiler_error(loc, what.str());
 	}
-*/
-
-	if(check_types_resolved(result) == false){
-		throw_compiler_error(loc, "Cannot resolve type");
-	}
-	return result;
 }
 
 
@@ -896,7 +899,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 			}
 			const auto member_type = struct_def._members[member_index]._type;
 			if(new_value_type != member_type){
-				quark::throw_runtime_error("New value's type does not match struct member's type.");
+				throw_compiler_error(parent.location, "New value's type does not match struct member's type.");
 			}
 
 			return {
@@ -945,7 +948,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 
 		const auto element_type = collection_type.get_vector_element_type();
 		if(element_type != new_value_type){
-			quark::throw_runtime_error("New value's type must match vector's element type.");
+			throw_compiler_error(parent.location, "New value's type must match vector's element type.");
 		}
 
 		return {
@@ -966,7 +969,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 
 		const auto element_type = collection_type.get_dict_value_type();
 		if(element_type != new_value_type){
-			quark::throw_runtime_error("New value's type must match dict's value type.");
+			throw_compiler_error(parent.location, "New value's type must match dict's value type.");
 		}
 
 		return {
@@ -1057,12 +1060,12 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_find_expression(const anal
 
 	if(parent_type.is_string()){
 		if(wanted_type.is_string() == false){
-			quark::throw_runtime_error("find() requires argument 2 to be a string.");
+			throw_compiler_error(parent.location, "find() requires argument 2 to be a string.");
 		}
 	}
 	else if(parent_type.is_vector()){
 		if(wanted_type != parent_type.get_vector_element_type()){
-			quark::throw_runtime_error("find([]) requires argument 2 to be of vector's element type.");
+			throw_compiler_error(parent.location, "find([]) requires argument 2 to be of vector's element type.");
 		}
 	}
 	else{
@@ -1090,10 +1093,10 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_exists_expression(const an
 	const auto wanted_type = resolved_call.second.function_type.get_function_args()[1];
 
 	if(parent_type.is_dict() == false){
-		quark::throw_runtime_error("exists() requires a dictionary.");
+		throw_compiler_error(parent.location, "exists() requires a dictionary.");
 	}
 	if(wanted_type.is_string() == false){
-		quark::throw_runtime_error("exists() requires a string key.");
+		throw_compiler_error(parent.location, "exists() requires a string key.");
 	}
 
 	return {
@@ -1115,10 +1118,10 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_erase_expression(const ana
 	const auto key_type = resolved_call.second.function_type.get_function_args()[1];
 
 	if(parent_type.is_dict() == false){
-		quark::throw_runtime_error("erase() requires a dictionary.");
+		throw_compiler_error(parent.location, "erase() requires a dictionary.");
 	}
 	if(key_type.is_string() == false){
-		quark::throw_runtime_error("erase() requires a string key.");
+		throw_compiler_error(parent.location, "erase() requires a string key.");
 	}
 
 	return {
@@ -1141,7 +1144,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_get_keys_expression(const 
 	const auto parent_type = resolved_call.second.function_type.get_function_args()[0];
 
 	if(parent_type.is_dict() == false){
-		quark::throw_runtime_error("get_keys() requires a dictionary.");
+		throw_compiler_error(parent.location, "get_keys() requires a dictionary.");
 	}
 
 	return {
@@ -1163,7 +1166,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_subset_expression(const an
 	const auto key_type = resolved_call.second.function_type.get_function_args()[1];
 
 	if(parent_type.is_string() == false && parent_type.is_vector() == false){
-		quark::throw_runtime_error("subset([]) requires a string or a vector.");
+		throw_compiler_error(parent.location, "subset([]) requires a string or a vector.");
 	}
 
 	return {
@@ -1185,11 +1188,11 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_replace_expression(const a
 	const auto replace_with_type = resolved_call.second.function_type.get_function_args()[3];
 
 	if(parent_type != replace_with_type){
-		quark::throw_runtime_error("replace() requires argument 4 to be same type of collection.");
+		throw_compiler_error(parent.location, "replace() requires argument 4 to be same type of collection.");
 	}
 
 	if(parent_type.is_string() == false && parent_type.is_vector() == false){
-		quark::throw_runtime_error("replace([]) requires a string or a vector.");
+		throw_compiler_error(parent.location, "replace([]) requires a string or a vector.");
 	}
 
 	return {
@@ -1214,7 +1217,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_expression(const analy
 	const auto expected = harden_map_func_type(resolved_call.second.function_type);
 
 	if(resolved_call.second.function_type != expected){
-		quark::throw_runtime_error("Call to map() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
+		throw_compiler_error(parent.location, "Call to map() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
 	}
 
 	return {
@@ -1236,7 +1239,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_string_expression(cons
 	const auto expected = harden_map_string_func_type(resolved_call.second.function_type);
 
 	if(resolved_call.second.function_type != expected){
-		quark::throw_runtime_error("Call to map_string() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
+		throw_compiler_error(parent.location, "Call to map_string() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
 	}
 
 	return {
@@ -1258,7 +1261,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_dag_expression(const a
 	const auto expected = harden_map_dag_func_type(resolved_call.second.function_type);
 
 	if(resolved_call.second.function_type != expected){
-		quark::throw_runtime_error("Call to map_dag() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
+		throw_compiler_error(parent.location, "Call to map_dag() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
 	}
 
 	return {
@@ -1279,7 +1282,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_filter_expression(const an
 	const auto expected = harden_filter_func_type(resolved_call.second.function_type);
 
 	if(resolved_call.second.function_type != expected){
-		quark::throw_runtime_error("Call to filter() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", expected to be \"" + typeid_to_compact_string(expected) + "\".");
+		throw_compiler_error(parent.location, "Call to filter() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", expected to be \"" + typeid_to_compact_string(expected) + "\".");
 	}
 
 	return {
@@ -1301,7 +1304,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_reduce_expression(const an
 
 	const auto expected = harden_reduce_func_type(resolved_call.second.function_type);
 	if(resolved_call.second.function_type != expected){
-		quark::throw_runtime_error("Call to reduce() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", expected to be \"" + typeid_to_compact_string(expected) + "\".");
+		throw_compiler_error(parent.location, "Call to reduce() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", expected to be \"" + typeid_to_compact_string(expected) + "\".");
 	}
 
 	return {
@@ -1323,7 +1326,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_stable_sort_expression(con
 	const auto expected = harden_stable_sort_func_type(resolved_call.second.function_type);
 
 	if(resolved_call.second.function_type != expected){
-		quark::throw_runtime_error("Call to stable_sort() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
+		throw_compiler_error(parent.location, "Call to stable_sort() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
 	}
 
 	return {
@@ -2338,7 +2341,7 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 	}
 	else if(e3.get_output_type().is_undefined()){
 		QUARK_ASSERT(false);
-		quark::throw_runtime_error("Expression type mismatch.");
+		throw_compiler_error(parent.location, "Expression type mismatch.");
 	}
 	else{
 		std::stringstream what;
@@ -2604,31 +2607,38 @@ static semantic_ast_t run_semantic_analysis0(const unchecked_ast_t& ast){
 semantic_ast_t run_semantic_analysis(const unchecked_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
-	if(k_trace_input_flag || k_trace_output_flag){
-		QUARK_SCOPED_TRACE("run_semantic_analysis()");
+	try {
+		if(k_trace_input_flag || k_trace_output_flag){
+			QUARK_SCOPED_TRACE("run_semantic_analysis()");
 
-		if(k_trace_input_flag){
-			QUARK_SCOPED_TRACE("INPUT AST");
-			QUARK_TRACE(json_to_pretty_string(gp_ast_to_json(ast._tree)));
-		}
-
-		const auto result = run_semantic_analysis0(ast);
-
-		if(k_trace_output_flag){
-			{
-				QUARK_SCOPED_TRACE("OUTPUT AST");
-				QUARK_TRACE(json_to_pretty_string(gp_ast_to_json(result._tree)));
+			if(k_trace_input_flag){
+				QUARK_SCOPED_TRACE("INPUT AST");
+				QUARK_TRACE(json_to_pretty_string(gp_ast_to_json(ast._tree)));
 			}
-			{
-				QUARK_SCOPED_TRACE("OUTPUT TYPES");
-				trace_type_interner(result._tree._interned_types);
-			}
-		}
 
-		return result;
+			const auto result = run_semantic_analysis0(ast);
+
+			if(k_trace_output_flag){
+				{
+					QUARK_SCOPED_TRACE("OUTPUT AST");
+					QUARK_TRACE(json_to_pretty_string(gp_ast_to_json(result._tree)));
+				}
+				{
+					QUARK_SCOPED_TRACE("OUTPUT TYPES");
+					trace_type_interner(result._tree._interned_types);
+				}
+			}
+
+			return result;
+		}
+		else {
+			return run_semantic_analysis0(ast);
+		}
 	}
-	else {
-		return run_semantic_analysis0(ast);
+	catch(const compiler_error& e){
+		const auto what = e.what();
+		const auto what2 = std::string("[Semantics] ") + what;
+		throw compiler_error(e.location, e.location2, what2);
 	}
 }
 

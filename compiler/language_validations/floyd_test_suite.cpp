@@ -158,7 +158,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "Define variable", "Error: assign to immuta
 			let int a = 11
 
 		)",
-		"Local identifier \"a\" already exists. Line: 4 \"let int a = 11\""
+		"[Semantics] Local identifier \"a\" already exists. Line: 4 \"let int a = 11\""
 	);
 }
 
@@ -170,7 +170,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "Define variable", "Error: assign to unknow
 			a = 10
 
 		)",
-		"Unknown identifier 'a'. Line: 3 \"a = 10\""
+		"[Semantics] Unknown identifier 'a'. Line: 3 \"a = 10\""
 	);
 }
 
@@ -324,7 +324,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "int", "Wrong number of arguments to int-co
 			let a = int()
 
 		)",
-		"Construct value of primitive type requires exactly 1 argument. Line: 3 \"let a = int()\""
+		"[Semantics] Construct value of primitive type requires exactly 1 argument. Line: 3 \"let a = int()\""
 	);
 }
 
@@ -336,7 +336,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "Expression", "Error: mix types", "exceptio
 			let a = 3 < "hello"
 
 		)",
-		"Expression type mismatch - cannot convert 'string' to 'int. Line: 3 \"let a = 3 < \"hello\"\""
+		"[Semantics] Expression type mismatch - cannot convert 'string' to 'int. Line: 3 \"let a = 3 < \"hello\"\""
 	);
 }
 
@@ -348,7 +348,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "Expression", "Error: mix types", "exceptio
 			let a = 3 * 3.2
 
 		)",
-		"Expression type mismatch - cannot convert 'double' to 'int. Line: 3 \"let a = 3 * 3.2\""
+		"[Semantics] Expression type mismatch - cannot convert 'double' to 'int. Line: 3 \"let a = 3 * 3.2\""
 	);
 }
 
@@ -613,7 +613,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Type mismatch", ""
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		"let int result = true",
-		"Expression type mismatch - cannot convert 'bool' to 'int. Line: 1 \"let int result = true\""
+		"[Semantics] Expression type mismatch - cannot convert 'bool' to 'int. Line: 1 \"let int result = true\""
 	);
 }
 
@@ -634,7 +634,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "-true", "") {
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		"let int result = -true",
-		"Unary minus don't work on expressions of type \"bool\", only int and double. Line: 1 \"let int result = -true\""
+		"[Semantics] Unary minus don't work on expressions of type \"bool\", only int and double. Line: 1 \"let int result = -true\""
 	);
 }
 
@@ -643,7 +643,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "Forgot let or mutable", "", "Exception"){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "Access variable", "Access undefined variable", "exception"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		print(a)		)", "Undefined variable \"a\". Line: 1 \"print(a)\"");
+	ut_verify_exception_nolib(QUARK_POS, R"(		print(a)		)", "[Semantics] Undefined variable \"a\". Line: 1 \"print(a)\"");
 }
 
 
@@ -668,7 +668,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "Construct value", "double()", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "Construct value", "string()", ""){
-	ut_verify_exception_nolib(QUARK_POS, "let result = string()", "Construct value of primitive type requires exactly 1 argument. Line: 1 \"let result = string()\"");
+	ut_verify_exception_nolib(QUARK_POS, "let result = string()", "[Semantics] Construct value of primitive type requires exactly 1 argument. Line: 1 \"let result = string()\"");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "Construct value", "string()", ""){
@@ -799,7 +799,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "Mutate", "Store to immutable", "compiler e
 			a = 4
 
 		)",
-		"Cannot assign to immutable identifier \"a\". Line: 4 \"a = 4\""
+		"[Semantics] Cannot assign to immutable identifier \"a\". Line: 4 \"a = 4\""
 	);
 }
 
@@ -1034,7 +1034,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "func", "test function args are always immu
 			f(5)
 
 		)",
-		"Cannot assign to immutable identifier \"x\". Line: 4 \"x = 6\""
+		"[Semantics] Cannot assign to immutable identifier \"x\". Line: 4 \"x = 6\""
 	);
 }
 
@@ -1052,7 +1052,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "func", "return from void function", "error
 			}
 
 		)",
-		R"xxx(Cannot return value from function with void-return. Line: 4 "return 3")xxx"
+		R"xxx([Semantics] Cannot return value from function with void-return. Line: 4 "return 3")xxx"
 	);
 }
 
@@ -1153,12 +1153,12 @@ FLOYD_LANG_PROOF("Floyd test suite", "Call", "Error: Wrong number of arguments i
 			let a = f(1, 2)
 
 		)",
-		"Wrong number of arguments in function call, got 2, expected 1. Line: 4 \"let a = f(1, 2)\""
+		"[Semantics] Wrong number of arguments in function call, got 2, expected 1. Line: 4 \"let a = f(1, 2)\""
 	);
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "Call", "Call non-function, non-struct, non-typeid", "exception"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		let a = 3()		)", "Cannot call non-function, its type is int. Line: 1 \"let a = 3()\"");
+	ut_verify_exception_nolib(QUARK_POS, R"(		let a = 3()		)", "[Semantics] Cannot call non-function, its type is int. Line: 1 \"let a = 3()\"");
 }
 
 
@@ -1221,7 +1221,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "return", "Make sure returning wrong type =
 			}
 
 		)",
-		"Expression type mismatch - cannot convert 'string' to 'int. Line: 4 \"return \"x\"\""
+		"[Semantics] Expression type mismatch - cannot convert 'string' to 'int. Line: 4 \"return \"x\"\""
 	);
 }
 
@@ -1234,7 +1234,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "return", "You can't return from global sco
 			return "hello"
 
 		)",
-		R"___(Cannot return value from function with void-return. Line: 3 "return "hello"")___"
+		R"___([Semantics] Cannot return value from function with void-return. Line: 3 "return "hello"")___"
 	);
 }
 
@@ -1331,7 +1331,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "impure", "call pure->impure", "Compilation
 			func int b(){ return a(100) }
 
 		)",
-		"Cannot call impure function from a pure function. Line: 4 \"func int b(){ return a(100) }\""
+		"[Semantics] Cannot call impure function from a pure function. Line: 4 \"func int b(){ return a(100) }\""
 	);
 }
 
@@ -1935,7 +1935,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "if", "Error: if with non-bool expression",
 			if("not a bool"){ } else{ assert(false) }
 
 		)",
-		R"(Boolean condition required. Line: 3 "if("not a bool"){ } else{ assert(false) }")"
+		R"([Semantics] Boolean condition required. Line: 3 "if("not a bool"){ } else{ assert(false) }")"
 	);
 }
 
@@ -2237,7 +2237,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "for", "bool ... bool", "Error"){
 			}
 
 		)",
-		R"abc(For-loop requires integer iterator, start type is bool. Line: 3 "for (i in true ... false) {")abc"
+		R"abc([Semantics] For-loop requires integer iterator, start type is bool. Line: 3 "for (i in true ... false) {")abc"
 	);
 }
 
@@ -2369,7 +2369,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "while", "Error: while with non-bool condit
 			}
 
 		)",
-		R"abc(Expression type mismatch - cannot convert 'int' to 'bool. Line: 4 "while(105){")abc"
+		R"abc([Semantics] Expression type mismatch - cannot convert 'int' to 'bool. Line: 4 "while(105){")abc"
 	);
 }
 
@@ -2961,7 +2961,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "string", "Error: Lookup in string using no
 			print(a["not an integer"])
 
 		)",
-		"Strings can only be indexed by integers, not a \"string\". Line: 4 \"print(a[\"not an integer\"])\""
+		"[Semantics] Strings can only be indexed by integers, not a \"string\". Line: 4 \"print(a[\"not an integer\"])\""
 	);
 }
 
@@ -3073,7 +3073,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "string replace()", "", "error"){
 	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace("hello", 5, 0, "goodbye") == "hellogoodbye")		)", "replace() requires start <= end.");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string replace()", "", "error"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace("hello", 2, 3, 666) == "")		)", "replace() requires argument 4 to be same type of collection.");
+	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace("hello", 2, 3, 666) == "")		)", R"___([Semantics] replace() requires argument 4 to be same type of collection. Line: 1 "assert(replace("hello", 2, 3, 666) == "")")___");
 }
 
 
@@ -3119,7 +3119,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [] - empty constructor", "cannot be
 			print(a)
 
 		)",
-		"Cannot infer vector element type, add explicit type. Line: 3 \"let a = []\""
+		"[Semantics] Cannot infer vector element type, add explicit type. Line: 3 \"let a = []\""
 	);
 }
 
@@ -3173,7 +3173,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [string] - constructor", "empty vec
 
 //	We could support this if we had special type for empty-vector and empty-dict.
 FLOYD_LANG_PROOF("Floyd test suite", "vector ==", "lhs and rhs are empty-typeless", ""){
-	ut_verify_exception_nolib(QUARK_POS, R"(		assert(([] == []) == true)		)", "Cannot infer vector element type, add explicit type. Line: 1 \"assert(([] == []) == true)\"");
+	ut_verify_exception_nolib(QUARK_POS, R"(		assert(([] == []) == true)		)", "[Semantics] Cannot infer vector element type, add explicit type. Line: 1 \"assert(([] == []) == true)\"");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] =", "copy", ""){
@@ -3193,7 +3193,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [string] =", "copy", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector +", "add empty vectors", ""){
-	ut_verify_exception_nolib(QUARK_POS, R"(		let [int] a = [] + [] result = a == []		)", R"(Cannot infer vector element type, add explicit type. Line: 1 "let [int] a = [] + [] result = a == []")");
+	ut_verify_exception_nolib(QUARK_POS, R"(		let [int] a = [] + [] result = a == []		)", R"([Semantics] Cannot infer vector element type, add explicit type. Line: 1 "let [int] a = [] + [] result = a == []")");
 }
 
 #if 0
@@ -3431,7 +3431,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [string] replace()", "", "error"){
 	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace(["one", "two", "three", "four", "five"], 5, 0, ["goodbye"]) == ["hellogoodbye"])		)", "replace() requires start <= end.");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] replace()", "", "error"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace(["one", "two", "three", "four", "five"], 2, 3, 666) == [])		)", "replace() requires argument 4 to be same type of collection.");
+	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace(["one", "two", "three", "four", "five"], 2, 3, 666) == [])		)", R"___([Semantics] replace() requires argument 4 to be same type of collection. Line: 1 "assert(replace(["one", "two", "three", "four", "five"], 2, 3, 666) == [])")___");
 }
 
 
@@ -3652,7 +3652,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [double] constructor-expression", "
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let [double] result = [10.5, 20.5, 30.5]		)",	make_double_vec({ 10.5, 20.5, 30.5 }) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector", "Vector can not hold elements of different types.", "exception"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		let a = [3, bool]		)", "Vector of type [int] cannot hold an element of type typeid. Line: 1 \"let a = [3, bool]\"");
+	ut_verify_exception_nolib(QUARK_POS, R"(		let a = [3, bool]		)", "[Semantics] Vector of type [int] cannot hold an element of type typeid. Line: 1 \"let a = [3, bool]\"");
 }
 
 
@@ -3665,11 +3665,11 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector []", "Error: Lookup in vector using
 			print(a["not an integer"])
 
 		)",
-		"Vector can only be indexed by integers, not a \"string\". Line: 4 \"print(a[\"not an integer\"])\""
+		"[Semantics] Vector can only be indexed by integers, not a \"string\". Line: 4 \"print(a[\"not an integer\"])\""
 	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector", "Error: Lookup the unlookupable", "exception"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		let a = 3[0]		)", "Lookup using [] only works with strings, vectors, dicts and json - not a \"int\". Line: 1 \"let a = 3[0]\"");
+	ut_verify_exception_nolib(QUARK_POS, R"(		let a = 3[0]		)", "[Semantics] Lookup using [] only works with strings, vectors, dicts and json - not a \"int\". Line: 1 \"let a = 3[0]\"");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] =", "copy", ""){
@@ -3862,7 +3862,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [dict[string]] constructor", "Mixin
 			print(d)
 
 		)",
-		R"___(Vector of type [[string:string]] cannot hold an element of type [string:int]. Line: 3 "let d = [{"color": "red", "color2": "blue"}, {"num": 100, "num2": 200, "num3": 300}]")___"
+		R"___([Semantics] Vector of type [[string:string]] cannot hold an element of type [string:int]. Line: 3 "let d = [{"color": "red", "color2": "blue"}, {"num": 100, "num2": 200, "num3": 300}]")___"
 	);
 }
 
@@ -3903,16 +3903,16 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict constructor", "No type", "error"){
 			print(a)
 
 		)",
-		"Cannot infer type in value-constructor-expression. Line: 3 \"let a = {}\""
+		"[Semantics] Cannot infer type in value-constructor-expression. Line: 3 \"let a = {}\""
 	);
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "dict constructor", "", "Error cannot infer type"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		assert(size({}) == 0)		)", "Cannot infer type in value-constructor-expression. Line: 1 \"assert(size({}) == 0)\"");
+	ut_verify_exception_nolib(QUARK_POS, R"(		assert(size({}) == 0)		)", "[Semantics] Cannot infer type in value-constructor-expression. Line: 1 \"assert(size({}) == 0)\"");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "dict constructor", "", "Error cannot infer type"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		print({})		)", "Cannot infer type in value-constructor-expression. Line: 1 \"print({})\"");
+	ut_verify_exception_nolib(QUARK_POS, R"(		print({})		)", "[Semantics] Cannot infer type in value-constructor-expression. Line: 1 \"print({})\"");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "dict [int] constructor", "", "Compilation error"){
@@ -3924,7 +3924,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [int] constructor", "", "Compilation 
 			print(a)
 
 		)",
-		"Cannot infer type in value-constructor-expression. Line: 3 \"mutable a = {}\""
+		"[Semantics] Cannot infer type in value-constructor-expression. Line: 3 \"mutable a = {}\""
 	);
 }
 
@@ -3951,7 +3951,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [int]", "Error: Lookup in dict using 
 			print(a[3])
 
 		)",
-		"Dictionary can only be looked up using string keys, not a \"int\". Line: 4 \"print(a[3])\""
+		"[Semantics] Dictionary can only be looked up using string keys, not a \"int\". Line: 4 \"print(a[3])\""
 	);
 }
 
@@ -3963,7 +3963,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [int]", "Dict can not hold elements o
 			let a = {"one": 1, "two": bool}
 
 		)",
-		"Dictionary of type [string:int] cannot hold an element of type typeid. Line: 3 \"let a = {\"one\": 1, \"two\": bool}\""
+		"[Semantics] Dictionary of type [string:int] cannot hold an element of type typeid. Line: 3 \"let a = {\"one\": 1, \"two\": bool}\""
 	);
 }
 
@@ -3979,7 +3979,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [int] update()", "dest is empty dict"
 			assert(b == {"one": 1, "two": 2})
 
 		)",
-		"Cannot infer type in value-constructor-expression. Line: 3 \"let a = update({}, \"one\", 1)\""
+		"[Semantics] Cannot infer type in value-constructor-expression. Line: 3 \"let a = update({}, \"one\", 1)\""
 	);
 }
 
@@ -4291,7 +4291,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [string]", "Error: Lookup in dict usi
 			print(a[3])
 
 		)",
-		"Dictionary can only be looked up using string keys, not a \"int\". Line: 4 \"print(a[3])\""
+		"[Semantics] Dictionary can only be looked up using string keys, not a \"int\". Line: 4 \"print(a[3])\""
 	);
 }
 
@@ -4686,7 +4686,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "compare structs different types"
 			print(color(1, 2, 3) == file(404))
 
 		)",
-		"Expression type mismatch - cannot convert 'struct {int id;}' to 'struct {int red;int green;int blue;}. Line: 5 \"print(color(1, 2, 3) == file(404))\""
+		"[Semantics] Expression type mismatch - cannot convert 'struct {int id;}' to 'struct {int red;int green;int blue;}. Line: 5 \"print(color(1, 2, 3) == file(404))\""
 	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "compare structs with <, different types", ""){
@@ -4808,7 +4808,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Error: Define struct with collid
 			struct a { int x }
 
 		)",
-		R"___(Local identifier "a" already exists. Line: 4 "struct a { int x }")___"
+		R"___([Semantics] Local identifier "a" already exists. Line: 4 "struct a { int x }")___"
 	);
 }
 
@@ -4822,7 +4822,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Error: Access unknown struct mem
 			print(b.y)
 
 		)",
-		"Unknown struct member \"y\". Line: 5 \"print(b.y)\""
+		"[Semantics] Unknown struct member \"y\". Line: 5 \"print(b.y)\""
 	);
 }
 
@@ -4835,7 +4835,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Error: Access member in non-stru
 			print(a.y)
 
 		)",
-		"Left hand side is not a struct value, it's of type \"int\". Line: 4 \"print(a.y)\""
+		"[Semantics] Left hand side is not a struct value, it's of type \"int\". Line: 4 \"print(a.y)\""
 	);
 }
 
@@ -4877,7 +4877,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "Struct", "Error: Wrong number of arguments
 			let a = pos(3)
 
 		)",
-		"Wrong number of arguments in function call, got 1, expected 2. Line: 4 \"let a = pos(3)\""
+		"[Semantics] Wrong number of arguments in function call, got 1, expected 2. Line: 4 \"let a = pos(3)\""
 	);
 }
 
@@ -4891,9 +4891,42 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Error: Wrong TYPE of arguments t
 			let a = pos(3, "hello")
 
 		)",
-		"Expression type mismatch - cannot convert 'int' to 'double. Line: 4 \"let a = pos(3, \"hello\")\""
+		"[Semantics] Expression type mismatch - cannot convert 'int' to 'double. Line: 4 \"let a = pos(3, \"hello\")\""
 	);
 }
+
+
+#if 0
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "struct", "nested", ""){
+	ut_run_closed_nolib(QUARK_POS, R"(
+
+		struct object_t {
+			object_t left
+		}
+		let x = object_t( { } )
+		print(x)
+
+	)");
+}
+#endif
+
+#if 0
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "nested", ""){
+	ut_run_closed_nolib(QUARK_POS, R"(
+
+		struct object_t {
+			[object_t] inside
+		}
+		let x = object_t( { } )
+		print(x)
+
+	)");
+}
+#endif
+
+
+
+
 
 #endif	//	RUN_LANG_STRUCT_TESTS
 
@@ -5118,7 +5151,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "json", "", "error"){
 			let result = c["image"][1].y
 
 		)",
-		"Dictionary of type [string:string] cannot hold an element of type [struct {double x;double y;}]. Line: 6 \"let c = { \"version\": \"1.0\", \"image\": [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)] }\""
+		"[Semantics] Dictionary of type [string:string] cannot hold an element of type [struct {double x;double y;}]. Line: 6 \"let c = { \"version\": \"1.0\", \"image\": [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)] }\""
 	);
 }
 
@@ -6651,7 +6684,7 @@ FLOYD_LANG_PROOF("software-system-def", "run two CONNECTED processes", "", ""){
 
 
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "hello_world.floyd", "", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "hello_world.floyd", "", ""){
 	const auto path = get_working_dir() + "/examples/hello_world.floyd";
 	const auto program = read_text_file(path);
 
