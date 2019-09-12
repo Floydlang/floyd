@@ -13,9 +13,12 @@
 #include <string>
 
 #include "floyd_interpreter.h"
+#include "floyd_parser.h"
 
 #include "floyd_llvm.h"
 #include "floyd_llvm_runtime.h"
+#include "floyd_llvm_helpers.h"
+#include "floyd_llvm_codegen.h"
 
 #include "ast_value.h"
 #include "json_support.h"
@@ -42,8 +45,9 @@ using namespace floyd;
 
 bool g_trace_on = true;
 
-
 void run_tests(){
+
+#if QUARK_UNIT_TESTS_ON
 	//	Cherry-picked list of files who's tests we run first.
 	//	Ideally you should run the test for the lowest level source first.
 	quark::run_tests(
@@ -84,6 +88,7 @@ void run_tests(){
 		},
 		g_trace_on ? false: true
 	);
+#endif
 }
 
 
@@ -161,21 +166,101 @@ void floyd_quark_runtime::runtime_i__on_unit_test_failed(const quark::source_cod
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
 ////////////////////////////////	BENCHMARKS
 
 
 
 
-
-static int do_compile_command(const command_t& command, const command_t::compile_to_ast_t& command2){
-	const auto source = read_text_file(command2.source_path);
-	const auto cu = floyd::make_compilation_unit_lib(source, command2.source_path);
-	const auto ast = floyd::compile_to_sematic_ast__errors(cu);
-	const auto json = semantic_ast_to_json(ast);
-	std::cout << json_to_pretty_string(json);
-	std::cout << std::endl;
-	return EXIT_SUCCESS;
+//	If dest_path is empty, print to stdout
+void output_result(const std::string& dest_path, const std::string& s){
+	if(dest_path == ""){
+		std::cout << s << std::endl;
+	}
+	else{
+		SaveFile(dest_path, reinterpret_cast<const uint8_t*>(&s[0]), s.size());
+	}
 }
+
+static int do_compile_command(const command_t& command, const command_t::compile_t& command2){
+	const std::string base_path = "";
+
+	if(command2.source_paths.size() != 1){
+		throw std::runtime_error("Provide one source file to compile.");
+	}
+	const std::string source_path = command2.source_paths[0];
+
+	const auto source = read_text_file(source_path);
+	const auto cu = floyd::make_compilation_unit_lib(source, source_path);
+
+	if(command2.output_type == eoutput_type::parse_tree){
+		const auto parse_tree = parse_program__errors(cu);
+		const auto out = json_to_pretty_string(parse_tree._value);
+		output_result(command2.dest_path, out);
+		return EXIT_SUCCESS;
+	}
+	if(command2.output_type == eoutput_type::ast){
+		const auto ast = floyd::compile_to_sematic_ast__errors(cu);
+		const auto json = semantic_ast_to_json(ast);
+		const auto out = json_to_pretty_string(json);
+		output_result(command2.dest_path, out);
+		return EXIT_SUCCESS;
+	}
+	if(command2.output_type == eoutput_type::ir){
+		if(command2.backend == ebackend::bytecode){
+			throw std::runtime_error("Operation not implemented for byte code interpreter.");
+		}
+		else if(command2.backend == ebackend::llvm){
+			const auto ast = floyd::compile_to_sematic_ast__errors(cu);
+			llvm_instance_t llvm_instance;
+			std::unique_ptr<llvm_ir_program_t> llvm_program = generate_llvm_ir_program(llvm_instance, ast, "", command2.compiler_settings);
+			const auto ir_code = write_ir_file(*llvm_program, llvm_instance.target);
+			output_result(command2.dest_path, ir_code);
+			return EXIT_SUCCESS;
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+	}
+	if(command2.output_type == eoutput_type::object_file){
+		if(command2.backend == ebackend::bytecode){
+			throw std::runtime_error("Operation not implemented for byte code interpreter.");
+		}
+		else if(command2.backend == ebackend::llvm){
+			const auto ast = floyd::compile_to_sematic_ast__errors(cu);
+			llvm_instance_t llvm_instance;
+			std::unique_ptr<llvm_ir_program_t> llvm_program = generate_llvm_ir_program(llvm_instance, ast, "", command2.compiler_settings);
+			const auto object_file = write_object_file(*llvm_program, llvm_instance.target);
+	
+
+			const auto path = command2.dest_path == "" ? (base_path + "out.o") : command2.dest_path;
+			SaveFile(path, &object_file[0], object_file.size());
+			return EXIT_SUCCESS;
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+
+////////////////////////////////	do_run()
 
 
 static int do_run(const command_t& command, const command_t::compile_and_run_t& command2){
@@ -184,7 +269,7 @@ static int do_run(const command_t& command, const command_t::compile_and_run_t& 
 	const auto source = read_text_file(command2.source_path);
 
 	if(command2.backend == ebackend::llvm){
-		const auto run_results = floyd::run_program_helper(source, command2.source_path, compilation_unit_mode::k_include_core_lib, command2.floyd_main_args);
+		const auto run_results = floyd::run_program_helper(source, command2.source_path, compilation_unit_mode::k_include_core_lib, command2.compiler_settings, command2.floyd_main_args);
 		if(run_results.process_results.empty()){
 			return static_cast<int>(run_results.main_result);
 		}
@@ -210,17 +295,20 @@ static int do_run(const command_t& command, const command_t::compile_and_run_t& 
 }
 
 
+
+////////////////////////////////	do_user_benchmarks_run_all()
+
 //??? Only compile once!
 
-static std::string do_user_benchmarks_run_all(const std::string& program_source, const std::string& source_path){
-	const auto b = collect_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib);
+static std::string do_user_benchmarks_run_all(const std::string& program_source, const std::string& source_path, const compiler_settings_t& compiler_settings){
+	const auto b = collect_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib, compiler_settings);
 	const auto b2 = mapf<std::string>(b, [](const bench_t& e){ return e.benchmark_id.test; });
-	const auto results = run_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib, b2);
+	const auto results = run_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib, compiler_settings, b2);
 
 	return make_benchmark_report(results);
 }
 
-QUARK_UNIT_TEST("", "do_user_benchmarks_run_all()", "", ""){
+QUARK_TEST("", "do_user_benchmarks_run_all()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
 	R"(
@@ -243,7 +331,7 @@ QUARK_UNIT_TEST("", "do_user_benchmarks_run_all()", "", ""){
 
 	)";
 
-	const auto result = do_user_benchmarks_run_all(program_source, "");
+	const auto result = do_user_benchmarks_run_all(program_source, "", make_default_compiler_settings());
 	std::cout << result;
 
 	std::stringstream expected;
@@ -261,19 +349,20 @@ QUARK_UNIT_TEST("", "do_user_benchmarks_run_all()", "", ""){
 */
 }
 
+////////////////////////////////	do_user_benchmarks_run_specified()
 
 
-static std::string do_user_benchmarks_run_specified(const std::string& program_source, const std::string& source_path, const std::vector<std::string>& tests){
-	const auto b = collect_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib);
+static std::string do_user_benchmarks_run_specified(const std::string& program_source, const std::string& source_path, const compiler_settings_t& compiler_settings, const std::vector<std::string>& tests){
+	const auto b = collect_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib, compiler_settings);
 	const auto c = filter_benchmarks(b, tests);
 	const auto b2 = mapf<std::string>(c, [](const bench_t& e){ return e.benchmark_id.test; });
-	const auto results = run_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib, b2);
+	const auto results = run_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib, compiler_settings, b2);
 
 	return make_benchmark_report(results);
 }
 
 /*
-QUARK_UNIT_TEST("", "do_user_benchmarks_run_specified()", "", ""){
+QUARK_TEST("", "do_user_benchmarks_run_specified()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
 	R"(
@@ -309,7 +398,7 @@ QUARK_UNIT_TEST("", "do_user_benchmarks_run_specified()", "", ""){
 
 
 static std::string do_user_benchmarks_list(const std::string& program_source, const std::string& source_path){
-	const auto b = collect_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib);
+	const auto b = collect_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib, make_default_compiler_settings());
 
 	std::stringstream ss;
 
@@ -320,7 +409,7 @@ static std::string do_user_benchmarks_list(const std::string& program_source, co
 	return ss.str();
 }
 
-QUARK_UNIT_TEST("", "do_user_benchmarks_list()", "", ""){
+QUARK_TEST("", "do_user_benchmarks_list()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
 	R"(
@@ -344,7 +433,7 @@ QUARK_UNIT_TEST("", "do_user_benchmarks_list()", "", ""){
 }
 
 
-QUARK_UNIT_TEST("", "do_user_benchmarks_list()", "", ""){
+QUARK_TEST("", "do_user_benchmarks_list()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
 	R"(
@@ -390,7 +479,7 @@ static int do_user_benchmarks(const command_t& command, const command_t::user_be
 			std::cout << "RELEASE build" << std::endl;
 		}
 
-		const auto s = do_user_benchmarks_run_all(program_source, command2.source_path);
+		const auto s = do_user_benchmarks_run_all(program_source, command2.source_path, command2.compiler_settings);
 		std::cout << get_current_date_and_time_string() << std::endl;
 		std::cout << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;
 		std::cout << s;
@@ -404,7 +493,7 @@ static int do_user_benchmarks(const command_t& command, const command_t::user_be
 			std::cout << "RELEASE build" << std::endl;
 		}
 
-		const auto s = do_user_benchmarks_run_specified(program_source, command2.source_path, command2.optional_benchmark_keys);
+		const auto s = do_user_benchmarks_run_specified(program_source, command2.source_path, command2.compiler_settings, command2.optional_benchmark_keys);
 		std::cout << get_current_date_and_time_string() << std::endl;
 		std::cout << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;
 		std::cout << s;
@@ -421,7 +510,7 @@ static int do_user_benchmarks(const command_t& command, const command_t::user_be
 	return EXIT_FAILURE;
 }
 
-QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
+QUARK_TEST("", "run_benchmarks()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
 	R"(
@@ -432,13 +521,13 @@ QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
 
 	)";
 
-	const auto result = run_benchmarks(program_source, "module1", compilation_unit_mode::k_include_core_lib, { "ABC" });
+	const auto result = run_benchmarks(program_source, "module1", compilation_unit_mode::k_include_core_lib, make_default_compiler_settings(), { "ABC" });
 
 	QUARK_UT_VERIFY(result.size() == 1);
 	QUARK_UT_VERIFY(result[0] == (benchmark_result2_t { benchmark_id_t{ "", "ABC" }, benchmark_result_t { 200, json_t("0 elements") } }));
 }
 
-QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
+QUARK_TEST("", "run_benchmarks()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
 	R"(
@@ -461,7 +550,7 @@ QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
 
 	)";
 
-	const auto result = run_benchmarks(program_source, "", compilation_unit_mode::k_include_core_lib, { "abc", "def", "g" });
+	const auto result = run_benchmarks(program_source, "", compilation_unit_mode::k_include_core_lib, make_default_compiler_settings(), { "abc", "def", "g" });
 
 	QUARK_UT_VERIFY(result.size() == 5);
 	QUARK_UT_VERIFY(result[0] == (benchmark_result2_t { benchmark_id_t{ "", "abc" }, benchmark_result_t { 200, json_t("0 elements") } }));
@@ -472,7 +561,7 @@ QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
 }
 
 
-QUARK_UNIT_TEST("", "collect_benchmarks()", "", ""){
+QUARK_TEST("", "collect_benchmarks()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
 	R"(
@@ -495,12 +584,12 @@ QUARK_UNIT_TEST("", "collect_benchmarks()", "", ""){
 
 	)";
 
-	const auto result = collect_benchmarks(program_source, "mymodule", compilation_unit_mode::k_include_core_lib);
+	const auto result = collect_benchmarks(program_source, "mymodule", compilation_unit_mode::k_include_core_lib, make_default_compiler_settings());
 
 	QUARK_UT_VERIFY(result.size() == 3);
-	QUARK_UT_VERIFY(result[0] == (bench_t{ benchmark_id_t{ "", "abc" }, link_name_t{"floydf_benchmark__abc" } }));
-	QUARK_UT_VERIFY(result[1] == (bench_t{ benchmark_id_t{ "", "def" }, link_name_t{"floydf_benchmark__def" } }));
-	QUARK_UT_VERIFY(result[2] == (bench_t{ benchmark_id_t{ "", "g" }, link_name_t{ "floydf_benchmark__g" } }));
+	QUARK_UT_VERIFY(result[0] == (bench_t{ benchmark_id_t{ "", "abc" }, encode_floyd_func_link_name("benchmark__abc") }));
+	QUARK_UT_VERIFY(result[1] == (bench_t{ benchmark_id_t{ "", "def" }, encode_floyd_func_link_name("benchmark__def") }));
+	QUARK_UT_VERIFY(result[2] == (bench_t{ benchmark_id_t{ "", "g" }, encode_floyd_func_link_name("benchmark__g") }));
 }
 
 
@@ -527,7 +616,7 @@ static int do_command(const command_t& command){
 			return do_run(command, command2);
 		}
 
-		int operator()(const command_t::compile_to_ast_t& command2) const{
+		int operator()(const command_t::compile_t& command2) const{
 			return do_compile_command(command, command2);
 		}
 
@@ -553,7 +642,8 @@ static int do_command(const command_t& command){
 static int main_internal(int argc, const char * argv[]) {
 	const auto args = args_to_vector(argc, argv);
 	try{
-		const auto command = parse_command(args);
+		const auto command = parse_floyd_command_line(args);
+		const auto wd = get_working_dir();
 		const int result = do_command(command);
 		return result;
 	}
@@ -573,7 +663,7 @@ static int main_internal(int argc, const char * argv[]) {
 }
 
 /*
-QUARK_UNIT_TEST("", "main_internal()", "", ""){
+QUARK_TEST("", "main_internal()", "", ""){
 	const char* args[] = { "floyd", "run", "examples/test_main.floyd" };
 	const auto result = main_internal(3, args);
 	QUARK_UT_VERIFY(result == 0);

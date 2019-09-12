@@ -981,7 +981,7 @@ int get_local_n_pos(int frame_pos, int n){
 
 
 //	Check memory layouts.
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const auto int_size = sizeof(int);
 	QUARK_ASSERT(int_size == 4);
 
@@ -1293,13 +1293,13 @@ int bc_compare_string(const std::string& left, const std::string& right){
 	return compare(std::strcmp(left.c_str(), right.c_str()));
 }
 
-QUARK_UNIT_TEST("bc_compare_string()", "", "", ""){
+QUARK_TEST("bc_compare_string()", "", "", ""){
 	ut_verify_auto(QUARK_POS, bc_compare_string("", ""), 0);
 }
-QUARK_UNIT_TEST("bc_compare_string()", "", "", ""){
+QUARK_TEST("bc_compare_string()", "", "", ""){
 	ut_verify_auto(QUARK_POS, bc_compare_string("aaa", "aaa"), 0);
 }
-QUARK_UNIT_TEST("bc_compare_string()", "", "", ""){
+QUARK_TEST("bc_compare_string()", "", "", ""){
 	ut_verify_auto(QUARK_POS, bc_compare_string("b", "a"), 1);
 }
 
@@ -2145,12 +2145,12 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 	if(function_def._frame_ptr == nullptr){
 		const auto function_id = function_def._function_id;
 
-		const auto& host_function = vm._imm->_native_functions.at(function_id);
+		const auto& native_function_ptr = vm._imm->_native_functions.at(function_id);
 
 		//	arity
 	//	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
 
-		const auto& result = (host_function)(vm, &args[0], arg_count);
+		const auto& result = (native_function_ptr)(vm, &args[0], arg_count);
 		return result;
 	}
 	else{
@@ -2366,7 +2366,7 @@ bool interpreter_t::check_invariant() const {
 //////////////////////////////////////////		INSTRUCTIONS
 
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const auto value_size = sizeof(bc_value_t);
 	QUARK_UT_VERIFY(value_size >= 8);
 /*
@@ -2381,7 +2381,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 //	QUARK_UT_VERIFY(sizeof(temp) == 56);
 }
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const auto s = sizeof(bc_value_t);
 	QUARK_UT_VERIFY(s >= 8);
 //	QUARK_UT_VERIFY(s == 16);
@@ -2526,6 +2526,136 @@ void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t target_ityp
 //	QUARK_TRACE(to_compact_string2(instance));
 
 	vm._stack.write_register__external_value(dest_reg, result);
+}
+
+
+/*
+	??? Make stub bc_static_frame_t for each host function to make call conventions same as Floyd functions.
+*/
+//	??? Very slow
+//	Notice: host calls and floyd calls have the same type -- we cannot detect host calls until we have a callee value.
+static void call_native(interpreter_t& vm, const bc_instruction_t& i, const typeid_t& function_type){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(i.check_invariant());
+	QUARK_ASSERT(function_type.check_invariant());
+
+	interpreter_stack_t& stack = vm._stack;
+	bc_pod_value_t* regs = stack._current_frame_entry_ptr;
+
+	QUARK_ASSERT(stack.check_reg_function(i._b));
+
+	const function_id_t function_id = regs[i._b]._external->_function_id;
+	const int callee_arg_count = i._c;
+
+	const auto native_it = vm._imm->_native_functions.find(function_id);
+	if(native_it == vm._imm->_native_functions.end()){
+		quark::throw_runtime_error("Attempting to calling unimplemented function.");
+	}
+	const auto& host_function_ptr = native_it->second;
+
+	const auto function_def_dynamic_arg_count = count_function_dynamic_args(function_type);
+
+	const int arg0_stack_pos = stack.size() - (function_def_dynamic_arg_count + callee_arg_count);
+	int stack_pos = arg0_stack_pos;
+
+	//	Notice that dynamic functions will have each DYN argument with a leading itype as an extra argument.
+	const auto function_def_arg_count = function_type.get_function_args().size();
+	std::vector<bc_value_t> arg_values;
+	for(int a = 0 ; a < function_def_arg_count ; a++){
+		const auto func_arg_type = function_type.get_function_args()[a];
+		if(func_arg_type.is_any()){
+			const auto arg_itype = stack.load_intq(stack_pos);
+			const auto& arg_type = lookup_full_type(vm, static_cast<int16_t>(arg_itype));
+			const auto arg_value = stack.load_value(stack_pos + 1, arg_type);
+			arg_values.push_back(arg_value);
+			stack_pos += k_frame_overhead;
+		}
+		else{
+			const auto arg_value = stack.load_value(stack_pos + 0, func_arg_type);
+			arg_values.push_back(arg_value);
+			stack_pos++;
+		}
+	}
+
+	const auto& result = (host_function_ptr)(vm, &arg_values[0], static_cast<int>(arg_values.size()));
+	const auto bc_result = result;
+
+	const auto& function_return_type = function_type.get_function_return();
+	if(function_return_type.is_void() == true){
+	}
+	else if(function_return_type.is_any()){
+		stack.write_register(i._a, bc_result);
+	}
+	else{
+		stack.write_register(i._a, bc_result);
+	}
+}
+
+//	We need to examine the callee, since we support magic argument lists of varying size.
+static void do_call(interpreter_t& vm, const bc_instruction_t& i){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(i.check_invariant());
+
+	interpreter_stack_t& stack = vm._stack;
+	bc_pod_value_t* regs = stack._current_frame_entry_ptr;
+
+
+	QUARK_ASSERT(stack.check_reg_function(i._b));
+
+	const function_id_t function_id = regs[i._b]._external->_function_id;
+	const int callee_arg_count = i._c;
+
+	const auto function_def_it = vm._imm->_program._function_defs.find(function_id);
+
+	//	Can't find this functions -- it could be an intrinsic.
+	if(function_def_it != vm._imm->_program._function_defs.end() == false){
+		//??? Don't call every time!
+		const auto intrinsic_signatures = get_intrinsic_signatures();
+
+		//	Find function
+		const auto it = std::find_if(intrinsic_signatures.begin(), intrinsic_signatures.end(), [&](const intrinsic_signature_t& e) { return e.name == function_id.name; } );
+		QUARK_ASSERT(it != intrinsic_signatures.end());
+		const auto& function_type = it->_function_type;
+		call_native(vm, i, function_type);
+	}
+	else{
+		const auto& function_def = function_def_it->second;
+
+		//	There is a function def but it has no frame_ptr: this is a native function.
+		if(function_def._frame_ptr == nullptr){
+			call_native(vm, i, function_def._function_type);
+		}
+
+		//	This is a floyd function, with a frame_ptr to execute.
+		else{
+			QUARK_ASSERT(function_def._args.size() == callee_arg_count);
+
+			const int function_def_dynamic_arg_count = function_def._dyn_arg_count;
+			const auto& function_return_type = function_def._function_type.get_function_return();
+
+			QUARK_ASSERT(function_def_dynamic_arg_count == 0);
+
+			//	We need to remember the global pos where to store return value, since we're switching frame to call function.
+			int result_reg_pos = static_cast<int>(stack._current_frame_entry_ptr - &stack._entries[0]) + i._a;
+
+			stack.open_frame(*function_def._frame_ptr, callee_arg_count);
+			const auto& result = execute_instructions(vm, function_def._frame_ptr->_instructions);
+			stack.close_frame(*function_def._frame_ptr);
+
+			//	Update our cached pointers.
+
+			if(function_return_type.is_void() == false){
+
+				//	Cannot store via register, we have not yet executed k_pop_frame_ptr that restores our frame.
+				if(function_def._return_is_ext){
+					stack.replace_external_value(result_reg_pos, result.second);
+				}
+				else{
+					stack.replace_inplace_value(result_reg_pos, result.second);
+				}
+			}
+		}
+	}
 }
 
 
@@ -3095,94 +3225,14 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 
-		/*
-			??? Make stub bc_static_frame_t for each host function to make call conventions same as Floyd functions.
-		*/
-
-		//	Notice: host calls and floyd calls have the same type -- we cannot detect host calls until we have a callee value.
 		case bc_opcode::k_call: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_function(i._b));
 
-			const function_id_t function_id = regs[i._b]._external->_function_id;
-			const int callee_arg_count = i._c;
-//			QUARK_ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
+			do_call(vm, i);
 
-			const auto& function_def = vm._imm->_program._function_defs.at(function_id);
-			const int function_def_dynamic_arg_count = function_def._dyn_arg_count;
-			const auto& function_return_type = function_def._function_type.get_function_return();
-
-			//	_e[...] contains first callee, then each argument.
-			//	We need to examine the callee, since we support magic argument lists of varying size.
-
-			QUARK_ASSERT(function_def._args.size() == callee_arg_count);
-
-			if(function_def._frame_ptr == nullptr){
-				const auto it = vm._imm->_native_functions.find(function_def._function_id);
-				if(it == vm._imm->_native_functions.end()){
-					quark::throw_runtime_error("Attempting to calling unimplemented function.");
-				}
-				const auto& host_function = it->second;
-
-				const int arg0_stack_pos = stack.size() - (function_def_dynamic_arg_count + callee_arg_count);
-				int stack_pos = arg0_stack_pos;
-
-				//	Notice that dynamic functions will have each DYN argument with a leading itype as an extra argument.
-				const auto function_def_arg_count = function_def._args.size();
-				std::vector<bc_value_t> arg_values;
-				for(int a = 0 ; a < function_def_arg_count ; a++){
-					const auto& func_arg_type = function_def._args[a]._type;
-					if(func_arg_type.is_any()){
-						const auto arg_itype = stack.load_intq(stack_pos);
-						const auto& arg_type = lookup_full_type(vm, static_cast<int16_t>(arg_itype));
-						const auto arg_value = stack.load_value(stack_pos + 1, arg_type);
-						arg_values.push_back(arg_value);
-						stack_pos += k_frame_overhead;
-					}
-					else{
-						const auto arg_value = stack.load_value(stack_pos + 0, func_arg_type);
-						arg_values.push_back(arg_value);
-						stack_pos++;
-					}
-				}
-
-				const auto& result = (host_function)(vm, &arg_values[0], static_cast<int>(arg_values.size()));
-				const auto bc_result = result;
-
-				if(function_return_type.is_void() == true){
-				}
-				else if(function_return_type.is_any()){
-					stack.write_register(i._a, bc_result);
-				}
-				else{
-					stack.write_register(i._a, bc_result);
-				}
-			}
-			else{
-				QUARK_ASSERT(function_def_dynamic_arg_count == 0);
-
-				//	We need to remember the global pos where to store return value, since we're switching frame to call function.
-				int result_reg_pos = static_cast<int>(stack._current_frame_entry_ptr - &stack._entries[0]) + i._a;
-
-				stack.open_frame(*function_def._frame_ptr, callee_arg_count);
-				const auto& result = execute_instructions(vm, function_def._frame_ptr->_instructions);
-				stack.close_frame(*function_def._frame_ptr);
-
-				//	Update our cached pointers.
-				frame_ptr = stack._current_frame_ptr;
-				regs = stack._current_frame_entry_ptr;
-
-				if(function_return_type.is_void() == false){
-
-					//	Cannot store via register, we have not yet executed k_pop_frame_ptr that restores our frame.
-					if(function_def._return_is_ext){
-						stack.replace_external_value(result_reg_pos, result.second);
-					}
-					else{
-						stack.replace_inplace_value(result_reg_pos, result.second);
-					}
-				}
-			}
+			frame_ptr = stack._current_frame_ptr;
+			regs = stack._current_frame_entry_ptr;
 
 			QUARK_ASSERT(frame_ptr == stack._current_frame_ptr);
 			QUARK_ASSERT(regs == stack._current_frame_entry_ptr);

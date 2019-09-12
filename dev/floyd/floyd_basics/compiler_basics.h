@@ -43,6 +43,12 @@ bool is_floyd_literal(const typeid_t& type);
 bool is_preinitliteral(const typeid_t& type);
 
 
+enum class epod_type {
+	pod,
+	nonpod
+};
+
+
 ////////////////////////////////////////		main() init() and message handler
 
 
@@ -170,7 +176,6 @@ const std::string k_global_benchmark_registry = "benchmark_registry";
 
 struct intrinsic_signature_t {
 	std::string name;
-	function_id_t _function_id;
 	floyd::typeid_t _function_type;
 };
 std::string get_intrinsic_opcode(const intrinsic_signature_t& signature);
@@ -319,10 +324,121 @@ location_t unpack_loc2(const json_t& s);
 
 
 struct compilation_unit_t {
+	bool check_invariant() const {
+		return true;
+	}
+
+
 	std::string prefix_source;
 	std::string program_text;
 	std::string source_file_path;
 };
+
+
+
+
+////////////////////////////////////////		config_t
+
+
+
+enum class vector_backend {
+	carray,
+	hamt
+};
+enum class dict_backend {
+	cppmap,
+	hamt
+};
+
+struct config_t {
+	bool check_invariant() const {
+		return true;
+	}
+
+
+	vector_backend vector_backend_mode;
+	dict_backend dict_backend_mode;
+	bool trace_allocs;
+};
+
+inline bool operator==(const config_t& lhs, const config_t& rhs){
+	QUARK_ASSERT(lhs.check_invariant());
+	QUARK_ASSERT(rhs.check_invariant());
+	return lhs.vector_backend_mode == rhs.vector_backend_mode && lhs.dict_backend_mode == rhs.dict_backend_mode && lhs.trace_allocs == rhs.trace_allocs;
+}
+
+
+config_t make_default_config();
+
+
+
+////////////////////////////////////////		compiler_settings_t
+
+
+/*
+Optimization level
+Flags controlling how much optimization should be performed.
+
+-O<arg>, -O (equivalent to -O2), --optimize, --optimize=<arg>
+-Ofast<arg>
+Debug information generation
+Flags controlling how much and what kind of debug information should be generated.
+
+Kind and level of debug information
+-g, --debug, --debug=<arg>
+
+OPTIONS:
+  Choose optimization level:
+    -g          - No optimizations, enable debugging
+    -O1         - Enable trivial optimizations
+    -O2         - Enable default optimizations
+    -O3         - Enable expensive optimizations
+  -f            - Enable binary output on terminals
+  -help         - display available options (-help-hidden for more)
+  -o <filename> - Specify output filename
+  -quiet        - Don't print informational messages
+*/
+
+enum class eoptimization_level {
+	g_no_optimizations_enable_debugging,
+	O1_enable_trivial_optimizations,
+	O2_enable_default_optimizations,
+	O3_enable_expensive_optimizations
+//	Ofast
+};
+
+struct compiler_settings_t {
+	bool check_invariant() const {
+		return true;
+	}
+
+
+	config_t config;
+	eoptimization_level optimization_level;
+};
+
+compiler_settings_t make_default_compiler_settings();
+
+inline bool operator==(const compiler_settings_t& lhs, const compiler_settings_t& rhs){
+	QUARK_ASSERT(lhs.check_invariant());
+	QUARK_ASSERT(rhs.check_invariant());
+	return lhs.config == rhs.config && lhs.optimization_level == rhs.optimization_level;
+}
+
+
+
+////////////////////////////////////////		compilation_task_t
+
+//	All inputs requires to compile one translation unit.
+
+
+struct compilation_task_t {
+	compilation_unit_t cu;
+
+	compiler_settings_t compiler_settings;
+};
+
+
 
 
 
@@ -346,7 +462,7 @@ class compiler_error : public std::runtime_error {
 ////////////////////////////////////////		throw_compiler_error()
 
 
-void throw_compiler_error_nopos(const std::string& message) __dead2;
+void throw_compiler_error_nopos(const std::string& message) QUARK_NO_RETURN;
 inline void throw_compiler_error_nopos(const std::string& message){
 //	location2_t(const std::string& source_file_path, int line_number, int column, std::size_t start, std::size_t end, const std::string& line) :
 	throw compiler_error(k_no_location, location2_t("", 0, 0, 0, 0, "", k_no_location), message);
@@ -354,13 +470,13 @@ inline void throw_compiler_error_nopos(const std::string& message){
 
 
 
-void throw_compiler_error(const location_t& location, const std::string& message) __dead2;
+void throw_compiler_error(const location_t& location, const std::string& message) QUARK_NO_RETURN;
 inline void throw_compiler_error(const location_t& location, const std::string& message){
 //	location2_t(const std::string& source_file_path, int line_number, int column, std::size_t start, std::size_t end, const std::string& line) :
 	throw compiler_error(location, location2_t("", 0, 0, 0, 0, "", k_no_location), message);
 }
 
-void throw_compiler_error(const location2_t& location2, const std::string& message) __dead2;
+void throw_compiler_error(const location2_t& location2, const std::string& message) QUARK_NO_RETURN;
 inline void throw_compiler_error(const location2_t& location2, const std::string& message){
 	throw compiler_error(location2.loc, location2, message);
 }
@@ -381,8 +497,8 @@ std::pair<location2_t, std::string> refine_compiler_error_with_loc2(const compil
 
 
 
-void NOT_IMPLEMENTED_YET() __dead2;
-void UNSUPPORTED() __dead2;
+void NOT_IMPLEMENTED_YET() QUARK_NO_RETURN;
+void UNSUPPORTED() QUARK_NO_RETURN;
 
 
 
@@ -401,6 +517,29 @@ void ut_verify(const quark::call_context_t& context, const std::pair<std::string
 //	Creates json values for different AST constructs like expressions and statements.
 
 json_t make_ast_node(const location_t& location, const std::string& opcode, const std::vector<json_t>& params);
+
+
+
+
+////////////////////////////////		ENCODE / DECODE LINK NAMES
+
+
+
+//	"hello" => "floydf_hello"
+link_name_t encode_floyd_func_link_name(const std::string& name);
+std::string decode_floyd_func_link_name(const link_name_t& name);
+
+
+//	"hello" => "floyd_runtime_hello"
+link_name_t encode_runtime_func_link_name(const std::string& name);
+std::string decode_runtime_func_link_name(const link_name_t& name);
+
+
+//	"hello" => "floyd_intrinsic_hello"
+link_name_t encode_intrinsic_link_name(const std::string& name);
+std::string decode_intrinsic_link_name(const link_name_t& name);
+
+
 
 
 

@@ -93,6 +93,7 @@ static const std::string gol_floyd_str = R"(
 
 static const int k_len = 39 * 1000;
 
+#if 0
 OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Text metrics", "", ""){
 	std::vector<uint8_t> a;
 	std::vector<uint8_t> b;
@@ -123,6 +124,7 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Text metrics", "", ""){
 		},
 		k_repeats
 	);
+#endif
 
 #endif
 

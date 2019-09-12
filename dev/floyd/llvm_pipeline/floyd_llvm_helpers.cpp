@@ -10,6 +10,11 @@
 
 #include <llvm/IR/Verifier.h>
 
+#include "llvm/Support/TargetRegistry.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Target/TargetOptions.h"
+
 #include <string>
 #include <vector>
 
@@ -20,6 +25,64 @@
 
 
 namespace floyd {
+
+
+bool target_t::check_invariant() const{
+	QUARK_ASSERT(target_machine != nullptr);
+	return true;
+}
+
+
+
+llvm_instance_t::llvm_instance_t(){
+	llvm::InitializeAllTargetInfos();
+	llvm::InitializeAllTargets();
+	llvm::InitializeAllTargetMCs();
+	llvm::InitializeAllAsmParsers();
+	llvm::InitializeAllAsmPrinters();
+
+	target = make_default_target();
+
+	QUARK_ASSERT(check_invariant());
+}
+
+bool llvm_instance_t::check_invariant() const {
+	QUARK_ASSERT(target.check_invariant());
+	return true;
+}
+
+
+
+
+
+target_t make_default_target(){
+	auto TargetTriple = llvm::sys::getDefaultTargetTriple();
+
+	std::string Error;
+	auto Target = llvm::TargetRegistry::lookupTarget(TargetTriple, Error);
+
+	// This generally occurs if we've forgotten to initialise the
+	// TargetRegistry or we have a bogus target triple.
+	if (!Target) {
+		throw std::exception();
+	}
+
+	auto CPU = "generic";
+	auto Features = "";
+
+	llvm::TargetOptions opt;
+	auto RM = llvm::Optional<llvm::Reloc::Model>();
+	auto TargetMachine = Target->createTargetMachine(TargetTriple, CPU, Features, opt, RM);
+
+	//	Cannot copy DataLayout or put in shared_ptr.
+//	auto data_layout = TargetMachine->createDataLayout();
+	return target_t { TargetTriple, TargetMachine };
+}
+
+
+
+
+
 
 
 /*
@@ -284,40 +347,6 @@ llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::string& 
 
 
 
-static const std::string k_floyd_func_link_prefix = "floydf_";
-
-
-//	"hello" => "floyd_f_hello"
-link_name_t encode_floyd_func_link_name(const std::string& name){
-	return link_name_t { k_floyd_func_link_prefix + name };
-}
-std::string decode_floyd_func_link_name(const link_name_t& name){
-	const auto left = name.s. substr(0, k_floyd_func_link_prefix.size());
-	const auto right = name.s.substr(k_floyd_func_link_prefix.size(), std::string::npos);
-	QUARK_ASSERT(left == k_floyd_func_link_prefix);
-	return right;
-}
-
-
-static const std::string k_runtime_func_link_prefix = "floydrt_";
-
-//	"hello" => "floyd_rt_hello"
-link_name_t encode_runtime_func_link_name(const std::string& name){
-	return link_name_t { k_runtime_func_link_prefix + name };
-}
-
-std::string decode_runtime_func_link_name(const link_name_t& name){
-	const auto left = name.s.substr(0, k_runtime_func_link_prefix.size());
-	const auto right = name.s.substr(k_runtime_func_link_prefix.size(), std::string::npos);
-	QUARK_ASSERT(left == k_runtime_func_link_prefix);
-	return right;
-}
-
-
-
-
-
-
 
 
 ////////////////////////////////		VALUES
@@ -417,24 +446,24 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const
 			return builder.CreateCast(llvm::Instruction::CastOps::BitCast, &runtime_value_reg, llvm::Type::getDoubleTy(context), "");
 		}
 		llvm::Value* operator()(const typeid_t::string_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_vec_type(type_lookup)->getPointerTo(), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_vec_type_byvalue(type_lookup)->getPointerTo(), "");
 		}
 
 		llvm::Value* operator()(const typeid_t::json_type_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_json_type(type_lookup)->getPointerTo(), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_json_type_byvalue(type_lookup)->getPointerTo(), "");
 		}
 		llvm::Value* operator()(const typeid_t::typeid_type_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::Trunc, &runtime_value_reg, llvm::Type::getInt32Ty(context), "");
 		}
 
 		llvm::Value* operator()(const typeid_t::struct_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, get_generic_struct_type(type_lookup)->getPointerTo(), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, get_generic_struct_type_byvalue(type_lookup)->getPointerTo(), "");
 		}
 		llvm::Value* operator()(const typeid_t::vector_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_vec_type(type_lookup)->getPointerTo(), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_vec_type_byvalue(type_lookup)->getPointerTo(), "");
 		}
 		llvm::Value* operator()(const typeid_t::dict_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_dict_type(type_lookup)->getPointerTo(), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_dict_type_byvalue(type_lookup)->getPointerTo(), "");
 		}
 		llvm::Value* operator()(const typeid_t::function_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, get_llvm_type_as_arg(type_lookup, type), "");

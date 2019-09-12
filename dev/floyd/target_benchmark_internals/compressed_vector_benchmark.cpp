@@ -100,6 +100,8 @@ static void BM_read_vector_uint32(benchmark::State& state) {
 	std::vector<int32_t> data(element_count, 0x1234abcd);
 
 	for (auto _ : state) {
+		(void)_;
+
 		long sum = 0;
 		for (int j = 0; j < element_count; ++j){
 			const auto value = data[j];
@@ -119,6 +121,8 @@ static void BM_read_vector_uint8(benchmark::State& state) {
 	std::vector<uint8_t> data(element_count, 0x13);
 
 	for (auto _ : state) {
+		(void)_;
+
 		long sum = 0;
 		for (int j = 0; j < element_count; ++j){
 			const auto value = data[j];
@@ -161,6 +165,8 @@ static void BM_read_vlq_vector(benchmark::State& state) {
 	std::vector<uint8_t> data = pack_vlq_vector(make_random_vector_int32(element_count));
 
 	for (auto _ : state) {
+		(void)_;
+
 		long sum = 0;
 		size_t pos = 0;
 		for (int j = 0; j < data.size(); ++j){
@@ -183,6 +189,8 @@ static void BM_read_vlq_vector2(benchmark::State& state) {
 	std::vector<uint8_t> data = pack_vlq_vector(make_random_vector_int32(element_count));
 
 	for (auto _ : state) {
+		(void)_;
+
 		long sum = 0;
 		size_t pos = 0;
 		for (int j = 0; j < data.size(); ++j){

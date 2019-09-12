@@ -480,7 +480,7 @@ json_t statement_to_json(const statement_t& e){
 
 
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	const auto a = statement_t::make__block_statement(k_no_location, {});
 	const auto b = statement_t::make__block_statement(k_no_location, {});
 	QUARK_UT_VERIFY(a == b);

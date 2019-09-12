@@ -10,6 +10,7 @@
 
 #include "test_helpers.h"
 #include "floyd_corelib.h"
+#include "unistd.h"
 
 using namespace floyd;
 
@@ -98,6 +99,12 @@ static value_t make_double_vec(const std::vector<double>& elements){
 
 	return value_t::make_vector_value(typeid_t::make_double(), elements2);
 }
+
+#if 0
+FLOYD_LANG_PROOF_VIP("NOP", "See if we leak memory", "", ""){
+    usleep(11 * 1000000);
+}
+#endif
 
 
 #if RUN_LANG_BASIC_TESTS1
@@ -2713,6 +2720,18 @@ R"___(| MODULE  | TEST  |    DUR|              |
 	);
 }
 
+FLOYD_LANG_PROOF("Floyd test suite", "Call corelib function", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			make_benchmark_report([])
+
+		)"
+	);
+}
+
+
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Example", ""){
 	ut_verify_printout_lib(
 		QUARK_POS,
@@ -4576,6 +4595,25 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "access member of nested structs"
 		{ "201" }
 	);
 }
+
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "Update struct member that is a POD", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			struct color { int red int green int blue }
+			struct image { color back color front }
+
+			let a = image(color(1, 2, 3), color(4, 5, 6))
+
+			let b = update(a, front, color(7, 8, 9))
+			print(b)
+
+		)",
+		{ "{back={red=1, green=2, blue=3}, front={red=7, green=8, blue=9}}" }
+	);
+}
+
 
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "return struct from function", ""){
 	ut_verify_printout_nolib(
@@ -6968,3 +7006,32 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict hamt performance()", "", ""){
 
 #endif	//	RUN_EXAMPLE_AND_DOCS_TESTS
 
+
+
+
+
+
+
+
+
+/*
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "OPTIMZATION SETTINGS" "Fibonacci 10", "", ""){
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"(
+
+			func int fibonacci(int n) {
+				if (n <= 1){
+					return n
+				}
+				return fibonacci(n - 2) + fibonacci(n - 1)
+			}
+
+			for (i in 0...10) {
+				print(fibonacci(i))
+			}
+
+		)"
+	);
+}
+*/

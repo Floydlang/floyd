@@ -6,76 +6,6 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-#ifndef value_backend_hpp
-#define value_backend_hpp
-
-#include "immer/vector.hpp"
-#include "immer/map.hpp"
-
-#include <atomic>
-#include <map>
-#include <mutex>
-#include "ast_value.h"
-#include "type_interner.h"
-#include "ast.h"
-
-#include "quark.h"
-
-struct json_t;
-
-namespace floyd {
-
-struct typeid_t;
-
-struct VECTOR_CARRAY_T;
-struct VECTOR_HAMT_T;
-struct DICT_CPPMAP_T;
-struct DICT_HAMT_T;
-struct JSON_T;
-struct STRUCT_T;
-
-static const bool k_record_allocs = false;
-
-#define HEAP_MUTEX 0
-#define ATOMIC_RC 1
-
-
-enum vector_backend {
-	carray,
-	hamt
-};
-
-//	Temporary *global* constant that switches between array-based vector backened and HAMT-based vector.
-//	The string always uses array-based vector.
-//	There is still only one typeid_t/itype for vector.
-//	Future: make this flag a per-vector setting.
-
-#if 0
-const vector_backend k_global_vector_type = vector_backend::carray;
-#else
-const vector_backend k_global_vector_type = vector_backend::hamt;
-#endif
-
-const bool k_global_dict_is_hamt = true;
-
-
-
-////////////////////////////////	runtime_type_t
-
-/*
-	An integer that specifies a unique type a type interner. Use this to specify types in running program.
-	Avoid using floyd::typeid_t
-	It is 1:1 compatible with itype_t. Use itype_t except in binary situations.
-*/
-
-typedef int32_t runtime_type_t;
-
-runtime_type_t make_runtime_type(itype_t itype);
-
-
-
-////////////////////////////////		heap_t
-
 /*
 	TERMS
 
@@ -97,6 +27,116 @@ runtime_type_t make_runtime_type(itype_t itype);
 
 	NOTICE: Right now each alloc is made using malloc(). In the future we can switch to private heap / arena / pooling.
 */
+
+#ifndef value_backend_hpp
+#define value_backend_hpp
+
+#include "immer/vector.hpp"
+#include "immer/map.hpp"
+
+#include <atomic>
+#include <map>
+#include <mutex>
+#include "ast_value.h"
+#include "type_interner.h"
+#include "ast.h"
+
+#include "quark.h"
+
+struct json_t;
+
+
+namespace floyd {
+
+
+
+
+
+////////////////////////////////	CONFIGURATION
+
+
+#define HEAP_MUTEX 0
+#define ATOMIC_RC 1
+
+
+
+
+////////////////////////////////	FORWARD DECL
+
+
+struct typeid_t;
+struct heap_alloc_64_t;
+
+
+struct VECTOR_CARRAY_T;
+struct VECTOR_HAMT_T;
+struct DICT_CPPMAP_T;
+struct DICT_HAMT_T;
+struct JSON_T;
+struct STRUCT_T;
+
+
+
+
+////////////////////////////////	runtime_type_t
+
+/*
+	An integer that specifies a unique type a type interner. Use this to specify types in running program.
+	Avoid using floyd::typeid_t
+	It is 1:1 compatible with itype_t. Use itype_t except in binary situations.
+*/
+
+typedef int32_t runtime_type_t;
+
+runtime_type_t make_runtime_type(itype_t itype);
+
+
+
+
+////////////////////////////////		heap_t
+
+
+
+struct heap_rec_t {
+	heap_alloc_64_t* alloc_ptr;
+//	bool in_use;
+};
+
+
+
+static const uint64_t HEAP_MAGIC = 0xf00d1234;
+
+struct heap_t {
+	heap_t(bool record_allocs_flag) :
+		magic(0xf00d1234),
+		allocation_id_generator(1000000),
+		record_allocs_flag(record_allocs_flag)
+	{
+#if HEAP_MUTEX
+		alloc_records_mutex = std::make_shared<std::recursive_mutex>();
+#endif
+	}
+	~heap_t();
+	public: bool check_invariant() const;
+	public: int count_used() const;
+
+
+	////////////////////////////////		STATE
+	uint64_t magic;
+#if HEAP_MUTEX
+	std::shared_ptr<std::recursive_mutex> alloc_records_mutex;
+#endif
+	std::vector<heap_rec_t> alloc_records;
+
+	uint64_t allocation_id_generator;
+	bool record_allocs_flag;
+};
+
+
+
+
+////////////////////////////////		heap_alloc_64_t
+
 
 
 /*
@@ -131,17 +171,20 @@ struct heap_alloc_64_t {
 	static const size_t k_data_bytes = sizeof(uint64_t) * k_data_elements;
 
 
-	heap_alloc_64_t(heap_t* heap, uint64_t allocation_word_count, itype_t debug_value_type, const char debug_string[]) :
+	heap_alloc_64_t(heap_t* heap0, uint64_t allocation_word_count, itype_t debug_value_type, const char debug_string[]) :
 		rc(1),
 		magic(ALLOC_64_MAGIC),
 		allocation_word_count(allocation_word_count),
-		heap(heap)
+		heap(heap0)
 #if DEBUG
 		,
 		debug_value_type(debug_value_type)
 #endif
+		,alloc_id(heap->allocation_id_generator++)
 	{
-		QUARK_ASSERT(heap != nullptr);
+		QUARK_ASSERT(heap0 != nullptr);
+		assert(heap0 != nullptr);
+		QUARK_ASSERT(heap0->check_invariant());
 		QUARK_ASSERT(debug_string != nullptr && strlen(debug_string) < sizeof(debug_info));
 
 		data[0] = 0x00000000'00000000;
@@ -157,7 +200,6 @@ struct heap_alloc_64_t {
 	}
 
 	public: bool check_invariant() const;
-
 
 
 	////////////////////////////////		STATE
@@ -181,43 +223,13 @@ struct heap_alloc_64_t {
 	itype_t debug_value_type;
 //	std::string debug_value_type_str;
 #endif
+	int64_t alloc_id;
 
 };
 
 std::string get_debug_info(const heap_alloc_64_t& alloc);
 
 
-
-
-struct heap_rec_t {
-	heap_alloc_64_t* alloc_ptr;
-//	bool in_use;
-};
-
-
-
-static const uint64_t HEAP_MAGIC = 0xf00d1234;
-
-struct heap_t {
-	heap_t() :
-		magic(0xf00d1234)
-	{
-#if HEAP_MUTEX
-		alloc_records_mutex = std::make_shared<std::recursive_mutex>();
-#endif
-	}
-	~heap_t();
-	public: bool check_invariant() const;
-	public: int count_used() const;
-
-
-	////////////////////////////////		STATE
-	uint64_t magic;
-#if HEAP_MUTEX
-	std::shared_ptr<std::recursive_mutex> alloc_records_mutex;
-#endif
-	std::vector<heap_rec_t> alloc_records;
-};
 
 /*
 	Allocates a block of data using malloc().
@@ -244,7 +256,7 @@ const void* get_alloc_ptr(const heap_alloc_64_t& alloc);
 void trace_heap(const heap_t& heap);
 void detect_leaks(const heap_t& heap);
 
-uint64_t size_to_allocation_blocks(std::size_t size);
+inline uint64_t size_to_allocation_blocks(std::size_t size);
 
 //	Returns updated RC, no need to atomically read it yourself.
 //	If returned RC is 0, there is no way for any other client to bump it up again.
@@ -252,10 +264,6 @@ inline int32_t dec_rc(const heap_alloc_64_t& alloc);
 inline int32_t inc_rc(const heap_alloc_64_t& alloc);
 
 void dispose_alloc(heap_alloc_64_t& alloc);
-
-
-
-
 
 
 
@@ -294,7 +302,6 @@ union runtime_value_t {
 		return true;
 	}
 };
-
 
 
 runtime_value_t make_blank_runtime_value();
@@ -354,7 +361,6 @@ enum class WIDE_RETURN_MEMBERS {
 };
 
 WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
-
 
 
 
@@ -429,9 +435,8 @@ struct VECTOR_CARRAY_T {
 	heap_alloc_64_t alloc;
 };
 
-runtime_value_t alloc_vector_ccpvector2(heap_t& heap, uint64_t allocation_count, uint64_t element_count, itype_t value_type);
+runtime_value_t alloc_vector_carray(heap_t& heap, uint64_t allocation_count, uint64_t element_count, itype_t value_type);
 void dispose_vector_carray(const runtime_value_t& value);
-
 
 
 
@@ -634,6 +639,7 @@ struct STRUCT_T {
 };
 
 STRUCT_T* alloc_struct(heap_t& heap, std::size_t size, itype_t value_type);
+STRUCT_T* alloc_struct_copy(heap_t& heap, const uint64_t data[], std::size_t size, itype_t value_type);
 void dispose_struct(STRUCT_T& v);
 
 
@@ -642,27 +648,21 @@ void dispose_struct(STRUCT_T& v);
 
 
 
-
-
 runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type);
 void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t& value);
-
-
-
-
-
-
-
-
-
 
 
 
 ////////////////////////////////		struct_layout_t
 
 
+struct member_info_t {
+	size_t offset;
+	itype_t type;
+};
+
 struct struct_layout_t {
-	std::vector<size_t> offsets;
+	std::vector<member_info_t> members;
 	size_t size;
 };
 
@@ -676,12 +676,14 @@ struct value_backend_t {
 	value_backend_t(
 		const std::vector<std::pair<link_name_t, void*>>& native_func_lookup,
 		const std::vector<std::pair<itype_t, struct_layout_t>>& struct_layouts,
-		const type_interner_t& type_interner
+		const type_interner_t& type_interner,
+		const config_t& config
 	);
 
 	bool check_invariant() const {
 		QUARK_ASSERT(heap.check_invariant());
 		QUARK_ASSERT(child_type.size() == type_interner.interned.size());
+		QUARK_ASSERT(config.check_invariant());
 		return true;
 	}
 
@@ -695,8 +697,16 @@ struct value_backend_t {
 
 	type_interner_t type_interner;
 	std::vector<itype_t> child_type;
+
+
+	//	Temporary *global* constant that switches between array-based vector backened and HAMT-based vector.
+	//	The string always uses array-based vector.
+	//	There is still only one typeid_t/itype for vector.
+	//	Future: make this flag a per-vector setting.
 	std::vector<std::pair<link_name_t, void*>> native_func_lookup;
 	std::vector<std::pair<itype_t, struct_layout_t>> struct_layouts;
+
+	config_t config;
 };
 
 
@@ -706,8 +716,10 @@ itype_t lookup_itype(const value_backend_t& backend, const typeid_t& type);
 const typeid_t& lookup_type_ref(const value_backend_t& backend, itype_t itype);
 const typeid_t& lookup_type_ref(const value_backend_t& backend, runtime_type_t type);
 
-itype_t lookup_vector_element_itype(const value_backend_t& backend, itype_t itype);
-itype_t lookup_dict_value_itype(const value_backend_t& backend, itype_t itype);
+inline itype_t lookup_vector_element_itype(const value_backend_t& backend, itype_t itype);
+inline itype_t lookup_dict_value_itype(const value_backend_t& backend, itype_t itype);
+
+//??? Don't return pair, only struct_layout_t.
 const std::pair<itype_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, itype_t type);
 
 
@@ -719,23 +731,32 @@ bool is_rc_value(const itype_t& type);
 bool is_rc_value(const typeid_t& type);
 
 
+
 void retain_value(value_backend_t& backend, runtime_value_t value, itype_t itype);
+
 void retain_vector_carray(value_backend_t& backend, runtime_value_t vec, itype_t itype);
 inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, itype_t itype);
+
 void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, itype_t itype);
 void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, itype_t itype);
+
 void retain_struct(value_backend_t& backend, runtime_value_t s, itype_t itype);
+
 
 
 void release_value(value_backend_t& backend, runtime_value_t value, itype_t itype);
 
 void release_vector_carray_pod(value_backend_t& backend, runtime_value_t vec, itype_t itype);
 void release_vector_carray_nonpod(value_backend_t& backend, runtime_value_t vec, itype_t itype);
+
 inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, itype_t itype);
 inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, itype_t itype);
 
 void release_vec(value_backend_t& backend, runtime_value_t vec, itype_t itype);
 
+
+void release_dict_cppmap(value_backend_t& backend, runtime_value_t dict0, itype_t itype);
+void release_dict_hamt(value_backend_t& backend, runtime_value_t dict0, itype_t itype);
 void release_dict(value_backend_t& backend, runtime_value_t dict0, itype_t itype);
 
 
@@ -743,46 +764,68 @@ void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_val
 void release_struct(value_backend_t& backend, runtime_value_t s, itype_t itype);
 
 
-/*
-	vector_carray_pod
-	vector_carray_rc
 
-	vector_hamt_pod
-	vector_hamt_rc
-*/
+////////////////////////////////		DETECT TYPES
 
-inline bool is_vector_carray(itype_t t){
-	return t.is_vector() && k_global_vector_type == vector_backend::carray;
-}
-inline bool is_vector_hamt(itype_t t){
-	return t.is_vector() && k_global_vector_type == vector_backend::hamt;
-}
 
-inline bool is_dict_cppmap(itype_t t){
-	return t.is_dict() && (k_global_dict_is_hamt == false);
+
+inline bool is_vector_carray(const config_t& config, itype_t t){
+	QUARK_ASSERT(config.check_invariant());
+	QUARK_ASSERT(t.check_invariant());
+
+	return t.is_vector() && config.vector_backend_mode == vector_backend::carray;
 }
-inline bool is_dict_hamt(itype_t t){
-	return t.is_dict() && (k_global_dict_is_hamt == true);
+inline bool is_vector_hamt(const config_t& config, itype_t t){
+	QUARK_ASSERT(config.check_invariant());
+	QUARK_ASSERT(t.check_invariant());
+
+	return t.is_vector() && config.vector_backend_mode == vector_backend::hamt;
 }
 
-inline bool is_vector_carray(const typeid_t& t){
-	return t.is_vector() && k_global_vector_type == vector_backend::carray;
+inline bool is_dict_cppmap(const config_t& config, itype_t t){
+	QUARK_ASSERT(config.check_invariant());
+	QUARK_ASSERT(t.check_invariant());
+
+	return t.is_dict() && config.dict_backend_mode == dict_backend::cppmap;
 }
-inline bool is_vector_hamt(const typeid_t& t){
-	return t.is_vector() && k_global_vector_type == vector_backend::hamt;
+inline bool is_dict_hamt(const config_t& config, itype_t t){
+	QUARK_ASSERT(config.check_invariant());
+	QUARK_ASSERT(t.check_invariant());
+
+	return t.is_dict() && config.dict_backend_mode == dict_backend::hamt;
 }
 
-inline bool is_dict_cppmap(const typeid_t& t){
-	return t.is_dict() && (k_global_dict_is_hamt == false);
+
+
+inline bool is_vector_carray(const config_t& config, const typeid_t& t){
+	QUARK_ASSERT(config.check_invariant());
+	QUARK_ASSERT(t.check_invariant());
+
+	return t.is_vector() && config.vector_backend_mode == vector_backend::carray;
 }
-inline bool is_dict_hamt(const typeid_t& t){
-	return t.is_dict() && (k_global_dict_is_hamt == true);
+inline bool is_vector_hamt(const config_t& config, const typeid_t& t){
+	QUARK_ASSERT(config.check_invariant());
+	QUARK_ASSERT(t.check_invariant());
+
+	return t.is_vector() && config.vector_backend_mode == vector_backend::hamt;
 }
+
+inline bool is_dict_cppmap(const config_t& config, const typeid_t& t){
+	QUARK_ASSERT(config.check_invariant());
+	QUARK_ASSERT(t.check_invariant());
+
+	return t.is_dict() && config.dict_backend_mode == dict_backend::cppmap;
+}
+inline bool is_dict_hamt(const config_t& config, const typeid_t& t){
+	QUARK_ASSERT(config.check_invariant());
+	QUARK_ASSERT(t.check_invariant());
+
+	return t.is_dict() && config.dict_backend_mode == dict_backend::hamt;
+}
+
 
 
 value_backend_t make_test_value_backend();
-
-
 
 
 
@@ -793,6 +836,7 @@ value_backend_t make_test_value_backend();
 
 
 inline int32_t dec_rc(const heap_alloc_64_t& alloc){
+	assert(alloc.heap != nullptr);
 	QUARK_ASSERT(alloc.check_invariant());
 
 #if ATOMIC_RC
@@ -831,7 +875,7 @@ inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, it
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(itype.check_invariant());
 	QUARK_ASSERT(is_rc_value(itype));
-	QUARK_ASSERT(is_vector_hamt(itype));
+	QUARK_ASSERT(is_vector_hamt(backend.config, itype));
 
 	inc_rc(vec.vector_hamt_ptr->alloc);
 }
@@ -840,7 +884,8 @@ inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t ve
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(itype.check_invariant());
-	QUARK_ASSERT(is_vector_hamt(itype));
+	QUARK_ASSERT(is_vector_hamt(backend.config, itype));
+	QUARK_ASSERT(is_rc_value(lookup_vector_element_itype(backend, itype)) == false);
 
 	if(dec_rc(vec.vector_hamt_ptr->alloc) == 0){
 		dispose_vector_hamt(vec);
@@ -851,7 +896,8 @@ inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(itype.check_invariant());
-	QUARK_ASSERT(is_vector_hamt(itype));
+	QUARK_ASSERT(is_vector_hamt(backend.config, itype));
+	QUARK_ASSERT(is_rc_value(lookup_vector_element_itype(backend, itype)) == true);
 
 	if(dec_rc(vec.vector_hamt_ptr->alloc) == 0){
 		release_vector_hamt_elements_internal(backend, vec, itype);
@@ -860,6 +906,34 @@ inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t
 }
 
 
+
+inline uint64_t size_to_allocation_blocks(std::size_t size){
+	const auto r = (size >> 3) + ((size & 7) > 0 ? 1 : 0);
+
+	QUARK_ASSERT((r * sizeof(uint64_t) - size) >= 0);
+	QUARK_ASSERT((r * sizeof(uint64_t) - size) < sizeof(uint64_t));
+
+	return r;
+}
+
+
+
+
+inline itype_t lookup_vector_element_itype(const value_backend_t& backend, itype_t itype){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(itype.check_invariant());
+	QUARK_ASSERT(itype.is_vector());
+
+	return backend.child_type[itype.get_lookup_index()];
+}
+
+inline itype_t lookup_dict_value_itype(const value_backend_t& backend, itype_t itype){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(itype.check_invariant());
+	QUARK_ASSERT(itype.is_dict());
+
+	return backend.child_type[itype.get_lookup_index()];
+}
 
 }	// floyd
 

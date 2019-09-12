@@ -12,7 +12,7 @@
 using namespace floyd;
 
 
-QUARK_UNIT_TEST("https://github.com/marcusz/floyd/issues/8", "", "", "") {
+QUARK_TEST("https://github.com/marcusz/floyd/issues/8", "", "", "") {
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		

@@ -449,7 +449,6 @@ void trace_llvm_type_lookup(const llvm_type_lookup& type_lookup){
 
 	for(int i = 0 ; i < type_lookup.state.types.size() ; i++){
 		const auto& e = type_lookup.state.types[i];
-		const auto itype = i;
 		const auto type = type_lookup.state.type_interner.interned[i];
 		const auto l = line_t {
 			{
@@ -513,7 +512,7 @@ itype_t lookup_itype(const llvm_type_lookup& type_lookup, const typeid_t& type){
 
 
 
-llvm::StructType* get_exact_struct_type_noptr(const llvm_type_lookup& i, const typeid_t& type){
+llvm::StructType* get_exact_struct_type_byvalue(const llvm_type_lookup& i, const typeid_t& type){
 	QUARK_ASSERT(i.check_invariant());
 	QUARK_ASSERT(type.is_struct());
 
@@ -536,25 +535,36 @@ llvm::Type* get_llvm_type_as_arg(const llvm_type_lookup& i, const typeid_t& type
 	}
 }
 
-llvm::Type* make_generic_vec_type(const llvm_type_lookup& type_lookup){
+
+llvm::FunctionType* get_llvm_function_type(const llvm_type_lookup& type_lookup, const typeid_t& type){
+	QUARK_ASSERT(type_lookup.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	auto t = get_llvm_type_as_arg(type_lookup, type);
+	return llvm::cast<llvm::FunctionType>(t);
+}
+
+
+
+llvm::Type* make_generic_vec_type_byvalue(const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	return type_lookup.state.generic_vec_type;
 }
 
-llvm::Type* make_generic_dict_type(const llvm_type_lookup& type_lookup){
+llvm::Type* make_generic_dict_type_byvalue(const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	return type_lookup.state.generic_dict_type;
 }
 
-llvm::Type* make_json_type(const llvm_type_lookup& type_lookup){
+llvm::Type* make_json_type_byvalue(const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	return type_lookup.state.json_type;
 }
 
-llvm::Type* get_generic_struct_type(const llvm_type_lookup& type_lookup){
+llvm::Type* get_generic_struct_type_byvalue(const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	return type_lookup.state.generic_struct_type;
@@ -586,7 +596,7 @@ static llvm_type_lookup make_basic_interner(llvm::LLVMContext& context){
 static llvm_type_lookup make_basic_interner(llvm::LLVMContext& context);
 
 #if 0
-QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void()", ""){
+QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func void()", ""){
 	llvm::LLVMContext context;
 	const auto interner = make_basic_interner(context);
 	auto module = std::make_unique<llvm::Module>("test", context);
@@ -608,7 +618,7 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void()", ""){
 	QUARK_UT_VERIFY(r.args[0].map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr);
 }
 
-QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func int()", ""){
+QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func int()", ""){
 	llvm::LLVMContext context;
 	auto interner = make_basic_interner(context);
 	auto module = std::make_unique<llvm::Module>("test", context);
@@ -627,7 +637,7 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func int()", ""){
 	QUARK_UT_VERIFY(r.args[0].map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr);
 }
 
-QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""){
+QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""){
 	llvm::LLVMContext context;
 	const auto interner = make_basic_interner(context);
 	auto module = std::make_unique<llvm::Module>("test", context);
@@ -652,7 +662,7 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""
 	QUARK_UT_VERIFY(r.args[1].map_type == llvm_arg_mapping_t::map_type::k_known_value_type);
 }
 
-QUARK_UNIT_TEST
+QUARK_TEST
 ("LLVM Codegen", "map_function_arguments()", "func void(int, DYN, bool)", ""){
 	llvm::LLVMContext context;
 	const auto interner = make_basic_interner(context);

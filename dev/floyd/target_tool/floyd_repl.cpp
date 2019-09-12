@@ -28,14 +28,18 @@
 
 #if true
 
-#ifndef _MSC_VER
-#include <editline/readline.h>
-#else
-#include <readline/readline.h>
+#if QUARK_MAC
+	#include <editline/readline.h>
+#elif QUARK_WINDOWS
+	#include <readline/readline.h>
+#elif QUARK_LINUX
+	#include <editline/readline.h>
 #endif
+
+
+
 void init_terminal(){
 }
-
 
 std::string get_command(){
 	std::string result;
@@ -47,7 +51,7 @@ std::string get_command(){
 			line_read = nullptr;
 		}
 	}
-#ifndef _MSC_VER
+#if QUARK_MAC || QUARK_LINUX
 	add_history (result.c_str());
 #endif
 	return result;

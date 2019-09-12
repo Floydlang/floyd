@@ -47,13 +47,13 @@ struct smurf_impl_t {
 };
 
 
-QUARK_UNIT_TESTQ("make_immutable_ref()", "Basic construction"){
+QUARK_TESTQ("make_immutable_ref()", "Basic construction"){
 	const auto a = immutable_ref_value_t<smurf_impl_t>();
 	QUARK_TEST_VERIFY(a.check_invariant());
 }
 
 
-QUARK_UNIT_TESTQ("make_immutable_ref()", "Basic construction"){
+QUARK_TESTQ("make_immutable_ref()", "Basic construction"){
 	const auto a = make_immutable_ref<smurf_impl_t>(12.4f, "Hungry-Smurf");
 
 	QUARK_TEST_VERIFY(a.check_invariant());
@@ -61,28 +61,28 @@ QUARK_UNIT_TESTQ("make_immutable_ref()", "Basic construction"){
 	QUARK_UT_VERIFY(a->_name == "Hungry-Smurf");
 }
 
-QUARK_UNIT_TESTQ("make_immutable_ref()", "operator==() -- EQUAL by ptr comparison shortcut"){
+QUARK_TESTQ("make_immutable_ref()", "operator==() -- EQUAL by ptr comparison shortcut"){
 	const auto a = make_immutable_ref<smurf_impl_t>(12.4f, "Hungry-Smurf");
 	const auto b = a;
 
 	QUARK_TEST_VERIFY(a == b);
 }
 
-QUARK_UNIT_TESTQ("make_immutable_ref()", "operator==()"){
+QUARK_TESTQ("make_immutable_ref()", "operator==()"){
 	const auto a = make_immutable_ref<smurf_impl_t>(12.4f, "Hungry-Smurf");
 	const auto b = make_immutable_ref<smurf_impl_t>(12.4f, "Fuller");
 
 	QUARK_TEST_VERIFY(!(a == b));
 }
 
-QUARK_UNIT_TESTQ("make_immutable_ref()", "operator==() -- equal BY VALUE"){
+QUARK_TESTQ("make_immutable_ref()", "operator==() -- equal BY VALUE"){
 	const auto a = make_immutable_ref<smurf_impl_t>(12.4f, "Hungry-Smurf");
 	const auto b = make_immutable_ref<smurf_impl_t>(12.4f, "Hungry-Smurf");
 
 	QUARK_TEST_VERIFY(a == b);
 }
 
-QUARK_UNIT_TESTQ("make_immutable_ref()", "Test using std::string"){
+QUARK_TESTQ("make_immutable_ref()", "Test using std::string"){
 	const auto a = make_immutable_ref<std::string>("Hello, world!");
 
 	QUARK_TEST_VERIFY(a.check_invariant());
@@ -94,13 +94,13 @@ QUARK_UNIT_TESTQ("make_immutable_ref()", "Test using std::string"){
 
 
 
-QUARK_UNIT_TESTQ("make_immutable_value()", "Basic construction"){
+QUARK_TESTQ("make_immutable_value()", "Basic construction"){
 	const auto a = make_immutable_value<smurf_impl_t>();
 	QUARK_TEST_VERIFY(a.check_invariant());
 }
 
 
-QUARK_UNIT_TESTQ("make_immutable_value()", "Basic construction"){
+QUARK_TESTQ("make_immutable_value()", "Basic construction"){
 	const auto a = make_immutable_value<smurf_impl_t>(12.4f, "Hungry-Smurf");
 
 	QUARK_TEST_VERIFY(a.check_invariant());
@@ -108,14 +108,14 @@ QUARK_UNIT_TESTQ("make_immutable_value()", "Basic construction"){
 	QUARK_UT_VERIFY(a->_name == "Hungry-Smurf");
 }
 
-QUARK_UNIT_TESTQ("make_immutable_value()", "operator==()"){
+QUARK_TESTQ("make_immutable_value()", "operator==()"){
 	const auto a = make_immutable_value<smurf_impl_t>(12.4f, "Hungry-Smurf");
 	const auto b = make_immutable_value<smurf_impl_t>(12.4f, "Fuller");
 
 	QUARK_TEST_VERIFY(!(a == b));
 }
 
-QUARK_UNIT_TESTQ("make_immutable_value()", "operator==() -- equal BY VALUE"){
+QUARK_TESTQ("make_immutable_value()", "operator==() -- equal BY VALUE"){
 	const auto a = make_immutable_value<smurf_impl_t>(12.4f, "Hungry-Smurf");
 	const auto b = make_immutable_value<smurf_impl_t>(12.4f, "Hungry-Smurf");
 
@@ -123,7 +123,7 @@ QUARK_UNIT_TESTQ("make_immutable_value()", "operator==() -- equal BY VALUE"){
 }
 
 #if false
-QUARK_UNIT_TESTQ("make_immutable_value()", "operator=()"){
+QUARK_TESTQ("make_immutable_value()", "operator=()"){
 	const auto a = make_immutable_value<smurf_impl_t>(12.4f, "Hungry-Smurf");
 	const auto b = a;
 	b = a;
@@ -133,7 +133,7 @@ QUARK_UNIT_TESTQ("make_immutable_value()", "operator=()"){
 #endif
 
 
-QUARK_UNIT_TESTQ("make_immutable_value()", "Test using std::string"){
+QUARK_TESTQ("make_immutable_value()", "Test using std::string"){
 	const auto a = make_immutable_value<std::string>("Hello, world!");
 
 	QUARK_TEST_VERIFY(a.check_invariant());

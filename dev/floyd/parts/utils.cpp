@@ -19,35 +19,35 @@ using std::string;
 //	template <typename T> bool compare_shared_values(const T& ptr_a, const T& ptr_b){
 
 
-QUARK_UNIT_TEST("", "compare_shared_values()", "", ""){
+QUARK_TEST("", "compare_shared_values()", "", ""){
 	const auto a = std::make_shared<std::string>("a");
 	const auto b = std::make_shared<std::string>("a");
 	QUARK_TEST_VERIFY(compare_shared_values(a, b) == true);
 }
 
-QUARK_UNIT_TEST("", "compare_shared_values()", "", ""){
+QUARK_TEST("", "compare_shared_values()", "", ""){
 	const auto a = std::make_shared<std::string>("a");
 	const auto b = a;
 	QUARK_TEST_VERIFY(compare_shared_values(a, b) == true);
 }
 
 
-QUARK_UNIT_TEST("", "compare_shared_values()", "", ""){
+QUARK_TEST("", "compare_shared_values()", "", ""){
 	const auto a = std::make_shared<std::string>("a");
 	const auto b = std::make_shared<std::string>("b");
 	QUARK_TEST_VERIFY(compare_shared_values(a, b) == false);
 }
-QUARK_UNIT_TEST("", "compare_shared_values()", "", ""){
+QUARK_TEST("", "compare_shared_values()", "", ""){
 	const auto a = std::shared_ptr<std::string>();
 	const auto b = std::make_shared<std::string>("b");
 	QUARK_TEST_VERIFY(compare_shared_values(a, b) == false);
 }
-QUARK_UNIT_TEST("", "compare_shared_values()", "", ""){
+QUARK_TEST("", "compare_shared_values()", "", ""){
 	const auto a = std::make_shared<std::string>("a");
 	const auto b = std::shared_ptr<std::string>();
 	QUARK_TEST_VERIFY(compare_shared_values(a, b) == false);
 }
-QUARK_UNIT_TEST("", "compare_shared_values()", "", ""){
+QUARK_TEST("", "compare_shared_values()", "", ""){
 	const auto a = std::shared_ptr<std::string>();
 	const auto b = std::shared_ptr<std::string>();
 	QUARK_TEST_VERIFY(compare_shared_values(a, b) == true);
@@ -60,7 +60,7 @@ auto lambda_echo = [](int i ) { QUARK_TRACE_SS(i); };
 
 std::vector<int> test_collection{20,24,37,42,23,45,37};
 
-QUARK_UNIT_TEST("", "lambda_echo()", "", "") {
+QUARK_TEST("", "lambda_echo()", "", "") {
 	for_each_col(test_collection, lambda_echo);
 }
 
@@ -100,12 +100,12 @@ auto map_container(const T& iterable, Func&& func) ->
 }
 */
 
-QUARK_UNIT_TEST("", "mapf()", "", "") {
+QUARK_TEST("", "mapf()", "", "") {
 	auto result = mapf<int>(std::vector<int>{ 20, 21, 22, 23 }, [](int e){ return e + 100; });
 	QUARK_UT_VERIFY(result == (std::vector<int>{ 120, 121, 122, 123 }));
 }
 
-QUARK_UNIT_TEST("", "mapf()", "", "") {
+QUARK_TEST("", "mapf()", "", "") {
 	auto result = mapf<string>(std::vector<int>{ 20, 21, 22, 23 }, [](int e){ return std::to_string(e + 100); });
 	QUARK_UT_VERIFY(result == (std::vector<string>{ "120", "121", "122", "123" }));
 }
@@ -114,7 +114,7 @@ QUARK_UNIT_TEST("", "mapf()", "", "") {
 
 
 /*
-QUARK_UNIT_TEST("", "filter()", "", "") {
+QUARK_TEST("", "filter()", "", "") {
 	auto filteredCol = filter(test_collection,[](int value){ return value > 30;});
 	for_each(filteredCol,lambda_echo);
 }
@@ -122,11 +122,11 @@ QUARK_UNIT_TEST("", "filter()", "", "") {
 
 
 
-QUARK_UNIT_TEST("", "reduce()", "", "") {
+QUARK_TEST("", "reduce()", "", "") {
 	const auto result = reduce(std::vector<int>{ 1, 2, 3 }, 1000, [](int acc, int e){ return acc + e; });
 	QUARK_UT_VERIFY(result == (1000 + 1 + 2 + 3));
 }
-QUARK_UNIT_TEST("", "reduce()", "", "") {
+QUARK_TEST("", "reduce()", "", "") {
 	const auto result = reduce(std::vector<std::string>{ "a", "b", "c", "b", "d" }, 100, [](int acc, std::string e){ return e == "b" ? acc + 1 : acc; });
 	QUARK_UT_VERIFY(result == 102);
 }
@@ -147,16 +147,16 @@ std::string float_to_string_no_trailing_zeros(float v){
 }
 
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	QUARK_UT_VERIFY(float_to_string_no_trailing_zeros(0) == "0");
 }
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	QUARK_UT_VERIFY(float_to_string_no_trailing_zeros(123) == "123");
 }
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	QUARK_UT_VERIFY(float_to_string_no_trailing_zeros(1.123) == "1.123");
 }
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	QUARK_UT_VERIFY(float_to_string_no_trailing_zeros(1.5) == "1.5");
 }
 #endif
@@ -172,7 +172,7 @@ std::string ptr_to_hexstring(const void* ptr){
 	return ss.str();
 }
 
-QUARK_UNIT_TEST("", "ptr_to_hexstring()", "", "") {
+QUARK_TEST("", "ptr_to_hexstring()", "", "") {
 	const auto s = ptr_to_hexstring((void*)0xdeadbeef);
 	QUARK_UT_VERIFY(s == "0x00000000deadbeef");
 }

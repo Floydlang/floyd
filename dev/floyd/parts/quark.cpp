@@ -35,9 +35,7 @@ bool trace_on = QUARK_TRACE_ON;
 bool unit_tests_on = QUARK_UNIT_TESTS_ON;
 
 
-#if QUARK_UNIT_TESTS_ON
-	unit_test_registry* unit_test_rec::_registry_instance = nullptr;
-#endif
+unit_test_registry* unit_test_rec::registry_instance = nullptr;
 
 
 namespace {
@@ -62,26 +60,26 @@ void set_runtime(runtime_i* iRuntime){
 #if QUARK_UNIT_TESTS_ON
 
 
-QUARK_UNIT_TESTQ("path_to_name()", ""){
+QUARK_TESTQ("path_to_name()", ""){
 	QUARK_UT_VERIFY(path_to_name("/Users/marcus/Repositories/Floyd/examples/game_of_life2.cpp") == "game_of_life2.cpp");
 }
-QUARK_UNIT_TESTQ("path_to_name()", ""){
+QUARK_TESTQ("path_to_name()", ""){
 	QUARK_UT_VERIFY(path_to_name("game_of_life2.cpp") == "game_of_life2.cpp");
 }
-QUARK_UNIT_TESTQ("path_to_name()", ""){
+QUARK_TESTQ("path_to_name()", ""){
 	QUARK_UT_VERIFY(path_to_name("") == "");
 }
 
 //??? test mixes of string vs char*
 
-QUARK_UNIT_TEST("Quark", "ut_verify()", "", ""){
+QUARK_TEST("Quark", "ut_verify()", "", ""){
 	ut_verify(QUARK_POS, std::string("xyz123"), std::string("xyz123"));
 }
-QUARK_UNIT_TEST("Quark", "ut_verify()", "", ""){
+QUARK_TEST("Quark", "ut_verify()", "", ""){
 	ut_verify(QUARK_POS, "xyz", "xyz");
 }
 /*
-QUARK_UNIT_TEST("Quark", "ut_verify()", "", ""){
+QUARK_TEST("Quark", "ut_verify()", "", ""){
 	try{
 		ut_verify(QUARK_POS, "xyzabc", "xyztbcd");
 		fail_test(QUARK_POS);
@@ -104,20 +102,6 @@ void ut_verify(const call_context_t& context, const custom_type_t& result, const
 		QUARK_TRACE_SS("  result: " << result.a << " " << result.s);
 		QUARK_TRACE_SS("expected: " << expected.a << " " << expected.s);
 		quark::fail_test(context);
-	}
-}
-
-/*bool operator==(const custom_type_t& lhs, const custom_type_t& rhs){
-	return lhs.a == rhs.a && lhs.s == rhs.s;
-}*/
-OFF_QUARK_UNIT_TEST("Quark", "ut_verify()", "", ""){
-	try {
-		const auto result = custom_type_t{ 100, "one hundred" };
-		const auto expected = custom_type_t{ 200, "two hundred" };
-		ut_verify(QUARK_POS, result, expected);
-	}
-	catch(...){
-		//	We should land here.
 	}
 }
 
@@ -175,7 +159,7 @@ void test_macros(){
 	QUARK_SCOPED_TRACE(std::string("scoped trace") + "std::string version");
 }
 
-QUARK_UNIT_TEST("", "", "", ""){
+QUARK_TEST("", "", "", ""){
 	QUARK_UT_VERIFY(true);
 	QUARK_TEST_VERIFY(true);
 }

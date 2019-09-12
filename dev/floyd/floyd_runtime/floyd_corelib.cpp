@@ -112,6 +112,153 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 	}
 
 
+	func string make_benchmark_report([benchmark_result2_t] results)
+
+	func [string: json] detect_hardware_caps()
+
+	func string make_hardware_caps_report([string: json] caps)
+	func string make_hardware_caps_report_brief([string: json] caps)
+	func string get_current_date_and_time_string() impure
+
+
+
+
+	let double cmath_pi = 3.14159265358979323846
+
+
+	struct time_ms_t {
+		int pos
+	}
+
+	struct date_t {
+		string utc_date
+	}
+
+	struct uuid_t {
+		int high64
+		int low64
+	}
+
+
+	struct ip_address_t {
+		int high64
+		int low_64_bits
+	}
+
+
+	struct url_t {
+		string absolute_url
+	}
+
+	struct url_parts_t {
+		string protocol
+		string domain
+		string path
+		[string:string] query_strings
+		int port
+	}
+
+	struct quick_hash_t {
+		int hash
+	}
+
+	struct sha1_t {
+		string ascii40
+	}
+
+	struct key_t {
+		quick_hash_t hash
+	}
+
+	struct binary_t {
+		string bytes
+	}
+
+	struct seq_t {
+		string str
+		int pos
+	}
+
+	struct text_t {
+		binary_t data
+	}
+
+	struct text_resource_id {
+		quick_hash_t id
+	}
+
+	struct image_id_t {
+		int id
+	}
+
+	struct color_t {
+		double red
+		double green
+		double blue
+		double alpha
+	}
+
+	struct vector2_t {
+		double x
+		double y
+	}
+
+
+	////////////////////////////		FILE SYSTEM TYPES
+
+
+	struct fsentry_t {
+		string type	//	"dir" or "file"
+		string abs_parent_path
+		string name
+	}
+
+	struct fsentry_info_t {
+		string type	//	"file" or "dir"
+		string name
+		string abs_parent_path
+
+		string creation_date
+		string modification_date
+		int file_size
+	}
+
+	struct fs_environment_t {
+		string home_dir
+		string documents_dir
+		string desktop_dir
+
+		string hidden_persistence_dir
+		string preferences_dir
+		string cache_dir
+		string temp_dir
+
+		string executable_dir
+	}
+
+
+	func sha1_t calc_string_sha1(string s)
+	func sha1_t calc_binary_sha1(binary_t d)
+
+	func int get_time_of_day() impure
+
+	func string read_text_file(string abs_path) impure
+	func void write_text_file(string abs_path, string data) impure
+
+	func [fsentry_t] get_fsentries_shallow(string abs_path) impure
+	func [fsentry_t] get_fsentries_deep(string abs_path) impure
+	func fsentry_info_t get_fsentry_info(string abs_path) impure
+	func fs_environment_t get_fs_environment() impure
+	func bool does_fsentry_exist(string abs_path) impure
+	func void create_directory_branch(string abs_path) impure
+	func void delete_fsentry_deep(string abs_path) impure
+	func void rename_fsentry(string abs_path, string n) impure
+
+)";
+
+
+
+
 /*
 
 	//[R] map([E] elements, func R (E e, C context) f, C context)
@@ -257,164 +404,6 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 */
 
 
-	func string make_benchmark_report([benchmark_result2_t] results)
-
-
-
-
-	func [string: json] detect_hardware_caps()
-
-
-	func string make_hardware_caps_report([string: json] caps)
-	func string make_hardware_caps_report_brief([string: json] caps)
-	func string get_current_date_and_time_string() impure
-
-
-
-
-	let double cmath_pi = 3.14159265358979323846
-
-
-	struct time_ms_t {
-		int pos
-	}
-
-	struct date_t {
-		string utc_date
-	}
-
-
-
-
-
-	struct uuid_t {
-		int high64
-		int low64
-	}
-
-
-	struct ip_address_t {
-		int high64
-		int low_64_bits
-	}
-
-
-	struct url_t {
-		string absolute_url
-	}
-
-	struct url_parts_t {
-		string protocol
-		string domain
-		string path
-		[string:string] query_strings
-		int port
-	}
-
-
-
-
-	struct quick_hash_t {
-		int hash
-	}
-
-	struct sha1_t {
-		string ascii40
-	}
-
-	struct key_t {
-		quick_hash_t hash
-	}
-
-
-
-	struct binary_t {
-		string bytes
-	}
-
-	struct seq_t {
-		string str
-		int pos
-	}
-
-	struct text_t {
-		binary_t data
-	}
-
-	struct text_resource_id {
-		quick_hash_t id
-	}
-
-	struct image_id_t {
-		int id
-	}
-
-	struct color_t {
-		double red
-		double green
-		double blue
-		double alpha
-	}
-
-	struct vector2_t {
-		double x
-		double y
-	}
-
-
-	////////////////////////////		FILE SYSTEM TYPES
-
-
-	struct fsentry_t {
-		string type	//	"dir" or "file"
-		string abs_parent_path
-		string name
-	}
-
-	struct fsentry_info_t {
-		string type	//	"file" or "dir"
-		string name
-		string abs_parent_path
-
-		string creation_date
-		string modification_date
-		int file_size
-	}
-
-	struct fs_environment_t {
-		string home_dir
-		string documents_dir
-		string desktop_dir
-
-		string hidden_persistence_dir
-		string preferences_dir
-		string cache_dir
-		string temp_dir
-
-		string executable_dir
-	}
-
-
-	func sha1_t calc_string_sha1(string s)
-	func sha1_t calc_binary_sha1(binary_t d)
-
-	func int get_time_of_day() impure
-
-	func string read_text_file(string abs_path) impure
-	func void write_text_file(string abs_path, string data) impure
-
-	func [fsentry_t] get_fsentries_shallow(string abs_path) impure
-	func [fsentry_t] get_fsentries_deep(string abs_path) impure
-	func fsentry_info_t get_fsentry_info(string abs_path) impure
-	func fs_environment_t get_fs_environment() impure
-	func bool does_fsentry_exist(string abs_path) impure
-	func void create_directory_branch(string abs_path) impure
-	func void delete_fsentry_deep(string abs_path) impure
-	func void rename_fsentry(string abs_path, string n) impure
-
-)";
-
-
 
 /*
     auto start = std::chrono::system_clock::now();
@@ -495,7 +484,6 @@ std::vector<std::pair<std::string, json_t>> corelib_detect_hardware_caps(){
 	};
 	return result;
 }
-
 /*
 {
 	"availcpu": 0,
@@ -546,7 +534,7 @@ std::string simplify_mem_size(int64_t value){
 	}
 }
 
-QUARK_UNIT_TEST("", "corelib_make_hardware_caps_report()", "", ""){
+QUARK_TEST("", "corelib_make_hardware_caps_report()", "", ""){
 	const auto r = simplify_mem_size(3943120896);
 //	QUARK_UT_VERIFY(r == "4 GB");
 }
@@ -636,14 +624,11 @@ std::string corelib_make_hardware_caps_report(const std::vector<std::pair<std::s
 }
 
 
-
-QUARK_UNIT_TEST("", "corelib_make_hardware_caps_report()", "", ""){
+QUARK_TEST("", "corelib_make_hardware_caps_report()", "", ""){
 	const auto caps = corelib_detect_hardware_caps();
 	const auto r = corelib_make_hardware_caps_report(caps);
 	std::cout << r << std::endl;
 }
-
-
 
 //	"Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz"	mem_size: 1.71799e+10,	logical_processor_count: 8,
 //	Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz  16 GB DRAM  8 cores
@@ -661,7 +646,7 @@ std::string corelib_make_hardware_caps_report_brief(const std::vector<std::pair<
 	return r.str();
 }
 
-QUARK_UNIT_TEST("", "corelib_make_hardware_caps_report_brief()", "", ""){
+QUARK_TEST("", "corelib_make_hardware_caps_report_brief()", "", ""){
 	const std::vector<std::pair<std::string, json_t>> caps = {
 		{ "machdep_cpu_brand_string", json_t("Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz") },
 		{ "logical_processor_count", json_t(8) },
@@ -673,14 +658,6 @@ QUARK_UNIT_TEST("", "corelib_make_hardware_caps_report_brief()", "", ""){
 	QUARK_UT_VERIFY(r == "Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz  16 GB DRAM  8 cores");
 }
 
-
-
-
-
-
-
-
-
 //	Only does this at top level, not for member strings.
 static std::string json_to_pretty_string_no_quotes(const json_t& j){
 	if(j.is_string()){
@@ -690,7 +667,6 @@ static std::string json_to_pretty_string_no_quotes(const json_t& j){
 		return json_to_pretty_string(j);
 	}
 }
-
 
 std::string make_benchmark_report(const std::vector<benchmark_result2_t>& test_results){
 	const auto fixed_headings = std::vector<std::string>{ "MODULE", "TEST", "DUR" };
@@ -784,7 +760,7 @@ std::string make_benchmark_report(const std::vector<benchmark_result2_t>& test_r
 }
 
 
-QUARK_UNIT_TEST("", "make_benchmark_report()", "", ""){
+QUARK_TEST("", "make_benchmark_report()", "", ""){
 	const auto test = std::vector<benchmark_result2_t> {
 		benchmark_result2_t { benchmark_id_t{ "", "g" }, benchmark_result_t { 2, json_t::make_object({ { "rate", "===========" }, { "wind", 14 } } ) } },
 		benchmark_result2_t { benchmark_id_t{ "", "abc" }, benchmark_result_t { 2000, json_t("0 elements") } },
@@ -802,7 +778,7 @@ QUARK_UNIT_TEST("", "make_benchmark_report()", "", ""){
 }
 
 //	Generate demo reports
-QUARK_UNIT_TEST("", "make_benchmark_report()", "Demo", ""){
+QUARK_TEST("", "make_benchmark_report()", "Demo", ""){
 	const auto test = std::vector<benchmark_result2_t> {
 		benchmark_result2_t { benchmark_id_t{ "", "pack_png()" }, benchmark_result_t { 1800, json_t::make_object({ { "kb/s", 670000 }, { "out size", 14014 } } ) } },
 		benchmark_result2_t { benchmark_id_t{ "", "pack_png()" }, benchmark_result_t { 2023, json_t("alpha") } },
@@ -815,13 +791,6 @@ QUARK_UNIT_TEST("", "make_benchmark_report()", "Demo", ""){
 	const auto result = make_benchmark_report(test);
 	std::cout << result << std::endl;
 }
-
-
-
-
-
-
-
 
 
 
@@ -840,7 +809,6 @@ bool is_valid_absolute_dir_path(const std::string& s){
 	}
 	return true;
 }
-
 
 
 std::vector<value_t> directory_entries_to_values(const std::vector<TDirEntry>& v){
@@ -863,10 +831,6 @@ std::vector<value_t> directory_entries_to_values(const std::vector<TDirEntry>& v
 	);
 	return elements;
 }
-
-
-
-
 
 
 typeid_t make__fsentry_t__type(){
@@ -920,10 +884,6 @@ typeid_t make__fs_environment_t__type(){
 	});
 	return temp;
 }
-
-
-
-
 
 
 /*
@@ -980,16 +940,11 @@ typeid_t make__file_pos_t__type(){
 
 
 
-
-
-
-
 std::string corelib_calc_string_sha1(const std::string& s){
 	const auto sha1 = CalcSHA1(s);
 	const auto ascii40 = SHA1ToStringPlain(sha1);
 	return ascii40;
 }
-
 
 
 std::string corelib_read_text_file(const std::string& abs_path){
@@ -1012,7 +967,6 @@ void corelib_write_text_file(const std::string& abs_path, const std::string& fil
 }
 
 
-
 /*
 	const auto a = std::chrono::high_resolution_clock::now();
 	std::this_thread::sleep_for(std::chrono::milliseconds(7));
@@ -1030,12 +984,12 @@ int64_t corelib__get_time_of_day(){
 	return result;
 }
 
-QUARK_UNIT_TEST("sizeof(int)", "", "", ""){
+QUARK_TEST("sizeof(int)", "", "", ""){
 	QUARK_TRACE(std::to_string(sizeof(int)));
 	QUARK_TRACE(std::to_string(sizeof(int64_t)));
 }
 
-QUARK_UNIT_TEST("get_time_of_day_ms()", "", "", ""){
+QUARK_TEST("get_time_of_day_ms()", "", "", ""){
 	const auto a = std::chrono::high_resolution_clock::now();
 	std::this_thread::sleep_for(std::chrono::milliseconds(7));
 	const auto b = std::chrono::high_resolution_clock::now();
@@ -1068,7 +1022,6 @@ std::vector<TDirEntry> corelib_get_fsentries_deep(const std::string& abs_path){
 	const auto a = GetDirItemsDeep(abs_path);
 	return a;
 }
-
 
 
 

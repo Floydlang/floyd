@@ -68,6 +68,7 @@ struct llvm_arg_mapping_t {
 ////////////////////////////////		llvm_function_def_t
 
 //	Describes a complete LLVM function signature.
+// ??? rename llvm_function_type_t
 
 struct llvm_function_def_t {
 	bool check_invariant() const {
@@ -174,13 +175,12 @@ itype_t lookup_itype(const llvm_type_lookup& type_lookup, const typeid_t& type);
 
 
 //	Returns the exact LLVM struct layout that maps to the struct members, without any alloc-64 header. Not a pointer.
-llvm::StructType* get_exact_struct_type_noptr(const llvm_type_lookup& type_lookup, const typeid_t& type);
+llvm::StructType* get_exact_struct_type_byvalue(const llvm_type_lookup& type_lookup, const typeid_t& type);
 
 
 
 //	Returns the LLVM type used to pass this type of value around. It uses generic types for vector, dict and struct.
 //	Small types are by-value, large types are pointers.
-//??? Make get_llvm_type_as_arg() return vector, struct etc. directly, not getPointerTo().
 /*
 |typeid_t                                                                |llvm_type_specific                                   |llvm_type_generic |
 |------------------------------------------------------------------------|-----------------------------------------------------|------------------|
@@ -204,14 +204,15 @@ llvm::StructType* get_exact_struct_type_noptr(const llvm_type_lookup& type_looku
 */
 llvm::Type* get_llvm_type_as_arg(const llvm_type_lookup& type_lookup, const typeid_t& type);
 
+llvm::FunctionType* get_llvm_function_type(const llvm_type_lookup& type_lookup, const typeid_t& type);
 
 
 //	Returns generic types.
-llvm::Type* make_generic_vec_type(const llvm_type_lookup& type_lookup);
-llvm::Type* make_generic_dict_type(const llvm_type_lookup& type_lookup);
-llvm::Type* get_generic_struct_type(const llvm_type_lookup& type_lookup);
+llvm::Type* make_generic_vec_type_byvalue(const llvm_type_lookup& type_lookup);
+llvm::Type* make_generic_dict_type_byvalue(const llvm_type_lookup& type_lookup);
+llvm::Type* get_generic_struct_type_byvalue(const llvm_type_lookup& type_lookup);
 
-llvm::Type* make_json_type(const llvm_type_lookup& type_lookup);
+llvm::Type* make_json_type_byvalue(const llvm_type_lookup& type_lookup);
 llvm::Type* make_frp_type(const llvm_type_lookup& type_lookup);
 
 

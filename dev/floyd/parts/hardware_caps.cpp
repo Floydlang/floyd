@@ -18,7 +18,7 @@ using namespace std;
 
 
 
-QUARK_UNIT_TEST("","", "", ""){
+QUARK_TEST("","", "", ""){
 	const auto a = read_hardware_caps();
 	QUARK_UT_VERIFY(a._hw_cacheline_size >= 16);
 	QUARK_UT_VERIFY(a._hw_scalar_align >= 4);

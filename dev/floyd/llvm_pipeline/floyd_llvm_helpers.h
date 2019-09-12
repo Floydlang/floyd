@@ -12,6 +12,7 @@
 #include "value_backend.h"
 
 #include <llvm/IR/IRBuilder.h>
+#include "llvm/Target/TargetMachine.h"
 
 
 
@@ -22,14 +23,36 @@ struct llvm_type_lookup;
 struct link_name_t;
 struct value_backend_t;
 
+
+struct target_t {
+	std::string target_triple;
+	llvm::TargetMachine* target_machine;
+
+
+	////////////////////////////////	STATE
+
+	bool check_invariant() const;
+};
+
+target_t make_default_target();
+
+
+
 //	Must LLVMContext be kept while using the execution engine? Yes!
 struct llvm_instance_t {
-	bool check_invariant() const {
-		return true;
-	}
+	llvm_instance_t();
+
+	bool check_invariant() const;
+
+
+	////////////////////////////////	STATE
 
 	llvm::LLVMContext context;
+	target_t target;
 };
+
+
+
 
 
 bool check_invariant__function(const llvm::Function* f);
@@ -68,21 +91,6 @@ void generate_array_element_store(llvm::IRBuilder<>& builder, llvm::Value& array
 
 
 llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::string& symbol_name, llvm::Type& itype, llvm::Constant* init_or_nullptr);
-
-
-
-////////////////////////////////		ENCODE / DECODE LLVM LINK NAMES
-
-
-
-//	"hello" => "floydf_hello"
-link_name_t encode_floyd_func_link_name(const std::string& name);
-std::string decode_floyd_func_link_name(const link_name_t& name);
-
-
-//	"hello" => "floydrt_hello"
-link_name_t encode_runtime_func_link_name(const std::string& name);
-std::string decode_runtime_func_link_name(const link_name_t& name);
 
 
 

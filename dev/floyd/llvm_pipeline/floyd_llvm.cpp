@@ -9,6 +9,7 @@
 #include "floyd_llvm.h"
 
 #include "floyd_llvm_runtime.h"
+#include "value_backend.h"
 #include "floyd_llvm_codegen.h"
 #include "semantic_ast.h"
 #include "compiler_helpers.h"
@@ -17,13 +18,15 @@
 namespace floyd {
 
 
-run_output_t run_program_helper(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const std::vector<std::string>& main_args){
+run_output_t run_program_helper(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const compiler_settings_t& settings, const std::vector<std::string>& main_args){
+	QUARK_ASSERT(settings.check_invariant());
+
 	const auto cu = floyd::make_compilation_unit(program_source, file, mode);
 	const auto sem_ast = compile_to_sematic_ast__errors(cu);
 
 	llvm_instance_t instance;
-	auto program = generate_llvm_ir_program(instance, sem_ast, file);
-	auto ee = init_program(*program);
+	auto program = generate_llvm_ir_program(instance, sem_ast, file, settings);
+	auto ee = init_llvm_jit(*program);
 	const auto result = run_program(*ee, main_args);
 	return result;
 }
@@ -32,26 +35,30 @@ run_output_t run_program_helper(const std::string& program_source, const std::st
 
 
 
-std::vector<bench_t> collect_benchmarks(const std::string& program_source, const std::string& file, compilation_unit_mode mode){
+std::vector<bench_t> collect_benchmarks(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const compiler_settings_t& settings){
+	QUARK_ASSERT(settings.check_invariant());
+
 	const auto cu = floyd::make_compilation_unit(program_source, file, mode);
 	const auto sem_ast = compile_to_sematic_ast__errors(cu);
 
 	llvm_instance_t instance;
-	auto program = generate_llvm_ir_program(instance, sem_ast, file);
-	auto ee = init_program(*program);
+	auto program = generate_llvm_ir_program(instance, sem_ast, file, settings);
+	auto ee = init_llvm_jit(*program);
 
 	std::vector<bench_t> b = collect_benchmarks(*ee);
 	return b;
 //	const auto result = mapf<benchmark_id_t>(b, [](auto& e){ return e.benchmark_id; });
 }
 
-std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const std::vector<std::string>& tests){
+std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const compiler_settings_t& settings, const std::vector<std::string>& tests){
+	QUARK_ASSERT(settings.check_invariant());
+
 	const auto cu = floyd::make_compilation_unit(program_source, file, mode);
 	const auto sem_ast = compile_to_sematic_ast__errors(cu);
 
 	llvm_instance_t instance;
-	auto program = generate_llvm_ir_program(instance, sem_ast, file);
-	auto ee = init_program(*program);
+	auto program = generate_llvm_ir_program(instance, sem_ast, file, settings);
+	auto ee = init_llvm_jit(*program);
 
 	const auto b = collect_benchmarks(*ee);
 	const auto b2 = filter_benchmarks(b, tests);
@@ -66,7 +73,7 @@ std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_sourc
 
 
 
-QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
+QUARK_TEST("", "run_benchmarks()", "", ""){
 	run_benchmarks(
 		R"(
 
@@ -79,6 +86,7 @@ QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
 		)",
 		"myfile.floyd",
 		compilation_unit_mode::k_no_core_lib,
+		make_default_compiler_settings(),
 		{ }
 	);
 	QUARK_UT_VERIFY(true);
@@ -94,13 +102,13 @@ QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
 
 
 
-QUARK_UNIT_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
+QUARK_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
 	const auto cu = floyd::make_compilation_unit_nolib("let int result = 1 + 2 + 3", "myfile.floyd");
 	const auto sem_ast = compile_to_sematic_ast__errors(cu);
 
 	floyd::llvm_instance_t instance;
-	auto program = generate_llvm_ir_program(instance, sem_ast, "myfile.floyd");
-	auto ee = init_program(*program);
+	auto program = generate_llvm_ir_program(instance, sem_ast, "myfile.floyd", floyd::make_default_compiler_settings());
+	auto ee = init_llvm_jit(*program);
 
 	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(*ee, "result"));
 	QUARK_ASSERT(result == 6);
@@ -109,13 +117,13 @@ QUARK_UNIT_TEST("", "From source: Check that floyd_runtime_init() runs and sets 
 }
 
 //	BROKEN!
-QUARK_UNIT_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
+QUARK_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
 	const auto cu = floyd::make_compilation_unit_nolib("print(5)", "myfile.floyd");
 	const auto sem_ast = compile_to_sematic_ast__errors(cu);
 
 	floyd::llvm_instance_t instance;
-	auto program = generate_llvm_ir_program(instance, sem_ast, "myfile.floyd");
-	auto ee = init_program(*program);
+	auto program = generate_llvm_ir_program(instance, sem_ast, "myfile.floyd", floyd::make_default_compiler_settings());
+	auto ee = init_llvm_jit(*program);
 	QUARK_ASSERT(ee->_print_output == std::vector<std::string>{"5"});
 }
 

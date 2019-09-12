@@ -57,23 +57,34 @@ struct function_bind_t {
 
 
 
-////////////////////////////////		function_def_t
+////////////////////////////////		function_link_entry_t
 
 
 
-struct function_def_t {
+struct function_link_entry_t {
+	std::string module;
+
 	link_name_t link_name;
 
 	llvm::FunctionType* llvm_function_type;
 
 	//	Only valid during codegen
+	//??? Rename llvm_function_node;
 	llvm::Function* llvm_codegen_f;
 
-	function_definition_t floyd_fundef;
+	typeid_t function_type_or_undef;
+
+	//??? better to use vector<string>
+	std::vector<member_t> arg_names_or_empty;
+
 	void* native_f;
 };
 
-void trace_function_defs(const std::vector<function_def_t>& defs);
+void trace_function_link_map(const std::vector<function_link_entry_t>& defs);
+
+
+
+
 
 
 
@@ -103,7 +114,7 @@ struct llvm_execution_engine_t {
 	llvm_instance_t* instance;
 	std::shared_ptr<llvm::ExecutionEngine> ee;
 	symbol_table_t global_symbols;
-	std::vector<function_def_t> function_defs;
+	std::vector<function_link_entry_t> function_defs;
 	public: std::vector<std::string> _print_output;
 
 	public: runtime_handler_i* _handler;
@@ -113,6 +124,7 @@ struct llvm_execution_engine_t {
 
 	llvm_bind_t main_function;
 	bool inited;
+	config_t config;
 };
 
 
@@ -149,12 +161,14 @@ typedef runtime_value_t (*FLOYD_RUNTIME_PROCESS_MESSAGE)(floyd_runtime_t* frp, r
 typedef runtime_value_t (*FLOYD_BENCHMARK_F)(floyd_runtime_t* frp);
 
 
-////////////////////////////////		ENGINE GLOBALS
 
+////////////////////////////////	CLIENT ACCESS OF RUNNING PROGRAM
+
+
+const function_link_entry_t& find_function_def_from_link_name(const std::vector<function_link_entry_t>& function_defs, const link_name_t& link_name);
 
 void* get_global_ptr(const llvm_execution_engine_t& ee, const std::string& name);
 
-const function_def_t& find_function_def_from_link_name(const std::vector<function_def_t>& function_defs, const link_name_t& link_name);
 
 std::pair<void*, typeid_t> bind_global(const llvm_execution_engine_t& ee, const std::string& name);
 value_t load_global(const llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& v);
@@ -165,6 +179,7 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name)
 
 
 inline llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp);
+
 
 
 ////////////////////////////////		VALUES
@@ -192,8 +207,7 @@ inline runtime_value_t to_runtime_string(llvm_execution_engine_t& runtime, const
 
 
 //	Returns a complete list of all functions: programmed in floyd, runtime functions, init() deinit().
-//	Notice that intrinics area already in the ast_function_defs-list.
-std::vector<function_def_t> make_all_function_defs(
+std::vector<function_link_entry_t> make_function_link_map1(
 	llvm::LLVMContext& context,
 	const llvm_type_lookup& type_lookup,
 	const std::vector<floyd::function_definition_t>& ast_function_defs
@@ -205,7 +219,7 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 
 
 //	Calls init() and will perform deinit() when engine is destructed later.
-std::unique_ptr<llvm_execution_engine_t> init_program(llvm_ir_program_t& program);
+std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& program);
 
 
 //	Calls main() if it exists, else runs the floyd processes. Returns when execution is done.

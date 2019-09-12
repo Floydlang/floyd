@@ -13,6 +13,7 @@
 
 #include <getopt.h>
 
+//	The shell actually strips the quotes, not C or C++.
 
 
 ////////////////////////////		COMMAND LINE ARGUMENTS
@@ -29,7 +30,7 @@ std::vector<std::string> args_to_vector(int argc, const char * argv[]){
 	return r;
 }
 
-#ifdef __APPLE__
+#if QUARK_MAC
 std::pair<std::string, std::vector<std::string> > extract_key(const std::vector<std::string>& args, const std::string& key){
 	const auto it = std::find(args.begin(), args.end(), key);
 	if(it != args.end()){
@@ -110,7 +111,7 @@ command_line_args_t parse_command_line_args(const std::vector<std::string>& args
 
 	int argc = static_cast<int>(args.size());
 
-	std::map<std::string, std::string> flags2;
+	std::map<std::string, flag_info_t> flags2;
 
 	//	The variable optind is the index of the next element to be processed in argv. The system
 	//	initializes this value to 1. The caller can reset it to 1 to restart scanning of the same argv,
@@ -120,9 +121,6 @@ command_line_args_t parse_command_line_args(const std::vector<std::string>& args
 	//	Disable getopt() from printing errors to stderr.
 	opterr = 0;
 
-    // put ':' in the starting of the
-    // string so that program can
-    //distinguish between '?' and ':'
     int opt = 0;
     while((opt = getopt(argc, &argv[0], flags.c_str())) != -1){
 		const auto opt_string = std::string(1, opt);
@@ -131,22 +129,26 @@ command_line_args_t parse_command_line_args(const std::vector<std::string>& args
 
 		//	Unknown flag.
 		if(opt == '?'){
-			flags2.insert({ optopt_string, "?" });
+//			flags2.insert({ optopt_string, "?" });
+			flags2.insert({ optopt_string, flag_info_t { flag_info_t::etype::unknown_flag, ""} } );
 		}
 
 		//	Flag with parameter.
 		else if(optarg_string.empty() == false){
-			flags2.insert({ opt_string, optarg_string });
+//			flags2.insert({ opt_string, optarg_string });
+			flags2.insert({ opt_string, flag_info_t { flag_info_t::etype::flag_with_parameter, optarg_string} } );
 		}
 
 		//	Flag needs a value(???)
 		else if(opt == ':'){
-			flags2.insert({ ":", optarg_string });
+//			flags2.insert({ ":", optarg_string });
+			flags2.insert({ optarg_string, flag_info_t { flag_info_t::etype::flag_missing_parameter, ""} } );
 		}
 
 		//	Flag without parameter.
 		else{
-			flags2.insert({ opt_string, "" });
+//			flags2.insert({ opt_string, "" });
+			flags2.insert({ opt_string, flag_info_t { flag_info_t::etype::simple_flag, ""} } );
 		}
     }
 
@@ -162,9 +164,11 @@ command_line_args_t parse_command_line_args(const std::vector<std::string>& args
 	return { args[0], "", flags2, extras };
 }
 
-//	The shell actually strips the quotes, not C or C++.
 
-command_line_args_t parse_command_line_args_subcommands(const std::vector<std::string>& args, const std::string& flags){
+command_line_args_t parse_command_line_args_subcommand(const std::vector<std::string>& args, const std::string& flags){
+	if(args.size () < 2){
+		throw std::exception();
+	}
 	const auto a = parse_command_line_args({ args.begin() + 1, args.end()}, flags);
 	return { args[0], a.command, a.flags, a.extra_arguments };
 }
@@ -176,27 +180,26 @@ void trace_command_line_args(const command_line_args_t& v){
 	{
 		QUARK_SCOPED_TRACE("flags");
 		for(const auto& e: v.flags){
-			const auto s = e.first + ": " + e.second;
-			QUARK_TRACE(s);
+
+			if(e.second.type == flag_info_t::etype::simple_flag){
+				QUARK_TRACE_SS(e.first + ": [simple_flag] = " + e.second.parameter);
+			}
+			else if(e.second.type == flag_info_t::etype::flag_with_parameter){
+				QUARK_TRACE_SS(e.first + ": [flag_with_parameter] = " + e.second.parameter);
+			}
+			else if(e.second.type == flag_info_t::etype::unknown_flag){
+				QUARK_TRACE_SS(e.first + ": [unknown_flag] = " + e.second.parameter);
+			}
+			else if(e.second.type == flag_info_t::etype::flag_missing_parameter){
+				QUARK_TRACE_SS(e.first + ": [flag_missing_parameter] = " + e.second.parameter);
+			}
+			else{
+				QUARK_ASSERT(false);
+			}
 		}
 	}
 }
 
-const auto k_git_command_examples = std::vector<std::string>({
-	R"(git init)",
-
-	R"(git clone /path/to/repository)",
-	R"(git clone username@host:/path/to/repository)",
-	R"(git add <filename>)",
-	R"(git add *)",
-	R"(git commit -m "Commit message")",
-
-	R"(git push origin master)",
-	R"(git remote add origin <server>)",
-	R"(git checkout -b feature_x)",
-	R"(git tag 1.0.0 1b2e1d63ff)",
-	R"(git log --help)"
-});
 
 
 /*
@@ -289,28 +292,28 @@ std::vector<std::string> split_command_line(const std::string& s){
 	return result;
 }
 
-QUARK_UNIT_TEST("", "split_command_line()", "", ""){
+QUARK_TEST("", "split_command_line()", "", ""){
 	const auto result = split_command_line("");
 	QUARK_UT_VERIFY(result == std::vector<std::string>{});
 }
-QUARK_UNIT_TEST("", "split_command_line()", "", ""){
+QUARK_TEST("", "split_command_line()", "", ""){
 	const auto result = split_command_line("  ");
 	QUARK_UT_VERIFY(result == std::vector<std::string>{});
 }
-QUARK_UNIT_TEST("", "split_command_line()", "", ""){
+QUARK_TEST("", "split_command_line()", "", ""){
 	const auto result = split_command_line(" one ");
 	QUARK_UT_VERIFY(result == std::vector<std::string>{ "one" });
 }
-QUARK_UNIT_TEST("", "split_command_line()", "", ""){
+QUARK_TEST("", "split_command_line()", "", ""){
 	const auto result = split_command_line("one two");
 	QUARK_UT_VERIFY((result == std::vector<std::string>{ "one", "two" }));
 }
-QUARK_UNIT_TEST("", "split_command_line()", "", ""){
+QUARK_TEST("", "split_command_line()", "", ""){
 	const auto result = split_command_line("one two     three");
 	QUARK_UT_VERIFY((result == std::vector<std::string>{ "one", "two", "three" }));
 }
 
-QUARK_UNIT_TEST("", "split_command_line()", "", ""){
+QUARK_TEST("", "split_command_line()", "", ""){
 	const auto result = split_command_line(R"(one "hello world"    three)");
 	QUARK_UT_VERIFY((result == std::vector<std::string>{ "one", R"("hello world")", "three" }));
 }
@@ -318,14 +321,14 @@ QUARK_UNIT_TEST("", "split_command_line()", "", ""){
 
 
 
-QUARK_UNIT_TEST("", "parse_command_line_args()", "", ""){
+QUARK_TEST("", "parse_command_line_args()", "", ""){
 	const auto result = parse_command_line_args({ "myapp" }, ":if:lrx");
 	QUARK_UT_VERIFY(result.command == "myapp");
 	QUARK_UT_VERIFY(result.subcommand == "");
 	QUARK_UT_VERIFY(result.flags.empty() && result.extra_arguments.empty());
 }
 
-QUARK_UNIT_TEST("", "parse_command_line_args()", "", ""){
+QUARK_TEST("", "parse_command_line_args()", "", ""){
 	const auto result = parse_command_line_args({ "myapp", "file1.txt" }, ":if:lrx");
 	QUARK_UT_VERIFY(result.command == "myapp");
 	QUARK_UT_VERIFY(result.subcommand == "");
@@ -333,27 +336,27 @@ QUARK_UNIT_TEST("", "parse_command_line_args()", "", ""){
 	QUARK_UT_VERIFY(result.extra_arguments == std::vector<std::string>({"file1.txt"}));
 }
 
-QUARK_UNIT_TEST("", "parse_command_line_args()", "", ""){
+QUARK_TEST("", "parse_command_line_args()", "", ""){
 	const auto result = parse_command_line_args({ "myapp", "-ilr", "-f", "doc.txt" }, ":if:lrx");
 	QUARK_UT_VERIFY(result.command == "myapp");
 	QUARK_UT_VERIFY(result.subcommand == "");
-	QUARK_UT_VERIFY(result.flags.find("i")->second == "");
-	QUARK_UT_VERIFY(result.flags.find("l")->second == "");
-	QUARK_UT_VERIFY(result.flags.find("r")->second == "");
-	QUARK_UT_VERIFY(result.flags.find("f")->second == "doc.txt");
+	QUARK_UT_VERIFY(result.flags.find("i")->second == (flag_info_t{ flag_info_t::etype::simple_flag, "" }) );
+	QUARK_UT_VERIFY(result.flags.find("l")->second == (flag_info_t{ flag_info_t::etype::simple_flag, "" }) );
+	QUARK_UT_VERIFY(result.flags.find("r")->second == (flag_info_t{ flag_info_t::etype::simple_flag, "" }) );
+	QUARK_UT_VERIFY(result.flags.find("f")->second == (flag_info_t{ flag_info_t::etype::flag_with_parameter, "doc.txt" }) );
 	QUARK_UT_VERIFY(result.extra_arguments.size() == 0);
 }
 
 
 //	getopt() uses global state, make sure we can call it several times OK (we reset it).
-QUARK_UNIT_TEST("", "parse_command_line_args()", "", ""){
+QUARK_TEST("", "parse_command_line_args()", "", ""){
 	const auto result = parse_command_line_args({ "myapp", "-ilr", "-f", "doc.txt" }, ":if:lrx");
 	QUARK_UT_VERIFY(result.command == "myapp");
 	QUARK_UT_VERIFY(result.subcommand == "");
-	QUARK_UT_VERIFY(result.flags.find("i")->second == "");
-	QUARK_UT_VERIFY(result.flags.find("l")->second == "");
-	QUARK_UT_VERIFY(result.flags.find("r")->second == "");
-	QUARK_UT_VERIFY(result.flags.find("f")->second == "doc.txt");
+	QUARK_UT_VERIFY(result.flags.find("i")->second == (flag_info_t{ flag_info_t::etype::simple_flag, "" }) );
+	QUARK_UT_VERIFY(result.flags.find("l")->second == (flag_info_t{ flag_info_t::etype::simple_flag, "" }) );
+	QUARK_UT_VERIFY(result.flags.find("r")->second == (flag_info_t{ flag_info_t::etype::simple_flag, "" }) );
+	QUARK_UT_VERIFY(result.flags.find("f")->second == (flag_info_t{ flag_info_t::etype::flag_with_parameter, "doc.txt" }) );
 	QUARK_UT_VERIFY(result.extra_arguments.size() == 0);
 
 	const auto result1 = parse_command_line_args({ "myapp", "-ilr", "-f", "doc.txt" }, ":if:lrx");
@@ -361,48 +364,93 @@ QUARK_UNIT_TEST("", "parse_command_line_args()", "", ""){
 }
 
 
-QUARK_UNIT_TEST("", "parse_command_line_args()", "", ""){
+QUARK_TEST("", "parse_command_line_args()", "", ""){
 	const auto result = parse_command_line_args({ "myapp", "-i", "-f", "doc.txt", "extra_one", "extra_two" }, ":if:lrx");
 	QUARK_UT_VERIFY(result.command == "myapp");
 	QUARK_UT_VERIFY(result.subcommand == "");
-	QUARK_UT_VERIFY(result.flags.find("i")->second == "");
-	QUARK_UT_VERIFY(result.flags.find("f")->second == "doc.txt");
+	QUARK_UT_VERIFY(result.flags.find("i")->second == (flag_info_t{ flag_info_t::etype::simple_flag, "" }) );
+	QUARK_UT_VERIFY(result.flags.find("f")->second == (flag_info_t{ flag_info_t::etype::flag_with_parameter, "doc.txt" }) );
 	QUARK_UT_VERIFY((result.extra_arguments == std::vector<std::string>{ "extra_one", "extra_two" }));
 }
 
 
+const auto k_git_command_examples = std::vector<std::string>({
+	R"(git init)",
 
-QUARK_UNIT_TEST("", "parse_command_line_args_subcommands()", "", ""){
-	const auto result = parse_command_line_args_subcommands(split_command_line(k_git_command_examples[0]), "");
+	R"(git clone /path/to/repository)",
+	R"(git clone username@host:/path/to/repository)",
+	R"(git add <filename>)",
+	R"(git add *)",
+	R"(git commit -m "Commit message")",
+
+	R"(git push origin master)",
+	R"(git remote add origin <server>)",
+	R"(git checkout -b feature_x)",
+	R"(git tag 1.0.0 1b2e1d63ff)",
+	R"(git log --help)"
+});
+
+QUARK_TEST("", "parse_command_line_args_subcommand()", "", ""){
+	const auto result = parse_command_line_args_subcommand(split_command_line(k_git_command_examples[0]), "");
 	QUARK_UT_VERIFY(result.command == "git");
 	QUARK_UT_VERIFY(result.subcommand == "init");
-	QUARK_UT_VERIFY((result.flags == std::map<std::string, std::string>{}));
+	QUARK_UT_VERIFY((result.flags == std::map<std::string, flag_info_t>{}));
 	QUARK_UT_VERIFY((result.extra_arguments == std::vector<std::string>{}));
 }
-QUARK_UNIT_TEST("", "parse_command_line_args_subcommands()", "", ""){
-	const auto result = parse_command_line_args_subcommands(split_command_line(k_git_command_examples[1]), "");
+QUARK_TEST("", "parse_command_line_args_subcommand()", "", ""){
+	const auto result = parse_command_line_args_subcommand(split_command_line(k_git_command_examples[1]), "");
 	QUARK_UT_VERIFY(result.command == "git");
 	QUARK_UT_VERIFY(result.subcommand == "clone");
-	QUARK_UT_VERIFY((result.flags == std::map<std::string, std::string>{}));
+	QUARK_UT_VERIFY((result.flags == std::map<std::string, flag_info_t>{}));
 	QUARK_UT_VERIFY((result.extra_arguments == std::vector<std::string>{ "/path/to/repository" }));
 }
 
-QUARK_UNIT_TEST("", "parse_command_line_args_subcommands()", "", ""){
-	const auto result = parse_command_line_args_subcommands(split_command_line(k_git_command_examples[4]), "");
+QUARK_TEST("", "parse_command_line_args_subcommand()", "", ""){
+	const auto result = parse_command_line_args_subcommand(split_command_line(k_git_command_examples[4]), "");
 	QUARK_UT_VERIFY(result.command == "git");
 	QUARK_UT_VERIFY(result.subcommand == "add");
-	QUARK_UT_VERIFY((result.flags == std::map<std::string, std::string>{}));
+	QUARK_UT_VERIFY((result.flags == std::map<std::string, flag_info_t>{}));
 	QUARK_UT_VERIFY((result.extra_arguments == std::vector<std::string>{ "*" }));
 }
-QUARK_UNIT_TEST("", "parse_command_line_args_subcommands()", "", ""){
-	const auto result = parse_command_line_args_subcommands(split_command_line(k_git_command_examples[5]), "");
+QUARK_TEST("", "parse_command_line_args_subcommand()", "", ""){
+	const auto result = parse_command_line_args_subcommand(split_command_line(k_git_command_examples[5]), "");
 	QUARK_UT_VERIFY(result.command == "git");
 	QUARK_UT_VERIFY(result.subcommand == "commit");
-	QUARK_UT_VERIFY((result.flags == std::map<std::string, std::string>{ {"m","?"}} ));
+	QUARK_UT_VERIFY((result.flags == std::map<std::string, flag_info_t>{ { "m", flag_info_t{ flag_info_t::etype::unknown_flag, "" } } } ));
 	QUARK_UT_VERIFY((result.extra_arguments == std::vector<std::string>{ R"("Commit message")" }));
 }
 
 
 
 
+QUARK_TEST("", "parse_command_line_args()", "", ""){
+	const auto result = parse_command_line_args(split_command_line("myapp -O1"), "O:");
+	QUARK_UT_VERIFY(result.command == "myapp");
+	QUARK_UT_VERIFY(result.subcommand == "");
+	QUARK_UT_VERIFY(result.flags.find("O")->second == (flag_info_t{ flag_info_t::etype::flag_with_parameter, "1" }) );
+	QUARK_UT_VERIFY((result.extra_arguments == std::vector<std::string>{}));
+}
+QUARK_TEST("", "parse_command_line_args()", "", ""){
+	const auto result = parse_command_line_args(split_command_line("myapp -i -O1"), "iO:");
+	QUARK_UT_VERIFY(result.command == "myapp");
+	QUARK_UT_VERIFY(result.subcommand == "");
+	QUARK_UT_VERIFY(result.flags.find("O")->second == (flag_info_t{ flag_info_t::etype::flag_with_parameter, "1" }) );
+	QUARK_UT_VERIFY((result.extra_arguments == std::vector<std::string>{}));
+}
+
+QUARK_TEST("", "parse_command_line_args_subcommand()", "", ""){
+	const auto result = parse_command_line_args_subcommand(split_command_line("myapp compile -i -O1"), "iO:");
+	QUARK_UT_VERIFY(result.command == "myapp");
+	QUARK_UT_VERIFY(result.subcommand == "compile");
+	QUARK_UT_VERIFY(result.flags.find("O")->second == (flag_info_t{ flag_info_t::etype::flag_with_parameter, "1" }) );
+	QUARK_UT_VERIFY((result.extra_arguments == std::vector<std::string>{}));
+}
+
+QUARK_TEST("", "parse_command_line_args_subcommand()", "", ""){
+	const auto result = parse_command_line_args_subcommand(split_command_line("myapp compile -i -O1"), "iO:");
+	QUARK_UT_VERIFY(result.command == "myapp");
+	QUARK_UT_VERIFY(result.subcommand == "compile");
+	QUARK_UT_VERIFY(result.flags.find("O")->second == (flag_info_t{ flag_info_t::etype::flag_with_parameter, "1" }) );
+	QUARK_UT_VERIFY((result.extra_arguments == std::vector<std::string>{}));
+}
 

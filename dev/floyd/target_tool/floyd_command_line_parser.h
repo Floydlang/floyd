@@ -11,6 +11,7 @@
 #define floyd_command_line_parser_hpp
 
 #include "command_line_parser.h"
+#include "compiler_basics.h"
 
 #include <vector>
 #include <string>
@@ -24,6 +25,13 @@ enum class ebackend {
 	bytecode
 };
 
+enum class eoutput_type {
+	parse_tree,
+	ast,
+	ir,
+	object_file
+};
+
 //??? Add command for running AOT (ahead of time compiled) code.
 
 struct command_t {
@@ -34,6 +42,7 @@ struct command_t {
 		std::string source_path;
 		std::vector<std::string> floyd_main_args;
 		ebackend backend;
+		compiler_settings_t compiler_settings;
 		bool trace;
 	};
 
@@ -44,9 +53,12 @@ struct command_t {
 			&& lhs.trace == rhs.trace
 	}
 */
-	struct compile_to_ast_t {
-		std::string source_path;
+	struct compile_t {
+		std::vector<std::string> source_paths;
+		std::string dest_path;
+		eoutput_type output_type;
 		ebackend backend;
+		compiler_settings_t compiler_settings;
 		bool trace;
 	};
 
@@ -61,6 +73,7 @@ struct command_t {
 		std::string source_path;
 		std::vector<std::string> optional_benchmark_keys;
 		ebackend backend;
+		compiler_settings_t compiler_settings;
 		bool trace;
 	};
 
@@ -79,7 +92,7 @@ struct command_t {
 		help_t,
 
 		compile_and_run_t,
-		compile_to_ast_t,
+		compile_t,
 		user_benchmarks_t,
 		hwcaps_t,
 
@@ -88,7 +101,7 @@ struct command_t {
 };
 
 //	Parses Floyd command lines.
-command_t parse_command(const std::vector<std::string>& args);
+command_t parse_floyd_command_line(const std::vector<std::string>& args);
 
 
 //	Get usage instructions.

@@ -159,19 +159,46 @@ Floyd generates native machine code but also comes with a bytecode interpreter.
 <a id="13-command-line-tool"></a>
 ## 1.3 COMMAND LINE TOOL
 
-|COMMAND		  	| MEANING
-|:---				|:---	
-| floyd help								| Show built in help for command line tool
-| floyd run mygame.floyd [arg1 arg2]		| compile and run the floyd program "mygame.floyd" using native exection
-| floyd run -t mygame.floyd					| -t turns on tracing, which shows compilation steps
-| floyd compile mygame.floyd				| compile the floyd program "mygame.floyd" to an AST, in JSON format
-| floyd bench mygame.floyd					| Runs all benchmarks, as defined by benchmark-def statements in Floyd program
-| floyd bench mygame.floyd rle game_loop	| Runs specified benchmarks "rle" and "game_loop"
-| floyd bench -l mygame.floyd				| Returns list of benchmarks
-| floyd hwcaps								| Outputs hardware capabilities
-| floyd runtests							| Runs Floyd built internal unit tests
-| Flag t									| Verbose tracing
-| Flag b									| Use Floyd's bytecode backend (compiler, bytecode ISA and interpreter) rather than the default, LLVM
+Usage:
+
+||COMMAND		  	| MEANING
+|:---|:---				|:---	
+|help     | floyd help                         | Show built in help for command line tool
+|run      | floyd run game.floyd [arg1 arg2]   | compile and run the floyd program "game.floyd" using native execution. arg1 and arg2 are inputs to your main()
+|run      | floyd run -t mygame.floyd          | -t turns on tracing, which shows compilation steps
+|compile  | floyd compile mygame.floyd         | compile the floyd program "mygame.floyd" to a native object file, output to stdout
+|compile  | floyd compile game.floyd myl.floyd | compile the floyd program "game.floyd" and "myl.floyd" to one native object file, output to stdout
+|compile  | floyd compile game.floyd -o test.o | compile the floyd program "game.floyd" to a native object file .o, called "test.o"
+|bench    | floyd bench mygame.floyd           | Runs all benchmarks, as defined by benchmark-def statements in Floyd program
+|bench    | floyd bench game.floyd rle game_lp | Runs specified benchmarks: "rle" and "game_lp"
+|bench    | floyd bench -l mygame.floyd        | Returns list of benchmarks
+|hwcaps   | floyd hwcaps                       | Outputs hardware capabilities
+|runtests | floyd runtests                     | Runs Floyd built internal unit tests
+
+Flags:
+
+|FLAG	| MEANING
+|:---	|:---	
+| -t       | Verbose tracing
+| -p       | Output parse tree as a JSON
+| -a       | Output Abstract syntax tree (AST) as a JSON
+| -i       | Output intermediate representation (IR / ASM) as assembly
+| -b       | Use Floyd's bytecode backend instead of default LLVM
+| -g       | Compiler with debug info, no optimizations
+| -O1      | Enable trivial optimizations
+| -O2      | Enable default optimizations
+| -O3      | Enable expensive optimizations
+| -l       | floyd bench returns a list of all benchmarks
+| -vcarray | Force vectors to use carray backend
+| -vhamt   | Force vectors to use HAMT backend (this is default)
+| -dcppmap | Force dictionaries to use c++ map as backend
+| -dhamt   | Force dictionaries to use HAMT backend (this is default)
+
+##### MORE EXAMPLES
+
+Compile "examples/fibonacci.floyd" to LLVM IR code, disable optimization, write to file "a.ir"
+
+>	floyd compile -i -g examples/fibonacci.floyd -o a.ir
 
 
 
@@ -1902,7 +1929,7 @@ Use [] to look up values using a key. It throws an exception is the key not foun
 | update() | DICTIONARY update(DICTIONARY s, string key, ELEMENT new_element) | Changes one element of the dictionary and returns a new dictionary
 | size() | int size(DICTIONARY s) | Returns the number of elements in the dictionary. Returns 0 if the dictionary is empty
 | exists() | bool exists(DICTIONARY s, string key) | Returns true if the key is found
-| erase() | DICTIONARY push_back(DICTIONARY s, string key) | Erases the value from the dictionary, returns a new dictionary
+| erase() | DICTIONARY erase(DICTIONARY s, string key) | Erases the value from the dictionary, returns a new dictionary
 | get_keys() | [ELEMENT] get_keys(DICTIONARY s) | Returns a vector with all the string keys of the dictionary. Order is undefined
 
 
