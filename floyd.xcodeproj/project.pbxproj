@@ -66,7 +66,15 @@
 		2C1CEFCD23140F7D00DE9A77 /* software_system.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB30737214ACF09007D2732 /* software_system.cpp */; };
 		2C1CEFCE23140F7D00DE9A77 /* test_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC0B3E122248EBD00C9D584 /* test_helpers.cpp */; };
 		2C1CEFD4231415AE00DE9A77 /* benchmark_soundsystem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1CEFD2231415AE00DE9A77 /* benchmark_soundsystem.cpp */; };
-		2C1CEFDA23141F7200DE9A77 /* floyd_benchmarks.floyd in Copy Files - benchmarks */ = {isa = PBXBuildFile; fileRef = 2C1CEFD623141B4200DE9A77 /* floyd_benchmarks.floyd */; };
+		2C2FB296232A9F1B006105E4 /* process_test1.floyd in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2C2FB28D232A9CFF006105E4 /* process_test1.floyd */; };
+		2C2FB297232A9F1B006105E4 /* hello_world.floyd in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2C2FB28E232A9CFF006105E4 /* hello_world.floyd */; };
+		2C2FB298232A9F1B006105E4 /* benchmarks.floyd in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2C2FB28F232A9CFF006105E4 /* benchmarks.floyd */; };
+		2C2FB299232A9F1B006105E4 /* test_main.floyd in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2C2FB290232A9CFF006105E4 /* test_main.floyd */; };
+		2C2FB29A232A9F1B006105E4 /* game_of_life.cpp in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2C2FB291232A9CFF006105E4 /* game_of_life.cpp */; };
+		2C2FB29B232A9F1B006105E4 /* test.json in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2C2FB292232A9CFF006105E4 /* test.json */; };
+		2C2FB29C232A9F1B006105E4 /* fibonacci.floyd in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2C2FB293232A9CFF006105E4 /* fibonacci.floyd */; };
+		2C2FB29D232A9F1B006105E4 /* game_of_life.floyd in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2C2FB294232A9CFF006105E4 /* game_of_life.floyd */; };
+		2C2FB2A0232A9F41006105E4 /* pretty_json.floyd in Copy Files - tools */ = {isa = PBXBuildFile; fileRef = 2C2FB29F232A9F35006105E4 /* pretty_json.floyd */; };
 		2C3174AC2262125F0004E086 /* parse_tree_to_ast_conv.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C3174AA2262125F0004E086 /* parse_tree_to_ast_conv.cpp */; };
 		2C3174AD2262125F0004E086 /* parse_tree_to_ast_conv.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C3174AA2262125F0004E086 /* parse_tree_to_ast_conv.cpp */; };
 		2C3D2D9722EF869B00B808AA /* ast_visitor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C3D2D9522EF869B00B808AA /* ast_visitor.cpp */; };
@@ -184,33 +192,41 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		2C1CEFD923141F6300DE9A77 /* Copy Files - benchmarks */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = benchmarks;
-			dstSubfolderSpec = 6;
-			files = (
-				2C1CEFDA23141F7200DE9A77 /* floyd_benchmarks.floyd in Copy Files - benchmarks */,
-			);
-			name = "Copy Files - benchmarks";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		2C1D84DB1CA765A90042F0A8 /* Copy Files - examples */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 12;
 			dstPath = examples;
 			dstSubfolderSpec = 6;
 			files = (
+				2C2FB296232A9F1B006105E4 /* process_test1.floyd in Copy Files - examples */,
+				2C2FB297232A9F1B006105E4 /* hello_world.floyd in Copy Files - examples */,
+				2C2FB298232A9F1B006105E4 /* benchmarks.floyd in Copy Files - examples */,
+				2C2FB299232A9F1B006105E4 /* test_main.floyd in Copy Files - examples */,
+				2C2FB29A232A9F1B006105E4 /* game_of_life.cpp in Copy Files - examples */,
+				2C2FB29B232A9F1B006105E4 /* test.json in Copy Files - examples */,
+				2C2FB29C232A9F1B006105E4 /* fibonacci.floyd in Copy Files - examples */,
+				2C2FB29D232A9F1B006105E4 /* game_of_life.floyd in Copy Files - examples */,
 			);
 			name = "Copy Files - examples";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2C2FB295232A9DF8006105E4 /* Copy Files - docs */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+			);
+			name = "Copy Files - docs";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		2C36C08A221DF9E600CAFEF4 /* Copy Files - tools */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
-			dstPath = floyd_tools;
+			dstPath = utilities;
 			dstSubfolderSpec = 6;
 			files = (
+				2C2FB2A0232A9F41006105E4 /* pretty_json.floyd in Copy Files - tools */,
 			);
 			name = "Copy Files - tools";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -251,6 +267,40 @@
 		2C1CEFD5231415FB00DE9A77 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		2C1CEFD623141B4200DE9A77 /* floyd_benchmarks.floyd */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = floyd_benchmarks.floyd; sourceTree = "<group>"; };
 		2C1D84DD1CA765A90042F0A8 /* floyd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = floyd; sourceTree = BUILT_PRODUCTS_DIR; };
+		2C2FB272232A9CFF006105E4 /* floyd_preso.key */ = {isa = PBXFileReference; lastKnownFileType = file; path = floyd_preso.key; sourceTree = "<group>"; };
+		2C2FB273232A9CFF006105E4 /* floyd_logo_banner.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_logo_banner.png; sourceTree = "<group>"; };
+		2C2FB274232A9CFF006105E4 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		2C2FB275232A9CFF006105E4 /* floyd_logo1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_logo1.png; sourceTree = "<group>"; };
+		2C2FB276232A9CFF006105E4 /* _config.yml */ = {isa = PBXFileReference; lastKnownFileType = text; path = _config.yml; sourceTree = "<group>"; };
+		2C2FB277232A9CFF006105E4 /* floyd_snippets.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_snippets.png; sourceTree = "<group>"; };
+		2C2FB278232A9CFF006105E4 /* floyd_quick_reference.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_quick_reference.png; sourceTree = "<group>"; };
+		2C2FB279232A9CFF006105E4 /* floyd_container_example.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_container_example.png; sourceTree = "<group>"; };
+		2C2FB27A232A9CFF006105E4 /* floyd_optimization.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_optimization.png; sourceTree = "<group>"; };
+		2C2FB27C232A9CFF006105E4 /* floyd_systems_vst.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_systems_vst.png; sourceTree = "<group>"; };
+		2C2FB27D232A9CFF006105E4 /* floyd_pacman.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_pacman.png; sourceTree = "<group>"; };
+		2C2FB27E232A9CFF006105E4 /* floyd_systems_level2_diagram.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_systems_level2_diagram.png; sourceTree = "<group>"; };
+		2C2FB27F232A9CFF006105E4 /* floyd_logo_banner.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_logo_banner.png; sourceTree = "<group>"; };
+		2C2FB280232A9CFF006105E4 /* floyd_systems_software_system.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_systems_software_system.png; sourceTree = "<group>"; };
+		2C2FB281232A9CFF006105E4 /* floyd_sys_example.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_sys_example.png; sourceTree = "<group>"; };
+		2C2FB282232A9CFF006105E4 /* floyd_systems_level4_diagram.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_systems_level4_diagram.png; sourceTree = "<group>"; };
+		2C2FB283232A9CFF006105E4 /* floyd_systems_level1_diagram.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_systems_level1_diagram.png; sourceTree = "<group>"; };
+		2C2FB284232A9CFF006105E4 /* floyd_process.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_process.png; sourceTree = "<group>"; };
+		2C2FB285232A9CFF006105E4 /* floyd_systems_1st_person_shooter.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_systems_1st_person_shooter.png; sourceTree = "<group>"; };
+		2C2FB286232A9CFF006105E4 /* cache_system.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = cache_system.png; sourceTree = "<group>"; };
+		2C2FB287232A9CFF006105E4 /* floyd_systems_level3_diagram.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_systems_level3_diagram.png; sourceTree = "<group>"; };
+		2C2FB288232A9CFF006105E4 /* floyd_quick_reference.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_quick_reference.png; sourceTree = "<group>"; };
+		2C2FB289232A9CFF006105E4 /* floyd_container_example.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_container_example.png; sourceTree = "<group>"; };
+		2C2FB28A232A9CFF006105E4 /* cpu_overview.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = cpu_overview.png; sourceTree = "<group>"; };
+		2C2FB28B232A9CFF006105E4 /* floyd_manual.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = floyd_manual.md; sourceTree = "<group>"; };
+		2C2FB28D232A9CFF006105E4 /* process_test1.floyd */ = {isa = PBXFileReference; lastKnownFileType = text; path = process_test1.floyd; sourceTree = "<group>"; };
+		2C2FB28E232A9CFF006105E4 /* hello_world.floyd */ = {isa = PBXFileReference; lastKnownFileType = text; path = hello_world.floyd; sourceTree = "<group>"; };
+		2C2FB28F232A9CFF006105E4 /* benchmarks.floyd */ = {isa = PBXFileReference; lastKnownFileType = text; path = benchmarks.floyd; sourceTree = "<group>"; };
+		2C2FB290232A9CFF006105E4 /* test_main.floyd */ = {isa = PBXFileReference; lastKnownFileType = text; path = test_main.floyd; sourceTree = "<group>"; };
+		2C2FB291232A9CFF006105E4 /* game_of_life.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = game_of_life.cpp; sourceTree = "<group>"; };
+		2C2FB292232A9CFF006105E4 /* test.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = test.json; sourceTree = "<group>"; };
+		2C2FB293232A9CFF006105E4 /* fibonacci.floyd */ = {isa = PBXFileReference; lastKnownFileType = text; path = fibonacci.floyd; sourceTree = "<group>"; };
+		2C2FB294232A9CFF006105E4 /* game_of_life.floyd */ = {isa = PBXFileReference; lastKnownFileType = text; path = game_of_life.floyd; sourceTree = "<group>"; };
+		2C2FB29F232A9F35006105E4 /* pretty_json.floyd */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = pretty_json.floyd; sourceTree = "<group>"; };
 		2C3174AA2262125F0004E086 /* parse_tree_to_ast_conv.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = parse_tree_to_ast_conv.cpp; sourceTree = "<group>"; };
 		2C3174AB2262125F0004E086 /* parse_tree_to_ast_conv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = parse_tree_to_ast_conv.h; sourceTree = "<group>"; };
 		2C3D2D9522EF869B00B808AA /* ast_visitor.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ast_visitor.cpp; sourceTree = "<group>"; };
@@ -854,6 +904,9 @@
 			isa = PBXGroup;
 			children = (
 				2C1D84DF1CA765A90042F0A8 /* compiler */,
+				2C2FB271232A9CFF006105E4 /* docs */,
+				2C2FB28C232A9CFF006105E4 /* examples */,
+				2C2FB29E232A9F35006105E4 /* utilities */,
 				2CBF330B202143BC0030AE98 /* Frameworks */,
 				2C1D84DE1CA765A90042F0A8 /* Products */,
 				2C182F1F220B17780003FC1F /* README.md */,
@@ -892,6 +945,69 @@
 			);
 			path = compiler;
 			sourceTree = SOURCE_ROOT;
+		};
+		2C2FB271232A9CFF006105E4 /* docs */ = {
+			isa = PBXGroup;
+			children = (
+				2C2FB272232A9CFF006105E4 /* floyd_preso.key */,
+				2C2FB273232A9CFF006105E4 /* floyd_logo_banner.png */,
+				2C2FB274232A9CFF006105E4 /* README.md */,
+				2C2FB275232A9CFF006105E4 /* floyd_logo1.png */,
+				2C2FB276232A9CFF006105E4 /* _config.yml */,
+				2C2FB277232A9CFF006105E4 /* floyd_snippets.png */,
+				2C2FB278232A9CFF006105E4 /* floyd_quick_reference.png */,
+				2C2FB279232A9CFF006105E4 /* floyd_container_example.png */,
+				2C2FB27A232A9CFF006105E4 /* floyd_optimization.png */,
+				2C2FB27B232A9CFF006105E4 /* floyd_manual */,
+			);
+			path = docs;
+			sourceTree = "<group>";
+		};
+		2C2FB27B232A9CFF006105E4 /* floyd_manual */ = {
+			isa = PBXGroup;
+			children = (
+				2C2FB27C232A9CFF006105E4 /* floyd_systems_vst.png */,
+				2C2FB27D232A9CFF006105E4 /* floyd_pacman.png */,
+				2C2FB27E232A9CFF006105E4 /* floyd_systems_level2_diagram.png */,
+				2C2FB27F232A9CFF006105E4 /* floyd_logo_banner.png */,
+				2C2FB280232A9CFF006105E4 /* floyd_systems_software_system.png */,
+				2C2FB281232A9CFF006105E4 /* floyd_sys_example.png */,
+				2C2FB282232A9CFF006105E4 /* floyd_systems_level4_diagram.png */,
+				2C2FB283232A9CFF006105E4 /* floyd_systems_level1_diagram.png */,
+				2C2FB284232A9CFF006105E4 /* floyd_process.png */,
+				2C2FB285232A9CFF006105E4 /* floyd_systems_1st_person_shooter.png */,
+				2C2FB286232A9CFF006105E4 /* cache_system.png */,
+				2C2FB287232A9CFF006105E4 /* floyd_systems_level3_diagram.png */,
+				2C2FB288232A9CFF006105E4 /* floyd_quick_reference.png */,
+				2C2FB289232A9CFF006105E4 /* floyd_container_example.png */,
+				2C2FB28A232A9CFF006105E4 /* cpu_overview.png */,
+				2C2FB28B232A9CFF006105E4 /* floyd_manual.md */,
+			);
+			path = floyd_manual;
+			sourceTree = "<group>";
+		};
+		2C2FB28C232A9CFF006105E4 /* examples */ = {
+			isa = PBXGroup;
+			children = (
+				2C2FB28D232A9CFF006105E4 /* process_test1.floyd */,
+				2C2FB28E232A9CFF006105E4 /* hello_world.floyd */,
+				2C2FB28F232A9CFF006105E4 /* benchmarks.floyd */,
+				2C2FB290232A9CFF006105E4 /* test_main.floyd */,
+				2C2FB291232A9CFF006105E4 /* game_of_life.cpp */,
+				2C2FB292232A9CFF006105E4 /* test.json */,
+				2C2FB293232A9CFF006105E4 /* fibonacci.floyd */,
+				2C2FB294232A9CFF006105E4 /* game_of_life.floyd */,
+			);
+			path = examples;
+			sourceTree = "<group>";
+		};
+		2C2FB29E232A9F35006105E4 /* utilities */ = {
+			isa = PBXGroup;
+			children = (
+				2C2FB29F232A9F35006105E4 /* pretty_json.floyd */,
+			);
+			path = utilities;
+			sourceTree = "<group>";
 		};
 		2C4699AC214EC97A007216BE /* bytecode_interpreter */ = {
 			isa = PBXGroup;
@@ -1573,7 +1689,7 @@
 				2C1D84DA1CA765A90042F0A8 /* Frameworks */,
 				2C1D84DB1CA765A90042F0A8 /* Copy Files - examples */,
 				2C36C08A221DF9E600CAFEF4 /* Copy Files - tools */,
-				2C1CEFD923141F6300DE9A77 /* Copy Files - benchmarks */,
+				2C2FB295232A9DF8006105E4 /* Copy Files - docs */,
 			);
 			buildRules = (
 			);

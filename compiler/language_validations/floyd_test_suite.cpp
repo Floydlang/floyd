@@ -6651,7 +6651,7 @@ FLOYD_LANG_PROOF("software-system-def", "run two CONNECTED processes", "", ""){
 
 
 
-FLOYD_LANG_PROOF("Floyd test suite", "hello_world.floyd", "", ""){
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "hello_world.floyd", "", ""){
 	const auto path = get_working_dir() + "/examples/hello_world.floyd";
 	const auto program = read_text_file(path);
 

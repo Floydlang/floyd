@@ -2593,7 +2593,7 @@ static semantic_ast_t run_semantic_analysis0(const unchecked_ast_t& ast){
 semantic_ast_t run_semantic_analysis(const unchecked_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
-	if(k_trace_input_flag || k_trace_output_flag){
+	if(k_trace_input_flag || k_trace_output_flag){
 		QUARK_SCOPED_TRACE("run_semantic_analysis()");
 
 		if(k_trace_input_flag){
