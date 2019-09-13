@@ -286,7 +286,8 @@ static typeid_t record_type_internal1(analyser_t& acc, const location_t& loc, co
 
 			const auto resolved_type = record_type_internal2(acc, loc, type);
 
-			std::pair<itype_t, typeid_t> named_type = intern_type(acc._types, typeid_t::make_resolved_type_identifier(identifier));
+//			std::pair<itype_t, typeid_t> named_type = intern_type(acc._types, typeid_t::make_resolved_type_identifier(identifier));
+			std::pair<itype_t, typeid_t> named_type = intern_type(acc._types, typeid_t::make_unresolved_type_identifier(identifier));
 
 			//	Update our temporary. Notice that we need to find it again since other types might have been inserted since.
 			acc._types.lookup_type_name[name_index].second = lookup_itype(acc._types, resolved_type);

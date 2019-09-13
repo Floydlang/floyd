@@ -232,6 +232,7 @@ itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type){
 	throw std::exception();
 }
 
+#if 0
 typeid_t resolve_named_type(const type_interner_t& interner, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -249,6 +250,7 @@ typeid_t resolve_named_type(const type_interner_t& interner, const typeid_t& typ
 		return type;
 	}
 }
+#endif
 
 
 

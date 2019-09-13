@@ -558,29 +558,6 @@ QUARK_TESTQ("typeid_t", "get_unresolved()"){
 
 
 
-QUARK_TESTQ("typeid_t", "make_resolved_type_identifier()"){
-	const auto t = typeid_t::make_resolved_type_identifier("xyz");
-	QUARK_UT_VERIFY(t.get_base_type() == base_type::k_resolved);
-}
-
-QUARK_TESTQ("typeid_t", "is_resolved_type_identifier()"){
-	const auto t = typeid_t::make_resolved_type_identifier("xyz");
-	QUARK_UT_VERIFY(t.is_resolved_type_identifier() == true);
-}
-QUARK_TESTQ("typeid_t", "is_resolved_type_identifier()"){
-	QUARK_UT_VERIFY(typeid_t::make_bool().is_resolved_type_identifier() == false);
-}
-
-QUARK_TESTQ("typeid_t", "get_unresolved()"){
-	const auto t = typeid_t::make_resolved_type_identifier("xyz");
-	QUARK_UT_VERIFY(t.get_resolved_type_identifer() == "xyz");
-}
-QUARK_TESTQ("typeid_t", "get_unresolved()"){
-	const auto t = typeid_t::make_resolved_type_identifier("123");
-	QUARK_UT_VERIFY(t.get_resolved_type_identifer() == "123");
-}
-
-
 
 
 
@@ -638,9 +615,6 @@ std::string typeid_to_compact_string_int(const typeid_t& t){
 
 	if(basetype == floyd::base_type::k_unresolved){
 		return std::string() + "unresolved: " + t.get_unresolved_type_identifer();
-	}
-	else if(basetype == floyd::base_type::k_resolved){
-		return std::string() + "resolved: " + t.get_resolved_type_identifer();
 	}
 /*
 	else if(basetype == floyd::base_type::k_typeid){
@@ -730,9 +704,7 @@ const std::vector<typeid_str_test_t> make_typeid_str_tests(){
 
 
 		//	unknown_identifier
-		{ typeid_t::make_unresolved_type_identifier("hello"), "\"hello\"", "hello" },
-
-		{ typeid_t::make_resolved_type_identifier("hello"), "\"hello\"", "hello" }
+		{ typeid_t::make_unresolved_type_identifier("hello"), "\"hello\"", "hello" }
 	};
 	return tests;
 }
@@ -986,9 +958,6 @@ json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 	else if(b == base_type::k_unresolved){
 		return std::string() + std::string(1, tag_unresolved_type_char) + t.get_unresolved_type_identifer();
 	}
-	else if(b == base_type::k_resolved){
-		return std::string() + t.get_resolved_type_identifer();
-	}
 	else{
 		QUARK_ASSERT(false);
 		quark::throw_logic_error();
@@ -1061,7 +1030,7 @@ typeid_t typeid_from_ast_json(const json_t& t2){
 			return typeid_t::make_unresolved_type_identifier(s);
 		}
 		else {
-			return typeid_t::make_resolved_type_identifier(s0);
+			throw std::exception();
 		}
 	}
 	else if(t.is_array()){

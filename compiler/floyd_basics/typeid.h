@@ -515,21 +515,6 @@ struct typeid_t {
 
 
 
-	public: static typeid_t make_resolved_type_identifier(const std::string& s){
-		return { resolved_t{ s } };
-	}
-	public: bool is_resolved_type_identifier() const {
-		QUARK_ASSERT(check_invariant());
-
-		return std::holds_alternative<resolved_t>(_contents);
-	}
-	public: std::string get_resolved_type_identifer() const{
-		QUARK_ASSERT(check_invariant());
-
-		return std::get<resolved_t>(_contents)._resolved_type_identifier;
-	}
-
-
 	////////////////////////////////////////		BASICS
 
 	public: floyd::base_type get_base_type() const{
@@ -623,6 +608,12 @@ struct typeid_t {
 };
 
 std::string typeid_to_compact_string(const typeid_t& t);
+
+
+struct typeid2_t {
+	std::string optional_type_name;
+	typeid_t optional_type_desc;
+};
 
 
 
