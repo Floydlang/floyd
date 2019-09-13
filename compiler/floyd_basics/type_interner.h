@@ -80,6 +80,11 @@ struct itype_t {
 	static itype_t make_unresolved(){
 		return itype_t(assemble((int)base_type::k_unresolved, base_type::k_unresolved, base_type::k_undefined));
 	}
+/*
+	static itype_t make_resolved(){
+		return itype_t(assemble((int)base_type::k_resolved, base_type::k_unresolved, base_type::k_undefined));
+	}
+*/
 
 	bool check_invariant() const {
 		return true;
@@ -167,6 +172,12 @@ struct itype_t {
 		QUARK_ASSERT(check_invariant());
 
 		return get_base_type() == base_type::k_unresolved;
+	}
+
+	bool is_resolved() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_resolved;
 	}
 
 

@@ -115,7 +115,10 @@ enum class base_type {
 
 	//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
 	//	Keep the identifier so it can be resolved later.
-	k_unresolved = 13
+	k_unresolved = 13,
+
+	//	Identifier string specifies resolved *name* of type.
+	k_resolved = 14,
 };
 
 std::string base_type_to_opcode(const base_type t);
@@ -273,6 +276,12 @@ struct typeid_t {
 		std::string _unresolved_type_identifier;
 	};
 
+	struct resolved_t {
+		bool operator==(const resolved_t& other) const{	return _resolved_type_identifier == other._resolved_type_identifier; };
+
+		std::string _resolved_type_identifier;
+	};
+
 	typedef std::variant<
 		undefined_t,
 		any_t,
@@ -289,7 +298,8 @@ struct typeid_t {
 		dict_t,
 		function_t,
 
-		unresolved_t
+		unresolved_t,
+		resolved_t
 	> type_variant_t;
 
 
@@ -504,6 +514,22 @@ struct typeid_t {
 	}
 
 
+
+	public: static typeid_t make_resolved_type_identifier(const std::string& s){
+		return { resolved_t{ s } };
+	}
+	public: bool is_resolved_type_identifier() const {
+		QUARK_ASSERT(check_invariant());
+
+		return std::holds_alternative<resolved_t>(_contents);
+	}
+	public: std::string get_resolved_type_identifer() const{
+		QUARK_ASSERT(check_invariant());
+
+		return std::get<resolved_t>(_contents)._resolved_type_identifier;
+	}
+
+
 	////////////////////////////////////////		BASICS
 
 	public: floyd::base_type get_base_type() const{
@@ -552,6 +578,9 @@ struct typeid_t {
 			}
 			base_type operator()(const unresolved_t& e) const{
 				return base_type::k_unresolved;
+			}
+			base_type operator()(const resolved_t& e) const{
+				return base_type::k_resolved;
 			}
 		};
 		return std::visit(visitor_t{}, _contents);

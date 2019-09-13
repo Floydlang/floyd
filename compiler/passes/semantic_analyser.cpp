@@ -257,6 +257,10 @@ static typeid_t resolve_type_internal(analyser_t& acc, const location_t& loc, co
 				throw_compiler_error(loc, "Cannot resolve type");
 			}
 		}
+		typeid_t operator()(const typeid_t::resolved_t& e) const{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
 	};
 	const auto resolved = std::visit(visitor_t{ acc, loc, type }, type._contents);
 	intern_type(acc._types, resolved);

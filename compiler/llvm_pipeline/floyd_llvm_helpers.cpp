@@ -410,6 +410,9 @@ llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const l
 		llvm::Value* operator()(const typeid_t::unresolved_t& e) const{
 			UNSUPPORTED();
 		}
+		llvm::Value* operator()(const typeid_t::resolved_t& e) const{
+			UNSUPPORTED();
+		}
 	};
 	return std::visit(visitor_t{ builder, context, type_lookup, value }, floyd_type._contents);
 }
@@ -469,6 +472,9 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const
 			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, get_llvm_type_as_arg(type_lookup, type), "");
 		}
 		llvm::Value* operator()(const typeid_t::unresolved_t& e) const{
+			UNSUPPORTED();
+		}
+		llvm::Value* operator()(const typeid_t::resolved_t& e) const{
 			UNSUPPORTED();
 		}
 	};

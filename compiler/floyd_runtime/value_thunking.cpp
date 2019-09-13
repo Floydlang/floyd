@@ -374,6 +374,9 @@ runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value
 		runtime_value_t operator()(const typeid_t::unresolved_t& e) const{
 			UNSUPPORTED();
 		}
+		runtime_value_t operator()(const typeid_t::resolved_t& e) const{
+			UNSUPPORTED();
+		}
 	};
 	return std::visit(visitor_t{ backend, value }, type._contents);
 }
@@ -472,6 +475,9 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 			return value_t::make_function_value(type, function_id_t { link_name.s });
 		}
 		value_t operator()(const typeid_t::unresolved_t& e) const{
+			UNSUPPORTED();
+		}
+		value_t operator()(const typeid_t::resolved_t& e) const{
 			UNSUPPORTED();
 		}
 	};

@@ -570,6 +570,9 @@ std::string to_compact_string2(const value_t& value) {
 		QUARK_ASSERT(false);
 		return "";
 	}
+	else if(base_type == base_type::k_resolved){
+		return value.get_type().get_resolved_type_identifer();
+	}
 
 	else{
 		return "??";

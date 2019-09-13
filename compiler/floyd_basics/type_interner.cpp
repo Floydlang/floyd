@@ -42,6 +42,7 @@ type_interner_t::type_interner_t(){
 	interned.push_back(typeid_t::make_undefined());
 
 	interned.push_back(typeid_t::make_unresolved_type_identifier(""));
+	interned.push_back(typeid_t::make_undefined());
 
 	QUARK_ASSERT(check_invariant());
 }
@@ -175,6 +176,10 @@ static itype_t make_new_itype_recursive(type_interner_t& interner, const typeid_
 			return itype_t::make_function(lookup_index);
 		}
 		itype_t operator()(const typeid_t::unresolved_t& e) const{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+		itype_t operator()(const typeid_t::resolved_t& e) const{
 			QUARK_ASSERT(false);
 			throw std::exception();
 		}

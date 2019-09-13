@@ -372,6 +372,9 @@ static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const 
 		llvm::Value* operator()(const typeid_t::unresolved_t& e) const{
 			UNSUPPORTED();
 		}
+		llvm::Value* operator()(const typeid_t::resolved_t& e) const{
+			UNSUPPORTED();
+		}
 	};
 	return std::visit(visitor_t{ gen_acc, builder, context, itype, value }, type._contents);
 }
