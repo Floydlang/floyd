@@ -199,6 +199,8 @@ enum class epure {
 };
 
 
+
+
 //////////////////////////////////////		typeid_t
 
 
@@ -517,6 +519,16 @@ struct typeid_t {
 
 	////////////////////////////////////////		BASICS
 
+	public: typeid_t name(const std::string& name){
+		return { this->_contents, name };
+	}
+
+	public: std::string get_name() const {
+		QUARK_ASSERT(check_invariant());
+
+		return _name;
+	}
+
 	public: floyd::base_type get_base_type() const{
 		struct visitor_t {
 			base_type operator()(const undefined_t& e) const{
@@ -571,6 +583,7 @@ struct typeid_t {
 		return std::visit(visitor_t{}, _contents);
 	}
 
+	//	Checks for EXACT match: type is identical and name is identical.
 	public: bool operator==(const typeid_t& other) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
@@ -579,7 +592,8 @@ struct typeid_t {
 #if DEBUG_DEEP
 			&& _DEBUG_string == other._DEBUG_string
 #endif
-			&& _contents == other._contents;
+			&& _contents == other._contents
+			&& _name == other._name;
 	}
 	public: bool operator!=(const typeid_t& other) const{ return !(*this == other);}
 	public: bool check_invariant() const;
@@ -590,7 +604,18 @@ struct typeid_t {
 
 
 	private: typeid_t(const type_variant_t& contents) :
-		_contents(contents)
+		_contents(contents),
+		_name("")
+	{
+
+#if DEBUG_DEEP
+		_DEBUG_string = typeid_to_compact_string(*this);
+#endif
+		QUARK_ASSERT(check_invariant());
+	}
+	private: typeid_t(const type_variant_t& contents, const std::string& name) :
+		_contents(contents),
+		_name(name)
 	{
 
 #if DEBUG_DEEP
@@ -605,15 +630,12 @@ struct typeid_t {
 	private: std::string _DEBUG_string;
 #endif
 	public: type_variant_t _contents;
+	public: std::string _name;
 };
 
 std::string typeid_to_compact_string(const typeid_t& t);
 
 
-struct typeid2_t {
-	std::string optional_type_name;
-	typeid_t optional_type_desc;
-};
 
 
 
