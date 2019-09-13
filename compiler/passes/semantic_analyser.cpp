@@ -22,8 +22,8 @@
 
 namespace floyd {
 
-static const bool k_trace_input_flag = false;
-static const bool k_trace_output_flag = false;
+static const bool k_trace_input_flag = true;
+static const bool k_trace_output_flag = true;
 
 //???? remove!!
 using namespace std;
@@ -171,6 +171,8 @@ static typeid_t resolve_type_internal(analyser_t& acc, const location_t& loc, co
 	QUARK_ASSERT(acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
+	//	NOTICE: Add parent type *first* so we can support recursive type definitions, like "struct node_t { node_t left, node_t right }
+	//	NOTICE: All basic types are already interned.
 	struct visitor_t {
 		analyser_t& acc;
 		const location_t& loc;
@@ -235,10 +237,17 @@ static typeid_t resolve_type_internal(analyser_t& acc, const location_t& loc, co
 			return typeid_t::make_function3(ret2, args2, pure, dyn_return_type);
 		}
 		typeid_t operator()(const typeid_t::unresolved_t& e) const{
-			const auto found = find_symbol_by_name(acc, type.get_unresolved());
+			const auto found = find_symbol_by_name(acc, type.get_unresolved_type_identifer());
 			if(found.first != nullptr){
 				if(found.first->_value_type.is_typeid()){
-					return found.first->_init.get_typeid_value();
+					if(found.first->_init.is_undefined() == false){
+						return found.first->_init.get_typeid_value();
+					}
+
+					//	There is a symbol with this name but it's not yet resolved.
+					else{
+						throw_compiler_error(loc, "Cannot resolve type");
+					}
 				}
 				else{
 					throw_compiler_error(loc, "Cannot resolve type");
@@ -268,11 +277,6 @@ typeid_t resolve_type(analyser_t& acc, const location_t& loc, const typeid_t& ty
 	}
 	catch(const std::exception& e){
 		throw_compiler_error(loc, e.what());
-	}
-	catch(...){
-		std::stringstream what;
-		what << "Argument 2 must be a typeid literal.";
-		throw_compiler_error(loc, what.str());
 	}
 }
 

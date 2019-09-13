@@ -4897,7 +4897,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Error: Wrong TYPE of arguments t
 
 
 #if 0
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "struct", "nested", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "nested", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(
 
 		struct object_t {

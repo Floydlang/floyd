@@ -699,13 +699,13 @@ struct value_backend_t {
 	std::vector<itype_t> child_type;
 
 
+	std::vector<std::pair<link_name_t, void*>> native_func_lookup;
+	std::vector<std::pair<itype_t, struct_layout_t>> struct_layouts;
+
 	//	Temporary *global* constant that switches between array-based vector backened and HAMT-based vector.
 	//	The string always uses array-based vector.
 	//	There is still only one typeid_t/itype for vector.
 	//	Future: make this flag a per-vector setting.
-	std::vector<std::pair<link_name_t, void*>> native_func_lookup;
-	std::vector<std::pair<itype_t, struct_layout_t>> struct_layouts;
-
 	config_t config;
 };
 

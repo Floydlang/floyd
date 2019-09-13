@@ -497,7 +497,7 @@ struct typeid_t {
 
 		return std::holds_alternative<unresolved_t>(_contents);
 	}
-	public: std::string get_unresolved() const{
+	public: std::string get_unresolved_type_identifer() const{
 		QUARK_ASSERT(check_invariant());
 
 		return std::get<unresolved_t>(_contents)._unresolved_type_identifier;
