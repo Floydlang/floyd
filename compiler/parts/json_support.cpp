@@ -1200,7 +1200,7 @@ std::string json_to_compact_string2(const json_t& v, bool quote_fields){
 		return array_to_compact_string(v.get_array(), quote_fields);
 	}
 	else if(v.is_string()){
-		return quote(v.get_string());
+		return quote_fields ? quote(v.get_string()) : v.get_string();
 	}
 	else if(v.is_number()){
 		return double_to_string_simplify(v.get_number());

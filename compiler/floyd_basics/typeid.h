@@ -519,7 +519,7 @@ struct typeid_t {
 
 	////////////////////////////////////////		BASICS
 
-	public: typeid_t name(const std::string& name){
+	public: typeid_t name(const std::string& name) const {
 		return { this->_contents, name };
 	}
 
