@@ -167,7 +167,7 @@ const std::pair<std::string, symbol_t>* resolve_symbol_by_address(const analyser
 /////////////////////////////////////////			RESOLVE typeid_t::unresolved_t USING LEXICAL SCOPE PATH
 
 
-static typeid_t resolve_type_internal(analyser_t& acc, const location_t& loc, const typeid_t& type){
+static typeid_t record_type_internal(analyser_t& acc, const location_t& loc, const std::string& identifier, const typeid_t& type){
 	QUARK_ASSERT(acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -213,15 +213,15 @@ static typeid_t resolve_type_internal(analyser_t& acc, const location_t& loc, co
 			const auto& struct_def = type.get_struct();
 			std::vector<member_t> members2;
 			for(const auto& m: struct_def._members){
-				members2.push_back(member_t(resolve_type_internal(acc, loc, m._type), m._name));
+				members2.push_back(member_t(record_type_internal(acc, loc, "", m._type), m._name));
 			}
 			return typeid_t::make_struct2(members2);
 		}
 		typeid_t operator()(const typeid_t::vector_t& e) const{
-			return typeid_t::make_vector(resolve_type_internal(acc, loc, type.get_vector_element_type()));
+			return typeid_t::make_vector(record_type_internal(acc, loc, "", type.get_vector_element_type()));
 		}
 		typeid_t operator()(const typeid_t::dict_t& e) const{
-			return typeid_t::make_dict(resolve_type_internal(acc, loc, type.get_dict_value_type()));
+			return typeid_t::make_dict(record_type_internal(acc, loc, "", type.get_dict_value_type()));
 		}
 		typeid_t operator()(const typeid_t::function_t& e) const{
 			const auto ret = type.get_function_return();
@@ -229,10 +229,10 @@ static typeid_t resolve_type_internal(analyser_t& acc, const location_t& loc, co
 			const auto pure = type.get_function_pure();
 			const auto dyn_return_type = type.get_function_dyn_return_type();
 
-			const auto ret2 = resolve_type_internal(acc, loc, ret);
+			const auto ret2 = record_type_internal(acc, loc, "", ret);
 			vector<typeid_t> args2;
 			for(const auto& m: args){
-				args2.push_back(resolve_type_internal(acc, loc, m));
+				args2.push_back(record_type_internal(acc, loc, "", m));
 			}
 			return typeid_t::make_function3(ret2, args2, pure, dyn_return_type);
 		}
@@ -267,9 +267,9 @@ static typeid_t resolve_type_internal(analyser_t& acc, const location_t& loc, co
 	return resolved;
 }
 
-typeid_t resolve_type(analyser_t& acc, const location_t& loc, const typeid_t& type){
+typeid_t resolve_type(analyser_t& acc, const location_t& loc, const std::string& identifier, const typeid_t& type){
 	try {
-		const auto result = resolve_type_internal(acc, loc, type);
+		const auto result = record_type_internal(acc, loc, identifier, type);
 
 		if(check_types_resolved(result) == false){
 			throw_compiler_error(loc, "Cannot resolve type");
@@ -282,6 +282,10 @@ typeid_t resolve_type(analyser_t& acc, const location_t& loc, const typeid_t& ty
 	catch(const std::exception& e){
 		throw_compiler_error(loc, e.what());
 	}
+}
+
+typeid_t resolve_type(analyser_t& acc, const location_t& loc, const typeid_t& type){
+	return resolve_type(acc, loc, "", type);
 }
 
 
@@ -2108,7 +2112,7 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 	const auto& struct_def = *details.def;
 
 	const auto struct_typeid1 = typeid_t::make_struct2(struct_def._members);
-	const auto struct_typeid2 = resolve_type(a_acc, parent.location, struct_typeid1);
+	const auto struct_typeid2 = resolve_type(a_acc, parent.location, details.name, struct_typeid1);
 	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid2);
 	const auto r = expression_t::make_literal(struct_typeid_value);
 	return { a_acc, r };

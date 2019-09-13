@@ -4478,21 +4478,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [json] constructor", "", ""){
 
 
 
-FLOYD_LANG_PROOF("Floyd test suite", "struct", "update without quoting member name", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			struct color { int red int green int blue }
-			let a = color(0, 1, 2)
-			let b = update(a, green, 100)
-			print(b)
-
-		)",
-		{ "{red=0, green=100, blue=2}" }
-	);
-}
-
 
 
 
@@ -4530,6 +4515,41 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "check struct's type", ""){
 		{ R"({a=3})" }
 	);
 }
+
+
+
+
+
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "struct", "Test struct name-equivalence", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			struct pixel1_t { int a }
+			struct pixel2_t { int a }
+
+			print(pixel1_t)
+			print(pixel2_t)
+
+			let pixel1_t d = pixel1_t(100)
+			let pixel2_t e = pixel1_t(100)
+
+		)",
+		{ R"({a=3})" }
+	);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "read back struct member", ""){
 	ut_verify_printout_nolib(
@@ -4613,6 +4633,22 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Update struct member that is a P
 		{ "{back={red=1, green=2, blue=3}, front={red=7, green=8, blue=9}}" }
 	);
 }
+
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "update without quoting member name", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			struct color { int red int green int blue }
+			let a = color(0, 1, 2)
+			let b = update(a, green, 100)
+			print(b)
+
+		)",
+		{ "{red=0, green=100, blue=2}" }
+	);
+}
+
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "return struct from function", ""){
