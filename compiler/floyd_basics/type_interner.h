@@ -13,6 +13,7 @@
 #include "quark.h"
 
 #include <vector>
+#include <map>
 
 struct json_t;
 
@@ -80,11 +81,9 @@ struct itype_t {
 	static itype_t make_unresolved(){
 		return itype_t(assemble((int)base_type::k_unresolved, base_type::k_unresolved, base_type::k_undefined));
 	}
-/*
-	static itype_t make_resolved(){
-		return itype_t(assemble((int)base_type::k_resolved, base_type::k_unresolved, base_type::k_undefined));
+	static itype_t make_resolved(int name_index){
+		return itype_t(assemble(name_index, base_type::k_unresolved, base_type::k_undefined));
 	}
-*/
 
 	bool check_invariant() const {
 		return true;
@@ -269,8 +268,15 @@ struct type_interner_t {
 	bool check_invariant() const;
 
 
+
 	////////////////////////////////	STATE
+
+	//	All types are recorded here, an uniqued. Including named types.
 	std::vector<typeid_t> interned;
+
+	//	Stores itype_t for this type-indentifer-name, or make_undefined() if there is no type (yet).
+	//	Needs to be a vector since we store
+	std::vector<std::pair<std::string, itype_t>> lookup_type_name;
 };
 
 
@@ -278,6 +284,7 @@ std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid
 itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type);
 inline const typeid_t& lookup_type(const type_interner_t& interner, const itype_t& type);
 
+typeid_t resolve_named_type(const type_interner_t& interner, const typeid_t& type);
 
 /*
 Do this without using typeid_t at all.

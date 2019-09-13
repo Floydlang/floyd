@@ -4520,8 +4520,8 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "check struct's type", ""){
 
 
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "struct", "Test struct name-equivalence", ""){
-	ut_verify_printout_nolib(
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "Test struct name-equivalence", ""){
+	ut_run_closed_nolib(
 		QUARK_POS,
 		R"(
 
@@ -4534,8 +4534,7 @@ FLOYD_LANG_PROOF_VIP("Floyd test suite", "struct", "Test struct name-equivalence
 			let pixel1_t d = pixel1_t(100)
 			let pixel2_t e = pixel1_t(100)
 
-		)",
-		{ R"({a=3})" }
+		)"
 	);
 }
 

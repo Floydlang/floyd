@@ -639,7 +639,7 @@ std::string typeid_to_compact_string_int(const typeid_t& t){
 	if(basetype == floyd::base_type::k_unresolved){
 		return std::string() + "unresolved: " + t.get_unresolved_type_identifer();
 	}
-	else if(basetype == floyd::base_type::k_unresolved){
+	else if(basetype == floyd::base_type::k_resolved){
 		return std::string() + "resolved: " + t.get_resolved_type_identifer();
 	}
 /*

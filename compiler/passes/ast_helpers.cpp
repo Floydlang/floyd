@@ -293,7 +293,7 @@ bool check_types_resolved(const typeid_t& t){
 			return false;
 		}
 		bool operator()(const typeid_t::resolved_t& e) const{
-			return false;
+			return true;
 		}
 	};
 	return std::visit(visitor_t{}, t._contents);

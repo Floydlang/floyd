@@ -180,8 +180,17 @@ static itype_t make_new_itype_recursive(type_interner_t& interner, const typeid_
 			throw std::exception();
 		}
 		itype_t operator()(const typeid_t::resolved_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			const auto it = std::find_if(interner.lookup_type_name.begin(), interner.lookup_type_name.end(), [&](const auto& m){ return m.first == e._resolved_type_identifier; });
+			if(it == interner.lookup_type_name.end()){
+				QUARK_ASSERT(false);
+				throw std::exception();
+			}
+			else{
+				interner.interned.push_back(type);
+
+				const auto name_index = it - interner.lookup_type_name.begin();
+				return itype_t::make_resolved((int)name_index);
+			}
 		}
 	};
 	const auto result = std::visit(visitor_t{ interner, type }, type._contents);
@@ -223,12 +232,49 @@ itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type){
 	throw std::exception();
 }
 
+typeid_t resolve_named_type(const type_interner_t& interner, const typeid_t& type){
+	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	if(type.is_resolved_type_identifier()){
+		const auto identifier = type.get_resolved_type_identifer();
+		const auto it = std::find_if(interner.lookup_type_name.begin(), interner.lookup_type_name.end(), [&](const auto& m){ return m.first == identifier; });
+		if(it == interner.lookup_type_name.end()){
+			throw std::exception();
+		}
+
+		return lookup_type(interner, it->second);
+	}
+	else{
+		return type;
+	}
+}
+
+
 
 
 void trace_type_interner(const type_interner_t& interner){
-	for(auto i = 0 ; i < interner.interned.size() ; i++){
-		const auto& e = interner.interned[i];
-		QUARK_TRACE_SS("itype_t: " << i << "\t=\ttypeid_t: " << typeid_to_compact_string(e));
+	{
+		QUARK_SCOPED_TRACE("ITYPES");
+		for(auto i = 0 ; i < interner.interned.size() ; i++){
+			const auto& e = interner.interned[i];
+			QUARK_TRACE_SS("itype_t: " << i << "\t=\ttypeid_t: " << typeid_to_compact_string(e));
+		}
+	}
+
+	{
+		QUARK_SCOPED_TRACE("NAMED TYPES");
+		for(auto i = 0 ; i < interner.lookup_type_name.size() ; i++){
+			const auto& e = interner.lookup_type_name[i];
+			const auto t = lookup_type(interner, e.second);
+			QUARK_TRACE_SS(
+				"name_index: " << i
+				<< "\t name: \"" << e.first << "\""
+				<< " itype_data: " << e.second.get_data()
+				<< " itype_lookup_index: " << e.second.get_lookup_index()
+				<< " typeid: " << typeid_to_compact_string(t)
+			);
+		}
 	}
 }
 

@@ -166,8 +166,9 @@ const std::pair<std::string, symbol_t>* resolve_symbol_by_address(const analyser
 
 /////////////////////////////////////////			RESOLVE typeid_t::unresolved_t USING LEXICAL SCOPE PATH
 
+static typeid_t record_type_internal1(analyser_t& acc, const location_t& loc, const std::string& identifier, const typeid_t& type);
 
-static typeid_t record_type_internal(analyser_t& acc, const location_t& loc, const std::string& identifier, const typeid_t& type){
+static typeid_t record_type_internal2(analyser_t& acc, const location_t& loc, const typeid_t& type){
 	QUARK_ASSERT(acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -213,15 +214,15 @@ static typeid_t record_type_internal(analyser_t& acc, const location_t& loc, con
 			const auto& struct_def = type.get_struct();
 			std::vector<member_t> members2;
 			for(const auto& m: struct_def._members){
-				members2.push_back(member_t(record_type_internal(acc, loc, "", m._type), m._name));
+				members2.push_back(member_t(record_type_internal1(acc, loc, "", m._type), m._name));
 			}
 			return typeid_t::make_struct2(members2);
 		}
 		typeid_t operator()(const typeid_t::vector_t& e) const{
-			return typeid_t::make_vector(record_type_internal(acc, loc, "", type.get_vector_element_type()));
+			return typeid_t::make_vector(record_type_internal1(acc, loc, "", type.get_vector_element_type()));
 		}
 		typeid_t operator()(const typeid_t::dict_t& e) const{
-			return typeid_t::make_dict(record_type_internal(acc, loc, "", type.get_dict_value_type()));
+			return typeid_t::make_dict(record_type_internal1(acc, loc, "", type.get_dict_value_type()));
 		}
 		typeid_t operator()(const typeid_t::function_t& e) const{
 			const auto ret = type.get_function_return();
@@ -229,10 +230,10 @@ static typeid_t record_type_internal(analyser_t& acc, const location_t& loc, con
 			const auto pure = type.get_function_pure();
 			const auto dyn_return_type = type.get_function_dyn_return_type();
 
-			const auto ret2 = record_type_internal(acc, loc, "", ret);
+			const auto ret2 = record_type_internal1(acc, loc, "", ret);
 			vector<typeid_t> args2;
 			for(const auto& m: args){
-				args2.push_back(record_type_internal(acc, loc, "", m));
+				args2.push_back(record_type_internal1(acc, loc, "", m));
 			}
 			return typeid_t::make_function3(ret2, args2, pure, dyn_return_type);
 		}
@@ -267,9 +268,49 @@ static typeid_t record_type_internal(analyser_t& acc, const location_t& loc, con
 	return resolved;
 }
 
-typeid_t resolve_type(analyser_t& acc, const location_t& loc, const std::string& identifier, const typeid_t& type){
+static typeid_t record_type_internal1(analyser_t& acc, const location_t& loc, const std::string& identifier, const typeid_t& type){
+	QUARK_ASSERT(acc.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	if(identifier != ""){
+		const auto it = std::find_if(acc._types.lookup_type_name.begin(), acc._types.lookup_type_name.end(), [&](const auto& m){ return m.first == identifier; });
+		if(it == acc._types.lookup_type_name.end()){
+			{
+				QUARK_SCOPED_TRACE("TYPES 1");
+				trace_type_interner(acc._types);
+			}
+
+			//	Insert a temporary identifier.
+			acc._types.lookup_type_name.push_back( { identifier, itype_t::make_undefined() } );
+			const auto name_index = acc._types.lookup_type_name.size() - 1; 
+
+			const auto resolved_type = record_type_internal2(acc, loc, type);
+
+			std::pair<itype_t, typeid_t> named_type = intern_type(acc._types, typeid_t::make_resolved_type_identifier(identifier));
+
+			//	Update our temporary. Notice that we need to find it again since other types might have been inserted since.
+			acc._types.lookup_type_name[name_index].second = lookup_itype(acc._types, resolved_type);
+
+			{
+				QUARK_SCOPED_TRACE("TYPES 2");
+				trace_type_interner(acc._types);
+			}
+
+			return named_type.second;
+		}
+		else{
+			throw_compiler_error(loc, "Type already defined");
+		}
+	}
+	else {
+		return record_type_internal2(acc, loc, type);
+	}
+}
+
+static typeid_t record_type(analyser_t& acc, const location_t& loc, const std::string& identifier, const typeid_t& type){
 	try {
-		const auto result = record_type_internal(acc, loc, identifier, type);
+//		const auto result = record_type_internal1(acc, loc, identifier, type);
+		const auto result = record_type_internal2(acc, loc, type);
 
 		if(check_types_resolved(result) == false){
 			throw_compiler_error(loc, "Cannot resolve type");
@@ -284,8 +325,8 @@ typeid_t resolve_type(analyser_t& acc, const location_t& loc, const std::string&
 	}
 }
 
-typeid_t resolve_type(analyser_t& acc, const location_t& loc, const typeid_t& type){
-	return resolve_type(acc, loc, "", type);
+static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid_t& type){
+	return record_type(acc, loc, "", type);
 }
 
 
@@ -519,7 +560,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 	//	If lhs may be
 	//		(1) undefined, if input is "let a = 10" for example. Then we need to infer its type.
 	//		(2) have a type, but it might not be fully resolved yet.
-	const auto lhs_type = lhs_type0.is_undefined() ? lhs_type0 : resolve_type(a_acc, s.location, lhs_type0);
+	const auto lhs_type = lhs_type0.is_undefined() ? lhs_type0 : record_type(a_acc, s.location, lhs_type0);
 
 	const auto mutable_flag = statement._locals_mutable_mode == statement_t::bind_local_t::k_mutable;
 
@@ -561,13 +602,13 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 			if(is_preinitliteral(lhs_type2) && mutable_flag == false && get_expression_type(rhs_expr_pair.second) == expression_type::k_literal){
 				const auto symbol2 = symbol_t::make_immutable_precalc(rhs_expr_pair.second.get_literal());
 				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
-				resolve_type(a_acc, s.location, rhs_expr_pair.second.get_output_type());
+				record_type(a_acc, s.location, rhs_expr_pair.second.get_output_type());
 				return { a_acc, {} };
 			}
 			else{
 				const auto symbol2 = mutable_flag ? symbol_t::make_mutable(lhs_type2) : symbol_t::make_immutable_reserve(lhs_type2);
 				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
-				resolve_type(a_acc, s.location, rhs_expr_pair.second.get_output_type());
+				record_type(a_acc, s.location, rhs_expr_pair.second.get_output_type());
 
 				return {
 					a_acc,
@@ -1460,6 +1501,8 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 	auto a_acc = a;
 
 	const auto current_type = *e._output_type;
+//	const auto resolved_named_type = resolve_named_type(a_acc._types, current_type);
+
 	if(current_type.is_vector()){
 		//	JSON constants supports mixed element types: convert each element into a json.
 		//	Encode as [json]
@@ -1505,7 +1548,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				throw_compiler_error(parent.location, what.str());
 			}
 
-			const auto result_type = resolve_type(a_acc, parent.location, result_type1);
+			const auto result_type = record_type(a_acc, parent.location, result_type1);
 
 			for(const auto& m: elements2){
 				if(m.get_output_type() != element_type2){
@@ -2112,7 +2155,7 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 	const auto& struct_def = *details.def;
 
 	const auto struct_typeid1 = typeid_t::make_struct2(struct_def._members);
-	const auto struct_typeid2 = resolve_type(a_acc, parent.location, details.name, struct_typeid1);
+	const auto struct_typeid2 = record_type(a_acc, parent.location, details.name, struct_typeid1);
 	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid2);
 	const auto r = expression_t::make_literal(struct_typeid_value);
 	return { a_acc, r };
@@ -2125,12 +2168,12 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	auto a_acc = analyser;
 
 	const auto function_def = details.def;
-	const auto function_type2 = resolve_type(a_acc, parent.location, function_def._function_type);
+	const auto function_type2 = record_type(a_acc, parent.location, function_def._function_type);
 	const auto function_pure = function_type2.get_function_pure();
 
 	vector<member_t> args2;
 	for(const auto& arg: function_def._named_args){
-		const auto arg_type2 = resolve_type(a_acc, parent.location, arg._type);
+		const auto arg_type2 = record_type(a_acc, parent.location, arg._type);
 		args2.push_back(member_t(arg_type2, arg._name));
 	}
 
@@ -2275,7 +2318,7 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 	//	Record all output type, if there is one.
 	auto a_acc = result.first;
 	if(check_types_resolved(result.second)){
-		resolve_type(a_acc, parent.location, result.second.get_output_type());
+		record_type(a_acc, parent.location, result.second.get_output_type());
 	}
 	return { a_acc, result.second };
 }
@@ -2425,7 +2468,7 @@ static builtins_t generate_intrinsics(analyser_t& a, const std::vector<intrinsic
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 
 	for(auto signature: intrinsics){
-		resolve_type(a, k_no_location, signature._function_type);
+		record_type(a, k_no_location, signature._function_type);
 
 		vector<member_t> args;
 		for(const auto& e: signature._function_type.get_function_args()){
@@ -2505,7 +2548,7 @@ semantic_ast_t analyse(analyser_t& a){
 
 
 	for(const auto& e: a._imm->intrinsic_signatures){
-		resolve_type(a, k_no_location, e._function_type);
+		record_type(a, k_no_location, e._function_type);
 	}
 
 
