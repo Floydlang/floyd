@@ -114,7 +114,7 @@ struct llvm_execution_engine_t {
 	llvm_instance_t* instance;
 	std::shared_ptr<llvm::ExecutionEngine> ee;
 	symbol_table_t global_symbols;
-	std::vector<function_link_entry_t> function_defs;
+	std::vector<function_link_entry_t> function_link_map;
 	public: std::vector<std::string> _print_output;
 
 	public: runtime_handler_i* _handler;
@@ -165,7 +165,7 @@ typedef runtime_value_t (*FLOYD_BENCHMARK_F)(floyd_runtime_t* frp);
 ////////////////////////////////	CLIENT ACCESS OF RUNNING PROGRAM
 
 
-const function_link_entry_t& find_function_def_from_link_name(const std::vector<function_link_entry_t>& function_defs, const link_name_t& link_name);
+const function_link_entry_t& find_function_def_from_link_name(const std::vector<function_link_entry_t>& function_link_map, const link_name_t& link_name);
 
 void* get_global_ptr(const llvm_execution_engine_t& ee, const std::string& name);
 

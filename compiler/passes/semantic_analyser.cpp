@@ -168,7 +168,7 @@ const std::pair<std::string, symbol_t>* resolve_symbol_by_address(const analyser
 
 static typeid_t record_type_internal1(analyser_t& acc, const location_t& loc, const std::string& identifier, const typeid_t& type);
 
-static typeid_t record_type_internal2(analyser_t& acc, const location_t& loc, const typeid_t& type){
+static typeid_t record_type_internal0(analyser_t& acc, const location_t& loc, const typeid_t& type){
 	QUARK_ASSERT(acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -238,8 +238,12 @@ static typeid_t record_type_internal2(analyser_t& acc, const location_t& loc, co
 			return typeid_t::make_function3(ret2, args2, pure, dyn_return_type);
 		}
 		typeid_t operator()(const typeid_t::unresolved_t& e) const{
-			const auto found = find_symbol_by_name(acc, type.get_unresolved_type_identifer());
+			const auto name = type.get_unresolved_type_identifer();
+			const auto found = find_symbol_by_name(acc, name);
 			if(found.first != nullptr){
+
+//	???named-types
+#if 1
 				if(found.first->_value_type.is_typeid()){
 					if(found.first->_init.is_undefined() == false){
 						return found.first->_init.get_typeid_value();
@@ -253,6 +257,14 @@ static typeid_t record_type_internal2(analyser_t& acc, const location_t& loc, co
 				else{
 					throw_compiler_error(loc, "Cannot resolve type");
 				}
+#else
+				if(found.first->_value_type.is_undefined()){
+					throw_compiler_error(loc, "Type not fully defined");
+				}
+				else {
+					return found.first->_value_type.name(name);
+				}
+#endif
 			}
 			else{
 				throw_compiler_error(loc, "Cannot resolve type");
@@ -284,7 +296,7 @@ static typeid_t record_type_internal1(analyser_t& acc, const location_t& loc, co
 			acc._types.lookup_type_name.push_back( { identifier, itype_t::make_undefined() } );
 			const auto name_index = acc._types.lookup_type_name.size() - 1; 
 
-			const auto resolved_type = record_type_internal2(acc, loc, type);
+			const auto resolved_type = record_type_internal0(acc, loc, type);
 
 //			std::pair<itype_t, typeid_t> named_type = intern_type(acc._types, typeid_t::make_resolved_type_identifier(identifier));
 			std::pair<itype_t, typeid_t> named_type = intern_type(acc._types, typeid_t::make_unresolved_type_identifier(identifier));
@@ -304,14 +316,69 @@ static typeid_t record_type_internal1(analyser_t& acc, const location_t& loc, co
 		}
 	}
 	else {
-		return record_type_internal2(acc, loc, type);
+		return record_type_internal0(acc, loc, type);
 	}
 }
 
-static typeid_t record_type(analyser_t& acc, const location_t& loc, const std::string& identifier, const typeid_t& type){
+
+static typeid_t record_type_internal3(analyser_t& acc, const location_t& loc, const typeid_t& type){
+	QUARK_ASSERT(acc.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto identifier = type.get_name();
+	if(identifier != ""){
+
+		// Add symbol for the new, with undefined. Later store resolved type.
+		const auto existing_value_deep_ptr = find_symbol_by_name(acc, identifier);
+		if(existing_value_deep_ptr.first != nullptr){
+			throw_compiler_error(loc, "Type already defined");
+		}
+
+		const auto type_name_symbol = symbol_t::make_named_type(type);
+		acc._lexical_scope_stack.back().symbols._symbols.push_back({ identifier, type_name_symbol });
+		const auto symbol_index = acc._lexical_scope_stack.back().symbols._symbols.size() - 1;
+
+		const auto resolved_type = record_type_internal0(acc, loc, type).name(identifier);
+		QUARK_ASSERT(resolved_type.get_name() != "");
+
+		//	Update our temporary. Notice that we need to find it again since other types might have been inserted since.
+		const auto symbol2 = symbol_t::make_named_type(resolved_type);
+		acc._lexical_scope_stack.back().symbols._symbols[symbol_index].second = symbol2;
+
+		if(false){
+			QUARK_SCOPED_TRACE("TYPES 2");
+			trace_type_interner(acc._types);
+		}
+
+		return resolved_type;
+	}
+	else {
+		return record_type_internal0(acc, loc, type);
+	}
+}
+
+static typeid_t record_type_internal4(analyser_t& acc, const location_t& loc, const typeid_t& type){
+	QUARK_ASSERT(acc.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto type2 = record_type_internal0(acc, loc, type);
+	if(type2.get_name() != ""){
+		return type2;
+	}
+	else{
+		return type2.name(type.get_name());
+	}
+}
+
+//	???named-types
+static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid_t& type){
 	try {
-//		const auto result = record_type_internal1(acc, loc, identifier, type);
-		const auto result = record_type_internal2(acc, loc, type);
+//		const auto result = record_type_internal1(acc, loc, "", type);
+//		const auto result = record_type_internal0(acc, loc, type);
+//		const auto result = record_type_internal3(acc, loc, type);
+
+		const auto result = record_type_internal0(acc, loc, type);
+//		const auto result = record_type_internal4(acc, loc, type);
 
 		if(check_types_resolved(result) == false){
 			throw_compiler_error(loc, "Cannot resolve type");
@@ -326,9 +393,6 @@ static typeid_t record_type(analyser_t& acc, const location_t& loc, const std::s
 	}
 }
 
-static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid_t& type){
-	return record_type(acc, loc, "", type);
-}
 
 
 
@@ -2114,9 +2178,30 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 		return { a_acc, expression_t::make_call(callee_expr, resolved_call.second.args, make_shared<typeid_t>(resolved_call.second.function_type.get_function_return())) };
 	}
 
+
+//	???named-types
+#if 0
 	//	Desugar!
 	//	Attempting to call a TYPE? Then this may be a constructor call.
 	//	Converts these calls to construct-value-expressions.
+	else if(/*callee_type.is_typeid() &&*/ callee_expr_load2){
+		const auto construct_value_type = callee_type;
+
+		//	Convert calls to struct-type into construct-value expression.
+		if(construct_value_type.is_struct()){
+			const auto construct_value_expr = expression_t::make_construct_value_expr(construct_value_type, details.args);
+			const auto result_pair = analyse_expression_to_target(a_acc, parent, construct_value_expr, construct_value_type);
+			return { result_pair.first, result_pair.second };
+		}
+
+		//	One argument for primitive types.
+		else{
+			const auto construct_value_expr = expression_t::make_construct_value_expr(construct_value_type, details.args);
+			const auto result_pair = analyse_expression_to_target(a_acc, parent, construct_value_expr, construct_value_type);
+			return { result_pair.first, result_pair.second };
+		}
+	}
+#else
 	else if(callee_type.is_typeid() && callee_expr_load2){
 		const auto found_symbol_ptr = resolve_symbol_by_address(a_acc, callee_expr_load2->address);
 		QUARK_ASSERT(found_symbol_ptr != nullptr);
@@ -2142,6 +2227,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 			}
 		}
 	}
+#endif
 	else{
 		std::stringstream what;
 		what << "Cannot call non-function, its type is " << typeid_to_compact_string(callee_type) << ".";
@@ -2149,6 +2235,9 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 	}
 }
 
+
+//	???named-types
+#if 1
 static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const analyser_t& a, const statement_t& parent, const expression_t& e0, const expression_t::struct_definition_expr_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
@@ -2156,11 +2245,44 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 	const auto& struct_def = *details.def;
 
 	const auto struct_typeid1 = typeid_t::make_struct2(struct_def._members);
-	const auto struct_typeid2 = record_type(a_acc, parent.location, details.name, struct_typeid1);
+	const auto struct_typeid2 = record_type(a_acc, parent.location, struct_typeid1);
 	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid2);
 	const auto r = expression_t::make_literal(struct_typeid_value);
 	return { a_acc, r };
 }
+#else
+static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const analyser_t& a, const statement_t& parent, const expression_t& e0, const expression_t::struct_definition_expr_t& details){
+	QUARK_ASSERT(a.check_invariant());
+
+	auto a_acc = a;
+
+	const std::string identifier = details.name;
+
+	// Add symbol for the new, with undefined. Later store resolved type.
+	if(does_symbol_exist_shallow(a_acc, identifier)){
+		throw_compiler_error(parent.location, "Type already defined");
+	}
+
+	const auto type_name_symbol = symbol_t::make_named_type(typeid_t::make_undefined());
+	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ identifier, type_name_symbol });
+	const auto symbol_index = a_acc._lexical_scope_stack.back().symbols._symbols.size() - 1;
+
+
+	const auto struct_typeid1 = typeid_t::make_struct2(details.def->_members).name(details.name);
+	const auto struct_typeid2 = record_type(a_acc, parent.location, struct_typeid1);
+	QUARK_ASSERT(struct_typeid2.get_name() != "");
+
+	//	Update our temporary. Notice that we need to find it again since other types might have been inserted since.
+	const auto symbol2 = symbol_t::make_named_type(struct_typeid2);
+	a_acc._lexical_scope_stack.back().symbols._symbols[symbol_index].second = symbol2;
+
+
+	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid2);
+	const auto r = expression_t::make_literal(struct_typeid_value);
+	return { a_acc, r };
+}
+#endif
+
 
 // ??? Check that function returns always returns a value, if it has a return-type.
 std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& analyser, const statement_t& parent, const expression_t& e, const expression_t::function_definition_expr_t& details){
@@ -2486,12 +2608,30 @@ static builtins_t generate_intrinsics(analyser_t& a, const std::vector<intrinsic
 }
 #endif
 
+
+static std::pair<std::string, symbol_t> make_builtin_type(const typeid_t& type){
+	const auto bt = type.get_base_type();
+	const auto opcode = base_type_to_opcode(bt);
+	return { opcode, make_type_symbol(type) };
+}
+
+
 static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	/*
 		Create built-in global symbol map: built in data types, built-in functions (intrinsics).
 	*/
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 
+//	???named-types
+#if 0
+	symbol_map.push_back( make_builtin_type(typeid_t::make_void()) );
+	symbol_map.push_back( make_builtin_type(typeid_t::make_bool()) );
+	symbol_map.push_back( make_builtin_type(typeid_t::make_int()) );
+	symbol_map.push_back( make_builtin_type(typeid_t::make_double()) );
+	symbol_map.push_back( make_builtin_type(typeid_t::make_string()) );
+	symbol_map.push_back( make_builtin_type(typeid_t::make_typeid()) );
+	symbol_map.push_back( make_builtin_type(typeid_t::make_json()) );
+#else
 	symbol_map.push_back( { base_type_to_opcode(base_type::k_void), make_type_symbol(typeid_t::make_void()) });
 	symbol_map.push_back( { base_type_to_opcode(base_type::k_bool), make_type_symbol(typeid_t::make_bool()) });
 	symbol_map.push_back( { base_type_to_opcode(base_type::k_int), make_type_symbol(typeid_t::make_int()) });
@@ -2499,6 +2639,7 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	symbol_map.push_back( { base_type_to_opcode(base_type::k_string), make_type_symbol(typeid_t::make_string()) });
 	symbol_map.push_back( { base_type_to_opcode(base_type::k_typeid), make_type_symbol(typeid_t::make_typeid()) });
 	symbol_map.push_back( { base_type_to_opcode(base_type::k_json), make_type_symbol(typeid_t::make_json()) });
+#endif
 
 
 	//	"null" is equivalent to json::null
@@ -2665,7 +2806,7 @@ semantic_ast_t run_semantic_analysis(const unchecked_ast_t& ast){
 
 	try {
 		if(k_trace_input_flag || k_trace_output_flag){
-			QUARK_SCOPED_TRACE("run_semantic_analysis()");
+			QUARK_SCOPED_TRACE("SEMANTIC ANALYSIS PASS");
 
 			if(k_trace_input_flag){
 				QUARK_SCOPED_TRACE("INPUT AST");

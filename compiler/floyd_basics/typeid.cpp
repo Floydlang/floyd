@@ -609,7 +609,7 @@ QUARK_TESTQ("typeid_t", "operator=()"){
 
 
 
-std::string typeid_to_compact_string_int(const typeid_t& t){
+static std::string typeid_to_compact_string_int(const typeid_t& t){
 //		QUARK_ASSERT(t.check_invariant());
 
 	const auto basetype = t.get_base_type();
@@ -652,8 +652,13 @@ std::string typeid_to_compact_string_int(const typeid_t& t){
 	}
 }
 std::string typeid_to_compact_string(const typeid_t& t){
-	return typeid_to_compact_string_int(t);
-//		return std::string() + "<" + typeid_to_compact_string_int(t) + ">";
+//	return typeid_to_compact_string_int(t);
+	if(t.get_name() == ""){
+		return typeid_to_compact_string_int(t);
+	}
+	else{
+		return t.get_name() + ":" + typeid_to_compact_string_int(t);
+	}
 }
 
 
@@ -958,7 +963,7 @@ static json_t typeid_to_json0(const typeid_t& t, json_tags tags){
 		});
 	}
 	else if(b == base_type::k_unresolved){
-		return std::string() + std::string(1, tag_unresolved_type_char) + t.get_unresolved_type_identifer();
+		return std::string(1, tag_unresolved_type_char) + t.get_unresolved_type_identifer();
 	}
 	else{
 		QUARK_ASSERT(false);

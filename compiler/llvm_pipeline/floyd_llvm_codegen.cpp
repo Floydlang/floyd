@@ -6,8 +6,10 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
+
+const bool k_trace_pass_io = true;
+
 const bool k_trace_input_output = false;
-const bool k_trace_types = k_trace_input_output;
 static const bool k_trace_function_link_map = false;
 
 
@@ -114,11 +116,11 @@ struct llvm_code_generator_t;
 
 
 
-llvm_ir_program_t::llvm_ir_program_t(llvm_instance_t* instance, std::unique_ptr<llvm::Module>& module2_swap, const llvm_type_lookup& type_lookup, const symbol_table_t& globals, const std::vector<function_link_entry_t>& function_defs, const compiler_settings_t& settings) :
+llvm_ir_program_t::llvm_ir_program_t(llvm_instance_t* instance, std::unique_ptr<llvm::Module>& module2_swap, const llvm_type_lookup& type_lookup, const symbol_table_t& globals, const std::vector<function_link_entry_t>& function_link_map, const compiler_settings_t& settings) :
 	instance(instance),
 	type_lookup(type_lookup),
 	debug_globals(globals),
-	function_defs(function_defs),
+	function_link_map(function_link_map),
 	settings(settings)
 {
 	QUARK_ASSERT(settings.check_invariant());
@@ -201,13 +203,14 @@ std::string print_gen(const llvm_code_generator_t& gen){
 	return out.str();
 }
 
-std::string print_program(const llvm_ir_program_t& program){
+static std::string print_program(const llvm_ir_program_t& program){
 	QUARK_ASSERT(program.check_invariant());
 
 //	std::string dump;
 //	llvm::raw_string_ostream stream2(dump);
 //	program.module->print(stream2, nullptr);
 
+	QUARK_SCOPED_TRACE("module");
 	return print_module(*program.module);
 }
 
@@ -2337,7 +2340,7 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const bo
 	}
 
 	if(k_trace_input_output){
-		QUARK_TRACE_SS(print_module(*gen_acc.module));
+//		QUARK_TRACE_SS(print_module(*gen_acc.module));
 	}
 	QUARK_ASSERT(check_invariant__function(f));
 
@@ -2380,7 +2383,7 @@ static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const 
 	}
 
 	if(k_trace_input_output){
-		QUARK_TRACE_SS(print_module(*gen_acc.module));
+//		QUARK_TRACE_SS(print_module(*gen_acc.module));
 	}
 	QUARK_ASSERT(check_invariant__function(f));
 
@@ -2481,12 +2484,18 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 	QUARK_ASSERT(ast0.check_invariant());
 	QUARK_ASSERT(settings.check_invariant());
 
-	if(k_trace_input_output){
-		QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast0)));
-	}
-	if(k_trace_types){
-		QUARK_SCOPED_TRACE("ast0 types");
-		trace_type_interner(ast0._tree._interned_types);
+	QUARK_SCOPED_TRACE("LLVM CODE GENERATION");
+
+	if(k_trace_pass_io){
+		{
+			QUARK_SCOPED_TRACE("LLVM CODE GENERATION -- INPUT AST");
+			QUARK_TRACE_SS(json_to_pretty_string(semantic_ast_to_json(ast0)));
+		}
+
+		{
+			QUARK_SCOPED_TRACE("LLVM CODE GENERATION -- INPUT TYPES");
+			trace_type_interner(ast0._tree._interned_types);
+		}
 	}
 
 	auto ast = ast0;
@@ -2512,11 +2521,17 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 	result->container_def = ast0._tree._container_def;
 	result->software_system = ast0._tree._software_system;
 
-	if(k_trace_input_output){
-		QUARK_TRACE_SS("result = " << floyd::print_program(*result));
-	}
-	if(k_trace_function_link_map){
-		trace_function_link_map(result->function_defs);
+	if(k_trace_pass_io){
+
+		{
+			QUARK_SCOPED_TRACE("LLVM CODE GENERATION -- OUTPUT LLVM MODULE");
+			QUARK_TRACE(print_module(*result->module));
+//			QUARK_TRACE_SS(floyd::print_program(*result));
+		}
+		{
+			QUARK_SCOPED_TRACE("LLVM CODE GENERATION -- OUTPUT LINK MAP");
+			trace_function_link_map(result->function_link_map);
+		}
 	}
 	return result;
 }

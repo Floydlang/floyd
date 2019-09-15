@@ -19,10 +19,6 @@ namespace floyd {
 ////////////////////////////////////////////		symbol_t
 
 
-symbol_t make_type_symbol(const floyd::typeid_t& t){
-	const auto a = value_t::make_typeid_value(t);
-	return symbol_t::make_immutable_precalc(a);
-}
 
 std::string symbol_to_string(const symbol_t& s){
 	std::stringstream out;
@@ -72,7 +68,7 @@ symbol_t json_to_symbol(const json_t& e){
 
 
 
-const floyd::symbol_t* find_symbol(const symbol_table_t& symbol_table, const std::string& name){
+const symbol_t* find_symbol(const symbol_table_t& symbol_table, const std::string& name){
 	const auto it = std::find_if(
 		symbol_table._symbols.begin(), symbol_table._symbols.end(),
 		[&name](const std::pair<std::string, symbol_t>& x) { return x.first == name; }
@@ -80,7 +76,7 @@ const floyd::symbol_t* find_symbol(const symbol_table_t& symbol_table, const std
 	
 	return (it == symbol_table._symbols.end()) ? nullptr : &(it->second);
 }
-const floyd::symbol_t& find_symbol_required(const symbol_table_t& symbol_table, const std::string& name){
+const symbol_t& find_symbol_required(const symbol_table_t& symbol_table, const std::string& name){
 	const auto it = std::find_if(
 		symbol_table._symbols.begin(), symbol_table._symbols.end(),
 		[&name](const std::pair<std::string, symbol_t>& x) { return x.first == name; }
@@ -108,7 +104,7 @@ std::vector<json_t> symbols_to_json(const symbol_table_t& symbol_table){
 }
 
 symbol_table_t ast_json_to_symbols(const json_t& p){
-	std::vector<std::pair<std::string, floyd::symbol_t>> result;
+	std::vector<std::pair<std::string, symbol_t>> result;
 	const auto json_array = p.get_array();
 	for(const auto& e: json_array){
 		const auto symbol_array_json = e;

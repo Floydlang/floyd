@@ -186,12 +186,55 @@ bool check_invariant__builder(llvm::IRBuilder<>* builder){
 
 
 
+
+static bool replace(std::string& str, const std::string& from, const std::string& to) {
+    size_t start_pos = str.find(from);
+    if(start_pos == std::string::npos)
+        return false;
+    str.replace(start_pos, from.length(), to);
+    return true;
+}
+static void replaceAll(std::string& str, const std::string& from, const std::string& to) {
+    if(from.empty())
+        return;
+    size_t start_pos = 0;
+    while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+    }
+}
+
+//	We don't fix up the first occurence of declare since that would move it in contact with what's before it.
+std::string reformat_llvm_module_print(const std::string& s0){
+	auto temp = s0;
+	const auto from = std::string("\n\ndeclare ");
+	const auto to = std::string("\ndeclare ");
+
+	const auto first_pos = temp.find("\n\ndeclare", 0);
+
+	//	+1 is to avoid replacing first occurance.
+	size_t start_pos = first_pos + 1;
+
+    while((start_pos = temp.find(from, start_pos)) != std::string::npos) {
+        temp.replace(start_pos, from.length(), to);
+        start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+    }
+	return temp;
+}
+
+
+
+
 std::string print_module(llvm::Module& module){
 	std::string dump;
 	llvm::raw_string_ostream stream2(dump);
 
-	stream2 << "\n" "MODULE" << "\n";
+//	stream2 << "\n" "MODULE" << "\n";
 	module.print(stream2, nullptr);
+
+	//	Printout of declare-lines have an extra newline, let's remove that extra newline for more compact printout.
+
+	auto r = reformat_llvm_module_print(stream2.str());
 
 /*
 	Not needed, module.print() prints the exact list.
@@ -202,6 +245,9 @@ std::string print_module(llvm::Module& module){
 	}
 */
 
+/*
+??? This is already part of module.print()
+
 	stream2 << "\n" "GLOBALS" << "\n";
 	const auto& globalList = module.getGlobalList();
 	int index = 0;
@@ -211,8 +257,9 @@ std::string print_module(llvm::Module& module){
 		stream2 << "\n";
 		index++;
 	}
+*/
 
-	return stream2.str();
+	return r;
 }
 
 

@@ -1332,25 +1332,25 @@ QUARK_TESTQ("count_char_positions()", ""){
 /*
 	key == name of this value inside a parent object if any. If this is an entry in an array, key == "". Else key == "".
 */
-std::string json_to_pretty_string_internal(const string& key, const json_t& value, int pos, const pretty_t& pretty){
+std::string json_to_pretty_string_internal(const string& key, const json_t& value, int indent, const pretty_t& pretty){
 	const auto key_str = make_key_str(key);
 	if(value.is_object()){
 		const auto& object = value.get_object();
 		if(object.empty()){
-			return string(pos, '\t') + key_str + "{}";
+			return string(indent, '\t') + key_str + "{}";
 		}
 		else{
 			/*
 				Attempt to put all object entires on one text line, recursively.
 			*/
-			string one_line = string(pos, '\t') + key_str + json_to_compact_string(value);
+			string one_line = string(indent, '\t') + key_str + json_to_compact_string(value);
 			size_t width = count_char_positions(one_line, pretty._tab_char_setting);
 			if(width <= pretty._max_column_chars){
 				return one_line;
 			}
 
 			else{
-				string lines = string(pos, '\t') + key_str + "{\n";
+				string lines = string(indent, '\t') + key_str + "{\n";
 				size_t index = 0;
 				for(auto member: object){
 					const auto last = index == object.size() - 1;
@@ -1358,11 +1358,11 @@ std::string json_to_pretty_string_internal(const string& key, const json_t& valu
 					const auto member_value = member.second;
 
 					//	Can be multi-line if this member is a collection.
-					const auto member_lines = json_to_pretty_string_internal(member_key, member_value, pos + 1, pretty);
+					const auto member_lines = json_to_pretty_string_internal(member_key, member_value, indent + 1, pretty);
 					lines = lines + member_lines + (last ? "\n" : ",\n");
 					index++;
 				}
-				lines = lines + string(pos, '\t') + "}";
+				lines = lines + string(indent, '\t') + "}";
 				return lines;
 			}
 		}
@@ -1370,7 +1370,7 @@ std::string json_to_pretty_string_internal(const string& key, const json_t& valu
 	else if(value.is_array()){
 		const auto& array = value.get_array();
 		if(array.empty()){
-			return string(pos, '\t') + key_str + "[]";
+			return string(indent, '\t') + key_str + "[]";
 		}
 		else{
 			/*
@@ -1379,7 +1379,7 @@ std::string json_to_pretty_string_internal(const string& key, const json_t& valu
 				"array1": [ 100, 20, 30, 40 ]
 				"array2": [ 100, 20, 30, [ "yes", "no" ], { "x": 10, "y": 100 }]
 			*/
-			string one_line = string(pos, '\t') + key_str + json_to_compact_string(value);
+			string one_line = string(indent, '\t') + key_str + json_to_compact_string(value);
 			size_t width = count_char_positions(one_line, pretty._tab_char_setting);
 			if(width <= pretty._max_column_chars){
 				return one_line;
@@ -1394,33 +1394,33 @@ std::string json_to_pretty_string_internal(const string& key, const json_t& valu
 				]
 			*/
 			else{
-				string lines = string(pos, '\t') + key_str + "[\n";
+				string lines = string(indent, '\t') + key_str + "[\n";
 				const size_t count = array.size();
 				for(auto index = 0 ; index < count ; index++){
 					const auto last = (index == count - 1);
 					const auto member_value = array[index];
-					const auto member_lines = json_to_pretty_string_internal("", member_value, pos + 1, pretty);
+					const auto member_lines = json_to_pretty_string_internal("", member_value, indent + 1, pretty);
 					lines = lines + member_lines + (last ? "\n" : ",\n");
 				}
-				lines = lines + string(pos, '\t') + "]";
+				lines = lines + string(indent, '\t') + "]";
 				return lines;
 			}
 		}
 	}
 	else if(value.is_string()){
-		return string(pos, '\t') + key_str + quote(value.get_string());
+		return string(indent, '\t') + key_str + quote(value.get_string());
 	}
 	else if(value.is_number()){
-		return string(pos, '\t') + key_str + double_to_string_simplify(value.get_number());
+		return string(indent, '\t') + key_str + double_to_string_simplify(value.get_number());
 	}
 	else if(value.is_true()){
-		return string(pos, '\t') + key_str + "true";
+		return string(indent, '\t') + key_str + "true";
 	}
 	else if(value.is_false()){
-		return string(pos, '\t') + key_str + "false";
+		return string(indent, '\t') + key_str + "false";
 	}
 	else if(value.is_null()){
-		return string(pos, '\t') + key_str + "null";
+		return string(indent, '\t') + key_str + "null";
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -1428,8 +1428,8 @@ std::string json_to_pretty_string_internal(const string& key, const json_t& valu
 	}
 }
 
-std::string json_to_pretty_string(const json_t& value, int pos, const pretty_t& pretty){
-	return json_to_pretty_string_internal("", value, pos, pretty);
+std::string json_to_pretty_string(const json_t& value, int indent, const pretty_t& pretty){
+	return json_to_pretty_string_internal("", value, indent, pretty);
 }
 
 

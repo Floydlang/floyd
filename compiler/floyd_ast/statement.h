@@ -102,7 +102,7 @@ struct symbol_t {
 		return true;
 	}
 
-	public: symbol_t(mutable_mode mutable_mode, const floyd::typeid_t& value_type, const floyd::value_t& init_value) :
+	public: symbol_t(mutable_mode mutable_mode, const typeid_t& value_type, const value_t& init_value) :
 		_mutable_mode(mutable_mode),
 		_value_type(value_type),
 		_init(init_value)
@@ -110,41 +110,57 @@ struct symbol_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: floyd::typeid_t get_type() const {
+	public: typeid_t get_type() const {
 		QUARK_ASSERT(check_invariant());
 
 		return _value_type;
 	}
 
-	public: static symbol_t make_immutable_reserve(const floyd::typeid_t& value_type){
+	public: static symbol_t make_immutable_reserve(const typeid_t& value_type){
 		return symbol_t{ mutable_mode::immutable, value_type, {} };
 	}
 
-	public: static symbol_t make_immutable_arg(const floyd::typeid_t& value_type){
+	public: static symbol_t make_immutable_arg(const typeid_t& value_type){
 		return symbol_t{ mutable_mode::immutable, value_type, {} };
 	}
 
 	//??? Mutable could support init-value too!?
-	public: static symbol_t make_mutable(const floyd::typeid_t& value_type){
+	public: static symbol_t make_mutable(const typeid_t& value_type){
 		return symbol_t{ mutable_mode::mutable1, value_type, {} };
 	}
 
-	public: static symbol_t make_immutable_precalc(const floyd::value_t& init_value){
+	public: static symbol_t make_immutable_precalc(const value_t& init_value){
 		QUARK_ASSERT(is_floyd_literal(init_value.get_type()));
 
 		return symbol_t{ mutable_mode::immutable, init_value.get_type(), init_value };
 	}
 
 
+	public: static symbol_t make_named_type(const typeid_t& type){
+		return symbol_t{ mutable_mode::immutable, type, value_t::make_undefined() };
+	}
+
+
+
 	//////////////////////////////////////		STATE
 	mutable_mode _mutable_mode;
-	floyd::typeid_t _value_type;
+	typeid_t _value_type;
 
 	//	If there is no initialization value, this member must be value_t::make_undefined();
-	floyd::value_t _init;
+	value_t _init;
 };
 
-symbol_t make_type_symbol(const floyd::typeid_t& t);
+inline symbol_t make_type_symbol(const typeid_t& t){
+//	???named-types
+#if 0
+	return symbol_t::make_named_type(t);
+#else
+	const auto a = value_t::make_typeid_value(t);
+	return symbol_t::make_immutable_precalc(a);
+#endif
+}
+
+
 std::string symbol_to_string(const symbol_t& symbol);
 
 
@@ -165,8 +181,8 @@ struct symbol_table_t {
 	public: std::vector<std::pair<std::string, symbol_t>> _symbols;
 };
 
-const floyd::symbol_t* find_symbol(const symbol_table_t& symbol_table, const std::string& name);
-const floyd::symbol_t& find_symbol_required(const symbol_table_t& symbol_table, const std::string& name);
+const symbol_t* find_symbol(const symbol_table_t& symbol_table, const std::string& name);
+const symbol_t& find_symbol_required(const symbol_table_t& symbol_table, const std::string& name);
 
 std::vector<json_t> symbols_to_json(const symbol_table_t& symbols);
 symbol_table_t ast_json_to_symbols(const json_t& p);

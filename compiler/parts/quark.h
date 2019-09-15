@@ -231,6 +231,7 @@ struct trace_i {
 	public: virtual void trace_i__trace(const char s[]) const = 0;
 	public: virtual void trace_i__open_scope(const char s[]) const = 0;
 	public: virtual void trace_i__close_scope(const char s[]) const = 0;
+	public: virtual int trace_i__get_indent() const = 0;
 };
 
 
@@ -245,10 +246,11 @@ struct default_tracer_t : public trace_i {
 	public: virtual void trace_i__trace(const char s[]) const;
 	public: virtual void trace_i__open_scope(const char s[]) const;
 	public: virtual void trace_i__close_scope(const char s[]) const;
+	public: virtual int trace_i__get_indent() const;
 
 
 	///////////////		State.
-	public: long mutable _indent;
+	public: int mutable _indent;
 };
 
 inline default_tracer_t::default_tracer_t() :
@@ -256,15 +258,52 @@ inline default_tracer_t::default_tracer_t() :
 {
 }
 
-inline void default_tracer_t::trace_i__trace(const char s[]) const{
-	if(strlen(s) > 0){
-		for(long i = 0 ; i < _indent ; i++){
-//			std::cout << "|\t";
-			std::cout << "\t";
-		}
+//??? Take argument std::ostream to stream to.
+//	Indents each line in s correctly.
+inline void trace_indent(const char s[], int indent, const std::string& indent_str) {
+	const auto count = strlen(s);
+	if(count > 0){
+		size_t pos = 0;
+		while(pos != count){
 
-		std::cout << std::string(s);
-		std::cout << std::endl;
+			int line_indent = indent;
+
+			//	Convert leading tabs into indents so we can indent everything using indent_str.
+			while(pos < count && s[pos] == '\t'){
+				line_indent++;
+				pos++;
+			}
+
+			//	Indent start of line.
+			for(auto i = 0 ; i < line_indent ; i++){
+				std::cout << indent_str;
+			}
+
+
+			//	Print line until newline.
+			std::string line_acc;
+			while(pos < count && s[pos] != '\n'){
+				const auto ch = s[pos];
+				line_acc.push_back(ch);
+				pos++;
+			}
+
+			std::cout << line_acc << std::endl;
+
+			//	Skip newline.
+			if(pos < count){
+				pos++;
+			}
+		}
+	}
+}
+
+
+//	Indents each line in s correctly.
+inline void default_tracer_t::trace_i__trace(const char s[]) const{
+	const auto count = strlen(s);
+	if(count > 0){
+		trace_indent(s, _indent, "\t");
 	}
 }
 inline void default_tracer_t::trace_i__open_scope(const char s[]) const{
@@ -274,6 +313,9 @@ inline void default_tracer_t::trace_i__open_scope(const char s[]) const{
 inline void default_tracer_t::trace_i__close_scope(const char s[]) const{
 	_indent--;
 	trace_i__trace(s);
+}
+inline int default_tracer_t::trace_i__get_indent() const{
+	return _indent;
 }
 
 
@@ -381,9 +423,9 @@ inline void set_trace(const trace_i* v){
 
 
 
-	//??? implement
 	inline int get_log_indent(){
-		return 0;
+		const trace_i& tracer = get_trace();
+		return tracer.trace_i__get_indent();
 	}
 
 

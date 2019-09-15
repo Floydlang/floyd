@@ -102,6 +102,7 @@ struct floyd_tracer : public quark::trace_i {
 	public: virtual void trace_i__trace(const char s[]) const;
 	public: virtual void trace_i__open_scope(const char s[]) const;
 	public: virtual void trace_i__close_scope(const char s[]) const;
+	public: virtual int trace_i__get_indent() const;
 
 
 	///////////////		State.
@@ -127,6 +128,10 @@ void floyd_tracer::trace_i__close_scope(const char s[]) const{
 	if(g_trace_on){
 		def.trace_i__close_scope(s);
 	}
+}
+
+int floyd_tracer::trace_i__get_indent() const{
+	return def._indent;
 }
 
 
