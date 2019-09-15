@@ -4275,7 +4275,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Update struct member that is a P
 	);
 }
 
-FLOYD_LANG_PROOF("Floyd test suite", "struct", "update without quoting member name", ""){
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "struct", "update without quoting member name", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
