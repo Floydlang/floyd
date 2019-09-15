@@ -22,7 +22,7 @@
 
 namespace floyd {
 
-static const bool k_trace_io = false;
+static const bool k_trace_io = true;
 
 //???? remove!!
 using namespace std;
@@ -235,26 +235,8 @@ static typeid_t record_type_internal0(analyser_t& acc, const location_t& loc, co
 			}
 			return typeid_t::make_function3(ret2, args2, pure, dyn_return_type);
 		}
-/*
-		typeid_t operator()(const typeid_t::unresolved_t& e) const{
-			const auto name = type.get_unresolved_type_identifer();
-			const auto found = find_symbol_by_name(acc, name);
-			if(found.first != nullptr){
-				if(found.first->_value_type.is_undefined()){
-					throw_compiler_error(loc, "Type not fully defined");
-				}
-				else {
-					return found.first->_value_type.name(name);
-				}
-			}
-			else{
-				throw_compiler_error(loc, "Cannot resolve type");
-			}
-		}
-*/
 	};
 	const auto resolved = std::visit(visitor_t{ acc, loc, type }, type._contents);
-	intern_type(acc._types, resolved);
 	return resolved;
 }
 
@@ -269,6 +251,7 @@ static typeid_t record_type_internal_wrap(analyser_t& acc, const location_t& loc
 		if(existing_value_deep_ptr.first == nullptr || existing_value_deep_ptr.first->_symbol_type != symbol_t::symbol_type::named_type){
 			throw_compiler_error(loc, "Unknown type name '" + identifier + "'.");
 		}
+//		return existing_value_deep_ptr.first->_value_type.name(identifier);
 		return existing_value_deep_ptr.first->_value_type;
 	}
 	else {
@@ -282,12 +265,15 @@ static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid
 	QUARK_ASSERT(type.check_invariant());
 
 	try {
-		const auto result = record_type_internal_wrap(acc, loc, type);
+		const auto resolved = record_type_internal_wrap(acc, loc, type);
+		intern_type(acc._types, resolved);
 
-		if(check_types_resolved(result) == false){
+/*
+		if(check_types_resolved(resolved) == false){
 			throw_compiler_error(loc, "Cannot resolve type");
 		}
-		return result;
+*/
+		return resolved;
 	}
 	catch(const compiler_error& e){
 		throw;

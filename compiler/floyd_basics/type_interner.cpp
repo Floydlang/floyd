@@ -65,6 +65,8 @@ bool type_interner_t::check_invariant() const {
 	QUARK_ASSERT(interned[(int)base_type::k_function].is_undefined());
 
 
+	QUARK_ASSERT(lookup_type_name.size() == 0);
+
 //??? Add other common combinations, like vectors with each atomic type, dict with each atomic type.
 	return true;
 }
@@ -171,22 +173,6 @@ static itype_t make_new_itype_recursive(type_interner_t& interner, const typeid_
 			const auto lookup_index = static_cast<int32_t>(interner.interned.size() - 1);
 			return itype_t::make_function(lookup_index);
 		}
-/*
-		itype_t operator()(const typeid_t::resolved_t& e) const{
-			const auto it = std::find_if(interner.lookup_type_name.begin(), interner.lookup_type_name.end(), [&](const auto& m){ return m.first == e._resolved_type_identifier; });
-			if(it == interner.lookup_type_name.end()){
-				QUARK_ASSERT(false);
-				throw std::exception();
-			}
-			else{
-				interner.interned.push_back(type);
-
-				const auto name_index = it - interner.lookup_type_name.begin();
-				return itype_t::make_resolved((int)name_index);
-			}
-		}
-*/
-
 	};
 	const auto result = std::visit(visitor_t{ interner, type }, type._contents);
 
@@ -212,6 +198,13 @@ std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid
 		return { itype, type };
 	}
 }
+
+#if 0
+QUARK_TEST_VIP("type_interner_t()", "type_interner_t()", "", ""){
+	type_interner_t a;
+	const auto r = make_new_itype_recursive(a, typeid_t::make_undefined().name("node_t"));
+}
+#endif
 
 
 itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type){
@@ -251,6 +244,8 @@ typeid_t resolve_named_type(const type_interner_t& interner, const typeid_t& typ
 
 
 void trace_type_interner(const type_interner_t& interner){
+	QUARK_ASSERT(interner.check_invariant());
+
 	{
 		QUARK_SCOPED_TRACE("ITYPES");
 		for(auto i = 0 ; i < interner.interned.size() ; i++){
