@@ -566,10 +566,6 @@ std::string to_compact_string2(const value_t& value) {
 	else if(base_type == base_type::k_function){
 		return floyd::typeid_to_compact_string(value.get_type());
 	}
-	else if(base_type == base_type::k_unresolved){
-		QUARK_ASSERT(false);
-		return "";
-	}
 
 	else{
 		return "??";
@@ -1225,7 +1221,6 @@ value_t value_t::make_typeid_value(const typeid_t& type_id){
 
 value_t value_t::make_struct_value(const typeid_t& struct_type, const std::vector<value_t>& values){
 	QUARK_ASSERT(struct_type.check_invariant());
-	QUARK_ASSERT(struct_type.get_base_type() != base_type::k_unresolved);
 	QUARK_ASSERT(struct_type.get_struct()._members.size() == values.size());
 
 	auto instance = std::make_shared<struct_value_t>(struct_value_t{struct_type.get_struct_ref(), values});

@@ -164,7 +164,7 @@ static void collect_used_types(type_interner_t& acc, const statement_t& statemen
 }
 
 void collect_used_types_symbol(type_interner_t& acc, const std::string& name, const symbol_t& symbol){
-	intern_type(acc, symbol.get_type());
+	intern_type(acc, symbol.get_value_type());
 	if(symbol._init.is_typeid()){
 		intern_type(acc, symbol._init.get_typeid_value());
 	}

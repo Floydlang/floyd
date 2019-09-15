@@ -485,8 +485,6 @@ value_encoding type_to_encoding(const typeid_t& type){
 	else if(basetype == base_type::k_function){
 		return value_encoding::k_external__function;
 	}
-	else if(basetype == base_type::k_unresolved){
-	}
 	else{
 	}
 	QUARK_ASSERT(false);
@@ -3694,7 +3692,7 @@ std::vector<json_t> bc_symbols_to_json(const std::vector<std::pair<std::string, 
 	int symbol_index = 0;
 	for(const auto& e: symbols){
 		const auto& symbol = e.second;
-		const auto symbol_type_str = symbol._symbol_type == bc_symbol_t::immutable ? "immutable" : "mutable";
+		const auto symbol_type_str = symbol._symbol_type == bc_symbol_t::type::immutable ? "immutable" : "mutable";
 
 		if(symbol._const_value._type.is_undefined() == false){
 			const auto e2 = json_t::make_array({

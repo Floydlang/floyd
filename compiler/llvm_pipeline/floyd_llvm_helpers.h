@@ -90,9 +90,6 @@ llvm::Value* get_callers_fcp(const llvm_type_lookup& type_lookup, llvm::Function
 void generate_array_element_store(llvm::IRBuilder<>& builder, llvm::Value& array_ptr_reg, uint64_t element_index, llvm::Value& element_reg);
 
 
-llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::string& symbol_name, llvm::Type& itype, llvm::Constant* init_or_nullptr);
-
-
 
 
 ////////////////////////////////		VALUES

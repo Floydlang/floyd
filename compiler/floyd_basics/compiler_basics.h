@@ -275,6 +275,10 @@ struct location_t {
 
 	location_t(const location_t& other) = default;
 	location_t& operator=(const location_t& other) = default;
+	bool check_invariant() const {
+		return true;
+	}
+
 
 	std::size_t offset;
 };

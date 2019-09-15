@@ -936,12 +936,6 @@ runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type){
 		runtime_value_t operator()(const typeid_t::function_t& e) const{
 			return *static_cast<const runtime_value_t*>(value_ptr);
 		}
-		runtime_value_t operator()(const typeid_t::unresolved_t& e) const{
-			UNSUPPORTED();
-		}
-		runtime_value_t operator()(const typeid_t::resolved_t& e) const{
-			UNSUPPORTED();
-		}
 	};
 	return std::visit(visitor_t{ value_ptr }, type._contents);
 }
@@ -993,12 +987,6 @@ void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t
 		}
 		void operator()(const typeid_t::function_t& e) const{
 			*static_cast<runtime_value_t*>(value_ptr) = value;
-		}
-		void operator()(const typeid_t::unresolved_t& e) const{
-			UNSUPPORTED();
-		}
-		void operator()(const typeid_t::resolved_t& e) const{
-			UNSUPPORTED();
 		}
 	};
 	std::visit(visitor_t{ value_ptr, value }, type._contents);

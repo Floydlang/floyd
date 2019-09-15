@@ -317,12 +317,6 @@ static llvm::Type* make_llvm_type(const builder_t& builder, const typeid_t& type
 		llvm::Type* operator()(const typeid_t::function_t& e) const{
 			return deref_ptr(make_function_type(builder, type));
 		}
-		llvm::Type* operator()(const typeid_t::unresolved_t& e) const{
-			return llvm::Type::getInt16Ty(builder.context);
-		}
-		llvm::Type* operator()(const typeid_t::resolved_t& e) const{
-			return llvm::Type::getInt16Ty(builder.context);
-		}
 	};
 	return std::visit(visitor_t{ builder, type }, type._contents);
 }

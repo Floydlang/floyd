@@ -99,8 +99,7 @@ std::pair<void*, typeid_t> bind_global(const llvm_execution_engine_t& ee, const 
 	if(global_ptr != nullptr){
 		auto symbol = find_symbol(ee.global_symbols, name);
 		QUARK_ASSERT(symbol != nullptr);
-
-		return { global_ptr, symbol->get_type() };
+		return { global_ptr, symbol->get_value_type() };
 	}
 	else{
 		return { nullptr, typeid_t::make_undefined() };
@@ -387,7 +386,7 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 static void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p){
 	int index = 0;
 	for(const auto& e: p.debug_globals._symbols){
-		if(e.second.get_type().is_function()){
+		if(e.second.get_value_type().is_function()){
 			const auto global_var = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(ee2, e.first);
 			QUARK_ASSERT(global_var != nullptr);
 

@@ -1836,15 +1836,29 @@ bc_static_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_
 
 	std::vector<std::pair<std::string, bc_symbol_t>> symbols2;
 	for(const auto& e: body._symbol_table._symbols){
-		const auto e2 = std::pair<std::string, bc_symbol_t>{
-			e.first,
-			bc_symbol_t{
-				e.second._mutable_mode == symbol_t::mutable_mode::immutable ? bc_symbol_t::immutable : bc_symbol_t::mutable1,
-				e.second._value_type,
-				value_to_bc(e.second._init)
-			}
-		};
-		symbols2.push_back(e2);
+		//???named-type
+		if(e.second._symbol_type == symbol_t::symbol_type::named_type){
+			const auto e2 = std::pair<std::string, bc_symbol_t>{
+				e.first,
+				bc_symbol_t{
+					bc_symbol_t::type::named_type,
+					typeid_t::make_typeid(),
+					bc_value_t::make_typeid_value(e.second.get_value_type())
+				}
+			};
+			symbols2.push_back(e2);
+		}
+		else{
+			const auto e2 = std::pair<std::string, bc_symbol_t>{
+				e.first,
+				bc_symbol_t{
+					is_mutable(e.second) ? bc_symbol_t::type::mutable1 : bc_symbol_t::type::immutable,
+					e.second.get_value_type(),
+					value_to_bc(e.second._init)
+				}
+			};
+			symbols2.push_back(e2);
+		}
 	}
 
 	return bc_static_frame_t(instrs2, symbols2, args);

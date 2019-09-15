@@ -43,6 +43,7 @@ unsupported syntax
 #define RUN_LANG_STRUCT_TESTS				true
 #define RUN_LANG_JSON_TESTS					true
 #define RUN_LANG_INTRINSICS_TESTS			true
+#define RUN_BENCHMARK_DEF_STATEMENT__AND__BENCHMARK_EXPRESSION_TESTS true
 #define RUN_CORELIB_TESTS					true
 #define RUN_CONTAINER_TESTS					true
 #define RUN_EXAMPLE_AND_DOCS_TESTS			true
@@ -50,10 +51,11 @@ unsupported syntax
 //#define RUN_LANG_BASIC_TESTS1				true
 //#define RUN_LANG_BASIC_TESTS2				true
 //#define RUN_LANG_VECTOR_TESTS				true
-#define RUN_LANG_DICT_TESTS					true
-//#define RUN_LANG_STRUCT_TESTS				true
+//#define RUN_LANG_DICT_TESTS					true
+#define RUN_LANG_STRUCT_TESTS				true
 //#define RUN_LANG_JSON_TESTS					true
 //#define RUN_LANG_INTRINSICS_TESTS			true
+//#define RUN_BENCHMARK_DEF_STATEMENT__AND__BENCHMARK_EXPRESSION_TESTS true
 //#define RUN_CORELIB_TESTS					true
 //#define RUN_CONTAINER_TESTS					true
 //#define RUN_EXAMPLE_AND_DOCS_TESTS			true
@@ -2401,378 +2403,17 @@ FLOYD_LANG_PROOF("Floyd test suite", "while", "return from within while", ""){
 
 
 
+
 //######################################################################################################################
-//	BENCHMARK-DEF STATEMENT, BENCHMARK EXPRESSION
+//	typeid
 //######################################################################################################################
 
 
-FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "empty body", "overflows max samples"){
-	ut_run_closed_nolib(
-		QUARK_POS,
-		R"(
 
-			let dur = benchmark {
-			}
-			print(dur)
 
-		)"
-	);
+FLOYD_LANG_PROOF("Floyd test suite", "typeid", "", "exception"){
+	ut_verify_exception_nolib(QUARK_POS, R"(		let int a = bool		)", "[Semantics] Expression type mismatch - cannot convert 'typeid' to 'int. Line: 1 \"let int a = bool\"");
 }
-
-FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			let dur = benchmark {
-				let a = [ 10, 20, 30 ]
-			}
-
-		)",
-		{ }
-	);
-}
-
-FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
-	ut_run_closed_nolib(
-		QUARK_POS,
-		R"___(
-
-			for(run in 0 ... 50){
-				let dur = benchmark {
-				}
-				print(dur)
-			}
-
-		)___"
-	);
-}
-
-FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
-	ut_run_closed_nolib(
-		QUARK_POS,
-		R"___(
-
-			for(instance in 0 ... 3){
-				let dur = benchmark {
-					for(e in 0 ... 2){
-						let a = "hello, world!"
-					}
-				}
-				print(dur)
-			}
-
-		)___"
-	);
-}
-
-
-
-/*
-//	??? Semantic analyser doesn't yet catch this problem. LLVM codegen does. Function doesnt return in all paths
-FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Must return", ""){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			benchmark-def "ABC" {
-				print("Running benchmark ABC")
-			}
-
-		)",
-		""
-	);
-}
-*/
-
-FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Make sure def compiles", ""){
-	ut_run_closed_nolib(
-		QUARK_POS,
-		R"(
-
-			benchmark-def "ABC" {
-				return [ benchmark_result_t(200, json("0 eleements")) ]
-			}
-
-		)"
-	);
-}
-
-FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Access benchmark registry", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			benchmark-def "ABC" {
-				return [ benchmark_result_t(200, json("0 eleements")) ]
-			}
-
-			print(benchmark_registry)
-
-		)",
-		{
-			R"___([{name="ABC", f=function [struct {int dur;json more;}]() pure}])___"
-		}
-	);
-}
-
-#if 0
-FLOYD_LANG_PROOF("Floyd test suite", "for", "Make sure loop variable is hidden outside of for-body", ""){
-	ut_run_closed_nolib(
-		QUARK_POS,
-		R"(
-
-			for(i in 0 ..< 1){
-				let result = 3
-			}
-			assert(result)
-		)"
-	);
-}
-#endif
-
-FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running more than one simple benchmark_def", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			benchmark-def "AAA" {
-				return [ benchmark_result_t(200, json("0 eleements")) ]
-			}
-			benchmark-def "BBB" {
-				return [ benchmark_result_t(300, json("3 monkeys")) ]
-			}
-
-			for(i in 0 ..< size(benchmark_registry)){
-				let e = benchmark_registry[i]
-				let benchmark_result = e.f()
-				for(v in 0 ..< size(benchmark_result)){
-					print(e.name + ": " + to_string(v) + ": dur: " + to_string(benchmark_result[v].dur) + ", more: " + to_pretty_string(benchmark_result[v].more) )
-				}
-			}
-
-		)",
-		{
-			R"___(AAA: 0: dur: 200, more: "0 eleements")___",
-			R"___(BBB: 0: dur: 300, more: "3 monkeys")___"
-		}
-	);
-}
-
-FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running benchmark_def with variants", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			benchmark-def "AAA" {
-				return [
-					benchmark_result_t(1111, json("ONE")),
-					benchmark_result_t(2222, json("TWO")),
-					benchmark_result_t(3333, json("THREE"))
-				]
-			}
-
-			for(i in 0 ..< size(benchmark_registry)){
-				let e = benchmark_registry[i]
-				let benchmark_result = e.f()
-				for(v in 0 ..< size(benchmark_result)){
-					print(e.name + ": " + to_string(v) + ": dur: " + to_string(benchmark_result[v].dur) + ", more: " + to_pretty_string(benchmark_result[v].more) )
-				}
-			}
-
-		)",
-		{
-			R"___(AAA: 0: dur: 1111, more: "ONE")___",
-			R"___(AAA: 1: dur: 2222, more: "TWO")___",
-			R"___(AAA: 2: dur: 3333, more: "THREE")___"
-		}
-	);
-}
-
-FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running benchmark_def with complex 'more'", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			benchmark-def "AAA" {
-				return [
-					benchmark_result_t(1111, json("ONE")),
-					benchmark_result_t(2222, json( { "elements": 10, "copies": 20 } ))
-				]
-			}
-
-			for(i in 0 ..< size(benchmark_registry)){
-				let e = benchmark_registry[i]
-				let benchmark_result = e.f()
-				for(v in 0 ..< size(benchmark_result)){
-					print(e.name + ": " + to_string(v) + ": dur: " + to_string(benchmark_result[v].dur) + ", more: " + to_pretty_string(benchmark_result[v].more) )
-				}
-			}
-
-		)",
-		{
-			R"___(AAA: 0: dur: 1111, more: "ONE")___",
-			R"___(AAA: 1: dur: 2222, more: { "copies": 20, "elements": 10 })___",
-		}
-	);
-}
-
-FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Example", ""){
-	ut_run_closed_nolib(
-		QUARK_POS,
-		R"(
-
-			benchmark-def "Linear veq" {
-				mutable [benchmark_result_t] results = []
-				let instances = [ 0, 1, 2, 3, 4, 10, 20, 100, 1000, 10000, 100000 ]
-				for(i in 0 ..< size(instances)){
-					let x = instances[i]
-					mutable acc = 0
-
-					let r = benchmark {
-						//	The work to measure
-						for(a in 0 ..< x){
-							acc = acc + 1
-						}
-					}
-					results = push_back(results, benchmark_result_t(r, json( { "Count": x } )))
-				}
-				return results
-			}
-
-			func void run_benchmarks() impure {
-				for(i in 0 ..< size(benchmark_registry)){
-					let e = benchmark_registry[i]
-					let benchmark_result = e.f()
-					for(v in 0 ..< size(benchmark_result)){
-						print(e.name + ": " + to_string(v) + ": dur: " + to_string(benchmark_result[v].dur) + ", more: " + to_pretty_string(benchmark_result[v].more) )
-					}
-				}
-			}
-
-			run_benchmarks()
-		)"
-	);
-}
-
-FLOYD_LANG_PROOF("Floyd test suite", "get_benchmarks()", "", ""){
-	ut_verify_printout_lib(
-		QUARK_POS,
-		R"(
-
-			benchmark-def "AAA" {
-				return [ benchmark_result_t(200, json("0 eleements")) ]
-			}
-			benchmark-def "BBB" {
-				return [ benchmark_result_t(300, json("3 monkeys")) ]
-			}
-
-
-			print(get_benchmarks())
-		)",
-		{
-			R"___([{module="", test="AAA"}, {module="", test="BBB"}])___",
-		}
-	);
-}
-
-FLOYD_LANG_PROOF("Floyd test suite", "run_benchmarks()", "", ""){
-	ut_verify_printout_lib(
-		QUARK_POS,
-		R"(
-
-			benchmark-def "AAA" {
-				return [ benchmark_result_t(200, json("0 eleements")) ]
-			}
-			benchmark-def "BBB" {
-				return [ benchmark_result_t(300, json("3 monkeys")) ]
-			}
-
-			print(run_benchmarks(get_benchmarks()))
-		)",
-		{
-			R"___([{test_id={module="", test="AAA"}, result={dur=200, more="0 eleements"}}, {test_id={module="", test="BBB"}, result={dur=300, more="3 monkeys"}}])___",
-		}
-	);
-}
-
-FLOYD_LANG_PROOF("Floyd test suite", "run_benchmarks()", "", ""){
-	ut_verify_printout_lib(
-		QUARK_POS,
-		R"(
-
-			benchmark-def "AAA" {
-				return [ benchmark_result_t(200, json("0 eleements")) ]
-			}
-			benchmark-def "BBB" {
-				return [ benchmark_result_t(300, json("3 monkeys")) ]
-			}
-
-			print(make_benchmark_report(run_benchmarks(get_benchmarks())))
-		)",
-		{
-R"___(| MODULE  | TEST  |    DUR|              |
-|---------|-------|-------|--------------|
-|         | AAA   | 200 ns| 0 eleements  |
-|         | BBB   | 300 ns| 3 monkeys    |
-)___"
-		}
-	);
-}
-
-FLOYD_LANG_PROOF("Floyd test suite", "Call corelib function", "", ""){
-	ut_run_closed_lib(
-		QUARK_POS,
-		R"(
-
-			make_benchmark_report([])
-
-		)"
-	);
-}
-
-
-FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Example", ""){
-	ut_verify_printout_lib(
-		QUARK_POS,
-		R"(
-
-			let test_results = [
-				benchmark_result2_t(benchmark_id_t("mod1", "my"), benchmark_result_t(240, "")),
-				benchmark_result2_t(benchmark_id_t("mod1", "my"), benchmark_result_t(3000, "")),
-				benchmark_result2_t(benchmark_id_t("mod1", "my"), benchmark_result_t(100000, "kb/s")),
-				benchmark_result2_t(benchmark_id_t("mod1", "my"), benchmark_result_t(1200000, "mb/s")),
-				benchmark_result2_t(benchmark_id_t("mod1", "baggins"), benchmark_result_t(5000, "mb/s")),
-				benchmark_result2_t(benchmark_id_t("mod1", "baggins"), benchmark_result_t(7000, "mb/s")),
-				benchmark_result2_t(benchmark_id_t("mod1", "baggins"), benchmark_result_t(8000, "mb/s")),
-				benchmark_result2_t(benchmark_id_t("mod1", "baggins"), benchmark_result_t(80000, "mb/s"))
-			]
-
-			print(make_benchmark_report(test_results))
-
-		)",
-		{
-R"___(| MODULE  | TEST     |        DUR|       |
-|---------|----------|-----------|-------|
-| mod1    | my       |     240 ns|       |
-| mod1    | my       |    3000 ns|       |
-| mod1    | my       |  100000 ns| kb/s  |
-| mod1    | my       | 1200000 ns| mb/s  |
-| mod1    | baggins  |    5000 ns| mb/s  |
-| mod1    | baggins  |    7000 ns| mb/s  |
-| mod1    | baggins  |    8000 ns| mb/s  |
-| mod1    | baggins  |   80000 ns| mb/s  |
-)___"
-		}
-	);
-}
-
-
-
-//////////////////////////////////////////		TYPEID - TYPE
-
-
-
 
 
 
@@ -3731,6 +3372,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [double] constructor", "", ""){
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] constructor", "", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(		assert(to_string(["one", "two", "three"]) == "[\"one\", \"two\", \"three\"]")		)");
 }
+
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [typeid] constructor", "", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(		assert(to_string([int, bool, string]) == "[int, bool, string]")		)");
@@ -4932,6 +4574,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Error: Wrong TYPE of arguments t
 
 
 #if 0
+//??named-type
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "nested", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(
 
@@ -4946,6 +4589,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "nested", ""){
 #endif
 
 #if 0
+//??named-type
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "nested", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(
 
@@ -5490,6 +5134,10 @@ FLOYD_LANG_PROOF("Floyd test suite", "generate_json_script()", "[pixel_t]", ""){
 	??? test all types!
 */
 FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "bool", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let json z = to_json(true); let result = from_json(z, bool)		)", value_t::make_bool(true));
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "bool", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = from_json(to_json(true), bool)		)", value_t::make_bool(true));
 }
 
@@ -5866,6 +5514,383 @@ FLOYD_LANG_PROOF("Floyd test suite", "stable_sort()", "[string]", ""){
 
 
 
+#if RUN_BENCHMARK_DEF_STATEMENT__AND__BENCHMARK_EXPRESSION_TESTS
+
+
+//######################################################################################################################
+//	BENCHMARK-DEF STATEMENT, BENCHMARK EXPRESSION
+//######################################################################################################################
+
+
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "empty body", "overflows max samples"){
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"(
+
+			let dur = benchmark {
+			}
+			print(dur)
+
+		)"
+	);
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let dur = benchmark {
+				let a = [ 10, 20, 30 ]
+			}
+
+		)",
+		{ }
+	);
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"___(
+
+			for(run in 0 ... 50){
+				let dur = benchmark {
+				}
+				print(dur)
+			}
+
+		)___"
+	);
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"___(
+
+			for(instance in 0 ... 3){
+				let dur = benchmark {
+					for(e in 0 ... 2){
+						let a = "hello, world!"
+					}
+				}
+				print(dur)
+			}
+
+		)___"
+	);
+}
+
+
+
+/*
+//	??? Semantic analyser doesn't yet catch this problem. LLVM codegen does. Function doesnt return in all paths
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Must return", ""){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			benchmark-def "ABC" {
+				print("Running benchmark ABC")
+			}
+
+		)",
+		""
+	);
+}
+*/
+
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Make sure def compiles", ""){
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"(
+
+			benchmark-def "ABC" {
+				return [ benchmark_result_t(200, json("0 eleements")) ]
+			}
+
+		)"
+	);
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Access benchmark registry", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			benchmark-def "ABC" {
+				return [ benchmark_result_t(200, json("0 eleements")) ]
+			}
+
+			print(benchmark_registry)
+
+		)",
+		{
+			R"___([{name="ABC", f=function [struct {int dur;json more;}]() pure}])___"
+		}
+	);
+}
+
+#if 0
+FLOYD_LANG_PROOF("Floyd test suite", "for", "Make sure loop variable is hidden outside of for-body", ""){
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"(
+
+			for(i in 0 ..< 1){
+				let result = 3
+			}
+			assert(result)
+		)"
+	);
+}
+#endif
+
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running more than one simple benchmark_def", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			benchmark-def "AAA" {
+				return [ benchmark_result_t(200, json("0 eleements")) ]
+			}
+			benchmark-def "BBB" {
+				return [ benchmark_result_t(300, json("3 monkeys")) ]
+			}
+
+			for(i in 0 ..< size(benchmark_registry)){
+				let e = benchmark_registry[i]
+				let benchmark_result = e.f()
+				for(v in 0 ..< size(benchmark_result)){
+					print(e.name + ": " + to_string(v) + ": dur: " + to_string(benchmark_result[v].dur) + ", more: " + to_pretty_string(benchmark_result[v].more) )
+				}
+			}
+
+		)",
+		{
+			R"___(AAA: 0: dur: 200, more: "0 eleements")___",
+			R"___(BBB: 0: dur: 300, more: "3 monkeys")___"
+		}
+	);
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running benchmark_def with variants", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			benchmark-def "AAA" {
+				return [
+					benchmark_result_t(1111, json("ONE")),
+					benchmark_result_t(2222, json("TWO")),
+					benchmark_result_t(3333, json("THREE"))
+				]
+			}
+
+			for(i in 0 ..< size(benchmark_registry)){
+				let e = benchmark_registry[i]
+				let benchmark_result = e.f()
+				for(v in 0 ..< size(benchmark_result)){
+					print(e.name + ": " + to_string(v) + ": dur: " + to_string(benchmark_result[v].dur) + ", more: " + to_pretty_string(benchmark_result[v].more) )
+				}
+			}
+
+		)",
+		{
+			R"___(AAA: 0: dur: 1111, more: "ONE")___",
+			R"___(AAA: 1: dur: 2222, more: "TWO")___",
+			R"___(AAA: 2: dur: 3333, more: "THREE")___"
+		}
+	);
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running benchmark_def with complex 'more'", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			benchmark-def "AAA" {
+				return [
+					benchmark_result_t(1111, json("ONE")),
+					benchmark_result_t(2222, json( { "elements": 10, "copies": 20 } ))
+				]
+			}
+
+			for(i in 0 ..< size(benchmark_registry)){
+				let e = benchmark_registry[i]
+				let benchmark_result = e.f()
+				for(v in 0 ..< size(benchmark_result)){
+					print(e.name + ": " + to_string(v) + ": dur: " + to_string(benchmark_result[v].dur) + ", more: " + to_pretty_string(benchmark_result[v].more) )
+				}
+			}
+
+		)",
+		{
+			R"___(AAA: 0: dur: 1111, more: "ONE")___",
+			R"___(AAA: 1: dur: 2222, more: { "copies": 20, "elements": 10 })___",
+		}
+	);
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Example", ""){
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"(
+
+			benchmark-def "Linear veq" {
+				mutable [benchmark_result_t] results = []
+				let instances = [ 0, 1, 2, 3, 4, 10, 20, 100, 1000, 10000, 100000 ]
+				for(i in 0 ..< size(instances)){
+					let x = instances[i]
+					mutable acc = 0
+
+					let r = benchmark {
+						//	The work to measure
+						for(a in 0 ..< x){
+							acc = acc + 1
+						}
+					}
+					results = push_back(results, benchmark_result_t(r, json( { "Count": x } )))
+				}
+				return results
+			}
+
+			func void run_benchmarks() impure {
+				for(i in 0 ..< size(benchmark_registry)){
+					let e = benchmark_registry[i]
+					let benchmark_result = e.f()
+					for(v in 0 ..< size(benchmark_result)){
+						print(e.name + ": " + to_string(v) + ": dur: " + to_string(benchmark_result[v].dur) + ", more: " + to_pretty_string(benchmark_result[v].more) )
+					}
+				}
+			}
+
+			run_benchmarks()
+		)"
+	);
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "get_benchmarks()", "", ""){
+	ut_verify_printout_lib(
+		QUARK_POS,
+		R"(
+
+			benchmark-def "AAA" {
+				return [ benchmark_result_t(200, json("0 eleements")) ]
+			}
+			benchmark-def "BBB" {
+				return [ benchmark_result_t(300, json("3 monkeys")) ]
+			}
+
+
+			print(get_benchmarks())
+		)",
+		{
+			R"___([{module="", test="AAA"}, {module="", test="BBB"}])___",
+		}
+	);
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "run_benchmarks()", "", ""){
+	ut_verify_printout_lib(
+		QUARK_POS,
+		R"(
+
+			benchmark-def "AAA" {
+				return [ benchmark_result_t(200, json("0 eleements")) ]
+			}
+			benchmark-def "BBB" {
+				return [ benchmark_result_t(300, json("3 monkeys")) ]
+			}
+
+			print(run_benchmarks(get_benchmarks()))
+		)",
+		{
+			R"___([{test_id={module="", test="AAA"}, result={dur=200, more="0 eleements"}}, {test_id={module="", test="BBB"}, result={dur=300, more="3 monkeys"}}])___",
+		}
+	);
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "run_benchmarks()", "", ""){
+	ut_verify_printout_lib(
+		QUARK_POS,
+		R"(
+
+			benchmark-def "AAA" {
+				return [ benchmark_result_t(200, json("0 eleements")) ]
+			}
+			benchmark-def "BBB" {
+				return [ benchmark_result_t(300, json("3 monkeys")) ]
+			}
+
+			print(make_benchmark_report(run_benchmarks(get_benchmarks())))
+		)",
+		{
+R"___(| MODULE  | TEST  |    DUR|              |
+|---------|-------|-------|--------------|
+|         | AAA   | 200 ns| 0 eleements  |
+|         | BBB   | 300 ns| 3 monkeys    |
+)___"
+		}
+	);
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "Call corelib function", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			make_benchmark_report([])
+
+		)"
+	);
+}
+
+
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Example", ""){
+	ut_verify_printout_lib(
+		QUARK_POS,
+		R"(
+
+			let test_results = [
+				benchmark_result2_t(benchmark_id_t("mod1", "my"), benchmark_result_t(240, "")),
+				benchmark_result2_t(benchmark_id_t("mod1", "my"), benchmark_result_t(3000, "")),
+				benchmark_result2_t(benchmark_id_t("mod1", "my"), benchmark_result_t(100000, "kb/s")),
+				benchmark_result2_t(benchmark_id_t("mod1", "my"), benchmark_result_t(1200000, "mb/s")),
+				benchmark_result2_t(benchmark_id_t("mod1", "baggins"), benchmark_result_t(5000, "mb/s")),
+				benchmark_result2_t(benchmark_id_t("mod1", "baggins"), benchmark_result_t(7000, "mb/s")),
+				benchmark_result2_t(benchmark_id_t("mod1", "baggins"), benchmark_result_t(8000, "mb/s")),
+				benchmark_result2_t(benchmark_id_t("mod1", "baggins"), benchmark_result_t(80000, "mb/s"))
+			]
+
+			print(make_benchmark_report(test_results))
+
+		)",
+		{
+R"___(| MODULE  | TEST     |        DUR|       |
+|---------|----------|-----------|-------|
+| mod1    | my       |     240 ns|       |
+| mod1    | my       |    3000 ns|       |
+| mod1    | my       |  100000 ns| kb/s  |
+| mod1    | my       | 1200000 ns| mb/s  |
+| mod1    | baggins  |    5000 ns| mb/s  |
+| mod1    | baggins  |    7000 ns| mb/s  |
+| mod1    | baggins  |    8000 ns| mb/s  |
+| mod1    | baggins  |   80000 ns| mb/s  |
+)___"
+		}
+	);
+}
+
+#endif	//	RUN_BENCHMARK_DEF_STATEMENT__AND__BENCHMARK_EXPRESSION_TESTS
+
+
+
+
+
+
+
 #if RUN_CORELIB_TESTS
 
 //######################################################################################################################
@@ -6110,6 +6135,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "write_text_file()", "", ""){
 //////////////////////////////////////////		CORE LIBRARY - get_directory_entries()
 
 #if 0
+//??? needs clean prep/take down code.
 FLOYD_LANG_PROOF("Floyd test suite", "get_fsentries_shallow()", "", ""){
 	ut_verify_global_result_lib(
 		QUARK_POS,
@@ -6133,6 +6159,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_fsentries_shallow()", "", ""){
 //////////////////////////////////////////		CORE LIBRARY - get_fsentries_deep()
 
 #if 0
+//??? needs clean prep/take down code.
 FLOYD_LANG_PROOF("Floyd test suite", "get_fsentries_deep()", "", ""){
 	ut_run_closed_lib(QUARK_POS,
 		R"(
@@ -6149,6 +6176,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_fsentries_deep()", "", ""){
 //////////////////////////////////////////		CORE LIBRARY - get_fsentry_info()
 
 #if 0
+//??? needs clean prep/take down code.
 FLOYD_LANG_PROOF("Floyd test suite", "get_fsentry_info()", "", ""){
 	ut_verify_global_result_lib(
 		QUARK_POS,
@@ -7039,7 +7067,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
 #endif
 
 #if 0
-
 FLOYD_LANG_PROOF("Floyd test suite", "dict hamt performance()", "", ""){
 	ut_run_closed_lib(
 		QUARK_POS,
@@ -7068,7 +7095,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict hamt performance()", "", ""){
 		)___"
 	);
 }
-
 #endif
 
 

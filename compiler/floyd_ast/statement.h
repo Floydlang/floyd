@@ -59,39 +59,25 @@ namespace statement_opcode_t {
 //////////////////////////////////////		symbol_t
 
 /*
-	This is an entry in the symbol table, kept for each environment/stack frame.
-	When you make a local variable it gets an entry in symbol table, with a type and name but no value. Like a reservered slot.
-	You can also add precalculated constants directly to the symbol table.
+	This is an entry in the symbol table.
+	There is one symbol table for globals and one for each stack frame, like function body, inside an if-body etc.
 
-
-	# Function values
-	These are stored as local variable reservations of correct function-signature-type. They are inited
-	during execution, not const-values in symbol table.
-
-	Function calls needs to evaluate callee expression.
-	??? TODO: make functions const-values when possible.
-
-
-	# Structs
-	Struct-types are stored in symbol table as precalculated values. Struct instances are not.
-
-	struct pixel_t { int red; int green; int blue; }
-
-	- needs to become a precalculated symbol called "pixel_t" so print(pixel_t) etc works.
-	- pixel_t variable =
-		type: typeid_t = struct{ int red; int green; int blue; }
-		const: value_t::typeid_value =
+	Variable slot: When you make a local variable it gets an entry in symbol table, with a type and name but no value. Like a reservered slot.
+	Preinit: You can also add precalculated constants directly to the symbol table. Only works for some basic types right now.
 */
 
 struct symbol_t {
-	enum class mutable_mode {
-		immutable,
-		mutable1
+	enum class symbol_type {
+		immutable_reserve,
+		immutable_arg,
+		immutable_precalc,
+		named_type,
+		mutable_reserve
 	};
 
 	bool operator==(const symbol_t& other) const {
 		return true
-			&& _mutable_mode == other._mutable_mode
+			&& _symbol_type == other._symbol_type
 			&& _value_type == other._value_type
 			&& _init == other._init
 			;
@@ -102,62 +88,57 @@ struct symbol_t {
 		return true;
 	}
 
-	public: symbol_t(mutable_mode mutable_mode, const typeid_t& value_type, const value_t& init_value) :
-		_mutable_mode(mutable_mode),
+	public: symbol_t(symbol_type symbol_type, const typeid_t& value_type, const value_t& init_value) :
+		_symbol_type(symbol_type),
 		_value_type(value_type),
 		_init(init_value)
 	{
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: typeid_t get_type() const {
+	public: typeid_t get_value_type() const {
 		QUARK_ASSERT(check_invariant());
 
 		return _value_type;
 	}
 
 	public: static symbol_t make_immutable_reserve(const typeid_t& value_type){
-		return symbol_t{ mutable_mode::immutable, value_type, {} };
+		return symbol_t{ symbol_type::immutable_reserve, value_type, {} };
 	}
 
 	public: static symbol_t make_immutable_arg(const typeid_t& value_type){
-		return symbol_t{ mutable_mode::immutable, value_type, {} };
+		return symbol_t{ symbol_type::immutable_arg, value_type, {} };
 	}
 
 	//??? Mutable could support init-value too!?
 	public: static symbol_t make_mutable(const typeid_t& value_type){
-		return symbol_t{ mutable_mode::mutable1, value_type, {} };
+		return symbol_t{ symbol_type::mutable_reserve, value_type, {} };
 	}
 
 	public: static symbol_t make_immutable_precalc(const value_t& init_value){
 		QUARK_ASSERT(is_floyd_literal(init_value.get_type()));
 
-		return symbol_t{ mutable_mode::immutable, init_value.get_type(), init_value };
+		return symbol_t{ symbol_type::immutable_precalc, init_value.get_type(), init_value };
 	}
 
 
 	public: static symbol_t make_named_type(const typeid_t& type){
-		return symbol_t{ mutable_mode::immutable, type, value_t::make_undefined() };
+		QUARK_ASSERT(type.get_name() == "");
+		return symbol_t{ symbol_type::named_type, type, value_t::make_undefined() };
 	}
 
 
 
 	//////////////////////////////////////		STATE
-	mutable_mode _mutable_mode;
+	symbol_type _symbol_type;
 	typeid_t _value_type;
 
 	//	If there is no initialization value, this member must be value_t::make_undefined();
 	value_t _init;
 };
 
-inline symbol_t make_type_symbol(const typeid_t& t){
-//	???named-types
-#if 0
-	return symbol_t::make_named_type(t);
-#else
-	const auto a = value_t::make_typeid_value(t);
-	return symbol_t::make_immutable_precalc(a);
-#endif
+inline bool is_mutable(const symbol_t& s){
+	return s._symbol_type == symbol_t::symbol_type::mutable_reserve;
 }
 
 

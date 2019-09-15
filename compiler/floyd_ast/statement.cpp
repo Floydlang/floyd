@@ -19,12 +19,58 @@ namespace floyd {
 ////////////////////////////////////////////		symbol_t
 
 
+static std::string symbol_type_to_string(symbol_t::symbol_type type){
+	switch(type){
+		case symbol_t::symbol_type::immutable_reserve:
+			return "immutable_reserve";
+
+		case symbol_t::symbol_type::immutable_arg:
+			return "immutable_arg";
+
+		case symbol_t::symbol_type::immutable_precalc:
+			return "immutable_precalc";
+
+		case symbol_t::symbol_type::named_type:
+			return "named_type";
+
+		case symbol_t::symbol_type::mutable_reserve:
+			return "mutable_reserve";
+		default:
+			QUARK_ASSERT(false);
+			throw std::exception();
+	}
+}
+
+static symbol_t::symbol_type symbol_type_from_string(const std::string& s){
+	if(s == "immutable_reserve"){
+		return symbol_t::symbol_type::immutable_reserve;
+	}
+	else if(s == "immutable_arg"){
+		return symbol_t::symbol_type::immutable_arg;
+	}
+
+	else if(s == "immutable_precalc"){
+		return symbol_t::symbol_type::immutable_precalc;
+	}
+
+
+	else if(s == "named_type"){
+		return symbol_t::symbol_type::named_type;
+	}
+
+	else if(s == "mutable_reserve"){
+		return symbol_t::symbol_type::mutable_reserve;
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
 
 std::string symbol_to_string(const symbol_t& s){
 	std::stringstream out;
-
 	out << "<symbol> {"
-		<< (s._mutable_mode == symbol_t::mutable_mode::immutable ? "immutable" : "mutable" )
+		<< symbol_type_to_string(s._symbol_type)
 		<< " type: " << typeid_to_compact_string(s._value_type)
 		<< " init: " << (s._init.is_undefined() ? "<none>" : value_and_type_to_string(s._init))
 	<< "}";
@@ -33,7 +79,7 @@ std::string symbol_to_string(const symbol_t& s){
 
 
 json_t symbol_to_json(const symbol_t& symbol){
-	const auto symbol_type_str = symbol._mutable_mode == symbol_t::mutable_mode::immutable ? "immutable" : "mutable";
+	const auto symbol_type_str = symbol_type_to_string(symbol._symbol_type);
 	const auto value_type = typeid_to_ast_json(symbol._value_type, json_tags::k_tag_resolve_state);
 
 	const auto e2 = json_t::make_object({
@@ -53,7 +99,7 @@ symbol_t json_to_symbol(const json_t& e){
 	else{
 		throw std::exception();
 	}
-	const auto symbol_type1 = symbol_type == "immutable" ? symbol_t::mutable_mode::immutable : symbol_t::mutable_mode::mutable1;
+	const auto symbol_type1 = symbol_type_from_string(symbol_type);
 	const auto value_type1 = typeid_from_ast_json(value_type);
 	const auto init = e.get_object_element("init");
 	const auto init_value1 = init.is_null() ? value_t::make_undefined() : ast_json_to_value(value_type1, init);

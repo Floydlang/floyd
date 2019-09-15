@@ -599,8 +599,6 @@ QUARK_TEST("", "parse_function_definition_statement()", "Min whitespace", "Corre
 //////////////////////////////////////////////////		parse_struct_definition_statement()
 
 
-//	???named-types
-#if 0
 static std::pair<json_t, seq_t>  parse_struct_definition_body(const seq_t& p, const std::string& name, const location_t& location){
 	const auto s2 = skip_whitespace(p);
 	const auto start = s2;
@@ -624,18 +622,6 @@ static std::pair<json_t, seq_t>  parse_struct_definition_body(const seq_t& p, co
 		}
 	);
 
-#if 0
-	const auto struct_type = typeid_t::make_struct2(members);
-	const auto s = make_parser_node(
-		location_t(start.pos()),
-		parse_tree_statement_opcode::k_init_local,
-		{
-			typeid_to_ast_json(typeid_t::make_typeid(), json_tags::k_tag_resolve_state),
-			name,
-			struct_def_expr
-		}
-	);
-#else
 	const auto s = make_parser_node(
 		location_t(start.pos()),
 		parse_tree_statement_opcode::k_expression_statement,
@@ -643,47 +629,8 @@ static std::pair<json_t, seq_t>  parse_struct_definition_body(const seq_t& p, co
 			struct_def_expr
 		}
 	);
-#endif
 	return { s, pos };
 }
-#else
-std::pair<json_t, seq_t>  parse_struct_definition_body(const seq_t& p, const std::string& name, const location_t& location){
-	const auto s2 = skip_whitespace(p);
-	const auto start = s2;
-	auto pos = read_required_char(s2, '{');
-	std::vector<member_t> members;
-	while(!pos.empty() && pos.first() != "}"){
-		const auto member_type = read_required_type(pos);
-		const auto member_name = read_required_identifier(member_type.second);
-		members.push_back(member_t(member_type.first, member_name.first));
-		pos = read_optional_char(skip_whitespace(member_name.second), ';').second;
-		pos = skip_whitespace(pos);
-	}
-	pos = read_required(pos, "}");
-
-	const auto struct_def_expr = make_parser_node(
-		location_t(k_no_location),
-		parse_tree_expression_opcode_t::k_struct_def,
-		{
-			name,
-			members_to_json(members)
-		}
-	);
-
-	const auto struct_type = typeid_t::make_struct2(members);
-	const auto s = make_parser_node(
-		location_t(start.pos()),
-		parse_tree_statement_opcode::k_init_local,
-		{
-			typeid_to_ast_json(typeid_t::make_typeid(), json_tags::k_tag_resolve_state),
-			name,
-			struct_def_expr
-		}
-	);
-	return { s, pos };
-
-}
-#endif
 
 std::pair<json_t, seq_t>  parse_struct_definition_statement(const seq_t& pos0){
 	std::pair<bool, seq_t> token_pos = if_first(pos0, keyword_t::k_struct);
@@ -706,9 +653,7 @@ QUARK_TEST("parser", "parse_struct_definition_statement", "", ""){
 
 			[
 				9,
-				"init-local",
-				"^typeid",
-				"a",
+				"expression-statement",
 				["struct-def", "a", [{ "name": "x", "type": "^int" }, { "name": "y", "type": "^string" }, { "name": "z", "type": "^double" }]]
 			]
 

@@ -41,9 +41,6 @@ type_interner_t::type_interner_t(){
 	interned.push_back(typeid_t::make_undefined());
 	interned.push_back(typeid_t::make_undefined());
 
-	interned.push_back(typeid_t::make_unresolved_type_identifier(""));
-	interned.push_back(typeid_t::make_undefined());
-
 	QUARK_ASSERT(check_invariant());
 }
 
@@ -67,7 +64,6 @@ bool type_interner_t::check_invariant() const {
 	QUARK_ASSERT(interned[(int)base_type::k_dict].is_undefined());
 	QUARK_ASSERT(interned[(int)base_type::k_function].is_undefined());
 
-	QUARK_ASSERT(interned[(int)base_type::k_unresolved] == typeid_t::make_unresolved_type_identifier(""));
 
 //??? Add other common combinations, like vectors with each atomic type, dict with each atomic type.
 	return true;
@@ -175,10 +171,7 @@ static itype_t make_new_itype_recursive(type_interner_t& interner, const typeid_
 			const auto lookup_index = static_cast<int32_t>(interner.interned.size() - 1);
 			return itype_t::make_function(lookup_index);
 		}
-		itype_t operator()(const typeid_t::unresolved_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
+/*
 		itype_t operator()(const typeid_t::resolved_t& e) const{
 			const auto it = std::find_if(interner.lookup_type_name.begin(), interner.lookup_type_name.end(), [&](const auto& m){ return m.first == e._resolved_type_identifier; });
 			if(it == interner.lookup_type_name.end()){
@@ -192,6 +185,8 @@ static itype_t make_new_itype_recursive(type_interner_t& interner, const typeid_
 				return itype_t::make_resolved((int)name_index);
 			}
 		}
+*/
+
 	};
 	const auto result = std::visit(visitor_t{ interner, type }, type._contents);
 
@@ -295,7 +290,6 @@ QUARK_TEST("type_interner_t()", "type_interner_t()", "Check that built in types 
 	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_json()) == itype_t::make_json());
 
 	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_typeid()) == itype_t::make_typeid());
-	QUARK_UT_VERIFY(lookup_itype(a, typeid_t::make_unresolved_type_identifier("")) == itype_t::make_unresolved());
 }
 
 QUARK_TEST("type_interner_t()", "type_interner_t()", "Check that built in types work with lookup_type()", ""){
@@ -311,7 +305,6 @@ QUARK_TEST("type_interner_t()", "type_interner_t()", "Check that built in types 
 	QUARK_UT_VERIFY(lookup_type(a, itype_t::make_json()) == typeid_t::make_json());
 
 	QUARK_UT_VERIFY(lookup_type(a, itype_t::make_typeid()) == typeid_t::make_typeid());
-	QUARK_UT_VERIFY(lookup_type(a, itype_t::make_unresolved()) == typeid_t::make_unresolved_type_identifier(""));
 }
 
 

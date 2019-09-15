@@ -288,8 +288,6 @@ QUARK_TEST("", "parse_program2()", "k_test_program_1_source", ""){
 	);
 }
 
-//	???named-types
-#if 0
 const char k_test_program_100_parserout[] = R"(
 	[
 		[
@@ -336,56 +334,6 @@ const char k_test_program_100_parserout[] = R"(
 		]
 	]
 )";
-#else
-const char k_test_program_100_parserout[] = R"(
-	[
-		[
-			18,
-			"init-local",
-			"^typeid",
-			"pixel",
-			["struct-def", "pixel", [{ "name": "red", "type": "^double" }, { "name": "green", "type": "^double" }, { "name": "blue", "type": "^double" }]]
-		],
-		[
-			65,
-			"init-local",
-			["func", "^double", ["#pixel"], true],
-			"get_grey",
-			[
-				"function-def",
-				["func", "^double", ["#pixel"], true],
-				"get_grey",
-				[{ "name": "p", "type": "#pixel" }],
-				{
-					"statements": [
-						[96, "return", ["/", ["+", ["+", ["->", ["@", "p"], "red"], ["->", ["@", "p"], "green"]], ["->", ["@", "p"], "blue"]], ["k", 3, "^double"]]]
-					],
-					"symbols": null
-				}
-			]
-		],
-		[
-			144,
-			"init-local",
-			["func", "^double", [], true],
-			"main",
-			[
-				"function-def",
-				["func", "^double", [], true],
-				"main",
-				[],
-				{
-					"statements": [
-						[169, "init-local", "#pixel", "p", ["call", ["@", "pixel"], [["k", 1, "^int"], ["k", 0, "^int"], ["k", 0, "^int"]]]],
-						[204, "return", ["call", ["@", "get_grey"], [["@", "p"]]]]
-					],
-					"symbols": null
-				}
-			]
-		]
-	]
-)";
-#endif
 
 QUARK_TEST("", "parse_program2()", "k_test_program_100_source", ""){
 	ut_verify(QUARK_POS,

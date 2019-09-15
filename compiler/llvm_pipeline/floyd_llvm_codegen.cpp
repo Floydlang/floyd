@@ -7,7 +7,7 @@
 //
 
 
-const bool k_trace_pass_io = true;
+const bool k_trace_pass_io = false;
 
 const bool k_trace_input_output = false;
 static const bool k_trace_function_link_map = false;
@@ -372,12 +372,6 @@ static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const 
 			llvm::PointerType* ptr_type = llvm::cast<llvm::PointerType>(itype);
 			return llvm::ConstantPointerNull::get(ptr_type);
 		}
-		llvm::Value* operator()(const typeid_t::unresolved_t& e) const{
-			UNSUPPORTED();
-		}
-		llvm::Value* operator()(const typeid_t::resolved_t& e) const{
-			UNSUPPORTED();
-		}
 	};
 	return std::visit(visitor_t{ gen_acc, builder, context, itype, value }, type._contents);
 }
@@ -389,7 +383,9 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_genera
 
 	std::vector<resolved_symbol_t> result;
 	for(const auto& e: symbol_table._symbols){
-		const auto type = e.second.get_type();
+		//???named-type
+		//??? unify with global handling
+		const auto type = e.second.get_value_type();
 		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type);
 
 		//	Reserve stack slot for each local.
@@ -413,7 +409,10 @@ static void generate_destruct_scope_locals(llvm_function_generator_t& gen_acc, c
 
 	for(const auto& e: symbols){
 		if(e.symtype == resolved_symbol_t::esymtype::k_global || e.symtype == resolved_symbol_t::esymtype::k_local){
-			const auto type = e.symbol.get_type();
+
+			//???named-type
+			//??? unify with global handling
+			const auto type = e.symbol.get_value_type();
 			if(is_rc_value(type)){
 				auto reg = builder.CreateLoad(e.value_ptr);
 				generate_release(gen_acc, *reg, type);
@@ -475,7 +474,7 @@ static llvm::Value* generate_resolve_member_expression(llvm_function_generator_t
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	auto& builder = gen_acc.get_builder();
+//	auto& builder = gen_acc.get_builder();
 
 	auto struct_ptr_reg = generate_expression(gen_acc, *details.parent_address);
 
@@ -1746,7 +1745,8 @@ static void generate_assign2_statement(llvm_function_generator_t& gen_acc, const
 	llvm::Value* value = generate_expression(gen_acc, s._expression);
 
 	auto dest = find_symbol(gen_acc.gen, s._dest_variable);
-	const auto type = dest.symbol.get_type();
+	//???named-type, check this is a mutable
+	const auto type = dest.symbol.get_value_type();
 
 	if(is_rc_value(type)){
 		auto prev_value = gen_acc.get_builder().CreateLoad(dest.value_ptr);
@@ -2106,7 +2106,9 @@ std::vector<resolved_symbol_t> generate_function_local_symbols(llvm_function_gen
 	//	Make a resolved_symbol_t for each element in the symbol table. Some are local variables, some are arguments.
 	std::vector<resolved_symbol_t> result;
 	for(const auto& e: symbol_table._symbols){
-		const auto type = e.second.get_type();
+
+		//???named-type
+		const auto type = e.second.get_value_type();
 		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type);
 
 		//	Figure out if this symbol is an argument or a local variable.
@@ -2156,6 +2158,33 @@ std::vector<resolved_symbol_t> generate_function_local_symbols(llvm_function_gen
 }
 
 
+//	dest->setInitializer(constant_reg);
+/*
+	if (CI->getBitWidth() <= 32) {
+		constIntValue = CI->getSExtValue();
+	}
+*/
+
+static llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::string& symbol_name, llvm::Type& itype, llvm::Constant* init_or_nullptr){
+//	QUARK_ASSERT(check_invariant__module(&module));
+	QUARK_ASSERT(symbol_name.empty() == false);
+
+	llvm::GlobalVariable* gv = new llvm::GlobalVariable(
+		module,
+		&itype,
+		false,	//	isConstant
+		llvm::GlobalValue::ExternalLinkage,
+		init_or_nullptr ? init_or_nullptr : llvm::Constant::getNullValue(&itype),
+		symbol_name
+	);
+
+//	QUARK_ASSERT(check_invariant__module(&module));
+
+	return gv;
+}
+
+
+
 static llvm::Value* generate_global(llvm_function_generator_t& gen_acc, const std::string& symbol_name, const symbol_t& symbol){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(symbol_name.empty() == false);
@@ -2163,37 +2192,51 @@ static llvm::Value* generate_global(llvm_function_generator_t& gen_acc, const st
 
 	auto& module = *gen_acc.gen.module;
 
-	const auto type0 = symbol.get_type();
-	const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type0);
+	if(symbol._symbol_type == symbol_t::symbol_type::immutable_reserve){
+		QUARK_ASSERT(symbol._init.is_undefined());
 
-	if(symbol._init.is_undefined()){
+		const auto type0 = symbol.get_value_type();
+		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type0);
 		return generate_global0(module, symbol_name, *itype, nullptr);
 	}
-	else{
+	else if(symbol._symbol_type == symbol_t::symbol_type::immutable_arg){
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+	else if(symbol._symbol_type == symbol_t::symbol_type::immutable_precalc){
+		QUARK_ASSERT(symbol._init.is_undefined() == false);
+
+		const auto type0 = symbol.get_value_type();
+		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type0);
 		auto init_reg = generate_constant(gen_acc, symbol._init);
 		if (llvm::Constant* CI = llvm::dyn_cast<llvm::Constant>(init_reg)){
-
-			//	dest->setInitializer(constant_reg);
 			return generate_global0(module, symbol_name, *itype, CI);
-
-/*
-			if (CI->getBitWidth() <= 32) {
-				constIntValue = CI->getSExtValue();
-			}
-*/
 		}
 		else{
 			return generate_global0(module, symbol_name, *itype, nullptr);
 		}
+	}
+	else if(symbol._symbol_type == symbol_t::symbol_type::named_type){
+		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, typeid_t::make_typeid());
+		auto itype_reg = generate_itype_constant(gen_acc.gen, symbol.get_value_type());
+		return generate_global0(module, symbol_name, *itype, itype_reg);
+	}
+	else if(symbol._symbol_type == symbol_t::symbol_type::mutable_reserve){
+		const auto type0 = symbol.get_value_type();
+		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type0);
+		return generate_global0(module, symbol_name, *itype, nullptr);
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 
 //	Make LLVM globals for every global in the AST.
 //	Inits the globals when possible.
 //	Other globals are uninitialised and global init2-statements will store to them from floyd_runtime_init().
-static std::vector<resolved_symbol_t> generate_globals_from_ast(llvm_function_generator_t& gen_acc, const semantic_ast_t& ast, const symbol_table_t& symbol_table){
+static std::vector<resolved_symbol_t> generate_globals_from_symbols(llvm_function_generator_t& gen_acc, const symbol_table_t& symbol_table){
 	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(symbol_table.check_invariant());
 
 //	QUARK_TRACE_SS("result = " << floyd::print_program(gen_acc.program_acc));
@@ -2201,12 +2244,12 @@ static std::vector<resolved_symbol_t> generate_globals_from_ast(llvm_function_ge
 	std::vector<resolved_symbol_t> result;
 
 	for(const auto& e: symbol_table._symbols){
-		llvm::Value* value = generate_global(gen_acc, e.first, e.second);
 		const auto debug_str = "name:" + e.first + " symbol_t: " + symbol_to_string(e.second);
-		result.push_back(make_resolved_symbol(value, debug_str, resolved_symbol_t::esymtype::k_global, e.first, e.second));
-
-//		QUARK_TRACE_SS("result = " << floyd::print_program(gen_acc.program_acc));
+		llvm::Value* value = generate_global(gen_acc, e.first, e.second);
+		const auto resolved_symbol = make_resolved_symbol(value, debug_str, resolved_symbol_t::esymtype::k_global, e.first, e.second);
+		result.push_back(resolved_symbol);
 	}
+//	QUARK_TRACE_SS(print_module(*gen_acc.gen.module));
 	return result;
 }
 
@@ -2366,14 +2409,35 @@ static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const 
 
 			//	Destruct global variables.
 			for(const auto& e: function_gen_acc.gen.scope_path.front()){
+/*
+				if(e.symbol._symbol_type == symbol_t::symbol_type::immutable_reserve){
+				}
+				else if(e.symbol._symbol_type == symbol_t::symbol_type::immutable_arg){
+				}
+				else if(e.symbol._symbol_type == symbol_t::symbol_type::immutable_precalc){
+				}
+				else if(e.symbol._symbol_type == symbol_t::symbol_type::named_type){
+				}
+				else if(e.symbol._symbol_type == symbol_t::symbol_type::mutable_reserve){
+				}
+				else{
+					QUARK_ASSERT(false);
+					throw std::exception();
+				}
+*/
 				if(e.symtype == resolved_symbol_t::esymtype::k_global || e.symtype == resolved_symbol_t::esymtype::k_local){
-					const auto type = e.symbol.get_type();
-					if(is_rc_value(type)){
-						auto reg = builder.CreateLoad(e.value_ptr);
-						generate_release(function_gen_acc, *reg, type);
+					bool needs_destruct = e.symbol._symbol_type != symbol_t::symbol_type::named_type;
+					if(needs_destruct){
+						//???named-type
+						const auto type = e.symbol.get_value_type();
+						if(is_rc_value(type)){
+							auto reg = builder.CreateLoad(e.value_ptr);
+							generate_release(function_gen_acc, *reg, type);
+						}
+						else{
+						}
 					}
-					else{
-					}
+
 				}
 			}
 
@@ -2422,13 +2486,12 @@ static module_output_t generate_module(llvm_instance_t& instance, const std::str
 
 	auto gen_acc = llvm_code_generator_t(instance, module.get(), semantic_ast._tree._interned_types, type_lookup, link_map2, settings);
 
-	//	Global variables.
+	//	Globals.
 	{
 		llvm_function_generator_t function_gen_acc(gen_acc, *gen_acc.runtime_functions.floydrt_init.llvm_codegen_f);
 
-		std::vector<resolved_symbol_t> globals = generate_globals_from_ast(
+		std::vector<resolved_symbol_t> globals = generate_globals_from_symbols(
 			function_gen_acc,
-			semantic_ast,
 			semantic_ast._tree._globals._symbol_table
 		);
 		gen_acc.scope_path = { globals };
@@ -2479,24 +2542,10 @@ std::string write_ir_file(llvm_ir_program_t& program, const target_t& target){
 	return std::string(a.begin(), a.end());
 }
 
-std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& instance, const semantic_ast_t& ast0, const std::string& module_name, const compiler_settings_t& settings){
+static std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program_internal(llvm_instance_t& instance, const semantic_ast_t& ast0, const std::string& module_name, const compiler_settings_t& settings){
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(ast0.check_invariant());
 	QUARK_ASSERT(settings.check_invariant());
-
-	QUARK_SCOPED_TRACE("LLVM CODE GENERATION");
-
-	if(k_trace_pass_io){
-		{
-			QUARK_SCOPED_TRACE("LLVM CODE GENERATION -- INPUT AST");
-			QUARK_TRACE_SS(json_to_pretty_string(semantic_ast_to_json(ast0)));
-		}
-
-		{
-			QUARK_SCOPED_TRACE("LLVM CODE GENERATION -- INPUT TYPES");
-			trace_type_interner(ast0._tree._interned_types);
-		}
-	}
 
 	auto ast = ast0;
 
@@ -2520,20 +2569,46 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 
 	result->container_def = ast0._tree._container_def;
 	result->software_system = ast0._tree._software_system;
+	return result;
+}
+
+
+std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& instance, const semantic_ast_t& ast0, const std::string& module_name, const compiler_settings_t& settings){
+	QUARK_ASSERT(instance.check_invariant());
+	QUARK_ASSERT(ast0.check_invariant());
+	QUARK_ASSERT(settings.check_invariant());
 
 	if(k_trace_pass_io){
+		QUARK_SCOPED_TRACE("LLVM CODE GENERATION");
 
 		{
-			QUARK_SCOPED_TRACE("LLVM CODE GENERATION -- OUTPUT LLVM MODULE");
-			QUARK_TRACE(print_module(*result->module));
-//			QUARK_TRACE_SS(floyd::print_program(*result));
+			QUARK_SCOPED_TRACE("LLVM CODE GENERATION -- INPUT AST");
+			QUARK_TRACE_SS(json_to_pretty_string(semantic_ast_to_json(ast0)));
 		}
+
 		{
-			QUARK_SCOPED_TRACE("LLVM CODE GENERATION -- OUTPUT LINK MAP");
-			trace_function_link_map(result->function_link_map);
+			QUARK_SCOPED_TRACE("LLVM CODE GENERATION -- INPUT TYPES");
+			trace_type_interner(ast0._tree._interned_types);
 		}
+
+		auto result = generate_llvm_ir_program_internal(instance, ast0, module_name, settings);
+
+		{
+			{
+				QUARK_SCOPED_TRACE("LLVM CODE GENERATION -- OUTPUT LLVM MODULE");
+				QUARK_TRACE(print_module(*result->module));
+	//			QUARK_TRACE_SS(floyd::print_program(*result));
+			}
+			{
+				QUARK_SCOPED_TRACE("LLVM CODE GENERATION -- OUTPUT LINK MAP");
+				trace_function_link_map(result->function_link_map);
+			}
+		}
+		return result;
 	}
-	return result;
+	else{
+		return generate_llvm_ir_program_internal(instance, ast0, module_name, settings);
+	}
 }
 
 }	//	floyd

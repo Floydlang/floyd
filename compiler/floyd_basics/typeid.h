@@ -111,14 +111,14 @@ enum class base_type {
 	k_struct = 9,
 	k_vector = 10,
 	k_dict = 11,
-	k_function = 12,
+	k_function = 12
 
 	//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
 	//	Keep the identifier so it can be resolved later.
-	k_unresolved = 13,
+//	k_unresolved = 13,
 
 	//	Identifier string specifies resolved *name* of type.
-	k_resolved = 14,
+//	k_resolved = 14,
 };
 
 std::string base_type_to_opcode(const base_type t);
@@ -148,8 +148,6 @@ inline bool is_atomic_type(base_type type){
 //		|| type == base_type::k_vector
 //		|| type == base_type::k_dict
 //		|| type == base_type::k_function
-
-		|| type == base_type::k_unresolved
 	;
 }
 
@@ -272,17 +270,6 @@ struct typeid_t {
 		//??? Make this property travel OK through JSON, print outs etc.
 		return_dyn_type dyn_return;
 	};
-	struct unresolved_t {
-		bool operator==(const unresolved_t& other) const{	return _unresolved_type_identifier == other._unresolved_type_identifier; };
-
-		std::string _unresolved_type_identifier;
-	};
-
-	struct resolved_t {
-		bool operator==(const resolved_t& other) const{	return _resolved_type_identifier == other._resolved_type_identifier; };
-
-		std::string _resolved_type_identifier;
-	};
 
 	typedef std::variant<
 		undefined_t,
@@ -298,10 +285,7 @@ struct typeid_t {
 		struct_t,
 		vector_t,
 		dict_t,
-		function_t,
-
-		unresolved_t,
-		resolved_t
+		function_t
 	> type_variant_t;
 
 
@@ -501,18 +485,22 @@ struct typeid_t {
 	}
 
 
+
+
+
 	public: static typeid_t make_unresolved_type_identifier(const std::string& s){
-		return { unresolved_t{ s } };
+		return make_undefined().name(s);
 	}
 	public: bool is_unresolved_type_identifier() const {
 		QUARK_ASSERT(check_invariant());
 
-		return std::holds_alternative<unresolved_t>(_contents);
+		return _name != "" && is_undefined();
 	}
 	public: std::string get_unresolved_type_identifer() const{
 		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(is_unresolved_type_identifier());
 
-		return std::get<unresolved_t>(_contents)._unresolved_type_identifier;
+		return get_name();
 	}
 
 
@@ -573,12 +561,6 @@ struct typeid_t {
 			base_type operator()(const function_t& e) const{
 				return base_type::k_function;
 			}
-			base_type operator()(const unresolved_t& e) const{
-				return base_type::k_unresolved;
-			}
-			base_type operator()(const resolved_t& e) const{
-				return base_type::k_resolved;
-			}
 		};
 		return std::visit(visitor_t{}, _contents);
 	}
@@ -635,8 +617,7 @@ struct typeid_t {
 
 std::string typeid_to_compact_string(const typeid_t& t);
 
-
-
+std::string get_default_type_name(const typeid_t& type);
 
 
 
