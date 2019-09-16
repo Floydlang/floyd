@@ -153,6 +153,34 @@ inline bool is_atomic_type(base_type type){
 
 
 
+//////////////////////////////////////////////////		type_name_t
+
+/*
+	Link-time unique name, including its local path.
+
+	Examples:
+
+		"main"
+		"k_global_constant"
+		"main/argc"
+		"main/argv"
+		"main/x"
+*/
+
+struct type_name_t {
+	std::string path;
+};
+
+
+//////////////////////////////////////////////////		identifier_t
+
+
+//	Simple string used in source code or symbol table to specify a local name.
+
+struct identifier_t {
+	std::string s;
+};
+
 
 
 //////////////////////////////////////////////////		get_json_type()
