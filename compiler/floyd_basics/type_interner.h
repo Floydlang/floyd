@@ -250,23 +250,78 @@ struct type_interner_t {
 	bool check_invariant() const;
 
 
-
 	////////////////////////////////	STATE
 
 	//	All types are recorded here, an uniqued. Including named types.
-	std::vector<typeid_t> interned;
-
-	//	Stores itype_t for this type-indentifer-name, or make_undefined() if there is no type (yet).
-	//	Needs to be a vector since we store
-	std::vector<std::pair<std::string, itype_t>> lookup_type_name;
+	//	itype uses the INDEX into this array for fast lookups.
+	std::vector<std::pair<type_name_t, typeid_t>> interned2;
 };
 
 
-std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid_t& type);
+
+
+
+//	Records AND resolves the type. The returned type may be improved over input type.
+std::pair<itype_t, typeid_t> intern_type2(type_interner_t& interner, const typeid_t& type);
+std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const type_name_t& name, const typeid_t& type);
+
+
+
 itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type);
 inline const typeid_t& lookup_type(const type_interner_t& interner, const itype_t& type);
+const typeid_t& lookup_type(const type_interner_t& interner, const type_name_t& name);
 
-typeid_t resolve_named_type(const type_interner_t& interner, const typeid_t& type);
+//	Returns true if the type is completely described with no subnodes that are undefined.
+bool is_resolved(const type_interner_t& interner, const type_name_t& t);
+
+
+void trace_type_interner(const type_interner_t& interner);
+
+inline bool is_atomic_type(itype_t type);
+
+
+
+//////////////////////////////////////////////////		INLINES
+
+
+
+//	Used at runtime.
+inline const typeid_t& lookup_type(const type_interner_t& interner, const itype_t& type){
+	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto lookup_index = type.get_lookup_index();
+	QUARK_ASSERT(lookup_index >= 0);
+	QUARK_ASSERT(lookup_index < interner.interned2.size());
+
+	const auto& result = interner.interned2[lookup_index].second;
+	return result;
+}
+
+inline bool is_atomic_type(itype_t type){
+	const auto bt = type.get_base_type();
+	if(
+		bt == base_type::k_undefined
+		|| bt == base_type::k_any
+		|| bt == base_type::k_void
+
+		|| bt == base_type::k_bool
+		|| bt == base_type::k_int
+		|| bt == base_type::k_double
+		|| bt == base_type::k_string
+		|| bt == base_type::k_json
+
+		|| bt == base_type::k_typeid
+		|| bt == base_type::k_unresolved_identifier
+	){
+		return true;
+	}
+	else{
+		return false;
+	}
+}
+
+
 
 /*
 Do this without using typeid_t at all.
@@ -296,51 +351,6 @@ inline itype_t get_dict_value_type(const type_interner_t& interner, itype_t vec)
 	return bt;
 }
 */
-
-
-void trace_type_interner(const type_interner_t& interner);
-
-
-
-inline bool is_atomic_type(itype_t type){
-	const auto bt = type.get_base_type();
-	if(
-		bt == base_type::k_undefined
-		|| bt == base_type::k_any
-		|| bt == base_type::k_void
-
-		|| bt == base_type::k_bool
-		|| bt == base_type::k_int
-		|| bt == base_type::k_double
-		|| bt == base_type::k_string
-		|| bt == base_type::k_json
-
-		|| bt == base_type::k_typeid
-	){
-		return true;
-	}
-	else{
-		return false;
-	}
-}
-
-
-//////////////////////////////////////////////////		INLINES
-
-
-
-//	Used at runtime.
-inline const typeid_t& lookup_type(const type_interner_t& interner, const itype_t& type){
-	QUARK_ASSERT(interner.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	const auto lookup_index = type.get_lookup_index();
-	QUARK_ASSERT(lookup_index >= 0);
-	QUARK_ASSERT(lookup_index < interner.interned.size());
-
-	const auto& result = interner.interned[lookup_index];
-	return result;
-}
 
 
 }	//	floyd

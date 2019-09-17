@@ -99,7 +99,7 @@ std::pair<void*, typeid_t> bind_global(const llvm_execution_engine_t& ee, const 
 	if(global_ptr != nullptr){
 		auto symbol = find_symbol(ee.global_symbols, name);
 		QUARK_ASSERT(symbol != nullptr);
-		return { global_ptr, symbol->get_value_type() };
+		return { global_ptr, lookup_type(ee.type_lookup.state.type_interner, symbol->get_value_type()) };
 	}
 	else{
 		return { nullptr, typeid_t::make_undefined() };
@@ -386,7 +386,8 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 static void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p){
 	int index = 0;
 	for(const auto& e: p.debug_globals._symbols){
-		if(e.second.get_value_type().is_function()){
+		const auto t = lookup_type(ee2.type_lookup.state.type_interner, e.second.get_value_type());
+		if(t.is_function()){
 			const auto global_var = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(ee2, e.first);
 			QUARK_ASSERT(global_var != nullptr);
 
@@ -471,7 +472,7 @@ static std::vector<std::pair<itype_t, struct_layout_t>> make_struct_layouts(cons
 	std::vector<std::pair<itype_t, struct_layout_t>> result;
 
 	for(int i = 0 ; i < type_lookup.state.types.size() ; i++){
-		const auto& type = type_lookup.state.type_interner.interned[i];
+		const auto& type = type_lookup.state.type_interner.interned2[i].second;
 		if(type.is_struct()){
 			auto t2 = get_exact_struct_type_byvalue(type_lookup, type);
 			const llvm::StructLayout* layout = data_layout.getStructLayout(t2);

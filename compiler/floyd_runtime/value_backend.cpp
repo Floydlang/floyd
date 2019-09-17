@@ -936,6 +936,9 @@ runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type){
 		runtime_value_t operator()(const typeid_t::function_t& e) const{
 			return *static_cast<const runtime_value_t*>(value_ptr);
 		}
+		runtime_value_t operator()(const typeid_t::identifier_t& e) const {
+			QUARK_ASSERT(false); throw std::exception();
+		}
 	};
 	return std::visit(visitor_t{ value_ptr }, type._contents);
 }
@@ -988,6 +991,9 @@ void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t
 		void operator()(const typeid_t::function_t& e) const{
 			*static_cast<runtime_value_t*>(value_ptr) = value;
 		}
+		void operator()(const typeid_t::identifier_t& e) const {
+			QUARK_ASSERT(false); throw std::exception();
+		}
 	};
 	std::visit(visitor_t{ value_ptr, value }, type._contents);
 }
@@ -1030,14 +1036,14 @@ value_backend_t::value_backend_t(
 {
 	QUARK_ASSERT(config.check_invariant());
 
-	for(const auto& e: type_interner.interned){
-		if(e.is_vector()){
-			const auto& type = e.get_vector_element_type();
+	for(const auto& e: type_interner.interned2){
+		if(e.second.is_vector()){
+			const auto& type = e.second.get_vector_element_type();
 			const auto itype = lookup_itype(type_interner, type);
 			child_type.push_back(itype);
 		}
-		else if(e.is_dict()){
-			const auto& type = e.get_dict_value_type();
+		else if(e.second.is_dict()){
+			const auto& type = e.second.get_dict_value_type();
 			const auto itype = lookup_itype(type_interner, type);
 			child_type.push_back(itype);
 		}

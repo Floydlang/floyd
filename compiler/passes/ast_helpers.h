@@ -20,24 +20,27 @@ struct expression_t;
 struct statement_t;
 struct body_t;
 struct typeid_t;
+struct type_name_t;
+struct type_interner_t;
 struct struct_definition_t;
 
-bool check_types_resolved(const expression_t& e);
-bool check_types_resolved(const std::vector<expression_t>& expressions);
+bool check_types_resolved(const type_interner_t& interner, const expression_t& e);
+bool check_types_resolved(const type_interner_t& interner, const std::vector<expression_t>& expressions);
 
-bool check_types_resolved(const function_definition_t& def);
+bool check_types_resolved(const type_interner_t& interner, const function_definition_t& def);
 
-bool check_types_resolved(const body_t& body);
+bool check_types_resolved(const type_interner_t& interner, const body_t& body);
 
-bool check_types_resolved(const statement_t& s);
-bool check_types_resolved(const std::vector<std::shared_ptr<statement_t>>& s);
+bool check_types_resolved(const type_interner_t& interner, const statement_t& s);
+bool check_types_resolved(const type_interner_t& interner, const std::vector<std::shared_ptr<statement_t>>& s);
 
-bool check_types_resolved(const struct_definition_t& s);
-bool check_types_resolved_int(const std::vector<typeid_t>& elements);
-bool check_types_resolved(const typeid_t& t);
+bool check_types_resolved(const type_interner_t& interner, const struct_definition_t& s);
+bool check_types_resolved(const type_interner_t& interner, const type_name_t& t);
+bool check_types_resolved(const type_interner_t& interner, const typeid_t& t);
 
 bool check_types_resolved(const general_purpose_ast_t& ast);
 
+bool check_types_resolved_int(const type_interner_t& interner, const std::vector<typeid_t>& elements);
 
 
 }	//	floyd

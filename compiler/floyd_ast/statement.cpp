@@ -71,7 +71,7 @@ std::string symbol_to_string(const symbol_t& s){
 	std::stringstream out;
 	out << "<symbol> {"
 		<< symbol_type_to_string(s._symbol_type)
-		<< " type: " << typeid_to_compact_string(s._value_type)
+		<< " type: " << s._value_type.path
 		<< " init: " << (s._init.is_undefined() ? "<none>" : value_and_type_to_string(s._init))
 	<< "}";
 	return out.str();
@@ -80,7 +80,7 @@ std::string symbol_to_string(const symbol_t& s){
 
 json_t symbol_to_json(const symbol_t& symbol){
 	const auto symbol_type_str = symbol_type_to_string(symbol._symbol_type);
-	const auto value_type = typeid_to_ast_json(symbol._value_type, json_tags::k_tag_resolve_state);
+	const auto value_type = symbol._value_type.path;
 
 	const auto e2 = json_t::make_object({
 		{ "symbol_type", symbol_type_str },
@@ -90,20 +90,20 @@ json_t symbol_to_json(const symbol_t& symbol){
 	return e2;
 }
 
-symbol_t json_to_symbol(const json_t& e){
+static symbol_t json_to_symbol(const type_interner_t& interner, const json_t& e){
+	QUARK_ASSERT(interner.check_invariant());
+
 	const auto symbol_type = e.get_object_element("symbol_type").get_string();
 	const auto value_type = e.get_object_element("value_type");
-
-	if(symbol_type == "immutable" || symbol_type == "mutable"){
-	}
-	else{
-		throw std::exception();
-	}
-	const auto symbol_type1 = symbol_type_from_string(symbol_type);
-	const auto value_type1 = typeid_from_ast_json(value_type);
 	const auto init = e.get_object_element("init");
-	const auto init_value1 = init.is_null() ? value_t::make_undefined() : ast_json_to_value(value_type1, init);
-	const auto result = symbol_t(symbol_type1, value_type1, init_value1);
+
+	const auto symbol_type2 = symbol_type_from_string(symbol_type);
+	const auto value_type1 = make_type_name(value_type.get_string());
+	const auto value_type2 = lookup_type(interner, value_type1);
+
+	value_t init_value2 = init.is_null() ? value_t::make_undefined() : ast_json_to_value(value_type2, init);
+
+	const auto result = symbol_t(symbol_type2, value_type1, init_value2);
 	return result;
 }
 
@@ -149,14 +149,16 @@ std::vector<json_t> symbols_to_json(const symbol_table_t& symbol_table){
 	return r;
 }
 
-symbol_table_t ast_json_to_symbols(const json_t& p){
+symbol_table_t ast_json_to_symbols(const type_interner_t& interner, const json_t& p){
+	QUARK_ASSERT(interner.check_invariant());
+
 	std::vector<std::pair<std::string, symbol_t>> result;
 	const auto json_array = p.get_array();
 	for(const auto& e: json_array){
 		const auto symbol_array_json = e;
 		const auto symbol_index = e.get_array_n(0).get_number();
 		const auto symbol_name = e.get_array_n(1).get_string();
-		const auto symbol = json_to_symbol(e.get_array_n(2));
+		const auto symbol = json_to_symbol(interner, e.get_array_n(2));
 
 		while(result.size() < symbol_index){
 			result.push_back({"dummy_symbol #" + std::to_string(result.size()), symbol});
@@ -196,12 +198,14 @@ json_t body_to_json(const body_t& e){
 	});
 }
 
-body_t json_to_body(const json_t& json){
+body_t json_to_body(const type_interner_t& interner, const json_t& json){
+	QUARK_ASSERT(interner.check_invariant());
+
 	const auto statements = json.does_object_element_exist("statements") ? json.get_object_element("statements") : json_t();
-	const auto statements1 = statements.is_null() ? std::vector<statement_t>() : ast_json_to_statements(statements);
+	const auto statements1 = statements.is_null() ? std::vector<statement_t>() : ast_json_to_statements(interner, statements);
 
 	const auto symbols = json.does_object_element_exist("symbols") ? json.get_object_element("symbols") : json_t();
-	const auto symbols1 = symbols.is_null() ? symbol_table_t{} : ast_json_to_symbols(symbols);
+	const auto symbols1 = symbols.is_null() ? symbol_table_t{} : ast_json_to_symbols(interner, symbols);
 
 	return body_t(statements1, symbols1);
 }
@@ -219,7 +223,8 @@ bool operator==(const body_t& lhs, const body_t& rhs){
 
 
 
-static statement_t ast_json_to_statement(const json_t& statement0){
+static statement_t ast_json_to_statement(const type_interner_t& interner, const json_t& statement0){
+	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(statement0.check_invariant());
 	QUARK_ASSERT(statement0.is_array());
 
@@ -230,7 +235,7 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 
 	if(type == statement_opcode_t::k_return){
 		QUARK_ASSERT(statement.get_array_size() == 2);
-		const auto expr = ast_json_to_expression(statement.get_array_n(1));
+		const auto expr = ast_json_to_expression(interner, statement.get_array_n(1));
 		return statement_t::make__return_statement(loc, expr);
 	}
 
@@ -244,7 +249,7 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 
 		const auto bind_type2 = typeid_from_ast_json(bind_type);
 		const auto name2 = name.get_string();
-		const auto expr2 = ast_json_to_expression(expr);
+		const auto expr2 = ast_json_to_expression(interner, expr);
 		bool mutable_flag = !meta.is_null() && meta.does_object_element_exist("mutable");
 		const auto mutable_mode = mutable_flag ? statement_t::bind_local_t::k_mutable : statement_t::bind_local_t::k_immutable;
 		return statement_t::make__bind_local(loc, name2, bind_type2, expr2, mutable_mode);
@@ -256,7 +261,7 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 		const auto expr = statement.get_array_n(2);
 
 		const auto name2 = name.get_string();
-		const auto expr2 = ast_json_to_expression(expr);
+		const auto expr2 = ast_json_to_expression(interner, expr);
 		return statement_t::make__assign(loc, name2, expr2);
 	}
 
@@ -266,7 +271,7 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 		const auto variable_index = (int)statement.get_array_n(2).get_number();
 		const auto expr = statement.get_array_n(3);
 
-		const auto expr2 = ast_json_to_expression(expr);
+		const auto expr2 = ast_json_to_expression(interner, expr);
 		return statement_t::make__assign2(loc, variable_address_t::make_variable_address(parent_index, variable_index), expr2);
 	}
 
@@ -276,7 +281,7 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 		const auto variable_index = (int)statement.get_array_n(2).get_number();
 		const auto expr = statement.get_array_n(3);
 
-		const auto expr2 = ast_json_to_expression(expr);
+		const auto expr2 = ast_json_to_expression(interner, expr);
 		return statement_t::make__init2(loc, variable_address_t::make_variable_address(parent_index, variable_index), expr2);
 	}
 
@@ -284,7 +289,7 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 		QUARK_ASSERT(statement.get_array_size() == 2);
 
 		const auto statements = statement.get_array_n(1);
-		const auto r = ast_json_to_statements(statements);
+		const auto r = ast_json_to_statements(interner, statements);
 
 		const auto body = body_t(r);
 		return statement_t::make__block_statement(loc, body);
@@ -296,9 +301,9 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 		const auto then_statements = statement.get_array_n(2);
 		const auto else_statements = statement.get_array_size() == 4 ? statement.get_array_n(3) : json_t::make_array();
 
-		const auto condition_expression2 = ast_json_to_expression(condition_expression);
-		const auto then_statements2 = ast_json_to_statements(then_statements);
-		const auto else_statements2 = ast_json_to_statements(else_statements);
+		const auto condition_expression2 = ast_json_to_expression(interner, condition_expression);
+		const auto then_statements2 = ast_json_to_statements(interner, then_statements);
+		const auto else_statements2 = ast_json_to_statements(interner, else_statements);
 
 		return statement_t::make__ifelse_statement(
 			loc,
@@ -315,9 +320,9 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 		const auto end_expression = statement.get_array_n(4);
 		const auto body_statements = statement.get_array_n(5);
 
-		const auto start_expression2 = ast_json_to_expression(start_expression);
-		const auto end_expression2 = ast_json_to_expression(end_expression);
-		const auto body_statements2 = ast_json_to_statements(body_statements);
+		const auto start_expression2 = ast_json_to_expression(interner, start_expression);
+		const auto end_expression2 = ast_json_to_expression(interner, end_expression);
+		const auto body_statements2 = ast_json_to_statements(interner, body_statements);
 
 		const auto range_type = for_mode.get_string() == "open-range" ? statement_t::for_statement_t::k_open_range : statement_t::for_statement_t::k_closed_range;
 		return statement_t::make__for_statement(
@@ -334,8 +339,8 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 		const auto expression = statement.get_array_n(1);
 		const auto body_statements = statement.get_array_n(2);
 
-		const auto expression2 = ast_json_to_expression(expression);
-		const auto body_statements2 = ast_json_to_statements(body_statements);//??? should use json_to_body()!?
+		const auto expression2 = ast_json_to_expression(interner, expression);
+		const auto body_statements2 = ast_json_to_statements(interner, body_statements);//??? should use json_to_body()!?
 
 		return statement_t::make__while_statement(loc, expression2, body_t{ body_statements2 });
 	}
@@ -343,7 +348,7 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 	else if(type == statement_opcode_t::k_expression_statement){
 		QUARK_ASSERT(statement.get_array_size() == 2);
 		const auto expr = statement.get_array_n(1);
-		const auto expr2 = ast_json_to_expression(expr);
+		const auto expr2 = ast_json_to_expression(interner, expr);
 		return statement_t::make__expression_statement(loc, expr2);
 	}
 
@@ -364,7 +369,7 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 		QUARK_ASSERT(statement.get_array_size() == 3);
 		const auto name = statement.get_array_n(1);
 		const auto body = statement.get_array_n(2);
-		const auto body_statements2 = ast_json_to_statements(body);//??? should use json_to_body()!?
+		const auto body_statements2 = ast_json_to_statements(interner, body);//??? should use json_to_body()!?
 
 		return statement_t::make__benchmark_def_statement(loc, name.get_string(), body_t { body_statements2 } );
 	}
@@ -374,13 +379,14 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 	}
 }
 
-const std::vector<statement_t> ast_json_to_statements(const json_t& p){
+const std::vector<statement_t> ast_json_to_statements(const type_interner_t& interner, const json_t& p){
+	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(p.check_invariant());
 	QUARK_ASSERT(p.is_array());
 
 	std::vector<statement_t> statements2;
 	for(const auto& statement: p.get_array()){
-		const auto s2 = ast_json_to_statement(statement);
+		const auto s2 = ast_json_to_statement(interner, statement);
 		statements2.push_back(s2);
 	}
 	return statements2;

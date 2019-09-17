@@ -75,6 +75,14 @@ struct member_t;
 
 std::string typeid_to_compact_string(const typeid_t& t);
 
+enum class json_tags{
+	k_plain,
+
+	//	Show in the string if the type has been resolved or not. Uses "^hello" or "#world"
+	k_tag_resolve_state
+};
+const char tag_unresolved_type_char = '#';
+const char tag_resolved_type_char = '^';
 
 
 
@@ -111,7 +119,9 @@ enum class base_type {
 	k_struct = 9,
 	k_vector = 10,
 	k_dict = 11,
-	k_function = 12
+	k_function = 12,
+
+	k_unresolved_identifier = 13
 
 	//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
 	//	Keep the identifier so it can be resolved later.
@@ -167,9 +177,63 @@ inline bool is_atomic_type(base_type type){
 		"main/x"
 */
 
+struct type_name_t;
+inline type_name_t make_type_name(base_type bt);
+
 struct type_name_t {
+	bool check_invariant() const {
+		return true;
+	}
+
+	static type_name_t make_undefined() {
+		return make_type_name(base_type::k_undefined);
+	}
+
+	static type_name_t make_bool() {
+		return make_type_name(base_type::k_bool);
+	}
+	static type_name_t make_int() {
+		return make_type_name(base_type::k_int);
+	}
+	static type_name_t make_double() {
+		return make_type_name(base_type::k_double);
+	}
+	static type_name_t make_string() {
+		return make_type_name(base_type::k_string);
+	}
+	static type_name_t make_json() {
+		return make_type_name(base_type::k_json);
+	}
+
 	std::string path;
 };
+
+inline type_name_t make_no_type_name(){
+	return { "" };
+}
+inline bool is_empty(const type_name_t& name){
+	return name.path == "";
+}
+
+inline bool operator==(const type_name_t& lhs, const type_name_t& rhs){
+	return lhs.path == rhs.path;
+}
+
+type_name_t make_type_name_from_typeid(const typeid_t& t);
+
+inline type_name_t make_type_name(const std::string& path){
+	return type_name_t { path };
+}
+
+inline type_name_t make_type_name(base_type bt){
+	return type_name_t { base_type_to_opcode(bt) };
+}
+
+
+json_t type_name_to_json(const type_name_t& name);
+type_name_t type_name_from_json(const json_t& j);
+
+
 
 
 //////////////////////////////////////////////////		identifier_t
@@ -232,17 +296,17 @@ enum class epure {
 
 struct typeid_t {
 	public: enum class return_dyn_type {
-		none,
-		arg0,
-		arg1,
+		none = 0,
+		arg0 = 1,
+		arg1 = 2,
 
-		arg1_typeid_constant_type,
+		arg1_typeid_constant_type = 3,
 
 		//	x = make_vector(arg1.get_function_return());
-		vector_of_arg1func_return,
+		vector_of_arg1func_return = 4,
 
 		//	x = make_vector(arg2.get_function_return());
-		vector_of_arg2func_return
+		vector_of_arg2func_return = 5
 	};
 
 
@@ -298,6 +362,10 @@ struct typeid_t {
 		//??? Make this property travel OK through JSON, print outs etc.
 		return_dyn_type dyn_return;
 	};
+	struct identifier_t {
+		bool operator==(const identifier_t& other) const{ return name == other.name; };
+		type_name_t name;
+	};
 
 	typedef std::variant<
 		undefined_t,
@@ -313,7 +381,8 @@ struct typeid_t {
 		struct_t,
 		vector_t,
 		dict_t,
-		function_t
+		function_t,
+		identifier_t
 	> type_variant_t;
 
 
@@ -517,33 +586,25 @@ struct typeid_t {
 
 
 	public: static typeid_t make_unresolved_type_identifier(const std::string& s){
-		return make_undefined().name(s);
+		return { identifier_t{ make_type_name(s) } };
 	}
 	public: bool is_unresolved_type_identifier() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _name != "" && is_undefined();
+		return std::holds_alternative<identifier_t>(_contents);
 	}
 	public: std::string get_unresolved_type_identifer() const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(is_unresolved_type_identifier());
 
-		return get_name();
+		return std::get<identifier_t>(_contents).name.path;
 	}
 
 
 
 	////////////////////////////////////////		BASICS
 
-	public: typeid_t name(const std::string& name) const {
-		return { this->_contents, name };
-	}
 
-	public: std::string get_name() const {
-		QUARK_ASSERT(check_invariant());
-
-		return _name;
-	}
 
 	public: floyd::base_type get_base_type() const{
 		struct visitor_t {
@@ -589,6 +650,9 @@ struct typeid_t {
 			base_type operator()(const function_t& e) const{
 				return base_type::k_function;
 			}
+			base_type operator()(const identifier_t& e) const {
+				return base_type::k_unresolved_identifier;
+			}
 		};
 		return std::visit(visitor_t{}, _contents);
 	}
@@ -603,7 +667,7 @@ struct typeid_t {
 			&& _DEBUG_string == other._DEBUG_string
 #endif
 			&& _contents == other._contents
-			&& _name == other._name;
+			;
 	}
 	public: bool operator!=(const typeid_t& other) const{ return !(*this == other);}
 	public: bool check_invariant() const;
@@ -614,18 +678,7 @@ struct typeid_t {
 
 
 	private: typeid_t(const type_variant_t& contents) :
-		_contents(contents),
-		_name("")
-	{
-
-#if DEBUG_DEEP
-		_DEBUG_string = typeid_to_compact_string(*this);
-#endif
-		QUARK_ASSERT(check_invariant());
-	}
-	private: typeid_t(const type_variant_t& contents, const std::string& name) :
-		_contents(contents),
-		_name(name)
+		_contents(contents)
 	{
 
 #if DEBUG_DEEP
@@ -640,12 +693,10 @@ struct typeid_t {
 	private: std::string _DEBUG_string;
 #endif
 	public: type_variant_t _contents;
-	public: std::string _name;
 };
 
 std::string typeid_to_compact_string(const typeid_t& t);
 
-std::string get_default_type_name(const typeid_t& type);
 
 
 
@@ -694,14 +745,6 @@ json_t members_to_json(const std::vector<member_t>& members);
 std::vector<member_t> members_from_json(const json_t& members);
 
 
-enum class json_tags{
-	k_plain,
-
-	//	Show in the string if the type has been resolved or not. Uses "^hello" or "#world"
-	k_tag_resolve_state
-};
-const char tag_unresolved_type_char = '#';
-const char tag_resolved_type_char = '^';
 
 json_t typeid_to_ast_json(const typeid_t& t, json_tags tags);
 typeid_t typeid_from_ast_json(const json_t& t);

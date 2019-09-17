@@ -136,6 +136,9 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 		value_t operator()(const typeid_t::function_t& e) const{
 			quark::throw_runtime_error("Invalid json schema, cannot unflatten functions.");
 		}
+		value_t operator()(const typeid_t::identifier_t& e) const {
+			QUARK_ASSERT(false); throw std::exception();
+		}
 	};
 	return std::visit(visitor_t{ target_type, v}, target_type._contents);
 }

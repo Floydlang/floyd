@@ -103,7 +103,7 @@ struct bcgen_body_t {
 	std::vector<bcgen_instruction_t> _instrs;
 };
 
-bc_static_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_t>& args);
+static bc_static_frame_t make_frame(const type_interner_t& interner, const bcgen_body_t& body, const std::vector<typeid_t>& args);
 
 
 //////////////////////////////////////		bcgenerator_t
@@ -160,10 +160,16 @@ bcgen_body_t bcgen_body_block(bcgenerator_t& gen_acc, const body_t& body);
 
 static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const typeid_t& call_output_type, const expression_t::call_t& details, const bcgen_body_t& body);
 
+static typeid_t get_expr_output(const bcgenerator_t& gen, const expression_t& e){
+	QUARK_ASSERT(gen.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	return get_expr_output_type(gen._ast_imm->_tree._interned_types, e);
+}
 
 
 static int add_temp(symbol_table_t& symbols, const std::string& name, const floyd::typeid_t& value_type){
-	const auto s = symbol_t::make_immutable_reserve(value_type);
+	const auto s = symbol_t::make_immutable_reserve(make_type_name_from_typeid(value_type));
 	symbols._symbols.push_back(std::pair<std::string, symbol_t>(name, s));
 	return static_cast<int>(symbols._symbols.size() - 1);
 }
@@ -178,7 +184,7 @@ variable_address_t add_local_temp(bcgen_body_t& body_acc, const typeid_t& type, 
 }
 
 int add_constant_literal(symbol_table_t& symbols, const std::string& name, const floyd::value_t& value){
-	const auto s = symbol_t::make_immutable_precalc(value);
+	const auto s = symbol_t::make_immutable_precalc(make_type_name_from_typeid(value.get_type()), value);
 	symbols._symbols.push_back(std::pair<std::string, symbol_t>(name, s));
 	return static_cast<int>(symbols._symbols.size() - 1);
 }
@@ -401,7 +407,7 @@ bcgen_body_t bcgen_assign2_statement(bcgenerator_t& gen_acc, const statement_t::
 	else{
 		const auto expr = bcgen_expression(gen_acc, {}, statement._expression, body_acc);
 		body_acc = expr._body;
-		body_acc = copy_value(statement._expression.get_output_type(), statement._dest_variable, expr._out, body_acc);
+		body_acc = copy_value(get_expr_output(gen_acc, statement._expression), statement._dest_variable, expr._out, body_acc);
 		QUARK_ASSERT(body_acc.check_invariant());
 	}
 	return body_acc;
@@ -442,7 +448,7 @@ bcgen_body_t bcgen_ifelse_statement(bcgenerator_t& gen_acc, const statement_t::i
 
 	const auto condition_expr = bcgen_expression(gen_acc, {}, statement._condition, body_acc);
 	body_acc = condition_expr._body;
-	QUARK_ASSERT(statement._condition.get_output_type().is_bool());
+	QUARK_ASSERT(get_expr_output(gen_acc, statement._condition).is_bool());
 
 	//???	Needs short-circuit evaluation here!
 
@@ -690,7 +696,7 @@ static bcgen_body_t bcgen_function(bcgenerator_t& gen_acc, const floyd::function
 
 expression_gen_t bcgen_resolve_member_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const expression_t& e, const expression_t::resolve_member_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(details.parent_address->get_output_type().is_struct());
+	QUARK_ASSERT(get_expr_output(gen_acc, *details.parent_address).is_struct());
 	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
@@ -698,11 +704,11 @@ expression_gen_t bcgen_resolve_member_expression(bcgenerator_t& gen_acc, const v
 	const auto& parent_expr = bcgen_expression(gen_acc, {}, *details.parent_address, body);
 	body_acc = parent_expr._body;
 
-	const auto& struct_def = details.parent_address->get_output_type().get_struct();
+	const auto& struct_def = get_expr_output(gen_acc, *details.parent_address).get_struct();
 	int index = find_struct_member_index(struct_def, details.member_name);
 	QUARK_ASSERT(index != -1);
 
-	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: resolve-member output") : target_reg;
+	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, get_expr_output(gen_acc, e), "temp: resolve-member output") : target_reg;
 	body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_get_struct_member,
 		target_reg2,
 		parent_expr._out,
@@ -710,7 +716,7 @@ expression_gen_t bcgen_resolve_member_expression(bcgenerator_t& gen_acc, const v
 	));
 
 	QUARK_ASSERT(body_acc.check_invariant());
-	return { body_acc, target_reg2, intern_type(gen_acc, *e._output_type) };
+	return { body_acc, target_reg2, intern_type(gen_acc, get_expr_output(gen_acc, e)) };
 }
 
 
@@ -737,7 +743,7 @@ expression_gen_t bcgen_make_fallthrough_intrinsic(bcgenerator_t& gen_acc, const 
 	const auto addr = variable_address_t::make_variable_address(variable_address_t::k_intrinsic, static_cast<int>(index));
 
 	const auto call_details = expression_t::call_t {
-		std::make_shared<expression_t>(expression_t::make_load2(addr, function_type)),
+		std::make_shared<expression_t>(expression_t::make_load2(addr, make_type_name_from_typeid(*function_type))),
 		details.args
 	};
 
@@ -797,13 +803,13 @@ static expression_gen_t bcgen_intrinsic_push_back_expression(bcgenerator_t& gen_
 
 	auto body_acc = body;
 
-	QUARK_ASSERT(call_output_type == details.args[0].get_output_type());
+	QUARK_ASSERT(call_output_type == get_expr_output(gen_acc, details.args[0]));
 
-	const auto arg1_type = details.args[0].get_output_type();
+	const auto arg1_type = get_expr_output(gen_acc, details.args[0]);
 	bc_opcode opcode = convert_call_to_pushback_opcode(arg1_type);
 	if(opcode != bc_opcode::k_nop){
 		//	push_back() used DYN-arguments which are resolved at runtime. When we make opcodes we need to check at compile time = now.
-		if(arg1_type.is_string() && details.args[1].get_output_type().is_int() == false){
+		if(arg1_type.is_string() && get_expr_output(gen_acc, details.args[1]).is_int() == false){
 			quark::throw_runtime_error("Bad element to push_back(). Require push_back(string, int)");
 		}
 
@@ -864,7 +870,7 @@ static expression_gen_t bcgen_intrinsic_size_expression(bcgenerator_t& gen_acc, 
 	QUARK_ASSERT(body.check_invariant());
 	QUARK_ASSERT(details.args.size() == 1);
 
-	const auto arg1_type = details.args[0].get_output_type();
+	const auto arg1_type = get_expr_output(gen_acc, details.args[0]);
 
 	auto body_acc = body;
 
@@ -888,13 +894,13 @@ static expression_gen_t bcgen_intrinsic_size_expression(bcgenerator_t& gen_acc, 
 //	Converts expression to a call to intrinsic() function.
 expression_gen_t bcgen_update_member_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const expression_t& e, const expression_t::update_member_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(details.parent_address->get_output_type().is_struct());
+	QUARK_ASSERT(get_expr_output(gen_acc, *details.parent_address).is_struct());
 	QUARK_ASSERT(body.check_invariant());
 
-	const auto struct_def = e.get_output_type().get_struct();
+	const auto struct_def = get_expr_output(gen_acc, e).get_struct();
 	const auto member_name = struct_def._members[details.member_index]._name;
 	const auto member_name_expr = expression_t::make_literal_string(member_name);
-	return make_update_call(gen_acc, target_reg, e.get_output_type(), *details.parent_address, member_name_expr, *details.new_value, body);
+	return make_update_call(gen_acc, target_reg, get_expr_output(gen_acc, e), *details.parent_address, member_name_expr, *details.new_value, body);
 }
 
 
@@ -941,7 +947,7 @@ expression_gen_t bcgen_lookup_element_expression(bcgenerator_t& gen_acc, const v
 		}
 	}();
 
-	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: resolve-member output") : target_reg;
+	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, get_expr_output(gen_acc, e), "temp: resolve-member output") : target_reg;
 
 	body_acc._instrs.push_back(bcgen_instruction_t(
 		opcode,
@@ -950,7 +956,7 @@ expression_gen_t bcgen_lookup_element_expression(bcgenerator_t& gen_acc, const v
 		key_expr._out
 	));
 	QUARK_ASSERT(body_acc.check_invariant());
-	return { body_acc, target_reg2, intern_type(gen_acc, e.get_output_type()) };
+	return { body_acc, target_reg2, intern_type(gen_acc, get_expr_output(gen_acc, e)) };
 }
 
 //??? Value already sits in a register / global -- no need to generate code to copy it in most cases!
@@ -960,7 +966,7 @@ expression_gen_t bcgen_load2_expression(bcgenerator_t& gen_acc, const variable_a
 	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
-	const auto result_type = e.get_output_type();
+	const auto result_type = get_expr_output(gen_acc, e);
 
 	//	Shortcut: If we're loading a local-variable and are free from putting it in target_reg -- just access the register where it sits = no instruction!
 	if(target_reg.is_empty() && details.address._parent_steps != variable_address_t::k_global_scope){
@@ -968,7 +974,7 @@ expression_gen_t bcgen_load2_expression(bcgenerator_t& gen_acc, const variable_a
 		return { body_acc, details.address, intern_type(gen_acc, result_type) };
 	}
 	else{
-		const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: load2") : target_reg;
+		const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, get_expr_output(gen_acc, e), "temp: load2") : target_reg;
 		body_acc = copy_value(result_type, target_reg2, details.address, body_acc);
 
 		QUARK_ASSERT(body_acc.check_invariant());
@@ -1088,7 +1094,7 @@ static expression_gen_t generate_callee(bcgenerator_t& gen_acc, const expression
 		const auto name = intrinsic.name;
 //		const auto& def = find_function_def_from_link_name(gen_acc.gen.function_defs, encode_floyd_func_link_name(name));
 
-		const auto function_type = details.callee->get_output_type();
+		const auto function_type = get_expr_output(gen_acc, *details.callee);
 		const auto value = value_t::make_function_value(function_type, function_id_t { name });
 		const auto r = add_local_const(body_acc, value, "temp: intrinsics-" + name);
 		return expression_gen_t { body_acc, r, intern_type(gen_acc, function_type) };
@@ -1114,7 +1120,7 @@ static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const vari
 
 	const auto callee_arg_count = static_cast<int>(details.args.size());
 
-	const auto function_type = details.callee->get_output_type();
+	const auto function_type = get_expr_output(gen_acc, *details.callee);
 	const auto function_def_arg_types = function_type.get_function_args();
 	QUARK_ASSERT(callee_arg_count == function_def_arg_types.size());
 	const auto return_type = call_output_type;
@@ -1299,22 +1305,22 @@ expression_gen_t bcgen_construct_value_expression(bcgenerator_t& gen_acc, const 
 
 	auto body_acc = body;
 
-	const auto target_type = e.get_output_type();
+	const auto target_type = get_expr_output(gen_acc, e);
 	const auto target_itype = intern_type(gen_acc, target_type);
 
 	const auto callee_arg_count = static_cast<int>(details.elements.size());
 	std::vector<typeid_t> arg_types;
 	for(const auto& m: details.elements){
-		arg_types.push_back(m.get_output_type());
+		arg_types.push_back(get_expr_output(gen_acc, m));
 	}
 	const auto arg_count = callee_arg_count;
 
 	const auto call_setup = gen_call_setup(gen_acc, arg_types, &details.elements[0], arg_count, body_acc);
 	body_acc = call_setup._body;
 
-	const auto source_itype = arg_count == 0 ? -1 : intern_type(gen_acc, details.elements[0].get_output_type());
+	const auto source_itype = arg_count == 0 ? -1 : intern_type(gen_acc, get_expr_output(gen_acc, details.elements[0]));
 
-	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: construct value result") : target_reg;
+	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, get_expr_output(gen_acc, e), "temp: construct value result") : target_reg;
 
 	if(target_type.is_vector()){
 		if(encode_as_vector_w_inplace_elements(target_type)){
@@ -1393,7 +1399,7 @@ expression_gen_t bcgen_arithmetic_unary_minus_expression(bcgenerator_t& gen_acc,
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-	const auto type = details.expr->get_output_type();
+	const auto type = get_expr_output(gen_acc, *details.expr);
 
 	if(type.is_int()){
 		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract, expression_t::make_literal_int(0), *details.expr, e._output_type);
@@ -1432,10 +1438,10 @@ expression_gen_t bcgen_conditional_operator_expression(bcgenerator_t& gen_acc, c
 	const auto& condition_expr = bcgen_expression(gen_acc, {}, *details.condition, body_acc);
 	body_acc = condition_expr._body;
 
-	const auto result_type = e.get_output_type();
+	const auto result_type = get_expr_output(gen_acc, e);
 	const auto result_itype = intern_type(gen_acc, result_type);
 
-	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: condition value output") : target_reg;
+	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, get_expr_output(gen_acc, e), "temp: condition value output") : target_reg;
 
 	int jump1_pc = static_cast<int>(body_acc._instrs.size());
 	body_acc._instrs.push_back(
@@ -1493,11 +1499,11 @@ expression_gen_t bcgen_comparison_expression(bcgenerator_t& gen_acc, const varia
 	body_acc = right_expr._body;
 
 	//	Type is the data the opcode works on -- comparing two ints, comparing two strings etc.
-	const auto type = details.lhs->get_output_type();
+	const auto type = get_expr_output(gen_acc, *details.lhs);
 
 	//	Output reg always a bool.
-	QUARK_ASSERT(e.get_output_type().is_bool());
-	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: comparison flag") : target_reg;
+	QUARK_ASSERT(get_expr_output(gen_acc, e).is_bool());
+	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, get_expr_output(gen_acc, e), "temp: comparison flag") : target_reg;
 
 	if(type.is_int()){
 
@@ -1559,10 +1565,10 @@ expression_gen_t bcgen_arithmetic_expression(bcgenerator_t& gen_acc, const varia
 	const auto& right_expr = bcgen_expression(gen_acc, {}, *details.rhs, body_acc);
 	body_acc = right_expr._body;
 
-	const auto type = details.lhs->get_output_type();
+	const auto type = get_expr_output(gen_acc, *details.lhs);
 	const auto itype = intern_type(gen_acc, type);
 
-	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: arithmetic output") : target_reg;
+	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, get_expr_output(gen_acc, e), "temp: arithmetic output") : target_reg;
 
 	const auto opcode = [&type, &e, &details]{
 		if(type.is_bool()){
@@ -1667,12 +1673,12 @@ expression_gen_t bcgen_literal_expression(bcgenerator_t& gen_acc, const variable
 	const auto const_temp = add_local_const(body_acc, e.get_literal(), "literal constant");
 	if(target_reg.is_empty()){
 		QUARK_ASSERT(body_acc.check_invariant());
-		return { body_acc, const_temp, intern_type(gen_acc, *e._output_type) };
+		return { body_acc, const_temp, intern_type(gen_acc, get_expr_output(gen_acc, e)) };
 	}
 
 	//	We need to copy the value to the target reg...
 	else{
-		const auto result_type = e.get_output_type();
+		const auto result_type = get_expr_output(gen_acc, e);
 		body_acc = copy_value(result_type, target_reg, const_temp, body_acc);
 
 		QUARK_ASSERT(body_acc.check_invariant());
@@ -1710,10 +1716,10 @@ expression_gen_t bcgen_expression(bcgenerator_t& gen_acc, const variable_address
 		}
 
 		expression_gen_t operator()(const expression_t::call_t& expr) const{
-			return bcgen_call_expression(gen_acc, target_reg, e.get_output_type(), expr, body);
+			return bcgen_call_expression(gen_acc, target_reg, get_expr_output(gen_acc, e), expr, body);
 		}
 		expression_gen_t operator()(const expression_t::intrinsic_t& expr) const{
-			return bcgen_intrinsic_expression(gen_acc, target_reg, e.get_output_type(), expr, body);
+			return bcgen_intrinsic_expression(gen_acc, target_reg, get_expr_output(gen_acc, e), expr, body);
 		}
 
 		expression_gen_t operator()(const expression_t::struct_definition_expr_t& expr) const{
@@ -1826,7 +1832,8 @@ bc_instruction_t squeeze_instruction(const bcgen_instruction_t& instruction){
 	return result;
 }
 
-bc_static_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_t>& args){
+static bc_static_frame_t make_frame(const type_interner_t& interner, const bcgen_body_t& body, const std::vector<typeid_t>& args){
+	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
 	std::vector<bc_instruction_t> instrs2;
@@ -1837,13 +1844,14 @@ bc_static_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_
 	std::vector<std::pair<std::string, bc_symbol_t>> symbols2;
 	for(const auto& e: body._symbol_table._symbols){
 		//???named-type
+		const auto t = lookup_type(interner, e.second.get_value_type());
 		if(e.second._symbol_type == symbol_t::symbol_type::named_type){
 			const auto e2 = std::pair<std::string, bc_symbol_t>{
 				e.first,
 				bc_symbol_t{
 					bc_symbol_t::type::named_type,
 					typeid_t::make_typeid(),
-					bc_value_t::make_typeid_value(e.second.get_value_type())
+					bc_value_t::make_typeid_value(t)
 				}
 			};
 			symbols2.push_back(e2);
@@ -1853,7 +1861,7 @@ bc_static_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_
 				e.first,
 				bc_symbol_t{
 					is_mutable(e.second) ? bc_symbol_t::type::mutable1 : bc_symbol_t::type::immutable,
-					e.second.get_value_type(),
+					t,
 					value_to_bc(e.second._init)
 				}
 			};
@@ -1883,7 +1891,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 		if(function_def._optional_body){
 			const auto body2 = bcgen_function(a, function_def);
 
-			const auto frame = make_frame(body2, function_def._function_type.get_function_args());
+			const auto frame = make_frame(ast._tree._interned_types, body2, function_def._function_type.get_function_args());
 			const auto f = bc_function_definition_t{
 				function_def._function_type,
 				function_def._named_args,
@@ -1904,7 +1912,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 		}
 	}
 
-	const auto globals2 = make_frame(a._globals, {});
+	const auto globals2 = make_frame(a._ast_imm->_tree._interned_types, a._globals, {});
 	const auto result = bc_program_t{
 		globals2,
 		function_defs2,

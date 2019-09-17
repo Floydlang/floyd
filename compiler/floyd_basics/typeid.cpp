@@ -18,6 +18,38 @@ namespace floyd {
 
 
 
+type_name_t make_type_name_from_typeid(const typeid_t& t){
+	const auto j = typeid_to_ast_json(t, json_tags::k_plain);
+	const auto s = json_to_compact_string_minimal_quotes(j);
+	return type_name_t { s };
+}
+
+
+
+json_t type_name_to_json(const type_name_t& name){
+	return json_t(name.path);
+/*
+	if(tags == json_tags::k_tag_resolve_state){
+		return json_t(std::string(1, tag_unresolved_type_char) + t.get_unresolved_type_identifer());
+	}
+	else if(tags == json_tags::k_plain){
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+
+	}
+	else if(tags == json_tags::k_plain){
+		return json_t(t.get_unresolved_type_identifer());
+	}
+*/
+
+}
+
+type_name_t type_name_from_json(const json_t& j){
+	return make_type_name(j.get_string());
+}
+
 
 
 //////////////////////////////////////////////////		base_type
@@ -65,6 +97,9 @@ std::string base_type_to_opcode(const base_type t){
 	}
 	else if(t == base_type::k_function){
 		return "func";
+	}
+	else if(t == base_type::k_unresolved_identifier){
+		return "unresolved";
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -115,6 +150,9 @@ QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
 QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_function) == "func");
 }
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_unresolved_identifier) == "unresolved");
+}
 
 
 base_type opcode_to_base_type(const std::string& s){
@@ -159,6 +197,9 @@ base_type opcode_to_base_type(const std::string& s){
 	}
 	else if(s == "func"){
 		return base_type::k_function;
+	}
+	else if(s == "unresolved"){
+		return base_type::k_unresolved_identifier;
 	}
 
 	else{
@@ -275,6 +316,9 @@ bool typeid_t::check_invariant() const{
 			}
 			return true;
 		}
+		bool operator()(const identifier_t& e) const {
+			QUARK_ASSERT(false); throw std::exception();
+		}
 	};
 	return std::visit(visitor_t{}, _contents);
 #else
@@ -290,7 +334,6 @@ void typeid_t::swap(typeid_t& other){
 	std::swap(_DEBUG_string, other._DEBUG_string);
 #endif
 	std::swap(_contents, other._contents);
-	std::swap(_name, other._name);
 
 	QUARK_ASSERT(other.check_invariant());
 	QUARK_ASSERT(check_invariant());
@@ -578,7 +621,7 @@ QUARK_TESTQ("typeid_t", "operator=()"){
 
 
 
-static std::string typeid_to_compact_string_int(const typeid_t& t){
+std::string typeid_to_compact_string(const typeid_t& t){
 //	QUARK_ASSERT(t.check_invariant());
 
 	const auto basetype = t.get_base_type();
@@ -610,25 +653,6 @@ static std::string typeid_to_compact_string_int(const typeid_t& t){
 		return base_type_to_opcode(basetype);
 	}
 }
-std::string typeid_to_compact_string(const typeid_t& t){
-	if(t.get_name() == ""){
-		return typeid_to_compact_string_int(t);
-	}
-	else{
-		return t.get_name() + ":" + typeid_to_compact_string_int(t);
-	}
-}
-
-std::string get_default_type_name(const typeid_t& type){
-	const auto bt = type.get_base_type();
-	if(is_atomic_type(bt)){
-		return base_type_to_opcode(bt);
-	}
-	else{
-		return "";
-	}
-}
-
 
 
 
@@ -883,7 +907,7 @@ json_t struct_definition_to_ast_json(const struct_definition_t& v){
 
 
 
-static json_t typeid_to_json0(const typeid_t& t, json_tags tags){
+json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 	QUARK_ASSERT(t.check_invariant());
 
 	const auto b = t.get_base_type();
@@ -930,8 +954,17 @@ static json_t typeid_to_json0(const typeid_t& t, json_tags tags){
 			basetype_str,
 			typeid_to_ast_json(t.get_function_return(), tags),
 			typeids_to_json_array(t.get_function_args()),
-			t.get_function_pure() == epure::pure ? true : false
+			t.get_function_pure() == epure::pure ? true : false,
+			json_t(static_cast<int>(t.get_function_dyn_return_type()))
 		});
+	}
+	else if(b == base_type::k_unresolved_identifier){
+		if(tags == json_tags::k_tag_resolve_state){
+			return json_t(std::string(1, tag_unresolved_type_char) + t.get_unresolved_type_identifer());
+		}
+		else if(tags == json_tags::k_plain){
+			return json_t(t.get_unresolved_type_identifer());
+		}
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -940,35 +973,6 @@ static json_t typeid_to_json0(const typeid_t& t, json_tags tags){
 	return basetype_str_tagged;
 }
 
-json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
-	QUARK_ASSERT(t.check_invariant());
-
-	if(t.get_name() == ""){
-		const auto type_desc = typeid_to_json0(t, tags);
-		return type_desc;
-	}
-	else{
-		if(t.is_unresolved_type_identifier()){
-			if(tags == json_tags::k_tag_resolve_state){
-				return json_t(std::string(1, tag_unresolved_type_char) + t.get_name());
-			}
-			else if(tags == json_tags::k_plain){
-				return json_t(t.get_name());
-			}
-			else{
-				QUARK_ASSERT(false);
-				throw std::exception();
-			}
-		}
-		else{
-			const auto type_desc = typeid_to_json0(t, tags);
-			return json_t::make_object({
-				{ "name", t._name },
-				{ "desc", type_desc }
-			});
-		}
-	}
-}
 
 
 QUARK_TEST("", "typeid_to_ast_json()", "", ""){
@@ -978,13 +982,13 @@ QUARK_TEST("", "typeid_to_ast_json()", "", ""){
 }
 
 QUARK_TEST("", "typeid_to_ast_json()", "", ""){
-	const auto t = typeid_t::make_int().name("coord_t");
+	const auto t = typeid_t::make_int();
 	const auto r = json_to_compact_string_minimal_quotes(typeid_to_ast_json(t, json_tags::k_tag_resolve_state));
 	QUARK_UT_VERIFY(r == "{ desc: ^int, name: coord_t }");
 }
 
 QUARK_TEST("", "typeid_to_ast_json()", "", ""){
-	const auto t = typeid_t::make_undefined().name("coord_t");
+	const auto t = typeid_t::make_undefined();
 	const auto r = json_to_compact_string_minimal_quotes(typeid_to_ast_json(t, json_tags::k_tag_resolve_state));
 	QUARK_UT_VERIFY(r == "#coord_t");
 }
@@ -1082,7 +1086,14 @@ static typeid_t typeid_from_json0(const json_t& t){
 				quark::throw_exception();
 			}
 			const bool pure = a[3].is_true();
-			return typeid_t::make_function(ret_type, arg_types, pure ? epure::pure : epure::impure);
+
+			const auto dyn = static_cast<typeid_t::return_dyn_type>(a[4].get_number());
+			if(dyn == typeid_t::return_dyn_type::none){
+				return typeid_t::make_function(ret_type, arg_types, pure ? epure::pure : epure::impure);
+			}
+			else{
+				return typeid_t::make_function_dyn_return(arg_types, pure ? epure::pure : epure::impure, dyn);
+			}
 		}
 		else if(s == "unknown-identifier"){
 			QUARK_ASSERT(false);
@@ -1102,16 +1113,7 @@ static typeid_t typeid_from_json0(const json_t& t){
 typeid_t typeid_from_ast_json(const json_t& t2){
 	QUARK_ASSERT(t2.check_invariant());
 
-	if(t2.is_object()){
-		const auto name = t2.get_object_element("name").get_string();
-		const auto& t = t2.get_object_element("desc");
-		const auto a = typeid_from_json0(t);
-		return a.name(name);
-	}
-	else{
-		const auto a = typeid_from_json0(t2);
-		return a;
-	}
+	return typeid_from_json0(t2);
 }
 
 
@@ -1124,14 +1126,14 @@ QUARK_TEST("", "typeid_from_ast_json()", "", ""){
 }
 
 QUARK_TEST("", "typeid_from_ast_json()", "", ""){
-	const auto t = typeid_t::make_int().name("coord_t");
+	const auto t = typeid_t::make_int();
 	const auto j = typeid_to_ast_json(t, json_tags::k_tag_resolve_state);
 	const auto r = typeid_from_ast_json(j);
 	QUARK_ASSERT(r == t);
 }
 
 QUARK_TEST("", "typeid_from_ast_json()", "", ""){
-	const auto t = typeid_t::make_undefined().name("coord_t");
+	const auto t = typeid_t::make_undefined();
 	const auto j = typeid_to_ast_json(t, json_tags::k_tag_resolve_state);
 	const auto r = typeid_from_ast_json(j);
 	QUARK_ASSERT(r == t);

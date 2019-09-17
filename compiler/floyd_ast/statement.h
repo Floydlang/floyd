@@ -84,11 +84,33 @@ struct symbol_t {
 	}
 
 	public: bool check_invariant() const {
-		QUARK_ASSERT(_init.is_undefined() || _init.get_type() == _value_type);
+		if(_symbol_type == symbol_type::immutable_reserve){
+			QUARK_ASSERT(is_empty(_value_type) == false);
+			QUARK_ASSERT(_init.is_undefined());
+		}
+		else if(_symbol_type == symbol_type::immutable_arg){
+			QUARK_ASSERT(is_empty(_value_type) == false);
+			QUARK_ASSERT(_init.is_undefined());
+		}
+		else if(_symbol_type == symbol_type::immutable_precalc){
+			QUARK_ASSERT(is_empty(_value_type) == false);
+			QUARK_ASSERT(_init.is_undefined() == false);
+		}
+		else if(_symbol_type == symbol_type::named_type){
+			QUARK_ASSERT(is_empty(_value_type) == false);
+			QUARK_ASSERT(_init.is_undefined());
+		}
+		else if(_symbol_type == symbol_type::mutable_reserve){
+			QUARK_ASSERT(is_empty(_value_type) == false);
+			QUARK_ASSERT(_init.is_undefined());
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
 		return true;
 	}
 
-	public: symbol_t(symbol_type symbol_type, const typeid_t& value_type, const value_t& init_value) :
+	public: symbol_t(symbol_type symbol_type, const type_name_t& value_type, const value_t& init_value) :
 		_symbol_type(symbol_type),
 		_value_type(value_type),
 		_init(init_value)
@@ -96,42 +118,41 @@ struct symbol_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: typeid_t get_value_type() const {
+	public: type_name_t get_value_type() const {
 		QUARK_ASSERT(check_invariant());
 
 		return _value_type;
 	}
 
-	public: static symbol_t make_immutable_reserve(const typeid_t& value_type){
+	public: static symbol_t make_immutable_reserve(const type_name_t& value_type){
 		return symbol_t{ symbol_type::immutable_reserve, value_type, {} };
 	}
 
-	public: static symbol_t make_immutable_arg(const typeid_t& value_type){
+	public: static symbol_t make_immutable_arg(const type_name_t& value_type){
 		return symbol_t{ symbol_type::immutable_arg, value_type, {} };
 	}
 
 	//??? Mutable could support init-value too!?
-	public: static symbol_t make_mutable(const typeid_t& value_type){
+	public: static symbol_t make_mutable(const type_name_t& value_type){
 		return symbol_t{ symbol_type::mutable_reserve, value_type, {} };
 	}
 
-	public: static symbol_t make_immutable_precalc(const value_t& init_value){
+	public: static symbol_t make_immutable_precalc(const type_name_t& value_type, const value_t& init_value){
 		QUARK_ASSERT(is_floyd_literal(init_value.get_type()));
 
-		return symbol_t{ symbol_type::immutable_precalc, init_value.get_type(), init_value };
+		return symbol_t{ symbol_type::immutable_precalc, value_type, init_value };
 	}
 
 
-	public: static symbol_t make_named_type(const typeid_t& type){
-		QUARK_ASSERT(type.get_name() == "");
-		return symbol_t{ symbol_type::named_type, type, value_t::make_undefined() };
+	public: static symbol_t make_named_type(const type_name_t& name){
+		return symbol_t{ symbol_type::named_type, name, value_t::make_undefined() };
 	}
 
 
 
 	//////////////////////////////////////		STATE
 	symbol_type _symbol_type;
-	typeid_t _value_type;
+	type_name_t _value_type;
 
 	//	If there is no initialization value, this member must be value_t::make_undefined();
 	value_t _init;
@@ -166,7 +187,7 @@ const symbol_t* find_symbol(const symbol_table_t& symbol_table, const std::strin
 const symbol_t& find_symbol_required(const symbol_table_t& symbol_table, const std::string& name);
 
 std::vector<json_t> symbols_to_json(const symbol_table_t& symbols);
-symbol_table_t ast_json_to_symbols(const json_t& p);
+symbol_table_t ast_json_to_symbols(const type_interner_t& interner, const json_t& p);
 
 
 
@@ -202,7 +223,7 @@ bool operator==(const body_t& lhs, const body_t& rhs);
 
 
 json_t body_to_json(const body_t& e);
-body_t json_to_body(const json_t& json);
+body_t json_to_body(const type_interner_t& interner, const json_t& json);
 
 
 
@@ -547,7 +568,7 @@ static bool operator==(const statement_t& lhs, const statement_t& rhs){
 }
 
 
-const std::vector<statement_t> ast_json_to_statements(const json_t& p);
+const std::vector<statement_t> ast_json_to_statements(const type_interner_t& interner, const json_t& p);
 json_t statement_to_json(const statement_t& e);
 
 

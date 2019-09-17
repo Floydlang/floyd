@@ -19,6 +19,7 @@
 #include "floyd_syntax.h"
 #include "collect_used_types.h"
 
+#if 0
 
 namespace floyd {
 
@@ -197,4 +198,7 @@ void collect_used_types(type_interner_t& acc, const general_purpose_ast_t& ast){
 }
 
 }	// floyd
+
+
+#endif
 

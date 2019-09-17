@@ -372,6 +372,9 @@ static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const 
 			llvm::PointerType* ptr_type = llvm::cast<llvm::PointerType>(itype);
 			return llvm::ConstantPointerNull::get(ptr_type);
 		}
+		llvm::Value* operator()(const typeid_t::identifier_t& e) const {
+			QUARK_ASSERT(false); throw std::exception();
+		}
 	};
 	return std::visit(visitor_t{ gen_acc, builder, context, itype, value }, type._contents);
 }
@@ -385,7 +388,7 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_genera
 	for(const auto& e: symbol_table._symbols){
 		//???named-type
 		//??? unify with global handling
-		const auto type = e.second.get_value_type();
+		const auto type = lookup_type(gen_acc.gen.type_lookup.state.type_interner, e.second.get_value_type());
 		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type);
 
 		//	Reserve stack slot for each local.
@@ -412,7 +415,7 @@ static void generate_destruct_scope_locals(llvm_function_generator_t& gen_acc, c
 
 			//???named-type
 			//??? unify with global handling
-			const auto type = e.symbol.get_value_type();
+			const auto type = lookup_type(gen_acc.gen.type_lookup.state.type_interner, e.symbol.get_value_type());
 			if(is_rc_value(type)){
 				auto reg = builder.CreateLoad(e.value_ptr);
 				generate_release(gen_acc, *reg, type);
@@ -456,6 +459,13 @@ static function_return_mode generate_block(llvm_function_generator_t& gen_acc, c
 
 
 
+static typeid_t get_expr_output(const llvm_code_generator_t& gen, const expression_t& e){
+	QUARK_ASSERT(gen.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	return get_expr_output_type(gen.type_lookup.state.type_interner, e);
+}
+
 
 
 ////////////////////////////////		EXPRESSIONS
@@ -479,10 +489,10 @@ static llvm::Value* generate_resolve_member_expression(llvm_function_generator_t
 	auto struct_ptr_reg = generate_expression(gen_acc, *details.parent_address);
 
 
-	const auto parent_type =  details.parent_address->get_output_type();
+	const auto parent_type = get_expr_output(gen_acc.gen, *details.parent_address);
 	QUARK_ASSERT(parent_type.is_struct());
 
-	const auto& struct_def = details.parent_address->get_output_type().get_struct();
+	const auto& struct_def = get_expr_output(gen_acc.gen, *details.parent_address).get_struct();
 	int member_index = find_struct_member_index(struct_def, details.member_name);
 	QUARK_ASSERT(member_index != -1);
 
@@ -516,8 +526,8 @@ static llvm::Value* generate_update_member_expression(llvm_function_generator_t&
 	auto parent_struct_ptr_reg = generate_expression(gen_acc, *details.parent_address);
 	auto new_value_reg = generate_expression(gen_acc, *details.new_value);
 
-	const auto struct_type = details.parent_address->get_output_type();
-	const auto member_type = details.new_value->get_output_type();
+	const auto struct_type = get_expr_output(gen_acc.gen, *details.parent_address);
+	const auto member_type = get_expr_output(gen_acc.gen, *details.new_value);
 	auto struct2_ptr_reg = generate_update_struct_member(gen_acc, *parent_struct_ptr_reg, struct_type, details.member_index, *new_value_reg);
 
 	generate_release(gen_acc, *new_value_reg, member_type);
@@ -535,9 +545,9 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 
 	auto parent_reg = generate_expression(gen_acc, *details.parent_address);
 	auto key_reg = generate_expression(gen_acc, *details.lookup_key);
-	const auto key_type = details.lookup_key->get_output_type();
+	const auto key_type = get_expr_output(gen_acc.gen, *details.lookup_key);
 
-	const auto parent_type =  details.parent_address->get_output_type();
+	const auto parent_type =  get_expr_output(gen_acc.gen, *details.parent_address);
 	if(parent_type.is_string()){
 		QUARK_ASSERT(key_type.is_int());
 
@@ -638,7 +648,7 @@ static llvm::Value* generate_arithmetic_expression(llvm_function_generator_t& ge
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	const auto type = details.lhs->get_output_type();
+	const auto type = get_expr_output(gen_acc.gen, *details.lhs);
 
 	auto lhs_temp = generate_expression(gen_acc, *details.lhs);
 	auto rhs_temp = generate_expression(gen_acc, *details.rhs);
@@ -730,8 +740,8 @@ static llvm::Value* generate_arithmetic_expression(llvm_function_generator_t& ge
 			rhs_temp
 		};
 		auto result = gen_acc.get_builder().CreateCall(gen_acc.gen.runtime_functions.floydrt_concatunate_vectors.llvm_codegen_f, args2, "");
-		generate_release(gen_acc, *lhs_temp, *details.lhs->_output_type);
-		generate_release(gen_acc, *rhs_temp, *details.rhs->_output_type);
+		generate_release(gen_acc, *lhs_temp, get_expr_output(gen_acc.gen, *details.lhs));
+		generate_release(gen_acc, *rhs_temp, get_expr_output(gen_acc.gen, *details.rhs));
 		return result;
 	}
 	else{
@@ -772,10 +782,10 @@ static llvm::Value* generate_comparison_expression(llvm_function_generator_t& ge
 	auto rhs_temp = generate_expression(gen_acc, *details.rhs);
 
 	//	Type is the data the opcode works on -- comparing two ints, comparing two strings etc.
-	const auto type = details.lhs->get_output_type();
+	const auto type = get_expr_output(gen_acc.gen, *details.lhs);
 
 	//	Output reg is always a bool.
-	QUARK_ASSERT(e.get_output_type().is_bool());
+	QUARK_ASSERT(get_expr_output(gen_acc.gen, e).is_bool());
 
 	if(type.is_bool() || type.is_int()){
 		/*
@@ -830,26 +840,26 @@ static llvm::Value* generate_comparison_expression(llvm_function_generator_t& ge
 	}
 	else if(type.is_string() || type.is_vector()){
 		auto result_reg = generate_compare_values(gen_acc, details.op, type, *lhs_temp, *rhs_temp);
-		generate_release(gen_acc, *lhs_temp, *details.lhs->_output_type);
-		generate_release(gen_acc, *rhs_temp, *details.rhs->_output_type);
+		generate_release(gen_acc, *lhs_temp, get_expr_output(gen_acc.gen, *details.lhs));
+		generate_release(gen_acc, *rhs_temp, get_expr_output(gen_acc.gen, *details.rhs));
 		return result_reg;
 	}
 	else if(type.is_dict()){
 		auto result_reg = generate_compare_values(gen_acc, details.op, type, *lhs_temp, *rhs_temp);
-		generate_release(gen_acc, *lhs_temp, *details.lhs->_output_type);
-		generate_release(gen_acc, *rhs_temp, *details.rhs->_output_type);
+		generate_release(gen_acc, *lhs_temp, get_expr_output(gen_acc.gen, *details.lhs));
+		generate_release(gen_acc, *rhs_temp, get_expr_output(gen_acc.gen, *details.rhs));
 		return result_reg;
 	}
 	else if(type.is_struct()){
 		auto result_reg = generate_compare_values(gen_acc, details.op, type, *lhs_temp, *rhs_temp);
-		generate_release(gen_acc, *lhs_temp, *details.lhs->_output_type);
-		generate_release(gen_acc, *rhs_temp, *details.rhs->_output_type);
+		generate_release(gen_acc, *lhs_temp, get_expr_output(gen_acc.gen, *details.lhs));
+		generate_release(gen_acc, *rhs_temp, get_expr_output(gen_acc.gen, *details.rhs));
 		return result_reg;
 	}
 	else if(type.is_json()){
 		auto result_reg = generate_compare_values(gen_acc, details.op, type, *lhs_temp, *rhs_temp);
-		generate_release(gen_acc, *lhs_temp, *details.lhs->_output_type);
-		generate_release(gen_acc, *rhs_temp, *details.rhs->_output_type);
+		generate_release(gen_acc, *lhs_temp, get_expr_output(gen_acc.gen, *details.lhs));
+		generate_release(gen_acc, *rhs_temp, get_expr_output(gen_acc.gen, *details.rhs));
 		return result_reg;
 	}
 	else{
@@ -870,11 +880,11 @@ enum class bitwize_operator {
 static llvm::Value* generate_bitwize_expression(llvm_function_generator_t& gen_acc, bitwize_operator op, const expression_t& e, const std::vector<expression_t>& operands){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
-	QUARK_ASSERT(e.get_output_type().is_int());
+	QUARK_ASSERT(get_expr_output(gen_acc.gen, e).is_int());
 	QUARK_ASSERT(operands.size() == 1 || operands.size() == 2);
 
 	if(operands.size() == 1){
-		QUARK_ASSERT(operands[0].get_output_type().is_int());
+		QUARK_ASSERT(get_expr_output(gen_acc.gen, operands[0]).is_int());
 
 		auto a = generate_expression(gen_acc, operands[0]);
 
@@ -886,8 +896,8 @@ static llvm::Value* generate_bitwize_expression(llvm_function_generator_t& gen_a
 		}
 	}
 	else if(operands.size() == 2){
-		QUARK_ASSERT(operands[0].get_output_type().is_int());
-		QUARK_ASSERT(operands[1].get_output_type().is_int());
+		QUARK_ASSERT(get_expr_output(gen_acc.gen, operands[0]).is_int());
+		QUARK_ASSERT(get_expr_output(gen_acc.gen, operands[1]).is_int());
 
 		auto a = generate_expression(gen_acc, operands[0]);
 		auto b = generate_expression(gen_acc, operands[1]);
@@ -928,7 +938,7 @@ static llvm::Value* generate_arithmetic_unary_minus_expression(llvm_function_gen
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	const auto type = details.expr->get_output_type();
+	const auto type = get_expr_output(gen_acc.gen, *details.expr);
 	if(type.is_int()){
 		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract, expression_t::make_literal_int(0), *details.expr, e._output_type);
 		return generate_expression(gen_acc, e2);
@@ -949,7 +959,7 @@ static llvm::Value* generate_conditional_operator_expression(llvm_function_gener
 	auto& builder = gen_acc.get_builder();
 	auto& context = builder.getContext();
 
-	const auto result_type = e.get_output_type();
+	const auto result_type = get_expr_output(gen_acc.gen, e);
 	const auto result_itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, result_type);
 
 	llvm::Value* condition_reg = generate_expression(gen_acc, *conditional.condition);
@@ -999,13 +1009,14 @@ static llvm::Value* generate_conditional_operator_expression(llvm_function_gener
 }
 
 //	Call functon type and callee function types are identical, except the callee function type can use ANY-types.
-static typeid_t calc_resolved_function_type(const expression_t& e, const typeid_t& callee_function_type, const std::vector<expression_t>& args){
+static typeid_t calc_resolved_function_type(const llvm_code_generator_t& gen, const expression_t& e, const typeid_t& callee_function_type, const std::vector<expression_t>& args){
+	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(callee_function_type.check_invariant());
 
 	//	Callee type can include ANY-arguments. Check the resolved call expression's types to know the types.
-	const auto resolved_call_return_type = e.get_output_type();
+	const auto resolved_call_return_type = get_expr_output(gen, e);
 
-	const auto resolved_call_arguments = mapf<typeid_t>(args, [](auto& e){ return e.get_output_type(); });
+	const auto resolved_call_arguments = mapf<typeid_t>(args, [&gen](auto& e){ return get_expr_output(gen, e); });
 	const auto resolved_call_function_type = typeid_t::make_function(
 		resolved_call_return_type,
 		resolved_call_arguments,
@@ -1019,11 +1030,12 @@ static typeid_t calc_resolved_function_type(const expression_t& e, const typeid_
 }
 
 //	Call functon type and callee function types are identical, except the callee function type can use ANY-types.
-static typeid_t calc_call_expression_function_type(const expression_t& e, const expression_t::call_t& details){
+static typeid_t calc_call_expression_function_type(const llvm_code_generator_t& gen, const expression_t& e, const expression_t::call_t& details){
+	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	const auto callee_function_type = details.callee->get_output_type();
-	return calc_resolved_function_type(e, details.callee->get_output_type(), details.args);
+	const auto callee_function_type = get_expr_output(gen, *details.callee);
+	return calc_resolved_function_type(gen, e, get_expr_output(gen, *details.callee), details.args);
 }
 
 /*
@@ -1044,8 +1056,8 @@ static llvm::Value* generate_call_expression(llvm_function_generator_t& gen_acc,
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e0.check_invariant());
 
-	const auto callee_function_type = details.callee->get_output_type();
-	const auto resolved_function_type = calc_call_expression_function_type(e0, details);
+	const auto callee_function_type = get_expr_output(gen_acc.gen, *details.callee);
+	const auto resolved_function_type = calc_call_expression_function_type(gen_acc.gen, e0, details);
 
 	auto callee_reg = generate_expression(gen_acc, *details.callee);
 
@@ -1073,7 +1085,7 @@ llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& gen_acc, 
 	//	Verify that the actual argument expressions, their count and output types -- all match callee_function_type.
 	QUARK_ASSERT(details.args.size() == callee_function_type.get_function_args().size());
 
-	const auto resolved_call_function_type = calc_resolved_function_type(e, callee_function_type, details.args);
+	const auto resolved_call_function_type = calc_resolved_function_type(gen_acc.gen, e, callee_function_type, details.args);
 
 	const auto name = it->name;
 	const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(name));
@@ -1092,10 +1104,10 @@ llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& gen_acc, 
 static llvm::Value* generate_push_back_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
-	QUARK_ASSERT(e.get_output_type().is_vector() || e.get_output_type().is_string());
+	QUARK_ASSERT(get_expr_output(gen_acc.gen, e).is_vector() || get_expr_output(gen_acc.gen, e).is_string());
 
-	const auto resolved_call_type = calc_resolved_function_type(e, make_push_back_signature()._function_type, details.args);
-	const auto collection_type = details.args[0].get_output_type();
+	const auto resolved_call_type = calc_resolved_function_type(gen_acc.gen, e, make_push_back_signature()._function_type, details.args);
+	const auto collection_type = get_expr_output(gen_acc.gen, details.args[0]);
 	auto vector_reg = generate_expression(gen_acc, details.args[0]);
 	auto element_reg = generate_expression(gen_acc, details.args[1]);
 	return generate_instrinsic_push_back(gen_acc, resolved_call_type, *vector_reg, collection_type, *element_reg);
@@ -1105,10 +1117,10 @@ static llvm::Value* generate_size_expression(llvm_function_generator_t& gen_acc,
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	const auto collection_type = details.args[0].get_output_type();
+	const auto collection_type = get_expr_output(gen_acc.gen, details.args[0]);
 	QUARK_ASSERT(collection_type.is_vector() || collection_type.is_string() || collection_type.is_dict() || collection_type.is_json());
 
-	const auto resolved_call_type = calc_resolved_function_type(e, make_size_signature()._function_type, details.args);
+	const auto resolved_call_type = calc_resolved_function_type(gen_acc.gen, e, make_size_signature()._function_type, details.args);
 	auto collection_reg = generate_expression(gen_acc, details.args[0]);
 	return generate_instrinsic_size(gen_acc, resolved_call_type, *collection_reg, collection_type);
 }
@@ -1116,10 +1128,10 @@ static llvm::Value* generate_size_expression(llvm_function_generator_t& gen_acc,
 static llvm::Value* generate_update_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
-	QUARK_ASSERT(e.get_output_type().is_vector() || e.get_output_type().is_string() || e.get_output_type().is_dict());
+	QUARK_ASSERT(get_expr_output(gen_acc.gen, e).is_vector() || get_expr_output(gen_acc.gen, e).is_string() || get_expr_output(gen_acc.gen, e).is_dict());
 
-	const auto resolved_call_type = calc_resolved_function_type(e, make_update_signature()._function_type, details.args);
-	const auto collection_type = details.args[0].get_output_type();
+	const auto resolved_call_type = calc_resolved_function_type(gen_acc.gen, e, make_update_signature()._function_type, details.args);
+	const auto collection_type = get_expr_output(gen_acc.gen, details.args[0]);
 	auto vector_reg = generate_expression(gen_acc, details.args[0]);
 	auto index_reg = generate_expression(gen_acc, details.args[1]);
 	auto element_reg = generate_expression(gen_acc, details.args[2]);
@@ -1129,18 +1141,18 @@ static llvm::Value* generate_update_expression(llvm_function_generator_t& gen_ac
 static llvm::Value* generate_map_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
-	QUARK_ASSERT(e.get_output_type().is_vector());
+	QUARK_ASSERT(get_expr_output(gen_acc.gen, e).is_vector());
 
-	const auto resolved_call_type = calc_resolved_function_type(e, make_update_signature()._function_type, details.args);
+	const auto resolved_call_type = calc_resolved_function_type(gen_acc.gen, e, make_update_signature()._function_type, details.args);
 
 	auto vector_reg = generate_expression(gen_acc, details.args[0]);
-	const auto collection_type = details.args[0].get_output_type();
+	const auto collection_type = get_expr_output(gen_acc.gen, details.args[0]);
 
 	auto f_reg = generate_expression(gen_acc, details.args[1]);
-	auto f_type = details.args[1].get_output_type();
+	auto f_type = get_expr_output(gen_acc.gen, details.args[1]);
 
 	auto context_reg = generate_expression(gen_acc, details.args[2]);
-	auto context_type = details.args[2].get_output_type();
+	auto context_type = get_expr_output(gen_acc.gen, details.args[2]);
 
 	return generate_instrinsic_map(gen_acc, resolved_call_type, *vector_reg, collection_type, *f_reg, f_type, *context_reg, context_type);
 }
@@ -1272,18 +1284,21 @@ static llvm::Value* generate_intrinsic_expression(llvm_function_generator_t& gen
 
 static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(details.value_type.is_vector());
+
+	const auto construct_type = lookup_type(gen_acc.gen.type_lookup.state.type_interner, details.value_type);
+
+	QUARK_ASSERT(construct_type.is_vector());
 
 	auto& builder = gen_acc.get_builder();
 	auto& context = builder.getContext();
 
 	const auto element_count = details.elements.size();
-	const auto element_type0 = details.value_type.get_vector_element_type();
+	const auto element_type0 = construct_type.get_vector_element_type();
 	const auto& element_type1 = *get_llvm_type_as_arg(gen_acc.gen.type_lookup, element_type0);
-	auto vec_type_reg = generate_itype_constant(gen_acc.gen, details.value_type);
+	auto vec_type_reg = generate_itype_constant(gen_acc.gen, construct_type);
 
-	if(is_vector_carray(gen_acc.gen.settings.config, details.value_type)){
-		auto vec_ptr_reg = generate_allocate_vector(gen_acc, details.value_type, element_count, vector_backend::carray);
+	if(is_vector_carray(gen_acc.gen.settings.config, construct_type)){
+		auto vec_ptr_reg = generate_allocate_vector(gen_acc, construct_type, element_count, vector_backend::carray);
 
 		auto ptr_reg = generate_get_vec_element_ptr_needs_cast(gen_acc, *vec_ptr_reg);
 
@@ -1318,8 +1333,8 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 			return vec_ptr_reg;
 		}
 	}
-	else if(is_vector_hamt(gen_acc.gen.settings.config, details.value_type)){
-		auto vec_ptr_reg = generate_allocate_vector(gen_acc, details.value_type, element_count, vector_backend::hamt);
+	else if(is_vector_hamt(gen_acc.gen.settings.config, construct_type)){
+		auto vec_ptr_reg = generate_allocate_vector(gen_acc, construct_type, element_count, vector_backend::hamt);
 		int element_index = 0;
 		for(const auto& element_value: details.elements){
 			auto index_reg = generate_constant(gen_acc, value_t::make_int(element_index));
@@ -1340,12 +1355,14 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 
 static llvm::Value* generate_construct_dict(llvm_function_generator_t& gen_acc, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(details.value_type.is_dict());
+
+	const auto construct_type = lookup_type(gen_acc.gen.type_lookup.state.type_interner, details.value_type);
+	QUARK_ASSERT(construct_type.is_dict());
 
 	auto& builder = gen_acc.get_builder();
 
-	const auto element_type0 = details.value_type.get_dict_value_type();
-	auto dict_type_reg = generate_itype_constant(gen_acc.gen, details.value_type);
+	const auto element_type0 = construct_type.get_dict_value_type();
+	auto dict_type_reg = generate_itype_constant(gen_acc.gen, construct_type);
 	auto dict_acc_ptr_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_allocate_dict.llvm_codegen_f, { gen_acc.get_callers_fcp(), dict_type_reg }, "");
 
 	//	Elements are stored as pairs.
@@ -1355,7 +1372,7 @@ static llvm::Value* generate_construct_dict(llvm_function_generator_t& gen_acc, 
 	for(int element_index = 0 ; element_index < count ; element_index++){
 		llvm::Value* key0_reg = generate_expression(gen_acc, details.elements[element_index * 2 + 0]);
 		llvm::Value* element0_reg = generate_expression(gen_acc, details.elements[element_index * 2 + 1]);
-		generate_store_dict_mutable(gen_acc, *dict_acc_ptr_reg, details.value_type, *key0_reg, *element0_reg, gen_acc.gen.settings.config.dict_backend_mode);
+		generate_store_dict_mutable(gen_acc, *dict_acc_ptr_reg, construct_type, *key0_reg, *element0_reg, gen_acc.gen.settings.config.dict_backend_mode);
 		generate_release(gen_acc, *key0_reg, typeid_t::make_string());
 	}
 	return dict_acc_ptr_reg;
@@ -1363,16 +1380,17 @@ static llvm::Value* generate_construct_dict(llvm_function_generator_t& gen_acc, 
 
 static llvm::Value* generate_construct_struct(llvm_function_generator_t& gen_acc, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(details.value_type.is_struct());
+
+	const auto construct_type = lookup_type(gen_acc.gen.type_lookup.state.type_interner, details.value_type);
+	QUARK_ASSERT(construct_type.is_struct());
 
 	auto& builder = gen_acc.get_builder();
 	auto& context = builder.getContext();
 
-	const auto target_type = details.value_type;
 	const auto element_count = details.elements.size();
 
-	const auto& struct_def = target_type.get_struct();
-	auto& exact_struct_type = *get_exact_struct_type_byvalue(gen_acc.gen.type_lookup, target_type);
+	const auto& struct_def = construct_type.get_struct();
+	auto& exact_struct_type = *get_exact_struct_type_byvalue(gen_acc.gen.type_lookup, construct_type);
 	QUARK_ASSERT(struct_def._members.size() == element_count);
 
 
@@ -1380,7 +1398,7 @@ static llvm::Value* generate_construct_struct(llvm_function_generator_t& gen_acc
 	const llvm::StructLayout* layout = data_layout.getStructLayout(&exact_struct_type);
 	const auto struct_bytes = layout->getSizeInBytes();
 
-	auto struct_type_reg = generate_itype_constant(gen_acc.gen, details.value_type);
+	auto struct_type_reg = generate_itype_constant(gen_acc.gen, construct_type);
 	const auto size_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), struct_bytes);
 	std::vector<llvm::Value*> args2 = {
 		gen_acc.get_callers_fcp(),
@@ -1392,7 +1410,7 @@ static llvm::Value* generate_construct_struct(llvm_function_generator_t& gen_acc
 
 
 	//!!! We basically inline the entire constructor here -- bad idea? Maybe generate a construction function and call it.
-	auto base_ptr_reg = generate_get_struct_base_ptr(gen_acc, *generic_struct_ptr_reg, target_type);
+	auto base_ptr_reg = generate_get_struct_base_ptr(gen_acc, *generic_struct_ptr_reg, construct_type);
 
 	int member_index = 0;
 	for(const auto& m: struct_def._members){
@@ -1418,25 +1436,25 @@ static llvm::Value* generate_construct_struct(llvm_function_generator_t& gen_acc
 
 static llvm::Value* generate_construct_primitive(llvm_function_generator_t& gen_acc, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
-//	QUARK_ASSERT(details.value_type.is_struct());
 
-	const auto target_type = details.value_type;
+	const auto construct_type = lookup_type(gen_acc.gen.type_lookup.state.type_interner, details.value_type);
+
 	const auto element_count = details.elements.size();
 	QUARK_ASSERT(element_count == 1);
 
 	//	Construct a primitive, using int(113) or double(3.14)
 
 	auto element0_reg = generate_expression(gen_acc, details.elements[0]);
-	const auto input_value_type = details.elements[0].get_output_type();
+	const auto input_value_type = get_expr_output(gen_acc.gen, details.elements[0]);
 
-	if(target_type.is_bool() || target_type.is_int() || target_type.is_double() || target_type.is_typeid()){
+	if(construct_type.is_bool() || construct_type.is_int() || construct_type.is_double() || construct_type.is_typeid()){
 		return element0_reg;
 	}
 
 	//	NOTICE: string -> json needs to be handled at runtime.
 
 	//	Automatically transform a json::string => string at runtime?
-	else if(target_type.is_string() && input_value_type.is_json()){
+	else if(construct_type.is_string() && input_value_type.is_json()){
 		std::vector<llvm::Value*> args = {
 			gen_acc.get_callers_fcp(),
 			element0_reg
@@ -1446,7 +1464,7 @@ static llvm::Value* generate_construct_primitive(llvm_function_generator_t& gen_
 		generate_release(gen_acc, *element0_reg, input_value_type);
 		return result;
 	}
-	else if(target_type.is_json()){
+	else if(construct_type.is_json()){
 		//	Put a value_t into a json
 		std::vector<llvm::Value*> args2 = {
 			gen_acc.get_callers_fcp(),
@@ -1467,13 +1485,15 @@ static llvm::Value* generate_construct_value_expression(llvm_function_generator_
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	if(details.value_type.is_vector()){
+	const auto construct_type = lookup_type(gen_acc.gen.type_lookup.state.type_interner, details.value_type);
+
+	if(construct_type.is_vector()){
 		return generate_construct_vector(gen_acc, details);
 	}
-	else if(details.value_type.is_dict()){
+	else if(construct_type.is_dict()){
 		return generate_construct_dict(gen_acc, details);
 	}
-	else if(details.value_type.is_struct()){
+	else if(construct_type.is_struct()){
 		return generate_construct_struct(gen_acc, details);
 	}
 
@@ -1645,7 +1665,7 @@ static llvm::Value* generate_load2_expression(llvm_function_generator_t& gen_acc
 
 	auto dest = find_symbol(gen_acc.gen, details.address);
 	auto result = gen_acc.get_builder().CreateLoad(dest.value_ptr, "temp");
-	generate_retain(gen_acc, *result, e.get_output_type());
+	generate_retain(gen_acc, *result, get_expr_output(gen_acc.gen, e));
 	return result;
 }
 
@@ -1701,7 +1721,7 @@ static llvm::Value* generate_expression(llvm_function_generator_t& gen_acc, cons
 				auto result = s.value_ptr;
 
 				//	No need to retain function arguments! We should track which expression-outputs that need release.
-				generate_retain(gen_acc, *result, e.get_output_type());
+				generate_retain(gen_acc, *result, get_expr_output(gen_acc.gen, e));
 				return result;
 			}
 			else{
@@ -1746,7 +1766,7 @@ static void generate_assign2_statement(llvm_function_generator_t& gen_acc, const
 
 	auto dest = find_symbol(gen_acc.gen, s._dest_variable);
 	//???named-type, check this is a mutable
-	const auto type = dest.symbol.get_value_type();
+	const auto type = lookup_type(gen_acc.gen.type_lookup.state.type_interner, dest.symbol.get_value_type());
 
 	if(is_rc_value(type)){
 		auto prev_value = gen_acc.get_builder().CreateLoad(dest.value_ptr);
@@ -1994,7 +2014,7 @@ static void generate_expression_statement(llvm_function_generator_t& gen_acc, co
 	QUARK_ASSERT(gen_acc.check_invariant());
 
 	auto result_reg = generate_expression(gen_acc, s._expression);
-	generate_release(gen_acc, *result_reg, s._expression.get_output_type());
+	generate_release(gen_acc, *result_reg, get_expr_output(gen_acc.gen, s._expression));
 
 	QUARK_ASSERT(gen_acc.check_invariant());
 }
@@ -2108,7 +2128,7 @@ std::vector<resolved_symbol_t> generate_function_local_symbols(llvm_function_gen
 	for(const auto& e: symbol_table._symbols){
 
 		//???named-type
-		const auto type = e.second.get_value_type();
+		const auto type = lookup_type(gen_acc.gen.type_lookup.state.type_interner, e.second.get_value_type());
 		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type);
 
 		//	Figure out if this symbol is an argument or a local variable.
@@ -2192,11 +2212,12 @@ static llvm::Value* generate_global(llvm_function_generator_t& gen_acc, const st
 
 	auto& module = *gen_acc.gen.module;
 
+	const auto symbol_value_type = lookup_type(gen_acc.gen.type_lookup.state.type_interner, symbol.get_value_type());
+
 	if(symbol._symbol_type == symbol_t::symbol_type::immutable_reserve){
 		QUARK_ASSERT(symbol._init.is_undefined());
 
-		const auto type0 = symbol.get_value_type();
-		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type0);
+		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, symbol_value_type);
 		return generate_global0(module, symbol_name, *itype, nullptr);
 	}
 	else if(symbol._symbol_type == symbol_t::symbol_type::immutable_arg){
@@ -2206,8 +2227,7 @@ static llvm::Value* generate_global(llvm_function_generator_t& gen_acc, const st
 	else if(symbol._symbol_type == symbol_t::symbol_type::immutable_precalc){
 		QUARK_ASSERT(symbol._init.is_undefined() == false);
 
-		const auto type0 = symbol.get_value_type();
-		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type0);
+		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, symbol_value_type);
 		auto init_reg = generate_constant(gen_acc, symbol._init);
 		if (llvm::Constant* CI = llvm::dyn_cast<llvm::Constant>(init_reg)){
 			return generate_global0(module, symbol_name, *itype, CI);
@@ -2218,12 +2238,11 @@ static llvm::Value* generate_global(llvm_function_generator_t& gen_acc, const st
 	}
 	else if(symbol._symbol_type == symbol_t::symbol_type::named_type){
 		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, typeid_t::make_typeid());
-		auto itype_reg = generate_itype_constant(gen_acc.gen, symbol.get_value_type());
+		auto itype_reg = generate_itype_constant(gen_acc.gen, symbol_value_type);
 		return generate_global0(module, symbol_name, *itype, itype_reg);
 	}
 	else if(symbol._symbol_type == symbol_t::symbol_type::mutable_reserve){
-		const auto type0 = symbol.get_value_type();
-		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type0);
+		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, symbol_value_type);
 		return generate_global0(module, symbol_name, *itype, nullptr);
 	}
 	else{
@@ -2429,7 +2448,7 @@ static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const 
 					bool needs_destruct = e.symbol._symbol_type != symbol_t::symbol_type::named_type;
 					if(needs_destruct){
 						//???named-type
-						const auto type = e.symbol.get_value_type();
+						const auto type = lookup_type(gen_acc.type_lookup.state.type_interner, e.symbol.get_value_type());
 						if(is_rc_value(type)){
 							auto reg = builder.CreateLoad(e.value_ptr);
 							generate_release(function_gen_acc, *reg, type);

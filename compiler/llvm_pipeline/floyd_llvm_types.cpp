@@ -317,6 +317,9 @@ static llvm::Type* make_llvm_type(const builder_t& builder, const typeid_t& type
 		llvm::Type* operator()(const typeid_t::function_t& e) const{
 			return deref_ptr(make_function_type(builder, type));
 		}
+		llvm::Type* operator()(const typeid_t::identifier_t& e) const {
+			QUARK_ASSERT(false); throw std::exception();
+		}
 	};
 	return std::visit(visitor_t{ builder, type }, type._contents);
 }
@@ -372,7 +375,7 @@ llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const type_intern
 	acc.type_interner = type_interner;
 
 	//	Make an entry for each entry in type_interner
-	acc.types = std::vector<type_entry_t>(type_interner.interned.size(), type_entry_t());
+	acc.types = std::vector<type_entry_t>(type_interner.interned2.size(), type_entry_t());
 
 
 	acc.generic_vec_type = make_generic_vec_type_internal(context);
@@ -388,13 +391,14 @@ llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const type_intern
 
 	builder_t builder { context, acc };
 
-	for(const auto& e: acc.type_interner.interned){
+	for(const auto& e: acc.type_interner.interned2){
 		QUARK_ASSERT(builder.acc.type_interner.check_invariant());
-		QUARK_ASSERT(e.check_invariant());
+		QUARK_ASSERT(e.first.check_invariant());
+		QUARK_ASSERT(e.second.check_invariant());
 
-		const auto itype = lookup_itype(builder.acc.type_interner, e);
+		const auto itype = lookup_itype(builder.acc.type_interner, e.second);
 		const auto index = itype.get_lookup_index();
-		const auto entry = make_type(builder, e);
+		const auto entry = make_type(builder, e.second);
 		builder.acc.types[index] = entry;
 	}
 
@@ -417,7 +421,7 @@ bool llvm_type_lookup::check_invariant() const {
 	QUARK_ASSERT(state.wide_return_type != nullptr);
 
 	QUARK_ASSERT(state.type_interner.check_invariant());
-	QUARK_ASSERT(state.type_interner.interned.size() == state.types.size());
+	QUARK_ASSERT(state.type_interner.interned2.size() == state.types.size());
 	return true;
 }
 
@@ -446,7 +450,7 @@ void trace_llvm_type_lookup(const llvm_type_lookup& type_lookup){
 
 	for(int i = 0 ; i < type_lookup.state.types.size() ; i++){
 		const auto& e = type_lookup.state.types[i];
-		const auto type = type_lookup.state.type_interner.interned[i];
+		const auto type = type_lookup.state.type_interner.interned2[i].second;
 		const auto l = line_t {
 			{
 				std::to_string(i),
@@ -582,10 +586,6 @@ llvm::Type* make_frp_type(const llvm_type_lookup& type_lookup){
 
 static llvm_type_lookup make_basic_interner(llvm::LLVMContext& context){
 	type_interner_t temp;
-	intern_type(temp, typeid_t::make_void());
-	intern_type(temp, typeid_t::make_int());
-	intern_type(temp, typeid_t::make_bool());
-	intern_type(temp, typeid_t::make_string());
 	return llvm_type_lookup(context, temp);
 }
 

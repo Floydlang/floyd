@@ -371,6 +371,9 @@ runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value
 			NOT_IMPLEMENTED_YET();
 			QUARK_ASSERT(false);
 		}
+		runtime_value_t operator()(const typeid_t::identifier_t& e) const {
+			QUARK_ASSERT(false); throw std::exception();
+		}
 	};
 	return std::visit(visitor_t{ backend, value }, type._contents);
 }
@@ -467,6 +470,9 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 		value_t operator()(const typeid_t::function_t& e) const{
 			const auto link_name = native_func_ptr_to_link_name(backend, encoded_value.function_ptr);
 			return value_t::make_function_value(type, function_id_t { link_name.s });
+		}
+		value_t operator()(const typeid_t::identifier_t& e) const {
+			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
 	return std::visit(visitor_t{ backend, encoded_value, type }, type._contents);

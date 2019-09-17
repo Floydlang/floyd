@@ -36,9 +36,13 @@ json_t gp_ast_to_json(const general_purpose_ast_t& ast){
 
 
 	std::vector<json_t> types;
-	for(auto i = 0 ; i < ast._interned_types.interned.size() ; i++){
-		const auto& e = ast._interned_types.interned[i];
-		const auto x = typeid_to_ast_json(e, json_tags::k_tag_resolve_state);
+	for(auto i = 0 ; i < ast._interned_types.interned2.size() ; i++){
+		const auto& e = ast._interned_types.interned2[i];
+		const auto a = typeid_to_ast_json(e.second, json_tags::k_tag_resolve_state);
+		const auto x = json_t::make_object({
+			{ "name", e.first.path },
+			{ "desc", a }
+		});
 		types.push_back(x);
 	}
 
@@ -55,26 +59,37 @@ json_t gp_ast_to_json(const general_purpose_ast_t& ast){
 }
 
 general_purpose_ast_t json_to_gp_ast(const json_t& json){
+	QUARK_ASSERT(json.check_invariant());
+
 	const auto globals0 = json.get_object_element("globals");
 	const auto function_defs = json.get_object_element("function_defs");
 	const auto types0 = json.get_object_element("types");
 
-	body_t globals1 = json_to_body(globals0);
+
+	//	Fix types first, before globals and functions.
+	std::vector<std::pair<type_name_t, typeid_t>> types;
+	for(const auto& t: types0.get_array()){
+		const auto name = t.get_object_element("name").get_string();
+		const auto desc = t.get_object_element("desc");
+
+		const auto t2 = typeid_from_ast_json(desc);
+		const auto e = std::pair<type_name_t, typeid_t>{ type_name_t { name }, t2 };
+		types.push_back(e);
+	}
+	type_interner_t types2;
+
+
+
+	body_t globals1 = json_to_body(types2, globals0);
 
 	std::vector<floyd::function_definition_t> function_defs1;
 	for(const auto& f: function_defs.get_array()){
-		const auto f1 = json_to_function_def(f);
+		const auto f1 = json_to_function_def(types2, f);
 		function_defs1.push_back(f1);
 	}
 
 
-	std::vector<typeid_t> types;
-	for(const auto& t: types0.get_array()){
-		const auto t2 = typeid_from_ast_json(t);
-		types.push_back(t2);
-	}
-	type_interner_t types2;
-	types2.interned = types;
+	types2.interned2 = types;
 
 	return general_purpose_ast_t {
 		globals1,
