@@ -228,7 +228,7 @@ static statement_t ast_json_to_statement(const type_interner_t& interner, const 
 	QUARK_ASSERT(statement0.check_invariant());
 	QUARK_ASSERT(statement0.is_array());
 
-	const auto statement1 = unpack_loc(statement0);
+	const auto statement1 = unpack_loc(statement0);	
 	const auto loc = statement1.second;
 	const auto statement = statement1.first;
 	const std::string type = statement.get_array_n(0).get_string();
@@ -247,7 +247,7 @@ static statement_t ast_json_to_statement(const type_interner_t& interner, const 
 		const auto expr = statement.get_array_n(3);
 		const auto meta = statement.get_array_size() >= 5 ? statement.get_array_n(4) : json_t();
 
-		const auto bind_type2 = typeid_from_ast_json(bind_type);
+		const auto bind_type2 = type_name_from_json(bind_type);
 		const auto name2 = name.get_string();
 		const auto expr2 = ast_json_to_expression(interner, expr);
 		bool mutable_flag = !meta.is_null() && meta.does_object_element_exist("mutable");
@@ -415,7 +415,7 @@ json_t statement_to_json(const statement_t& e){
 				statement_opcode_t::k_init_local,
 				{
 					s._new_local_name,
-					typeid_to_ast_json(s._bindtype, json_tags::k_tag_resolve_state),
+					type_name_to_json(s._bindtype),
 					expression_to_json(s._expression),
 					meta
 				}

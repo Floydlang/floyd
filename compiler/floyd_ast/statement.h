@@ -272,11 +272,11 @@ struct statement_t {
 		}
 
 		std::string _new_local_name;
-		typeid_t _bindtype;
+		type_name_t _bindtype;
 		expression_t _expression;
 		mutable_mode _locals_mutable_mode;
 	};
-	public: static statement_t make__bind_local(const location_t& location, const std::string& new_local_name, const typeid_t& bindtype, const expression_t& expression, bind_local_t::mutable_mode locals_mutable_mode){
+	public: static statement_t make__bind_local(const location_t& location, const std::string& new_local_name, const type_name_t& bindtype, const expression_t& expression, bind_local_t::mutable_mode locals_mutable_mode){
 		return statement_t(location, { bind_local_t{ new_local_name, bindtype, expression, locals_mutable_mode } });
 	}
 

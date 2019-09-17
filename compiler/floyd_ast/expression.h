@@ -491,7 +491,7 @@ struct expression_t {
 		const body_t& body
 	)
 	{
-		return expression_t({ benchmark_expr_t{ std::make_shared<body_t>(body) } }, make_type_name_from_typeid(typeid_t::make_int()));
+		return expression_t({ benchmark_expr_t{ std::make_shared<body_t>(body) } }, type_name_t::make_int());
 	}
 
 

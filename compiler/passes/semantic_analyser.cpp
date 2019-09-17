@@ -288,6 +288,14 @@ static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid
 	}
 }
 
+static typeid_t record_type2(analyser_t& acc, const location_t& loc, const type_name_t& name){
+	QUARK_ASSERT(acc.check_invariant());
+	QUARK_ASSERT(loc.check_invariant());
+	QUARK_ASSERT(name.check_invariant());
+
+	return lookup_type(acc._types, name);
+}
+
 
 static typeid_t analyze_expr_output_type(analyser_t& a, const expression_t& e){
 	QUARK_ASSERT(a.check_invariant());
@@ -303,7 +311,7 @@ static typeid_t analyze_expr_output_type(analyser_t& a, const expression_t& e){
 
 
 //	When callee has "any" as return type, we need to figure out its return type using its algorithm and the actual types
-static const typeid_t figure_out_callee_return_type(const analyser_t& a, const statement_t& parent, const typeid_t& callee_type, const std::vector<expression_t>& call_args){
+static const typeid_t figure_out_callee_return_type(analyser_t& a, const statement_t& parent, const typeid_t& callee_type, const std::vector<expression_t>& call_args){
 	const auto callee_return_type = callee_type.get_function_return();
 
 	const auto ret_type_algo = callee_type.get_function_dyn_return_type();
@@ -319,14 +327,14 @@ static const typeid_t figure_out_callee_return_type(const analyser_t& a, const s
 			{
 				QUARK_ASSERT(call_args.size() > 0);
 
-				return analyze_expr_output_type(a._types, call_args[0]);
+				return analyze_expr_output_type(a, call_args[0]);
 			}
 			break;
 		case typeid_t::return_dyn_type::arg1:
 			{
 				QUARK_ASSERT(call_args.size() >= 2);
 
-				return analyze_expr_output_type(a._types, call_args[1]);
+				return analyze_expr_output_type(a, call_args[1]);
 			}
 			break;
 		case typeid_t::return_dyn_type::arg1_typeid_constant_type:
@@ -359,7 +367,7 @@ static const typeid_t figure_out_callee_return_type(const analyser_t& a, const s
 		//	x = make_vector(arg1.get_function_return());
 				QUARK_ASSERT(call_args.size() >= 2);
 
-				const auto f = analyze_expr_output_type(a._types, call_args[1]).get_function_return();
+				const auto f = analyze_expr_output_type(a, call_args[1]).get_function_return();
 				const auto ret = typeid_t::make_vector(f);
 				return ret;
 			}
@@ -368,7 +376,7 @@ static const typeid_t figure_out_callee_return_type(const analyser_t& a, const s
 			{
 		//	x = make_vector(arg2.get_function_return());
 			QUARK_ASSERT(call_args.size() >= 3);
-			const auto f = analyze_expr_output_type(a._types, call_args[2]).get_function_return();
+			const auto f = analyze_expr_output_type(a, call_args[2]).get_function_return();
 			const auto ret = typeid_t::make_vector(f);
 			return ret;
 			}
@@ -417,7 +425,7 @@ static std::pair<analyser_t, fully_resolved_call_t> analyze_resolve_call_type(co
 	const auto callee_return_type = figure_out_callee_return_type(a_acc, parent, callee_type, call_args2);
 	std::vector<typeid_t> resolved_arg_types;
 	for(const auto& e: call_args2){
-		resolved_arg_types.push_back(analyze_expr_output_type(a_acc._types, e));
+		resolved_arg_types.push_back(analyze_expr_output_type(a_acc, e));
 	}
 	const auto resolved_function_type = typeid_t::make_function(callee_return_type, resolved_arg_types, callee_type.get_function_pure());
 	return { a_acc, { call_args2, resolved_function_type } };
@@ -496,10 +504,10 @@ std::pair<analyser_t, statement_t> analyse_assign_statement(const analyser_t& a,
 			a_acc = rhs_expr2.first;
 			const auto rhs_expr3 = rhs_expr2.second;
 
-			if(lhs_type != analyze_expr_output_type(a_acc._types, rhs_expr3)){
+			if(lhs_type != analyze_expr_output_type(a_acc, rhs_expr3)){
 				std::stringstream what;
 				what << "Types not compatible in assignment - cannot convert '"
-				<< typeid_to_compact_string(analyze_expr_output_type(a_acc._types, rhs_expr3)) << "' to '" << typeid_to_compact_string(lhs_type) << ".";
+				<< typeid_to_compact_string(analyze_expr_output_type(a_acc, rhs_expr3)) << "' to '" << typeid_to_compact_string(lhs_type) << ".";
 				throw_compiler_error(s.location, what.str());
 			}
 			else{
@@ -536,7 +544,8 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 	//	If lhs may be
 	//		(1) undefined, if input is "let a = 10" for example. Then we need to infer its type.
 	//		(2) have a type, but it might not be fully resolved yet.
-	const auto lhs_type = lhs_type0.is_undefined() ? lhs_type0 : record_type(a_acc, s.location, lhs_type0);
+	const auto lhs_type_name = lhs_type0.is_undefined() ? lhs_type0 : /*record_type2(a_acc, s.location, lhs_type0)*/ lhs_type0;
+	const auto lhs_type = lookup_type(a._types, lhs_type_name);
 
 	const auto mutable_flag = statement._locals_mutable_mode == statement_t::bind_local_t::k_mutable;
 
@@ -547,9 +556,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 
 	//	Setup temporary symbol so function definition can find itself = recursive.
 	//	Notice: the final type may not be correct yet, but for function definitions it is.
-	//	This logic should be available for infered binds too, in analyse_assign_statement().
-
-	const auto lhs_type_name = make_type_name_from_typeid(lhs_type);
+	//	This logic should be available for inferred binds too, in analyse_assign_statement().
 
 	const auto new_symbol = mutable_flag ? symbol_t::make_mutable(lhs_type_name) : symbol_t::make_immutable_reserve(lhs_type_name);
 	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ new_local_name, new_symbol });
@@ -561,7 +568,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 			: analyse_expression_to_target(a_acc, s, statement._expression, lhs_type);
 		a_acc = rhs_expr_pair.first;
 
-		const auto rhs_type = analyze_expr_output_type(a_acc._types, rhs_expr_pair.second);
+		const auto rhs_type = analyze_expr_output_type(a_acc, rhs_expr_pair.second);
 		const auto lhs_type2 = lhs_type.is_undefined() ? rhs_type : lhs_type;
 
 		if(lhs_type2 != lhs_type2){
@@ -580,13 +587,13 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 			if(is_preinitliteral(lhs_type2) && mutable_flag == false && get_expression_type(rhs_expr_pair.second) == expression_type::k_literal){
 				const auto symbol2 = symbol_t::make_immutable_precalc(lhs_type_name2, rhs_expr_pair.second.get_literal());
 				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
-				record_type(a_acc, s.location, analyze_expr_output_type(a_acc._types, rhs_expr_pair.second));
+				record_type(a_acc, s.location, analyze_expr_output_type(a_acc, rhs_expr_pair.second));
 				return { a_acc, {} };
 			}
 			else{
 				const auto symbol2 = mutable_flag ? symbol_t::make_mutable(lhs_type_name2) : symbol_t::make_immutable_reserve(lhs_type_name2);
 				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
-				record_type(a_acc, s.location, analyze_expr_output_type(a_acc._types, rhs_expr_pair.second));
+				record_type(a_acc, s.location, analyze_expr_output_type(a_acc, rhs_expr_pair.second));
 
 				return {
 					a_acc,
@@ -650,7 +657,7 @@ std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a,
 	const auto condition2 = analyse_expression_no_target(a_acc, s, statement._condition);
 	a_acc = condition2.first;
 
-	const auto condition_type = analyze_expr_output_type(a_acc._types, condition2.second);
+	const auto condition_type = analyze_expr_output_type(a_acc, condition2.second);
 	if(condition_type.is_bool() == false){
 		std::stringstream what;
 		what << "Boolean condition required.";
@@ -671,18 +678,18 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, co
 	const auto start_expr2 = analyse_expression_no_target(a_acc, s, statement._start_expression);
 	a_acc = start_expr2.first;
 
-	if(analyze_expr_output_type(a_acc._types, start_expr2.second).is_int() == false){
+	if(analyze_expr_output_type(a_acc, start_expr2.second).is_int() == false){
 		std::stringstream what;
-		what << "For-loop requires integer iterator, start type is " <<  typeid_to_compact_string(analyze_expr_output_type(a_acc._types, start_expr2.second)) << ".";
+		what << "For-loop requires integer iterator, start type is " <<  typeid_to_compact_string(analyze_expr_output_type(a_acc, start_expr2.second)) << ".";
 		throw_compiler_error(s.location, what.str());
 	}
 
 	const auto end_expr2 = analyse_expression_no_target(a_acc, s, statement._end_expression);
 	a_acc = end_expr2.first;
 
-	if(analyze_expr_output_type(a_acc._types, end_expr2.second).is_int() == false){
+	if(analyze_expr_output_type(a_acc, end_expr2.second).is_int() == false){
 		std::stringstream what;
-		what << "For-loop requires integer iterator, end type is " <<  typeid_to_compact_string(analyze_expr_output_type(a_acc._types, end_expr2.second)) << ".";
+		what << "For-loop requires integer iterator, end type is " <<  typeid_to_compact_string(analyze_expr_output_type(a_acc, end_expr2.second)) << ".";
 		throw_compiler_error(s.location, what.str());
 	}
 
@@ -874,7 +881,7 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 	const auto parent_expr = analyse_expression_no_target(a_acc, parent, *details.parent_address);
 	a_acc = parent_expr.first;
 
-	const auto parent_type = analyze_expr_output_type(a_acc._types, parent_expr.second);
+	const auto parent_type = analyze_expr_output_type(a_acc, parent_expr.second);
 
 	if(parent_type.is_struct()){
 		const auto struct_def = parent_type.get_struct();
@@ -908,11 +915,11 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 
 	const auto new_value_expr = analyse_expression_no_target(a_acc, parent, args[2]);
 	a_acc = new_value_expr.first;
-	const auto collection_type = analyze_expr_output_type(a_acc._types, collection_expr.second);
+	const auto collection_type = analyze_expr_output_type(a_acc, collection_expr.second);
 
 
 	const auto& key = args[1];
-	const auto new_value_type = analyze_expr_output_type(a_acc._types, new_value_expr.second);
+	const auto new_value_type = analyze_expr_output_type(a_acc, new_value_expr.second);
 
 	if(collection_type.is_struct()){
 		const auto struct_def = collection_type.get_struct();
@@ -947,7 +954,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 	else if(collection_type.is_string()){
 		const auto key_expr = analyse_expression_no_target(a_acc, parent, key);
 		a_acc = key_expr.first;
-		const auto key_type = analyze_expr_output_type(a_acc._types, key_expr.second);
+		const auto key_type = analyze_expr_output_type(a_acc, key_expr.second);
 
 		if(key_type.is_int() == false){
 			std::stringstream what;
@@ -969,7 +976,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 	else if(collection_type.is_vector()){
 		const auto key_expr = analyse_expression_no_target(a_acc, parent, key);
 		a_acc = key_expr.first;
-		const auto key_type = analyze_expr_output_type(a_acc._types, key_expr.second);
+		const auto key_type = analyze_expr_output_type(a_acc, key_expr.second);
 
 		if(key_type.is_int() == false){
 			std::stringstream what;
@@ -990,7 +997,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 	else if(collection_type.is_dict()){
 		const auto key_expr = analyse_expression_no_target(a_acc, parent, key);
 		a_acc = key_expr.first;
-		const auto key_type = analyze_expr_output_type(a_acc._types, key_expr.second);
+		const auto key_type = analyze_expr_output_type(a_acc, key_expr.second);
 
 		if(key_type.is_string() == false){
 			std::stringstream what;
@@ -1382,8 +1389,8 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 	const auto key_expr = analyse_expression_no_target(a_acc, parent, *details.lookup_key);
 	a_acc = key_expr.first;
 
-	const auto parent_type = analyze_expr_output_type(a_acc._types, parent_expr.second);
-	const auto key_type = analyze_expr_output_type(a_acc._types, key_expr.second);
+	const auto parent_type = analyze_expr_output_type(a_acc, parent_expr.second);
+	const auto key_type = analyze_expr_output_type(a_acc, key_expr.second);
 
 	if(parent_type.is_string()){
 		if(key_type.is_int() == false){
@@ -1496,7 +1503,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 
 	auto a_acc = a;
 
-	const auto current_type = analyze_expr_output_type(a_acc._types, e);
+	const auto current_type = analyze_expr_output_type(a_acc, e);
 //	const auto resolved_named_type = resolve_named_type(a_acc._types, current_type);
 
 	if(current_type.is_vector()){
@@ -1534,7 +1541,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				elements2.push_back(element_expr.second);
 			}
 
-			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? analyze_expr_output_type(a_acc._types, elements2[0]) : element_type;
+			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? analyze_expr_output_type(a_acc, elements2[0]) : element_type;
 			const auto result_type0 = typeid_t::make_vector(element_type2);
 			const auto result_type1 = check_types_resolved(a_acc._types, result_type0) == false && target_type.is_any() == false ? target_type : result_type0;
 
@@ -1547,9 +1554,9 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			const auto result_type = record_type(a_acc, parent.location, result_type1);
 
 			for(const auto& m: elements2){
-				if(analyze_expr_output_type(a_acc._types, m) != element_type2){
+				if(analyze_expr_output_type(a_acc, m) != element_type2){
 					std::stringstream what;
-					what << "Vector of type " << typeid_to_compact_string(result_type) << " cannot hold an element of type " << typeid_to_compact_string(analyze_expr_output_type(a_acc._types, m)) << ".";
+					what << "Vector of type " << typeid_to_compact_string(result_type) << " cannot hold an element of type " << typeid_to_compact_string(analyze_expr_output_type(a_acc, m)) << ".";
 					throw_compiler_error(parent.location, what.str());
 				}
 			}
@@ -1605,14 +1612,14 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			}
 
 			//	Infer type of dictionary based on first value.
-			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? analyze_expr_output_type(a_acc._types, elements2[0 * 2 + 1]) : element_type;
+			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? analyze_expr_output_type(a_acc, elements2[0 * 2 + 1]) : element_type;
 			const auto result_type0 = typeid_t::make_dict(element_type2);
 			const auto result_type = check_types_resolved(a_acc._types, result_type0) == false && target_type.is_any() == false ? target_type : result_type0;
 
 
 			//	Make sure all elements have the correct type.
 			for(int i = 0 ; i < elements2.size() / 2 ; i++){
-				const auto element_type0 = analyze_expr_output_type(a_acc._types, elements2[i * 2 + 1]);
+				const auto element_type0 = analyze_expr_output_type(a_acc, elements2[i * 2 + 1]);
 				if(element_type0 != element_type2){
 					std::stringstream what;
 					what << "Dictionary of type " << typeid_to_compact_string(result_type) << " cannot hold an element of type " << typeid_to_compact_string(element_type0) << ".";
@@ -1666,7 +1673,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(co
 	a_acc = expr2.first;
 
 	//??? We could simplify here and return [ "-", 0, expr]
-	const auto type = analyze_expr_output_type(a_acc._types, expr2.second);
+	const auto type = analyze_expr_output_type(a_acc, expr2.second);
 	if(type.is_int() || type.is_double()){
 		return {a_acc, expression_t::make_unary_minus(expr2.second, make_type_name_from_typeid(type))  };
 	}
@@ -1692,19 +1699,19 @@ std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(cons
 	const auto b = analyse_expression_no_target(analyser_acc, parent, *details.b);
 	analyser_acc = b.first;
 
-	const auto type = analyze_expr_output_type(analyser_acc._types, cond_result.second);
+	const auto type = analyze_expr_output_type(analyser_acc, cond_result.second);
 	if(type.is_bool() == false){
 		std::stringstream what;
 		what << "Conditional expression needs to be a bool, not a " << typeid_to_compact_string(type) << ".";
 		throw_compiler_error(parent.location, what.str());
 	}
-	else if(analyze_expr_output_type(analyser_acc._types, a.second) != analyze_expr_output_type(analyser_acc._types, b.second)){
+	else if(analyze_expr_output_type(analyser_acc, a.second) != analyze_expr_output_type(analyser_acc, b.second)){
 		std::stringstream what;
-		what << "Conditional expression requires true/false expressions to have the same type, currently " << typeid_to_compact_string(analyze_expr_output_type(analyser_acc._types, a.second)) << " : " << typeid_to_compact_string(analyze_expr_output_type(analyser_acc._types, b.second)) << ".";
+		what << "Conditional expression requires true/false expressions to have the same type, currently " << typeid_to_compact_string(analyze_expr_output_type(analyser_acc, a.second)) << " : " << typeid_to_compact_string(analyze_expr_output_type(analyser_acc, b.second)) << ".";
 		throw_compiler_error(parent.location, what.str());
 	}
 	else{
-		const auto final_expression_type = analyze_expr_output_type(analyser_acc._types, a.second);
+		const auto final_expression_type = analyze_expr_output_type(analyser_acc, a.second);
 		return {
 			analyser_acc,
 			expression_t::make_conditional_operator(
@@ -1727,12 +1734,12 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 	const auto left_expr = analyse_expression_no_target(a_acc, parent, *details.lhs);
 	a_acc = left_expr.first;
 
-	const auto lhs_type = analyze_expr_output_type(a_acc._types, left_expr.second);
+	const auto lhs_type = analyze_expr_output_type(a_acc, left_expr.second);
 
 	//	Make rhs match left if needed/possible.
 	const auto right_expr = analyse_expression_to_target(a_acc, parent, *details.rhs, lhs_type);
 	a_acc = right_expr.first;
-	const auto rhs_type = analyze_expr_output_type(a_acc._types, right_expr.second);
+	const auto rhs_type = analyze_expr_output_type(a_acc, right_expr.second);
 
 	if(lhs_type != rhs_type || (lhs_type.is_undefined() == true || rhs_type.is_undefined() == true)){
 		std::stringstream what;
@@ -1793,13 +1800,13 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 	const auto left_expr = analyse_expression_no_target(a_acc, parent, *details.lhs);
 	a_acc = left_expr.first;
 
-	const auto lhs_type = analyze_expr_output_type(a_acc._types, left_expr.second);
+	const auto lhs_type = analyze_expr_output_type(a_acc, left_expr.second);
 
 	//	Make rhs match lhs if needed/possible.
 	const auto right_expr = analyse_expression_to_target(a_acc, parent, *details.rhs, lhs_type);
 	a_acc = right_expr.first;
 
-	const auto rhs_type = analyze_expr_output_type(a_acc._types, right_expr.second);
+	const auto rhs_type = analyze_expr_output_type(a_acc, right_expr.second);
 
 
 	if(lhs_type != rhs_type){
@@ -1967,7 +1974,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 	auto callee_expr_load2 = std::get_if<expression_t::load2_t>(&callee_expr._expression_variant);
 
 	//	This is a call to a function-value. Callee is a function-type.
-	const auto callee_type = analyze_expr_output_type(a_acc._types, callee_expr);
+	const auto callee_type = analyze_expr_output_type(a_acc, callee_expr);
 	if(callee_type.is_function()){
 		const auto callee_pure = callee_type.get_function_pure();
 
@@ -2336,7 +2343,7 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 	//	Record all output type, if there is one.
 	auto a_acc = result.first;
 	if(check_types_resolved(a_acc._types, result.second)){
-		record_type(a_acc, parent.location, analyze_expr_output_type(a_acc._types, result.second));
+		record_type(a_acc, parent.location, analyze_expr_output_type(a_acc, result.second));
 	}
 	return { a_acc, result.second };
 }
@@ -2345,13 +2352,13 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 /*
 	- Insert automatic type-conversions from string -> json etc.
 */
-expression_t auto_cast_expression_type(const analyser_t& a, const expression_t& e, const typeid_t& wanted_type){
+expression_t auto_cast_expression_type(analyser_t& a, const expression_t& e, const typeid_t& wanted_type){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(wanted_type.check_invariant());
 	QUARK_ASSERT(wanted_type.is_undefined() == false);
 
-	const auto current_type = analyze_expr_output_type(a._types, e);
+	const auto current_type = analyze_expr_output_type(a, e);
 
 	if(wanted_type.is_any()){
 		return e;
@@ -2411,9 +2418,9 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 
 	if(target_type.is_any()){
 	}
-	else if(analyze_expr_output_type(a_acc._types, e3) == target_type){
+	else if(analyze_expr_output_type(a_acc, e3) == target_type){
 	}
-	else if(analyze_expr_output_type(a_acc._types, e3).is_undefined()){
+	else if(analyze_expr_output_type(a_acc, e3).is_undefined()){
 		QUARK_ASSERT(false);
 		throw_compiler_error(parent.location, "Expression type mismatch.");
 	}
@@ -2421,7 +2428,7 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 		std::stringstream what;
 		what << "Expression type mismatch - cannot convert '"
 		//??? missing a trailing '
-		<< typeid_to_compact_string(analyze_expr_output_type(a_acc._types, e3)) << "' to '" << typeid_to_compact_string(target_type) << ".";
+		<< typeid_to_compact_string(analyze_expr_output_type(a_acc, e3)) << "' to '" << typeid_to_compact_string(target_type) << ".";
 		throw_compiler_error(parent.location, what.str());
 	}
 
@@ -2448,7 +2455,7 @@ void test__analyse_expression(const statement_t& parent, const expression_t& e, 
 
 QUARK_TEST("analyse_expression_no_target()", "literal 1234 == 1234", "", "") {
 	test__analyse_expression(
-		statement_t::make__bind_local(k_no_location, "xyz", typeid_t::make_string(), expression_t::make_literal_string("abc"), statement_t::bind_local_t::mutable_mode::k_immutable),
+		statement_t::make__bind_local(k_no_location, "xyz", type_name_t::make_string(), expression_t::make_literal_string("abc"), statement_t::bind_local_t::mutable_mode::k_immutable),
 		expression_t::make_literal_int(1234),
 		expression_t::make_literal_int(1234)
 	);
@@ -2459,7 +2466,7 @@ QUARK_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
 	const analyser_t interpreter(ast);
 	const auto e3 = analyse_expression_no_target(
 		interpreter,
-		statement_t::make__bind_local(k_no_location, "xyz", typeid_t::make_string(), expression_t::make_literal_string("abc"), statement_t::bind_local_t::mutable_mode::k_immutable),
+		statement_t::make__bind_local(k_no_location, "xyz", type_name_t::make_string(), expression_t::make_literal_string("abc"), statement_t::bind_local_t::mutable_mode::k_immutable),
 		expression_t::make_arithmetic(
 			expression_type::k_arithmetic_add,
 			expression_t::make_literal_int(1),

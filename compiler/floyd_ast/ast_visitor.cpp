@@ -28,10 +28,6 @@ value_t visit_ast_value(visit_ast_t& acc, const value_t& value){
 	return value;
 }
 
-typeid_t visit_ast_type(visit_ast_t& acc, const typeid_t& type){
-	return type;
-}
-
 
 static body_t visit_ast_body(visit_ast_t& acc, const body_t& body);
 

@@ -312,7 +312,7 @@ inline bool is_atomic_type(itype_t type){
 		|| bt == base_type::k_json
 
 		|| bt == base_type::k_typeid
-		|| bt == base_type::k_unresolved_identifier
+		|| bt == base_type::k_unresolved_identifier
 	){
 		return true;
 	}

@@ -98,7 +98,6 @@ const char tag_resolved_type_char = '^';
 
 enum class base_type {
 	//	k_undefined is never exposed in code, only used internally in compiler.
-	//	??? Maybe we can use void for this and remove k_undefined?
 	k_undefined = 0,
 
 	//	Used as function return/args to tell this is a dynamic value, not static type.
@@ -185,6 +184,8 @@ struct type_name_t {
 		return true;
 	}
 
+	inline bool is_undefined() const ;
+
 	static type_name_t make_undefined() {
 		return make_type_name(base_type::k_undefined);
 	}
@@ -227,6 +228,10 @@ inline type_name_t make_type_name(const std::string& path){
 
 inline type_name_t make_type_name(base_type bt){
 	return type_name_t { base_type_to_opcode(bt) };
+}
+
+inline bool type_name_t::is_undefined() const {
+	return (*this) == make_undefined();
 }
 
 
