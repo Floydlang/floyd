@@ -105,7 +105,8 @@ inline typeid_t make_benchmark_result_t(){
 
 
 inline typeid_t make_benchmark_function_t(){
-	return typeid_t::make_function(typeid_t::make_vector(make_benchmark_result_t()), {}, epure::pure);
+//	return typeid_t::make_function(typeid_t::make_vector(make_benchmark_result_t()), {}, epure::pure);
+	return typeid_t::make_function(typeid_t::make_identifier("benchmark_result_t"), {}, epure::pure);
 }
 
 inline typeid_t make_benchmark_def_t(){
@@ -151,7 +152,7 @@ inline bool operator==(const benchmark_result2_t& lhs, const benchmark_result2_t
 inline typeid_t make_benchmark_result2_t(){
 	const auto x = typeid_t::make_struct2( {
 		member_t{ make_benchmark_id_t(), "test_id" },
-		member_t{ make_benchmark_result_t(), "result" }
+		member_t{ typeid_t::make_identifier("benchmark_result_t"), "result" }
 	} );
 	return x;
 }

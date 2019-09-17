@@ -53,7 +53,7 @@ type_interner_t::type_interner_t(){
 	interned2.push_back(make_entry(typeid_t::make_undefined()));
 	interned2.push_back(make_entry(typeid_t::make_undefined()));
 
-	interned2.push_back(make_entry(typeid_t::make_unresolved_type_identifier("")));
+	interned2.push_back(make_entry(typeid_t::make_identifier("")));
 
 	QUARK_ASSERT(check_invariant());
 }
@@ -77,7 +77,7 @@ bool type_interner_t::check_invariant() const {
 	QUARK_ASSERT(interned2[(int)base_type::k_vector] == make_entry(typeid_t::make_undefined()));
 	QUARK_ASSERT(interned2[(int)base_type::k_dict] == make_entry(typeid_t::make_undefined()));
 	QUARK_ASSERT(interned2[(int)base_type::k_function] == make_entry(typeid_t::make_undefined()));
-	QUARK_ASSERT(interned2[(int)base_type::k_unresolved_identifier] == make_entry(typeid_t::make_unresolved_type_identifier("")));
+	QUARK_ASSERT(interned2[(int)base_type::k_identifier] == make_entry(typeid_t::make_identifier("")));
 
 
 	//??? Add other common combinations, like vectors with each atomic type, dict with each atomic type. This allows us to hardcoded their itype indexes.
@@ -198,7 +198,7 @@ static itype_t record_and_resolve_recursive(type_interner_t& interner, const typ
 }
 
 
-std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const std::string& name, const typeid_t& type){
+std::pair<itype_t, typeid_t> intern_type_with_name(type_interner_t& interner, const std::string& name, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -477,7 +477,7 @@ json_t ast_type_to_json(const ast_type_t& name){
 	}
 /*
 	if(tags == json_tags::k_tag_resolve_state){
-		return json_t(std::string(1, tag_unresolved_type_char) + t.get_unresolved_type_identifer());
+		return json_t(std::string(1, tag_unresolved_type_char) + t.get_identifier());
 	}
 	else if(tags == json_tags::k_plain){
 	}
@@ -487,7 +487,7 @@ json_t ast_type_to_json(const ast_type_t& name){
 
 	}
 	else if(tags == json_tags::k_plain){
-		return json_t(t.get_unresolved_type_identifer());
+		return json_t(t.get_identifier());
 	}
 */
 

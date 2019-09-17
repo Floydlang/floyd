@@ -24,6 +24,12 @@ struct ast_type_t;
 struct type_interner_t;
 struct struct_definition_t;
 
+/*
+	??? TODO: All ast_type_t:s are itypes.
+	All itypes can be resolved in type_interner (or defect)
+	Interned types are fully defined = all their types and subtypes are OK (undefined or identifer not allowed).
+*/
+
 bool check_types_resolved(const type_interner_t& interner, const expression_t& e);
 bool check_types_resolved(const type_interner_t& interner, const std::vector<expression_t>& expressions);
 

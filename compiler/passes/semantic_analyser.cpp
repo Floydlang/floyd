@@ -250,7 +250,7 @@ static typeid_t record_type_internal_wrap(analyser_t& acc, const location_t& loc
 	QUARK_ASSERT(loc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto identifier = type.is_unresolved_type_identifier() ? type.get_unresolved_type_identifer() : "";
+	const auto identifier = type.is_identifier() ? type.get_identifier() : "";
 	if(identifier != ""){
 		const auto existing_value_deep_ptr = find_symbol_by_name(acc, identifier);
 		if(existing_value_deep_ptr.first == nullptr || existing_value_deep_ptr.first->_symbol_type != symbol_t::symbol_type::named_type){
@@ -2491,29 +2491,6 @@ struct builtins_t {
 };
 
 
-#if 0
-static builtins_t generate_intrinsics(analyser_t& a, const std::vector<intrinsic_signature_t>& intrinsics){
-	std::map<function_id_t, function_definition_t> function_defs;
-	std::vector<std::pair<std::string, symbol_t>> symbol_map;
-
-	for(auto signature: intrinsics){
-		record_type(a, k_no_location, signature._function_type);
-
-		vector<member_t> args;
-		for(const auto& e: signature._function_type.get_function_args()){
-			args.push_back(member_t(e, "dummy"));//??? use "".
-		}
-		const auto function_id = signature._function_id;
-		const auto def = function_definition_t::make_intrinsic(k_no_location, signature._function_id.name, signature._function_type, args);
-		const auto function_value = value_t::make_function_value(signature._function_type, function_id_t { signature.name });
-
-		function_defs.insert({ function_id, def });
-		symbol_map.push_back({ signature.name, symbol_t::make_immutable_precalc(function_value) });
-	}
-	return builtins_t{ function_defs, symbol_map };
-}
-#endif
-
 
 static std::pair<std::string, symbol_t> make_builtin_type(type_interner_t& interner, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
@@ -2552,28 +2529,33 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 
 
 	//???named-type: use intern_type(), not lookup!
-	symbol_map.push_back( { "benchmark_def_t", symbol_t::make_named_type(intern_type(a._types, "benchmark_def_t", make_benchmark_def_t()).first) } );
-	symbol_map.push_back( { "benchmark_result_t", symbol_t::make_named_type(intern_type(a._types, "benchmark_result_t", make_benchmark_result_t()).first) } );
+	symbol_map.push_back( {
+		"benchmark_def_t",
+		symbol_t::make_named_type(
+			intern_type_with_name(a._types, "benchmark_def_t", make_benchmark_def_t()).first
+		)
+	} );
+	symbol_map.push_back( {
+		"benchmark_result_t",
+		symbol_t::make_named_type(
+			intern_type_with_name(a._types, "benchmark_result_t", make_benchmark_result_t()).first
+		)
+	} );
 
 	//	Reserve a symbol table entry for benchmark_registry instance.
 	{
 		const auto benchmark_def_t_struct = make_benchmark_def_t();
 		const auto benchmark_registry_type = typeid_t::make_vector(benchmark_def_t_struct);
-		symbol_map.push_back(
-			{
-				k_global_benchmark_registry,
-				symbol_t::make_immutable_reserve(intern_type(a._types, benchmark_registry_type).first)
-			}
-		);
+		symbol_map.push_back( {
+			k_global_benchmark_registry,
+			symbol_t::make_immutable_reserve(
+				intern_type_with_name(a._types, k_global_benchmark_registry, benchmark_registry_type).first
+			)
+		} );
 	}
 
 	std::map<function_id_t, function_definition_t> function_defs;
 
-#if 0
-	const auto intrinsics = generate_intrinsics(a, input.intrinsic_signatures);
-	function_defs.insert(intrinsics.function_defs.begin(), intrinsics.function_defs.end());
-	symbol_map.insert(symbol_map.end(), intrinsics.symbol_map.begin(), intrinsics.symbol_map.end());
-#endif
 	return builtins_t{ function_defs, symbol_map };
 }
 

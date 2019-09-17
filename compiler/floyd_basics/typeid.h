@@ -42,7 +42,7 @@
 	[string: int]					k_dict									["dict", "int"]
 	int ()							k_function								["function", "int", []]
 	int (double, [string])			k_function								["function", "int", ["double", ["vector", "string"]]]
-	randomize_player			k_unresolved		["internal_unresolved_type_identifier", "randomize_player"]
+	randomize_player			k_identifier		["identifier", "randomize_player"]
 
 
 	AST JSON
@@ -118,7 +118,7 @@ enum class base_type {
 	k_dict = 11,
 	k_function = 12,
 
-	k_unresolved_identifier = 13
+	k_identifier = 13
 };
 
 std::string base_type_to_opcode(const base_type t);
@@ -505,17 +505,17 @@ struct typeid_t {
 
 
 
-	public: static typeid_t make_unresolved_type_identifier(const std::string& s){
+	public: static typeid_t make_identifier(const std::string& s){
 		return { identifier_t{ s } };
 	}
-	public: bool is_unresolved_type_identifier() const {
+	public: bool is_identifier() const {
 		QUARK_ASSERT(check_invariant());
 
 		return std::holds_alternative<identifier_t>(_contents);
 	}
-	public: std::string get_unresolved_type_identifer() const{
+	public: std::string get_identifier() const{
 		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(is_unresolved_type_identifier());
+		QUARK_ASSERT(is_identifier());
 
 		return std::get<identifier_t>(_contents).name;
 	}
@@ -571,7 +571,7 @@ struct typeid_t {
 				return base_type::k_function;
 			}
 			base_type operator()(const identifier_t& e) const {
-				return base_type::k_unresolved_identifier;
+				return base_type::k_identifier;
 			}
 		};
 		return std::visit(visitor_t{}, _contents);

@@ -304,7 +304,6 @@ bool check_types_resolved__type_vector(const type_interner_t& interner, const st
 	return true;
 }
 
-//	Make sure we have an itype. Make sure it has not subtypes that are undefined.
 bool check_types_resolved(const type_interner_t& interner, const ast_type_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -383,7 +382,7 @@ bool check_types_resolved(const type_interner_t& interner, const typeid_t& t){
 			return check_types_resolved__type_vector(interner, e._parts);
 		}
 		bool operator()(const typeid_t::identifier_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			return false;
 		}
 	};
 	return std::visit(visitor_t { interner }, t._contents);

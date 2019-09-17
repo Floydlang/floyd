@@ -273,7 +273,7 @@ struct type_interner_t {
 
 //	Records AND resolves the type. The returned type may be improved over input type.
 std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid_t& type);
-std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const std::string& name, const typeid_t& type);
+std::pair<itype_t, typeid_t> intern_type_with_name(type_interner_t& interner, const std::string& name, const typeid_t& type);
 std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const ast_type_t& type);
 
 
@@ -423,7 +423,7 @@ inline bool is_atomic_type(itype_t type){
 		|| bt == base_type::k_json
 
 		|| bt == base_type::k_typeid
-		|| bt == base_type::k_unresolved_identifier
+		|| bt == base_type::k_identifier
 	){
 		return true;
 	}

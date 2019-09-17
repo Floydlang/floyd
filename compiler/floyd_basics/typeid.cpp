@@ -65,7 +65,7 @@ std::string base_type_to_opcode(const base_type t){
 	else if(t == base_type::k_function){
 		return "func";
 	}
-	else if(t == base_type::k_unresolved_identifier){
+	else if(t == base_type::k_identifier){
 		return "unresolved";
 	}
 	else{
@@ -118,7 +118,7 @@ QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_function) == "func");
 }
 QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_unresolved_identifier) == "unresolved");
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_identifier) == "unresolved");
 }
 
 
@@ -166,7 +166,7 @@ base_type opcode_to_base_type(const std::string& s){
 		return base_type::k_function;
 	}
 	else if(s == "unresolved"){
-		return base_type::k_unresolved_identifier;
+		return base_type::k_identifier;
 	}
 
 	else{
@@ -518,21 +518,21 @@ QUARK_TESTQ("typeid_t", "get_function_args()"){
 }
 
 
-QUARK_TESTQ("typeid_t", "is_unresolved_type_identifier()"){
-	const auto t = typeid_t::make_unresolved_type_identifier("xyz");
-	QUARK_UT_VERIFY(t.is_unresolved_type_identifier() == true);
+QUARK_TESTQ("typeid_t", "is_identifier()"){
+	const auto t = typeid_t::make_identifier("xyz");
+	QUARK_UT_VERIFY(t.is_identifier() == true);
 }
-QUARK_TESTQ("typeid_t", "is_unresolved_type_identifier()"){
-	QUARK_UT_VERIFY(typeid_t::make_bool().is_unresolved_type_identifier() == false);
+QUARK_TESTQ("typeid_t", "is_identifier()"){
+	QUARK_UT_VERIFY(typeid_t::make_bool().is_identifier() == false);
 }
 
 QUARK_TESTQ("typeid_t", "get_unresolved()"){
-	const auto t = typeid_t::make_unresolved_type_identifier("xyz");
-	QUARK_UT_VERIFY(t.get_unresolved_type_identifer() == "xyz");
+	const auto t = typeid_t::make_identifier("xyz");
+	QUARK_UT_VERIFY(t.get_identifier() == "xyz");
 }
 QUARK_TESTQ("typeid_t", "get_unresolved()"){
-	const auto t = typeid_t::make_unresolved_type_identifier("123");
-	QUARK_UT_VERIFY(t.get_unresolved_type_identifer() == "123");
+	const auto t = typeid_t::make_identifier("123");
+	QUARK_UT_VERIFY(t.get_identifier() == "123");
 }
 
 
@@ -672,7 +672,7 @@ const std::vector<typeid_str_test_t> make_typeid_str_tests(){
 
 
 		//	unknown_identifier
-		{ typeid_t::make_unresolved_type_identifier("hello"), "\"hello\"", "hello" }
+		{ typeid_t::make_identifier("hello"), "\"hello\"", "hello" }
 	};
 	return tests;
 }
@@ -925,12 +925,12 @@ json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 			json_t(static_cast<int>(t.get_function_dyn_return_type()))
 		});
 	}
-	else if(b == base_type::k_unresolved_identifier){
+	else if(b == base_type::k_identifier){
 		if(tags == json_tags::k_tag_resolve_state){
-			return json_t(std::string(1, tag_unresolved_type_char) + t.get_unresolved_type_identifer());
+			return json_t(std::string(1, tag_unresolved_type_char) + t.get_identifier());
 		}
 		else if(tags == json_tags::k_plain){
-			return json_t(t.get_unresolved_type_identifer());
+			return json_t(t.get_identifier());
 		}
 	}
 	else{
@@ -1010,10 +1010,10 @@ static typeid_t typeid_from_json0(const json_t& t){
 		}
 		else if(s0.front() == tag_unresolved_type_char){
 			const auto s = s0.substr(1);
-			return typeid_t::make_unresolved_type_identifier(s);
+			return typeid_t::make_identifier(s);
 		}
 		else{
-			return typeid_t::make_unresolved_type_identifier(s0);
+			return typeid_t::make_identifier(s0);
 		}
 	}
 	else if(t.is_array()){
