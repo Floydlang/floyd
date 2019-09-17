@@ -12,12 +12,15 @@
 #include "typeid.h"
 #include "quark.h"
 
+#include <variant>
 #include <vector>
 #include <map>
 
 struct json_t;
 
 namespace floyd {
+
+struct ast_type_t;
 
 
 //////////////////////////////////////////////////		itype_t
@@ -82,7 +85,6 @@ struct itype_t {
 	bool check_invariant() const {
 		return true;
 	}
-
 
 
 
@@ -230,6 +232,14 @@ inline itype_t get_json_itype(){
 	return itype_t::make_json();
 }
 
+inline bool is_empty(const itype_t& type){
+	return type == itype_t::make_undefined();
+}
+
+
+
+json_t itype_to_json(const itype_t& itype);
+itype_t itype_from_json(const json_t& j);
 
 
 
@@ -254,7 +264,7 @@ struct type_interner_t {
 
 	//	All types are recorded here, an uniqued. Including named types.
 	//	itype uses the INDEX into this array for fast lookups.
-	std::vector<std::pair<type_name_t, typeid_t>> interned2;
+	std::vector<std::pair<std::string, typeid_t>> interned2;
 };
 
 
@@ -262,22 +272,123 @@ struct type_interner_t {
 
 
 //	Records AND resolves the type. The returned type may be improved over input type.
-std::pair<itype_t, typeid_t> intern_type2(type_interner_t& interner, const typeid_t& type);
-std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const type_name_t& name, const typeid_t& type);
+std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid_t& type);
+std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const std::string& name, const typeid_t& type);
+std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const ast_type_t& type);
 
 
 
 itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type);
 inline const typeid_t& lookup_type(const type_interner_t& interner, const itype_t& type);
-const typeid_t& lookup_type(const type_interner_t& interner, const type_name_t& name);
+const typeid_t& lookup_type(const type_interner_t& interner, const std::string& name);
+
+//	Returns typeid_t::make_undefined() if ast_type_t is in monostate mode
+const typeid_t& lookup_type(const type_interner_t& interner, const ast_type_t& type);
 
 //	Returns true if the type is completely described with no subnodes that are undefined.
-bool is_resolved(const type_interner_t& interner, const type_name_t& t);
+bool is_resolved(const type_interner_t& interner, const std::string& t);
 
 
 void trace_type_interner(const type_interner_t& interner);
 
 inline bool is_atomic_type(itype_t type);
+
+
+
+
+
+//////////////////////////////////////////////////		ast_type_t
+
+/*
+	This is how the C++ AST structs define a Floyd type.
+
+	It can be
+	1. A type description using optional_typeid, including undefined and unresolved_identifier.
+	2. An itype into the type_interner.
+
+	Notice that both 1 & 2 may contain subtypes that are undefined or uses unresolved_identifiers.
+*/
+
+
+ast_type_t make_type_name_from_typeid(const typeid_t& t);
+ast_type_t make_type_name_from_itype(const itype_t& t);
+
+struct ast_type_t {
+	bool check_invariant() const {
+		return true;
+	}
+
+	inline bool is_undefined() const ;
+
+	static ast_type_t make_undefined() {
+		return make_type_name_from_typeid(typeid_t::make_undefined());
+	}
+
+	static ast_type_t make_bool() {
+		return make_type_name_from_typeid(typeid_t::make_bool());
+	}
+	static ast_type_t make_int() {
+		return make_type_name_from_typeid(typeid_t::make_int());
+	}
+	static ast_type_t make_double() {
+		return make_type_name_from_typeid(typeid_t::make_double());
+	}
+	static ast_type_t make_string() {
+		return make_type_name_from_typeid(typeid_t::make_string());
+	}
+	static ast_type_t make_json() {
+		return make_type_name_from_typeid(typeid_t::make_json());
+	}
+
+
+	////////////////////////////////////////		STATE
+
+	typedef std::variant<
+		std::monostate,
+		typeid_t,
+		itype_t
+	> type_variant_t;
+
+	type_variant_t _contents;
+};
+
+inline typeid_t get_typeid(const ast_type_t& type){
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(std::holds_alternative<typeid_t>(type._contents));
+
+	return std::get<typeid_t>(type._contents);
+}
+inline itype_t get_itype(const ast_type_t& type){
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(std::holds_alternative<itype_t>(type._contents));
+
+	return std::get<itype_t>(type._contents);
+}
+
+inline ast_type_t make_no_type_name(){
+	return { std::monostate() };
+}
+inline bool is_empty(const ast_type_t& name){
+	return std::holds_alternative<std::monostate>(name._contents);
+}
+
+inline bool operator==(const ast_type_t& lhs, const ast_type_t& rhs){
+	return lhs._contents == rhs._contents;
+}
+
+
+inline bool ast_type_t::is_undefined() const {
+	return (*this) == make_undefined();
+}
+
+
+json_t ast_type_to_json(const ast_type_t& name);
+ast_type_t ast_type_from_json(const json_t& j);
+
+std::string ast_type_to_string(const ast_type_t& type);
+
+
+
 
 
 
@@ -351,6 +462,7 @@ inline itype_t get_dict_value_type(const type_interner_t& interner, itype_t vec)
 	return bt;
 }
 */
+
 
 
 }	//	floyd

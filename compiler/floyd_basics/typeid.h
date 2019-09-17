@@ -56,8 +56,6 @@
 */
 
 #include "utils.h"
-//#include "compiler_basics.h"
-
 #include "quark.h"
 
 #include <string>
@@ -121,13 +119,6 @@ enum class base_type {
 	k_function = 12,
 
 	k_unresolved_identifier = 13
-
-	//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
-	//	Keep the identifier so it can be resolved later.
-//	k_unresolved = 13,
-
-	//	Identifier string specifies resolved *name* of type.
-//	k_resolved = 14,
 };
 
 std::string base_type_to_opcode(const base_type t);
@@ -162,84 +153,6 @@ inline bool is_atomic_type(base_type type){
 
 
 
-//////////////////////////////////////////////////		type_name_t
-
-/*
-	Link-time unique name, including its local path.
-
-	Examples:
-
-		"main"
-		"k_global_constant"
-		"main/argc"
-		"main/argv"
-		"main/x"
-*/
-
-struct type_name_t;
-inline type_name_t make_type_name(base_type bt);
-
-struct type_name_t {
-	bool check_invariant() const {
-		return true;
-	}
-
-	inline bool is_undefined() const ;
-
-	static type_name_t make_undefined() {
-		return make_type_name(base_type::k_undefined);
-	}
-
-	static type_name_t make_bool() {
-		return make_type_name(base_type::k_bool);
-	}
-	static type_name_t make_int() {
-		return make_type_name(base_type::k_int);
-	}
-	static type_name_t make_double() {
-		return make_type_name(base_type::k_double);
-	}
-	static type_name_t make_string() {
-		return make_type_name(base_type::k_string);
-	}
-	static type_name_t make_json() {
-		return make_type_name(base_type::k_json);
-	}
-
-	std::string path;
-};
-
-inline type_name_t make_no_type_name(){
-	return { "" };
-}
-inline bool is_empty(const type_name_t& name){
-	return name.path == "";
-}
-
-inline bool operator==(const type_name_t& lhs, const type_name_t& rhs){
-	return lhs.path == rhs.path;
-}
-
-type_name_t make_type_name_from_typeid(const typeid_t& t);
-
-inline type_name_t make_type_name(const std::string& path){
-	return type_name_t { path };
-}
-
-inline type_name_t make_type_name(base_type bt){
-	return type_name_t { base_type_to_opcode(bt) };
-}
-
-inline bool type_name_t::is_undefined() const {
-	return (*this) == make_undefined();
-}
-
-
-json_t type_name_to_json(const type_name_t& name);
-type_name_t type_name_from_json(const json_t& j);
-
-
-
 
 //////////////////////////////////////////////////		identifier_t
 
@@ -258,10 +171,12 @@ struct identifier_t {
 int get_json_type(const json_t& value);
 
 
+
+
 //////////////////////////////////////////////////		struct_definition_t
 
 
-//??? This struct should be *separate* from the actual struct_definition_t,
+//??? This struct should be *separate* from the actual struct_definition_t. Rename struct_type_description_t
 //	which should go next to function_definition_t in expression.h
 
 struct struct_definition_t {
@@ -369,7 +284,7 @@ struct typeid_t {
 	};
 	struct identifier_t {
 		bool operator==(const identifier_t& other) const{ return name == other.name; };
-		type_name_t name;
+		std::string name;
 	};
 
 	typedef std::variant<
@@ -591,7 +506,7 @@ struct typeid_t {
 
 
 	public: static typeid_t make_unresolved_type_identifier(const std::string& s){
-		return { identifier_t{ make_type_name(s) } };
+		return { identifier_t{ s } };
 	}
 	public: bool is_unresolved_type_identifier() const {
 		QUARK_ASSERT(check_invariant());
@@ -602,7 +517,7 @@ struct typeid_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(is_unresolved_type_identifier());
 
-		return std::get<identifier_t>(_contents).name.path;
+		return std::get<identifier_t>(_contents).name;
 	}
 
 

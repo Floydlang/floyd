@@ -263,7 +263,7 @@ QUARK_TEST("", "", "", ""){
 
 
 
-expression_t::expression_t(const expression_variant_t& contents, const type_name_t& output_type) :
+expression_t::expression_t(const expression_variant_t& contents, const ast_type_t& output_type) :
 #if DEBUG_DEEP
 	_debug(""),
 #endif
@@ -457,7 +457,7 @@ json_t expression_to_json(const expression_t& e){
 				expr.location,
 				expression_opcode_t::k_value_constructor,
 				{
-					type_name_to_json(e.value_type),
+					ast_type_to_json(e.value_type),
 					expressions_to_json(e.elements)
 				}
 			);
@@ -473,8 +473,7 @@ json_t expression_to_json(const expression_t& e){
 	if(e.is_annotated_shallow() && e.has_builtin_type() == false){
 		const auto t = e.get_output_type();
 		auto a2 = result0.get_array();
-//		const auto type_json = typeid_to_ast_json(t, json_tags::k_tag_resolve_state);
-		const auto type_json = json_t(t.path);
+		const auto type_json = ast_type_to_json(t);
 		a2.push_back(type_json);
 		return json_t::make_array(a2);
 	}
@@ -492,14 +491,14 @@ json_t expressions_to_json(const std::vector<expression_t> v){
 }
 
 
-static type_name_t get_optional_typeid(const json_t& json_array, int optional_index){
+static ast_type_t get_optional_typeid(const json_t& json_array, int optional_index){
 	if(optional_index < json_array.get_array_size()){
 		const auto e = json_array.get_array_n(optional_index);
 		const auto t = typeid_from_ast_json(e);
 		return make_type_name_from_typeid(t);
 	}
 	else{
-		return type_name_t { "" };
+		return make_no_type_name();
 	}
 }
 
@@ -659,8 +658,8 @@ expression_t ast_json_to_expression(const type_interner_t& interner, const json_
 	else if(op == expression_opcode_t::k_value_constructor){
 		QUARK_ASSERT(e.get_array_size() == 3);
 
-//??? changeall JSON code to use type_name_from_json() instead of goin via typeid with typeid_from_ast_json() 
-		const auto value_type = type_name_from_json(e.get_array_n(1));
+//??? changeall JSON code to use ast_type_from_json() instead of goin via typeid with typeid_from_ast_json() 
+		const auto value_type = ast_type_from_json(e.get_array_n(1));
 		const auto args = e.get_array_n(2).get_array();
 
 		std::vector<expression_t> args2;

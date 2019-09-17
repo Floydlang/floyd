@@ -20,6 +20,7 @@ namespace floyd {
 
 
 bool check_types_resolved(const type_interner_t& interner, const expression_t& e){
+	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
 	if(e.is_annotated_shallow() == false){
@@ -83,6 +84,9 @@ bool check_types_resolved(const type_interner_t& interner, const expression_t& e
 			return check_types_resolved(interner, *e.parent_address) && check_types_resolved(interner, *e.lookup_key);
 		}
 		bool operator()(const expression_t::value_constructor_t& e) const{
+			if(check_types_resolved(interner, e.value_type) == false){
+				return false;
+			}
 			return check_types_resolved(interner, e.elements);
 		}
 		bool operator()(const expression_t::benchmark_expr_t& e) const{
@@ -91,10 +95,20 @@ bool check_types_resolved(const type_interner_t& interner, const expression_t& e
 	};
 
 	bool result = std::visit(visitor_t{ interner }, e._expression_variant);
+	if(result == false){
+		return false;
+	}
+
+	if(check_types_resolved(interner, e.get_output_type()) == false){
+		return false;
+	}
+
 	return result;
 }
 
 bool check_types_resolved(const type_interner_t& interner, const std::vector<expression_t>& expressions){
+	QUARK_ASSERT(interner.check_invariant());
+
 	for(const auto& e: expressions){
 		if(floyd::check_types_resolved(interner, e) == false){
 			return false;
@@ -105,6 +119,7 @@ bool check_types_resolved(const type_interner_t& interner, const std::vector<exp
 
 
 bool check_types_resolved(const type_interner_t& interner, const function_definition_t& def){
+	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(def.check_invariant());
 
 	bool result = floyd::check_types_resolved(interner, def._function_type);
@@ -129,6 +144,7 @@ bool check_types_resolved(const type_interner_t& interner, const function_defini
 }
 
 bool check_types_resolved(const type_interner_t& interner, const body_t& body){
+	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
 	for(const auto& e: body._statements){
@@ -137,10 +153,42 @@ bool check_types_resolved(const type_interner_t& interner, const body_t& body){
 		}
 	}
 	for(const auto& s: body._symbol_table._symbols){
-		if(s.first != "undef" && check_types_resolved(interner, s.second._value_type) == false){
+		QUARK_ASSERT(s.second.check_invariant());
+
+		const auto value_type0 = s.second._value_type;
+		const auto value_type = lookup_type(interner, value_type0);
+
+/*
+		if(s._symbol_type == symbol_t::symbol_type::immutable_reserve){
+			QUARK_ASSERT(is_empty(_value_type) == false);
+			QUARK_ASSERT(_init.is_undefined());
+		}
+		else if(s._symbol_type == symbol_t::symbol_type::immutable_arg){
+			QUARK_ASSERT(is_empty(_value_type) == false);
+			QUARK_ASSERT(_init.is_undefined());
+		}
+		else if(s._symbol_type == symbol_t::symbol_type::immutable_precalc){
+			QUARK_ASSERT(is_empty(_value_type) == false);
+			QUARK_ASSERT(_init.is_undefined() == false);
+		}
+		else if(s._symbol_type == symbol_t::symbol_type::named_type){
+			QUARK_ASSERT(is_empty(_value_type) == false);
+			QUARK_ASSERT(_init.is_undefined());
+		}
+		else if(s._symbol_type == symbol_t::symbol_type::mutable_reserve){
+			QUARK_ASSERT(is_empty(_value_type) == false);
+			QUARK_ASSERT(_init.is_undefined());
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+*/
+
+		if(value_type.is_undefined() == false && check_types_resolved(interner, value_type) == false){
 			return false;
 		}
-		if(s.first != "undef" && s.second._init.is_undefined() == false && check_types_resolved(interner, s.second._init.get_type()) == false){
+
+		if(s.first != base_type_to_opcode(base_type::k_undefined) && s.second._init.is_undefined() == false && check_types_resolved(interner, s.second._init.get_type()) == false){
 			return false;
 		}
 	}
@@ -152,6 +200,8 @@ bool check_types_resolved(const type_interner_t& interner, const body_t& body){
 
 
 bool check_types_resolved(const type_interner_t& interner, const std::vector<std::shared_ptr<statement_t>>& s){
+	QUARK_ASSERT(interner.check_invariant());
+
 	for(const auto& e: s){
 		if(floyd::check_types_resolved(interner, *e) == false){
 			return false;
@@ -161,6 +211,7 @@ bool check_types_resolved(const type_interner_t& interner, const std::vector<std
 }
 
 bool check_types_resolved(const type_interner_t& interner, const statement_t& s){
+	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(s.check_invariant());
 
 	struct visitor_t {
@@ -242,7 +293,7 @@ bool check_types_resolved(const type_interner_t& interner, const struct_definiti
 }
 
 
-bool check_types_resolved_int(const type_interner_t& interner, const std::vector<typeid_t>& elements){
+bool check_types_resolved__type_vector(const type_interner_t& interner, const std::vector<typeid_t>& elements){
 	QUARK_ASSERT(interner.check_invariant());
 
 	for(const auto& e: elements){
@@ -253,20 +304,38 @@ bool check_types_resolved_int(const type_interner_t& interner, const std::vector
 	return true;
 }
 
-
-bool check_types_resolved(const type_interner_t& interner, const type_name_t& t){
+//	Make sure we have an itype. Make sure it has not subtypes that are undefined.
+bool check_types_resolved(const type_interner_t& interner, const ast_type_t& type){
 	QUARK_ASSERT(interner.check_invariant());
-	QUARK_ASSERT(t.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
 
-	const auto t2 = lookup_type(interner, t);
-	return check_types_resolved(interner, t2);
+	if(std::holds_alternative<typeid_t>(type._contents)){
+		const auto& typeid0 = std::get<typeid_t>(type._contents);
+		try {
+			const auto itype = lookup_itype(interner, typeid0);
+		}
+		catch(...){
+			return false;
+		}
+	}
+	else if(std::holds_alternative<itype_t>(type._contents)){
+		const auto& ityp0 = std::get<itype_t>(type._contents);
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+
+//	const auto t2 = lookup_type(interner, t);
+//	return check_types_resolved(interner, t2);
+
+	return true;
 }
 
 bool check_types_resolved(const type_interner_t& interner, const typeid_t& t){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(t.check_invariant());
 
-//	return is_resolved(interner, make_type_name_from_typeid(t));
 	struct visitor_t {
 		const type_interner_t interner;
 
@@ -305,13 +374,13 @@ bool check_types_resolved(const type_interner_t& interner, const typeid_t& t){
 			return check_types_resolved(interner, *e._struct_def);
 		}
 		bool operator()(const typeid_t::vector_t& e) const{
-			return check_types_resolved_int(interner, e._parts);
+			return check_types_resolved__type_vector(interner, e._parts);
 		}
 		bool operator()(const typeid_t::dict_t& e) const{
-			return check_types_resolved_int(interner, e._parts);
+			return check_types_resolved__type_vector(interner, e._parts);
 		}
 		bool operator()(const typeid_t::function_t& e) const{
-			return check_types_resolved_int(interner, e._parts);
+			return check_types_resolved__type_vector(interner, e._parts);
 		}
 		bool operator()(const typeid_t::identifier_t& e) const {
 			QUARK_ASSERT(false); throw std::exception();
@@ -321,8 +390,22 @@ bool check_types_resolved(const type_interner_t& interner, const typeid_t& t){
 }
 
 
+bool check_types_resolved(const type_interner_t& interner){
+	QUARK_ASSERT(interner.check_invariant());
+
+	for(auto index = 0 ; index < interner.interned2.size() ; index++){
+	}
+
+	return true;
+}
 
 bool check_types_resolved(const general_purpose_ast_t& ast){
+	QUARK_ASSERT(ast.check_invariant());
+
+	if(check_types_resolved(ast._interned_types) == false){
+		return false;
+	}
+
 	if(check_types_resolved(ast._interned_types, ast._globals) == false){
 		return false;
 	}

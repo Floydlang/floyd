@@ -318,7 +318,8 @@ static llvm::Type* make_llvm_type(const builder_t& builder, const typeid_t& type
 			return deref_ptr(make_function_type(builder, type));
 		}
 		llvm::Type* operator()(const typeid_t::identifier_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			return llvm::Type::getInt8Ty(builder.context);
+//			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
 	return std::visit(visitor_t{ builder, type }, type._contents);
@@ -393,7 +394,6 @@ llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const type_intern
 
 	for(const auto& e: acc.type_interner.interned2){
 		QUARK_ASSERT(builder.acc.type_interner.check_invariant());
-		QUARK_ASSERT(e.first.check_invariant());
 		QUARK_ASSERT(e.second.check_invariant());
 
 		const auto itype = lookup_itype(builder.acc.type_interner, e.second);

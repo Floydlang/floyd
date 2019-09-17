@@ -110,7 +110,7 @@ struct symbol_t {
 		return true;
 	}
 
-	public: symbol_t(symbol_type symbol_type, const type_name_t& value_type, const value_t& init_value) :
+	public: symbol_t(symbol_type symbol_type, const itype_t& value_type, const value_t& init_value) :
 		_symbol_type(symbol_type),
 		_value_type(value_type),
 		_init(init_value)
@@ -118,33 +118,33 @@ struct symbol_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: type_name_t get_value_type() const {
+	public: itype_t get_value_type() const {
 		QUARK_ASSERT(check_invariant());
 
 		return _value_type;
 	}
 
-	public: static symbol_t make_immutable_reserve(const type_name_t& value_type){
+	public: static symbol_t make_immutable_reserve(const itype_t& value_type){
 		return symbol_t{ symbol_type::immutable_reserve, value_type, {} };
 	}
 
-	public: static symbol_t make_immutable_arg(const type_name_t& value_type){
+	public: static symbol_t make_immutable_arg(const itype_t& value_type){
 		return symbol_t{ symbol_type::immutable_arg, value_type, {} };
 	}
 
 	//??? Mutable could support init-value too!?
-	public: static symbol_t make_mutable(const type_name_t& value_type){
+	public: static symbol_t make_mutable(const itype_t& value_type){
 		return symbol_t{ symbol_type::mutable_reserve, value_type, {} };
 	}
 
-	public: static symbol_t make_immutable_precalc(const type_name_t& value_type, const value_t& init_value){
+	public: static symbol_t make_immutable_precalc(const itype_t& value_type, const value_t& init_value){
 		QUARK_ASSERT(is_floyd_literal(init_value.get_type()));
 
 		return symbol_t{ symbol_type::immutable_precalc, value_type, init_value };
 	}
 
 
-	public: static symbol_t make_named_type(const type_name_t& name){
+	public: static symbol_t make_named_type(const itype_t& name){
 		return symbol_t{ symbol_type::named_type, name, value_t::make_undefined() };
 	}
 
@@ -152,7 +152,7 @@ struct symbol_t {
 
 	//////////////////////////////////////		STATE
 	symbol_type _symbol_type;
-	type_name_t _value_type;
+	itype_t _value_type;
 
 	//	If there is no initialization value, this member must be value_t::make_undefined();
 	value_t _init;
@@ -272,11 +272,11 @@ struct statement_t {
 		}
 
 		std::string _new_local_name;
-		type_name_t _bindtype;
+		ast_type_t _bindtype;
 		expression_t _expression;
 		mutable_mode _locals_mutable_mode;
 	};
-	public: static statement_t make__bind_local(const location_t& location, const std::string& new_local_name, const type_name_t& bindtype, const expression_t& expression, bind_local_t::mutable_mode locals_mutable_mode){
+	public: static statement_t make__bind_local(const location_t& location, const std::string& new_local_name, const ast_type_t& bindtype, const expression_t& expression, bind_local_t::mutable_mode locals_mutable_mode){
 		return statement_t(location, { bind_local_t{ new_local_name, bindtype, expression, locals_mutable_mode } });
 	}
 

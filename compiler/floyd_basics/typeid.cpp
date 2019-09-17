@@ -18,39 +18,6 @@ namespace floyd {
 
 
 
-type_name_t make_type_name_from_typeid(const typeid_t& t){
-	const auto j = typeid_to_ast_json(t, json_tags::k_plain);
-	const auto s = json_to_compact_string_minimal_quotes(j);
-	return type_name_t { s };
-}
-
-
-
-json_t type_name_to_json(const type_name_t& name){
-	return json_t(name.path);
-/*
-	if(tags == json_tags::k_tag_resolve_state){
-		return json_t(std::string(1, tag_unresolved_type_char) + t.get_unresolved_type_identifer());
-	}
-	else if(tags == json_tags::k_plain){
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-
-	}
-	else if(tags == json_tags::k_plain){
-		return json_t(t.get_unresolved_type_identifer());
-	}
-*/
-
-}
-
-type_name_t type_name_from_json(const json_t& j){
-	return make_type_name(j.get_string());
-}
-
-
 
 //////////////////////////////////////////////////		base_type
 

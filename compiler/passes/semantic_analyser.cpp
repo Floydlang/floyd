@@ -271,7 +271,7 @@ static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid
 
 	try {
 		const auto resolved = record_type_internal_wrap(acc, loc, type);
-		intern_type2(acc._types, resolved);
+		intern_type(acc._types, resolved);
 
 /*
 		if(check_types_resolved(a._types, resolved) == false){
@@ -288,7 +288,7 @@ static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid
 	}
 }
 
-static typeid_t record_type2(analyser_t& acc, const location_t& loc, const type_name_t& name){
+static typeid_t record_type2(analyser_t& acc, const location_t& loc, const ast_type_t& name){
 	QUARK_ASSERT(acc.check_invariant());
 	QUARK_ASSERT(loc.check_invariant());
 	QUARK_ASSERT(name.check_invariant());
@@ -546,6 +546,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 	//		(2) have a type, but it might not be fully resolved yet.
 	const auto lhs_type_name = lhs_type0.is_undefined() ? lhs_type0 : /*record_type2(a_acc, s.location, lhs_type0)*/ lhs_type0;
 	const auto lhs_type = lookup_type(a._types, lhs_type_name);
+	const auto lhs_itype = lookup_itype(a._types, lhs_type);
 
 	const auto mutable_flag = statement._locals_mutable_mode == statement_t::bind_local_t::k_mutable;
 
@@ -558,7 +559,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 	//	Notice: the final type may not be correct yet, but for function definitions it is.
 	//	This logic should be available for inferred binds too, in analyse_assign_statement().
 
-	const auto new_symbol = mutable_flag ? symbol_t::make_mutable(lhs_type_name) : symbol_t::make_immutable_reserve(lhs_type_name);
+	const auto new_symbol = mutable_flag ? symbol_t::make_mutable(lhs_itype) : symbol_t::make_immutable_reserve(lhs_itype);
 	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ new_local_name, new_symbol });
 	const auto local_name_index = a_acc._lexical_scope_stack.back().symbols._symbols.size() - 1;
 
@@ -581,17 +582,18 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 			//	Replace the temporary symbol with the complete symbol.
 
 			const auto lhs_type_name2 = make_type_name_from_typeid(lhs_type2);
+			const auto lhs_itype_name2 = lookup_itype(a._types, lhs_type2);
 
 			//	If symbol can be initialized directly, use make_immutable_precalc(). Else reserve it and create an init2-statement to set it up at runtime.
 			//	??? Better to always initialise it, even if it's a complex value. Codegen then decides if to translate to a reserve + init. BUT PROBLEM: we lose info *when* to init the value.
 			if(is_preinitliteral(lhs_type2) && mutable_flag == false && get_expression_type(rhs_expr_pair.second) == expression_type::k_literal){
-				const auto symbol2 = symbol_t::make_immutable_precalc(lhs_type_name2, rhs_expr_pair.second.get_literal());
+				const auto symbol2 = symbol_t::make_immutable_precalc(lhs_itype_name2, rhs_expr_pair.second.get_literal());
 				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
 				record_type(a_acc, s.location, analyze_expr_output_type(a_acc, rhs_expr_pair.second));
 				return { a_acc, {} };
 			}
 			else{
-				const auto symbol2 = mutable_flag ? symbol_t::make_mutable(lhs_type_name2) : symbol_t::make_immutable_reserve(lhs_type_name2);
+				const auto symbol2 = mutable_flag ? symbol_t::make_mutable(lhs_itype_name2) : symbol_t::make_immutable_reserve(lhs_itype_name2);
 				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
 				record_type(a_acc, s.location, analyze_expr_output_type(a_acc, rhs_expr_pair.second));
 
@@ -693,7 +695,7 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, co
 		throw_compiler_error(s.location, what.str());
 	}
 
-	const auto iterator_symbol = symbol_t::make_immutable_reserve(type_name_t::make_int());
+	const auto iterator_symbol = symbol_t::make_immutable_reserve(itype_t::make_int());
 
 	//	Add the iterator as a symbol to the body of the for-loop.
 	auto symbols = statement._body._symbol_table;
@@ -1454,7 +1456,7 @@ std::pair<analyser_t, expression_t> analyse_load(const analyser_t& a, const stat
 		else{
 			return {
 				a_acc,
-				expression_t::make_load2(found.second, found.first->_value_type)
+				expression_t::make_load2(found.second, make_type_name_from_typeid(lookup_type(a._types, found.first->_value_type)))
 			};
 		}
 	}
@@ -2127,19 +2129,19 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 		const auto& callee_symbol = a_acc._lexical_scope_stack[scope_index].symbols._symbols[addr._index];
 
 		if(callee_symbol.second._symbol_type == symbol_t::symbol_type::named_type){
-			const auto construct_value_type = callee_symbol.second.get_value_type();
-			const auto construct_value_type2 = lookup_type(a_acc._types, construct_value_type);
+			const auto construct_value_type = lookup_type(a_acc._types, callee_symbol.second.get_value_type());
+			const auto construct_value_type2 = construct_value_type;//lookup_type(a_acc._types, construct_value_type);
 
 			//	Convert calls to struct-type into construct-value expression.
 			if(construct_value_type2.is_struct()){
-				const auto construct_value_expr = expression_t::make_construct_value_expr(construct_value_type, details.args);
+				const auto construct_value_expr = expression_t::make_construct_value_expr(make_type_name_from_typeid(construct_value_type), details.args);
 				const auto result_pair = analyse_expression_to_target(a_acc, parent, construct_value_expr, construct_value_type2);
 				return { result_pair.first, result_pair.second };
 			}
 
 			//	One argument for primitive types.
 			else{
-				const auto construct_value_expr = expression_t::make_construct_value_expr(construct_value_type, details.args);
+				const auto construct_value_expr = expression_t::make_construct_value_expr(make_type_name_from_typeid(construct_value_type), details.args);
 				const auto result_pair = analyse_expression_to_target(a_acc, parent, construct_value_expr, construct_value_type2);
 				return { result_pair.first, result_pair.second };
 			}
@@ -2167,7 +2169,7 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 		throw_local_identifier_already_exists(parent.location, identifier);
 	}
 
-	const auto type_name_symbol = symbol_t::make_named_type(type_name_t::make_undefined());
+	const auto type_name_symbol = symbol_t::make_named_type(itype_t::make_undefined());
 	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ identifier, type_name_symbol });
 	const auto symbol_index = a_acc._lexical_scope_stack.back().symbols._symbols.size() - 1;
 
@@ -2176,7 +2178,7 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 	const auto struct_typeid2 = record_type(a_acc, parent.location, struct_typeid1);
 
 	//	Update our temporary. Notice that we need to find it again since other types might have been inserted since.
-	const auto symbol2 = symbol_t::make_named_type(make_type_name_from_typeid(struct_typeid2));
+	const auto symbol2 = symbol_t::make_named_type(lookup_itype(a_acc._types, struct_typeid2));
 	a_acc._lexical_scope_stack.back().symbols._symbols[symbol_index].second = symbol2;
 
 
@@ -2210,7 +2212,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 		//	Make function body with arguments injected FIRST in body as local symbols.
 		auto symbol_vec = function_def._optional_body->_symbol_table;
 		for(const auto& arg: args2){
-			symbol_vec._symbols.push_back({ arg._name , symbol_t::make_immutable_arg(make_type_name_from_typeid(arg._type)) });
+			symbol_vec._symbols.push_back({ arg._name , symbol_t::make_immutable_arg(lookup_itype(a_acc._types, arg._type)) });
 		}
 		const auto function_body2 = body_t(function_def._optional_body->_statements, symbol_vec);
 
@@ -2455,7 +2457,7 @@ void test__analyse_expression(const statement_t& parent, const expression_t& e, 
 
 QUARK_TEST("analyse_expression_no_target()", "literal 1234 == 1234", "", "") {
 	test__analyse_expression(
-		statement_t::make__bind_local(k_no_location, "xyz", type_name_t::make_string(), expression_t::make_literal_string("abc"), statement_t::bind_local_t::mutable_mode::k_immutable),
+		statement_t::make__bind_local(k_no_location, "xyz", ast_type_t::make_string(), expression_t::make_literal_string("abc"), statement_t::bind_local_t::mutable_mode::k_immutable),
 		expression_t::make_literal_int(1234),
 		expression_t::make_literal_int(1234)
 	);
@@ -2466,7 +2468,7 @@ QUARK_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
 	const analyser_t interpreter(ast);
 	const auto e3 = analyse_expression_no_target(
 		interpreter,
-		statement_t::make__bind_local(k_no_location, "xyz", type_name_t::make_string(), expression_t::make_literal_string("abc"), statement_t::bind_local_t::mutable_mode::k_immutable),
+		statement_t::make__bind_local(k_no_location, "xyz", ast_type_t::make_string(), expression_t::make_literal_string("abc"), statement_t::bind_local_t::mutable_mode::k_immutable),
 		expression_t::make_arithmetic(
 			expression_type::k_arithmetic_add,
 			expression_t::make_literal_int(1),
@@ -2513,13 +2515,13 @@ static builtins_t generate_intrinsics(analyser_t& a, const std::vector<intrinsic
 #endif
 
 
-static std::pair<std::string, symbol_t> make_builtin_type(const typeid_t& type){
+static std::pair<std::string, symbol_t> make_builtin_type(type_interner_t& interner, const typeid_t& type){
+	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto bt = type.get_base_type();
 	const auto opcode = base_type_to_opcode(bt);
-//	const auto named_type = type.name(opcode);
-	return { opcode, symbol_t::make_named_type(make_type_name_from_typeid(type)) };
+	return { opcode, symbol_t::make_named_type(lookup_itype(interner, type)) };
 }
 
 
@@ -2529,28 +2531,29 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	*/
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 
-	symbol_map.push_back( make_builtin_type(typeid_t::make_void()) );
-	symbol_map.push_back( make_builtin_type(typeid_t::make_bool()) );
-	symbol_map.push_back( make_builtin_type(typeid_t::make_int()) );
-	symbol_map.push_back( make_builtin_type(typeid_t::make_double()) );
-	symbol_map.push_back( make_builtin_type(typeid_t::make_string()) );
-	symbol_map.push_back( make_builtin_type(typeid_t::make_typeid()) );
-	symbol_map.push_back( make_builtin_type(typeid_t::make_json()) );
-
+	symbol_map.push_back( make_builtin_type(a._types, typeid_t::make_void()) );
+	symbol_map.push_back( make_builtin_type(a._types, typeid_t::make_bool()) );
+	symbol_map.push_back( make_builtin_type(a._types, typeid_t::make_int()) );
+	symbol_map.push_back( make_builtin_type(a._types, typeid_t::make_double()) );
+	symbol_map.push_back( make_builtin_type(a._types, typeid_t::make_string()) );
+	symbol_map.push_back( make_builtin_type(a._types, typeid_t::make_typeid()) );
+	symbol_map.push_back( make_builtin_type(a._types, typeid_t::make_json()) );
 
 	//	"null" is equivalent to json::null
-	symbol_map.push_back( { "null", symbol_t::make_immutable_precalc(type_name_t::make_json(), value_t::make_json(json_t())) });
+	symbol_map.push_back( { "null", symbol_t::make_immutable_precalc(itype_t::make_json(), value_t::make_json(json_t())) });
 
-	symbol_map.push_back( { "json_object", symbol_t::make_immutable_precalc(type_name_t::make_int(), value_t::make_int(1)) });
-	symbol_map.push_back( { "json_array", symbol_t::make_immutable_precalc(type_name_t::make_int(), value_t::make_int(2)) });
-	symbol_map.push_back( { "json_string", symbol_t::make_immutable_precalc(type_name_t::make_int(), value_t::make_int(3)) });
-	symbol_map.push_back( { "json_number", symbol_t::make_immutable_precalc(type_name_t::make_int(), value_t::make_int(4)) });
-	symbol_map.push_back( { "json_true", symbol_t::make_immutable_precalc(type_name_t::make_int(), value_t::make_int(5)) });
-	symbol_map.push_back( { "json_false", symbol_t::make_immutable_precalc(type_name_t::make_int(), value_t::make_int(6)) });
-	symbol_map.push_back( { "json_null", symbol_t::make_immutable_precalc(type_name_t::make_int(), value_t::make_int(7)) });
+	symbol_map.push_back( { "json_object", symbol_t::make_immutable_precalc(itype_t::make_int(), value_t::make_int(1)) });
+	symbol_map.push_back( { "json_array", symbol_t::make_immutable_precalc(itype_t::make_int(), value_t::make_int(2)) });
+	symbol_map.push_back( { "json_string", symbol_t::make_immutable_precalc(itype_t::make_int(), value_t::make_int(3)) });
+	symbol_map.push_back( { "json_number", symbol_t::make_immutable_precalc(itype_t::make_int(), value_t::make_int(4)) });
+	symbol_map.push_back( { "json_true", symbol_t::make_immutable_precalc(itype_t::make_int(), value_t::make_int(5)) });
+	symbol_map.push_back( { "json_false", symbol_t::make_immutable_precalc(itype_t::make_int(), value_t::make_int(6)) });
+	symbol_map.push_back( { "json_null", symbol_t::make_immutable_precalc(itype_t::make_int(), value_t::make_int(7)) });
 
-	symbol_map.push_back( { "benchmark_def_t", symbol_t::make_named_type(make_type_name_from_typeid(make_benchmark_def_t())) } );
-	symbol_map.push_back( { "benchmark_result_t", symbol_t::make_named_type(make_type_name_from_typeid(make_benchmark_result_t())) } );
+
+	//???named-type: use intern_type(), not lookup!
+	symbol_map.push_back( { "benchmark_def_t", symbol_t::make_named_type(intern_type(a._types, "benchmark_def_t", make_benchmark_def_t()).first) } );
+	symbol_map.push_back( { "benchmark_result_t", symbol_t::make_named_type(intern_type(a._types, "benchmark_result_t", make_benchmark_result_t()).first) } );
 
 	//	Reserve a symbol table entry for benchmark_registry instance.
 	{
@@ -2559,7 +2562,7 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 		symbol_map.push_back(
 			{
 				k_global_benchmark_registry,
-				symbol_t::make_immutable_reserve(make_type_name_from_typeid(benchmark_registry_type))
+				symbol_t::make_immutable_reserve(intern_type(a._types, benchmark_registry_type).first)
 			}
 		);
 	}
@@ -2656,17 +2659,16 @@ semantic_ast_t analyse(analyser_t& a){
 
 	const auto result_ast0 = unchecked_ast_t{ gp1 };
 
-			{
-				{
-					QUARK_SCOPED_TRACE("OUTPUT AST");
-					QUARK_TRACE(json_to_pretty_string(gp_ast_to_json(result_ast0._tree)));
-				}
-				{
-					QUARK_SCOPED_TRACE("OUTPUT TYPES");
-					trace_type_interner(result_ast0._tree._interned_types);
-				}
-			}
-
+	if(true){
+		{
+			QUARK_SCOPED_TRACE("OUTPUT AST");
+			QUARK_TRACE(json_to_pretty_string(gp_ast_to_json(result_ast0._tree)));
+		}
+		{
+			QUARK_SCOPED_TRACE("OUTPUT TYPES");
+			trace_type_interner(result_ast0._tree._interned_types);
+		}
+	}
 
 	QUARK_ASSERT(check_types_resolved(result_ast0._tree));
 	const auto result_ast1 = semantic_ast_t(result_ast0._tree);
@@ -2693,6 +2695,7 @@ analyser_t::analyser_t(const unchecked_ast_t& ast){
 #if DEBUG
 bool analyser_t::check_invariant() const {
 	QUARK_ASSERT(_imm->_ast.check_invariant());
+	QUARK_ASSERT(_types.check_invariant());
 	return true;
 }
 #endif
