@@ -502,8 +502,7 @@ struct typeid_t {
 	}
 
 
-
-
+	//	??? Better name: "named_type"
 
 	public: static typeid_t make_identifier(const std::string& s){
 		return { identifier_t{ s } };

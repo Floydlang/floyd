@@ -64,3 +64,32 @@ std::vector<std::string> generate_table(const std::vector<line_t>& table, const 
 
 
 
+
+
+
+std::string generate_table_type1(const std::vector<std::string>& headings, const std::vector<std::vector<std::string>>& matrix){
+	const auto column_count = headings.size();
+	const auto splitter = line_t( std::vector<std::string>(column_count, ""), '-', '|');
+
+	std::vector<line_t> table = {
+		line_t( headings, ' ', '|'),
+		splitter
+	};
+	for(const auto& line: matrix){
+		QUARK_ASSERT(line.size() == column_count);
+
+		const auto line2 = line_t { line, ' ', '|' };
+		table.push_back(line2);
+	}
+	table.push_back(splitter);
+
+	const auto columns0 = std::vector<column_t>(column_count, column_t{ 0, -1, 0 });
+	const auto columns = fit_columns(columns0, table);
+	const auto r = generate_table(table, columns);
+
+	std::stringstream ss;
+	for(const auto& e: r){
+		ss << e << std::endl;
+	}
+	return ss.str();
+}

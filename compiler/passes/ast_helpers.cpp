@@ -382,7 +382,9 @@ bool check_types_resolved(const type_interner_t& interner, const typeid_t& t){
 			return check_types_resolved__type_vector(interner, e._parts);
 		}
 		bool operator()(const typeid_t::identifier_t& e) const {
-			return false;
+
+//???
+			return true;
 		}
 	};
 	return std::visit(visitor_t { interner }, t._contents);

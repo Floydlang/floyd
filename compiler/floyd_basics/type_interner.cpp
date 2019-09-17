@@ -12,6 +12,7 @@
 #include "utils.h"
 #include "ast_helpers.h"
 #include "json_support.h"
+#include "format_table.h"
 
 #include <limits.h>
 
@@ -358,6 +359,7 @@ const typeid_t& lookup_type(const type_interner_t& interner, const ast_type_t& t
 void trace_type_interner(const type_interner_t& interner){
 	QUARK_ASSERT(interner.check_invariant());
 
+#if 0
 	{
 		QUARK_SCOPED_TRACE("ITYPES");
 		for(auto i = 0 ; i < interner.interned2.size() ; i++){
@@ -369,6 +371,29 @@ void trace_type_interner(const type_interner_t& interner){
 			);
 		}
 	}
+#endif
+
+	{
+		QUARK_SCOPED_TRACE("ITYPES");
+
+		std::vector<std::vector<std::string>> matrix;
+		for(auto i = 0 ; i < interner.interned2.size() ; i++){
+			const auto& e = interner.interned2[i];
+			const auto line = std::vector<std::string>{
+				std::to_string(i),
+				e.first,
+				typeid_to_compact_string(e.second),
+			};
+			matrix.push_back(line);
+		}
+
+		const auto result = generate_table_type1(
+			{ "itype_t", "NAME", "typeid_t" },
+			matrix
+		);
+		QUARK_TRACE(result);
+	}
+
 
 /*
 	{

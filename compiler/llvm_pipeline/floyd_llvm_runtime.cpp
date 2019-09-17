@@ -295,11 +295,7 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 void trace_function_link_map(const std::vector<function_link_entry_t>& defs){
 	QUARK_SCOPED_TRACE("FUNCTION LINK MAP");
 
-	std::vector<line_t> table = {
-		line_t( { "LINK-NAME", "MODULE", "LLVM_FUNCTION_TYPE", "LLVM_CODEGEN_F", "FUNCTION TYPE", "ARG NAMES", "NATIVE_F" }, ' ', '|'),
-		line_t( { "", "", "", "", "", "", "" }, '-', '|'),
-	};
-
+	std::vector<std::vector<std::string>> matrix;
 	for(const auto& e: defs){
 		const auto f0 = e.function_type_or_undef.is_undefined() ? "" : json_to_compact_string(typeid_to_compact_string(e.function_type_or_undef));
 
@@ -313,34 +309,23 @@ void trace_function_link_map(const std::vector<function_link_entry_t>& defs){
 		const auto f1 = f0.substr(0, 100);
 		const auto f = f1.size() != f0.size() ? (f1 + "...") : f1;
 
-		const auto l = line_t {
-			{
-				e.link_name.s,
-				e.module,
-				print_type(e.llvm_function_type),
-				e.llvm_codegen_f != nullptr ? ptr_to_hexstring(e.llvm_codegen_f) : "",
-				f,
-				arg_names,
-				e.native_f != nullptr ? ptr_to_hexstring(e.native_f) : "",
-			},
-			' ',
-			'|'
+		const auto line = std::vector<std::string>{
+			e.link_name.s,
+			e.module,
+			print_type(e.llvm_function_type),
+			e.llvm_codegen_f != nullptr ? ptr_to_hexstring(e.llvm_codegen_f) : "",
+			f,
+			arg_names,
+			e.native_f != nullptr ? ptr_to_hexstring(e.native_f) : "",
 		};
-		table.push_back(l);
+		matrix.push_back(line);
 	}
 
-	table.push_back(line_t( { "", "", "", "", "", "", "" }, '-', '|'));
-
-	const auto default_column = column_t{ 0, -1, 0 };
-	const auto columns0 = std::vector<column_t>(table[0].columns.size(), default_column);
-	const auto columns = fit_columns(columns0, table);
-	const auto r = generate_table(table, columns);
-
-	std::stringstream ss;
-	for(const auto& e: r){
-		ss << e << std::endl;
-	}
-	QUARK_TRACE(ss.str());
+	const auto result = generate_table_type1(
+		{ "LINK-NAME", "MODULE", "LLVM_FUNCTION_TYPE", "LLVM_CODEGEN_F", "FUNCTION TYPE", "ARG NAMES", "NATIVE_F" },
+		matrix
+	);
+	QUARK_TRACE(result);
 }
 
 

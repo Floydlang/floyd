@@ -66,7 +66,7 @@ std::string base_type_to_opcode(const base_type t){
 		return "func";
 	}
 	else if(t == base_type::k_identifier){
-		return "unresolved";
+		return "identifier";
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -118,7 +118,7 @@ QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_function) == "func");
 }
 QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_identifier) == "unresolved");
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_identifier) == "identifier");
 }
 
 
@@ -165,7 +165,7 @@ base_type opcode_to_base_type(const std::string& s){
 	else if(s == "func"){
 		return base_type::k_function;
 	}
-	else if(s == "unresolved"){
+	else if(s == "identifier"){
 		return base_type::k_identifier;
 	}
 
