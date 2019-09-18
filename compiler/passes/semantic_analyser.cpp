@@ -279,17 +279,26 @@ static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid
 
 	try {
 //		const auto resolved = record_type_internal(acc, loc, type);
-		const auto resolved = intern_anonymous_type(acc._types, &acc, type).second;
+
+		if(type.is_undefined()){
+			return type;
+		}
+		else{
+#if DEBUG
+			if(true) trace_type_interner(acc._types);
+#endif
+			const auto resolved = intern_anonymous_type(acc._types, &acc, type).second;
 
 /*
-		if(check_types_resolved(acc._types, resolved) == false){
-			throw_compiler_error(loc, "Cannot resolve type");
-		}
+			if(check_types_resolved(acc._types, resolved) == false){
+				throw_compiler_error(loc, "Cannot resolve type");
+			}
 */
 
-		lookup_itype(acc._types, type);
+			lookup_itype(acc._types, type);
 
-		return resolved;
+			return resolved;
+		}
 	}
 	catch(const compiler_error& e){
 		throw;
@@ -2626,9 +2635,6 @@ semantic_ast_t analyse(analyser_t& a){
 
 	//	Add Init benchmark_registry.
 	{
-		const auto benchmark_def_t_struct = make_benchmark_def_t();
-		const auto t = typeid_t::make_vector(benchmark_def_t_struct);
-
 		const auto it = std::find_if(
 			global_body3._symbol_table._symbols.begin(),
 			global_body3._symbol_table._symbols.end(),
@@ -2637,11 +2643,16 @@ semantic_ast_t analyse(analyser_t& a){
 		QUARK_ASSERT(it != global_body3._symbol_table._symbols.end());
 
 		const auto index = static_cast<int>(it - global_body3._symbol_table._symbols.begin());
+
+		const auto benchmark_registry_type = typeid_t::make_vector(typeid_t::make_identifier("benchmark_def_t"));
+
+		//??? remove most use of make_type_name_from_typeid()
 		const auto s = statement_t::make__init2(
 			k_no_location,
 			variable_address_t::make_variable_address(variable_address_t::k_global_scope, index),
-			expression_t::make_construct_value_expr(make_type_name_from_typeid(t), a.benchmark_defs)
+			expression_t::make_construct_value_expr(make_type_name_from_typeid(benchmark_registry_type), a.benchmark_defs)
 		);
+
 
 		global_body3._statements.insert(global_body3._statements.begin(), s);
 	}
@@ -2685,7 +2696,7 @@ semantic_ast_t analyse(analyser_t& a){
 	const auto result_ast1 = semantic_ast_t(result_ast0._tree);
 
 	QUARK_ASSERT(result_ast1._tree.check_invariant());
-	QUARK_ASSERT(check_types_resolved(result_ast1._tree));
+//	QUARK_ASSERT(check_types_resolved(result_ast1._tree));
 	return result_ast1;
 }
 

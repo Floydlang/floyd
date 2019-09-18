@@ -33,7 +33,7 @@ semantic_ast_t::semantic_ast_t(const general_purpose_ast_t& tree){
 #if DEBUG
 bool semantic_ast_t::check_invariant() const{
 	QUARK_ASSERT(_tree.check_invariant());
-	QUARK_ASSERT(check_types_resolved(_tree));
+//	QUARK_ASSERT(check_types_resolved(_tree));
 	return true;
 }
 #endif

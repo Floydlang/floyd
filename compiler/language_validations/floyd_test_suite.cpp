@@ -3536,7 +3536,18 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [json] constructor", "", ""){
 
 
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "dict constructor", "No type", "error"){
+	FLOYD_LANG_PROOF("Floyd test suite", "mini program", "", "built-ins compile"){
+		ut_run_closed_nolib(
+			QUARK_POS,
+			R"(
+
+				let a = 2
+
+			)"
+		);
+	}
+
+FLOYD_LANG_PROOF("Floyd test suite", "dict constructor", "No type", "error"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -3548,6 +3559,7 @@ FLOYD_LANG_PROOF_VIP("Floyd test suite", "dict constructor", "No type", "error")
 		"[Semantics] Cannot infer type in value-constructor-expression. Line: 3 \"let a = {}\""
 	);
 }
+
 
 FLOYD_LANG_PROOF("Floyd test suite", "dict constructor", "", "Error cannot infer type"){
 	ut_verify_exception_nolib(QUARK_POS, R"(		assert(size({}) == 0)		)", "[Semantics] Cannot infer type in value-constructor-expression. Line: 1 \"assert(size({}) == 0)\"");

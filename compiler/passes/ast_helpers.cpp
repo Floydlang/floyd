@@ -312,23 +312,21 @@ bool check_types_resolved(const type_interner_t& interner, const ast_type_t& typ
 		const auto& typeid0 = std::get<typeid_t>(type._contents);
 		try {
 			const auto itype = lookup_itype(interner, typeid0);
+			return check_types_resolved(interner, typeid0);
 		}
 		catch(...){
 			return false;
 		}
 	}
 	else if(std::holds_alternative<itype_t>(type._contents)){
-		const auto& ityp0 = std::get<itype_t>(type._contents);
+		const auto& itype0 = std::get<itype_t>(type._contents);
+		const auto typeid0 = lookup_type(interner, itype0);
+		return check_types_resolved(interner, typeid0);
 	}
 	else{
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
-
-//	const auto t2 = lookup_type(interner, t);
-//	return check_types_resolved(interner, t2);
-
-	return true;
 }
 
 bool check_types_resolved(const type_interner_t& interner, const typeid_t& t){
