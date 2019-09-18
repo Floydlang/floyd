@@ -284,6 +284,13 @@ std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, co
 
 
 
+QUARK_TEST("type_interner_t", "", "", ""){
+	type_interner_t a;
+	if(true) trace_type_interner(a);
+
+	const auto find = lookup_itype(a, typeid_t::make_undefined());
+	QUARK_ASSERT(find.is_undefined());
+}
 
 
 //??? How to update named type's type with new subtype and still guarantee named-type has bigger index? Subtype may introduce new itypes.

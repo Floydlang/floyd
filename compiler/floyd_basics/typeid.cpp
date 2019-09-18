@@ -920,12 +920,15 @@ json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 		});
 	}
 	else if(b == base_type::k_function){
-		return json_t::make_array({
+		//	Only include dyn-type it it's different than return_dyn_type::none. 
+		const auto d = t.get_function_dyn_return_type();
+		const auto dyn_type = d != typeid_t::return_dyn_type::none ? json_t(static_cast<int>(d)) : json_t();
+		return make_array_skip_nulls({
 			basetype_str,
 			typeid_to_ast_json(t.get_function_return(), tags),
 			typeids_to_json_array(t.get_function_args()),
 			t.get_function_pure() == epure::pure ? true : false,
-			json_t(static_cast<int>(t.get_function_dyn_return_type()))
+			dyn_type
 		});
 	}
 	else if(b == base_type::k_identifier){
@@ -1057,12 +1060,17 @@ static typeid_t typeid_from_json0(const json_t& t){
 			}
 			const bool pure = a[3].is_true();
 
-			const auto dyn = static_cast<typeid_t::return_dyn_type>(a[4].get_number());
-			if(dyn == typeid_t::return_dyn_type::none){
-				return typeid_t::make_function(ret_type, arg_types, pure ? epure::pure : epure::impure);
+			if(a.size() > 4){
+				const auto dyn = static_cast<typeid_t::return_dyn_type>(a[4].get_number());
+				if(dyn == typeid_t::return_dyn_type::none){
+					return typeid_t::make_function(ret_type, arg_types, pure ? epure::pure : epure::impure);
+				}
+				else{
+					return typeid_t::make_function_dyn_return(arg_types, pure ? epure::pure : epure::impure, dyn);
+				}
 			}
 			else{
-				return typeid_t::make_function_dyn_return(arg_types, pure ? epure::pure : epure::impure, dyn);
+				return typeid_t::make_function(ret_type, arg_types, pure ? epure::pure : epure::impure);
 			}
 		}
 		else if(s == "unknown-identifier"){

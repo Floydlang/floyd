@@ -181,7 +181,8 @@ static typeid_t record_type_internal0(analyser_t& acc, const location_t& loc, co
 
 
 		typeid_t operator()(const typeid_t::undefined_t& e) const{
-			throw_compiler_error(loc, "Cannot resolve type");
+			return type;
+//			throw_compiler_error(loc, "Cannot resolve type");
 		}
 		typeid_t operator()(const typeid_t::any_t& e) const{
 			return type;
@@ -238,30 +239,19 @@ static typeid_t record_type_internal0(analyser_t& acc, const location_t& loc, co
 			return typeid_t::make_function3(ret2, args2, pure, dyn_return_type);
 		}
 		typeid_t operator()(const typeid_t::identifier_t& e) const{
-			QUARK_ASSERT(false); throw std::exception();
+			const auto identifier = type.get_identifier();
+			QUARK_ASSERT(identifier != "");
+
+			const auto existing_value_deep_ptr = find_symbol_by_name(acc, identifier);
+			if(existing_value_deep_ptr.first == nullptr || existing_value_deep_ptr.first->_symbol_type != symbol_t::symbol_type::named_type){
+				throw_compiler_error(loc, "Unknown type name '" + identifier + "'.");
+			}
+			const auto resolved = lookup_type(acc._types, existing_value_deep_ptr.first->_value_type);
+			return resolved;
 		}
 	};
 	const auto resolved = std::visit(visitor_t{ acc, loc, type }, type._contents);
-	return resolved;
-}
-
-static typeid_t record_type_internal_wrap(analyser_t& acc, const location_t& loc, const typeid_t& type){
-	QUARK_ASSERT(acc.check_invariant());
-	QUARK_ASSERT(loc.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	const auto identifier = type.is_identifier() ? type.get_identifier() : "";
-	if(identifier != ""){
-		const auto existing_value_deep_ptr = find_symbol_by_name(acc, identifier);
-		if(existing_value_deep_ptr.first == nullptr || existing_value_deep_ptr.first->_symbol_type != symbol_t::symbol_type::named_type){
-			throw_compiler_error(loc, "Unknown type name '" + identifier + "'.");
-		}
-//		return existing_value_deep_ptr.first->_value_type.name(identifier);
-		return lookup_type(acc._types, existing_value_deep_ptr.first->_value_type);
-	}
-	else {
-		return record_type_internal0(acc, loc, type);
-	}
+	return intern_anonymous_type(acc._types, resolved).second;
 }
 
 static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid_t& type){
@@ -270,14 +260,16 @@ static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid
 	QUARK_ASSERT(type.check_invariant());
 
 	try {
-		const auto resolved = record_type_internal_wrap(acc, loc, type);
-		intern_anonymous_type(acc._types, resolved);
+		const auto resolved = record_type_internal0(acc, loc, type);
 
 /*
-		if(check_types_resolved(a._types, resolved) == false){
+		if(check_types_resolved(acc._types, resolved) == false){
 			throw_compiler_error(loc, "Cannot resolve type");
 		}
 */
+
+		lookup_itype(acc._types, type);
+
 		return resolved;
 	}
 	catch(const compiler_error& e){
@@ -296,16 +288,32 @@ static typeid_t record_type2(analyser_t& acc, const location_t& loc, const ast_t
 	return record_type(acc, loc, get_typeid(type));
 }
 
+static itype_t record_type_itype(analyser_t& acc, const location_t& loc, const ast_type_t& type){
+	QUARK_ASSERT(acc.check_invariant());
+	QUARK_ASSERT(loc.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
 
+	const auto t = record_type(acc, loc, get_typeid(type));
+	return lookup_itype(acc._types, t);
+}
+
+
+//	Pushes the expression type through recording, resolving and interning.
+static itype_t analyze_expr_output_itype(analyser_t& a, const expression_t& e){
+	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	return record_type_itype(a, k_no_location, e.get_output_type());
+}
+
+//	Pushes the expression type through recording, resolving and interning.
 static typeid_t analyze_expr_output_type(analyser_t& a, const expression_t& e){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-//???named-type --- should record!
-	return lookup_type(a._types, e.get_output_type());
+	const auto itype = analyze_expr_output_itype(a, e);
+	return lookup_type(a._types, itype);
 }
-
-
 
 
 
@@ -539,14 +547,11 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 	auto a_acc = a;
 
 	const auto new_local_name = statement._new_local_name;
-	const auto lhs_type0 = statement._bindtype;
 
 	//	If lhs may be
 	//		(1) undefined, if input is "let a = 10" for example. Then we need to infer its type.
 	//		(2) have a type, but it might not be fully resolved yet.
-	const auto lhs_type_name = lhs_type0.is_undefined() ? lhs_type0 : /*record_type2(a_acc, s.location, lhs_type0)*/ lhs_type0;
-	const auto lhs_type = record_type2(a_acc, s.location, lhs_type0);
-	const auto lhs_itype = lookup_itype(a._types, lhs_type);
+	const auto lhs_itype = record_type_itype(a_acc, s.location, statement._bindtype);
 
 	const auto mutable_flag = statement._locals_mutable_mode == statement_t::bind_local_t::k_mutable;
 
@@ -559,41 +564,39 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 	//	Notice: the final type may not be correct yet, but for function definitions it is.
 	//	This logic should be available for inferred binds too, in analyse_assign_statement().
 
-	const auto temp_symbol = mutable_flag ? symbol_t::make_mutable(itype_t::make_double()) : symbol_t::make_immutable_reserve(itype_t::make_double());
+	const auto temp_symbol = mutable_flag ? symbol_t::make_mutable(lhs_itype) : symbol_t::make_immutable_reserve(lhs_itype);
 	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ new_local_name, temp_symbol });
 	const auto local_name_index = a_acc._lexical_scope_stack.back().symbols._symbols.size() - 1;
 
 	try {
-		const auto rhs_expr_pair = lhs_type.is_undefined()
+		const auto rhs_expr_pair = lhs_itype.is_undefined()
 			? analyse_expression_no_target(a_acc, s, statement._expression)
-			: analyse_expression_to_target(a_acc, s, statement._expression, lhs_type);
+			: analyse_expression_to_target(a_acc, s, statement._expression, lookup_type(a_acc._types, lhs_itype));
 		a_acc = rhs_expr_pair.first;
 
-		const auto rhs_type = analyze_expr_output_type(a_acc, rhs_expr_pair.second);
-		const auto lhs_type2 = lhs_type.is_undefined() ? rhs_type : lhs_type;
+		const auto rhs_itype = analyze_expr_output_itype(a_acc, rhs_expr_pair.second);
+		const auto lhs_itype2 = lhs_itype.is_undefined() ? rhs_itype : lhs_itype;
 
-		if(lhs_type2 != lhs_type2){
+		//??? make test that checks I got this test + error right.
+		if((lhs_itype2 == rhs_itype) == false){
 			std::stringstream what;
 			what << "Types not compatible in bind - cannot convert '"
-			<< typeid_to_compact_string(lhs_type2) << "' to '" << typeid_to_compact_string(lhs_type2) << ".";
+			<< typeid_to_compact_string(lookup_type(a_acc._types, lhs_itype)) << "' to '" << typeid_to_compact_string(lookup_type(a_acc._types, lhs_itype2)) << ".";
 			throw_compiler_error(s.location, what.str());
 		}
 		else{
 			//	Replace the temporary symbol with the complete symbol.
 
-			const auto lhs_type_name2 = make_type_name_from_typeid(lhs_type2);
-			const auto lhs_itype_name2 = lookup_itype(a._types, lhs_type2);
-
 			//	If symbol can be initialized directly, use make_immutable_precalc(). Else reserve it and create an init2-statement to set it up at runtime.
 			//	??? Better to always initialise it, even if it's a complex value. Codegen then decides if to translate to a reserve + init. BUT PROBLEM: we lose info *when* to init the value.
-			if(is_preinitliteral(lhs_type2) && mutable_flag == false && get_expression_type(rhs_expr_pair.second) == expression_type::k_literal){
-				const auto symbol2 = symbol_t::make_immutable_precalc(lhs_itype_name2, rhs_expr_pair.second.get_literal());
+			if(is_preinitliteral(lookup_type(a_acc._types, lhs_itype2)) && mutable_flag == false && get_expression_type(rhs_expr_pair.second) == expression_type::k_literal){
+				const auto symbol2 = symbol_t::make_immutable_precalc(lhs_itype2, rhs_expr_pair.second.get_literal());
 				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
 				record_type(a_acc, s.location, analyze_expr_output_type(a_acc, rhs_expr_pair.second));
 				return { a_acc, {} };
 			}
 			else{
-				const auto symbol2 = mutable_flag ? symbol_t::make_mutable(lhs_itype_name2) : symbol_t::make_immutable_reserve(lhs_itype_name2);
+				const auto symbol2 = mutable_flag ? symbol_t::make_mutable(lhs_itype2) : symbol_t::make_immutable_reserve(lhs_itype2);
 				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
 				record_type(a_acc, s.location, analyze_expr_output_type(a_acc, rhs_expr_pair.second));
 
@@ -804,8 +807,17 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::bind_local_t& s) const{
 			const auto e = analyse_bind_local_statement(a, statement);
+
+			if(true){
+				{
+					QUARK_SCOPED_TRACE("OUTPUT TYPES");
+					trace_type_interner(e.first._types);
+				}
+			}
+
+
 			if(e.second){
-				QUARK_ASSERT(check_types_resolved(a._types, *e.second));
+				QUARK_ASSERT(check_types_resolved(e.first._types, *e.second));
 			}
 			return { e.first, e.second };
 		}
@@ -1506,7 +1518,6 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 	auto a_acc = a;
 
 	const auto current_type = analyze_expr_output_type(a_acc, e);
-//	const auto resolved_named_type = resolve_named_type(a_acc._types, current_type);
 
 	if(current_type.is_vector()){
 		//	JSON constants supports mixed element types: convert each element into a json.

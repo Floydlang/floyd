@@ -806,7 +806,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "Mutate", "Store to immutable", "compiler e
 }
 
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "", "String (which requires RC)", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "", "String (which requires RC)", ""){
 	ut_run_closed_nolib(
 		QUARK_POS,
 		R"___(
@@ -3536,7 +3536,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [json] constructor", "", ""){
 
 
 
-FLOYD_LANG_PROOF("Floyd test suite", "dict constructor", "No type", "error"){
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "dict constructor", "No type", "error"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(

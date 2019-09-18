@@ -85,7 +85,7 @@ struct symbol_t {
 
 	public: bool check_invariant() const {
 		if(_symbol_type == symbol_type::immutable_reserve){
-			QUARK_ASSERT(is_empty(_value_type) == false);
+//			QUARK_ASSERT(is_empty(_value_type) == false);
 			QUARK_ASSERT(_init.is_undefined());
 		}
 		else if(_symbol_type == symbol_type::immutable_arg){
@@ -101,7 +101,7 @@ struct symbol_t {
 			QUARK_ASSERT(_init.is_undefined());
 		}
 		else if(_symbol_type == symbol_type::mutable_reserve){
-			QUARK_ASSERT(is_empty(_value_type) == false);
+//			QUARK_ASSERT(is_empty(_value_type) == false);
 			QUARK_ASSERT(_init.is_undefined());
 		}
 		else{

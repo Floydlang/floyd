@@ -96,7 +96,7 @@ struct itype_t {
 	bool is_undefined() const {
 		QUARK_ASSERT(check_invariant());
 
-		return get_base_type() == base_type::k_string;
+		return get_base_type() == base_type::k_undefined;
 	}
 
 
