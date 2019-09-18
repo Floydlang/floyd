@@ -1082,7 +1082,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "Function value", "", ""){
 
 		)",
 		{
-			"function int(string) pure"
+			"func int(string) pure"
 		 }
 	);
 }
@@ -1109,7 +1109,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "func", "Declaration only, get its type", "
 			print(f)
 
 		)",
-		{ "function int() pure" }
+		{ "func int() pure" }
 	);
 }
 
@@ -3416,7 +3416,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [func] constructor", "", ""){
 
 		)",
 		{
-			"[function int(string) pure]"
+			"[func int(string) pure]"
 		 }
 	);
 }
@@ -3443,7 +3443,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [func] constructor", "", ""){
 
 		)",
 		{
-			"[function int(string) pure, function int(string) pure, function int(string) pure]"
+			"[func int(string) pure, func int(string) pure, func int(string) pure]"
 		 }
 	);
 }
@@ -3462,7 +3462,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [struct] constructor", "", ""){
 		)",
 		{
 			R"___([{name="Mozart", birth_year=1782}, {name="Bono", birth_year=1955}])___"
-		 }
+		}
 	);
 }
 
@@ -4049,7 +4049,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [func] constructor", "", ""){
 
 		)",
 		{
-			R"___({"one": function int(string) pure, "three": function int(string) pure, "two": function int(string) pure})___"
+			R"___({"one": func int(string) pure, "three": func int(string) pure, "two": func int(string) pure})___"
 		 }
 	);
 }
@@ -5639,7 +5639,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Access benchmark registry
 
 		)",
 		{
-			R"___([{name="ABC", f=function [struct {int dur;json more;}]() pure}])___"
+			R"___([{name="ABC", f=func [struct {int dur;json more;}]() pure}])___"
 		}
 	);
 }

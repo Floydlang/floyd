@@ -285,7 +285,7 @@ static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid
 		}
 		else{
 #if DEBUG
-			if(true) trace_type_interner(acc._types);
+			if(false) trace_type_interner(acc._types);
 #endif
 			const auto resolved = intern_anonymous_type(acc._types, &acc, type).second;
 
@@ -837,21 +837,12 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::return_statement_t& s) const{
 			const auto e = analyse_return_statement(a, statement, return_type);
-			QUARK_ASSERT(check_types_resolved(a._types, e.second));
+			QUARK_ASSERT(check_types_resolved(e.first._types, e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::bind_local_t& s) const{
 			const auto e = analyse_bind_local_statement(a, statement);
-
-			if(true){
-				{
-					QUARK_SCOPED_TRACE("OUTPUT TYPES");
-					trace_type_interner(e.first._types);
-				}
-			}
-
-
 			if(e.second){
 				QUARK_ASSERT(check_types_resolved(e.first._types, *e.second));
 			}
@@ -859,7 +850,7 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 		}
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::assign_t& s) const{
 			const auto e = analyse_assign_statement(a, statement);
-			QUARK_ASSERT(check_types_resolved(a._types, e.second));
+			QUARK_ASSERT(check_types_resolved(e.first._types, e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::assign2_t& s) const{
@@ -872,30 +863,30 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 		}
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::block_statement_t& s) const{
 			const auto e = analyse_block_statement(a, statement, return_type);
-			QUARK_ASSERT(check_types_resolved(a._types, e.second));
+			QUARK_ASSERT(check_types_resolved(e.first._types, e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::ifelse_statement_t& s) const{
 			const auto e = analyse_ifelse_statement(a, statement, return_type);
-			QUARK_ASSERT(check_types_resolved(a._types, e.second));
+			QUARK_ASSERT(check_types_resolved(e.first._types, e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::for_statement_t& s) const{
 			const auto e = analyse_for_statement(a, statement, return_type);
-			QUARK_ASSERT(check_types_resolved(a._types, e.second));
+			QUARK_ASSERT(check_types_resolved(e.first._types, e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::while_statement_t& s) const{
 			const auto e = analyse_while_statement(a, statement, return_type);
-			QUARK_ASSERT(check_types_resolved(a._types, e.second));
+			QUARK_ASSERT(check_types_resolved(e.first._types, e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 
 
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::expression_statement_t& s) const{
 			const auto e = analyse_expression_statement(a, statement);
-			QUARK_ASSERT(check_types_resolved(a._types, e.second));
+			QUARK_ASSERT(check_types_resolved(e.first._types, e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::software_system_statement_t& s) const{
@@ -2621,7 +2612,7 @@ semantic_ast_t analyse(analyser_t& a){
 		record_type(a, k_no_location, e._function_type);
 	}
 
-	if(true) trace_type_interner(a._types);
+	if(false) trace_type_interner(a._types);
 
 	const auto result = analyse_statements(a, global_body._statements, typeid_t::make_void());
 	a = result.first;
