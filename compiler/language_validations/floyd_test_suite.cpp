@@ -3556,17 +3556,17 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict constructor", "No type", "error"){
 			print(a)
 
 		)",
-		"[Semantics] Cannot infer type in value-constructor-expression. Line: 3 \"let a = {}\""
+		"[Semantics] Cannot infer dictionary element type, add explicit type. Line: 3 \"let a = {}\""
 	);
 }
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "dict constructor", "", "Error cannot infer type"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		assert(size({}) == 0)		)", "[Semantics] Cannot infer type in value-constructor-expression. Line: 1 \"assert(size({}) == 0)\"");
+	ut_verify_exception_nolib(QUARK_POS, R"(		assert(size({}) == 0)		)", "[Semantics] Cannot infer dictionary element type, add explicit type. Line: 1 \"assert(size({}) == 0)\"");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "dict constructor", "", "Error cannot infer type"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		print({})		)", "[Semantics] Cannot infer type in value-constructor-expression. Line: 1 \"print({})\"");
+	ut_verify_exception_nolib(QUARK_POS, R"(		print({})		)", "[Semantics] Cannot infer dictionary element type, add explicit type. Line: 1 \"print({})\"");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "dict [int] constructor", "", "Compilation error"){
@@ -3578,7 +3578,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [int] constructor", "", "Compilation 
 			print(a)
 
 		)",
-		"[Semantics] Cannot infer type in value-constructor-expression. Line: 3 \"mutable a = {}\""
+		"[Semantics] Cannot infer dictionary element type, add explicit type. Line: 3 \"mutable a = {}\""
 	);
 }
 
@@ -3633,7 +3633,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [int] update()", "dest is empty dict"
 			assert(b == {"one": 1, "two": 2})
 
 		)",
-		"[Semantics] Cannot infer type in value-constructor-expression. Line: 3 \"let a = update({}, \"one\", 1)\""
+		"[Semantics] Cannot infer dictionary element type, add explicit type. Line: 3 \"let a = update({}, \"one\", 1)\""
 	);
 }
 
