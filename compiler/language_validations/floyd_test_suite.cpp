@@ -4173,7 +4173,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "check struct's type", ""){
 
 
 
-
+#if 0
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "Test struct name-equivalence", ""){
 	ut_run_closed_nolib(
 		QUARK_POS,
@@ -4191,7 +4191,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Test struct name-equivalence", "
 		)"
 	);
 }
-
+#endif
 
 
 

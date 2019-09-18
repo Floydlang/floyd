@@ -123,42 +123,51 @@ static itype_t allocate(type_interner_t& interner, const i_resolve_identifer* re
 		const i_resolve_identifer* resolver;
 
 		itype_t operator()(const typeid_t::undefined_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			interner.interned2.push_back({ name, type });
+			const auto lookup_index = static_cast<int32_t>(interner.interned2.size() - 1);
+			return itype_t::assemble2(lookup_index, type.get_base_type(), base_type::k_undefined);
 		}
 		itype_t operator()(const typeid_t::any_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			interner.interned2.push_back({ name, type });
+			const auto lookup_index = static_cast<int32_t>(interner.interned2.size() - 1);
+			return itype_t::assemble2(lookup_index, type.get_base_type(), base_type::k_undefined);
 		}
 
 		itype_t operator()(const typeid_t::void_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			interner.interned2.push_back({ name, type });
+			const auto lookup_index = static_cast<int32_t>(interner.interned2.size() - 1);
+			return itype_t::assemble2(lookup_index, type.get_base_type(), base_type::k_undefined);
 		}
 		itype_t operator()(const typeid_t::bool_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			interner.interned2.push_back({ name, type });
+			const auto lookup_index = static_cast<int32_t>(interner.interned2.size() - 1);
+			return itype_t::assemble2(lookup_index, type.get_base_type(), base_type::k_undefined);
 		}
 		itype_t operator()(const typeid_t::int_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			interner.interned2.push_back({ name, type });
+			const auto lookup_index = static_cast<int32_t>(interner.interned2.size() - 1);
+			return itype_t::assemble2(lookup_index, type.get_base_type(), base_type::k_undefined);
 		}
 		itype_t operator()(const typeid_t::double_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			interner.interned2.push_back({ name, type });
+			const auto lookup_index = static_cast<int32_t>(interner.interned2.size() - 1);
+			return itype_t::assemble2(lookup_index, type.get_base_type(), base_type::k_undefined);
 		}
 		itype_t operator()(const typeid_t::string_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			interner.interned2.push_back({ name, type });
+			const auto lookup_index = static_cast<int32_t>(interner.interned2.size() - 1);
+			return itype_t::assemble2(lookup_index, type.get_base_type(), base_type::k_undefined);
 		}
 
 		itype_t operator()(const typeid_t::json_type_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			interner.interned2.push_back({ name, type });
+			const auto lookup_index = static_cast<int32_t>(interner.interned2.size() - 1);
+			return itype_t::assemble2(lookup_index, type.get_base_type(), base_type::k_undefined);
 		}
 		itype_t operator()(const typeid_t::typeid_type_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			interner.interned2.push_back({ name, type });
+			const auto lookup_index = static_cast<int32_t>(interner.interned2.size() - 1);
+			return itype_t::assemble2(lookup_index, type.get_base_type(), base_type::k_undefined);
 		}
 
 		itype_t operator()(const typeid_t::struct_t& e) const{
@@ -267,14 +276,12 @@ void update_named_type(type_interner_t& interner, const std::string& name, const
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto it = std::find_if(interner.interned2.begin(), interner.interned2.end(), [&](const auto& e){ return e.first == name; });
-
-	//	This name already exists, should we update it?
 	if(it != interner.interned2.end()){
-		QUARK_ASSERT(false); //??? also needs to update child types.
+	//??? also add child types.
 		it->second = type;
 	}
 
-	//	New type, store it.
+	//	This name doesn't exist and cannot be updated!
 	else{
 		QUARK_ASSERT(false);
 		throw std::exception();

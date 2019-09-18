@@ -584,6 +584,10 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 
 	const auto new_local_name = statement._new_local_name;
 
+#if DEBUG
+	if(true) trace_type_interner(a_acc._types);
+#endif
+
 	//	If lhs may be
 	//		(1) undefined, if input is "let a = 10" for example. Then we need to infer its type.
 	//		(2) have a type, but it might not be fully resolved yet.
@@ -2207,21 +2211,32 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 		throw_local_identifier_already_exists(parent.location, identifier);
 	}
 
-	const auto type_name_symbol = symbol_t::make_named_type(itype_t::make_undefined());
+	const auto named_itype = new_named_type(a_acc._types, nullptr, identifier, typeid_t::make_undefined());
+
+	const auto type_name_symbol = symbol_t::make_named_type(named_itype);
 	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ identifier, type_name_symbol });
 	const auto symbol_index = a_acc._lexical_scope_stack.back().symbols._symbols.size() - 1;
 
 
 	const auto struct_typeid1 = typeid_t::make_struct2(details.def->_members);
-	const auto struct_typeid2 = record_type(a_acc, parent.location, struct_typeid1);
+	const auto struct_typeid2 = struct_typeid1;//record_type(a_acc, parent.location, struct_typeid1);
 
 	//	Update our temporary. Notice that we need to find it again since other types might have been inserted since.
-	const auto symbol2 = symbol_t::make_named_type(lookup_itype(a_acc._types, struct_typeid2));
-	a_acc._lexical_scope_stack.back().symbols._symbols[symbol_index].second = symbol2;
-
+//	const auto symbol2 = symbol_t::make_named_type(lookup_itype(a_acc._types, struct_typeid2));
+//	a_acc._lexical_scope_stack.back().symbols._symbols[symbol_index].second = symbol2;
 
 	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid2);
+
+
+	update_named_type(a_acc._types, identifier, struct_typeid2);
+
+
 	const auto r = expression_t::make_literal(struct_typeid_value);
+
+#if DEBUG
+	if(true) trace_type_interner(a_acc._types);
+#endif
+
 	return { a_acc, r };
 }
 
@@ -2672,7 +2687,7 @@ semantic_ast_t analyse(analyser_t& a){
 
 	const auto result_ast0 = unchecked_ast_t{ gp1 };
 
-	if(true){
+	if(false){
 		{
 			QUARK_SCOPED_TRACE("OUTPUT AST");
 			QUARK_TRACE(json_to_pretty_string(gp_ast_to_json(result_ast0._tree)));

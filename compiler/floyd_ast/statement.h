@@ -89,15 +89,15 @@ struct symbol_t {
 			QUARK_ASSERT(_init.is_undefined());
 		}
 		else if(_symbol_type == symbol_type::immutable_arg){
-			QUARK_ASSERT(is_empty(_value_type) == false);
+//			QUARK_ASSERT(is_empty(_value_type) == false);
 			QUARK_ASSERT(_init.is_undefined());
 		}
 		else if(_symbol_type == symbol_type::immutable_precalc){
-			QUARK_ASSERT(is_empty(_value_type) == false);
+//			QUARK_ASSERT(is_empty(_value_type) == false);
 			QUARK_ASSERT(_init.is_undefined() == false);
 		}
 		else if(_symbol_type == symbol_type::named_type){
-			QUARK_ASSERT(is_empty(_value_type) == false);
+//			QUARK_ASSERT(is_empty(_value_type) == false);
 			QUARK_ASSERT(_init.is_undefined());
 		}
 		else if(_symbol_type == symbol_type::mutable_reserve){
