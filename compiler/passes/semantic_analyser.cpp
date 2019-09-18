@@ -55,11 +55,15 @@ struct lexical_scope_t {
 	epure pure;
 };
 
-struct analyser_t {
+struct analyser_t : public i_resolve_identifer {
 	public: analyser_t(const unchecked_ast_t& ast);
 #if DEBUG
 	public: bool check_invariant() const;
 #endif
+
+
+
+	itype_t i_resolve_identifer_resolve(const std::string& identifier) const override;
 
 
 	////////////////////////		STATE
@@ -167,7 +171,7 @@ static bool does_symbol_exist_shallow(const analyser_t& a, const std::string& s)
 
 static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid_t& type);
 
-static typeid_t record_type_internal0(analyser_t& acc, const location_t& loc, const typeid_t& type){
+static typeid_t record_type_internal(analyser_t& acc, const location_t& loc, const typeid_t& type){
 	QUARK_ASSERT(acc.check_invariant());
 	QUARK_ASSERT(loc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -251,8 +255,22 @@ static typeid_t record_type_internal0(analyser_t& acc, const location_t& loc, co
 		}
 	};
 	const auto resolved = std::visit(visitor_t{ acc, loc, type }, type._contents);
-	return intern_anonymous_type(acc._types, resolved).second;
+	return intern_anonymous_type(acc._types, nullptr, resolved).second;
 }
+
+
+itype_t analyser_t::i_resolve_identifer_resolve(const std::string& identifier) const {
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(identifier != "");
+
+	const auto existing_value_deep_ptr = find_symbol_by_name(*this, identifier);
+	if(existing_value_deep_ptr.first == nullptr || existing_value_deep_ptr.first->_symbol_type != symbol_t::symbol_type::named_type){
+		throw_compiler_error(k_no_location, "Unknown type name '" + identifier + "'.");
+	}
+	return existing_value_deep_ptr.first->_value_type;
+}
+
+
 
 static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid_t& type){
 	QUARK_ASSERT(acc.check_invariant());
@@ -260,7 +278,8 @@ static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid
 	QUARK_ASSERT(type.check_invariant());
 
 	try {
-		const auto resolved = record_type_internal0(acc, loc, type);
+//		const auto resolved = record_type_internal(acc, loc, type);
+		const auto resolved = intern_anonymous_type(acc._types, &acc, type).second;
 
 /*
 		if(check_types_resolved(acc._types, resolved) == false){
@@ -280,7 +299,7 @@ static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid
 	}
 }
 
-static typeid_t record_type2(analyser_t& acc, const location_t& loc, const ast_type_t& type){
+static typeid_t record_type(analyser_t& acc, const location_t& loc, const ast_type_t& type){
 	QUARK_ASSERT(acc.check_invariant());
 	QUARK_ASSERT(loc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -288,13 +307,21 @@ static typeid_t record_type2(analyser_t& acc, const location_t& loc, const ast_t
 	return record_type(acc, loc, get_typeid(type));
 }
 
+static itype_t record_type_itype(analyser_t& acc, const location_t& loc, const typeid_t& type){
+	QUARK_ASSERT(acc.check_invariant());
+	QUARK_ASSERT(loc.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto t = record_type(acc, loc, type);
+	return lookup_itype(acc._types, t);
+}
+
 static itype_t record_type_itype(analyser_t& acc, const location_t& loc, const ast_type_t& type){
 	QUARK_ASSERT(acc.check_invariant());
 	QUARK_ASSERT(loc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto t = record_type(acc, loc, get_typeid(type));
-	return lookup_itype(acc._types, t);
+	return record_type_itype(acc, loc,get_typeid(type));
 }
 
 
@@ -2496,11 +2523,6 @@ QUARK_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
 
 
 
-struct builtins_t {
-	std::map<function_id_t, function_definition_t> function_defs;
-	std::vector<std::pair<std::string, symbol_t>> symbol_map;
-};
-
 
 
 static std::pair<std::string, symbol_t> make_builtin_type(type_interner_t& interner, const typeid_t& type){
@@ -2513,12 +2535,11 @@ static std::pair<std::string, symbol_t> make_builtin_type(type_interner_t& inter
 }
 
 
-static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
+static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	/*
 		Create built-in global symbol map: built in data types, built-in functions (intrinsics).
 	*/
-	std::vector<std::pair<std::string, symbol_t>> symbol_map;
-
+	auto& symbol_map = a._lexical_scope_stack.back().symbols._symbols;
 	symbol_map.push_back( make_builtin_type(a._types, typeid_t::make_void()) );
 	symbol_map.push_back( make_builtin_type(a._types, typeid_t::make_bool()) );
 	symbol_map.push_back( make_builtin_type(a._types, typeid_t::make_int()) );
@@ -2539,35 +2560,33 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	symbol_map.push_back( { "json_null", symbol_t::make_immutable_precalc(itype_t::make_int(), value_t::make_int(7)) });
 
 
+	symbol_map.push_back( {
+		"benchmark_result_t",
+		symbol_t::make_named_type(
+			new_named_type(a._types, &a, "benchmark_result_t", make_benchmark_result_t())
+		)
+	} );
+
 	//???named-type: use intern_type(), not lookup!
 	symbol_map.push_back( {
 		"benchmark_def_t",
 		symbol_t::make_named_type(
-			new_named_type(a._types, "benchmark_def_t", make_benchmark_def_t())
-		)
-	} );
-	symbol_map.push_back( {
-		"benchmark_result_t",
-		symbol_t::make_named_type(
-			new_named_type(a._types, "benchmark_result_t", make_benchmark_result_t())
+			new_named_type(a._types, &a, "benchmark_def_t", make_benchmark_def_t())
 		)
 	} );
 
 	//	Reserve a symbol table entry for benchmark_registry instance.
 	{
-		const auto benchmark_def_t_struct = make_benchmark_def_t();
-		const auto benchmark_registry_type = typeid_t::make_vector(benchmark_def_t_struct);
+		const auto benchmark_registry_type = typeid_t::make_vector(typeid_t::make_identifier("benchmark_def_t"));
 		symbol_map.push_back( {
 			k_global_benchmark_registry,
 			symbol_t::make_immutable_reserve(
-				intern_anonymous_type(a._types, benchmark_registry_type).first
+				record_type_itype(a, k_no_location, benchmark_registry_type)
 			)
 		} );
 	}
 
-	std::map<function_id_t, function_definition_t> function_defs;
-
-	return builtins_t{ function_defs, symbol_map };
+	return symbol_map;
 }
 
 
@@ -2576,28 +2595,34 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 semantic_ast_t analyse(analyser_t& a){
 	QUARK_ASSERT(a.check_invariant());
 
-	////////////////////////////////	Create built-in global symbol map: built in data types, built-in functions (host functions).
+	////////////////////////////////	Create built-in global symbol map: built in data types and intrinsics.
+	////////////////////////////////	Analyze global namespace, including all Floyd functions defined there.
 
-	const auto builtins = generate_builtins(a, *a._imm);
 
 
+
+	auto global_body = body_t(a._imm->_ast._tree._globals._statements, symbol_table_t{ });
+
+	auto new_environment = symbol_table_t{ global_body._symbol_table };
+	const auto lexical_scope = lexical_scope_t{ new_environment, epure::pure };
+	a._lexical_scope_stack.push_back(lexical_scope);
+
+	const auto builtin_symbols = generate_builtins(a, *a._imm);
 	for(const auto& e: a._imm->intrinsic_signatures){
 		record_type(a, k_no_location, e._function_type);
 	}
 
+	if(true) trace_type_interner(a._types);
 
-	std::vector<std::pair<std::string, symbol_t>> symbol_map = builtins.symbol_map;
-	std::map<function_id_t, function_definition_t> function_defs = builtins.function_defs;
+	const auto result = analyse_statements(a, global_body._statements, typeid_t::make_void());
+	a = result.first;
 
-	a._function_defs.swap(function_defs);
+	const auto body2 = body_t(result.second, result.first._lexical_scope_stack.back().symbols);
 
+	a._lexical_scope_stack.pop_back();
 
+	auto global_body3 = body2;
 
-	////////////////////////////////	Analyze global namespace, including all Floyd functions defined there.
-	const auto global_body = body_t(a._imm->_ast._tree._globals._statements, symbol_table_t{ symbol_map });
-	auto global_body2_pair = analyse_body(a, global_body, epure::impure, typeid_t::make_void());
-	a = global_body2_pair.first;
-	auto global_body3 = global_body2_pair.second;
 
 	//	Add Init benchmark_registry.
 	{
@@ -2610,27 +2635,20 @@ semantic_ast_t analyse(analyser_t& a){
 			[&](const std::pair<std::string, symbol_t>& e) { return e.first == k_global_benchmark_registry; }
 		);
 		QUARK_ASSERT(it != global_body3._symbol_table._symbols.end());
-//		QUARK_ASSERT(sym.second._init.get_type().get_vector_element_type() == benchmark_def_t_struct);
+
 		const auto index = static_cast<int>(it - global_body3._symbol_table._symbols.begin());
 		const auto s = statement_t::make__init2(
 			k_no_location,
 			variable_address_t::make_variable_address(variable_address_t::k_global_scope, index),
 			expression_t::make_construct_value_expr(make_type_name_from_typeid(t), a.benchmark_defs)
 		);
-//		global_body3._statements.push_back(s);
+
 		global_body3._statements.insert(global_body3._statements.begin(), s);
 	}
 
 
 
 	////////////////////////////////	Make AST
-
-#if 0
-	for(const auto& e: a._types.interned){
-		QUARK_TRACE_SS(e.first.itype << ": " << typeid_to_compact_string(e.second));
-	}
-#endif
-
 
 	std::vector<floyd::function_definition_t> function_defs_vec;
 	for(const auto& e: a._function_defs){
@@ -2641,8 +2659,8 @@ semantic_ast_t analyse(analyser_t& a){
 		._globals = global_body3,
 		._function_defs = function_defs_vec,
 		._interned_types = a._types,
-		._software_system = global_body2_pair.first._software_system,
-		._container_def = global_body2_pair.first._container_def
+		._software_system = a._software_system,
+		._container_def = a._container_def
 	};
 
 	type_interner_t types3 = a._types;
@@ -2663,7 +2681,7 @@ semantic_ast_t analyse(analyser_t& a){
 		}
 	}
 
-	QUARK_ASSERT(check_types_resolved(result_ast0._tree));
+//	QUARK_ASSERT(check_types_resolved(result_ast0._tree));
 	const auto result_ast1 = semantic_ast_t(result_ast0._tree);
 
 	QUARK_ASSERT(result_ast1._tree.check_invariant());

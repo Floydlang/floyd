@@ -225,7 +225,7 @@ int get_json_type(const json_t& value){
 
 
 bool typeid_t::check_invariant() const{
-#if DEBUG_DEEP
+#if DEBUG_DEEP_TYPEID_T
 	struct visitor_t {
 		bool operator()(const undefined_t& e) const{
 			return true;
@@ -284,7 +284,8 @@ bool typeid_t::check_invariant() const{
 			return true;
 		}
 		bool operator()(const identifier_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			QUARK_ASSERT(e.name != "");
+			return true;
 		}
 	};
 	return std::visit(visitor_t{}, _contents);
@@ -297,7 +298,7 @@ void typeid_t::swap(typeid_t& other){
 	QUARK_ASSERT(other.check_invariant());
 	QUARK_ASSERT(check_invariant());
 
-#if DEBUG_DEEP
+#if DEBUG_DEEP_TYPEID_T
 	std::swap(_DEBUG_string, other._DEBUG_string);
 #endif
 	std::swap(_contents, other._contents);
@@ -614,10 +615,10 @@ std::string typeid_to_compact_string(const typeid_t& t){
 			args_str.push_back(typeid_to_compact_string(a));
 		}
 
-		return std::string() + "function " + typeid_to_compact_string(ret) + "(" + concat_strings_with_divider(args_str, ",") + ") " + (pure == epure::pure ? "pure" : "impure");
+		return std::string() + "func " + typeid_to_compact_string(ret) + "(" + concat_strings_with_divider(args_str, ",") + ") " + (pure == epure::pure ? "pure" : "impure");
 	}
 	else if(basetype == floyd::base_type::k_identifier){
-		return "identifier: \'" + t.get_identifier() + "\'";
+		return "@" + t.get_identifier() + "";
 	}
 	else{
 		return base_type_to_opcode(basetype);
@@ -669,8 +670,8 @@ const std::vector<typeid_str_test_t> make_typeid_str_tests(){
 		//	Function
 		{
 			typeid_t::make_function(typeid_t::make_bool(), std::vector<typeid_t>{ typeid_t::make_int(), typeid_t::make_double() }, epure::pure),
-			R"(["function", "bool", [ "int", "double"]])",
-			"function bool(int,double)"
+			R"(["func", "bool", [ "int", "double"]])",
+			"func bool(int,double)"
 		},
 
 

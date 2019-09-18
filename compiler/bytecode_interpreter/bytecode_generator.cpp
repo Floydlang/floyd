@@ -164,7 +164,7 @@ static typeid_t get_expr_output(const bcgenerator_t& gen, const expression_t& e)
 	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	return get_expr_output_type(gen._ast_imm->_tree._interned_types, e);
+	return get_expr_output_typeid(gen._ast_imm->_tree._interned_types, e);
 }
 
 

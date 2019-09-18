@@ -579,17 +579,11 @@ struct expression_t {
 };
 
 
-inline typeid_t get_expr_output_type(const type_interner_t& interner, const expression_t& e){
+inline typeid_t get_expr_output_typeid(const type_interner_t& interner, const expression_t& e){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
 	return lookup_type(interner, e.get_output_type());
-}
-inline typeid_t get_expr_output_type(type_interner_t& interner, const expression_t& e){
-	QUARK_ASSERT(interner.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-
-	return intern_anonymous_type(interner, e.get_output_type()).second;
 }
 
 

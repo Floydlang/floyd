@@ -84,7 +84,7 @@ const char tag_resolved_type_char = '^';
 
 
 
-
+#define DEBUG_DEEP_TYPEID_T 1
 
 //////////////////////////////////////		base_type
 
@@ -505,6 +505,8 @@ struct typeid_t {
 	//	??? Better name: "named_type"
 
 	public: static typeid_t make_identifier(const std::string& s){
+		QUARK_ASSERT(s != "");
+
 		return { identifier_t{ s } };
 	}
 	public: bool is_identifier() const {
@@ -582,7 +584,7 @@ struct typeid_t {
 		QUARK_ASSERT(other.check_invariant());
 
 		return true
-#if DEBUG_DEEP
+#if DEBUG_DEEP_TYPEID_T
 			&& _DEBUG_string == other._DEBUG_string
 #endif
 			&& _contents == other._contents
@@ -600,7 +602,7 @@ struct typeid_t {
 		_contents(contents)
 	{
 
-#if DEBUG_DEEP
+#if DEBUG_DEEP_TYPEID_T
 		_DEBUG_string = typeid_to_compact_string(*this);
 #endif
 		QUARK_ASSERT(check_invariant());
@@ -608,7 +610,7 @@ struct typeid_t {
 
 
 	////////////////////////////////////////		STATE
-#if DEBUG_DEEP
+#if DEBUG_DEEP_TYPEID_T
 	private: std::string _DEBUG_string;
 #endif
 	public: type_variant_t _contents;

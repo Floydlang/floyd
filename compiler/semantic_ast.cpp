@@ -25,7 +25,7 @@ namespace floyd {
 
 semantic_ast_t::semantic_ast_t(const general_purpose_ast_t& tree){
 	QUARK_ASSERT(tree.check_invariant());
-	QUARK_ASSERT(check_types_resolved(tree));
+//	QUARK_ASSERT(check_types_resolved(tree));
 
 	_tree = tree;
 }

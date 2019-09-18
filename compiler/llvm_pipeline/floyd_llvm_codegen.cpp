@@ -463,7 +463,7 @@ static typeid_t get_expr_output(const llvm_code_generator_t& gen, const expressi
 	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	return get_expr_output_type(gen.type_lookup.state.type_interner, e);
+	return get_expr_output_typeid(gen.type_lookup.state.type_interner, e);
 }
 
 

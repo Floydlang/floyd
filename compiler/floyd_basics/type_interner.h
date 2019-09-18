@@ -252,7 +252,6 @@ itype_t itype_from_json(const json_t& j);
 
 
 
-
 //	Assigns 32 bit ID to types. You can lookup the type using the ID.
 //	This allows us to describe a type using a single 32 bit integer (compact, fast to copy around).
 //	Each type has exactly ONE ID.
@@ -274,15 +273,23 @@ struct type_interner_t {
 
 
 
+//////////////////////////////////////////////////		i_resolve_identifer
+
+
+struct i_resolve_identifer {
+	virtual ~i_resolve_identifer(){ };
+	virtual itype_t i_resolve_identifer_resolve(const std::string& identifier) const = 0; 
+};
+
 
 
 //	Records AND resolves the type. The returned type may be improved over input type.
-std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, const typeid_t& type);
-std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, const ast_type_t& type);
+std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, const i_resolve_identifer* resolver, const typeid_t& type);
+std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, const i_resolve_identifer* resolver, const ast_type_t& type);
 
 //	Allocates a new itype for this name. The name must not already exist.
 //	Interns the type for this name. You can use typeid_t::make_undefined() and later update the type using update_named_type()
-itype_t new_named_type(type_interner_t& interner, const std::string& name, const typeid_t& type);
+itype_t new_named_type(type_interner_t& interner, const i_resolve_identifer* resolver, const std::string& name, const typeid_t& type);
 
 //	Update the named type's type. The named type must already exist. Any usage of this name will also get the new type.
 void update_named_type(type_interner_t& interner, const std::string& name, const typeid_t& type);
