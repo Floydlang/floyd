@@ -1531,6 +1531,24 @@ std::pair<analyser_t, expression_t> analyse_load2(const analyser_t& a, const exp
 	return { a, e };
 }
 
+
+static typeid_t select_inferred_type(const type_interner_t& interner, const typeid_t& target_type_or_any, const typeid_t& rhs_guess_type){
+	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(target_type_or_any.check_invariant());
+	QUARK_ASSERT(rhs_guess_type.check_invariant());
+
+	const bool rhs_guess_type_valid = check_types_resolved(interner, rhs_guess_type);
+	const bool have_target_type = target_type_or_any.is_any() == false;
+
+	if(have_target_type && rhs_guess_type_valid){
+	 	return target_type_or_any;
+	}
+	else{
+		return rhs_guess_type;
+	}
+}
+
+
 /*
 	Here is trickery with JSON support.
 
@@ -1586,26 +1604,26 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			}
 
 			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? analyze_expr_output_type(a_acc, elements2[0]) : element_type;
-			const auto result_type0 = typeid_t::make_vector(element_type2);
-			const auto result_type1 = check_types_resolved(a_acc._types, result_type0) == false && target_type.is_any() == false ? target_type : result_type0;
+			const auto rhs_guess_type = typeid_t::make_vector(element_type2);
+			const auto selected_type = select_inferred_type(a_acc._types, target_type, rhs_guess_type);
 
-			if(check_types_resolved(a_acc._types, result_type1) == false){
+			if(check_types_resolved(a_acc._types, selected_type) == false){
 				std::stringstream what;
 				what << "Cannot infer vector element type, add explicit type.";
 				throw_compiler_error(parent.location, what.str());
 			}
 
-			const auto result_type = record_type(a_acc, parent.location, result_type1);
+			const auto final_type = record_type(a_acc, parent.location, selected_type);
 
 			for(const auto& m: elements2){
 				if(analyze_expr_output_type(a_acc, m) != element_type2){
 					std::stringstream what;
-					what << "Vector of type " << typeid_to_compact_string(result_type) << " cannot hold an element of type " << typeid_to_compact_string(analyze_expr_output_type(a_acc, m)) << ".";
+					what << "Vector of type " << typeid_to_compact_string(final_type) << " cannot hold an element of type " << typeid_to_compact_string(analyze_expr_output_type(a_acc, m)) << ".";
 					throw_compiler_error(parent.location, what.str());
 				}
 			}
-			QUARK_ASSERT(check_types_resolved(a_acc._types, result_type));
-			return { a_acc, expression_t::make_construct_value_expr(make_type_name_from_typeid(result_type), elements2) };
+			QUARK_ASSERT(check_types_resolved(a_acc._types, final_type));
+			return { a_acc, expression_t::make_construct_value_expr(make_type_name_from_typeid(final_type), elements2) };
 		}
 	}
 
@@ -1626,12 +1644,17 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				elements2.push_back(element_expr.second);
 			}
 
-			const auto result_type = typeid_t::make_dict(typeid_t::make_json());
-			if(check_types_resolved(a_acc._types, result_type) == false){
+			const auto rhs_guess_type = typeid_t::make_dict(typeid_t::make_json());
+			const auto selected_type = select_inferred_type(a_acc._types, target_type, rhs_guess_type);
+
+			if(check_types_resolved(a_acc._types, selected_type) == false){
 				std::stringstream what;
 				what << "Cannot infer dictionary element type, add explicit type.";
 				throw_compiler_error(parent.location, what.str());
 			}
+
+			const auto final_type = record_type(a_acc, parent.location, selected_type);
+
 			return {
 				a_acc,
 				expression_t::make_construct_value_expr(
@@ -1657,20 +1680,28 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 
 			//	Infer type of dictionary based on first value.
 			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? analyze_expr_output_type(a_acc, elements2[0 * 2 + 1]) : element_type;
-			const auto result_type0 = typeid_t::make_dict(element_type2);
-			const auto result_type = check_types_resolved(a_acc._types, result_type0) == false && target_type.is_any() == false ? target_type : result_type0;
+			const auto rhs_guess_type = typeid_t::make_dict(element_type2);
+			const auto selected_type = select_inferred_type(a_acc._types, target_type, rhs_guess_type);
 
+			if(check_types_resolved(a_acc._types, selected_type) == false){
+				std::stringstream what;
+				what << "Cannot infer dictionary element type, add explicit type.";
+				throw_compiler_error(parent.location, what.str());
+			}
+
+			const auto final_type = record_type(a_acc, parent.location, selected_type);
 
 			//	Make sure all elements have the correct type.
 			for(int i = 0 ; i < elements2.size() / 2 ; i++){
 				const auto element_type0 = analyze_expr_output_type(a_acc, elements2[i * 2 + 1]);
 				if(element_type0 != element_type2){
 					std::stringstream what;
-					what << "Dictionary of type " << typeid_to_compact_string(result_type) << " cannot hold an element of type " << typeid_to_compact_string(element_type0) << ".";
+					what << "Dictionary of type " << typeid_to_compact_string(final_type) << " cannot hold an element of type " << typeid_to_compact_string(element_type0) << ".";
 					throw_compiler_error(parent.location, what.str());
 				}
 			}
-			return {a_acc, expression_t::make_construct_value_expr(make_type_name_from_typeid(result_type), elements2)};
+			QUARK_ASSERT(check_types_resolved(a_acc._types, final_type));
+			return {a_acc, expression_t::make_construct_value_expr(make_type_name_from_typeid(final_type), elements2)};
 		}
 	}
 	else if(current_type.is_struct()){
