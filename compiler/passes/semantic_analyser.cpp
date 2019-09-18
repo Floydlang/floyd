@@ -1540,7 +1540,7 @@ static typeid_t select_inferred_type(const type_interner_t& interner, const type
 	const bool rhs_guess_type_valid = check_types_resolved(interner, rhs_guess_type);
 	const bool have_target_type = target_type_or_any.is_any() == false;
 
-	if(have_target_type && rhs_guess_type_valid){
+	if(have_target_type && rhs_guess_type_valid == false){
 	 	return target_type_or_any;
 	}
 	else{
