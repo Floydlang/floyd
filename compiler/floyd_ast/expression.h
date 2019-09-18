@@ -589,7 +589,7 @@ inline typeid_t get_expr_output_type(type_interner_t& interner, const expression
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	return intern_type(interner, e.get_output_type()).second;
+	return intern_anonymous_type(interner, e.get_output_type()).second;
 }
 
 

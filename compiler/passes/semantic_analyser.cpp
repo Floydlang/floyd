@@ -271,7 +271,7 @@ static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid
 
 	try {
 		const auto resolved = record_type_internal_wrap(acc, loc, type);
-		intern_type(acc._types, resolved);
+		intern_anonymous_type(acc._types, resolved);
 
 /*
 		if(check_types_resolved(a._types, resolved) == false){
@@ -288,12 +288,12 @@ static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid
 	}
 }
 
-static typeid_t record_type2(analyser_t& acc, const location_t& loc, const ast_type_t& name){
+static typeid_t record_type2(analyser_t& acc, const location_t& loc, const ast_type_t& type){
 	QUARK_ASSERT(acc.check_invariant());
 	QUARK_ASSERT(loc.check_invariant());
-	QUARK_ASSERT(name.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
 
-	return lookup_type(acc._types, name);
+	return record_type(acc, loc, get_typeid(type));
 }
 
 
@@ -545,7 +545,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 	//		(1) undefined, if input is "let a = 10" for example. Then we need to infer its type.
 	//		(2) have a type, but it might not be fully resolved yet.
 	const auto lhs_type_name = lhs_type0.is_undefined() ? lhs_type0 : /*record_type2(a_acc, s.location, lhs_type0)*/ lhs_type0;
-	const auto lhs_type = lookup_type(a._types, lhs_type_name);
+	const auto lhs_type = record_type2(a_acc, s.location, lhs_type0);
 	const auto lhs_itype = lookup_itype(a._types, lhs_type);
 
 	const auto mutable_flag = statement._locals_mutable_mode == statement_t::bind_local_t::k_mutable;
@@ -559,8 +559,8 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 	//	Notice: the final type may not be correct yet, but for function definitions it is.
 	//	This logic should be available for inferred binds too, in analyse_assign_statement().
 
-	const auto new_symbol = mutable_flag ? symbol_t::make_mutable(lhs_itype) : symbol_t::make_immutable_reserve(lhs_itype);
-	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ new_local_name, new_symbol });
+	const auto temp_symbol = mutable_flag ? symbol_t::make_mutable(itype_t::make_double()) : symbol_t::make_immutable_reserve(itype_t::make_double());
+	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ new_local_name, temp_symbol });
 	const auto local_name_index = a_acc._lexical_scope_stack.back().symbols._symbols.size() - 1;
 
 	try {
@@ -2532,13 +2532,13 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	symbol_map.push_back( {
 		"benchmark_def_t",
 		symbol_t::make_named_type(
-			intern_type_with_name(a._types, "benchmark_def_t", make_benchmark_def_t()).first
+			new_named_type(a._types, "benchmark_def_t", make_benchmark_def_t())
 		)
 	} );
 	symbol_map.push_back( {
 		"benchmark_result_t",
 		symbol_t::make_named_type(
-			intern_type_with_name(a._types, "benchmark_result_t", make_benchmark_result_t()).first
+			new_named_type(a._types, "benchmark_result_t", make_benchmark_result_t())
 		)
 	} );
 
@@ -2549,7 +2549,7 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 		symbol_map.push_back( {
 			k_global_benchmark_registry,
 			symbol_t::make_immutable_reserve(
-				intern_type_with_name(a._types, k_global_benchmark_registry, benchmark_registry_type).first
+				intern_anonymous_type(a._types, benchmark_registry_type).first
 			)
 		} );
 	}

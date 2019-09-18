@@ -82,10 +82,15 @@ struct itype_t {
 		return itype_t(assemble(lookup_index, base_type::k_function, base_type::k_undefined));
 	}
 
+	static itype_t make_identifier(uint32_t lookup_index){
+		return itype_t(assemble(lookup_index, base_type::k_identifier, base_type::k_undefined));
+	}
+
+
+
 	bool check_invariant() const {
 		return true;
 	}
-
 
 
 	bool is_undefined() const {
@@ -272,9 +277,15 @@ struct type_interner_t {
 
 
 //	Records AND resolves the type. The returned type may be improved over input type.
-std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid_t& type);
-std::pair<itype_t, typeid_t> intern_type_with_name(type_interner_t& interner, const std::string& name, const typeid_t& type);
-std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const ast_type_t& type);
+std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, const typeid_t& type);
+std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, const ast_type_t& type);
+
+//	Allocates a new itype for this name. The name must not already exist.
+//	Interns the type for this name. You can use typeid_t::make_undefined() and later update the type using update_named_type()
+itype_t new_named_type(type_interner_t& interner, const std::string& name, const typeid_t& type);
+
+//	Update the named type's type. The named type must already exist. Any usage of this name will also get the new type.
+void update_named_type(type_interner_t& interner, const std::string& name, const typeid_t& type);
 
 
 

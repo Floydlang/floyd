@@ -616,6 +616,9 @@ std::string typeid_to_compact_string(const typeid_t& t){
 
 		return std::string() + "function " + typeid_to_compact_string(ret) + "(" + concat_strings_with_divider(args_str, ",") + ") " + (pure == epure::pure ? "pure" : "impure");
 	}
+	else if(basetype == floyd::base_type::k_identifier){
+		return "identifier: \'" + t.get_identifier() + "\'";
+	}
 	else{
 		return base_type_to_opcode(basetype);
 	}

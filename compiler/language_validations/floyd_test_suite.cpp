@@ -116,7 +116,7 @@ FLOYD_LANG_PROOF_VIP("NOP", "See if we leak memory", "", ""){
 //######################################################################################################################
 
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "Define variable", "int", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "Define variable", "int", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let int result = 123", value_t::make_int(123));
 }
 
@@ -806,7 +806,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "Mutate", "Store to immutable", "compiler e
 }
 
 
-FLOYD_LANG_PROOF("Floyd test suite", "", "String (which requires RC)", ""){
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "", "String (which requires RC)", ""){
 	ut_run_closed_nolib(
 		QUARK_POS,
 		R"___(
