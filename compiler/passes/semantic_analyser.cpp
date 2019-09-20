@@ -172,7 +172,7 @@ static bool does_symbol_exist_shallow(const analyser_t& a, const std::string& s)
 
 static typeid_t resolve_and_intern_typeid(analyser_t& acc, const location_t& loc, const typeid_t& type);
 
-static typeid_t record_type_internal(analyser_t& acc, const location_t& loc, const typeid_t& type){
+static typeid_t resolve_and_intern_internal(analyser_t& acc, const location_t& loc, const typeid_t& type){
 	QUARK_ASSERT(acc.check_invariant());
 	QUARK_ASSERT(loc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -286,7 +286,7 @@ static typeid_t resolve_and_intern_typeid(analyser_t& acc, const location_t& loc
 			if(false) trace_type_interner(acc._types);
 #endif
 
-//			const auto resolved = record_type_internal(acc, loc, type);
+//			const auto resolved = resolve_and_intern_internal(acc, loc, type);
 			const auto resolved = lookup_typeid_from_itype(acc._types, intern_anonymous_type(acc._types, type));
 
 #if DEBUG
@@ -304,7 +304,7 @@ static typeid_t resolve_and_intern_typeid(analyser_t& acc, const location_t& loc
 	}
 }
 
-static itype_t record_type_itype(analyser_t& acc, const location_t& loc, const typeid_t& type){
+static itype_t resolve_and_intern_itype(analyser_t& acc, const location_t& loc, const typeid_t& type){
 	QUARK_ASSERT(acc.check_invariant());
 	QUARK_ASSERT(loc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -318,12 +318,12 @@ static itype_t record_type_itype(analyser_t& acc, const location_t& loc, const t
 
 
 
-static itype_t record_type_itype(analyser_t& acc, const location_t& loc, const ast_type_t& type){
+static itype_t resolve_and_intern_itype(analyser_t& acc, const location_t& loc, const ast_type_t& type){
 	QUARK_ASSERT(acc.check_invariant());
 	QUARK_ASSERT(loc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	return record_type_itype(acc, loc,get_typeid(type));
+	return resolve_and_intern_itype(acc, loc, get_typeid(type));
 }
 
 static typeid_t resolve_and_intern_asttype(analyser_t& acc, const location_t& loc, const ast_type_t& type){
@@ -339,7 +339,7 @@ static itype_t analyze_expr_output_itype(analyser_t& a, const expression_t& e){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	return record_type_itype(a, k_no_location, e.get_output_type());
+	return resolve_and_intern_itype(a, k_no_location, e.get_output_type());
 }
 
 //	Pushes the expression type through recording, resolving and interning.
@@ -590,7 +590,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 	//	If lhs may be
 	//		(1) undefined, if input is "let a = 10" for example. Then we need to infer its type.
 	//		(2) have a type, but it might not be fully resolved yet.
-	const auto lhs_itype = record_type_itype(a_acc, s.location, statement._bindtype);
+	const auto lhs_itype = resolve_and_intern_itype(a_acc, s.location, statement._bindtype);
 
 	const auto mutable_flag = statement._locals_mutable_mode == statement_t::bind_local_t::k_mutable;
 
@@ -2638,7 +2638,7 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 		symbol_map.push_back( {
 			k_global_benchmark_registry,
 			symbol_t::make_immutable_reserve(
-				record_type_itype(a, k_no_location, benchmark_registry_type)
+				resolve_and_intern_itype(a, k_no_location, benchmark_registry_type)
 			)
 		} );
 	}
