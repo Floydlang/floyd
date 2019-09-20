@@ -67,11 +67,12 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 		string test
 	}
 
+/*
 	struct benchmark_result2_t {
 		benchmark_id_t test_id
 		benchmark_result_t result
 	}
-
+*/
 
 
 
@@ -79,7 +80,7 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 		return benchmark_id_t( "", def.name)
 	}
 
-	func [benchmark_id_t] get_benchmarks(){
+/*	func [benchmark_id_t] get_benchmarks(){
 		return map(benchmark_registry, get_benchmarks_f, 0)
 	}
 
@@ -253,7 +254,7 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 	func void create_directory_branch(string abs_path) impure
 	func void delete_fsentry_deep(string abs_path) impure
 	func void rename_fsentry(string abs_path, string n) impure
-
+*/
 )";
 
 

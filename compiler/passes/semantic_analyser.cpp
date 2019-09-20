@@ -165,6 +165,12 @@ static bool does_symbol_exist_shallow(const analyser_t& a, const std::string& s)
 }
 
 
+static itype_t get_named_symbol(const symbol_t& symbol){
+	QUARK_ASSERT(symbol._symbol_type == symbol_t::symbol_type::named_type);
+
+	return symbol._value_type;
+}
+
 
 
 /////////////////////////////////////////			RESOLVE typeid_t::unresolved_t USING LEXICAL SCOPE PATH
@@ -250,7 +256,7 @@ static typeid_t record_type_internal(analyser_t& acc, const location_t& loc, con
 			if(existing_value_deep_ptr.first == nullptr || existing_value_deep_ptr.first->_symbol_type != symbol_t::symbol_type::named_type){
 				throw_compiler_error(loc, "Unknown type name '" + identifier + "'.");
 			}
-			const auto resolved = lookup_type(acc._types, existing_value_deep_ptr.first->_value_type);
+			const auto resolved = lookup_type(acc._types, get_named_symbol(*existing_value_deep_ptr.first));
 			return resolved;
 		}
 	};
@@ -267,7 +273,7 @@ itype_t analyser_t::i_resolve_identifer_resolve(const std::string& identifier) c
 	if(existing_value_deep_ptr.first == nullptr || existing_value_deep_ptr.first->_symbol_type != symbol_t::symbol_type::named_type){
 		throw_compiler_error(k_no_location, "Unknown type name '" + identifier + "'.");
 	}
-	return existing_value_deep_ptr.first->_value_type;
+	return get_named_symbol(*existing_value_deep_ptr.first);
 }
 
 
@@ -402,8 +408,7 @@ static const typeid_t figure_out_callee_return_type(analyser_t& a, const stateme
 				const auto& symbol_kv = a._lexical_scope_stack[scope_index].symbols._symbols[addr._index];
 
 				QUARK_ASSERT(symbol_kv.second._symbol_type == symbol_t::symbol_type::named_type);
-
-				return lookup_type(a._types, symbol_kv.second.get_value_type());
+				return lookup_type(a._types, get_named_symbol(symbol_kv.second));
 			}
 			break;
 		case typeid_t::return_dyn_type::vector_of_arg1func_return:
@@ -683,7 +688,7 @@ std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& a,
 	auto a_acc = a;
 	const auto expr = statement._expression;
 	const auto result = analyse_expression_to_target(a_acc, s, expr, return_type);
-		
+
 	a_acc = result.first;
 
 	const auto result_value = result.second;
@@ -926,8 +931,9 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 	const auto parent_expr = analyse_expression_no_target(a_acc, parent, *details.parent_address);
 	a_acc = parent_expr.first;
 
-	const auto parent_type = analyze_expr_output_type(a_acc, parent_expr.second);
+	const auto parent_itype = analyze_expr_output_itype(a_acc, parent_expr.second);
 
+	const auto parent_type = expand_type_description(a_acc._types, parent_itype);
 	if(parent_type.is_struct()){
 		const auto struct_def = parent_type.get_struct();
 
@@ -2202,8 +2208,8 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 		const auto& callee_symbol = a_acc._lexical_scope_stack[scope_index].symbols._symbols[addr._index];
 
 		if(callee_symbol.second._symbol_type == symbol_t::symbol_type::named_type){
-			const auto construct_value_type = lookup_type(a_acc._types, callee_symbol.second.get_value_type());
-			const auto construct_value_type2 = construct_value_type;//lookup_type(a_acc._types, construct_value_type);
+			const auto construct_value_type = lookup_type(a_acc._types, get_named_symbol(callee_symbol.second));
+			const auto construct_value_type2 = construct_value_type;
 
 			//	Convert calls to struct-type into construct-value expression.
 			if(construct_value_type2.is_struct()){
@@ -2246,11 +2252,9 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 
 	const auto type_name_symbol = symbol_t::make_named_type(named_itype);
 	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ identifier, type_name_symbol });
-	const auto symbol_index = a_acc._lexical_scope_stack.back().symbols._symbols.size() - 1;
-
 
 	const auto struct_typeid1 = typeid_t::make_struct2(details.def->_members);
-	const auto struct_typeid2 = struct_typeid1;//record_type(a_acc, parent.location, struct_typeid1);
+	const auto struct_typeid2 = struct_typeid1;
 
 	//	Update our temporary. Notice that we need to find it again since other types might have been inserted since.
 //	const auto symbol2 = symbol_t::make_named_type(lookup_itype(a_acc._types, struct_typeid2));
@@ -2258,9 +2262,7 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 
 	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid2);
 
-
 	update_named_type(a_acc._types, identifier, struct_typeid2);
-
 
 	const auto r = expression_t::make_literal(struct_typeid_value);
 
@@ -2481,6 +2483,7 @@ std::string get_expression_name(const expression_t& e){
 	return expression_type_to_opcode(op);
 }
 
+
 //	Return new expression where all types have been resolved. The target-type is used as a hint for type inference.
 //	Returned expression is guaranteed to be deep-resolved.
 std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type){
@@ -2493,20 +2496,20 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 	auto a_acc = a;
 	const auto e2_pair = analyse_expression__operation_specific(a_acc, parent, e, target_type);
 	a_acc = e2_pair.first;
-	const auto e2b = e2_pair.second;
-	if(floyd::check_types_resolved(a_acc._types, e2b) == false){
+	const auto e3 = e2_pair.second;
+	if(floyd::check_types_resolved(a_acc._types, e3) == false){
 		std::stringstream what;
-		what << "Cannot infer type in " << get_expression_name(e2b) << "-expression.";
+		what << "Cannot infer type in " << get_expression_name(e3) << "-expression.";
 		throw_compiler_error(parent.location, what.str());
 	}
 
-	const auto e3 = auto_cast_expression_type(a_acc, e2b, target_type);
+	const auto e4 = auto_cast_expression_type(a_acc, e3, target_type);
 
 	if(target_type.is_any()){
 	}
-	else if(analyze_expr_output_type(a_acc, e3) == target_type){
+	else if(analyze_expr_output_type(a_acc, e4) == target_type){
 	}
-	else if(analyze_expr_output_type(a_acc, e3).is_undefined()){
+	else if(analyze_expr_output_type(a_acc, e4).is_undefined()){
 		QUARK_ASSERT(false);
 		throw_compiler_error(parent.location, "Expression type mismatch.");
 	}
@@ -2514,15 +2517,15 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 		std::stringstream what;
 		what << "Expression type mismatch - cannot convert '"
 		//??? missing a trailing '
-		<< typeid_to_compact_string(analyze_expr_output_type(a_acc, e3)) << "' to '" << typeid_to_compact_string(target_type) << ".";
+		<< typeid_to_compact_string(analyze_expr_output_type(a_acc, e4)) << "' to '" << typeid_to_compact_string(target_type) << ".";
 		throw_compiler_error(parent.location, what.str());
 	}
 
-	if(floyd::check_types_resolved(a_acc._types, e3) == false){
+	if(floyd::check_types_resolved(a_acc._types, e4) == false){
 		throw_compiler_error(parent.location, "Cannot resolve type.");
 	}
-	QUARK_ASSERT(floyd::check_types_resolved(a_acc._types, e3));
-	return { a_acc, e3 };
+	QUARK_ASSERT(floyd::check_types_resolved(a_acc._types, e4));
+	return { a_acc, e4 };
 }
 
 //	Returned expression is guaranteed to be deep-resolved.

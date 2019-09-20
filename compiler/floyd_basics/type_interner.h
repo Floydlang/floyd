@@ -168,6 +168,12 @@ struct itype_t {
 		return get_base_type() == base_type::k_function;
 	}
 
+	bool is_identifier() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_identifier;
+	}
+
 
 
 
@@ -281,6 +287,11 @@ struct i_resolve_identifer {
 	virtual itype_t i_resolve_identifer_resolve(const std::string& identifier) const = 0; 
 };
 
+//	Makes the type concrete by expanding any indirections via identifiers.
+typeid_t expand_type_description(const type_interner_t& interner, const itype_t& type);
+
+//	Compares the desci
+bool compare_types_structurally(const type_interner_t& interner, const typeid_t& lhs, const typeid_t& rhs);
 
 
 //	Records AND resolves the type. The returned type may be improved over input type.
@@ -298,7 +309,7 @@ void update_named_type(type_interner_t& interner, const std::string& name, const
 
 itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type);
 inline const typeid_t& lookup_type(const type_interner_t& interner, const itype_t& type);
-const typeid_t& lookup_type(const type_interner_t& interner, const std::string& name);
+const typeid_t& lookup_named_type(const type_interner_t& interner, const std::string& name);
 
 //	Returns typeid_t::make_undefined() if ast_type_t is in monostate mode
 const typeid_t& lookup_type(const type_interner_t& interner, const ast_type_t& type);
