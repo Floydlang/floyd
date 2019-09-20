@@ -36,6 +36,13 @@ struct itype_t {
 	explicit itype_t(int32_t data) :
 		data(data)
 	{
+
+#if DEBUG
+	debug_bt0 = get_base_type();
+	debug_lookup_index = get_lookup_index();
+#endif
+
+
 		QUARK_ASSERT(check_invariant());
 	}
 
@@ -227,6 +234,10 @@ struct itype_t {
 	////////////////////////////////	STATE
 
 	private: uint32_t data;
+#if DEBUG
+	private: base_type debug_bt0;
+	private: uint32_t debug_lookup_index;
+#endif
 };
 
 inline bool operator<(itype_t lhs, itype_t rhs){
@@ -274,7 +285,7 @@ struct type_interner_t {
 
 	//	All types are recorded here, an uniqued. Including tagged types.
 	//	itype uses the INDEX into this array for fast lookups.
-	std::vector<std::pair<std::string, typeid_t>> interned2;
+	std::vector<std::pair<type_tag_t, typeid_t>> interned2;
 };
 
 
@@ -300,27 +311,28 @@ std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, co
 
 //	Allocates a new itype for this tag. The tag must not already exist.
 //	Interns the type for this tag. You can use typeid_t::make_undefined() and later update the type using update_tagged_type()
-itype_t new_tagged_type(type_interner_t& interner, const i_resolve_identifer* resolver, const std::string& tag, const typeid_t& type);
+itype_t new_tagged_type(type_interner_t& interner, const i_resolve_identifer* resolver, const type_tag_t& tag, const typeid_t& type);
 
 //	Update the tagged type's type. The tagged type must already exist. Any usage of this tag will also get the new type.
-void update_tagged_type(type_interner_t& interner, const std::string& tag, const typeid_t& type);
+void update_tagged_type(type_interner_t& interner, const type_tag_t& tag, const typeid_t& type);
 
 
 
 itype_t lookup_itype_from_typeid(const type_interner_t& interner, const typeid_t& type);
 inline const typeid_t& lookup_type_from_itype(const type_interner_t& interner, const itype_t& type);
-const typeid_t& lookup_tagged_type(const type_interner_t& interner, const std::string& tag);
+inline const std::pair<type_tag_t, typeid_t>& lookup_typeinfo_from_itype(const type_interner_t& interner, const itype_t& type);
+const typeid_t& lookup_tagged_type(const type_interner_t& interner, const type_tag_t& tag);
 
 //	Returns typeid_t::make_undefined() if ast_type_t is in monostate mode
 const typeid_t& lookup_type_from_asttype(const type_interner_t& interner, const ast_type_t& type);
 
-//	Returns true if the type is completely described with no subnodes that are undefined.
-bool is_resolved(const type_interner_t& interner, const std::string& t);
 
 
 void trace_type_interner(const type_interner_t& interner);
 
 inline bool is_atomic_type(itype_t type);
+
+
 
 
 
@@ -405,11 +417,9 @@ inline bool operator==(const ast_type_t& lhs, const ast_type_t& rhs){
 	return lhs._contents == rhs._contents;
 }
 
-
 inline bool ast_type_t::is_undefined() const {
 	return (*this) == make_undefined();
 }
-
 
 json_t ast_type_to_json(const ast_type_t& name);
 ast_type_t ast_type_from_json(const json_t& j);
@@ -437,6 +447,19 @@ inline const typeid_t& lookup_type_from_itype(const type_interner_t& interner, c
 	const auto& result = interner.interned2[lookup_index].second;
 	return result;
 }
+
+inline const std::pair<type_tag_t, typeid_t>& lookup_typeinfo_from_itype(const type_interner_t& interner, const itype_t& type){
+	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto lookup_index = type.get_lookup_index();
+	QUARK_ASSERT(lookup_index >= 0);
+	QUARK_ASSERT(lookup_index < interner.interned2.size());
+
+	const auto& result = interner.interned2[lookup_index];
+	return result;
+}
+
 
 inline bool is_atomic_type(itype_t type){
 	const auto bt = type.get_base_type();

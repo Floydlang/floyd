@@ -19,13 +19,16 @@ namespace floyd {
 
 
 std::string pack_type_tag(const type_tag_t& tag){
-	QUARK_ASSERT(tag.lexical_path.empty() == false);
-
-	std::string acc;
-	for(const auto& e: tag.lexical_path){
-		acc = acc + "/" + e;
+	if(tag.lexical_path.empty()){
+		return "/";
 	}
-	return acc;
+	else{
+		std::string acc;
+		for(const auto& e: tag.lexical_path){
+			acc = acc + "/" + e;
+		}
+		return acc;
+	}
 }
 
 QUARK_TEST("", "pack_type_tag()", "", ""){
@@ -33,6 +36,9 @@ QUARK_TEST("", "pack_type_tag()", "", ""){
 }
 QUARK_TEST("", "pack_type_tag()", "", ""){
 	QUARK_TEST_VERIFY(pack_type_tag(type_tag_t{{ "hello", "goodbye" }} ) == "/hello/goodbye");
+}
+QUARK_TEST("", "pack_type_tag()", "", ""){
+	QUARK_TEST_VERIFY(pack_type_tag(type_tag_t{{ "" }} ) == "/");
 }
 
 
@@ -72,8 +78,14 @@ QUARK_TEST("", "pack_type_tag()", "", ""){
 QUARK_TEST("", "pack_type_tag()", "", ""){
 	QUARK_TEST_VERIFY(unpack_type_tag("/hello/goodbye") == ( type_tag_t{{ "hello", "goodbye" }} ) );
 }
+QUARK_TEST("", "pack_type_tag()", "", ""){
+	QUARK_TEST_VERIFY(unpack_type_tag("/") == type_tag_t{{ }} );
+}
 
 
+type_tag_t make_empty_type_tag(){
+	return type_tag_t { };
+}
 
 
 

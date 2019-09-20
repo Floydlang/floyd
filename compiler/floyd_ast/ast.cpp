@@ -40,7 +40,7 @@ json_t gp_ast_to_json(const general_purpose_ast_t& ast){
 		const auto& e = ast._interned_types.interned2[i];
 		const auto a = typeid_to_ast_json(e.second, json_tags::k_tag_resolve_state);
 		const auto x = json_t::make_object({
-			{ "name", e.first },
+			{ "tag", pack_type_tag(e.first) },
 			{ "desc", a }
 		});
 		types.push_back(x);
@@ -67,13 +67,13 @@ general_purpose_ast_t json_to_gp_ast(const json_t& json){
 
 
 	//	Fix types first, before globals and functions.
-	std::vector<std::pair<std::string, typeid_t>> types;
+	std::vector<std::pair<type_tag_t, typeid_t>> types;
 	for(const auto& t: types0.get_array()){
-		const auto name = t.get_object_element("name").get_string();
+		const auto name = t.get_object_element("tag").get_string();
 		const auto desc = t.get_object_element("desc");
 
 		const auto t2 = typeid_from_ast_json(desc);
-		const auto e = std::pair<std::string, typeid_t>{ name, t2 };
+		const auto e = std::pair<type_tag_t, typeid_t>{ unpack_type_tag(name), t2 };
 		types.push_back(e);
 	}
 	type_interner_t types2;

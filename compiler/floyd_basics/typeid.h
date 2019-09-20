@@ -701,6 +701,8 @@ std::string pack_type_tag(const type_tag_t& path);
 type_tag_t unpack_type_tag(const std::string& tag);
 bool is_type_tag(const std::string& s);
 
+type_tag_t make_empty_type_tag();
+
 
 
 

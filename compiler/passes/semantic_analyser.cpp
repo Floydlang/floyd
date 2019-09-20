@@ -82,7 +82,11 @@ struct analyser_t : public i_resolve_identifer {
 	public: container_t _container_def;
 
 	public: std::vector<expression_t> benchmark_defs;
+
+	public: int scope_id_generator;
 };
+
+
 
 
 
@@ -91,6 +95,10 @@ static void throw_local_identifier_already_exists(const location_t& loc, const s
 	what << "Local identifier \"" << local_identifier << "\" already exists.";
 	throw_compiler_error(loc, what.str());
 }
+
+
+
+
 
 
 //////////////////////////////////////		forward
@@ -164,12 +172,22 @@ static bool does_symbol_exist_shallow(const analyser_t& a, const std::string& s)
 	return it != a._lexical_scope_stack.back().symbols._symbols.end();
 }
 
-
 static itype_t get_named_symbol(const symbol_t& symbol){
 	QUARK_ASSERT(symbol._symbol_type == symbol_t::symbol_type::named_type);
 
 	return symbol._value_type;
 }
+
+static const std::pair<type_tag_t, typeid_t>& get_tagged_tag(const analyser_t& a, const std::string& identifier){
+	const std::pair<const symbol_t*, variable_address_t> symbol_kv = find_symbol_by_name(a, identifier);
+	QUARK_ASSERT(symbol_kv.first != nullptr && symbol_kv.first->_symbol_type == symbol_t::symbol_type::named_type);
+
+	const auto itype = symbol_kv.first->get_value_type();
+	const auto& info = lookup_typeinfo_from_itype(a._types, itype);
+	QUARK_ASSERT((info.first == make_empty_type_tag()) == false);
+	return info;
+}
+
 
 
 
@@ -2236,6 +2254,16 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 	}
 }
 
+static type_tag_t make_type_tag(analyser_t& a, const std::string& identifier){
+	const auto id = a.scope_id_generator++;
+
+	//??? TOOD: user proper hiearchy of lexical scopes, not a flat list of generated ID:s. This requires a name--string in each lexical_scope_t.
+
+	const auto b = std::string() + "lexical_scope" + std::to_string(id);
+
+	return type_tag_t { { b, identifier } };
+}
+
 static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const analyser_t& a, const statement_t& parent, const expression_t& e0, const expression_t::struct_definition_expr_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
@@ -2248,7 +2276,8 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 		throw_local_identifier_already_exists(parent.location, identifier);
 	}
 
-	const auto named_itype = new_tagged_type(a_acc._types, nullptr, identifier, typeid_t::make_undefined());
+	const auto name_tag = make_type_tag(a_acc, identifier);
+	const auto named_itype = new_tagged_type(a_acc._types, nullptr, name_tag, typeid_t::make_undefined());
 
 	const auto type_name_symbol = symbol_t::make_named_type(named_itype);
 	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ identifier, type_name_symbol });
@@ -2262,7 +2291,7 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 
 	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid2);
 
-	update_tagged_type(a_acc._types, identifier, struct_typeid2);
+	update_tagged_type(a_acc._types, name_tag, struct_typeid2);
 
 	const auto r = expression_t::make_literal(struct_typeid_value);
 
@@ -2609,20 +2638,22 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 	symbol_map.push_back( { "json_null", symbol_t::make_immutable_precalc(itype_t::make_int(), value_t::make_int(7)) });
 
 
+
 	symbol_map.push_back( {
 		"benchmark_result_t",
 		symbol_t::make_named_type(
-			new_tagged_type(a._types, &a, "benchmark_result_t", make_benchmark_result_t())
+			new_tagged_type(a._types, &a, make_type_tag(a, "benchmark_result_t"), make_benchmark_result_t())
 		)
 	} );
 
-	//???named-type: use intern_type(), not lookup!
 	symbol_map.push_back( {
 		"benchmark_def_t",
 		symbol_t::make_named_type(
-			new_tagged_type(a._types, &a, "benchmark_def_t", make_benchmark_def_t())
+			new_tagged_type(a._types, &a, make_type_tag(a, "benchmark_def_t"), make_benchmark_def_t())
 		)
 	} );
+
+
 
 	//	Reserve a symbol table entry for benchmark_registry instance.
 	{
@@ -2752,6 +2783,7 @@ analyser_t::analyser_t(const unchecked_ast_t& ast){
 
 	const auto intrinsics = get_intrinsic_signatures();
 	_imm = make_shared<analyzer_imm_t>(analyzer_imm_t{ ast, intrinsics });
+	scope_id_generator = 1000;
 }
 
 #if DEBUG
