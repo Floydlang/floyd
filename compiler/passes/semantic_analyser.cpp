@@ -931,7 +931,7 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 
 	const auto parent_itype = analyze_expr_output_itype(a_acc, parent_expr.second);
 
-	const auto parent_type = expand_type_description(a_acc._types, parent_itype);
+	const auto parent_type = explore_type_description(a_acc._types, parent_itype);
 	if(parent_type.is_struct()){
 		const auto struct_def = parent_type.get_struct();
 

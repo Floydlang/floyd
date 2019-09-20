@@ -289,7 +289,7 @@ struct type_interner_t {
 
 
 //	Makes the type concrete by expanding any indirections via identifiers.
-typeid_t expand_type_description(const type_interner_t& interner, const itype_t& type);
+typeid_t explore_type_description(const type_interner_t& interner, const itype_t& type);
 
 //	Compares the desci
 bool compare_types_structurally(const type_interner_t& interner, const typeid_t& lhs, const typeid_t& rhs);

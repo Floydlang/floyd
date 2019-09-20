@@ -289,7 +289,7 @@ void update_tagged_type(type_interner_t& interner, const type_tag_t& tag, const 
 }
 
 
-static typeid_t expand_type_description0(const type_interner_t& interner, const typeid_t& type){
+static typeid_t explore_type_description(const type_interner_t& interner, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -332,7 +332,7 @@ static typeid_t expand_type_description0(const type_interner_t& interner, const 
 			const auto& struct_def = type.get_struct();
 			std::vector<member_t> members2;
 			for(const auto& m: struct_def._members){
-				members2.push_back(member_t(expand_type_description(interner, lookup_itype_from_typeid(interner, m._type)), m._name));
+				members2.push_back(member_t(explore_type_description(interner, lookup_itype_from_typeid(interner, m._type)), m._name));
 			}
 			const auto type2 = typeid_t::make_struct2(members2);
 			return type2;
@@ -340,7 +340,7 @@ static typeid_t expand_type_description0(const type_interner_t& interner, const 
 		typeid_t operator()(const typeid_t::vector_t& e) const{
 			QUARK_ASSERT(e._parts.size() == 1);
 
-			const auto element_type2 = expand_type_description(interner, lookup_itype_from_typeid(interner, e._parts[0]));
+			const auto element_type2 = explore_type_description(interner, lookup_itype_from_typeid(interner, e._parts[0]));
 			const auto type2 = typeid_t::make_vector(element_type2);
 			return type2;
 
@@ -348,7 +348,7 @@ static typeid_t expand_type_description0(const type_interner_t& interner, const 
 		typeid_t operator()(const typeid_t::dict_t& e) const{
 			QUARK_ASSERT(e._parts.size() == 1);
 
-			const auto element_type2 = expand_type_description(interner, lookup_itype_from_typeid(interner, e._parts[0]));
+			const auto element_type2 = explore_type_description(interner, lookup_itype_from_typeid(interner, e._parts[0]));
 			const auto type2 = typeid_t::make_dict(element_type2);
 			return type2;
 		}
@@ -358,8 +358,8 @@ static typeid_t expand_type_description0(const type_interner_t& interner, const 
 			const auto pure = type.get_function_pure();
 			const auto dyn_return_type = type.get_function_dyn_return_type();
 
-			const auto ret2 = expand_type_description0(interner, ret);
-			const std::vector<typeid_t> args2 = mapf<typeid_t>(args, [&interner = interner](const auto& e){ return expand_type_description0(interner, e); }); 
+			const auto ret2 = explore_type_description(interner, ret);
+			const std::vector<typeid_t> args2 = mapf<typeid_t>(args, [&interner = interner](const auto& e){ return explore_type_description(interner, e); }); 
 			const auto type2 = typeid_t::make_function3(ret2, args2, pure, dyn_return_type);
 			return type2;
 		}
@@ -380,7 +380,7 @@ static typeid_t expand_type_description0(const type_interner_t& interner, const 
 			const auto lookup_index = static_cast<int32_t>(it - interner.interned2.begin());
 			const auto itype2 = make_itype_from_parts(lookup_index, t2);
 
-			return expand_type_description(interner, itype2);
+			return explore_type_description(interner, itype2);
 		}
 	};
 
@@ -391,12 +391,12 @@ static typeid_t expand_type_description0(const type_interner_t& interner, const 
 }
 
 //	Only exposes the function that takes an itype_t, to force clients to go via interner.
-typeid_t expand_type_description(const type_interner_t& interner, const itype_t& type){
+typeid_t explore_type_description(const type_interner_t& interner, const itype_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto& type2 = lookup_type_from_itype(interner, type);
-	return expand_type_description0(interner, type2);
+	return explore_type_description(interner, type2);
 }
 
 bool compare_types_structurally(const type_interner_t& interner, const typeid_t& lhs, const typeid_t& rhs){
@@ -404,8 +404,8 @@ bool compare_types_structurally(const type_interner_t& interner, const typeid_t&
 	QUARK_ASSERT(lhs.check_invariant());
 	QUARK_ASSERT(rhs.check_invariant());
 
-	const auto lhs_description = expand_type_description0(interner, lhs);
-	const auto rhs_description = expand_type_description0(interner, rhs);
+	const auto lhs_description = explore_type_description(interner, lhs);
+	const auto rhs_description = explore_type_description(interner, rhs);
 	return lhs == rhs;
 }
 
