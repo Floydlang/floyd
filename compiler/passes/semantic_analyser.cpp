@@ -55,13 +55,11 @@ struct lexical_scope_t {
 	epure pure;
 };
 
-struct analyser_t : public i_resolve_symbol_type {
+struct analyser_t {
 	public: analyser_t(const unchecked_ast_t& ast);
 #if DEBUG
 	public: bool check_invariant() const;
 #endif
-
-	itype_t i_resolve_symbol_type_resolve(const std::string& identifier) const override;
 
 
 	////////////////////////		STATE
@@ -272,10 +270,10 @@ static typeid_t record_type_internal(analyser_t& acc, const location_t& loc, con
 		}
 	};
 	const auto resolved = std::visit(visitor_t{ acc, loc, type }, type._contents);
-	return intern_anonymous_type(acc._types, nullptr, resolved).second;
+	return intern_anonymous_type(acc._types, resolved).second;
 }
 
-
+/*
 itype_t analyser_t::i_resolve_symbol_type_resolve(const std::string& identifier) const {
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(identifier != "");
@@ -286,7 +284,7 @@ itype_t analyser_t::i_resolve_symbol_type_resolve(const std::string& identifier)
 	}
 	return get_tagged_type_symbol(*existing_value_deep_ptr.first);
 }
-
+*/
 
 
 static typeid_t resolve_and_intern_typeid(analyser_t& acc, const location_t& loc, const typeid_t& type){
@@ -304,7 +302,7 @@ static typeid_t resolve_and_intern_typeid(analyser_t& acc, const location_t& loc
 #endif
 
 //			const auto resolved = record_type_internal(acc, loc, type);
-			const auto resolved = intern_anonymous_type(acc._types, &acc, type).second;
+			const auto resolved = intern_anonymous_type(acc._types, type).second;
 
 #if DEBUG
 			lookup_itype_from_typeid(acc._types, type);
@@ -2271,7 +2269,7 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 	}
 
 	const auto name_tag = make_type_tag(a_acc, identifier);
-	const auto named_itype = new_tagged_type(a_acc._types, nullptr, name_tag, typeid_t::make_undefined());
+	const auto named_itype = new_tagged_type(a_acc._types, name_tag, typeid_t::make_undefined());
 
 	const auto type_name_symbol = symbol_t::make_named_type(named_itype);
 	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ identifier, type_name_symbol });
@@ -2636,14 +2634,14 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 	symbol_map.push_back( {
 		"benchmark_result_t",
 		symbol_t::make_named_type(
-			new_tagged_type(a._types, &a, make_type_tag(a, "benchmark_result_t"), make_benchmark_result_t())
+			new_tagged_type(a._types, make_type_tag(a, "benchmark_result_t"), make_benchmark_result_t())
 		)
 	} );
 
 	symbol_map.push_back( {
 		"benchmark_def_t",
 		symbol_t::make_named_type(
-			new_tagged_type(a._types, &a, make_type_tag(a, "benchmark_def_t"), make_benchmark_def_t())
+			new_tagged_type(a._types, make_type_tag(a, "benchmark_def_t"), make_benchmark_def_t())
 		)
 	} );
 
