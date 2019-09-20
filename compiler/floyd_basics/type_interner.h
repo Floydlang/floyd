@@ -299,9 +299,9 @@ itype_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag, const 
 void update_tagged_type(type_interner_t& interner, const type_tag_t& tag, const typeid_t& type);
 
 itype_t lookup_itype_from_typeid(const type_interner_t& interner, const typeid_t& type);
-inline const typeid_t& lookup_type_from_itype(const type_interner_t& interner, const itype_t& type);
+inline const typeid_t& lookup_typeid_from_itype(const type_interner_t& interner, const itype_t& type);
 inline const std::pair<type_tag_t, typeid_t>& lookup_typeinfo_from_itype(const type_interner_t& interner, const itype_t& type);
-const typeid_t& lookup_tagged_type(const type_interner_t& interner, const type_tag_t& tag);
+itype_t lookup_itype_from_tagged_type(const type_interner_t& interner, const type_tag_t& tag);
 
 
 void trace_type_interner(const type_interner_t& interner);
@@ -385,7 +385,7 @@ inline itype_t get_itype(const ast_type_t& type){
 	return std::get<itype_t>(type._contents);
 }
 
-inline ast_type_t make_no_type_name(){
+inline ast_type_t make_no_asttype(){
 	return { std::monostate() };
 }
 inline bool is_empty(const ast_type_t& name){
@@ -409,7 +409,7 @@ std::string ast_type_to_string(const ast_type_t& type);
 itype_t intern_anonymous_type(type_interner_t& interner, const ast_type_t& type);
 
 //	Returns typeid_t::make_undefined() if ast_type_t is in monostate mode
-const typeid_t& lookup_type_from_asttype(const type_interner_t& interner, const ast_type_t& type);
+itype_t lookup_itype_from_asttype(const type_interner_t& interner, const ast_type_t& type);
 
 
 
@@ -420,7 +420,7 @@ const typeid_t& lookup_type_from_asttype(const type_interner_t& interner, const 
 
 
 //	Used at runtime.
-inline const typeid_t& lookup_type_from_itype(const type_interner_t& interner, const itype_t& type){
+inline const typeid_t& lookup_typeid_from_itype(const type_interner_t& interner, const itype_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 

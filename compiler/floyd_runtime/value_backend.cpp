@@ -1075,7 +1075,7 @@ const typeid_t& lookup_type_ref(const value_backend_t& backend, runtime_type_t t
 const typeid_t& lookup_type_ref(const value_backend_t& backend, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 
-	return lookup_type_from_itype(backend.type_interner, itype);
+	return lookup_typeid_from_itype(backend.type_interner, itype);
 }
 
 

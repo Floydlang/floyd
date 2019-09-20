@@ -1847,7 +1847,7 @@ static bc_static_frame_t make_frame(const type_interner_t& interner, const bcgen
 	std::vector<std::pair<std::string, bc_symbol_t>> symbols2;
 	for(const auto& e: body._symbol_table._symbols){
 		//???named-type
-		const auto t = lookup_type_from_itype(interner, e.second.get_value_type());
+		const auto t = lookup_typeid_from_itype(interner, e.second.get_value_type());
 		if(e.second._symbol_type == symbol_t::symbol_type::named_type){
 			const auto e2 = std::pair<std::string, bc_symbol_t>{
 				e.first,

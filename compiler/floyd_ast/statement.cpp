@@ -101,7 +101,7 @@ static symbol_t json_to_symbol(const type_interner_t& interner, const json_t& e)
 	const auto value_type2 = itype_from_json(value_type);
 
 //??? use intern_type() not lookup
-	const auto value_type1 = lookup_type_from_itype(interner, value_type2);
+	const auto value_type1 = lookup_typeid_from_itype(interner, value_type2);
 
 	value_t init_value2 = init.is_null() ? value_t::make_undefined() : ast_json_to_value(value_type1, init);
 

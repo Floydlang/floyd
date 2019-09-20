@@ -156,7 +156,7 @@ bool check_types_resolved(const type_interner_t& interner, const body_t& body){
 		QUARK_ASSERT(s.second.check_invariant());
 
 		const auto value_type0 = s.second._value_type;
-		const auto value_type = lookup_type_from_itype(interner, value_type0);
+		const auto value_type = lookup_typeid_from_itype(interner, value_type0);
 
 /*
 		if(s._symbol_type == symbol_t::symbol_type::immutable_reserve){
@@ -320,7 +320,7 @@ bool check_types_resolved(const type_interner_t& interner, const ast_type_t& typ
 	}
 	else if(std::holds_alternative<itype_t>(type._contents)){
 		const auto& itype0 = std::get<itype_t>(type._contents);
-		const auto typeid0 = lookup_type_from_itype(interner, itype0);
+		const auto typeid0 = lookup_typeid_from_itype(interner, itype0);
 		return check_types_resolved(interner, typeid0);
 	}
 	else{

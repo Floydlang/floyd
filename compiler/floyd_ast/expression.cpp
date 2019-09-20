@@ -301,7 +301,7 @@ QUARK_TEST("expression_t", "expression_to_json()", "math2", ""){
 		QUARK_POS,
 		expression_to_json_string(
 			expression_t::make_arithmetic(
-				expression_type::k_arithmetic_add, expression_t::make_literal_int(2), expression_t::make_literal_int(3), make_no_type_name())
+				expression_type::k_arithmetic_add, expression_t::make_literal_int(2), expression_t::make_literal_int(3), make_no_asttype())
 			),
 		R"(["+", ["k", 2, "^int"], ["k", 3, "^int"]])"
 	);
@@ -312,12 +312,12 @@ QUARK_TEST("expression_t", "expression_to_json()", "call", ""){
 		QUARK_POS,
 		expression_to_json_string(
 			expression_t::make_call(
-				expression_t::make_load("my_func", make_no_type_name()),
+				expression_t::make_load("my_func", make_no_asttype()),
 				{
 					expression_t::make_literal_string("xyz"),
 					expression_t::make_literal_int(123)
 				},
-				make_no_type_name()
+				make_no_asttype()
 			)
 		),
 		R"(["call", ["@", "my_func"], [["k", "xyz", "^string"], ["k", 123, "^int"]]])"
@@ -328,9 +328,9 @@ QUARK_TEST("expression_t", "expression_to_json()", "lookup", ""){
 	ut_verify(QUARK_POS, 
 		expression_to_json_string(
 			expression_t::make_lookup(
-				expression_t::make_load("hello", make_no_type_name()),
+				expression_t::make_load("hello", make_no_asttype()),
 				expression_t::make_literal_string("xyz"),
-				make_no_type_name()
+				make_no_asttype()
 			)
 		),
 		R"(["[]", ["@", "hello"], ["k", "xyz", "^string"]])"
@@ -498,7 +498,7 @@ static ast_type_t get_optional_typeid(const json_t& json_array, int optional_ind
 		return make_type_name_from_typeid(t);
 	}
 	else{
-		return make_no_type_name();
+		return make_no_asttype();
 	}
 }
 

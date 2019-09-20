@@ -500,7 +500,7 @@ llvm::Type* make_runtime_value_type(const llvm_type_lookup& type_lookup){
 typeid_t lookup_type(const llvm_type_lookup& type_lookup, const itype_t& itype){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	const auto type = lookup_type_from_itype(type_lookup.state.type_interner, itype);
+	const auto type = lookup_typeid_from_itype(type_lookup.state.type_interner, itype);
 	return type;
 }
 
