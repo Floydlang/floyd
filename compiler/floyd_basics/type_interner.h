@@ -272,8 +272,7 @@ itype_t itype_from_json(const json_t& j);
 //	Assigns 32 bit ID to types. You can lookup the type using the ID.
 //	This allows us to describe a type using a single 32 bit integer (compact, fast to copy around).
 //	Each type has exactly ONE ID.
-
-// Automatically insert all basetype-types so they ALWAYS have EXPLICIT integer IDs as itypes.
+//	Automatically insert all basetype-types so they ALWAYS have EXPLICIT integer IDs as itypes.
 
 struct type_interner_t {
 	type_interner_t();
