@@ -257,6 +257,7 @@ inline bool is_empty(const itype_t& type){
 	return type == itype_t::make_undefined();
 }
 
+inline bool is_atomic_type(itype_t type);
 
 
 json_t itype_to_json(const itype_t& itype);
@@ -288,13 +289,6 @@ struct type_interner_t {
 };
 
 
-//	Makes the type concrete by expanding any indirections via identifiers.
-typeid_t explore_type_description(const type_interner_t& interner, const itype_t& type);
-
-//	Compares the desci
-bool compare_types_structurally(const type_interner_t& interner, const typeid_t& lhs, const typeid_t& rhs);
-
-
 //	Records AND resolves the type. The returned type may be improved over input type.
 itype_t intern_anonymous_type(type_interner_t& interner, const typeid_t& type);
 
@@ -305,23 +299,20 @@ itype_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag, const 
 //	Update the tagged type's type. The tagged type must already exist. Any usage of this tag will also get the new type.
 void update_tagged_type(type_interner_t& interner, const type_tag_t& tag, const typeid_t& type);
 
-
-
 itype_t lookup_itype_from_typeid(const type_interner_t& interner, const typeid_t& type);
 inline const typeid_t& lookup_type_from_itype(const type_interner_t& interner, const itype_t& type);
 inline const std::pair<type_tag_t, typeid_t>& lookup_typeinfo_from_itype(const type_interner_t& interner, const itype_t& type);
 const typeid_t& lookup_tagged_type(const type_interner_t& interner, const type_tag_t& tag);
 
 
-
-
 void trace_type_interner(const type_interner_t& interner);
 
-inline bool is_atomic_type(itype_t type);
 
+//	Makes the type concrete by expanding any indirections via identifiers.
+typeid_t explore_type_description(const type_interner_t& interner, const itype_t& type);
 
-
-
+//	Compares the desci
+bool compare_types_structurally(const type_interner_t& interner, const typeid_t& lhs, const typeid_t& rhs);
 
 
 

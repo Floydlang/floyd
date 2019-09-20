@@ -98,6 +98,8 @@ static std::pair<analyser_t, std::vector<std::shared_ptr<statement_t>> > analyse
 static std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type);
 static std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_t& a, const statement_t& parent, const expression_t& e);
 
+static std::pair<const symbol_t*, symbol_pos_t> find_symbol_by_name(const analyser_t& a, const std::string& s);
+
 
 
 
@@ -115,6 +117,22 @@ static void throw_local_identifier_already_exists(const location_t& loc, const s
 
 /////////////////////////////////////////			RESOLVE SYMBOL USING LEXICAL SCOPE PATH
 
+
+static itype_t get_tagged_type_symbol(const symbol_t& symbol){
+	QUARK_ASSERT(symbol._symbol_type == symbol_t::symbol_type::named_type);
+
+	return symbol._value_type;
+}
+
+static const std::pair<type_tag_t, typeid_t>& get_tagged_tag(const analyser_t& a, const std::string& identifier){
+	const std::pair<const symbol_t*, symbol_pos_t> symbol_kv = find_symbol_by_name(a, identifier);
+	QUARK_ASSERT(symbol_kv.first != nullptr && symbol_kv.first->_symbol_type == symbol_t::symbol_type::named_type);
+
+	const auto itype = symbol_kv.first->get_value_type();
+	const auto& info = lookup_typeinfo_from_itype(a._types, itype);
+	QUARK_ASSERT((info.first == make_empty_type_tag()) == false);
+	return info;
+}
 
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
@@ -158,21 +176,6 @@ static bool does_symbol_exist_shallow(const analyser_t& a, const std::string& s)
 	return it != a._lexical_scope_stack.back().symbols._symbols.end();
 }
 
-static itype_t get_tagged_type_symbol(const symbol_t& symbol){
-	QUARK_ASSERT(symbol._symbol_type == symbol_t::symbol_type::named_type);
-
-	return symbol._value_type;
-}
-
-static const std::pair<type_tag_t, typeid_t>& get_tagged_tag(const analyser_t& a, const std::string& identifier){
-	const std::pair<const symbol_t*, symbol_pos_t> symbol_kv = find_symbol_by_name(a, identifier);
-	QUARK_ASSERT(symbol_kv.first != nullptr && symbol_kv.first->_symbol_type == symbol_t::symbol_type::named_type);
-
-	const auto itype = symbol_kv.first->get_value_type();
-	const auto& info = lookup_typeinfo_from_itype(a._types, itype);
-	QUARK_ASSERT((info.first == make_empty_type_tag()) == false);
-	return info;
-}
 
 static typeid_t resolve_and_intern_typeid(analyser_t& acc, const location_t& loc, const typeid_t& type);
 
