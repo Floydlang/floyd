@@ -24,9 +24,6 @@ namespace floyd {
 
 static const bool k_trace_io = true;
 
-//???? remove!!
-using namespace std;
-
 
 
 
@@ -96,7 +93,7 @@ struct analyser_t {
 
 
 //semantic_ast_t analyse(const analyser_t& a);
-static std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement, const typeid_t& return_type);
+static std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement, const typeid_t& return_type);
 static std::pair<analyser_t, std::vector<std::shared_ptr<statement_t>> > analyse_statements(const analyser_t& a, const std::vector<std::shared_ptr<statement_t>>& statements, const typeid_t& return_type);
 static std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type);
 static std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_t& a, const statement_t& parent, const expression_t& e);
@@ -244,7 +241,7 @@ static typeid_t record_type_internal(analyser_t& acc, const location_t& loc, con
 			const auto dyn_return_type = type.get_function_dyn_return_type();
 
 			const auto ret2 = resolve_and_intern_typeid(acc, loc, ret);
-			vector<typeid_t> args2;
+			std::vector<typeid_t> args2;
 			for(const auto& m: args){
 				args2.push_back(resolve_and_intern_typeid(acc, loc, m));
 			}
@@ -454,7 +451,7 @@ struct fully_resolved_call_t {
 
 	Throws errors on type mismatches.
 */
-static std::pair<analyser_t, fully_resolved_call_t> analyze_resolve_call_type(const analyser_t& a, const statement_t& parent, const vector<expression_t>& call_args, const typeid_t& callee_type){
+static std::pair<analyser_t, fully_resolved_call_t> analyze_resolve_call_type(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& call_args, const typeid_t& callee_type){
 	const std::vector<typeid_t> callee_arg_types = callee_type.get_function_args();
 
 	auto a_acc = a;
@@ -490,13 +487,13 @@ static std::pair<analyser_t, fully_resolved_call_t> analyze_resolve_call_type(co
 
 
 
-static std::pair<analyser_t, vector<statement_t>> analyse_statements(const analyser_t& a, const vector<statement_t>& statements, const typeid_t& return_type){
+static std::pair<analyser_t, std::vector<statement_t>> analyse_statements(const analyser_t& a, const std::vector<statement_t>& statements, const typeid_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 	for(const auto& i: statements){ QUARK_ASSERT(i.check_invariant()); };
 
 	auto a_acc = a;
 
-	vector<statement_t> statements2;
+	std::vector<statement_t> statements2;
 	int statement_index = 0;
 	while(statement_index < statements.size()){
 		const auto statement = statements[statement_index];
@@ -834,11 +831,11 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 }
 
 //	Output is the RETURN VALUE of the analysed statement, if any.
-static std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement, const typeid_t& return_type){
+static std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement, const typeid_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(statement.check_invariant());
 
-	typedef std::pair<analyser_t, shared_ptr<statement_t>> return_type_t;
+	typedef std::pair<analyser_t, std::shared_ptr<statement_t>> return_type_t;
 
 	struct visitor_t {
 		const analyser_t& a;
@@ -846,71 +843,71 @@ static std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const an
 		const typeid_t return_type;
 
 
-		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::return_statement_t& s) const{
+		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::return_statement_t& s) const{
 			const auto e = analyse_return_statement(a, statement, return_type);
 			QUARK_ASSERT(check_types_resolved(e.first._types, e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 
-		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::bind_local_t& s) const{
+		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::bind_local_t& s) const{
 			const auto e = analyse_bind_local_statement(a, statement);
 			if(e.second){
 				QUARK_ASSERT(check_types_resolved(e.first._types, *e.second));
 			}
 			return { e.first, e.second };
 		}
-		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::assign_t& s) const{
+		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::assign_t& s) const{
 			const auto e = analyse_assign_statement(a, statement);
 			QUARK_ASSERT(check_types_resolved(e.first._types, e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
-		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::assign2_t& s) const{
+		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::assign2_t& s) const{
 			QUARK_ASSERT(false);
 			quark::throw_exception();
 		}
-		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::init2_t& s) const{
+		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::init2_t& s) const{
 			QUARK_ASSERT(false);
 			quark::throw_exception();
 		}
-		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::block_statement_t& s) const{
+		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::block_statement_t& s) const{
 			const auto e = analyse_block_statement(a, statement, return_type);
 			QUARK_ASSERT(check_types_resolved(e.first._types, e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 
-		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::ifelse_statement_t& s) const{
+		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::ifelse_statement_t& s) const{
 			const auto e = analyse_ifelse_statement(a, statement, return_type);
 			QUARK_ASSERT(check_types_resolved(e.first._types, e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
-		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::for_statement_t& s) const{
+		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::for_statement_t& s) const{
 			const auto e = analyse_for_statement(a, statement, return_type);
 			QUARK_ASSERT(check_types_resolved(e.first._types, e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
-		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::while_statement_t& s) const{
+		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::while_statement_t& s) const{
 			const auto e = analyse_while_statement(a, statement, return_type);
 			QUARK_ASSERT(check_types_resolved(e.first._types, e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 
 
-		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::expression_statement_t& s) const{
+		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::expression_statement_t& s) const{
 			const auto e = analyse_expression_statement(a, statement);
 			QUARK_ASSERT(check_types_resolved(e.first._types, e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
-		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::software_system_statement_t& s) const{
+		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::software_system_statement_t& s) const{
 			analyser_t temp = a;
 			temp._software_system = parse_software_system_json(s._json_data);
 			return { temp, {} };
 		}
-		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::container_def_statement_t& s) const{
+		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::container_def_statement_t& s) const{
 			analyser_t temp = a;
 			temp._container_def = parse_container_def_json(s._json_data);
 			return { temp, {} };
 		}
-		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::benchmark_def_statement_t& s) const{
+		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::benchmark_def_statement_t& s) const{
 			const auto e = analyse_benchmark_def_statement(a, statement, return_type);
 //			QUARK_ASSERT(check_types_resolved(e.second));
 			return { e, {} };
@@ -2298,7 +2295,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	const auto function_type2 = resolve_and_intern_typeid(a_acc, parent.location, function_def._function_type);
 	const auto function_pure = function_type2.get_function_pure();
 
-	vector<member_t> args2;
+	std::vector<member_t> args2;
 	for(const auto& arg: function_def._named_args){
 		const auto arg_type2 = resolve_and_intern_typeid(a_acc, parent.location, arg._type);
 		args2.push_back(member_t(arg_type2, arg._name));
@@ -2767,7 +2764,7 @@ analyser_t::analyser_t(const unchecked_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
 	const auto intrinsics = get_intrinsic_signatures();
-	_imm = make_shared<analyzer_imm_t>(analyzer_imm_t{ ast, intrinsics });
+	_imm = std::make_shared<analyzer_imm_t>(analyzer_imm_t{ ast, intrinsics });
 	scope_id_generator = 1000;
 }
 
