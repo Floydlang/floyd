@@ -2226,7 +2226,8 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 		const auto& callee_symbol = a_acc._lexical_scope_stack[scope_index].symbols._symbols[addr._index];
 
 		if(callee_symbol.second._symbol_type == symbol_t::symbol_type::named_type){
-			const auto construct_value_type = lookup_type_from_itype(a_acc._types, get_named_symbol(callee_symbol.second));
+			const auto x = get_named_symbol(callee_symbol.second);
+			const auto construct_value_type = lookup_type_from_itype(a_acc._types, x);
 			const auto construct_value_type2 = construct_value_type;
 
 			//	Convert calls to struct-type into construct-value expression.
