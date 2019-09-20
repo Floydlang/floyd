@@ -388,7 +388,7 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_genera
 	for(const auto& e: symbol_table._symbols){
 		//???named-type
 		//??? unify with global handling
-		const auto type = lookup_type(gen_acc.gen.type_lookup.state.type_interner, e.second.get_value_type());
+		const auto type = lookup_type_from_itype(gen_acc.gen.type_lookup.state.type_interner, e.second.get_value_type());
 		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type);
 
 		//	Reserve stack slot for each local.
@@ -415,7 +415,7 @@ static void generate_destruct_scope_locals(llvm_function_generator_t& gen_acc, c
 
 			//???named-type
 			//??? unify with global handling
-			const auto type = lookup_type(gen_acc.gen.type_lookup.state.type_interner, e.symbol.get_value_type());
+			const auto type = lookup_type_from_itype(gen_acc.gen.type_lookup.state.type_interner, e.symbol.get_value_type());
 			if(is_rc_value(type)){
 				auto reg = builder.CreateLoad(e.value_ptr);
 				generate_release(gen_acc, *reg, type);
@@ -1285,7 +1285,7 @@ static llvm::Value* generate_intrinsic_expression(llvm_function_generator_t& gen
 static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
-	const auto construct_type = lookup_type(gen_acc.gen.type_lookup.state.type_interner, details.value_type);
+	const auto construct_type = lookup_type_from_asttype(gen_acc.gen.type_lookup.state.type_interner, details.value_type);
 
 	QUARK_ASSERT(construct_type.is_vector());
 
@@ -1356,7 +1356,7 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 static llvm::Value* generate_construct_dict(llvm_function_generator_t& gen_acc, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
-	const auto construct_type = lookup_type(gen_acc.gen.type_lookup.state.type_interner, details.value_type);
+	const auto construct_type = lookup_type_from_asttype(gen_acc.gen.type_lookup.state.type_interner, details.value_type);
 	QUARK_ASSERT(construct_type.is_dict());
 
 	auto& builder = gen_acc.get_builder();
@@ -1381,7 +1381,7 @@ static llvm::Value* generate_construct_dict(llvm_function_generator_t& gen_acc, 
 static llvm::Value* generate_construct_struct(llvm_function_generator_t& gen_acc, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
-	const auto construct_type = lookup_type(gen_acc.gen.type_lookup.state.type_interner, details.value_type);
+	const auto construct_type = lookup_type_from_asttype(gen_acc.gen.type_lookup.state.type_interner, details.value_type);
 	QUARK_ASSERT(construct_type.is_struct());
 
 	auto& builder = gen_acc.get_builder();
@@ -1437,7 +1437,7 @@ static llvm::Value* generate_construct_struct(llvm_function_generator_t& gen_acc
 static llvm::Value* generate_construct_primitive(llvm_function_generator_t& gen_acc, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
-	const auto construct_type = lookup_type(gen_acc.gen.type_lookup.state.type_interner, details.value_type);
+	const auto construct_type = lookup_type_from_asttype(gen_acc.gen.type_lookup.state.type_interner, details.value_type);
 
 	const auto element_count = details.elements.size();
 	QUARK_ASSERT(element_count == 1);
@@ -1485,7 +1485,7 @@ static llvm::Value* generate_construct_value_expression(llvm_function_generator_
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	const auto construct_type = lookup_type(gen_acc.gen.type_lookup.state.type_interner, details.value_type);
+	const auto construct_type = lookup_type_from_asttype(gen_acc.gen.type_lookup.state.type_interner, details.value_type);
 
 	if(construct_type.is_vector()){
 		return generate_construct_vector(gen_acc, details);
@@ -1766,7 +1766,7 @@ static void generate_assign2_statement(llvm_function_generator_t& gen_acc, const
 
 	auto dest = find_symbol(gen_acc.gen, s._dest_variable);
 	//???named-type, check this is a mutable
-	const auto type = lookup_type(gen_acc.gen.type_lookup.state.type_interner, dest.symbol.get_value_type());
+	const auto type = lookup_type_from_itype(gen_acc.gen.type_lookup.state.type_interner, dest.symbol.get_value_type());
 
 	if(is_rc_value(type)){
 		auto prev_value = gen_acc.get_builder().CreateLoad(dest.value_ptr);
@@ -2128,7 +2128,7 @@ std::vector<resolved_symbol_t> generate_function_local_symbols(llvm_function_gen
 	for(const auto& e: symbol_table._symbols){
 
 		//???named-type
-		const auto type = lookup_type(gen_acc.gen.type_lookup.state.type_interner, e.second.get_value_type());
+		const auto type = lookup_type_from_itype(gen_acc.gen.type_lookup.state.type_interner, e.second.get_value_type());
 		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type);
 
 		//	Figure out if this symbol is an argument or a local variable.
@@ -2212,7 +2212,7 @@ static llvm::Value* generate_global(llvm_function_generator_t& gen_acc, const st
 
 	auto& module = *gen_acc.gen.module;
 
-	const auto symbol_value_type = lookup_type(gen_acc.gen.type_lookup.state.type_interner, symbol.get_value_type());
+	const auto symbol_value_type = lookup_type_from_itype(gen_acc.gen.type_lookup.state.type_interner, symbol.get_value_type());
 
 	if(symbol._symbol_type == symbol_t::symbol_type::immutable_reserve){
 		QUARK_ASSERT(symbol._init.is_undefined());
@@ -2448,7 +2448,7 @@ static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const 
 					bool needs_destruct = e.symbol._symbol_type != symbol_t::symbol_type::named_type;
 					if(needs_destruct){
 						//???named-type
-						const auto type = lookup_type(gen_acc.type_lookup.state.type_interner, e.symbol.get_value_type());
+						const auto type = lookup_type_from_itype(gen_acc.type_lookup.state.type_interner, e.symbol.get_value_type());
 						if(is_rc_value(type)){
 							auto reg = builder.CreateLoad(e.value_ptr);
 							generate_release(function_gen_acc, *reg, type);

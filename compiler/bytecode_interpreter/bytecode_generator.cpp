@@ -175,7 +175,7 @@ static variable_address_t add_local_temp(const type_interner_t& interner, bcgen_
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(name.empty() == false);
 
-	const auto s = symbol_t::make_immutable_reserve(lookup_itype(interner, type));
+	const auto s = symbol_t::make_immutable_reserve(lookup_itype_from_typeid(interner, type));
 	body_acc._symbol_table._symbols.push_back(std::pair<std::string, symbol_t>(name, s));
 	int id = static_cast<int>(body_acc._symbol_table._symbols.size() - 1);
 
@@ -186,7 +186,7 @@ static int add_constant_literal(const type_interner_t& interner, symbol_table_t&
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 
-	const auto s = symbol_t::make_immutable_precalc(lookup_itype(interner, value.get_type()), value);
+	const auto s = symbol_t::make_immutable_precalc(lookup_itype_from_typeid(interner, value.get_type()), value);
 	symbols._symbols.push_back(std::pair<std::string, symbol_t>(name, s));
 	return static_cast<int>(symbols._symbols.size() - 1);
 }
@@ -1847,7 +1847,7 @@ static bc_static_frame_t make_frame(const type_interner_t& interner, const bcgen
 	std::vector<std::pair<std::string, bc_symbol_t>> symbols2;
 	for(const auto& e: body._symbol_table._symbols){
 		//???named-type
-		const auto t = lookup_type(interner, e.second.get_value_type());
+		const auto t = lookup_type_from_itype(interner, e.second.get_value_type());
 		if(e.second._symbol_type == symbol_t::symbol_type::named_type){
 			const auto e2 = std::pair<std::string, bc_symbol_t>{
 				e.first,

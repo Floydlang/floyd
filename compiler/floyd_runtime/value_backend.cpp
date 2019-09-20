@@ -1039,12 +1039,12 @@ value_backend_t::value_backend_t(
 	for(const auto& e: type_interner.interned2){
 		if(e.second.is_vector()){
 			const auto& type = e.second.get_vector_element_type();
-			const auto itype = lookup_itype(type_interner, type);
+			const auto itype = lookup_itype_from_typeid(type_interner, type);
 			child_type.push_back(itype);
 		}
 		else if(e.second.is_dict()){
 			const auto& type = e.second.get_dict_value_type();
-			const auto itype = lookup_itype(type_interner, type);
+			const auto itype = lookup_itype_from_typeid(type_interner, type);
 			child_type.push_back(itype);
 		}
 		else{
@@ -1063,7 +1063,7 @@ itype_t lookup_itype(const value_backend_t& backend, const typeid_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	return lookup_itype(backend.type_interner, type);
+	return lookup_itype_from_typeid(backend.type_interner, type);
 }
 
 const typeid_t& lookup_type_ref(const value_backend_t& backend, runtime_type_t type){
@@ -1075,7 +1075,7 @@ const typeid_t& lookup_type_ref(const value_backend_t& backend, runtime_type_t t
 const typeid_t& lookup_type_ref(const value_backend_t& backend, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 
-	return lookup_type(backend.type_interner, itype);
+	return lookup_type_from_itype(backend.type_interner, itype);
 }
 
 

@@ -256,7 +256,7 @@ static typeid_t record_type_internal(analyser_t& acc, const location_t& loc, con
 			if(existing_value_deep_ptr.first == nullptr || existing_value_deep_ptr.first->_symbol_type != symbol_t::symbol_type::named_type){
 				throw_compiler_error(loc, "Unknown type name '" + identifier + "'.");
 			}
-			const auto resolved = lookup_type(acc._types, get_named_symbol(*existing_value_deep_ptr.first));
+			const auto resolved = lookup_type_from_itype(acc._types, get_named_symbol(*existing_value_deep_ptr.first));
 			return resolved;
 		}
 	};
@@ -301,7 +301,7 @@ static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid
 			}
 */
 
-			lookup_itype(acc._types, type);
+			lookup_itype_from_typeid(acc._types, type);
 
 			return resolved;
 		}
@@ -328,7 +328,7 @@ static itype_t record_type_itype(analyser_t& acc, const location_t& loc, const t
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto t = record_type(acc, loc, type);
-	return lookup_itype(acc._types, t);
+	return lookup_itype_from_typeid(acc._types, t);
 }
 
 static itype_t record_type_itype(analyser_t& acc, const location_t& loc, const ast_type_t& type){
@@ -354,7 +354,7 @@ static typeid_t analyze_expr_output_type(analyser_t& a, const expression_t& e){
 	QUARK_ASSERT(e.check_invariant());
 
 	const auto itype = analyze_expr_output_itype(a, e);
-	return lookup_type(a._types, itype);
+	return lookup_type_from_itype(a._types, itype);
 }
 
 
@@ -408,7 +408,7 @@ static const typeid_t figure_out_callee_return_type(analyser_t& a, const stateme
 				const auto& symbol_kv = a._lexical_scope_stack[scope_index].symbols._symbols[addr._index];
 
 				QUARK_ASSERT(symbol_kv.second._symbol_type == symbol_t::symbol_type::named_type);
-				return lookup_type(a._types, get_named_symbol(symbol_kv.second));
+				return lookup_type_from_itype(a._types, get_named_symbol(symbol_kv.second));
 			}
 			break;
 		case typeid_t::return_dyn_type::vector_of_arg1func_return:
@@ -546,7 +546,7 @@ std::pair<analyser_t, statement_t> analyse_assign_statement(const analyser_t& a,
 			throw_compiler_error(s.location, "Cannot assign to immutable identifier \"" + local_name + "\".");
 		}
 		else{
-			const auto lhs_type = lookup_type(a_acc._types, existing_value_deep_ptr.first->get_value_type());
+			const auto lhs_type = lookup_type_from_itype(a_acc._types, existing_value_deep_ptr.first->get_value_type());
 			QUARK_ASSERT(check_types_resolved(a_acc._types, lhs_type));
 
 			const auto rhs_expr2 = analyse_expression_to_target(a_acc, s, statement._expression, lhs_type);
@@ -616,7 +616,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 	try {
 		const auto rhs_expr_pair = lhs_itype.is_undefined()
 			? analyse_expression_no_target(a_acc, s, statement._expression)
-			: analyse_expression_to_target(a_acc, s, statement._expression, lookup_type(a_acc._types, lhs_itype));
+			: analyse_expression_to_target(a_acc, s, statement._expression, lookup_type_from_itype(a_acc._types, lhs_itype));
 		a_acc = rhs_expr_pair.first;
 
 		const auto rhs_itype = analyze_expr_output_itype(a_acc, rhs_expr_pair.second);
@@ -626,7 +626,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 		if((lhs_itype2 == rhs_itype) == false){
 			std::stringstream what;
 			what << "Types not compatible in bind - cannot convert '"
-			<< typeid_to_compact_string(lookup_type(a_acc._types, lhs_itype)) << "' to '" << typeid_to_compact_string(lookup_type(a_acc._types, lhs_itype2)) << ".";
+			<< typeid_to_compact_string(lookup_type_from_itype(a_acc._types, lhs_itype)) << "' to '" << typeid_to_compact_string(lookup_type_from_itype(a_acc._types, lhs_itype2)) << ".";
 			throw_compiler_error(s.location, what.str());
 		}
 		else{
@@ -634,7 +634,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 
 			//	If symbol can be initialized directly, use make_immutable_precalc(). Else reserve it and create an init2-statement to set it up at runtime.
 			//	??? Better to always initialise it, even if it's a complex value. Codegen then decides if to translate to a reserve + init. BUT PROBLEM: we lose info *when* to init the value.
-			if(is_preinitliteral(lookup_type(a_acc._types, lhs_itype2)) && mutable_flag == false && get_expression_type(rhs_expr_pair.second) == expression_type::k_literal){
+			if(is_preinitliteral(lookup_type_from_itype(a_acc._types, lhs_itype2)) && mutable_flag == false && get_expression_type(rhs_expr_pair.second) == expression_type::k_literal){
 				const auto symbol2 = symbol_t::make_immutable_precalc(lhs_itype2, rhs_expr_pair.second.get_literal());
 				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
 				record_type(a_acc, s.location, analyze_expr_output_type(a_acc, rhs_expr_pair.second));
@@ -1505,7 +1505,7 @@ std::pair<analyser_t, expression_t> analyse_load(const analyser_t& a, const stat
 		else{
 			return {
 				a_acc,
-				expression_t::make_load2(found.second, make_type_name_from_typeid(lookup_type(a._types, found.first->_value_type)))
+				expression_t::make_load2(found.second, make_type_name_from_typeid(lookup_type_from_itype(a._types, found.first->_value_type)))
 			};
 		}
 	}
@@ -1712,7 +1712,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 	}
 	else if(current_type.is_struct()){
 		const auto construct_value_type0 = details.value_type;
-		const auto construct_value_type = lookup_type(a_acc._types, construct_value_type0);
+		const auto construct_value_type = lookup_type_from_asttype(a_acc._types, construct_value_type0);
 		const auto& def = construct_value_type.get_struct();
 		const auto struct_constructor_callee_type = typeid_t::make_function(construct_value_type, get_member_types(def._members), epure::pure);
 		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, details.elements, struct_constructor_callee_type);
@@ -1726,7 +1726,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			throw_compiler_error(parent.location, what.str());
 		}
 		const auto construct_value_type0 = details.value_type;
-		const auto construct_value_type = lookup_type(a_acc._types, construct_value_type0);
+		const auto construct_value_type = lookup_type_from_asttype(a_acc._types, construct_value_type0);
 		const auto struct_constructor_callee_type = typeid_t::make_function(construct_value_type, { construct_value_type }, epure::pure);
 		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, details.elements, struct_constructor_callee_type);
 		a_acc = resolved_call.first;
@@ -2208,7 +2208,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 		const auto& callee_symbol = a_acc._lexical_scope_stack[scope_index].symbols._symbols[addr._index];
 
 		if(callee_symbol.second._symbol_type == symbol_t::symbol_type::named_type){
-			const auto construct_value_type = lookup_type(a_acc._types, get_named_symbol(callee_symbol.second));
+			const auto construct_value_type = lookup_type_from_itype(a_acc._types, get_named_symbol(callee_symbol.second));
 			const auto construct_value_type2 = construct_value_type;
 
 			//	Convert calls to struct-type into construct-value expression.
@@ -2257,7 +2257,7 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 	const auto struct_typeid2 = struct_typeid1;
 
 	//	Update our temporary. Notice that we need to find it again since other types might have been inserted since.
-//	const auto symbol2 = symbol_t::make_named_type(lookup_itype(a_acc._types, struct_typeid2));
+//	const auto symbol2 = symbol_t::make_named_type(lookup_itype_from_typeid(a_acc._types, struct_typeid2));
 //	a_acc._lexical_scope_stack.back().symbols._symbols[symbol_index].second = symbol2;
 
 	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid2);
@@ -2298,7 +2298,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 		//	Make function body with arguments injected FIRST in body as local symbols.
 		auto symbol_vec = function_def._optional_body->_symbol_table;
 		for(const auto& arg: args2){
-			symbol_vec._symbols.push_back({ arg._name , symbol_t::make_immutable_arg(lookup_itype(a_acc._types, arg._type)) });
+			symbol_vec._symbols.push_back({ arg._name , symbol_t::make_immutable_arg(lookup_itype_from_typeid(a_acc._types, arg._type)) });
 		}
 		const auto function_body2 = body_t(function_def._optional_body->_statements, symbol_vec);
 
@@ -2580,7 +2580,7 @@ static std::pair<std::string, symbol_t> make_builtin_type(type_interner_t& inter
 
 	const auto bt = type.get_base_type();
 	const auto opcode = base_type_to_opcode(bt);
-	return { opcode, symbol_t::make_named_type(lookup_itype(interner, type)) };
+	return { opcode, symbol_t::make_named_type(lookup_itype_from_typeid(interner, type)) };
 }
 
 

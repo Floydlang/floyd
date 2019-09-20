@@ -307,12 +307,12 @@ void update_named_type(type_interner_t& interner, const std::string& name, const
 
 
 
-itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type);
-inline const typeid_t& lookup_type(const type_interner_t& interner, const itype_t& type);
+itype_t lookup_itype_from_typeid(const type_interner_t& interner, const typeid_t& type);
+inline const typeid_t& lookup_type_from_itype(const type_interner_t& interner, const itype_t& type);
 const typeid_t& lookup_named_type(const type_interner_t& interner, const std::string& name);
 
 //	Returns typeid_t::make_undefined() if ast_type_t is in monostate mode
-const typeid_t& lookup_type(const type_interner_t& interner, const ast_type_t& type);
+const typeid_t& lookup_type_from_asttype(const type_interner_t& interner, const ast_type_t& type);
 
 //	Returns true if the type is completely described with no subnodes that are undefined.
 bool is_resolved(const type_interner_t& interner, const std::string& t);
@@ -426,7 +426,7 @@ std::string ast_type_to_string(const ast_type_t& type);
 
 
 //	Used at runtime.
-inline const typeid_t& lookup_type(const type_interner_t& interner, const itype_t& type){
+inline const typeid_t& lookup_type_from_itype(const type_interner_t& interner, const itype_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 

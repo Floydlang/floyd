@@ -583,7 +583,7 @@ inline typeid_t get_expr_output_typeid(const type_interner_t& interner, const ex
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	return lookup_type(interner, e.get_output_type());
+	return lookup_type_from_asttype(interner, e.get_output_type());
 }
 
 
