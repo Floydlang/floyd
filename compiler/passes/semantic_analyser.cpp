@@ -42,8 +42,7 @@ struct analyzer_imm_t {
 
 
 
-
-//////////////////////////////////////		analyser_t
+//////////////////////////////////////		lexical_scope_t
 
 /*
 	Value object (MUTABLE!).
@@ -54,6 +53,11 @@ struct lexical_scope_t {
 	symbol_table_t symbols;
 	epure pure;
 };
+
+
+
+//////////////////////////////////////		analyser_t
+
 
 struct analyser_t {
 	public: analyser_t(const unchecked_ast_t& ast);
@@ -86,6 +90,22 @@ struct analyser_t {
 
 
 
+
+
+//////////////////////////////////////		forward
+
+
+//semantic_ast_t analyse(const analyser_t& a);
+static std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement, const typeid_t& return_type);
+static std::pair<analyser_t, std::vector<std::shared_ptr<statement_t>> > analyse_statements(const analyser_t& a, const std::vector<std::shared_ptr<statement_t>>& statements, const typeid_t& return_type);
+static std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type);
+static std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_t& a, const statement_t& parent, const expression_t& e);
+
+
+
+
+
+
 static void throw_local_identifier_already_exists(const location_t& loc, const std::string& local_identifier){
 	std::stringstream what;
 	what << "Local identifier \"" << local_identifier << "\" already exists.";
@@ -93,33 +113,6 @@ static void throw_local_identifier_already_exists(const location_t& loc, const s
 }
 
 
-
-
-
-
-//////////////////////////////////////		forward
-
-
-semantic_ast_t analyse(const analyser_t& a);
-std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement, const typeid_t& return_type);
-std::pair<analyser_t, std::vector<std::shared_ptr<statement_t>> > analyse_statements(const analyser_t& a, const std::vector<std::shared_ptr<statement_t>>& statements, const typeid_t& return_type);
-std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type);
-std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_t& a, const statement_t& parent, const expression_t& e);
-
-
-
-
-//////////////////////////////////////		IMPLEMENTATION
-
-
-
-
-
-static const function_definition_t& function_id_to_def(const analyser_t& a, const function_id_t& function_id){
-//	QUARK_ASSERT(function_id >= 0 && function_id < a._function_defs.size());
-
-	return a._function_defs.at(function_id);
-}
 
 
 
@@ -497,7 +490,7 @@ static std::pair<analyser_t, fully_resolved_call_t> analyze_resolve_call_type(co
 
 
 
-std::pair<analyser_t, vector<statement_t>> analyse_statements(const analyser_t& a, const vector<statement_t>& statements, const typeid_t& return_type){
+static std::pair<analyser_t, vector<statement_t>> analyse_statements(const analyser_t& a, const vector<statement_t>& statements, const typeid_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 	for(const auto& i: statements){ QUARK_ASSERT(i.check_invariant()); };
 
@@ -841,7 +834,7 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 }
 
 //	Output is the RETURN VALUE of the analysed statement, if any.
-std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement, const typeid_t& return_type){
+static std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement, const typeid_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(statement.check_invariant());
 
@@ -2499,7 +2492,7 @@ expression_t auto_cast_expression_type(analyser_t& a, const expression_t& e, con
 	}
 }
 
-std::string get_expression_name(const expression_t& e){
+static std::string get_expression_name(const expression_t& e){
 	const expression_type op = get_expression_type(e);
 	return expression_type_to_opcode(op);
 }
@@ -2507,7 +2500,7 @@ std::string get_expression_name(const expression_t& e){
 
 //	Return new expression where all types have been resolved. The target-type is used as a hint for type inference.
 //	Returned expression is guaranteed to be deep-resolved.
-std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type){
+static std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -2550,7 +2543,7 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 }
 
 //	Returned expression is guaranteed to be deep-resolved.
-std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_t& a, const statement_t& parent, const expression_t& e){
+static std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_t& a, const statement_t& parent, const expression_t& e){
 	return analyse_expression_to_target(a, parent, e, typeid_t::make_any());
 }
 
