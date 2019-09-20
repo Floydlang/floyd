@@ -113,7 +113,7 @@ static itype_t make_itype_from_parts(int lookup_index, const typeid_t& type){
 
 //	Adds type. Also interns any child types, as needed.
 //	Child types guaranteed to have lower itype indexes.
-//	Attempts to resolve all identifer-types by looking up named types.
+//	Attempts to resolve all identifer-types by looking up tagged types.
 //	Name can be ""
 static itype_t allocate(type_interner_t& interner, const i_resolve_identifer* resolver, const std::string& name, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
@@ -257,7 +257,7 @@ static itype_t allocate(type_interner_t& interner, const i_resolve_identifer* re
 
 
 
-itype_t new_named_type(type_interner_t& interner, const i_resolve_identifer* resolver, const std::string& name, const typeid_t& type){
+itype_t new_tagged_type(type_interner_t& interner, const i_resolve_identifer* resolver, const std::string& name, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -274,7 +274,7 @@ itype_t new_named_type(type_interner_t& interner, const i_resolve_identifer* res
 	return allocate(interner, resolver, name, type);
 }
 
-void update_named_type(type_interner_t& interner, const std::string& name, const typeid_t& type){
+void update_tagged_type(type_interner_t& interner, const std::string& name, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -461,12 +461,12 @@ QUARK_TEST("type_interner_t", "", "", ""){
 
 //??? How to update named type's type with new subtype and still guarantee named-type has bigger index? Subtype may introduce new itypes.
 
-QUARK_TEST("type_interner_t", "new_named_type()", "", ""){
+QUARK_TEST("type_interner_t", "new_tagged_type()", "", ""){
 	type_interner_t a;
-	const auto r = new_named_type(a, nullptr, "a", typeid_t::make_vector(typeid_t::make_identifier("hello")) );
+	const auto r = new_tagged_type(a, nullptr, "a", typeid_t::make_vector(typeid_t::make_identifier("hello")) );
 	if(true) trace_type_interner(a);
 
-	const auto find = lookup_named_type(a, "a");
+	const auto find = lookup_tagged_type(a, "a");
 	QUARK_UT_VERIFY(find == typeid_t::make_vector(typeid_t::make_identifier("hello")) );
 
 //	const auto r2 = intern_type_with_name(a, "a", typeid_t::make_vector(typeid_t::make_string()));
@@ -474,12 +474,12 @@ QUARK_TEST("type_interner_t", "new_named_type()", "", ""){
 }
 
 
-QUARK_TEST("type_interner_t", "new_named_type()", "Nested types", "Nested types get their own itypes"){
+QUARK_TEST("type_interner_t", "new_tagged_type()", "Nested types", "Nested types get their own itypes"){
 	type_interner_t a;
-	const auto r = new_named_type(a, nullptr, "a", typeid_t::make_vector(typeid_t::make_dict(typeid_t::make_double())) );
+	const auto r = new_tagged_type(a, nullptr, "a", typeid_t::make_vector(typeid_t::make_dict(typeid_t::make_double())) );
 	if(true) trace_type_interner(a);
 
-	QUARK_UT_VERIFY(lookup_named_type(a, "a") == typeid_t::make_vector(typeid_t::make_dict(typeid_t::make_double())) );
+	QUARK_UT_VERIFY(lookup_tagged_type(a, "a") == typeid_t::make_vector(typeid_t::make_dict(typeid_t::make_double())) );
 
 	QUARK_UT_VERIFY( lookup_itype_from_typeid(a, typeid_t::make_vector(typeid_t::make_dict(typeid_t::make_double()))) == itype_t::assemble2(15, base_type::k_vector, base_type::k_dict) );
 	QUARK_UT_VERIFY( lookup_itype_from_typeid(a, typeid_t::make_dict(typeid_t::make_double())) == itype_t::assemble2(14, base_type::k_dict, base_type::k_double) );
@@ -524,7 +524,7 @@ static long find_named_type(const type_interner_t& interner, const std::string& 
 	}
 }
 
-const typeid_t& lookup_named_type(const type_interner_t& interner, const std::string& name){
+const typeid_t& lookup_tagged_type(const type_interner_t& interner, const std::string& name){
 	QUARK_ASSERT(interner.check_invariant());
 
 	const auto index = find_named_type(interner, name);

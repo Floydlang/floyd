@@ -18,6 +18,64 @@ namespace floyd {
 
 
 
+std::string pack_type_tag(const type_tag_t& tag){
+	QUARK_ASSERT(tag.lexical_path.empty() == false);
+
+	std::string acc;
+	for(const auto& e: tag.lexical_path){
+		acc = acc + "/" + e;
+	}
+	return acc;
+}
+
+QUARK_TEST("", "pack_type_tag()", "", ""){
+	QUARK_TEST_VERIFY(pack_type_tag(type_tag_t{{ "hello" }} ) == "/hello");
+}
+QUARK_TEST("", "pack_type_tag()", "", ""){
+	QUARK_TEST_VERIFY(pack_type_tag(type_tag_t{{ "hello", "goodbye" }} ) == "/hello/goodbye");
+}
+
+
+bool is_type_tag(const std::string& s){
+	return s.size() > 0 && s[0] == '/';
+}
+
+QUARK_TEST("", "is_type_tag()", "", ""){
+	QUARK_TEST_VERIFY(is_type_tag("hello") == false);
+}
+QUARK_TEST("", "is_type_tag()", "", ""){
+	QUARK_TEST_VERIFY(is_type_tag("/hello") == true);
+}
+QUARK_TEST("", "is_type_tag()", "", ""){
+	QUARK_TEST_VERIFY(is_type_tag("/hello/goodbye") == true);
+}
+
+
+type_tag_t unpack_type_tag(const std::string& tag){
+	QUARK_ASSERT(is_type_tag(tag));
+
+	std::vector<std::string> path;
+	size_t pos = 0;
+	while(pos != tag.size()){
+		const auto next_pos = tag.find("/", pos + 1);
+		const auto next_pos2 = next_pos == std::string::npos ? tag.size() : next_pos;
+		const auto s = tag.substr(pos + 1, next_pos2 - 1);
+		path.push_back(s);
+		pos = next_pos2;
+	}
+	return type_tag_t { path } ;
+}
+
+QUARK_TEST("", "pack_type_tag()", "", ""){
+	QUARK_TEST_VERIFY(unpack_type_tag("/hello") == type_tag_t{{ "hello" }} );
+}
+QUARK_TEST("", "pack_type_tag()", "", ""){
+	QUARK_TEST_VERIFY(unpack_type_tag("/hello/goodbye") == ( type_tag_t{{ "hello", "goodbye" }} ) );
+}
+
+
+
+
 
 //////////////////////////////////////////////////		base_type
 
@@ -589,6 +647,8 @@ QUARK_TESTQ("typeid_t", "operator=()"){
 
 
 
+
+
 std::string typeid_to_compact_string(const typeid_t& t){
 //	QUARK_ASSERT(t.check_invariant());
 
@@ -618,7 +678,7 @@ std::string typeid_to_compact_string(const typeid_t& t){
 		return std::string() + "func " + typeid_to_compact_string(ret) + "(" + concat_strings_with_divider(args_str, ",") + ") " + (pure == epure::pure ? "pure" : "impure");
 	}
 	else if(basetype == floyd::base_type::k_identifier){
-		return "@" + t.get_identifier() + "";
+		return t.get_identifier();
 	}
 	else{
 		return base_type_to_opcode(basetype);

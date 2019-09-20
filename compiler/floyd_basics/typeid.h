@@ -677,6 +677,33 @@ void ut_verify(const quark::call_context_t& context, const typeid_t& result, con
 
 
 
+//////////////////////////////////////		type_tag_t
+
+
+//	Internal name that uniquely names a type in a program. Used for name-equivalence.
+
+struct type_tag_t {
+	bool check_invariant() const {
+		QUARK_ASSERT(lexical_path.size() > 0);
+		return true;
+	}
+
+	std::vector<std::string> lexical_path;
+};
+
+
+inline bool operator==(const type_tag_t& lhs, const type_tag_t& rhs){
+	return lhs.lexical_path == rhs.lexical_path;
+}
+
+//	A type tag is a unique string that names a type that should only type-equivalent to itself, no other types.
+std::string pack_type_tag(const type_tag_t& path);
+type_tag_t unpack_type_tag(const std::string& tag);
+bool is_type_tag(const std::string& s);
+
+
+
+
 }	//	floyd
 
 #endif /* typeid_hpp */

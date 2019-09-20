@@ -5910,7 +5910,7 @@ R"___(| MODULE  | TEST     |        DUR|       |
 //######################################################################################################################
 
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "Include library", "", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "Include library", "", ""){
 	ut_run_closed_lib(
 		QUARK_POS,
 		R"(

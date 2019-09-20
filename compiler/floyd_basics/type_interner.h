@@ -272,7 +272,7 @@ struct type_interner_t {
 
 	////////////////////////////////	STATE
 
-	//	All types are recorded here, an uniqued. Including named types.
+	//	All types are recorded here, an uniqued. Including tagged types.
 	//	itype uses the INDEX into this array for fast lookups.
 	std::vector<std::pair<std::string, typeid_t>> interned2;
 };
@@ -298,18 +298,18 @@ bool compare_types_structurally(const type_interner_t& interner, const typeid_t&
 std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, const i_resolve_identifer* resolver, const typeid_t& type);
 std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, const i_resolve_identifer* resolver, const ast_type_t& type);
 
-//	Allocates a new itype for this name. The name must not already exist.
-//	Interns the type for this name. You can use typeid_t::make_undefined() and later update the type using update_named_type()
-itype_t new_named_type(type_interner_t& interner, const i_resolve_identifer* resolver, const std::string& name, const typeid_t& type);
+//	Allocates a new itype for this tag. The tag must not already exist.
+//	Interns the type for this tag. You can use typeid_t::make_undefined() and later update the type using update_tagged_type()
+itype_t new_tagged_type(type_interner_t& interner, const i_resolve_identifer* resolver, const std::string& tag, const typeid_t& type);
 
-//	Update the named type's type. The named type must already exist. Any usage of this name will also get the new type.
-void update_named_type(type_interner_t& interner, const std::string& name, const typeid_t& type);
+//	Update the tagged type's type. The tagged type must already exist. Any usage of this tag will also get the new type.
+void update_tagged_type(type_interner_t& interner, const std::string& tag, const typeid_t& type);
 
 
 
 itype_t lookup_itype_from_typeid(const type_interner_t& interner, const typeid_t& type);
 inline const typeid_t& lookup_type_from_itype(const type_interner_t& interner, const itype_t& type);
-const typeid_t& lookup_named_type(const type_interner_t& interner, const std::string& name);
+const typeid_t& lookup_tagged_type(const type_interner_t& interner, const std::string& tag);
 
 //	Returns typeid_t::make_undefined() if ast_type_t is in monostate mode
 const typeid_t& lookup_type_from_asttype(const type_interner_t& interner, const ast_type_t& type);

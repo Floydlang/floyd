@@ -2248,7 +2248,7 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 		throw_local_identifier_already_exists(parent.location, identifier);
 	}
 
-	const auto named_itype = new_named_type(a_acc._types, nullptr, identifier, typeid_t::make_undefined());
+	const auto named_itype = new_tagged_type(a_acc._types, nullptr, identifier, typeid_t::make_undefined());
 
 	const auto type_name_symbol = symbol_t::make_named_type(named_itype);
 	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ identifier, type_name_symbol });
@@ -2262,7 +2262,7 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 
 	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid2);
 
-	update_named_type(a_acc._types, identifier, struct_typeid2);
+	update_tagged_type(a_acc._types, identifier, struct_typeid2);
 
 	const auto r = expression_t::make_literal(struct_typeid_value);
 
@@ -2612,7 +2612,7 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 	symbol_map.push_back( {
 		"benchmark_result_t",
 		symbol_t::make_named_type(
-			new_named_type(a._types, &a, "benchmark_result_t", make_benchmark_result_t())
+			new_tagged_type(a._types, &a, "benchmark_result_t", make_benchmark_result_t())
 		)
 	} );
 
@@ -2620,7 +2620,7 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 	symbol_map.push_back( {
 		"benchmark_def_t",
 		symbol_t::make_named_type(
-			new_named_type(a._types, &a, "benchmark_def_t", make_benchmark_def_t())
+			new_tagged_type(a._types, &a, "benchmark_def_t", make_benchmark_def_t())
 		)
 	} );
 
