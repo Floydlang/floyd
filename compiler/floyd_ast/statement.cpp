@@ -274,7 +274,7 @@ static statement_t ast_json_to_statement(const type_interner_t& interner, const 
 		const auto expr = statement.get_array_n(3);
 
 		const auto expr2 = ast_json_to_expression(interner, expr);
-		return statement_t::make__assign2(loc, variable_address_t::make_variable_address(parent_index, variable_index), expr2);
+		return statement_t::make__assign2(loc, symbol_pos_t::make_stack_pos(parent_index, variable_index), expr2);
 	}
 
 	else if(type == statement_opcode_t::k_init_local2){
@@ -284,7 +284,7 @@ static statement_t ast_json_to_statement(const type_interner_t& interner, const 
 		const auto expr = statement.get_array_n(3);
 
 		const auto expr2 = ast_json_to_expression(interner, expr);
-		return statement_t::make__init2(loc, variable_address_t::make_variable_address(parent_index, variable_index), expr2);
+		return statement_t::make__init2(loc, symbol_pos_t::make_stack_pos(parent_index, variable_index), expr2);
 	}
 
 	else if(type == statement_opcode_t::k_block){

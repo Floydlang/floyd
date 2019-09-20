@@ -617,7 +617,7 @@ expression_t ast_json_to_expression(const type_interner_t& interner, const json_
 		const auto parent_step = (int)e.get_array_n(1).get_number();
 		const auto index = (int)e.get_array_n(2).get_number();
 		const auto annotated_type = get_optional_typeid(e, 3);
-		return expression_t::make_load2(variable_address_t::make_variable_address(parent_step, index), annotated_type);
+		return expression_t::make_load2(symbol_pos_t::make_stack_pos(parent_step, index), annotated_type);
 	}
 	else if(op == expression_opcode_t::k_lookup_element){
 		QUARK_ASSERT(e.get_array_size() == 3 || e.get_array_size() == 4);
@@ -777,9 +777,9 @@ QUARK_TEST("", "", "", ""){
 
 
 QUARK_TEST("", "", "", ""){
-	const floyd::variable_address_t dummy;
+	const floyd::symbol_pos_t dummy;
 	const auto copy(dummy);
-	floyd::variable_address_t b;
+	floyd::symbol_pos_t b;
 	b = dummy;
 	(void)copy;
 }

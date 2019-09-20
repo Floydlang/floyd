@@ -290,12 +290,12 @@ struct type_interner_t {
 
 
 
-//////////////////////////////////////////////////		i_resolve_identifer
+//////////////////////////////////////////////////		i_resolve_symbol_type
 
 
-struct i_resolve_identifer {
-	virtual ~i_resolve_identifer(){ };
-	virtual itype_t i_resolve_identifer_resolve(const std::string& identifier) const = 0; 
+struct i_resolve_symbol_type {
+	virtual ~i_resolve_symbol_type(){ };
+	virtual itype_t i_resolve_symbol_type_resolve(const std::string& identifier) const = 0; 
 };
 
 //	Makes the type concrete by expanding any indirections via identifiers.
@@ -306,12 +306,12 @@ bool compare_types_structurally(const type_interner_t& interner, const typeid_t&
 
 
 //	Records AND resolves the type. The returned type may be improved over input type.
-std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, const i_resolve_identifer* resolver, const typeid_t& type);
-std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, const i_resolve_identifer* resolver, const ast_type_t& type);
+std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, const i_resolve_symbol_type* resolver, const typeid_t& type);
+std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, const i_resolve_symbol_type* resolver, const ast_type_t& type);
 
 //	Allocates a new itype for this tag. The tag must not already exist.
 //	Interns the type for this tag. You can use typeid_t::make_undefined() and later update the type using update_tagged_type()
-itype_t new_tagged_type(type_interner_t& interner, const i_resolve_identifer* resolver, const type_tag_t& tag, const typeid_t& type);
+itype_t new_tagged_type(type_interner_t& interner, const i_resolve_symbol_type* resolver, const type_tag_t& tag, const typeid_t& type);
 
 //	Update the tagged type's type. The tagged type must already exist. Any usage of this tag will also get the new type.
 void update_tagged_type(type_interner_t& interner, const type_tag_t& tag, const typeid_t& type);

@@ -310,11 +310,11 @@ struct statement_t {
 				&& _expression == other._expression;
 		}
 
-		variable_address_t _dest_variable;
+		symbol_pos_t _dest_variable;
 		expression_t _expression;
 	};
 
-	public: static statement_t make__assign2(const location_t& location, const variable_address_t& dest_variable, const expression_t& expression){
+	public: static statement_t make__assign2(const location_t& location, const symbol_pos_t& dest_variable, const expression_t& expression){
 		return statement_t(location, { assign2_t{ dest_variable, expression} });
 	}
 
@@ -330,11 +330,11 @@ struct statement_t {
 				&& _expression == other._expression;
 		}
 
-		variable_address_t _dest_variable;
+		symbol_pos_t _dest_variable;
 		expression_t _expression;
 	};
 
-	public: static statement_t make__init2(const location_t& location, const variable_address_t& dest_variable, const expression_t& expression){
+	public: static statement_t make__init2(const location_t& location, const symbol_pos_t& dest_variable, const expression_t& expression){
 		return statement_t(location, { init2_t{ dest_variable, expression} });
 	}
 

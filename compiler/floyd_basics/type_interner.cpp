@@ -115,7 +115,7 @@ static itype_t make_itype_from_parts(int lookup_index, const typeid_t& type){
 //	Child types guaranteed to have lower itype indexes.
 //	Attempts to resolve all identifer-types by looking up tagged types.
 //	Name can be ""
-static itype_t allocate(type_interner_t& interner, const i_resolve_identifer* resolver, const type_tag_t& tag, const typeid_t& type){
+static itype_t allocate(type_interner_t& interner, const i_resolve_symbol_type* resolver, const type_tag_t& tag, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -123,7 +123,7 @@ static itype_t allocate(type_interner_t& interner, const i_resolve_identifer* re
 		type_interner_t& interner;
 		const type_tag_t tag;
 		const typeid_t& type;
-		const i_resolve_identifer* resolver;
+		const i_resolve_symbol_type* resolver;
 
 		itype_t operator()(const typeid_t::undefined_t& e) const{
 			interner.interned2.push_back({ tag, type });
@@ -231,7 +231,7 @@ static itype_t allocate(type_interner_t& interner, const i_resolve_identifer* re
 			QUARK_ASSERT(resolver != nullptr);
 
 /*
-			const auto itype2 = resolver->i_resolve_identifer_resolve(identifier);
+			const auto itype2 = resolver->i_resolve_symbol_type_resolve(identifier);
 			return itype2;
 
 			const auto type2 = typeid_t::make_identifier(identifier);
@@ -258,7 +258,7 @@ static itype_t allocate(type_interner_t& interner, const i_resolve_identifer* re
 
 
 
-itype_t new_tagged_type(type_interner_t& interner, const i_resolve_identifer* resolver, const type_tag_t& tag, const typeid_t& type){
+itype_t new_tagged_type(type_interner_t& interner, const i_resolve_symbol_type* resolver, const type_tag_t& tag, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -414,7 +414,7 @@ bool compare_types_structurally(const type_interner_t& interner, const typeid_t&
 }
 
 
-std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, const i_resolve_identifer* resolver, const typeid_t& type){
+std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, const i_resolve_symbol_type* resolver, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -434,7 +434,7 @@ std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, co
 	}
 }
 
-std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, const i_resolve_identifer* resolver, const ast_type_t& type){
+std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, const i_resolve_symbol_type* resolver, const ast_type_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 

@@ -105,7 +105,7 @@ struct llvm_code_generator_t {
 	std::vector<function_link_entry_t> link_map;
 
 	/*
-		variable_address_t::_parent_steps
+		symbol_pos_t::_parent_steps
 			-1: global, uncoditionally.
 			0: current scope. scope_path[scope_path.size() - 1]
 			1: parent scope. scope_path[scope_path.size() - 2]

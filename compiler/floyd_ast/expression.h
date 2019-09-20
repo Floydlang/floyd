@@ -121,10 +121,10 @@ bool is_opcode_comparison_expression(const std::string& op);
 
 
 
-//////////////////////////////////////		variable_address_t
+//////////////////////////////////////		symbol_pos_t
 
 
-struct variable_address_t {
+struct symbol_pos_t {
 	/*
 		0: current stack frame
 		1: previous stack frame
@@ -139,23 +139,23 @@ struct variable_address_t {
 	};
 
 
-	public: variable_address_t() :
+	public: symbol_pos_t() :
 		_parent_steps(k_global_scope),
 		_index(-1)
 	{
 	}
 
 	public: bool is_empty() const {
-		return _parent_steps == variable_address_t::k_global_scope && _index == -1;
+		return _parent_steps == symbol_pos_t::k_global_scope && _index == -1;
 	}
 	public: bool check_invariant() const {
-		QUARK_ASSERT(_parent_steps == variable_address_t::k_intrinsic || _parent_steps == variable_address_t::k_global_scope || _parent_steps >= 0);
+		QUARK_ASSERT(_parent_steps == symbol_pos_t::k_intrinsic || _parent_steps == symbol_pos_t::k_global_scope || _parent_steps >= 0);
 		return true;
 	}
-	public: static variable_address_t make_variable_address(int parent_steps, int index){
-		return variable_address_t(parent_steps, index);
+	public: static symbol_pos_t make_stack_pos(int parent_steps, int index){
+		return symbol_pos_t(parent_steps, index);
 	}
-	private: variable_address_t(int parent_steps, int index) :
+	private: symbol_pos_t(int parent_steps, int index) :
 		_parent_steps(parent_steps),
 		_index(index)
 	{
@@ -165,7 +165,7 @@ struct variable_address_t {
 	public: int _index;
 };
 
-inline bool operator==(const variable_address_t& lhs, const variable_address_t& rhs){
+inline bool operator==(const symbol_pos_t& lhs, const symbol_pos_t& rhs){
 	return lhs._parent_steps == rhs._parent_steps && lhs._index == rhs._index;
 }
 
@@ -402,10 +402,10 @@ struct expression_t {
 	////////////////////////////////		load2_t
 
 	struct load2_t {
-		variable_address_t address;
+		symbol_pos_t address;
 	};
 
-	public: static expression_t make_load2(const variable_address_t& address, const ast_type_t& optional_type){
+	public: static expression_t make_load2(const symbol_pos_t& address, const ast_type_t& optional_type){
 		return expression_t({ load2_t{ address } }, optional_type);
 	}
 

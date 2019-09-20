@@ -55,15 +55,13 @@ struct lexical_scope_t {
 	epure pure;
 };
 
-struct analyser_t : public i_resolve_identifer {
+struct analyser_t : public i_resolve_symbol_type {
 	public: analyser_t(const unchecked_ast_t& ast);
 #if DEBUG
 	public: bool check_invariant() const;
 #endif
 
-
-
-	itype_t i_resolve_identifer_resolve(const std::string& identifier) const override;
+	itype_t i_resolve_symbol_type_resolve(const std::string& identifier) const override;
 
 
 	////////////////////////		STATE
@@ -132,7 +130,7 @@ static const function_definition_t& function_id_to_def(const analyser_t& a, cons
 
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-static std::pair<const symbol_t*, variable_address_t> resolve_env_variable_deep(const analyser_t& a, int depth, const std::string& s){
+static std::pair<const symbol_t*, symbol_pos_t> resolve_symbol_deep(const analyser_t& a, int depth, const std::string& s){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(depth >= 0 && depth < a._lexical_scope_stack.size());
 	QUARK_ASSERT(s.size() > 0);
@@ -146,21 +144,21 @@ static std::pair<const symbol_t*, variable_address_t> resolve_env_variable_deep(
 	if(it != a._lexical_scope_stack[depth].symbols._symbols.end()){
 		const auto parent_index = depth == 0 ? -1 : (int)(a._lexical_scope_stack.size() - depth - 1);
 		const auto variable_index = (int)(it - a._lexical_scope_stack[depth].symbols._symbols.begin());
-		return { &it->second, variable_address_t::make_variable_address(parent_index, variable_index) };
+		return { &it->second, symbol_pos_t::make_stack_pos(parent_index, variable_index) };
 	}
 	else if(depth > 0){
-		return resolve_env_variable_deep(a, depth - 1, s);
+		return resolve_symbol_deep(a, depth - 1, s);
 	}
 	else{
-		return { nullptr, variable_address_t::make_variable_address(0, 0) };
+		return { nullptr, symbol_pos_t::make_stack_pos(0, 0) };
 	}
 }
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-static std::pair<const symbol_t*, variable_address_t> find_symbol_by_name(const analyser_t& a, const std::string& s){
+static std::pair<const symbol_t*, symbol_pos_t> find_symbol_by_name(const analyser_t& a, const std::string& s){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
-	return resolve_env_variable_deep(a, static_cast<int>(a._lexical_scope_stack.size() - 1), s);
+	return resolve_symbol_deep(a, static_cast<int>(a._lexical_scope_stack.size() - 1), s);
 }
 
 static bool does_symbol_exist_shallow(const analyser_t& a, const std::string& s){
@@ -172,14 +170,14 @@ static bool does_symbol_exist_shallow(const analyser_t& a, const std::string& s)
 	return it != a._lexical_scope_stack.back().symbols._symbols.end();
 }
 
-static itype_t get_named_symbol(const symbol_t& symbol){
+static itype_t get_tagged_type_symbol(const symbol_t& symbol){
 	QUARK_ASSERT(symbol._symbol_type == symbol_t::symbol_type::named_type);
 
 	return symbol._value_type;
 }
 
 static const std::pair<type_tag_t, typeid_t>& get_tagged_tag(const analyser_t& a, const std::string& identifier){
-	const std::pair<const symbol_t*, variable_address_t> symbol_kv = find_symbol_by_name(a, identifier);
+	const std::pair<const symbol_t*, symbol_pos_t> symbol_kv = find_symbol_by_name(a, identifier);
 	QUARK_ASSERT(symbol_kv.first != nullptr && symbol_kv.first->_symbol_type == symbol_t::symbol_type::named_type);
 
 	const auto itype = symbol_kv.first->get_value_type();
@@ -188,12 +186,7 @@ static const std::pair<type_tag_t, typeid_t>& get_tagged_tag(const analyser_t& a
 	return info;
 }
 
-
-
-
-/////////////////////////////////////////			RESOLVE typeid_t::unresolved_t USING LEXICAL SCOPE PATH
-
-static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid_t& type);
+static typeid_t resolve_and_intern_typeid(analyser_t& acc, const location_t& loc, const typeid_t& type);
 
 static typeid_t record_type_internal(analyser_t& acc, const location_t& loc, const typeid_t& type){
 	QUARK_ASSERT(acc.check_invariant());
@@ -243,15 +236,15 @@ static typeid_t record_type_internal(analyser_t& acc, const location_t& loc, con
 			const auto& struct_def = type.get_struct();
 			std::vector<member_t> members2;
 			for(const auto& m: struct_def._members){
-				members2.push_back(member_t(record_type(acc, loc, m._type), m._name));
+				members2.push_back(member_t(resolve_and_intern_typeid(acc, loc, m._type), m._name));
 			}
 			return typeid_t::make_struct2(members2);
 		}
 		typeid_t operator()(const typeid_t::vector_t& e) const{
-			return typeid_t::make_vector(record_type(acc, loc, type.get_vector_element_type()));
+			return typeid_t::make_vector(resolve_and_intern_typeid(acc, loc, type.get_vector_element_type()));
 		}
 		typeid_t operator()(const typeid_t::dict_t& e) const{
-			return typeid_t::make_dict(record_type(acc, loc, type.get_dict_value_type()));
+			return typeid_t::make_dict(resolve_and_intern_typeid(acc, loc, type.get_dict_value_type()));
 		}
 		typeid_t operator()(const typeid_t::function_t& e) const{
 			const auto ret = type.get_function_return();
@@ -259,10 +252,10 @@ static typeid_t record_type_internal(analyser_t& acc, const location_t& loc, con
 			const auto pure = type.get_function_pure();
 			const auto dyn_return_type = type.get_function_dyn_return_type();
 
-			const auto ret2 = record_type(acc, loc, ret);
+			const auto ret2 = resolve_and_intern_typeid(acc, loc, ret);
 			vector<typeid_t> args2;
 			for(const auto& m: args){
-				args2.push_back(record_type(acc, loc, m));
+				args2.push_back(resolve_and_intern_typeid(acc, loc, m));
 			}
 			return typeid_t::make_function3(ret2, args2, pure, dyn_return_type);
 		}
@@ -274,7 +267,7 @@ static typeid_t record_type_internal(analyser_t& acc, const location_t& loc, con
 			if(existing_value_deep_ptr.first == nullptr || existing_value_deep_ptr.first->_symbol_type != symbol_t::symbol_type::named_type){
 				throw_compiler_error(loc, "Unknown type name '" + identifier + "'.");
 			}
-			const auto resolved = lookup_type_from_itype(acc._types, get_named_symbol(*existing_value_deep_ptr.first));
+			const auto resolved = lookup_type_from_itype(acc._types, get_tagged_type_symbol(*existing_value_deep_ptr.first));
 			return resolved;
 		}
 	};
@@ -283,7 +276,7 @@ static typeid_t record_type_internal(analyser_t& acc, const location_t& loc, con
 }
 
 
-itype_t analyser_t::i_resolve_identifer_resolve(const std::string& identifier) const {
+itype_t analyser_t::i_resolve_symbol_type_resolve(const std::string& identifier) const {
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(identifier != "");
 
@@ -291,19 +284,17 @@ itype_t analyser_t::i_resolve_identifer_resolve(const std::string& identifier) c
 	if(existing_value_deep_ptr.first == nullptr || existing_value_deep_ptr.first->_symbol_type != symbol_t::symbol_type::named_type){
 		throw_compiler_error(k_no_location, "Unknown type name '" + identifier + "'.");
 	}
-	return get_named_symbol(*existing_value_deep_ptr.first);
+	return get_tagged_type_symbol(*existing_value_deep_ptr.first);
 }
 
 
 
-static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid_t& type){
+static typeid_t resolve_and_intern_typeid(analyser_t& acc, const location_t& loc, const typeid_t& type){
 	QUARK_ASSERT(acc.check_invariant());
 	QUARK_ASSERT(loc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
 	try {
-//		const auto resolved = record_type_internal(acc, loc, type);
-
 		if(type.is_undefined()){
 			return type;
 		}
@@ -311,15 +302,13 @@ static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid
 #if DEBUG
 			if(false) trace_type_interner(acc._types);
 #endif
+
+//			const auto resolved = record_type_internal(acc, loc, type);
 			const auto resolved = intern_anonymous_type(acc._types, &acc, type).second;
 
-/*
-			if(check_types_resolved(acc._types, resolved) == false){
-				throw_compiler_error(loc, "Cannot resolve type");
-			}
-*/
-
+#if DEBUG
 			lookup_itype_from_typeid(acc._types, type);
+#endif
 
 			return resolved;
 		}
@@ -332,22 +321,19 @@ static typeid_t record_type(analyser_t& acc, const location_t& loc, const typeid
 	}
 }
 
-static typeid_t record_type(analyser_t& acc, const location_t& loc, const ast_type_t& type){
-	QUARK_ASSERT(acc.check_invariant());
-	QUARK_ASSERT(loc.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	return record_type(acc, loc, get_typeid(type));
-}
-
 static itype_t record_type_itype(analyser_t& acc, const location_t& loc, const typeid_t& type){
 	QUARK_ASSERT(acc.check_invariant());
 	QUARK_ASSERT(loc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto t = record_type(acc, loc, type);
+	const auto t = resolve_and_intern_typeid(acc, loc, type);
 	return lookup_itype_from_typeid(acc._types, t);
 }
+
+
+
+
+
 
 static itype_t record_type_itype(analyser_t& acc, const location_t& loc, const ast_type_t& type){
 	QUARK_ASSERT(acc.check_invariant());
@@ -357,6 +343,13 @@ static itype_t record_type_itype(analyser_t& acc, const location_t& loc, const a
 	return record_type_itype(acc, loc,get_typeid(type));
 }
 
+static typeid_t resolve_and_intern_asttype(analyser_t& acc, const location_t& loc, const ast_type_t& type){
+	QUARK_ASSERT(acc.check_invariant());
+	QUARK_ASSERT(loc.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	return resolve_and_intern_typeid(acc, loc, get_typeid(type));
+}
 
 //	Pushes the expression type through recording, resolving and interning.
 static itype_t analyze_expr_output_itype(analyser_t& a, const expression_t& e){
@@ -422,11 +415,11 @@ static const typeid_t figure_out_callee_return_type(analyser_t& a, const stateme
 				QUARK_ASSERT(load.address._parent_steps == -1);
 
 				const auto& addr = load.address; 
-				const size_t scope_index = addr._parent_steps == variable_address_t::k_global_scope ? 0 : a._lexical_scope_stack.size() - 1 - addr._parent_steps;
+				const size_t scope_index = addr._parent_steps == symbol_pos_t::k_global_scope ? 0 : a._lexical_scope_stack.size() - 1 - addr._parent_steps;
 				const auto& symbol_kv = a._lexical_scope_stack[scope_index].symbols._symbols[addr._index];
 
 				QUARK_ASSERT(symbol_kv.second._symbol_type == symbol_t::symbol_type::named_type);
-				return lookup_type_from_itype(a._types, get_named_symbol(symbol_kv.second));
+				return lookup_type_from_itype(a._types, get_tagged_type_symbol(symbol_kv.second));
 			}
 			break;
 		case typeid_t::return_dyn_type::vector_of_arg1func_return:
@@ -655,20 +648,20 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 			if(is_preinitliteral(lookup_type_from_itype(a_acc._types, lhs_itype2)) && mutable_flag == false && get_expression_type(rhs_expr_pair.second) == expression_type::k_literal){
 				const auto symbol2 = symbol_t::make_immutable_precalc(lhs_itype2, rhs_expr_pair.second.get_literal());
 				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
-				record_type(a_acc, s.location, analyze_expr_output_type(a_acc, rhs_expr_pair.second));
+				resolve_and_intern_typeid(a_acc, s.location, analyze_expr_output_type(a_acc, rhs_expr_pair.second));
 				return { a_acc, {} };
 			}
 			else{
 				const auto symbol2 = mutable_flag ? symbol_t::make_mutable(lhs_itype2) : symbol_t::make_immutable_reserve(lhs_itype2);
 				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
-				record_type(a_acc, s.location, analyze_expr_output_type(a_acc, rhs_expr_pair.second));
+				resolve_and_intern_typeid(a_acc, s.location, analyze_expr_output_type(a_acc, rhs_expr_pair.second));
 
 				return {
 					a_acc,
 					std::make_shared<statement_t>(
 						statement_t::make__init2(
 							s.location,
-							variable_address_t::make_variable_address(0, (int)local_name_index),
+							symbol_pos_t::make_stack_pos(0, (int)local_name_index),
 							rhs_expr_pair.second
 						)
 					)
@@ -1537,7 +1530,7 @@ std::pair<analyser_t, expression_t> analyse_load(const analyser_t& a, const stat
 		);
 		if(it != intrinsic_signatures.end()){
 			const auto index = it - intrinsic_signatures.begin();
-			const auto addr = variable_address_t::make_variable_address(variable_address_t::k_intrinsic, static_cast<int32_t>(index));
+			const auto addr = symbol_pos_t::make_stack_pos(symbol_pos_t::k_intrinsic, static_cast<int32_t>(index));
 			const auto e2 = expression_t::make_load2(addr, make_type_name_from_typeid(it->_function_type));
 			return { a_acc, e2 };
 		}
@@ -1637,7 +1630,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				throw_compiler_error(parent.location, what.str());
 			}
 
-			const auto final_type = record_type(a_acc, parent.location, selected_type);
+			const auto final_type = resolve_and_intern_typeid(a_acc, parent.location, selected_type);
 
 			for(const auto& m: elements2){
 				if(analyze_expr_output_type(a_acc, m) != element_type2){
@@ -1677,7 +1670,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				throw_compiler_error(parent.location, what.str());
 			}
 
-			const auto final_type = record_type(a_acc, parent.location, selected_type);
+			const auto final_type = resolve_and_intern_typeid(a_acc, parent.location, selected_type);
 
 			return {
 				a_acc,
@@ -1713,7 +1706,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				throw_compiler_error(parent.location, what.str());
 			}
 
-			const auto final_type = record_type(a_acc, parent.location, selected_type);
+			const auto final_type = resolve_and_intern_typeid(a_acc, parent.location, selected_type);
 
 			//	Make sure all elements have the correct type.
 			for(int i = 0 ; i < elements2.size() / 2 ; i++){
@@ -2083,7 +2076,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 
 		//	Detect use of intrinsics.
 		if(callee_expr_load2){
-			if(callee_expr_load2->address._parent_steps == variable_address_t::k_intrinsic){
+			if(callee_expr_load2->address._parent_steps == symbol_pos_t::k_intrinsic){
 
 				const std::vector<intrinsic_signature_t>& intrinsic_signatures = a0._imm->intrinsic_signatures;
 				const auto index = callee_expr_load2->address._index;
@@ -2222,11 +2215,11 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 	//	Converts these calls to construct-value-expressions.
 	else if(/*callee_type.is_typeid() &&*/ callee_expr_load2){
 		const auto& addr = callee_expr_load2->address; 
-		const size_t scope_index = addr._parent_steps == variable_address_t::k_global_scope ? 0 : a_acc._lexical_scope_stack.size() - 1 - addr._parent_steps;
+		const size_t scope_index = addr._parent_steps == symbol_pos_t::k_global_scope ? 0 : a_acc._lexical_scope_stack.size() - 1 - addr._parent_steps;
 		const auto& callee_symbol = a_acc._lexical_scope_stack[scope_index].symbols._symbols[addr._index];
 
 		if(callee_symbol.second._symbol_type == symbol_t::symbol_type::named_type){
-			const auto x = get_named_symbol(callee_symbol.second);
+			const auto x = get_tagged_type_symbol(callee_symbol.second);
 			const auto construct_value_type = lookup_type_from_itype(a_acc._types, x);
 			const auto construct_value_type2 = construct_value_type;
 
@@ -2311,12 +2304,12 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	auto a_acc = analyser;
 
 	const auto function_def = details.def;
-	const auto function_type2 = record_type(a_acc, parent.location, function_def._function_type);
+	const auto function_type2 = resolve_and_intern_typeid(a_acc, parent.location, function_def._function_type);
 	const auto function_pure = function_type2.get_function_pure();
 
 	vector<member_t> args2;
 	for(const auto& arg: function_def._named_args){
-		const auto arg_type2 = record_type(a_acc, parent.location, arg._type);
+		const auto arg_type2 = resolve_and_intern_typeid(a_acc, parent.location, arg._type);
 		args2.push_back(member_t(arg_type2, arg._name));
 	}
 
@@ -2461,7 +2454,7 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 	//	Record all output type, if there is one.
 	auto a_acc = result.first;
 	if(check_types_resolved(a_acc._types, result.second)){
-		record_type(a_acc, parent.location, analyze_expr_output_type(a_acc, result.second));
+		resolve_and_intern_typeid(a_acc, parent.location, analyze_expr_output_type(a_acc, result.second));
 	}
 	return { a_acc, result.second };
 }
@@ -2690,7 +2683,7 @@ semantic_ast_t analyse(analyser_t& a){
 
 	const auto builtin_symbols = generate_builtins(a, *a._imm);
 	for(const auto& e: a._imm->intrinsic_signatures){
-		record_type(a, k_no_location, e._function_type);
+		resolve_and_intern_typeid(a, k_no_location, e._function_type);
 	}
 
 	if(false) trace_type_interner(a._types);
@@ -2721,7 +2714,7 @@ semantic_ast_t analyse(analyser_t& a){
 		//??? remove most use of make_type_name_from_typeid()
 		const auto s = statement_t::make__init2(
 			k_no_location,
-			variable_address_t::make_variable_address(variable_address_t::k_global_scope, index),
+			symbol_pos_t::make_stack_pos(symbol_pos_t::k_global_scope, index),
 			expression_t::make_construct_value_expr(make_type_name_from_typeid(benchmark_registry_type), a.benchmark_defs)
 		);
 

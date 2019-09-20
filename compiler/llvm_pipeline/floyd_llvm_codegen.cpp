@@ -228,12 +228,12 @@ resolved_symbol_t make_resolved_symbol(llvm::Value* value_ptr, std::string debug
 	return { value_ptr, debug_str, t, symbol_name, symbol};
 }
 
-resolved_symbol_t find_symbol(llvm_code_generator_t& gen_acc, const variable_address_t& reg){
+resolved_symbol_t find_symbol(llvm_code_generator_t& gen_acc, const symbol_pos_t& reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(gen_acc.scope_path.size() >= 1);
-	QUARK_ASSERT(reg._parent_steps == variable_address_t::k_global_scope || (reg._parent_steps >= 0 && reg._parent_steps < gen_acc.scope_path.size()));
+	QUARK_ASSERT(reg._parent_steps == symbol_pos_t::k_global_scope || (reg._parent_steps >= 0 && reg._parent_steps < gen_acc.scope_path.size()));
 
-	if(reg._parent_steps == variable_address_t::k_global_scope){
+	if(reg._parent_steps == symbol_pos_t::k_global_scope){
 		QUARK_ASSERT(gen_acc.scope_path.size() >= 1);
 
 		const auto& global_scope = gen_acc.scope_path.front();
