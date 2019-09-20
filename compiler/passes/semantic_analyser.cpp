@@ -86,9 +86,6 @@ struct analyser_t {
 
 
 
-
-
-
 //////////////////////////////////////		forward
 
 
@@ -103,15 +100,11 @@ static std::pair<const symbol_t*, symbol_pos_t> find_symbol_by_name(const analys
 
 
 
-
-
 static void throw_local_identifier_already_exists(const location_t& loc, const std::string& local_identifier){
 	std::stringstream what;
 	what << "Local identifier \"" << local_identifier << "\" already exists.";
 	throw_compiler_error(loc, what.str());
 }
-
-
 
 
 
