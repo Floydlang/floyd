@@ -191,7 +191,6 @@ static typeid_t record_type_internal(analyser_t& acc, const location_t& loc, con
 
 		typeid_t operator()(const typeid_t::undefined_t& e) const{
 			return type;
-//			throw_compiler_error(loc, "Cannot resolve type");
 		}
 		typeid_t operator()(const typeid_t::any_t& e) const{
 			return type;
@@ -260,7 +259,7 @@ static typeid_t record_type_internal(analyser_t& acc, const location_t& loc, con
 		}
 	};
 	const auto resolved = std::visit(visitor_t{ acc, loc, type }, type._contents);
-	return intern_anonymous_type(acc._types, resolved).second;
+	return lookup_type_from_itype(acc._types, intern_anonymous_type(acc._types, resolved));
 }
 
 /*
@@ -292,7 +291,7 @@ static typeid_t resolve_and_intern_typeid(analyser_t& acc, const location_t& loc
 #endif
 
 //			const auto resolved = record_type_internal(acc, loc, type);
-			const auto resolved = intern_anonymous_type(acc._types, type).second;
+			const auto resolved = lookup_type_from_itype(acc._types, intern_anonymous_type(acc._types, type));
 
 #if DEBUG
 			lookup_itype_from_typeid(acc._types, type);

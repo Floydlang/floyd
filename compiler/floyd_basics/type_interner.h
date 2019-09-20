@@ -20,7 +20,6 @@ struct json_t;
 
 namespace floyd {
 
-struct ast_type_t;
 
 
 //////////////////////////////////////////////////		itype_t
@@ -289,10 +288,6 @@ struct type_interner_t {
 };
 
 
-
-
-
-
 //	Makes the type concrete by expanding any indirections via identifiers.
 typeid_t expand_type_description(const type_interner_t& interner, const itype_t& type);
 
@@ -301,8 +296,7 @@ bool compare_types_structurally(const type_interner_t& interner, const typeid_t&
 
 
 //	Records AND resolves the type. The returned type may be improved over input type.
-std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, const typeid_t& type);
-std::pair<itype_t, typeid_t> intern_anonymous_type(type_interner_t& interner, const ast_type_t& type);
+itype_t intern_anonymous_type(type_interner_t& interner, const typeid_t& type);
 
 //	Allocates a new itype for this tag. The tag must not already exist.
 //	Interns the type for this tag. You can use typeid_t::make_undefined() and later update the type using update_tagged_type()
@@ -318,8 +312,6 @@ inline const typeid_t& lookup_type_from_itype(const type_interner_t& interner, c
 inline const std::pair<type_tag_t, typeid_t>& lookup_typeinfo_from_itype(const type_interner_t& interner, const itype_t& type);
 const typeid_t& lookup_tagged_type(const type_interner_t& interner, const type_tag_t& tag);
 
-//	Returns typeid_t::make_undefined() if ast_type_t is in monostate mode
-const typeid_t& lookup_type_from_asttype(const type_interner_t& interner, const ast_type_t& type);
 
 
 
@@ -343,11 +335,13 @@ inline bool is_atomic_type(itype_t type);
 	2. An itype into the type_interner.
 
 	Notice that both 1 & 2 may contain subtypes that are undefined or uses unresolved_identifiers.
+
+	ast_type_t is built ontop of the type_interner and itype.
 */
 
-
+struct ast_type_t;
 ast_type_t make_type_name_from_typeid(const typeid_t& t);
-ast_type_t make_type_name_from_itype(const itype_t& t);
+ast_type_t to_asttype(const itype_t& t);
 
 struct ast_type_t {
 	bool check_invariant() const {
@@ -421,6 +415,11 @@ ast_type_t ast_type_from_json(const json_t& j);
 
 std::string ast_type_to_string(const ast_type_t& type);
 
+
+itype_t intern_anonymous_type(type_interner_t& interner, const ast_type_t& type);
+
+//	Returns typeid_t::make_undefined() if ast_type_t is in monostate mode
+const typeid_t& lookup_type_from_asttype(const type_interner_t& interner, const ast_type_t& type);
 
 
 
