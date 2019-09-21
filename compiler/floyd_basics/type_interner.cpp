@@ -112,7 +112,7 @@ static itype_t make_itype_from_parts(int lookup_index, const typeid_t& type){
 //	Adds type. Also interns any child types, as needed.
 //	Child types guaranteed to have lower itype indexes.
 //	Attempts to resolve all identifer-types by looking up tagged types.
-//	Name can be ""
+//	Tag type can be empty = annonumous type.
 static itype_t allocate(type_interner_t& interner, const type_tag_t& tag, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -225,17 +225,6 @@ static itype_t allocate(type_interner_t& interner, const type_tag_t& tag, const 
 		itype_t operator()(const typeid_t::identifier_t& e) const {
 			const auto identifier = type.get_identifier();
 			QUARK_ASSERT(identifier != "");
-
-/*
-			const auto itype2 = resolver->i_resolve_symbol_type_resolve(identifier);
-			return itype2;
-
-			const auto type2 = typeid_t::make_identifier(identifier);
-			interner.interned2.push_back({ tag, type2 });
-
-			const auto lookup_index = static_cast<int32_t>(interner.interned2.size() - 1);
-			return itype_t::make_identifier(lookup_index);
-*/
 
 			const auto type2 = typeid_t::make_identifier(identifier);
 			interner.interned2.push_back({ tag, type2 });
