@@ -33,25 +33,13 @@ json_t gp_ast_to_json(const general_purpose_ast_t& ast){
 	}
 
 	const auto function_defs_json = json_t::make_array(fds);
-
-
-	std::vector<json_t> types;
-	for(auto i = 0 ; i < ast._interned_types.interned2.size() ; i++){
-		const auto& e = ast._interned_types.interned2[i];
-		const auto a = typeid_to_ast_json(e.second, json_tags::k_tag_resolve_state);
-		const auto x = json_t::make_object({
-			{ "tag", pack_type_tag(e.first) },
-			{ "desc", a }
-		});
-		types.push_back(x);
-	}
-
+	const auto types = type_interner_to_json(ast._interned_types);
 
 	return json_t::make_object(
 		{
 			{ "globals", body_to_json(ast._globals) },
 			{ "function_defs", function_defs_json },
-			{ "types", json_t::make_array(types) }
+			{ "types", types }
 		}
 	);
 
@@ -67,34 +55,20 @@ general_purpose_ast_t json_to_gp_ast(const json_t& json){
 
 
 	//	Fix types first, before globals and functions.
-	std::vector<std::pair<type_tag_t, typeid_t>> types;
-	for(const auto& t: types0.get_array()){
-		const auto name = t.get_object_element("tag").get_string();
-		const auto desc = t.get_object_element("desc");
+	const auto interner = type_interner_from_json(types0);
 
-		const auto t2 = typeid_from_ast_json(desc);
-		const auto e = std::pair<type_tag_t, typeid_t>{ unpack_type_tag(name), t2 };
-		types.push_back(e);
-	}
-	type_interner_t types2;
-
-
-
-	body_t globals1 = json_to_body(types2, globals0);
+	body_t globals1 = json_to_body(interner, globals0);
 
 	std::vector<floyd::function_definition_t> function_defs1;
 	for(const auto& f: function_defs.get_array()){
-		const auto f1 = json_to_function_def(types2, f);
+		const auto f1 = json_to_function_def(interner, f);
 		function_defs1.push_back(f1);
 	}
-
-
-	types2.interned2 = types;
 
 	return general_purpose_ast_t {
 		globals1,
 		function_defs1,
-		types2,
+		interner,
 		software_system_t{},
 		container_t{}
 	};

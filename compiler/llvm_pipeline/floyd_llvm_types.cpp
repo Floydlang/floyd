@@ -394,11 +394,11 @@ llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const type_intern
 
 	for(const auto& e: acc.type_interner.interned2){
 		QUARK_ASSERT(builder.acc.type_interner.check_invariant());
-		QUARK_ASSERT(e.second.check_invariant());
+		QUARK_ASSERT(e.type.check_invariant());
 
-		const auto itype = lookup_itype_from_typeid(builder.acc.type_interner, e.second);
+		const auto itype = lookup_itype_from_typeid(builder.acc.type_interner, e.type);
 		const auto index = itype.get_lookup_index();
-		const auto entry = make_type(builder, e.second);
+		const auto entry = make_type(builder, e.type);
 		builder.acc.types[index] = entry;
 	}
 
@@ -450,7 +450,7 @@ void trace_llvm_type_lookup(const llvm_type_lookup& type_lookup){
 
 	for(int i = 0 ; i < type_lookup.state.types.size() ; i++){
 		const auto& e = type_lookup.state.types[i];
-		const auto type = type_lookup.state.type_interner.interned2[i].second;
+		const auto type = type_lookup.state.type_interner.interned2[i].type;
 		const auto l = line_t {
 			{
 				std::to_string(i),

@@ -457,7 +457,7 @@ static std::vector<std::pair<itype_t, struct_layout_t>> make_struct_layouts(cons
 	std::vector<std::pair<itype_t, struct_layout_t>> result;
 
 	for(int i = 0 ; i < type_lookup.state.types.size() ; i++){
-		const auto& type = type_lookup.state.type_interner.interned2[i].second;
+		const auto& type = type_lookup.state.type_interner.interned2[i].type;
 		if(type.is_struct()){
 			auto t2 = get_exact_struct_type_byvalue(type_lookup, type);
 			const llvm::StructLayout* layout = data_layout.getStructLayout(t2);

@@ -95,6 +95,7 @@ struct itype_t {
 
 
 	bool check_invariant() const {
+		QUARK_ASSERT(get_base_type() != base_type::k_identifier);
 		return true;
 	}
 
@@ -184,7 +185,7 @@ struct itype_t {
 
 
 	base_type get_base_type() const {
-		QUARK_ASSERT(check_invariant());
+//		QUARK_ASSERT(check_invariant());
 
 		const auto value = (data >> 28) & 15;
 		const auto bt = static_cast<base_type>(value);
@@ -257,7 +258,7 @@ inline bool is_empty(const itype_t& type){
 	return type == itype_t::make_undefined();
 }
 
-inline bool is_atomic_type(itype_t type);
+bool is_atomic_type(itype_t type);
 
 
 json_t itype_to_json(const itype_t& itype);
@@ -277,6 +278,15 @@ itype_t itype_from_json(const json_t& j);
 //	Each type has exactly ONE ID.
 //	Automatically insert all basetype-types so they ALWAYS have EXPLICIT integer IDs as itypes.
 
+struct type_node_t {
+	type_tag_t optional_tag;
+	typeid_t type;
+};
+
+inline bool operator==(const type_node_t& lhs, const type_node_t& rhs){
+	return lhs.optional_tag == rhs.optional_tag && lhs.type == rhs.type;
+}
+
 struct type_interner_t {
 	type_interner_t();
 
@@ -287,25 +297,31 @@ struct type_interner_t {
 
 	//	All types are recorded here, an uniqued. Including tagged types.
 	//	itype uses the INDEX into this array for fast lookups.
-	std::vector<std::pair<type_tag_t, typeid_t>> interned2;
+	std::vector<type_node_t> interned2;
 };
 
 
 //	Records AND resolves the type. The returned type may be improved over input type.
 itype_t intern_anonymous_type(type_interner_t& interner, const typeid_t& type);
 
-//	Allocates a new itype for this tag. The tag must not already exist.
-//	Interns the type for this tag. You can use typeid_t::make_undefined() and later update the type using update_tagged_type()
-itype_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag, const typeid_t& type);
 
-//	Update the tagged type's type. The tagged type must already exist. Any usage of this tag will also get the new type.
-void update_tagged_type(type_interner_t& interner, const type_tag_t& tag, const typeid_t& type);
+
+//	Allocates a new itype for this tag. The tag must not already exist.
+//	Interns the type for this tag. You can use typeid_t::make_undefined() and
+//	later update the type using update_tagged_type()
+itype_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag);
+void new_tagged_type(type_interner_t& interner, const type_tag_t& tag, const itype_t& type);
+
+//	Update the tagged type's type. The tagged type must already exist. Any usage of this
+//	tag will also get the new type.
+void update_tagged_type(type_interner_t& interner, const type_tag_t& tag, const itype_t& type);
+
+const type_node_t& get_tagged_type(const type_interner_t& interner, const type_tag_t& tag);
 
 itype_t lookup_itype_from_typeid(const type_interner_t& interner, const typeid_t& type);
-inline const typeid_t& lookup_typeid_from_itype(const type_interner_t& interner, const itype_t& type);
-inline const std::pair<type_tag_t, typeid_t>& lookup_typeinfo_from_itype(const type_interner_t& interner, const itype_t& type);
+const typeid_t& lookup_typeid_from_itype(const type_interner_t& interner, const itype_t& type);
+const type_node_t& lookup_typeinfo_from_itype(const type_interner_t& interner, const itype_t& type);
 itype_t lookup_itype_from_tagged_type(const type_interner_t& interner, const type_tag_t& tag);
-
 
 void trace_type_interner(const type_interner_t& interner);
 
@@ -315,6 +331,16 @@ typeid_t explore_type_description(const type_interner_t& interner, const itype_t
 
 //	Compares the desci
 bool compare_types_structurally(const type_interner_t& interner, const typeid_t& lhs, const typeid_t& rhs);
+
+
+
+
+
+
+
+json_t type_interner_to_json(const type_interner_t& interner);
+type_interner_t type_interner_from_json(const json_t& j);
+
 
 
 
@@ -415,61 +441,6 @@ itype_t intern_anonymous_type(type_interner_t& interner, const ast_type_t& type)
 itype_t lookup_itype_from_asttype(const type_interner_t& interner, const ast_type_t& type);
 
 
-
-
-
-//////////////////////////////////////////////////		INLINES
-
-
-
-//	Used at runtime.
-inline const typeid_t& lookup_typeid_from_itype(const type_interner_t& interner, const itype_t& type){
-	QUARK_ASSERT(interner.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	const auto lookup_index = type.get_lookup_index();
-	QUARK_ASSERT(lookup_index >= 0);
-	QUARK_ASSERT(lookup_index < interner.interned2.size());
-
-	const auto& result = interner.interned2[lookup_index].second;
-	return result;
-}
-
-inline const std::pair<type_tag_t, typeid_t>& lookup_typeinfo_from_itype(const type_interner_t& interner, const itype_t& type){
-	QUARK_ASSERT(interner.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	const auto lookup_index = type.get_lookup_index();
-	QUARK_ASSERT(lookup_index >= 0);
-	QUARK_ASSERT(lookup_index < interner.interned2.size());
-
-	const auto& result = interner.interned2[lookup_index];
-	return result;
-}
-
-
-inline bool is_atomic_type(itype_t type){
-	const auto bt = type.get_base_type();
-	if(
-		bt == base_type::k_undefined
-		|| bt == base_type::k_any
-		|| bt == base_type::k_void
-
-		|| bt == base_type::k_bool
-		|| bt == base_type::k_int
-		|| bt == base_type::k_double
-		|| bt == base_type::k_string
-		|| bt == base_type::k_json
-
-		|| bt == base_type::k_typeid
-		|| bt == base_type::k_identifier
-	){
-		return true;
-	}
-	else{
-		return false;
-	}
-}
 
 
 

@@ -2005,6 +2005,7 @@
 					"$(PROJECT_DIR)",
 					/usr/local/Cellar/llvm/8.0.1/lib,
 				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				PRODUCT_NAME = floyd;
 			};
 			name = "Release - Profiling";
@@ -2136,6 +2137,7 @@
 					"$(PROJECT_DIR)",
 					/usr/local/Cellar/llvm/8.0.1/lib,
 				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				PRODUCT_NAME = floyd;
 			};
 			name = Debug;
@@ -2148,6 +2150,7 @@
 					"$(PROJECT_DIR)",
 					/usr/local/Cellar/llvm/8.0.1/lib,
 				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				PRODUCT_NAME = floyd;
 			};
 			name = Release;

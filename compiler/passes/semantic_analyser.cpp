@@ -117,15 +117,6 @@ static itype_t get_tagged_type_symbol(const symbol_t& symbol){
 	return symbol._value_type;
 }
 
-static const std::pair<type_tag_t, typeid_t>& get_tagged_tag(const analyser_t& a, const std::string& identifier){
-	const std::pair<const symbol_t*, symbol_pos_t> symbol_kv = find_symbol_by_name(a, identifier);
-	QUARK_ASSERT(symbol_kv.first != nullptr && symbol_kv.first->_symbol_type == symbol_t::symbol_type::named_type);
-
-	const auto itype = symbol_kv.first->get_value_type();
-	const auto& info = lookup_typeinfo_from_itype(a._types, itype);
-	QUARK_ASSERT((info.first == make_empty_type_tag()) == false);
-	return info;
-}
 
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
@@ -287,6 +278,7 @@ static itype_t resolve_and_intern_itype_from_typeid(analyser_t& acc, const locat
 #if DEBUG
 			if(false) trace_type_interner(acc._types);
 #endif
+//			const auto resolved = lookup_itype_from_typeid(acc._types, type);
 			const auto resolved = resolve_and_intern_internal(acc, loc, type);
 
 #if DEBUG
@@ -603,7 +595,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 	const auto new_local_name = statement._new_local_name;
 
 #if DEBUG
-	if(true) trace_type_interner(a_acc._types);
+	if(false) trace_type_interner(a_acc._types);
 #endif
 
 	//	If lhs may be
@@ -2251,7 +2243,8 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 }
 
 static type_tag_t make_type_tag(analyser_t& a, const std::string& identifier){
-	const auto id = a.scope_id_generator++;
+//	const auto id = a.scope_id_generator++;
+	const auto id = 1;
 
 	//??? TOOD: user proper hiearchy of lexical scopes, not a flat list of generated ID:s. This requires a name--string in each lexical_scope_t.
 
@@ -2273,26 +2266,22 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 	}
 
 	const auto name_tag = make_type_tag(a_acc, identifier);
-	const auto named_itype = new_tagged_type(a_acc._types, name_tag, typeid_t::make_undefined());
+	const auto named_itype = new_tagged_type(a_acc._types, name_tag);
 
 	const auto type_name_symbol = symbol_t::make_named_type(named_itype);
 	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ identifier, type_name_symbol });
 
 	const auto struct_typeid1 = typeid_t::make_struct2(details.def->_members);
-	const auto struct_typeid2 = struct_typeid1;
 
 	//	Update our temporary. Notice that we need to find it again since other types might have been inserted since.
-//	const auto symbol2 = symbol_t::make_named_type(lookup_itype_from_typeid(a_acc._types, struct_typeid2));
-//	a_acc._lexical_scope_stack.back().symbols._symbols[symbol_index].second = symbol2;
+	const auto itype = intern_anonymous_type(a_acc._types, struct_typeid1);
+	update_tagged_type(a_acc._types, name_tag, itype);
 
-	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid2);
-
-	update_tagged_type(a_acc._types, name_tag, struct_typeid2);
-
+	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid1);
 	const auto r = expression_t::make_literal(struct_typeid_value);
 
 #if DEBUG
-	if(true) trace_type_interner(a_acc._types);
+	if(false) trace_type_interner(a_acc._types);
 #endif
 
 	return { a_acc, r };
@@ -2633,23 +2622,13 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 	symbol_map.push_back( { "json_false", symbol_t::make_immutable_precalc(itype_t::make_int(), value_t::make_int(6)) });
 	symbol_map.push_back( { "json_null", symbol_t::make_immutable_precalc(itype_t::make_int(), value_t::make_int(7)) });
 
+	const auto benchmark_result_itype = resolve_and_intern_itype_from_typeid(a, k_no_location, make_benchmark_result_t());
+	new_tagged_type(a._types, make_type_tag(a, "benchmark_result_t"), benchmark_result_itype);
+	symbol_map.push_back( { "benchmark_result_t", symbol_t::make_named_type(benchmark_result_itype) } );
 
-
-	symbol_map.push_back( {
-		"benchmark_result_t",
-		symbol_t::make_named_type(
-			new_tagged_type(a._types, make_type_tag(a, "benchmark_result_t"), make_benchmark_result_t())
-		)
-	} );
-
-	symbol_map.push_back( {
-		"benchmark_def_t",
-		symbol_t::make_named_type(
-			new_tagged_type(a._types, make_type_tag(a, "benchmark_def_t"), make_benchmark_def_t())
-		)
-	} );
-
-
+	const auto benchmark_def_itype = resolve_and_intern_itype_from_typeid(a, k_no_location, make_benchmark_def_t());
+	new_tagged_type(a._types, make_type_tag(a, "benchmark_def_t"), benchmark_def_itype);
+	symbol_map.push_back( { "benchmark_def_t", symbol_t::make_named_type(benchmark_def_itype)} );
 
 	//	Reserve a symbol table entry for benchmark_registry instance.
 	{

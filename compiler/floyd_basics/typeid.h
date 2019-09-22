@@ -684,7 +684,7 @@ void ut_verify(const quark::call_context_t& context, const typeid_t& result, con
 
 struct type_tag_t {
 	bool check_invariant() const {
-		QUARK_ASSERT(lexical_path.size() > 0);
+//		QUARK_ASSERT(lexical_path.size() > 0);
 		return true;
 	}
 
@@ -694,6 +694,9 @@ struct type_tag_t {
 
 inline bool operator==(const type_tag_t& lhs, const type_tag_t& rhs){
 	return lhs.lexical_path == rhs.lexical_path;
+}
+inline bool operator<(const type_tag_t& lhs, const type_tag_t& rhs){
+	return lhs.lexical_path < rhs.lexical_path;
 }
 
 //	A type tag is a unique string that names a type that should only type-equivalent to itself, no other types.

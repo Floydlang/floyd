@@ -1037,13 +1037,13 @@ value_backend_t::value_backend_t(
 	QUARK_ASSERT(config.check_invariant());
 
 	for(const auto& e: type_interner.interned2){
-		if(e.second.is_vector()){
-			const auto& type = e.second.get_vector_element_type();
+		if(e.type.is_vector()){
+			const auto& type = e.type.get_vector_element_type();
 			const auto itype = lookup_itype_from_typeid(type_interner, type);
 			child_type.push_back(itype);
 		}
-		else if(e.second.is_dict()){
-			const auto& type = e.second.get_dict_value_type();
+		else if(e.type.is_dict()){
+			const auto& type = e.type.get_dict_value_type();
 			const auto itype = lookup_itype_from_typeid(type_interner, type);
 			child_type.push_back(itype);
 		}
