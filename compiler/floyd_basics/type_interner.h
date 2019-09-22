@@ -265,6 +265,9 @@ itype_t itype_from_json(const json_t& j);
 
 
 
+
+
+
 //////////////////////////////////////////////////		type_interner_t
 
 
