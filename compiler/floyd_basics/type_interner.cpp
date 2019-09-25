@@ -21,6 +21,158 @@ namespace floyd {
 
 
 
+
+
+
+
+//////////////////////////////////////////////////		itype_t
+
+
+
+
+itype_t itype_t::get_vector_element_type(const type_interner_t& interner) const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(is_vector());
+
+	const auto& info = lookup_typeinfo_from_itype(interner, *this);
+	return lookup_itype_from_typeid(interner, info.type.get_vector_element_type());
+}
+itype_t itype_t::get_dict_value_type(const type_interner_t& interner) const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(is_dict());
+
+	const auto& info = lookup_typeinfo_from_itype(interner, *this);
+	return lookup_itype_from_typeid(interner, info.type.get_dict_value_type());
+}
+
+
+
+
+struct_def_itype_t itype_t::get_struct(const type_interner_t& interner) const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(is_struct());
+
+	const auto& info = lookup_typeinfo_from_itype(interner, *this);
+	QUARK_ASSERT(info.type.is_struct());
+
+	const auto members = info.type.get_struct()._members;
+	std::vector<member_itype_t> members2;
+	for(const auto& m: members){
+		const auto m_itype = lookup_itype_from_typeid(interner, m._type);
+		members2.push_back(member_itype_t { m._name, m_itype } );
+	}
+	return { members2 };
+}
+
+
+
+itype_t itype_t::get_function_return(const type_interner_t& interner) const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(is_function());
+	QUARK_ASSERT(interner.check_invariant());
+
+	const auto& info = lookup_typeinfo_from_itype(interner, *this);
+	return lookup_itype_from_typeid(interner, info.type.get_function_return());
+}
+
+std::vector<itype_t> itype_t::get_function_args(const type_interner_t& interner) const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(is_function());
+	QUARK_ASSERT(interner.check_invariant());
+
+	const auto& info = lookup_typeinfo_from_itype(interner, *this);
+	const auto& args = info.type.get_function_args();
+
+	const auto args2 = mapf<itype_t>(args, [&](const auto& e){ return lookup_itype_from_typeid(interner, e); } );
+	return args2;
+}
+
+typeid_t::return_dyn_type itype_t::get_function_dyn_return_type(const type_interner_t& interner) const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(is_function());
+	QUARK_ASSERT(interner.check_invariant());
+
+	const auto& info = lookup_typeinfo_from_itype(interner, *this);
+	return info.type.get_function_dyn_return_type();
+}
+
+epure itype_t::get_function_pure(const type_interner_t& interner) const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(is_function());
+	QUARK_ASSERT(interner.check_invariant());
+
+	const auto& info = lookup_typeinfo_from_itype(interner, *this);
+	return info.type.get_function_pure();
+}
+
+
+
+
+
+int find_struct_member_index(const struct_def_itype_t& def, const std::string& name){
+	int index = 0;
+	while(index < def._members.size() && def._members[index]._name != name){
+		index++;
+	}
+	if(index == def._members.size()){
+		return -1;
+	}
+	else{
+		return index;
+	}
+}
+
+
+
+//////////////////////////////////////////////////		OTHER
+
+
+
+
+static bool is_type_supported(const typeid_t& type){
+	if(type.is_any()){
+		return true;
+	}
+	else if(type.is_identifier()){
+		const auto s = type.get_identifier();
+		if(is_type_tag(s)){
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+	else{
+		return true;
+	}
+}
+
+
+static std::vector<type_node_t>::const_iterator find_type(const type_interner_t& interner, const typeid_t& type){
+	if(type.is_identifier()){
+		QUARK_ASSERT(is_type_tag(type.get_identifier()));
+
+		const auto wanted_tag = unpack_type_tag(type.get_identifier());
+		const auto it = std::find_if(
+			interner.interned2.begin(),
+			interner.interned2.end(),
+			[&](const auto& e){ return e.optional_tag == wanted_tag; }
+		);
+		return it;
+	}
+	else{
+		const auto it = std::find_if(
+			interner.interned2.begin(),
+			interner.interned2.end(),
+			[&](const auto& e){ return e.type == type; }
+		);
+		return it;
+	}
+}
+
 //////////////////////////////////////////////////		type_interner_t
 
 
@@ -54,7 +206,7 @@ type_interner_t::type_interner_t(){
 	interned2.push_back(make_entry(typeid_t::make_undefined()));
 	interned2.push_back(make_entry(typeid_t::make_undefined()));
 
-	interned2.push_back(make_entry(typeid_t::make_identifier("-")));
+	interned2.push_back(make_entry(typeid_t::make_identifier(pack_type_tag(make_empty_type_tag()))));
 
 	QUARK_ASSERT(check_invariant());
 }
@@ -78,7 +230,9 @@ bool type_interner_t::check_invariant() const {
 	QUARK_ASSERT(interned2[(int)base_type::k_vector] == make_entry(typeid_t::make_undefined()));
 	QUARK_ASSERT(interned2[(int)base_type::k_dict] == make_entry(typeid_t::make_undefined()));
 	QUARK_ASSERT(interned2[(int)base_type::k_function] == make_entry(typeid_t::make_undefined()));
-	QUARK_ASSERT(interned2[(int)base_type::k_identifier] == make_entry(typeid_t::make_identifier("-")));
+
+	const auto x = typeid_t::make_identifier(pack_type_tag(make_empty_type_tag()));
+	QUARK_ASSERT(interned2[(int)base_type::k_identifier] == make_entry(x) );
 
 
 	//??? Add other common combinations, like vectors with each atomic type, dict with each atomic
@@ -87,7 +241,7 @@ bool type_interner_t::check_invariant() const {
 }
 
 static itype_t make_itype_from_parts(int lookup_index, const typeid_t& type){
-	QUARK_ASSERT(type.is_identifier() == false);
+	QUARK_ASSERT(is_type_supported(type));
 
 	if(type.is_struct()){
 		return itype_t::make_struct(lookup_index);
@@ -114,12 +268,12 @@ static itype_t make_itype_from_parts(int lookup_index, const typeid_t& type){
 //	Adds type. Also interns any child types, as needed.
 //	Child types guaranteed to have lower itype indexes.
 //	Attempts to resolve all identifer-types by looking up tagged types.
-//	Tag type can be empty = annonumous type.
+//	Tag type can be empty = anonymous type.
 static itype_t allocate(type_interner_t& interner, const type_tag_t& tag, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(tag.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(type.is_identifier() == false);
+	QUARK_ASSERT(is_type_supported(type));
 
 	struct visitor_t {
 		type_interner_t& interner;
@@ -213,12 +367,10 @@ static itype_t allocate(type_interner_t& interner, const type_tag_t& tag, const 
 			return itype_t::make_function(lookup_index);
 		}
 		itype_t operator()(const typeid_t::identifier_t& e) const {
-			QUARK_ASSERT(false);
-
 			const auto identifier = type.get_identifier();
-			QUARK_ASSERT(identifier != "");
+			QUARK_ASSERT(is_type_tag(identifier));
 
-			const auto type2 = typeid_t::make_identifier(identifier);
+			const auto type2 = type;
 			interner.interned2.push_back(type_node_t{ tag, type2 });
 
 			const auto lookup_index = static_cast<int32_t>(interner.interned2.size() - 1);
@@ -240,11 +392,11 @@ itype_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag){
 	QUARK_ASSERT(tag.check_invariant());
 
 	const auto itype = itype_t::make_undefined();
-	new_tagged_type(interner, tag, itype);
-	return itype;
+	const auto result = new_tagged_type(interner, tag, itype);
+	return result;
 }
 
-void new_tagged_type(type_interner_t& interner, const type_tag_t& tag, const itype_t& type){
+itype_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag, const itype_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(tag.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -264,12 +416,36 @@ void new_tagged_type(type_interner_t& interner, const type_tag_t& tag, const ity
 	const auto type2 = lookup_typeid_from_itype(interner, type);
 	interner.interned2.push_back( type_node_t { tag, type2 } );
 
+	const auto lookup_index = static_cast<int32_t>(interner.interned2.size() - 1);
+
+//	const auto result = make_itype_from_parts(lookup_index, type2);
+	const auto bt = type.get_base_type();
+	const auto result = itype_t::assemble2(lookup_index, bt, base_type::k_undefined);
+
 	if(true) trace_type_interner(interner);
+
+	return result;
 }
 
-void update_tagged_type(type_interner_t& interner, const type_tag_t& tag, const itype_t& type){
+itype_t update_tagged_type(type_interner_t& interner, const itype_t& named, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(named.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
+
+	auto& node = lookup_typeinfo_from_itype(interner, named);
+	QUARK_ASSERT(node.type == typeid_t::make_undefined());
+
+	node.type = type;
+
+	const auto lookup_index = named.get_lookup_index();
+	const auto bt = type.get_base_type();
+	const auto result = itype_t::assemble2(lookup_index, bt, base_type::k_undefined);
+	return result;
+}
+
+itype_t get_tagged_type2(const type_interner_t& interner, const type_tag_t& tag){
+	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(tag.check_invariant());
 
 	const auto it = std::find_if(
 		interner.interned2.begin(),
@@ -279,11 +455,9 @@ void update_tagged_type(type_interner_t& interner, const type_tag_t& tag, const 
 	if(it == interner.interned2.end()){
 		throw std::exception();
 	}
-
-	QUARK_ASSERT(it->type == typeid_t::make_undefined());
-
-	//??? Lose typeid here!
-	it->type = lookup_typeid_from_itype(interner, type);
+	const auto index = it - interner.interned2.begin();
+	const auto lookup_index = static_cast<int32_t>(index);
+	return make_itype_from_parts(lookup_index, it->type);
 }
 
 const type_node_t& get_tagged_type(const type_interner_t& interner, const type_tag_t& tag){
@@ -303,10 +477,10 @@ const type_node_t& get_tagged_type(const type_interner_t& interner, const type_t
 
 
 
-static typeid_t explore_type_description(const type_interner_t& interner, const typeid_t& type){
+static typeid_t flatten_type_description_deep_internal(const type_interner_t& interner, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(type.is_identifier() == false);
+	QUARK_ASSERT(is_type_supported(type));
 
 	struct visitor_t {
 		const type_interner_t& interner;
@@ -349,7 +523,7 @@ static typeid_t explore_type_description(const type_interner_t& interner, const 
 			for(const auto& m: struct_def._members){
 				members2.push_back(
 					member_t(
-						explore_type_description(interner, lookup_itype_from_typeid(interner, m._type)),
+						flatten_type_description_deep(interner, lookup_itype_from_typeid(interner, m._type)),
 						m._name
 					)
 				);
@@ -360,7 +534,7 @@ static typeid_t explore_type_description(const type_interner_t& interner, const 
 		typeid_t operator()(const typeid_t::vector_t& e) const{
 			QUARK_ASSERT(e._parts.size() == 1);
 
-			const auto element_type2 = explore_type_description(interner, lookup_itype_from_typeid(interner, e._parts[0]));
+			const auto element_type2 = flatten_type_description_deep(interner, lookup_itype_from_typeid(interner, e._parts[0]));
 			const auto type2 = typeid_t::make_vector(element_type2);
 			return type2;
 
@@ -368,7 +542,7 @@ static typeid_t explore_type_description(const type_interner_t& interner, const 
 		typeid_t operator()(const typeid_t::dict_t& e) const{
 			QUARK_ASSERT(e._parts.size() == 1);
 
-			const auto element_type2 = explore_type_description(interner, lookup_itype_from_typeid(interner, e._parts[0]));
+			const auto element_type2 = flatten_type_description_deep(interner, lookup_itype_from_typeid(interner, e._parts[0]));
 			const auto type2 = typeid_t::make_dict(element_type2);
 			return type2;
 		}
@@ -378,13 +552,12 @@ static typeid_t explore_type_description(const type_interner_t& interner, const 
 			const auto pure = type.get_function_pure();
 			const auto dyn_return_type = type.get_function_dyn_return_type();
 
-			const auto ret2 = explore_type_description(interner, ret);
-			const std::vector<typeid_t> args2 = mapf<typeid_t>(args, [&interner = interner](const auto& e){ return explore_type_description(interner, e); }); 
+			const auto ret2 = flatten_type_description_deep_internal(interner, ret);
+			const std::vector<typeid_t> args2 = mapf<typeid_t>(args, [&interner = interner](const auto& e){ return flatten_type_description_deep_internal(interner, e); }); 
 			const auto type2 = typeid_t::make_function3(ret2, args2, pure, dyn_return_type);
 			return type2;
 		}
 		typeid_t operator()(const typeid_t::identifier_t& e) const {
-/*
 			const auto identifier = type.get_identifier();
 			QUARK_ASSERT(identifier != "");
 
@@ -392,23 +565,16 @@ static typeid_t explore_type_description(const type_interner_t& interner, const 
 			const auto tag = unpack_type_tag(identifier);
 
 			//	Find the itype the current itype refers to using its name.
-			const auto it = std::find_if(interner.interned2.begin(),
+			const auto it = std::find_if(
+				interner.interned2.begin(),
 				interner.interned2.end(),
-				[&tag](const auto& m){ return m.first == tag; }
+				[&tag](const auto& m){ return m.optional_tag == tag; }
 			);
 			if(it == interner.interned2.end()){
 				throw std::exception();
 			}
 
-			const auto& type2 = it->second;
-			const auto lookup_index = static_cast<int32_t>(it - interner.interned2.begin());
-			const auto itype2 = make_itype_from_parts(lookup_index, type2);
-
-			return explore_type_description(interner, itype2);
-*/
-			QUARK_ASSERT(false);
-			throw std::exception();
-
+			return flatten_type_description_deep_internal(interner, it->type);
 		}
 	};
 
@@ -417,39 +583,77 @@ static typeid_t explore_type_description(const type_interner_t& interner, const 
 	QUARK_ASSERT(interner.check_invariant());
 	return result;
 }
-
-//	Only exposes the function that takes an itype_t, to force clients to go via interner.
-typeid_t explore_type_description(const type_interner_t& interner, const itype_t& type){
+typeid_t flatten_type_description_deep(const type_interner_t& interner, const itype_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto& type2 = lookup_typeid_from_itype(interner, type);
-	return explore_type_description(interner, type2);
+	const auto& result = lookup_typeinfo_from_itype(interner, type);
+	return flatten_type_description_deep_internal(interner, result.type);
 }
 
-bool compare_types_structurally(const type_interner_t& interner, const typeid_t& lhs, const typeid_t& rhs){
+
+
+
+
+
+
+itype_t peek(const type_interner_t& interner, const itype_t& type){
 	QUARK_ASSERT(interner.check_invariant());
-	QUARK_ASSERT(lhs.check_invariant());
-	QUARK_ASSERT(rhs.check_invariant());
-	QUARK_ASSERT(lhs.is_identifier() == false);
-	QUARK_ASSERT(rhs.is_identifier() == false);
+	QUARK_ASSERT(type.check_invariant());
 
-	const auto lhs_description = explore_type_description(interner, lhs);
-	const auto rhs_description = explore_type_description(interner, rhs);
-	return lhs == rhs;
+	const auto& info = lookup_typeinfo_from_itype(interner, type);
+	if(info.type.is_identifier()){
+		const auto identifier = info.type.get_identifier();
+
+		QUARK_ASSERT(is_type_tag(info.type.get_identifier()));
+		const auto tag = unpack_type_tag(identifier);
+
+		//	Find the itype the current itype refers to using its name.
+		const auto it = std::find_if(
+			interner.interned2.begin(),
+			interner.interned2.end(),
+			[&tag](const auto& m){ return m.optional_tag == tag; }
+		);
+		if(it == interner.interned2.end()){
+			throw std::exception();
+		}
+
+		const auto index = it - interner.interned2.begin();
+		const auto lookup_index = static_cast<int32_t>(index);
+		const auto result = make_itype_from_parts(lookup_index, it->type);
+
+		//	Support many linked tags.
+		return peek(interner, result);
+	}
+	else{
+		return type;
+	}
 }
+
+itype_t refresh_itype(const type_interner_t& interner, const itype_t& type){
+	const auto lookup_index = type.get_lookup_index();
+	QUARK_ASSERT(lookup_index >= 0);
+	QUARK_ASSERT(lookup_index < interner.interned2.size());
+
+	const auto& a = interner.interned2[lookup_index];
+
+	return make_itype_from_parts(lookup_index, a.type);
+}
+
+
 
 
 itype_t intern_anonymous_type(type_interner_t& interner, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(type.is_identifier() == false);
+	QUARK_ASSERT(is_type_supported(type));
 
-	const auto wanted = type_node_t { make_empty_type_tag(), type };
+	//	If this is true, it's not anonymous!
+//	QUARK_ASSERT(type.is_identifier() == false);
 
-	const auto it = std::find_if(interner.interned2.begin(), interner.interned2.end(), [&](const auto& e){ return e == wanted; });
+	const auto it = find_type(interner, type);
 
-	//	This name already exists, should we update it?
+	//	This name already exists?
 	if(it != interner.interned2.end()){
 		const auto index = it - interner.interned2.begin();
 		const auto lookup_index = static_cast<int32_t>(index);
@@ -519,29 +723,28 @@ QUARK_TEST("type_interner_t", "new_tagged_type()", "Nested types", "Nested types
 
 
 
-
-
 itype_t lookup_itype_from_typeid(const type_interner_t& interner, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(type.is_identifier() == false);
+	QUARK_ASSERT(is_type_supported(type));
 
-	const auto wanted = type_node_t { make_empty_type_tag(), type };
-	const auto it = std::find_if(
-		interner.interned2.begin(),
-		interner.interned2.end(),
-		[&](const auto& e){ return e == wanted; }
-	);
+	const auto it = find_type(interner, type);
 	if(it != interner.interned2.end()){
 		const auto index = it - interner.interned2.begin();
 		const auto lookup_index = static_cast<int32_t>(index);
 		return make_itype_from_parts(lookup_index, it->type);
 	}
-#if DEBUG
-	if(true) trace_type_interner(interner);
-#endif
 	throw std::exception();
 }
+
+itype_t lookup_itype_from_index(const type_interner_t& interner, int type_index){
+	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(type_index >= 0 && type_index < interner.interned2.size());
+
+	const auto& a = interner.interned2[type_index];
+	return make_itype_from_parts(type_index, a.type);
+}
+
 
 itype_t lookup_itype_from_tagged_type(const type_interner_t& interner, const type_tag_t& tag){
 	QUARK_ASSERT(interner.check_invariant());
@@ -643,26 +846,7 @@ QUARK_TEST("type_interner_t", "type_interner_t()", "Check that built in types wo
 	QUARK_UT_VERIFY(lookup_typeid_from_itype(a, itype_t::make_typeid()) == typeid_t::make_typeid());
 }
 
-static typeid_t xxx_make_benchmark_result_t(){
-	const auto x = typeid_t::make_struct2( {
-		member_t{ typeid_t::make_int(), "dur" },
-		member_t{ typeid_t::make_json(), "more" }
-	} );
-	return x;
-}
 
-static typeid_t xxx_make_benchmark_function_t(){
-//	return typeid_t::make_function(typeid_t::make_vector(make_benchmark_result_t()), {}, epure::pure);
-	return typeid_t::make_function(typeid_t::make_identifier("benchmark_result_t"), {}, epure::pure);
-}
-
-static typeid_t xxx_make_benchmark_def_t(){
-	const auto x = typeid_t::make_struct2( {
-		member_t{ typeid_t::make_string(), "name" },
-		member_t{ make_benchmark_function_t(), "f" }
-	} );
-	return x;
-}
 
 
 static type_tag_t xxx_make_type_tag(const std::string& identifier){
@@ -676,15 +860,38 @@ static type_tag_t xxx_make_type_tag(const std::string& identifier){
 	return type_tag_t { { b, identifier } };
 }
 
-//test
+static typeid_t xxx_make_benchmark_result_t(){
+	const auto x = typeid_t::make_struct2( {
+		member_t{ typeid_t::make_int(), "dur" },
+		member_t{ typeid_t::make_json(), "more" }
+	} );
+	return x;
+}
+
+static typeid_t xxx_make_benchmark_function_t(){
+//	return typeid_t::make_function(typeid_t::make_vector(make_benchmark_result_t()), {}, epure::pure);
+
+	const auto tag = pack_type_tag(xxx_make_type_tag("benchmark_result_t"));
+	return typeid_t::make_function(typeid_t::make_identifier(tag), {}, epure::pure);
+}
+
+static typeid_t xxx_make_benchmark_def_t(){
+	const auto x = typeid_t::make_struct2( {
+		member_t{ typeid_t::make_string(), "name" },
+		member_t{ xxx_make_benchmark_function_t(), "f" }
+	} );
+	return x;
+}
+
 QUARK_TEST("type_interner_t", "type_interner_t()", "Check that built in types work with lookup_typeid_from_itype()", ""){
 	type_interner_t a;
 
 	const auto benchmark_result_itype = intern_anonymous_type(a, xxx_make_benchmark_result_t());
-	new_tagged_type(a, xxx_make_type_tag("benchmark_result_t"), benchmark_result_itype);
+	new_tagged_type(a, xxx_make_type_tag("/benchmark_result_t"), benchmark_result_itype);
 
 	const auto benchmark_def_itype = intern_anonymous_type(a, xxx_make_benchmark_def_t());
-	new_tagged_type(a, xxx_make_type_tag("benchmark_def_t"), benchmark_def_itype);
+	new_tagged_type(a, xxx_make_type_tag("/benchmark_def_t"), benchmark_def_itype);
+//???	to_asttype(resolve_and_intern_itype_from_typeid(a, k_no_location, benchmark_registry_type)),
 }
 
 
@@ -711,6 +918,16 @@ itype_t itype_from_json(const json_t& j){
 	else{
 		throw std::exception();
 	}
+}
+
+std::string itype_to_debug_string(const itype_t& itype){
+	std::stringstream s;
+	s << "{ " << itype.get_lookup_index() << ": " << base_type_to_opcode(itype.get_base_type()) << " }";
+	return s.str();
+}
+
+std::string typeid_to_compact_string(const itype_t& itype){
+	return itype_to_debug_string(itype);
 }
 
 
@@ -758,9 +975,9 @@ itype_t lookup_itype_from_asttype(const type_interner_t& interner, const ast_typ
 	}
 }
 
-ast_type_t make_type_name_from_typeid(const typeid_t& type){
+ast_type_t to_asttype(const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(type.is_identifier() == false);
+	QUARK_ASSERT(is_type_supported(type));
 
 	return { type };
 }
@@ -780,7 +997,7 @@ json_t ast_type_to_json(const ast_type_t& name){
 		return json_t();
 	}
 	else if(std::holds_alternative<typeid_t>(name._contents)){
-		return typeid_to_ast_json(std::get<typeid_t>(name._contents), json_tags::k_tag_resolve_state);
+		return typeid_to_ast_json(std::get<typeid_t>(name._contents));
 	}
 	else if(std::holds_alternative<itype_t>(name._contents)){
 		const auto itype = std::get<itype_t>(name._contents);
@@ -790,22 +1007,6 @@ json_t ast_type_to_json(const ast_type_t& name){
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
-/*
-	if(tags == json_tags::k_tag_resolve_state){
-		return json_t(std::string(1, tag_unresolved_type_char) + t.get_identifier());
-	}
-	else if(tags == json_tags::k_plain){
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-
-	}
-	else if(tags == json_tags::k_plain){
-		return json_t(t.get_identifier());
-	}
-*/
-
 }
 
 ast_type_t ast_type_from_json(const json_t& j){
@@ -819,14 +1020,29 @@ ast_type_t ast_type_from_json(const json_t& j){
 	}
 	else {
 		const auto t = typeid_from_ast_json(j);
-		return make_type_name_from_typeid(t);
+		return to_asttype(t);
 	}
 }
 
 std::string ast_type_to_string(const ast_type_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
-	return json_to_compact_string(ast_type_to_json(type));
+	if(std::holds_alternative<std::monostate>(type._contents)){
+		return "none";
+	}
+	else if(std::holds_alternative<typeid_t>(type._contents)){
+//		cpmst typeid_to_ast_json(std::get<typeid_t>(type._contents), json_tags::k_tag_resolve_state);
+		return typeid_to_compact_string(std::get<typeid_t>(type._contents));
+	}
+	else if(std::holds_alternative<itype_t>(type._contents)){
+		const auto itype = std::get<itype_t>(type._contents);
+
+		return std::string() + "itype " + itype_to_debug_string(itype);
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
 }
 
 
@@ -842,7 +1058,7 @@ json_t type_interner_to_json(const type_interner_t& interner){
 	for(auto i = 0 ; i < interner.interned2.size() ; i++){
 		const auto& e = interner.interned2[i];
 		const auto tag = pack_type_tag(e.optional_tag);
-		const auto desc = typeid_to_ast_json(e.type, json_tags::k_tag_resolve_state);
+		const auto desc = typeid_to_ast_json(e.type);
 		const auto x = json_t::make_object({
 			{ "tag", tag },
 			{ "desc", desc }
@@ -875,16 +1091,30 @@ type_interner_t type_interner_from_json(const json_t& j){
 
 
 
-const typeid_t& lookup_typeid_from_itype(const type_interner_t& interner, const itype_t& type){
+typeid_t lookup_typeid_from_itype(const type_interner_t& interner, const itype_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto lookup_index = type.get_lookup_index();
-	QUARK_ASSERT(lookup_index >= 0);
-	QUARK_ASSERT(lookup_index < interner.interned2.size());
+	const auto& result = lookup_typeinfo_from_itype(interner, type);
+	if(is_empty_type_tag(result.optional_tag)){
+		return result.type;
+	}
+	else{
+		return typeid_t::make_identifier(pack_type_tag(result.optional_tag));
+	}
+}
 
-	const auto& result = interner.interned2[lookup_index];
-	return result.type;
+const typeid_t& lookup_typeid_from_itype__only_anonymous(const type_interner_t& interner, const itype_t& type){
+	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto& result = lookup_typeinfo_from_itype(interner, type);
+	if(is_empty_type_tag(result.optional_tag)){
+		return result.type;
+	}
+	else{
+		throw std::exception();
+	}
 }
 
 const type_node_t& lookup_typeinfo_from_itype(const type_interner_t& interner, const itype_t& type){
@@ -896,6 +1126,17 @@ const type_node_t& lookup_typeinfo_from_itype(const type_interner_t& interner, c
 	QUARK_ASSERT(lookup_index < interner.interned2.size());
 
 	const auto& result = interner.interned2[lookup_index];
+	return result;
+}
+type_node_t& lookup_typeinfo_from_itype(type_interner_t& interner, const itype_t& type){
+	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto lookup_index = type.get_lookup_index();
+	QUARK_ASSERT(lookup_index >= 0);
+	QUARK_ASSERT(lookup_index < interner.interned2.size());
+
+	auto& result = interner.interned2[lookup_index];
 	return result;
 }
 

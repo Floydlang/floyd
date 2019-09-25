@@ -25,12 +25,12 @@ namespace floyd {
 bc_value_t bc_corelib__make_benchmark_report(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type == typeid_t::make_vector(make_benchmark_result2_t()));
+	QUARK_ASSERT(args[0]._type == lookup_itype_from_typeid(vm._imm->_program._types, typeid_t::make_vector(make_benchmark_result2_t())));
 
-	const auto b2 = bc_to_value(args[0]);
+	const auto b2 = bc_to_value(vm._imm->_program._types, args[0]);
 	const auto test_results = unpack_vec_benchmark_result2_t(b2);
 	const auto report = make_benchmark_report(test_results);
-	return value_to_bc(value_t::make_string(report));
+	return value_to_bc(vm._imm->_program._types, value_t::make_string(report));
 }
 
 
@@ -48,7 +48,7 @@ bc_value_t bc_corelib__detect_hardware_caps(interpreter_t& vm, const bc_value_t 
 	}
 	
 	const auto result = value_t::make_dict_value(typeid_t::make_json(), caps_map);
-	return value_to_bc(result);
+	return value_to_bc(vm._imm->_program._types, result);
 }
 
 
@@ -56,37 +56,37 @@ bc_value_t bc_corelib__detect_hardware_caps(interpreter_t& vm, const bc_value_t 
 bc_value_t bc_corelib__make_hardware_caps_report(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type == typeid_t::make_dict(typeid_t::make_json()));
+	QUARK_ASSERT(args[0]._type == lookup_itype_from_typeid(vm._imm->_program._types, typeid_t::make_dict(typeid_t::make_json())));
 
-	const auto b2 = bc_to_value(args[0]);
+	const auto b2 = bc_to_value(vm._imm->_program._types, args[0]);
 	const auto m = b2.get_dict_value();
 	std::vector<std::pair<std::string, json_t>> caps;
 	for(const auto& e: m){
 		caps.push_back({ e.first, e.second.get_json() });
 	}
 	const auto s = corelib_make_hardware_caps_report(caps);
-	return value_to_bc(value_t::make_string(s));
+	return value_to_bc(vm._imm->_program._types, value_t::make_string(s));
 }
 bc_value_t bc_corelib__make_hardware_caps_report_brief(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type == typeid_t::make_dict(typeid_t::make_json()));
+	QUARK_ASSERT(args[0]._type == lookup_itype_from_typeid(vm._imm->_program._types, typeid_t::make_dict(typeid_t::make_json())));
 
-	const auto b2 = bc_to_value(args[0]);
+	const auto b2 = bc_to_value(vm._imm->_program._types, args[0]);
 	const auto m = b2.get_dict_value();
 	std::vector<std::pair<std::string, json_t>> caps;
 	for(const auto& e: m){
 		caps.push_back({ e.first, e.second.get_json() });
 	}
 	const auto s = corelib_make_hardware_caps_report_brief(caps);
-	return value_to_bc(value_t::make_string(s));
+	return value_to_bc(vm._imm->_program._types, value_t::make_string(s));
 }
 bc_value_t bc_corelib__get_current_date_and_time_string(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
 
 	const auto s = get_current_date_and_time_string();
-	return value_to_bc(value_t::make_string(s));
+	return value_to_bc(vm._imm->_program._types, value_t::make_string(s));
 }
 
 
@@ -119,7 +119,7 @@ bc_value_t bc_corelib__calc_string_sha1(interpreter_t& vm, const bc_value_t args
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
-	const auto v = value_to_bc(result);
+	const auto v = value_to_bc(vm._imm->_program._types, result);
 	return v;
 }
 
@@ -128,7 +128,7 @@ bc_value_t bc_corelib__calc_string_sha1(interpreter_t& vm, const bc_value_t args
 bc_value_t bc_corelib__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type == make__binary_t__type());
+//	QUARK_ASSERT(args[0]._type == make__binary_t__type());
 
 	const auto& sha1_struct = args[0].get_struct_value();
 	QUARK_ASSERT(sha1_struct.size() == make__binary_t__type().get_struct()._members.size());
@@ -149,7 +149,7 @@ bc_value_t bc_corelib__calc_binary_sha1(interpreter_t& vm, const bc_value_t args
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
-	const auto v = value_to_bc(result);
+	const auto v = value_to_bc(vm._imm->_program._types, result);
 	return v;
 }
 
@@ -220,7 +220,7 @@ bc_value_t bc_corelib__get_fsentries_shallow(interpreter_t& vm, const bc_value_t
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
-	const auto v = value_to_bc(vec2);
+	const auto v = value_to_bc(vm._imm->_program._types, vec2);
 
 	return v;
 }
@@ -243,7 +243,7 @@ bc_value_t bc_corelib__get_fsentries_deep(interpreter_t& vm, const bc_value_t ar
 	QUARK_TRACE(json_to_pretty_string(debug._value));
 #endif
 
-	const auto v = value_to_bc(vec2);
+	const auto v = value_to_bc(vm._imm->_program._types, vec2);
 
 	return v;
 }
@@ -258,7 +258,7 @@ bc_value_t bc_corelib__get_fsentry_info(interpreter_t& vm, const bc_value_t args
 	const auto info = corelib_get_fsentry_info(path);
 
 	const auto info2 = pack_fsentry_info(info);
-	const auto v = value_to_bc(info2);
+	const auto v = value_to_bc(vm._imm->_program._types, info2);
 	return v;
 }
 
@@ -270,7 +270,7 @@ bc_value_t bc_corelib__get_fs_environment(interpreter_t& vm, const bc_value_t ar
 	const auto env = corelib_get_fs_environment();
 
 	const auto result = pack_fs_environment_t(env);
-	const auto v = value_to_bc(result);
+	const auto v = value_to_bc(vm._imm->_program._types, result);
 	return v;
 }
 
@@ -290,7 +290,7 @@ bc_value_t bc_corelib__does_fsentry_exist(interpreter_t& vm, const bc_value_t ar
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
-	const auto v = value_to_bc(result);
+	const auto v = value_to_bc(vm._imm->_program._types, result);
 	return v;
 }
 

@@ -73,15 +73,6 @@ struct member_t;
 
 std::string typeid_to_compact_string(const typeid_t& t);
 
-enum class json_tags{
-	k_plain,
-
-	//	Show in the string if the type has been resolved or not. Uses "^hello" or "#world"
-	k_tag_resolve_state
-};
-const char tag_unresolved_type_char = '#';
-const char tag_resolved_type_char = '^';
-
 
 
 #define DEBUG_DEEP_TYPEID_T 1
@@ -495,6 +486,8 @@ struct typeid_t {
 
 		return std::get<function_t>(_contents).pure;
 	}
+
+	//??? remove dyn_return from the type signature.
 	public: return_dyn_type get_function_dyn_return_type() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -667,7 +660,7 @@ std::vector<member_t> members_from_json(const json_t& members);
 
 
 
-json_t typeid_to_ast_json(const typeid_t& t, json_tags tags);
+json_t typeid_to_ast_json(const typeid_t& t);
 typeid_t typeid_from_ast_json(const json_t& t);
 
 
@@ -705,6 +698,9 @@ type_tag_t unpack_type_tag(const std::string& tag);
 bool is_type_tag(const std::string& s);
 
 type_tag_t make_empty_type_tag();
+inline bool is_empty_type_tag(const type_tag_t& tag){
+	return tag.lexical_path.empty();
+}
 
 
 

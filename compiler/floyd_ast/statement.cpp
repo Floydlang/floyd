@@ -69,11 +69,11 @@ static symbol_t::symbol_type symbol_type_from_string(const std::string& s){
 
 std::string symbol_to_string(const symbol_t& s){
 	std::stringstream out;
-	out << "<symbol> {"
+	out << "{ "
 		<< symbol_type_to_string(s._symbol_type)
-		<< " type: " << ast_type_to_string(to_asttype(s._value_type))
-		<< " init: " << (s._init.is_undefined() ? "<none>" : value_and_type_to_string(s._init))
-	<< "}";
+		<< ", type: " << ast_type_to_string(to_asttype(s._value_type))
+		<< ", init: " << (s._init.is_undefined() ? "<none>" : value_and_type_to_string(s._init))
+	<< " }";
 	return out.str();
 }
 
@@ -85,7 +85,7 @@ json_t symbol_to_json(const symbol_t& symbol){
 	const auto e2 = json_t::make_object({
 		{ "symbol_type", symbol_type_str },
 		{ "value_type", value_type },
-		{ "init", value_to_ast_json(symbol._init, json_tags::k_tag_resolve_state) }
+		{ "init", value_to_ast_json(symbol._init) }
 	});
 	return e2;
 }

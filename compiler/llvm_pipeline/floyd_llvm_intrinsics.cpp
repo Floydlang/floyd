@@ -1583,7 +1583,7 @@ static runtime_value_t floyd_llvm_intrinsic__to_pretty_string(floyd_runtime_t* f
 
 	const auto& type0 = lookup_type_ref(r.backend, value_type);
 	const auto& value2 = from_runtime_value(r, value, type0);
-	const auto json = value_to_ast_json(value2, json_tags::k_plain);
+	const auto json = value_to_ast_json(value2);
 	const auto s = json_to_pretty_string(json, 0, pretty_t{ 80, 4 });
 	return to_runtime_string(r, s);
 }
@@ -1878,7 +1878,7 @@ static JSON_T* floyd_llvm_intrinsic__to_json(floyd_runtime_t* frp, runtime_value
 
 	const auto& type0 = lookup_type_ref(r.backend, value_type);
 	const auto value0 = from_runtime_value(r, value, type0);
-	const auto j = value_to_ast_json(value0, json_tags::k_plain);
+	const auto j = value_to_ast_json(value0);
 	auto result = alloc_json(r.backend.heap, j);
 	return result;
 }

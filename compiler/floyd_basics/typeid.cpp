@@ -950,12 +950,11 @@ json_t struct_definition_to_ast_json(const struct_definition_t& v){
 
 
 
-json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
+json_t typeid_to_ast_json(const typeid_t& t){
 	QUARK_ASSERT(t.check_invariant());
 
 	const auto b = t.get_base_type();
 	const auto basetype_str = base_type_to_opcode(b);
-	const auto basetype_str_tagged = tags == json_tags::k_tag_resolve_state ? (std::string() + tag_resolved_type_char + basetype_str) : basetype_str;
 
 	if(false
 		|| b == base_type::k_undefined
@@ -969,12 +968,12 @@ json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 		|| b == base_type::k_json
 		|| b == base_type::k_typeid
 	){
-		return basetype_str_tagged;
+		return basetype_str;
 	}
 	else if(b == base_type::k_struct){
 		const auto struct_def = t.get_struct();
 		return json_t::make_array({
-			json_t(basetype_str_tagged),
+			json_t(basetype_str),
 			struct_definition_to_ast_json(struct_def)
 		});
 	}
@@ -982,14 +981,14 @@ json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 		const auto d = t.get_vector_element_type();
 		return json_t::make_array({
 			json_t(basetype_str),
-			typeid_to_ast_json(d, tags)
+			typeid_to_ast_json(d)
 		});
 	}
 	else if(b == base_type::k_dict){
 		const auto d = t.get_dict_value_type();
 		return json_t::make_array({
 			json_t(basetype_str),
-			typeid_to_ast_json(d, tags)
+			typeid_to_ast_json(d)
 		});
 	}
 	else if(b == base_type::k_function){
@@ -998,44 +997,45 @@ json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 		const auto dyn_type = d != typeid_t::return_dyn_type::none ? json_t(static_cast<int>(d)) : json_t();
 		return make_array_skip_nulls({
 			basetype_str,
-			typeid_to_ast_json(t.get_function_return(), tags),
+			typeid_to_ast_json(t.get_function_return()),
 			typeids_to_json_array(t.get_function_args()),
 			t.get_function_pure() == epure::pure ? true : false,
 			dyn_type
 		});
 	}
 	else if(b == base_type::k_identifier){
-		if(tags == json_tags::k_tag_resolve_state){
-			return json_t(std::string(1, tag_unresolved_type_char) + t.get_identifier());
-		}
-		else if(tags == json_tags::k_plain){
+		const auto identifier = t.get_identifier();
+		if(is_type_tag(identifier)){
 			return json_t(t.get_identifier());
+		}
+		else {
+			return json_t(std::string("%") + t.get_identifier());
 		}
 	}
 	else{
 		QUARK_ASSERT(false);
 		quark::throw_logic_error();
 	}
-	return basetype_str_tagged;
+	return basetype_str;
 }
 
 
 
 QUARK_TEST("", "typeid_to_ast_json()", "", ""){
 	const auto t = typeid_t::make_int();
-	const auto r = json_to_compact_string_minimal_quotes(typeid_to_ast_json(t, json_tags::k_tag_resolve_state));
+	const auto r = json_to_compact_string_minimal_quotes(typeid_to_ast_json(t));
 	QUARK_UT_VERIFY(r == "^int");
 }
 
 QUARK_TEST("", "typeid_to_ast_json()", "", ""){
 	const auto t = typeid_t::make_int();
-	const auto r = json_to_compact_string_minimal_quotes(typeid_to_ast_json(t, json_tags::k_tag_resolve_state));
+	const auto r = json_to_compact_string_minimal_quotes(typeid_to_ast_json(t));
 	QUARK_UT_VERIFY(r == "{ desc: ^int, name: coord_t }");
 }
 
 QUARK_TEST("", "typeid_to_ast_json()", "", ""){
 	const auto t = typeid_t::make_undefined();
-	const auto r = json_to_compact_string_minimal_quotes(typeid_to_ast_json(t, json_tags::k_tag_resolve_state));
+	const auto r = json_to_compact_string_minimal_quotes(typeid_to_ast_json(t));
 	QUARK_UT_VERIFY(r == "#coord_t");
 }
 
@@ -1047,9 +1047,22 @@ static typeid_t typeid_from_json0(const json_t& t){
 
 	if(t.is_string()){
 		const auto s0 = t.get_string();
-		if(s0.front() == tag_resolved_type_char){
+
+		//	Identifier.
+		if(s0.front() == '%'){
 			const auto s = s0.substr(1);
-			if(s == ""){
+			return typeid_t::make_identifier(s);
+		}
+
+		//	Tagged type.
+		else if(is_type_tag(s0)){
+			return typeid_t::make_identifier(s0);
+		}
+
+		//	Other types.
+		else {
+			const auto s = s0;
+			if(s0 == ""){
 				return typeid_t::make_undefined();
 			}
 
@@ -1086,13 +1099,6 @@ static typeid_t typeid_from_json0(const json_t& t){
 			else{
 				quark::throw_exception();
 			}
-		}
-		else if(s0.front() == tag_unresolved_type_char){
-			const auto s = s0.substr(1);
-			return typeid_t::make_identifier(s);
-		}
-		else{
-			return typeid_t::make_identifier(s0);
 		}
 	}
 	else if(t.is_array()){
@@ -1171,21 +1177,21 @@ typeid_t typeid_from_ast_json(const json_t& t2){
 
 QUARK_TEST("", "typeid_from_ast_json()", "", ""){
 	const auto t = typeid_t::make_int();
-	const auto j = typeid_to_ast_json(t, json_tags::k_tag_resolve_state);
+	const auto j = typeid_to_ast_json(t);
 	const auto r = typeid_from_ast_json(j);
 	QUARK_ASSERT(r == t);
 }
 
 QUARK_TEST("", "typeid_from_ast_json()", "", ""){
 	const auto t = typeid_t::make_int();
-	const auto j = typeid_to_ast_json(t, json_tags::k_tag_resolve_state);
+	const auto j = typeid_to_ast_json(t);
 	const auto r = typeid_from_ast_json(j);
 	QUARK_ASSERT(r == t);
 }
 
 QUARK_TEST("", "typeid_from_ast_json()", "", ""){
 	const auto t = typeid_t::make_undefined();
-	const auto j = typeid_to_ast_json(t, json_tags::k_tag_resolve_state);
+	const auto j = typeid_to_ast_json(t);
 	const auto r = typeid_from_ast_json(j);
 	QUARK_ASSERT(r == t);
 }
@@ -1196,7 +1202,7 @@ QUARK_TEST("", "typeid_from_ast_json()", "", ""){
 std::vector<json_t> typeids_to_json_array(const std::vector<typeid_t>& m){
 	std::vector<json_t> r;
 	for(const auto& a: m){
-		r.push_back(typeid_to_ast_json(a, json_tags::k_tag_resolve_state));
+		r.push_back(typeid_to_ast_json(a));
 	}
 	return r;
 }
@@ -1214,7 +1220,7 @@ json_t members_to_json(const std::vector<member_t>& members){
 	std::vector<json_t> r;
 	for(const auto& i: members){
 		const auto member = make_object({
-			{ "type", typeid_to_ast_json(i._type, json_tags::k_tag_resolve_state) },
+			{ "type", typeid_to_ast_json(i._type) },
 			{ "name", json_t(i._name) }
 		});
 		r.push_back(json_t(member));
@@ -1243,8 +1249,8 @@ void ut_verify(const quark::call_context_t& context, const typeid_t& result, con
 
 	ut_verify(
 		context,
-		typeid_to_ast_json(result, json_tags::k_plain),
-		typeid_to_ast_json(expected, json_tags::k_plain)
+		typeid_to_ast_json(result),
+		typeid_to_ast_json(expected)
 	);
 }
 

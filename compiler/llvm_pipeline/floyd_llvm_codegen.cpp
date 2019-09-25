@@ -7,7 +7,7 @@
 //
 
 
-const bool k_trace_pass_io = false;
+const bool k_trace_pass_io = true;
 
 const bool k_trace_input_output = false;
 static const bool k_trace_function_link_map = false;
@@ -458,6 +458,12 @@ static function_return_mode generate_block(llvm_function_generator_t& gen_acc, c
 }
 
 
+static typeid_t get_expr_output_typeid(const type_interner_t& interner, const expression_t& e){
+	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	return lookup_typeid_from_itype(interner, lookup_itype_from_asttype(interner, e.get_output_type()));
+}
 
 static typeid_t get_expr_output(const llvm_code_generator_t& gen, const expression_t& e){
 	QUARK_ASSERT(gen.check_invariant());
@@ -2402,7 +2408,7 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const bo
 	}
 
 	if(k_trace_input_output){
-//		QUARK_TRACE_SS(print_module(*gen_acc.module));
+		QUARK_TRACE_SS(print_module(*gen_acc.module));
 	}
 	QUARK_ASSERT(check_invariant__function(f));
 
@@ -2466,7 +2472,7 @@ static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const 
 	}
 
 	if(k_trace_input_output){
-//		QUARK_TRACE_SS(print_module(*gen_acc.module));
+		QUARK_TRACE_SS(print_module(*gen_acc.module));
 	}
 	QUARK_ASSERT(check_invariant__function(f));
 

@@ -116,7 +116,7 @@ FLOYD_LANG_PROOF_VIP("NOP", "See if we leak memory", "", ""){
 //######################################################################################################################
 
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "Define variable", "int", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "Define variable", "int", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let int result = 123", value_t::make_int(123));
 }
 
@@ -4304,7 +4304,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "update without quoting member na
 
 
 
-FLOYD_LANG_PROOF("Floyd test suite", "struct", "return struct from function", ""){
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "struct", "return struct from function", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(

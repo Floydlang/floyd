@@ -202,7 +202,7 @@ json_t function_def_to_ast_json(const function_definition_t& v) {
 	typeid_t function_type = get_function_type(v);
 
 	auto result = std::vector<json_t>{
-		typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state),
+		typeid_to_ast_json(function_type),
 		v._definition_name,
 		members_to_json(v._named_args)
 	};
@@ -346,8 +346,8 @@ json_t expression_to_json(const expression_t& e){
 				floyd::k_no_location,
 				expression_opcode_t::k_literal,
 				{
-					value_to_ast_json(e.value, json_tags::k_tag_resolve_state),
-					typeid_to_ast_json(e.value.get_type(), json_tags::k_tag_resolve_state)
+					value_to_ast_json(e.value),
+					typeid_to_ast_json(e.value.get_type())
 				}
 			);
 		}
@@ -495,7 +495,7 @@ static ast_type_t get_optional_typeid(const json_t& json_array, int optional_ind
 	if(optional_index < json_array.get_array_size()){
 		const auto e = json_array.get_array_n(optional_index);
 		const auto t = typeid_from_ast_json(e);
-		return make_type_name_from_typeid(t);
+		return to_asttype(t);
 	}
 	else{
 		return make_no_asttype();

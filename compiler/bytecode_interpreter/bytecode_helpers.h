@@ -13,10 +13,11 @@ namespace floyd {
 
 
 struct value_t;
+struct type_interner_t;
 struct bc_value_t;
 
-value_t bc_to_value(const bc_value_t& value);
-bc_value_t value_to_bc(const value_t& value);
+value_t bc_to_value(const type_interner_t& interner, const bc_value_t& value);
+bc_value_t value_to_bc(const type_interner_t& interner, const value_t& value);
 
 }	// floyd
 

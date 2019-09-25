@@ -90,9 +90,9 @@ struct analyser_t {
 
 
 //semantic_ast_t analyse(const analyser_t& a);
-static std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement, const typeid_t& return_type);
-static std::pair<analyser_t, std::vector<std::shared_ptr<statement_t>> > analyse_statements(const analyser_t& a, const std::vector<std::shared_ptr<statement_t>>& statements, const typeid_t& return_type);
-static std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type);
+static std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement, const itype_t& return_type);
+static std::pair<analyser_t, std::vector<std::shared_ptr<statement_t>> > analyse_statements(const analyser_t& a, const std::vector<std::shared_ptr<statement_t>>& statements, const itype_t& return_type);
+static std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& a, const statement_t& parent, const expression_t& e, const itype_t& target_type);
 static std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_t& a, const statement_t& parent, const expression_t& e);
 
 static std::pair<const symbol_t*, symbol_pos_t> find_symbol_by_name(const analyser_t& a, const std::string& s);
@@ -108,13 +108,55 @@ static void throw_local_identifier_already_exists(const location_t& loc, const s
 
 
 
+static void trace_analyser(const analyser_t& a){
+	QUARK_ASSERT(a.check_invariant());
+
+	QUARK_SCOPED_TRACE("ANALYSER");
+	{
+		QUARK_SCOPED_TRACE("CURRENT LEXICAL SCOPE PATH");
+
+		int index = 0;
+		for(const auto& scope: a._lexical_scope_stack){
+			QUARK_SCOPED_TRACE(std::to_string(index));
+
+			if(scope.pure == epure::pure){
+				QUARK_TRACE("scope pure: PURE");
+			}
+			else{
+				QUARK_TRACE("scope pure: IMPURE");
+			}
+
+			for(int i = 0 ; i < scope.symbols._symbols.size() ; i++){
+				const auto& symbol = scope.symbols._symbols[i];
+				QUARK_TRACE_SS(i << "\t " << symbol.first << ":\t" << symbol_to_string(symbol.second));
+			}
+
+			index++;
+		}
+	}
+	{
+		trace_type_interner(a._types);
+	}
+}
+
+
+//??? Rename and repurpose to check for unresolved symbols and UNDEFINED types/child types.
+bool check_types_resolved(const type_interner_t& interner, const itype_t target_type){
+	return true;
+}
+
+
+
 /////////////////////////////////////////			RESOLVE SYMBOL USING LEXICAL SCOPE PATH
 
 
-static itype_t get_tagged_type_symbol(const symbol_t& symbol){
+static itype_t get_tagged_type_symbol(const type_interner_t& interner, const symbol_t& symbol){
+	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(symbol._symbol_type == symbol_t::symbol_type::named_type);
 
-	return symbol._value_type;
+	const auto a = symbol._value_type;
+	const auto b = refresh_itype(interner, a);
+	return b;
 }
 
 
@@ -244,21 +286,27 @@ static itype_t resolve_and_intern_internal(analyser_t& acc, const location_t& lo
 			const auto identifier = type.get_identifier();
 			QUARK_ASSERT(identifier != "");
 
+			auto result = itype_t::make_undefined();
 #if DEBUG
-			if(false) trace_type_interner(acc._types);
+			if(true) trace_analyser(acc);
 #endif
 
-			const auto existing_value_deep_ptr = find_symbol_by_name(acc, identifier);
-			if(existing_value_deep_ptr.first == nullptr || existing_value_deep_ptr.first->_symbol_type != symbol_t::symbol_type::named_type){
-				throw_compiler_error(loc, "Unknown type name '" + identifier + "'.");
+			if(is_type_tag(identifier)){
+				const auto tag = unpack_type_tag(identifier);
+				result = get_tagged_type2(acc._types, tag);
 			}
-			const auto itype = get_tagged_type_symbol(*existing_value_deep_ptr.first);
-
+			else{
+				const auto existing_value_deep_ptr = find_symbol_by_name(acc, identifier);
+				if(existing_value_deep_ptr.first == nullptr || existing_value_deep_ptr.first->_symbol_type != symbol_t::symbol_type::named_type){
+					throw_compiler_error(loc, "Unknown type name '" + identifier + "'.");
+				}
+				result = get_tagged_type_symbol(acc._types, *existing_value_deep_ptr.first);
+			}
 #if DEBUG
-			if(false) trace_type_interner(acc._types);
+			if(true) trace_analyser(acc);
 #endif
 
-			return itype;
+			return result;
 		}
 	};
 	const auto result = std::visit(visitor_t{ acc, loc, type }, type._contents);
@@ -276,13 +324,13 @@ static itype_t resolve_and_intern_itype_from_typeid(analyser_t& acc, const locat
 		}
 		else{
 #if DEBUG
-			if(false) trace_type_interner(acc._types);
+			if(false) trace_analyser(acc);
 #endif
 //			const auto resolved = lookup_itype_from_typeid(acc._types, type);
 			const auto resolved = resolve_and_intern_internal(acc, loc, type);
 
 #if DEBUG
-			if(false) trace_type_interner(acc._types);
+			if(false) trace_analyser(acc);
 #endif
 
 #if DEBUG
@@ -353,23 +401,19 @@ static itype_t analyze_expr_output_itype(analyser_t& a, const expression_t& e){
 	return resolve_and_intern_itype_from_asttype(a, k_no_location, e.get_output_type());
 }
 
-//	Pushes the expression type through recording, resolving and interning.
-static typeid_t analyze_expr_output_type(analyser_t& a, const expression_t& e){
-	QUARK_ASSERT(a.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-
-	const auto itype = analyze_expr_output_itype(a, e);
-	return lookup_typeid_from_itype(a._types, itype);
+static itype_t analyze_expr_output_type(analyser_t& a, const expression_t& e){
+	return analyze_expr_output_itype(a, e);
 }
 
 
 
 
-//	When callee has "any" as return type, we need to figure out its return type using its algorithm and the actual types
-static const typeid_t figure_out_callee_return_type(analyser_t& a, const statement_t& parent, const typeid_t& callee_type, const std::vector<expression_t>& call_args){
-	const auto callee_return_type = callee_type.get_function_return();
 
-	const auto ret_type_algo = callee_type.get_function_dyn_return_type();
+//	When callee has "any" as return type, we need to figure out its return type using its algorithm and the actual types
+static const itype_t figure_out_callee_return_type(analyser_t& a, const statement_t& parent, const itype_t& callee_type, const std::vector<expression_t>& call_args){
+	const auto callee_return_type = callee_type.get_function_return(a._types);
+
+	const auto ret_type_algo = callee_type.get_function_dyn_return_type(a._types);
 	switch(ret_type_algo){
 		case typeid_t::return_dyn_type::none:
 			{
@@ -413,7 +457,7 @@ static const typeid_t figure_out_callee_return_type(analyser_t& a, const stateme
 				const auto& symbol_kv = a._lexical_scope_stack[scope_index].symbols._symbols[addr._index];
 
 				QUARK_ASSERT(symbol_kv.second._symbol_type == symbol_t::symbol_type::named_type);
-				return lookup_typeid_from_itype(a._types, get_tagged_type_symbol(symbol_kv.second));
+				return get_tagged_type_symbol(a._types, symbol_kv.second);
 			}
 			break;
 		case typeid_t::return_dyn_type::vector_of_arg1func_return:
@@ -421,18 +465,18 @@ static const typeid_t figure_out_callee_return_type(analyser_t& a, const stateme
 		//	x = make_vector(arg1.get_function_return());
 				QUARK_ASSERT(call_args.size() >= 2);
 
-				const auto f = analyze_expr_output_type(a, call_args[1]).get_function_return();
-				const auto ret = typeid_t::make_vector(f);
+				const auto f = analyze_expr_output_type(a, call_args[1]).get_function_return(a._types);
+				const auto ret = intern_anonymous_type(a._types, typeid_t::make_vector(lookup_typeid_from_itype(a._types, f)));
 				return ret;
 			}
 			break;
 		case typeid_t::return_dyn_type::vector_of_arg2func_return:
 			{
-		//	x = make_vector(arg2.get_function_return());
-			QUARK_ASSERT(call_args.size() >= 3);
-			const auto f = analyze_expr_output_type(a, call_args[2]).get_function_return();
-			const auto ret = typeid_t::make_vector(f);
-			return ret;
+			//	x = make_vector(arg2.get_function_return());
+				QUARK_ASSERT(call_args.size() >= 3);
+				const auto f = analyze_expr_output_type(a, call_args[2]).get_function_return(a._types);
+				const auto ret = intern_anonymous_type(a._types, typeid_t::make_vector(lookup_typeid_from_itype(a._types, f)));
+				return ret;
 			}
 			break;
 
@@ -446,7 +490,7 @@ static const typeid_t figure_out_callee_return_type(analyser_t& a, const stateme
 
 struct fully_resolved_call_t {
 	std::vector<expression_t> args;
-	typeid_t function_type;
+	itype_t function_type;
 };
 
 /*
@@ -457,8 +501,9 @@ struct fully_resolved_call_t {
 
 	Throws errors on type mismatches.
 */
-static std::pair<analyser_t, fully_resolved_call_t> analyze_resolve_call_type(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& call_args, const typeid_t& callee_type){
-	const std::vector<typeid_t> callee_arg_types = callee_type.get_function_args();
+static std::pair<analyser_t, fully_resolved_call_t> analyze_resolve_call_type(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& call_args, const itype_t& callee_itype){
+	const auto callee_type = peek(a._types, callee_itype);
+	const auto callee_arg_types = callee_type.get_function_args(a._types);
 
 	auto a_acc = a;
 
@@ -477,11 +522,22 @@ static std::pair<analyser_t, fully_resolved_call_t> analyze_resolve_call_type(co
 	}
 
 	const auto callee_return_type = figure_out_callee_return_type(a_acc, parent, callee_type, call_args2);
+
+
+
 	std::vector<typeid_t> resolved_arg_types;
 	for(const auto& e: call_args2){
-		resolved_arg_types.push_back(analyze_expr_output_type(a_acc, e));
+		resolved_arg_types.push_back(lookup_typeid_from_itype(a_acc._types, analyze_expr_output_type(a_acc, e)));
 	}
-	const auto resolved_function_type = typeid_t::make_function(callee_return_type, resolved_arg_types, callee_type.get_function_pure());
+	const auto resolved_function_type0 = typeid_t::make_function(
+		lookup_typeid_from_itype(a_acc._types, callee_return_type),
+		resolved_arg_types,
+		callee_type.get_function_pure(a_acc._types)
+	);
+	const auto resolved_function_type = intern_anonymous_type(a_acc._types, resolved_function_type0);
+
+
+
 	return { a_acc, { call_args2, resolved_function_type } };
 }
 
@@ -493,7 +549,7 @@ static std::pair<analyser_t, fully_resolved_call_t> analyze_resolve_call_type(co
 
 
 
-static std::pair<analyser_t, std::vector<statement_t>> analyse_statements(const analyser_t& a, const std::vector<statement_t>& statements, const typeid_t& return_type){
+static std::pair<analyser_t, std::vector<statement_t>> analyse_statements(const analyser_t& a, const std::vector<statement_t>& statements, const itype_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 	for(const auto& i: statements){ QUARK_ASSERT(i.check_invariant()); };
 
@@ -515,7 +571,7 @@ static std::pair<analyser_t, std::vector<statement_t>> analyse_statements(const 
 	return { a_acc, statements2 };
 }
 
-std::pair<analyser_t, body_t> analyse_body(const analyser_t& a, const body_t& body, epure pure, const typeid_t& return_type){
+std::pair<analyser_t, body_t> analyse_body(const analyser_t& a, const body_t& body, epure pure, const itype_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -551,9 +607,7 @@ std::pair<analyser_t, statement_t> analyse_assign_statement(const analyser_t& a,
 			throw_compiler_error(s.location, "Cannot assign to immutable identifier \"" + local_name + "\".");
 		}
 		else{
-			const auto lhs_type = lookup_typeid_from_itype(a_acc._types, existing_value_deep_ptr.first->get_value_type());
-			QUARK_ASSERT(check_types_resolved(a_acc._types, lhs_type));
-
+			const auto lhs_type = existing_value_deep_ptr.first->get_value_type();
 			const auto rhs_expr2 = analyse_expression_to_target(a_acc, s, statement._expression, lhs_type);
 			a_acc = rhs_expr2.first;
 			const auto rhs_expr3 = rhs_expr2.second;
@@ -595,7 +649,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 	const auto new_local_name = statement._new_local_name;
 
 #if DEBUG
-	if(false) trace_type_interner(a_acc._types);
+	if(false) trace_analyser(a_acc);
 #endif
 
 	//	If lhs may be
@@ -621,7 +675,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 	try {
 		const auto rhs_expr_pair = lhs_itype.is_undefined()
 			? analyse_expression_no_target(a_acc, s, statement._expression)
-			: analyse_expression_to_target(a_acc, s, statement._expression, lookup_typeid_from_itype(a_acc._types, lhs_itype));
+			: analyse_expression_to_target(a_acc, s, statement._expression, lhs_itype);
 		a_acc = rhs_expr_pair.first;
 
 		const auto rhs_itype = analyze_expr_output_itype(a_acc, rhs_expr_pair.second);
@@ -631,7 +685,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 		if((lhs_itype2 == rhs_itype) == false){
 			std::stringstream what;
 			what << "Types not compatible in bind - cannot convert '"
-			<< typeid_to_compact_string(lookup_typeid_from_itype(a_acc._types, lhs_itype)) << "' to '" << typeid_to_compact_string(lookup_typeid_from_itype(a_acc._types, lhs_itype2)) << ".";
+			<< typeid_to_compact_string(lhs_itype) << "' to '" << typeid_to_compact_string(lhs_itype2) << ".";
 			throw_compiler_error(s.location, what.str());
 		}
 		else{
@@ -642,13 +696,13 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 			if(is_preinitliteral(lookup_typeid_from_itype(a_acc._types, lhs_itype2)) && mutable_flag == false && get_expression_type(rhs_expr_pair.second) == expression_type::k_literal){
 				const auto symbol2 = symbol_t::make_immutable_precalc(lhs_itype2, rhs_expr_pair.second.get_literal());
 				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
-				resolve_and_intern_itype_from_typeid(a_acc, s.location, analyze_expr_output_type(a_acc, rhs_expr_pair.second));
+				analyze_expr_output_type(a_acc, rhs_expr_pair.second);
 				return { a_acc, {} };
 			}
 			else{
 				const auto symbol2 = mutable_flag ? symbol_t::make_mutable(lhs_itype2) : symbol_t::make_immutable_reserve(lhs_itype2);
 				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
-				resolve_and_intern_itype_from_typeid(a_acc, s.location, analyze_expr_output_type(a_acc, rhs_expr_pair.second));
+				analyze_expr_output_type(a_acc, rhs_expr_pair.second);
 
 				return {
 					a_acc,
@@ -672,7 +726,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 	}
 }
 
-std::pair<analyser_t, statement_t> analyse_block_statement(const analyser_t& a, const statement_t& s, const typeid_t& return_type){
+std::pair<analyser_t, statement_t> analyse_block_statement(const analyser_t& a, const statement_t& s, const itype_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	const auto statement = std::get<statement_t::block_statement_t>(s._contents);
@@ -680,7 +734,7 @@ std::pair<analyser_t, statement_t> analyse_block_statement(const analyser_t& a, 
 	return {e.first, statement_t::make__block_statement(s.location, e.second)};
 }
 
-std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& a, const statement_t& s, const typeid_t& return_type){
+std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& a, const statement_t& s, const itype_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	if(return_type.is_void()){
@@ -703,7 +757,7 @@ std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& a,
 	return { a_acc, statement_t::make__return_statement(s.location, result.second) };
 }
 
-std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a, const statement_t& s, const typeid_t& return_type){
+std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a, const statement_t& s, const itype_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	const auto statement = std::get<statement_t::ifelse_statement_t>(s._contents);
@@ -724,7 +778,7 @@ std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a,
 	return { a_acc, statement_t::make__ifelse_statement(s.location, condition2.second, then2.second, else2.second) };
 }
 
-std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, const statement_t& s, const typeid_t& return_type){
+std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, const statement_t& s, const itype_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	const auto statement = std::get<statement_t::for_statement_t>(s._contents);
@@ -760,13 +814,13 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, co
 	return { a_acc, statement_t::make__for_statement(s.location, statement._iterator_name, start_expr2.second, end_expr2.second, result.second, statement._range_type) };
 }
 
-std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& a, const statement_t& s, const typeid_t& return_type){
+std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& a, const statement_t& s, const itype_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	const auto statement = std::get<statement_t::while_statement_t>(s._contents);
 	auto a_acc = a;
 
-	const auto condition2_expr = analyse_expression_to_target(a_acc, s, statement._condition, typeid_t::make_bool());
+	const auto condition2_expr = analyse_expression_to_target(a_acc, s, statement._condition, itype_t::make_bool());
 	a_acc = condition2_expr.first;
 
 	const auto result = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, return_type);
@@ -786,10 +840,10 @@ std::pair<analyser_t, statement_t> analyse_expression_statement(const analyser_t
 	return { a_acc, statement_t::make__expression_statement(s.location, expr2.second) };
 }
 
-
+//??? Change this to find the symbol instead of using make_benchmark_def_t().
 //	Make new global function containing the body of the benchmark-def.
 //	Add the function as an entry in the global benchmark registry.
-static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const statement_t& s, const typeid_t& return_type){
+static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const statement_t& s, const itype_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	const auto statement = std::get<statement_t::benchmark_def_statement_t>(s._contents);
@@ -798,46 +852,48 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 	const auto test_name = statement.name;
 	const auto function_link_name = "benchmark__" + test_name;
 
-	const auto benchmark_def_t_struct = make_benchmark_def_t();
-	const auto benchmark_function_t = make_benchmark_function_t();
+	const auto benchmark_def_itype = resolve_and_intern_itype_from_typeid(a_acc, k_no_location, typeid_t::make_identifier("benchmark_def"));
+//	const auto benchmark_result_itype = resolve_and_intern_itype_from_typeid(a_acc, k_no_location, typeid_t::make_identifier("benchmark_result"));
+	const auto f_itype = resolve_and_intern_itype_from_typeid(a_acc, k_no_location, make_benchmark_function_t());
+
+
 	const auto function_id = function_id_t { function_link_name };
 
 	//	Make a function def expression for the new benchmark function.
 
-	const auto body_pair = analyse_body(a_acc, statement._body, epure::pure, benchmark_function_t.get_function_return());
+	const auto body_pair = analyse_body(a_acc, statement._body, epure::pure, f_itype.get_function_return(a_acc._types));
 	a_acc = body_pair.first;
 
 
-	const auto function_def2 = function_definition_t::make_func(k_no_location, function_link_name, benchmark_function_t, {}, std::make_shared<body_t>(body_pair.second));
+	const auto function_def2 = function_definition_t::make_func(k_no_location, function_link_name, lookup_typeid_from_itype(a_acc._types, f_itype), {}, std::make_shared<body_t>(body_pair.second));
 	QUARK_ASSERT(check_types_resolved(a_acc._types, function_def2));
 
 	a_acc._function_defs.insert({ function_id, function_definition_t(function_def2) });
 
-	const auto f = value_t::make_function_value(benchmark_function_t, function_id);
+	const auto f = value_t::make_function_value(lookup_typeid_from_itype(a_acc._types, f_itype), function_id);
 
 
 	//	Add benchmark-def record to benchmark_defs.
-
-	{//???named-type -- name this type
+	{
 		const auto new_record_expr = expression_t::make_construct_value_expr(
-			make_type_name_from_typeid(benchmark_def_t_struct),
+			to_asttype(benchmark_def_itype),
 			{
 				expression_t::make_literal_string(test_name),
 				expression_t::make_literal(f)
 			}
 		);
-		const auto new_record_expr3_pair = analyse_expression_to_target(a_acc, s, new_record_expr, benchmark_def_t_struct);
+		const auto new_record_expr3_pair = analyse_expression_to_target(a_acc, s, new_record_expr, benchmark_def_itype);
 		a_acc = new_record_expr3_pair.first;
 		a_acc.benchmark_defs.push_back(new_record_expr3_pair.second);
 	}
 
-	const auto body2 = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, benchmark_function_t.get_function_return());
+	const auto body2 = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, f_itype.get_function_return(a_acc._types));
 	a_acc = body2.first;
 	return a_acc;
 }
 
 //	Output is the RETURN VALUE of the analysed statement, if any.
-static std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement, const typeid_t& return_type){
+static std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement, const itype_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(statement.check_invariant());
 
@@ -846,7 +902,7 @@ static std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(con
 	struct visitor_t {
 		const analyser_t& a;
 		const statement_t& statement;
-		const typeid_t return_type;
+		const itype_t return_type;
 
 
 		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::return_statement_t& s) const{
@@ -938,7 +994,7 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 
 	const auto parent_itype = analyze_expr_output_itype(a_acc, parent_expr.second);
 
-	const auto parent_type = explore_type_description(a_acc._types, parent_itype);
+	const auto parent_type = flatten_type_description_deep(a_acc._types, parent_itype);
 	if(parent_type.is_struct()){
 		const auto struct_def = parent_type.get_struct();
 
@@ -950,7 +1006,7 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 			throw_compiler_error(parent.location, what.str());
 		}
 		const auto member_type = struct_def._members[index]._type;
-		return { a_acc, expression_t::make_resolve_member(parent_expr.second, details.member_name, make_type_name_from_typeid(member_type))};
+		return { a_acc, expression_t::make_resolve_member(parent_expr.second, details.member_name, to_asttype(member_type))};
 	}
 	else{
 		std::stringstream what;
@@ -978,7 +1034,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 	const auto new_value_type = analyze_expr_output_type(a_acc, new_value_expr.second);
 
 	if(collection_type.is_struct()){
-		const auto struct_def = collection_type.get_struct();
+		const auto struct_def = collection_type.get_struct(a_acc._types);
 
 		//	The key needs to be the name of an identifier. It's a compile-time constant.
 		//	It's encoded as a load which is confusing.
@@ -998,7 +1054,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 
 			return {
 				a_acc,
-				expression_t::make_update_member(collection_expr.second, member_index, new_value_expr.second, make_type_name_from_typeid(collection_type))
+				expression_t::make_update_member(collection_expr.second, member_index, new_value_expr.second, to_asttype(collection_type))
 			};
 		}
 		else{
@@ -1026,7 +1082,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 
 		return {
 			a_acc,
-			expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, make_type_name_from_typeid(collection_type))
+			expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, to_asttype(collection_type))
 		};
 	}
 	else if(collection_type.is_vector()){
@@ -1040,14 +1096,14 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 			throw_compiler_error(parent.location, what.str());
 		}
 
-		const auto element_type = collection_type.get_vector_element_type();
+		const auto element_type = collection_type.get_vector_element_type(a_acc._types);
 		if(element_type != new_value_type){
 			throw_compiler_error(parent.location, "New value's type must match vector's element type.");
 		}
 
 		return {
 			a_acc,
-			expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, make_type_name_from_typeid(collection_type))
+			expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, to_asttype(collection_type))
 		};
 	}
 	else if(collection_type.is_dict()){
@@ -1061,14 +1117,14 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 			throw_compiler_error(parent.location, what.str());
 		}
 
-		const auto element_type = collection_type.get_dict_value_type();
+		const auto element_type = collection_type.get_dict_value_type(a_acc._types);
 		if(element_type != new_value_type){
 			throw_compiler_error(parent.location, "New value's type must match dict's value type.");
 		}
 
 		return {
 			a_acc,
-			expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, make_type_name_from_typeid(collection_type))
+			expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, to_asttype(collection_type))
 		};
 	}
 
@@ -1084,11 +1140,11 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_push_back_expression(const
 
 	const auto sign = make_push_back_signature();
 	auto a_acc = a;
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, lookup_itype_from_typeid(a._types, sign._function_type));
 	a_acc = resolved_call.first;
 
-	const auto parent_type = resolved_call.second.function_type.get_function_args()[0];
-	const auto value_type = resolved_call.second.function_type.get_function_args()[1];
+	const auto parent_type = resolved_call.second.function_type.get_function_args(a_acc._types)[0];
+	const auto value_type = resolved_call.second.function_type.get_function_args(a_acc._types)[1];
 
 	if(parent_type.is_string()){
 		if(value_type.is_int() == false){
@@ -1098,7 +1154,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_push_back_expression(const
 		}
 	}
 	else if(parent_type.is_vector()){
-		if(value_type != parent_type.get_vector_element_type()){
+		if(value_type != parent_type.get_vector_element_type(a_acc._types)){
 			std::stringstream what;
 			what << "Vector push_back() has mismatching element type vs supplies a \"" + typeid_to_compact_string(value_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
@@ -1112,7 +1168,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_push_back_expression(const
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, make_type_name_from_typeid(parent_type))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, to_asttype(parent_type))
 	};
 }
 
@@ -1122,10 +1178,10 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_size_expression(const anal
 
 	const auto sign = make_size_signature();
 	auto a_acc = a;
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, lookup_itype_from_typeid(a._types, sign._function_type));
 	a_acc = resolved_call.first;
 
-	const auto parent_type = resolved_call.second.function_type.get_function_args()[0];
+	const auto parent_type = resolved_call.second.function_type.get_function_args(a_acc._types)[0];
 	if(parent_type.is_string() || parent_type.is_json() || parent_type.is_vector() || parent_type.is_dict()){
 	}
 	else{
@@ -1136,7 +1192,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_size_expression(const anal
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, make_type_name_from_typeid(resolved_call.second.function_type.get_function_return()))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, to_asttype(resolved_call.second.function_type.get_function_return(a_acc._types)))
 	};
 }
 
@@ -1146,11 +1202,11 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_find_expression(const anal
 
 	const auto sign = make_find_signature();
 	auto a_acc = a;
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, lookup_itype_from_typeid(a._types, sign._function_type));
 	a_acc = resolved_call.first;
 
-	const auto parent_type = resolved_call.second.function_type.get_function_args()[0];
-	const auto wanted_type = resolved_call.second.function_type.get_function_args()[1];
+	const auto parent_type = resolved_call.second.function_type.get_function_args(a_acc._types)[0];
+	const auto wanted_type = resolved_call.second.function_type.get_function_args(a_acc._types)[1];
 
 	if(parent_type.is_string()){
 		if(wanted_type.is_string() == false){
@@ -1158,7 +1214,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_find_expression(const anal
 		}
 	}
 	else if(parent_type.is_vector()){
-		if(wanted_type != parent_type.get_vector_element_type()){
+		if(wanted_type != parent_type.get_vector_element_type(a_acc._types)){
 			throw_compiler_error(parent.location, "find([]) requires argument 2 to be of vector's element type.");
 		}
 	}
@@ -1170,7 +1226,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_find_expression(const anal
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, make_type_name_from_typeid(resolved_call.second.function_type.get_function_return()))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, to_asttype(resolved_call.second.function_type.get_function_return(a_acc._types)))
 	};
 }
 
@@ -1180,11 +1236,11 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_exists_expression(const an
 
 	const auto sign = make_exists_signature();
 	auto a_acc = a;
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, lookup_itype_from_typeid(a._types, sign._function_type));
 	a_acc = resolved_call.first;
 
-	const auto parent_type = resolved_call.second.function_type.get_function_args()[0];
-	const auto wanted_type = resolved_call.second.function_type.get_function_args()[1];
+	const auto parent_type = resolved_call.second.function_type.get_function_args(a_acc._types)[0];
+	const auto wanted_type = resolved_call.second.function_type.get_function_args(a_acc._types)[1];
 
 	if(parent_type.is_dict() == false){
 		throw_compiler_error(parent.location, "exists() requires a dictionary.");
@@ -1195,7 +1251,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_exists_expression(const an
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, make_type_name_from_typeid(resolved_call.second.function_type.get_function_return()))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, to_asttype(resolved_call.second.function_type.get_function_return(a_acc._types)))
 	};
 }
 
@@ -1205,11 +1261,11 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_erase_expression(const ana
 
 	const auto sign = make_erase_signature();
 	auto a_acc = a;
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, lookup_itype_from_typeid(a._types, sign._function_type));
 	a_acc = resolved_call.first;
 
-	const auto parent_type = resolved_call.second.function_type.get_function_args()[0];
-	const auto key_type = resolved_call.second.function_type.get_function_args()[1];
+	const auto parent_type = resolved_call.second.function_type.get_function_args(a_acc._types)[0];
+	const auto key_type = resolved_call.second.function_type.get_function_args(a_acc._types)[1];
 
 	if(parent_type.is_dict() == false){
 		throw_compiler_error(parent.location, "erase() requires a dictionary.");
@@ -1220,7 +1276,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_erase_expression(const ana
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, make_type_name_from_typeid(resolved_call.second.function_type.get_function_return()))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, to_asttype(resolved_call.second.function_type.get_function_return(a_acc._types)))
 	};
 }
 
@@ -1232,10 +1288,10 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_get_keys_expression(const 
 
 	const auto sign = make_get_keys_signature();
 	auto a_acc = a;
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, lookup_itype_from_typeid(a._types, sign._function_type));
 	a_acc = resolved_call.first;
 
-	const auto parent_type = resolved_call.second.function_type.get_function_args()[0];
+	const auto parent_type = resolved_call.second.function_type.get_function_args(a_acc._types)[0];
 
 	if(parent_type.is_dict() == false){
 		throw_compiler_error(parent.location, "get_keys() requires a dictionary.");
@@ -1243,7 +1299,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_get_keys_expression(const 
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, make_type_name_from_typeid(resolved_call.second.function_type.get_function_return()))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, to_asttype(resolved_call.second.function_type.get_function_return(a_acc._types)))
 	};
 }
 
@@ -1253,11 +1309,11 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_subset_expression(const an
 
 	const auto sign = make_subset_signature();
 	auto a_acc = a;
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, lookup_itype_from_typeid(a._types, sign._function_type));
 	a_acc = resolved_call.first;
 
-	const auto parent_type = resolved_call.second.function_type.get_function_args()[0];
-	const auto key_type = resolved_call.second.function_type.get_function_args()[1];
+	const auto parent_type = resolved_call.second.function_type.get_function_args(a_acc._types)[0];
+	const auto key_type = resolved_call.second.function_type.get_function_args(a_acc._types)[1];
 
 	if(parent_type.is_string() == false && parent_type.is_vector() == false){
 		throw_compiler_error(parent.location, "subset([]) requires a string or a vector.");
@@ -1265,7 +1321,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_subset_expression(const an
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, make_type_name_from_typeid(resolved_call.second.function_type.get_function_return()))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, to_asttype(resolved_call.second.function_type.get_function_return(a_acc._types)))
 	};
 }
 
@@ -1275,11 +1331,11 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_replace_expression(const a
 
 	const auto sign = make_replace_signature();
 	auto a_acc = a;
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, lookup_itype_from_typeid(a._types, sign._function_type));
 	a_acc = resolved_call.first;
 
-	const auto parent_type = resolved_call.second.function_type.get_function_args()[0];
-	const auto replace_with_type = resolved_call.second.function_type.get_function_args()[3];
+	const auto parent_type = resolved_call.second.function_type.get_function_args(a_acc._types)[0];
+	const auto replace_with_type = resolved_call.second.function_type.get_function_args(a_acc._types)[3];
 
 	if(parent_type != replace_with_type){
 		throw_compiler_error(parent.location, "replace() requires argument 4 to be same type of collection.");
@@ -1291,7 +1347,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_replace_expression(const a
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, make_type_name_from_typeid(resolved_call.second.function_type.get_function_return()))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, to_asttype(resolved_call.second.function_type.get_function_return(a_acc._types)))
 	};
 }
 //??? pass around location_t instead of statement_t& parent!
@@ -1305,10 +1361,10 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_expression(const analy
 
 	const auto sign = make_map_signature();
 	auto a_acc = a;
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, lookup_itype_from_typeid(a._types, sign._function_type));
 	a_acc = resolved_call.first;
 
-	const auto expected = harden_map_func_type(resolved_call.second.function_type);
+	const auto expected = intern_anonymous_type(a_acc._types, harden_map_func_type(lookup_typeid_from_itype(a_acc._types, resolved_call.second.function_type)));
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to map() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
@@ -1316,7 +1372,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_expression(const analy
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, make_type_name_from_typeid(resolved_call.second.function_type.get_function_return()))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, to_asttype(resolved_call.second.function_type.get_function_return(a_acc._types)))
 	};
 }
 
@@ -1327,10 +1383,10 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_string_expression(cons
 
 	const auto sign = make_map_string_signature();
 	auto a_acc = a;
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, lookup_itype_from_typeid(a._types, sign._function_type));
 	a_acc = resolved_call.first;
 
-	const auto expected = harden_map_string_func_type(resolved_call.second.function_type);
+	const auto expected = intern_anonymous_type(a_acc._types, harden_map_string_func_type(lookup_typeid_from_itype(a_acc._types, resolved_call.second.function_type)));
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to map_string() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
@@ -1338,7 +1394,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_string_expression(cons
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, make_type_name_from_typeid(resolved_call.second.function_type.get_function_return()))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, to_asttype(resolved_call.second.function_type.get_function_return(a_acc._types)))
 	};
 }
 
@@ -1349,10 +1405,10 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_dag_expression(const a
 
 	const auto sign = make_map_dag_signature();
 	auto a_acc = a;
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, lookup_itype_from_typeid(a._types, sign._function_type));
 	a_acc = resolved_call.first;
 
-	const auto expected = harden_map_dag_func_type(resolved_call.second.function_type);
+	const auto expected = intern_anonymous_type(a_acc._types, harden_map_dag_func_type(lookup_typeid_from_itype(a_acc._types, resolved_call.second.function_type)));
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to map_dag() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
@@ -1360,7 +1416,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_dag_expression(const a
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, make_type_name_from_typeid(resolved_call.second.function_type.get_function_return()))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, to_asttype(resolved_call.second.function_type.get_function_return(a_acc._types)))
 	};
 }
 
@@ -1370,10 +1426,10 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_filter_expression(const an
 
 	const auto sign = make_filter_signature();
 	auto a_acc = a;
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, lookup_itype_from_typeid(a._types, sign._function_type));
 	a_acc = resolved_call.first;
 
-	const auto expected = harden_filter_func_type(resolved_call.second.function_type);
+	const auto expected = intern_anonymous_type(a_acc._types, harden_filter_func_type(lookup_typeid_from_itype(a_acc._types, resolved_call.second.function_type)));
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to filter() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", expected to be \"" + typeid_to_compact_string(expected) + "\".");
@@ -1381,7 +1437,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_filter_expression(const an
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, make_type_name_from_typeid(resolved_call.second.function_type.get_function_return()))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, to_asttype(resolved_call.second.function_type.get_function_return(a_acc._types)))
 	};
 }
 
@@ -1393,17 +1449,17 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_reduce_expression(const an
 	auto a_acc = a;
 
 	const auto sign = make_reduce_signature();
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, lookup_itype_from_typeid(a._types, sign._function_type));
 	a_acc = resolved_call.first;
 
-	const auto expected = harden_reduce_func_type(resolved_call.second.function_type);
+	const auto expected = intern_anonymous_type(a_acc._types, harden_reduce_func_type(lookup_typeid_from_itype(a_acc._types, resolved_call.second.function_type)));
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to reduce() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", expected to be \"" + typeid_to_compact_string(expected) + "\".");
 	}
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, make_type_name_from_typeid(resolved_call.second.function_type.get_function_return()))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, to_asttype(resolved_call.second.function_type.get_function_return(a_acc._types)))
 	};
 }
 
@@ -1414,10 +1470,10 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_stable_sort_expression(con
 
 	const auto sign = make_stable_sort_signature();
 	auto a_acc = a;
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, lookup_itype_from_typeid(a._types, sign._function_type));
 	a_acc = resolved_call.first;
 
-	const auto expected = harden_stable_sort_func_type(resolved_call.second.function_type);
+	const auto expected = intern_anonymous_type(a_acc._types, harden_stable_sort_func_type(lookup_typeid_from_itype(a_acc._types, resolved_call.second.function_type)));
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to stable_sort() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
@@ -1425,7 +1481,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_stable_sort_expression(con
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, make_type_name_from_typeid(resolved_call.second.function_type.get_function_return()))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, to_asttype(resolved_call.second.function_type.get_function_return(a_acc._types)))
 	};
 }
 
@@ -1455,11 +1511,11 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 			throw_compiler_error(parent.location, what.str());
 		}
 		else{
-			return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_type_name_from_typeid(typeid_t::make_int())) };
+			return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, to_asttype(itype_t::make_int())) };
 		}
 	}
 	else if(parent_type.is_json()){
-		return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_type_name_from_typeid(typeid_t::make_json())) };
+		return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, to_asttype(itype_t::make_json())) };
 	}
 	else if(parent_type.is_vector()){
 		if(key_type.is_int() == false){
@@ -1468,7 +1524,7 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 			throw_compiler_error(parent.location, what.str());
 		}
 		else{
-			return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_type_name_from_typeid(parent_type.get_vector_element_type())) };
+			return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, to_asttype(parent_type.get_vector_element_type(a_acc._types))) };
 		}
 	}
 	else if(parent_type.is_dict()){
@@ -1478,7 +1534,7 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 			throw_compiler_error(parent.location, what.str());
 		}
 		else{
-			return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_type_name_from_typeid(parent_type.get_dict_value_type())) };
+			return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, to_asttype(parent_type.get_dict_value_type(a_acc._types))) };
 		}
 	}
 	else {
@@ -1504,13 +1560,13 @@ std::pair<analyser_t, expression_t> analyse_load(const analyser_t& a, const stat
 		if(found.first->_symbol_type == symbol_t::symbol_type::named_type){
 			return {
 				a_acc,
-				expression_t::make_load2(found.second, make_type_name_from_typeid(typeid_t::make_typeid()))
+				expression_t::make_load2(found.second, to_asttype(itype_t::make_typeid()))
 			};
 		}
 		else{
 			return {
 				a_acc,
-				expression_t::make_load2(found.second, make_type_name_from_typeid(lookup_typeid_from_itype(a._types, found.first->_value_type)))
+				expression_t::make_load2(found.second, to_asttype(found.first->_value_type))
 			};
 		}
 	}
@@ -1525,7 +1581,7 @@ std::pair<analyser_t, expression_t> analyse_load(const analyser_t& a, const stat
 		if(it != intrinsic_signatures.end()){
 			const auto index = it - intrinsic_signatures.begin();
 			const auto addr = symbol_pos_t::make_stack_pos(symbol_pos_t::k_intrinsic, static_cast<int32_t>(index));
-			const auto e2 = expression_t::make_load2(addr, make_type_name_from_typeid(it->_function_type));
+			const auto e2 = expression_t::make_load2(addr, to_asttype(lookup_itype_from_typeid(a_acc._types, it->_function_type)));
 			return { a_acc, e2 };
 		}
 		else{
@@ -1543,12 +1599,12 @@ std::pair<analyser_t, expression_t> analyse_load2(const analyser_t& a, const exp
 }
 
 
-static typeid_t select_inferred_type(const type_interner_t& interner, const typeid_t& target_type_or_any, const typeid_t& rhs_guess_type){
+static itype_t select_inferred_type(const type_interner_t& interner, const itype_t& target_type_or_any, const itype_t& rhs_guess_type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(target_type_or_any.check_invariant());
 	QUARK_ASSERT(rhs_guess_type.check_invariant());
 
-	const bool rhs_guess_type_valid = check_types_resolved(interner, rhs_guess_type);
+	const bool rhs_guess_type_valid = check_types_resolved(interner, flatten_type_description_deep(interner, rhs_guess_type));
 	const bool have_target_type = target_type_or_any.is_any() == false;
 
 	if(have_target_type && rhs_guess_type_valid == false){
@@ -1572,18 +1628,18 @@ static typeid_t select_inferred_type(const type_interner_t& interner, const type
 
 	rhs is an invalid dict construction -- you can't mix string/int values in a floyd dict. BUT: it's a valid JSON!
 */
-std::pair<analyser_t, expression_t> analyse_construct_value_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::value_constructor_t& details, const typeid_t& target_type){
+std::pair<analyser_t, expression_t> analyse_construct_value_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::value_constructor_t& details, const itype_t& target_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
 
-	const auto current_type = analyze_expr_output_type(a_acc, e);
+	const auto current_type = analyze_expr_output_itype(a_acc, e);
 
 	if(current_type.is_vector()){
 		//	JSON constants supports mixed element types: convert each element into a json.
 		//	Encode as [json]
 		if(target_type.is_json()){
-			const auto element_type = typeid_t::make_json();
+			const auto element_type = itype_t::make_json();
 
 			std::vector<expression_t> elements2;
 			for(const auto& m: details.elements){
@@ -1600,13 +1656,13 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			return {
 				a_acc,
 				expression_t::make_construct_value_expr(
-					make_type_name_from_typeid(typeid_t::make_json()),
-					{ expression_t::make_construct_value_expr(make_type_name_from_typeid(typeid_t::make_vector(typeid_t::make_json())), elements2) }
+					to_asttype(itype_t::make_json()),
+					{ expression_t::make_construct_value_expr(to_asttype(typeid_t::make_vector(typeid_t::make_json())), elements2) }
 				)
 			};
 		}
 		else {
-			const auto element_type = current_type.get_vector_element_type();
+			const auto element_type = current_type.get_vector_element_type(a_acc._types);
 			std::vector<expression_t> elements2;
 			for(const auto& m: details.elements){
 				const auto element_expr = analyse_expression_no_target(a_acc, parent, m);
@@ -1615,16 +1671,16 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			}
 
 			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? analyze_expr_output_type(a_acc, elements2[0]) : element_type;
-			const auto rhs_guess_type = typeid_t::make_vector(element_type2);
-			const auto selected_type = select_inferred_type(a_acc._types, target_type, rhs_guess_type);
+			const auto rhs_guess_type = resolve_and_intern_itype_from_typeid(a_acc, parent.location, typeid_t::make_vector(lookup_typeid_from_itype(a_acc._types, element_type2)));
+			const auto final_type = select_inferred_type(a_acc._types, target_type, rhs_guess_type);
 
-			if(check_types_resolved(a_acc._types, selected_type) == false){
+			if(check_types_resolved(a_acc._types, lookup_typeid_from_itype(a_acc._types, final_type)) == false){
 				std::stringstream what;
 				what << "Cannot infer vector element type, add explicit type.";
 				throw_compiler_error(parent.location, what.str());
 			}
 
-			const auto final_type = resolve_and_intern_typeid_from_typeid(a_acc, parent.location, selected_type);
+//			const auto final_type = resolve_and_intern_typeid_from_typeid(a_acc, parent.location, selected_type);
 
 			for(const auto& m: elements2){
 				if(analyze_expr_output_type(a_acc, m) != element_type2){
@@ -1633,8 +1689,8 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 					throw_compiler_error(parent.location, what.str());
 				}
 			}
-			QUARK_ASSERT(check_types_resolved(a_acc._types, final_type));
-			return { a_acc, expression_t::make_construct_value_expr(make_type_name_from_typeid(final_type), elements2) };
+			QUARK_ASSERT(check_types_resolved(a_acc._types, lookup_typeid_from_itype(a_acc._types, final_type)));
+			return { a_acc, expression_t::make_construct_value_expr(to_asttype(final_type), elements2) };
 		}
 	}
 
@@ -1643,7 +1699,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 		//	JSON constants supports mixed element types: convert each element into a json.
 		//	Encode as [string:json]
 		if(target_type.is_json()){
-			const auto element_type = typeid_t::make_json();
+			const auto element_type = itype_t::make_json();
 
 			std::vector<expression_t> elements2;
 			for(int i = 0 ; i < details.elements.size() / 2 ; i++){
@@ -1655,29 +1711,27 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				elements2.push_back(element_expr.second);
 			}
 
-			const auto rhs_guess_type = typeid_t::make_dict(typeid_t::make_json());
-			const auto selected_type = select_inferred_type(a_acc._types, target_type, rhs_guess_type);
+			const auto rhs_guess_type = resolve_and_intern_itype_from_typeid(a_acc, parent.location, typeid_t::make_dict(typeid_t::make_json()));
+			 auto final_type = select_inferred_type(a_acc._types, target_type, rhs_guess_type);
 
-			if(check_types_resolved(a_acc._types, selected_type) == false){
+			if(check_types_resolved(a_acc._types, lookup_typeid_from_itype(a_acc._types, final_type)) == false){
 				std::stringstream what;
 				what << "Cannot infer dictionary element type, add explicit type.";
 				throw_compiler_error(parent.location, what.str());
 			}
 
-			const auto final_type = resolve_and_intern_typeid_from_typeid(a_acc, parent.location, selected_type);
-
 			return {
 				a_acc,
 				expression_t::make_construct_value_expr(
-					make_type_name_from_typeid(typeid_t::make_json()),
-					{ expression_t::make_construct_value_expr(make_type_name_from_typeid(typeid_t::make_dict(typeid_t::make_json())), elements2) }
+					to_asttype(itype_t::make_json()),
+					{ expression_t::make_construct_value_expr(to_asttype(typeid_t::make_dict(typeid_t::make_json())), elements2) }
 				)
 			};
 		}
 		else {
 			QUARK_ASSERT(details.elements.size() % 2 == 0);
 
-			const auto element_type = current_type.get_dict_value_type();
+			const auto element_type = current_type.get_dict_value_type(a_acc._types);
 
 			std::vector<expression_t> elements2;
 			for(int i = 0 ; i < details.elements.size() / 2 ; i++){
@@ -1691,16 +1745,14 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 
 			//	Infer type of dictionary based on first value.
 			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? analyze_expr_output_type(a_acc, elements2[0 * 2 + 1]) : element_type;
-			const auto rhs_guess_type = typeid_t::make_dict(element_type2);
-			const auto selected_type = select_inferred_type(a_acc._types, target_type, rhs_guess_type);
+			const auto rhs_guess_type = resolve_and_intern_itype_from_typeid(a_acc, parent.location, typeid_t::make_dict(lookup_typeid_from_itype(a_acc._types, element_type2)));
+			const auto final_type = select_inferred_type(a_acc._types, target_type, rhs_guess_type);
 
-			if(check_types_resolved(a_acc._types, selected_type) == false){
+			if(check_types_resolved(a_acc._types, lookup_typeid_from_itype(a_acc._types, final_type)) == false){
 				std::stringstream what;
 				what << "Cannot infer dictionary element type, add explicit type.";
 				throw_compiler_error(parent.location, what.str());
 			}
-
-			const auto final_type = resolve_and_intern_typeid_from_typeid(a_acc, parent.location, selected_type);
 
 			//	Make sure all elements have the correct type.
 			for(int i = 0 ; i < elements2.size() / 2 ; i++){
@@ -1711,18 +1763,19 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 					throw_compiler_error(parent.location, what.str());
 				}
 			}
-			QUARK_ASSERT(check_types_resolved(a_acc._types, final_type));
-			return {a_acc, expression_t::make_construct_value_expr(make_type_name_from_typeid(final_type), elements2)};
+			QUARK_ASSERT(check_types_resolved(a_acc._types, lookup_typeid_from_itype(a_acc._types, final_type)));
+			return {a_acc, expression_t::make_construct_value_expr(to_asttype(final_type), elements2)};
 		}
 	}
 	else if(current_type.is_struct()){
-		const auto construct_value_type0 = details.value_type;
-		const auto construct_value_type = lookup_typeid_from_itype(a_acc._types, lookup_itype_from_asttype(a_acc._types, construct_value_type0));
-		const auto& def = construct_value_type.get_struct();
-		const auto struct_constructor_callee_type = typeid_t::make_function(construct_value_type, get_member_types(def._members), epure::pure);
-		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, details.elements, struct_constructor_callee_type);
+		const auto construct_value_itype0 = lookup_itype_from_asttype(a_acc._types, details.value_type);
+		const auto construct_value_type_flat = flatten_type_description_deep(a_acc._types, construct_value_itype0);
+
+		const auto& def = construct_value_type_flat.get_struct();
+		const auto struct_constructor_callee_type = typeid_t::make_function(lookup_typeid_from_itype(a_acc._types, construct_value_itype0), get_member_types(def._members), epure::pure);
+		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, details.elements, intern_anonymous_type(a_acc._types, struct_constructor_callee_type));
 		a_acc = resolved_call.first;
-		return { a_acc, expression_t::make_construct_value_expr(construct_value_type0, resolved_call.second.args) };
+		return { a_acc, expression_t::make_construct_value_expr(to_asttype(construct_value_itype0), resolved_call.second.args) };
 	}
 	else{
 		if(details.elements.size() != 1){
@@ -1733,17 +1786,17 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 		const auto construct_value_type0 = details.value_type;
 		const auto construct_value_type = lookup_typeid_from_itype(a_acc._types, lookup_itype_from_asttype(a_acc._types, construct_value_type0));
 		const auto struct_constructor_callee_type = typeid_t::make_function(construct_value_type, { construct_value_type }, epure::pure);
-		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, details.elements, struct_constructor_callee_type);
+		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, details.elements, lookup_itype_from_typeid(a_acc._types, struct_constructor_callee_type));
 		a_acc = resolved_call.first;
 		return { a_acc, expression_t::make_construct_value_expr(construct_value_type0, resolved_call.second.args) };
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_benchmark_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::benchmark_expr_t& details, const typeid_t& target_type){
+std::pair<analyser_t, expression_t> analyse_benchmark_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::benchmark_expr_t& details, const itype_t& target_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto acc = a;
-	const auto body_pair = analyse_body(acc, *details.body, epure::impure, typeid_t::make_void());
+	const auto body_pair = analyse_body(acc, *details.body, epure::impure, itype_t::make_void());
 	acc = body_pair.first;
 
 	const auto e2 = expression_t::make_benchmark_expr(body_pair.second);
@@ -1761,7 +1814,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(co
 	//??? We could simplify here and return [ "-", 0, expr]
 	const auto type = analyze_expr_output_type(a_acc, expr2.second);
 	if(type.is_int() || type.is_double()){
-		return {a_acc, expression_t::make_unary_minus(expr2.second, make_type_name_from_typeid(type))  };
+		return {a_acc, expression_t::make_unary_minus(expr2.second, to_asttype(type))  };
 	}
 	else{
 		std::stringstream what;
@@ -1804,7 +1857,7 @@ std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(cons
 				cond_result.second,
 				a.second,
 				b.second,
-				make_type_name_from_typeid(final_expression_type)
+				to_asttype(final_expression_type)
 			)
 		};
 	}
@@ -1833,8 +1886,6 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 		throw_compiler_error(parent.location, what.str());
 	}
 	else{
-		const auto shared_type = lhs_type;
-
 		if(op == expression_type::k_comparison_smaller_or_equal){
 		}
 		else if(op == expression_type::k_comparison_smaller){
@@ -1857,7 +1908,7 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 				op,
 				left_expr.second,
 				right_expr.second,
-				make_type_name_from_typeid(typeid_t::make_bool())
+				to_asttype(itype_t::make_bool())
 			)
 		};
 	}
@@ -1871,7 +1922,10 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 std::pair<analyser_t, expression_t> analyse_literal_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::literal_exp_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
-	return { a,e };
+	auto a_acc = a;
+	const auto e2 = analyze_expr_output_type(a_acc, e);
+	const auto r = expression_t::make_literal(details.value, to_asttype(e2));
+	return { a_acc, r };
 }
 
 
@@ -1910,7 +1964,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 				|| op == expression_type::k_logical_and
 				|| op == expression_type::k_logical_or
 			){
-				return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_type_name_from_typeid(shared_type)) };
+				return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, to_asttype(shared_type)) };
 			}
 			else {
 				throw_compiler_error(parent.location, "Operation not allowed on bool.");
@@ -1919,7 +1973,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 
 		//	int
 		else if(shared_type.is_int()){
-			return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_type_name_from_typeid(shared_type)) };
+			return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, to_asttype(shared_type)) };
 		}
 
 		//	double
@@ -1927,13 +1981,13 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			if(op == expression_type::k_arithmetic_remainder){
 				throw_compiler_error(parent.location, "Modulo operation on double not supported.");
 			}
-			return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_type_name_from_typeid(shared_type)) };
+			return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, to_asttype(shared_type)) };
 		}
 
 		//	string
 		else if(shared_type.is_string()){
 			if(op == expression_type::k_arithmetic_add){
-				return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_type_name_from_typeid(shared_type)) };
+				return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, to_asttype(shared_type)) };
 			}
 			else{
 				throw_compiler_error(parent.location, "Operation not allowed on string.");
@@ -1967,14 +2021,13 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 				throw_compiler_error(parent.location, "Operation not allowed on structs.");
 			}
 
-			return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_type_name_from_typeid(shared_type)) };
+			return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, to_asttype(shared_type)) };
 		}
 
 		//	vector
 		else if(shared_type.is_vector()){
-			const auto element_type = shared_type.get_vector_element_type();
 			if(op == expression_type::k_arithmetic_add){
-				return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_type_name_from_typeid(shared_type)) };
+				return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, to_asttype(shared_type)) };
 			}
 			else{
 				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
@@ -2022,14 +2075,14 @@ static std::pair<analyser_t, expression_t> analyse_intrinsic_fallthrough_express
 
 	auto a_acc = a;
 
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, sign._function_type);
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, lookup_itype_from_typeid(a._types, sign._function_type));
 	a_acc = resolved_call.first;
 	return {
 		a_acc,
 		expression_t::make_intrinsic(
 			get_intrinsic_opcode(sign),
 			resolved_call.second.args,
-			make_type_name_from_typeid(resolved_call.second.function_type.get_function_return())
+			to_asttype(resolved_call.second.function_type.get_function_return(a_acc._types))
 		)
 	};
 }
@@ -2060,8 +2113,10 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 	auto callee_expr_load2 = std::get_if<expression_t::load2_t>(&callee_expr._expression_variant);
 
 	//	This is a call to a function-value. Callee is a function-type.
-	const auto callee_type = analyze_expr_output_type(a_acc, callee_expr);
-	if(callee_type.is_function()){
+	const auto callee_itype = analyze_expr_output_itype(a_acc, callee_expr);
+	const auto callee_type = lookup_typeid_from_itype(a_acc._types, callee_itype);
+
+	if(callee_itype.is_function()){
 		const auto callee_pure = callee_type.get_function_pure();
 
 		if(callsite_pure == epure::pure && callee_pure == epure::impure){
@@ -2199,35 +2254,34 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 			}
 		}
 
-		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, callee_type);
+		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, lookup_itype_from_typeid(a_acc._types, callee_type));
 		a_acc = resolved_call.first;
-		return { a_acc, expression_t::make_call(callee_expr, resolved_call.second.args, make_type_name_from_typeid(resolved_call.second.function_type.get_function_return())) };
+		return { a_acc, expression_t::make_call(callee_expr, resolved_call.second.args, to_asttype(resolved_call.second.function_type.get_function_return(a_acc._types))) };
 	}
 
 	//	Attempting to call a TYPE? Then this may be a constructor call.
 	//	Desugar!
 	//	Converts these calls to construct-value-expressions.
-	else if(/*callee_type.is_typeid() &&*/ callee_expr_load2){
+	else if(callee_expr_load2){
 		const auto& addr = callee_expr_load2->address; 
 		const size_t scope_index = addr._parent_steps == symbol_pos_t::k_global_scope ? 0 : a_acc._lexical_scope_stack.size() - 1 - addr._parent_steps;
 		const auto& callee_symbol = a_acc._lexical_scope_stack[scope_index].symbols._symbols[addr._index];
 
 		if(callee_symbol.second._symbol_type == symbol_t::symbol_type::named_type){
-			const auto x = get_tagged_type_symbol(callee_symbol.second);
-			const auto construct_value_type = lookup_typeid_from_itype(a_acc._types, x);
-			const auto construct_value_type2 = construct_value_type;
+			const auto construct_value_type = get_tagged_type_symbol(a_acc._types, callee_symbol.second);
+
 
 			//	Convert calls to struct-type into construct-value expression.
-			if(construct_value_type2.is_struct()){
-				const auto construct_value_expr = expression_t::make_construct_value_expr(make_type_name_from_typeid(construct_value_type), details.args);
-				const auto result_pair = analyse_expression_to_target(a_acc, parent, construct_value_expr, construct_value_type2);
+			if(construct_value_type.is_struct()){
+				const auto construct_value_expr = expression_t::make_construct_value_expr(to_asttype(construct_value_type), details.args);
+				const auto result_pair = analyse_expression_to_target(a_acc, parent, construct_value_expr, construct_value_type);
 				return { result_pair.first, result_pair.second };
 			}
 
 			//	One argument for primitive types.
 			else{
-				const auto construct_value_expr = expression_t::make_construct_value_expr(make_type_name_from_typeid(construct_value_type), details.args);
-				const auto result_pair = analyse_expression_to_target(a_acc, parent, construct_value_expr, construct_value_type2);
+				const auto construct_value_expr = expression_t::make_construct_value_expr(to_asttype(construct_value_type), details.args);
+				const auto result_pair = analyse_expression_to_target(a_acc, parent, construct_value_expr, construct_value_type);
 				return { result_pair.first, result_pair.second };
 			}
 		}
@@ -2271,17 +2325,25 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 	const auto type_name_symbol = symbol_t::make_named_type(named_itype);
 	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ identifier, type_name_symbol });
 
-	const auto struct_typeid1 = typeid_t::make_struct2(details.def->_members);
 
-	//	Update our temporary. Notice that we need to find it again since other types might have been inserted since.
-	const auto itype = intern_anonymous_type(a_acc._types, struct_typeid1);
-	update_tagged_type(a_acc._types, name_tag, itype);
+
+	std::vector<member_t> members2;
+	for(const auto& m: details.def->_members){
+		members2.push_back(member_t(resolve_and_intern_typeid_from_typeid(a_acc, parent.location, m._type), m._name));
+	}
+	const auto struct_typeid1 = typeid_t::make_struct2(members2);
+
+	//	Update our temporary.
+	const auto named_itype2 = update_tagged_type(a_acc._types, named_itype, struct_typeid1);
+
+
 
 	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid1);
-	const auto r = expression_t::make_literal(struct_typeid_value);
+
+	const auto r = expression_t::make_literal(struct_typeid_value, to_asttype(named_itype2));
 
 #if DEBUG
-	if(false) trace_type_interner(a_acc._types);
+	if(true) trace_analyser(a_acc);
 #endif
 
 	return { a_acc, r };
@@ -2295,8 +2357,8 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	auto a_acc = analyser;
 
 	const auto function_def = details.def;
-	const auto function_type2 = resolve_and_intern_typeid_from_typeid(a_acc, parent.location, function_def._function_type);
-	const auto function_pure = function_type2.get_function_pure();
+	const auto function_type2 = resolve_and_intern_itype_from_typeid(a_acc, parent.location, function_def._function_type);
+	const auto function_pure = function_type2.get_function_pure(a_acc._types);
 
 	std::vector<member_t> args2;
 	for(const auto& arg: function_def._named_args){
@@ -2316,7 +2378,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 		}
 		const auto function_body2 = body_t(function_def._optional_body->_statements, symbol_vec);
 
-		const auto body_pair = analyse_body(a_acc, function_body2, pure, function_type2.get_function_return());
+		const auto body_pair = analyse_body(a_acc, function_body2, pure, function_type2.get_function_return(a_acc._types));
 		a_acc = body_pair.first;
 		const auto function_body3 = body_pair.second;
 		body_result = std::make_shared<body_t>(function_body3);
@@ -2327,12 +2389,12 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	const auto definition_name = function_def._definition_name;
 	const auto function_id = function_id_t { definition_name };
 
-	const auto function_def2 = function_definition_t::make_func(k_no_location, definition_name, function_type2, args2, body_result);
+	const auto function_def2 = function_definition_t::make_func(k_no_location, definition_name, lookup_typeid_from_itype(a_acc._types, function_type2), args2, body_result);
 	QUARK_ASSERT(check_types_resolved(a_acc._types, function_def2));
 
 	a_acc._function_defs.insert({ function_id, function_def2 });
 
-	const auto r = expression_t::make_literal(value_t::make_function_value(function_type2, function_id));
+	const auto r = expression_t::make_literal(value_t::make_function_value(lookup_typeid_from_itype(a_acc._types, function_type2), function_id), to_asttype(function_type2));
 
 	return { a_acc, r };
 }
@@ -2373,7 +2435,7 @@ static std::pair<analyser_t, expression_t> analyse_function_definition_expressio
 }
 */
 
-std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type){
+std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const analyser_t& a, const statement_t& parent, const expression_t& e, const itype_t& target_type){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -2381,7 +2443,7 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 		const analyser_t& a;
 		const statement_t& parent;
 		const expression_t& e;
-		const typeid_t& target_type;
+		const itype_t& target_type;
 
 		std::pair<analyser_t, expression_t> operator()(const expression_t::literal_exp_t& expr) const{
 			return analyse_literal_expression(a, parent, e, expr);
@@ -2442,11 +2504,14 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 
 	const auto result = std::visit(visitor_t{ a, parent, e, target_type }, e._expression_variant);
 
-	//	Record output type, if there is one.
 	auto a_acc = result.first;
-	if(check_types_resolved(a_acc._types, result.second)){
-		resolve_and_intern_typeid_from_typeid(a_acc, parent.location, analyze_expr_output_type(a_acc, result.second));
+
+	const auto output_type = result.second.get_output_type();
+	if(is_empty(output_type) == false){
+		QUARK_ASSERT(is_itype(output_type));
+		QUARK_ASSERT(check_types_resolved(a_acc._types, result.second));
 	}
+
 	return { a_acc, result.second };
 }
 
@@ -2454,7 +2519,7 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 /*
 	- Insert automatic type-conversions from string -> json etc.
 */
-expression_t auto_cast_expression_type(analyser_t& a, const expression_t& e, const typeid_t& wanted_type){
+expression_t auto_cast_expression_type(analyser_t& a, const expression_t& e, const itype_t& wanted_type){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(wanted_type.check_invariant());
@@ -2467,7 +2532,7 @@ expression_t auto_cast_expression_type(analyser_t& a, const expression_t& e, con
 	}
 	else if(wanted_type.is_string()){
 		if(current_type.is_json()){
-			return expression_t::make_construct_value_expr(make_type_name_from_typeid(wanted_type), { e });
+			return expression_t::make_construct_value_expr(to_asttype(wanted_type), { e });
 		}
 		else{
 			return e;
@@ -2475,13 +2540,13 @@ expression_t auto_cast_expression_type(analyser_t& a, const expression_t& e, con
 	}
 	else if(wanted_type.is_json()){
 		if(current_type.is_int() || current_type.is_double() || current_type.is_string() || current_type.is_bool()){
-			return expression_t::make_construct_value_expr(make_type_name_from_typeid(wanted_type), { e });
+			return expression_t::make_construct_value_expr(to_asttype(wanted_type), { e });
 		}
 		else if(current_type.is_vector()){
-			return expression_t::make_construct_value_expr(make_type_name_from_typeid(wanted_type), { e });
+			return expression_t::make_construct_value_expr(to_asttype(wanted_type), { e });
 		}
 		else if(current_type.is_dict()){
-			return expression_t::make_construct_value_expr(make_type_name_from_typeid(wanted_type), { e });
+			return expression_t::make_construct_value_expr(to_asttype(wanted_type), { e });
 		}
 		else{
 			return e;
@@ -2500,7 +2565,7 @@ static std::string get_expression_name(const expression_t& e){
 
 //	Return new expression where all types have been resolved. The target-type is used as a hint for type inference.
 //	Returned expression is guaranteed to be deep-resolved.
-static std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type){
+static std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& a, const statement_t& parent, const expression_t& e, const itype_t& target_type){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -2544,7 +2609,7 @@ static std::pair<analyser_t, expression_t> analyse_expression_to_target(const an
 
 //	Returned expression is guaranteed to be deep-resolved.
 static std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_t& a, const statement_t& parent, const expression_t& e){
-	return analyse_expression_to_target(a, parent, e, typeid_t::make_any());
+	return analyse_expression_to_target(a, parent, e, itype_t::make_any());
 }
 
 void test__analyse_expression(const statement_t& parent, const expression_t& e, const expression_t& expected){
@@ -2623,12 +2688,12 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 	symbol_map.push_back( { "json_null", symbol_t::make_immutable_precalc(itype_t::make_int(), value_t::make_int(7)) });
 
 	const auto benchmark_result_itype = resolve_and_intern_itype_from_typeid(a, k_no_location, make_benchmark_result_t());
-	new_tagged_type(a._types, make_type_tag(a, "benchmark_result_t"), benchmark_result_itype);
-	symbol_map.push_back( { "benchmark_result_t", symbol_t::make_named_type(benchmark_result_itype) } );
+	const auto benchmark_result_itype2 = new_tagged_type(a._types, make_type_tag(a, "benchmark_result_t"), benchmark_result_itype);
+	symbol_map.push_back( { "benchmark_result_t", symbol_t::make_named_type(benchmark_result_itype2) } );
 
 	const auto benchmark_def_itype = resolve_and_intern_itype_from_typeid(a, k_no_location, make_benchmark_def_t());
-	new_tagged_type(a._types, make_type_tag(a, "benchmark_def_t"), benchmark_def_itype);
-	symbol_map.push_back( { "benchmark_def_t", symbol_t::make_named_type(benchmark_def_itype)} );
+	const auto benchmark_def_itype2 = new_tagged_type(a._types, make_type_tag(a, "benchmark_def_t"), benchmark_def_itype);
+	symbol_map.push_back( { "benchmark_def_t", symbol_t::make_named_type(benchmark_def_itype2)} );
 
 	//	Reserve a symbol table entry for benchmark_registry instance.
 	{
@@ -2646,15 +2711,10 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 
 
 
-
-semantic_ast_t analyse(analyser_t& a){
+//	Create built-in global symbol map: built in data types and intrinsics.
+//	Analyze global namespace, including all Floyd functions defined there.
+const body_t make_global_body(analyser_t& a){
 	QUARK_ASSERT(a.check_invariant());
-
-	////////////////////////////////	Create built-in global symbol map: built in data types and intrinsics.
-	////////////////////////////////	Analyze global namespace, including all Floyd functions defined there.
-
-
-
 
 	auto global_body = body_t(a._imm->_ast._tree._globals._statements, symbol_table_t{ });
 
@@ -2667,42 +2727,48 @@ semantic_ast_t analyse(analyser_t& a){
 		resolve_and_intern_typeid_from_typeid(a, k_no_location, e._function_type);
 	}
 
-	if(false) trace_type_interner(a._types);
+	if(false) trace_analyser(a);
 
-	const auto result = analyse_statements(a, global_body._statements, typeid_t::make_void());
+	const auto result = analyse_statements(a, global_body._statements, itype_t::make_void());
 	a = result.first;
 
 	const auto body2 = body_t(result.second, result.first._lexical_scope_stack.back().symbols);
 
-	a._lexical_scope_stack.pop_back();
+	trace_analyser(a);
 
 	auto global_body3 = body2;
 
 
 	//	Add Init benchmark_registry.
 	{
-		const auto it = std::find_if(
-			global_body3._symbol_table._symbols.begin(),
-			global_body3._symbol_table._symbols.end(),
-			[&](const std::pair<std::string, symbol_t>& e) { return e.first == k_global_benchmark_registry; }
-		);
-		QUARK_ASSERT(it != global_body3._symbol_table._symbols.end());
+		auto symbol_ptr = find_symbol_by_name(a, k_global_benchmark_registry);
+		QUARK_ASSERT(symbol_ptr.first != nullptr);
 
-		const auto index = static_cast<int>(it - global_body3._symbol_table._symbols.begin());
-
-		const auto benchmark_registry_type = typeid_t::make_vector(typeid_t::make_identifier("benchmark_def_t"));
-
-		//??? remove most use of make_type_name_from_typeid()
 		const auto s = statement_t::make__init2(
 			k_no_location,
-			symbol_pos_t::make_stack_pos(symbol_pos_t::k_global_scope, index),
-			expression_t::make_construct_value_expr(make_type_name_from_typeid(benchmark_registry_type), a.benchmark_defs)
+			symbol_ptr.second,
+			expression_t::make_construct_value_expr(
+				to_asttype(symbol_ptr.first->_value_type),
+				a.benchmark_defs
+			)
 		);
-
 
 		global_body3._statements.insert(global_body3._statements.begin(), s);
 	}
 
+	trace_analyser(a);
+
+	a._lexical_scope_stack.pop_back();
+
+	return global_body3;
+}
+
+
+
+semantic_ast_t analyse(analyser_t& a){
+	QUARK_ASSERT(a.check_invariant());
+
+	const auto global_body3 = make_global_body(a);
 
 
 	////////////////////////////////	Make AST
@@ -2734,7 +2800,7 @@ semantic_ast_t analyse(analyser_t& a){
 		}
 		{
 			QUARK_SCOPED_TRACE("OUTPUT TYPES");
-			trace_type_interner(result_ast0._tree._interned_types);
+			trace_analyser(result_ast0);
 		}
 	}
 

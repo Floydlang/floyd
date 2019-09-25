@@ -957,8 +957,8 @@ QUARK_TESTQ("value_t()", "string"){
 json_t value_and_type_to_ast_json(const value_t& v){
 	return
 		json_t::make_array({
-			typeid_to_ast_json(v.get_type(), json_tags::k_tag_resolve_state),
-			value_to_ast_json(v, json_tags::k_tag_resolve_state)
+			typeid_to_ast_json(v.get_type()),
+			value_to_ast_json(v)
 		});
 }
 
@@ -1078,7 +1078,7 @@ value_t ast_json_to_value(const typeid_t& type, const json_t& v){
 
 
 
-json_t value_to_ast_json(const value_t& v, json_tags tags){
+json_t value_to_ast_json(const value_t& v){
 	if(v.is_undefined()){
 		return json_t();
 	}
@@ -1112,7 +1112,7 @@ json_t value_to_ast_json(const value_t& v, json_tags tags){
 		return v.get_json();
 	}
 	else if(v.is_typeid()){
-		return typeid_to_ast_json(v.get_typeid_value(), tags);
+		return typeid_to_ast_json(v.get_typeid_value());
 	}
 	else if(v.is_struct()){
 		const auto& struct_value = v.get_struct_value();
@@ -1121,7 +1121,7 @@ json_t value_to_ast_json(const value_t& v, json_tags tags){
 			const auto& member = struct_value->_def->_members[i];
 			const auto& key = member._name;
 			const auto& value = struct_value->_member_values[i];
-			const auto& value2 = value_to_ast_json(value, tags);
+			const auto& value2 = value_to_ast_json(value);
 			obj2[key] = value2;
 		}
 		return json_t::make_object(obj2);
@@ -1134,7 +1134,7 @@ json_t value_to_ast_json(const value_t& v, json_tags tags){
 		const auto entries = v.get_dict_value();
 		std::map<std::string, json_t> result;
 		for(const auto& e: entries){
-			result[e.first] = value_to_ast_json(e.second, tags);
+			result[e.first] = value_to_ast_json(e.second);
 		}
 		return result;
 	}
@@ -1151,23 +1151,23 @@ json_t value_to_ast_json(const value_t& v, json_tags tags){
 }
 
 QUARK_TESTQ("value_to_ast_json()", ""){
-	ut_verify(QUARK_POS, value_to_ast_json(value_t::make_string("hello"), json_tags::k_tag_resolve_state), json_t("hello"));
+	ut_verify(QUARK_POS, value_to_ast_json(value_t::make_string("hello")), json_t("hello"));
 }
 
 QUARK_TESTQ("value_to_ast_json()", ""){
-	ut_verify(QUARK_POS, value_to_ast_json(value_t::make_int(123), json_tags::k_tag_resolve_state), json_t(123.0));
+	ut_verify(QUARK_POS, value_to_ast_json(value_t::make_int(123)), json_t(123.0));
 }
 
 QUARK_TESTQ("value_to_ast_json()", ""){
-	ut_verify(QUARK_POS, value_to_ast_json(value_t::make_bool(true), json_tags::k_tag_resolve_state), json_t(true));
+	ut_verify(QUARK_POS, value_to_ast_json(value_t::make_bool(true)), json_t(true));
 }
 
 QUARK_TESTQ("value_to_ast_json()", ""){
-	ut_verify(QUARK_POS, value_to_ast_json(value_t::make_bool(false), json_tags::k_tag_resolve_state), json_t(false));
+	ut_verify(QUARK_POS, value_to_ast_json(value_t::make_bool(false)), json_t(false));
 }
 
 QUARK_TESTQ("value_to_ast_json()", ""){
-	ut_verify(QUARK_POS, value_to_ast_json(value_t::make_undefined(), json_tags::k_tag_resolve_state), json_t());
+	ut_verify(QUARK_POS, value_to_ast_json(value_t::make_undefined()), json_t());
 }
 
 
@@ -1244,7 +1244,7 @@ value_t value_t::make_function_value(const typeid_t& function_type, const functi
 	json_t values_to_json_array(const std::vector<value_t>& values){
 		std::vector<json_t> r;
 		for(const auto& i: values){
-			const auto& j = value_to_ast_json(i, json_tags::k_tag_resolve_state);
+			const auto& j = value_to_ast_json(i);
 			r.push_back(j);
 		}
 		return json_t::make_array(r);

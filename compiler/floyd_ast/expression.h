@@ -266,7 +266,12 @@ struct expression_t {
 	public: static expression_t make_literal(const value_t& value){
 		QUARK_ASSERT(is_floyd_literal(value.get_type()));
 
-		return expression_t({ literal_exp_t{ value } }, make_type_name_from_typeid(value.get_type()) );
+		return expression_t({ literal_exp_t{ value } }, to_asttype(value.get_type()) );
+	}
+	public: static expression_t make_literal(const value_t& value, const ast_type_t& optional_type){
+		QUARK_ASSERT(is_floyd_literal(value.get_type()));
+
+		return expression_t({ literal_exp_t{ value } }, optional_type );
 	}
 
 	public: static expression_t make_literal_int(const int i){
@@ -369,7 +374,7 @@ struct expression_t {
 	};
 
 	public: static expression_t make_struct_definition(const std::string& name, const std::shared_ptr<const struct_definition_t>& def){
-		return expression_t({ struct_definition_expr_t{ name, def } }, make_type_name_from_typeid(typeid_t::make_struct1(def)));
+		return expression_t({ struct_definition_expr_t{ name, def } }, to_asttype(typeid_t::make_struct1(def)));
 	}
 
 
@@ -380,7 +385,7 @@ struct expression_t {
 	};
 
 	public: static expression_t make_function_definition(const function_definition_t& def){
-		return expression_t({ function_definition_expr_t{ def } }, make_type_name_from_typeid(def._function_type));
+		return expression_t({ function_definition_expr_t{ def } }, to_asttype(def._function_type));
 	}
 
 
@@ -579,12 +584,6 @@ struct expression_t {
 };
 
 
-inline typeid_t get_expr_output_typeid(const type_interner_t& interner, const expression_t& e){
-	QUARK_ASSERT(interner.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-
-	return lookup_typeid_from_itype(interner, lookup_itype_from_asttype(interner, e.get_output_type()));
-}
 
 
 json_t expression_to_json(const expression_t& e);

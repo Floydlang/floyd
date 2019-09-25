@@ -653,8 +653,8 @@ json_t parser__make_literal(const value_t& value){
 		floyd::k_no_location,
 		parse_tree_expression_opcode_t::k_literal,
 		{
-			value_to_ast_json(value, json_tags::k_tag_resolve_state),
-			typeid_to_ast_json(value.get_type(), json_tags::k_tag_resolve_state)
+			value_to_ast_json(value),
+			typeid_to_ast_json(value.get_type())
 		}
 	);
 }

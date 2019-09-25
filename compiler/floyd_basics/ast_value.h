@@ -707,7 +707,7 @@ std::string to_compact_string_quote_strings(const value_t& value);
 */
 std::string value_and_type_to_string(const value_t& value);
 
-json_t value_to_ast_json(const value_t& v, json_tags tags);
+json_t value_to_ast_json(const value_t& v);
 value_t ast_json_to_value(const typeid_t& type, const json_t& v);
 
 

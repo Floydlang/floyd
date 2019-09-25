@@ -44,7 +44,7 @@ value_t get_global(const interpreter_t& vm, const std::string& name){
 		quark::throw_runtime_error(std::string() + "Cannot find global \"" + name + "\".");
 	}
 	else{
-		return bc_to_value(result->_value);
+		return bc_to_value(vm._imm->_program._types, result->_value);
 	}
 }
 
@@ -56,14 +56,14 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vec
 	QUARK_ASSERT(f.is_function());
 #endif
 
-	const auto f2 = value_to_bc(f);
+	const auto f2 = value_to_bc(vm._imm->_program._types, f);
 	std::vector<bc_value_t> args2;
 	for(const auto& e: args){
-		args2.push_back(value_to_bc(e));
+		args2.push_back(value_to_bc(vm._imm->_program._types, e));
 	}
 
 	const auto result = call_function_bc(vm, f2, &args2[0], static_cast<int>(args2.size()));
-	return bc_to_value(result);
+	return bc_to_value(vm._imm->_program._types, result);
 }
 
 
@@ -94,7 +94,7 @@ std::pair<std::shared_ptr<interpreter_t>, value_t> run_main(const compilation_un
 
 	const auto& main_function = find_global_symbol2(*interpreter, "main");
 	if(main_function != nullptr){
-		const auto& result = call_function(*interpreter, bc_to_value(main_function->_value), args);
+		const auto& result = call_function(*interpreter, bc_to_value(interpreter->_imm->_program._types, main_function->_value), args);
 		return { interpreter, result };
 	}
 	else{
@@ -194,7 +194,7 @@ static void process_process(bc_process_runtime_t& runtime, int process_id){
 
 	if(process._init_function != nullptr){
 		const std::vector<value_t> args = {};
-		process._process_state = call_function(*process._interpreter, bc_to_value(process._init_function->_value), args);
+		process._process_state = call_function(*process._interpreter, bc_to_value(process._interpreter->_imm->_program._types, process._init_function->_value), args);
 	}
 
 	while(stop == false){
@@ -232,7 +232,7 @@ static void process_process(bc_process_runtime_t& runtime, int process_id){
 
 			if(process._process_function != nullptr){
 				const std::vector<value_t> args = { process._process_state, value_t::make_json(message) };
-				const auto& state2 = call_function(*process._interpreter, bc_to_value(process._process_function->_value), args);
+				const auto& state2 = call_function(*process._interpreter, bc_to_value(process._interpreter->_imm->_program._types, process._process_function->_value), args);
 				process._process_state = state2;
 			}
 		}
@@ -359,7 +359,7 @@ static int64_t bc_call_main(interpreter_t& interpreter, const floyd::value_t& f,
 run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& main_args){
 	const auto& main_function = find_global_symbol2(vm, "main");
 	if(main_function != nullptr){
-		const auto main_result_int = bc_call_main(vm, bc_to_value(main_function->_value), main_args);
+		const auto main_result_int = bc_call_main(vm, bc_to_value(vm._imm->_program._types, main_function->_value), main_args);
 		print_vm_printlog(vm);
 		return { main_result_int, {} };
 	}

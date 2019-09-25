@@ -36,7 +36,7 @@
 
 
 static const bool k_run_bc = true;
-static const bool k_run_llvm = true;
+static const bool k_run_llvm = false;
 
 namespace floyd {
 
@@ -105,7 +105,7 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 		const auto result_variable = find_global_symbol2(interpreter, "result");
 		value_t result_global;
 		if(result_variable != nullptr){
-			result_global = bc_to_value(result_variable->_value);
+			result_global = bc_to_value(interpreter._imm->_program._types, result_variable->_value);
 		}
 
 		print_vm_printlog(interpreter);

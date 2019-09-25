@@ -94,7 +94,7 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& s){
 QUARK_TEST("", "parse_statement()", "", ""){
 	ut_verify(QUARK_POS,
 		parse_statement(seq_t("let int x = 10;")).first,
-		parse_json(seq_t(R"([0, "init-local", "^int", "x", ["k", 10, "^int"]])")).first
+		parse_json(seq_t(R"([0, "init-local", "int", "x", ["k", 10, "int"]])")).first
 	);
 }
 
@@ -105,14 +105,14 @@ QUARK_TEST("", "parse_statement()", "", ""){
 			[
 				0,
 				"init-local",
-				["func", "^int", ["^string"], true],
+				["func", "int", ["string"], true],
 				"f",
 				[
 					"function-def",
-					["func", "^int", ["^string"], true],
+					["func", "int", ["string"], true],
 					"f",
-					[{ "name": "name", "type": "^string" }],
-					{ "statements": [[25, "return", ["k", 13, "^int"]]], "symbols": null }
+					[{ "name": "name", "type": "string" }],
+					{ "statements": [[25, "return", ["k", 13, "int"]]], "symbols": null }
 				]
 			]
 		)")).first
@@ -122,7 +122,7 @@ QUARK_TEST("", "parse_statement()", "", ""){
 QUARK_TEST("", "parse_statement()", "", ""){
 	ut_verify(QUARK_POS,
 		parse_statement(seq_t("let int x = f(3);")).first,
-		parse_json(seq_t(R"([0, "init-local", "^int", "x", ["call", ["@", "f"], [["k", 3, "^int"]]]])")).first
+		parse_json(seq_t(R"([0, "init-local", "int", "x", ["call", ["@", "f"], [["k", 3, "int"]]]])")).first
 	);
 }
 
@@ -201,8 +201,8 @@ QUARK_TEST("", "parse_statements_bracketted()", "", ""){
 		parse_json(seq_t(
 			R"(
 				[
-					[3, "init-local", "^int", "x", ["k", 1, "^int"]],
-					[18, "init-local", "^int", "y", ["k", 2, "^int"]]
+					[3, "init-local", "int", "x", ["k", 1, "int"]],
+					[18, "init-local", "int", "y", ["k", 2, "int"]]
 				]
 			)"
 		)).first
@@ -245,9 +245,9 @@ const std::string k_test_program_0_parserout = R"(
 		[
 			0,
 			"init-local",
-			["func", "^int", [], true],
+			["func", "int", [], true],
 			"main",
-			["function-def", ["func", "^int", [], true], "main", [], { "statements": [[17, "return", ["k", 3, "^int"]]], "symbols": null }]
+			["function-def", ["func", "int", [], true], "main", [], { "statements": [[17, "return", ["k", 3, "int"]]], "symbols": null }]
 		]
 	]
 )";
@@ -268,14 +268,14 @@ const std::string k_test_program_1_parserout = R"(
 		[
 			0,
 			"init-local",
-			["func", "^int", ["^string"], true],
+			["func", "int", ["string"], true],
 			"main",
 			[
 				"function-def",
-				["func", "^int", ["^string"], true],
+				["func", "int", ["string"], true],
 				"main",
-				[{ "name": "args", "type": "^string" }],
-				{ "statements": [[29, "return", ["k", 3, "^int"]]], "symbols": null }
+				[{ "name": "args", "type": "string" }],
+				{ "statements": [[29, "return", ["k", 3, "int"]]], "symbols": null }
 			]
 		]
 	]
@@ -293,21 +293,21 @@ const char k_test_program_100_parserout[] = R"(
 		[
 			18,
 			"expression-statement",
-			["struct-def", "pixel", [{ "name": "red", "type": "^double" }, { "name": "green", "type": "^double" }, { "name": "blue", "type": "^double" }]]
+			["struct-def", "pixel", [{ "name": "red", "type": "double" }, { "name": "green", "type": "double" }, { "name": "blue", "type": "double" }]]
 		],
 		[
 			65,
 			"init-local",
-			["func", "^double", ["#pixel"], true],
+			["func", "double", ["%pixel"], true],
 			"get_grey",
 			[
 				"function-def",
-				["func", "^double", ["#pixel"], true],
+				["func", "double", ["%pixel"], true],
 				"get_grey",
-				[{ "name": "p", "type": "#pixel" }],
+				[{ "name": "p", "type": "%pixel" }],
 				{
 					"statements": [
-						[96, "return", ["/", ["+", ["+", ["->", ["@", "p"], "red"], ["->", ["@", "p"], "green"]], ["->", ["@", "p"], "blue"]], ["k", 3, "^double"]]]
+						[96, "return", ["/", ["+", ["+", ["->", ["@", "p"], "red"], ["->", ["@", "p"], "green"]], ["->", ["@", "p"], "blue"]], ["k", 3, "double"]]]
 					],
 					"symbols": null
 				}
@@ -316,16 +316,16 @@ const char k_test_program_100_parserout[] = R"(
 		[
 			144,
 			"init-local",
-			["func", "^double", [], true],
+			["func", "double", [], true],
 			"main",
 			[
 				"function-def",
-				["func", "^double", [], true],
+				["func", "double", [], true],
 				"main",
 				[],
 				{
 					"statements": [
-						[169, "init-local", "#pixel", "p", ["call", ["@", "pixel"], [["k", 1, "^int"], ["k", 0, "^int"], ["k", 0, "^int"]]]],
+						[169, "init-local", "%pixel", "p", ["call", ["@", "pixel"], [["k", 1, "int"], ["k", 0, "int"], ["k", 0, "int"]]]],
 						[204, "return", ["call", ["@", "get_grey"], [["@", "p"]]]]
 					],
 					"symbols": null
@@ -477,7 +477,7 @@ std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s){
 QUARK_TEST("", "parse_prefixless_statement()", "", ""){
 	ut_verify(QUARK_POS,
 		parse_prefixless_statement(seq_t("x = f(3);")).first._value,
-		parse_json(seq_t(R"(["init-local", "^int", "x", ["call", ["@", "f"], [["k", 3, "^int"]]]])")).first
+		parse_json(seq_t(R"(["init-local", "int", "x", ["call", ["@", "f"], [["k", 3, "int"]]]])")).first
 	);
 }
 */

@@ -198,7 +198,7 @@ std::pair<json_t, seq_t> parse_let(const seq_t& pos, const location_t& loc){
 	const auto expression_pos = parse_expression(equal_sign);
 
 	const auto params = std::vector<json_t>{
-		typeid_to_ast_json(a_result.type, json_tags::k_tag_resolve_state),
+		typeid_to_ast_json(a_result.type),
 		a_result.identifier,
 		expression_pos.first,
 	};
@@ -217,7 +217,7 @@ std::pair<json_t, seq_t> parse_mutable(const seq_t& pos, const location_t& loc){
 	const auto meta = (json_t::make_object({ std::pair<std::string, json_t>{"mutable", true } }));
 
 	const auto params = std::vector<json_t>{
-		typeid_to_ast_json(a_result.type, json_tags::k_tag_resolve_state),
+		typeid_to_ast_json(a_result.type),
 		a_result.identifier,
 		expression_pos.first,
 		meta
@@ -454,7 +454,7 @@ std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos){
 		location_t(k_no_location),
 		parse_tree_expression_opcode_t::k_function_def,
 		{
-			typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state),
+			typeid_to_ast_json(function_type),
 			function_name,
 			named_args,
 			body_json
@@ -465,7 +465,7 @@ std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos){
 		location_t(start.pos()),
 		parse_tree_statement_opcode::k_init_local,
 		{
-			typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state),
+			typeid_to_ast_json(function_type),
 			function_name,
 			func_def_expr
 		}
