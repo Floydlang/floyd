@@ -15,7 +15,7 @@
 #include "utils.h"
 #include "floyd_syntax.h"
 #include "compiler_basics.h"
-#include "typeid.h"
+#include "types.h"
 
 static const bool k_trace_parse_tree_flag = false;
 

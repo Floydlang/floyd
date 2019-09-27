@@ -11,7 +11,7 @@
 
 #include "statement.h"
 #include "software_system.h"
-#include "type_interner.h"
+#include "types.h"
 
 #include "quark.h"
 

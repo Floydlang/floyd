@@ -15,7 +15,7 @@
 #include "floyd_syntax.h"
 #include "compiler_basics.h"
 
-#include "typeid.h"
+#include "types.h"
 
 
 namespace floyd {

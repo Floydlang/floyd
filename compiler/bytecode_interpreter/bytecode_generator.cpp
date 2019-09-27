@@ -27,7 +27,7 @@
 #include "floyd_runtime.h"
 #include "compiler_basics.h"
 #include "semantic_ast.h"
-#include "type_interner.h"
+#include "types.h"
 
 #include <cmath>
 #include <algorithm>

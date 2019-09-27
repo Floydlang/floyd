@@ -9,7 +9,7 @@
 #ifndef type_interner_hpp
 #define type_interner_hpp
 
-#include "typeid.h"
+#include "types.h"
 #include "quark.h"
 
 #include <variant>

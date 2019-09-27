@@ -12,8 +12,7 @@
 /*
 	Infrastructure primitives under the compiler.
 */
-#include "typeid.h"
-#include "type_interner.h"
+#include "types.h"
 #include "ast_value.h"
 
 #include "quark.h"

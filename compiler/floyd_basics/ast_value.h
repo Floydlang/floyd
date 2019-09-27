@@ -39,7 +39,7 @@
 
 #include "quark.h"
 
-#include "typeid.h"
+#include "types.h"
 #include "json_support.h"
 
 #include <vector>

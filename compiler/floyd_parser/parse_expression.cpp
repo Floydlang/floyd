@@ -14,7 +14,7 @@
 #include "parse_statement.h"
 #include "floyd_syntax.h"
 
-#include "typeid.h"
+#include "types.h"
 #include "ast_value.h"
 
 

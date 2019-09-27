@@ -13,7 +13,7 @@
 #include "text_parser.h"
 #include "ast_value.h"
 #include "bytecode_helpers.h"
-#include "type_interner.h"
+#include "types.h"
 
 #include <algorithm>
 

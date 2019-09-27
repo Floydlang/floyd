@@ -11,7 +11,7 @@
 
 #include "ast_value.h"
 #include "compiler_basics.h"
-#include "type_interner.h"
+#include "types.h"
 
 #include "quark.h"
 

@@ -6,7 +6,7 @@
 //  Copyright © 2018 Marcus Zetterquist. All rights reserved.
 //
 
-#include "typeid.h"
+#include "types.h"
 
 #include "parser_primitives.h"
 #include "json_support.h"

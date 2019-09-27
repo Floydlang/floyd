@@ -11,7 +11,7 @@
 
 
 #include <string>
-#include "typeid.h"
+#include "types.h"
 #include "compiler_basics.h"
 #include "ast_value.h"
 

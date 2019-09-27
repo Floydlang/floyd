@@ -66,6 +66,7 @@
 		2C1CEFCD23140F7D00DE9A77 /* software_system.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB30737214ACF09007D2732 /* software_system.cpp */; };
 		2C1CEFCE23140F7D00DE9A77 /* test_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC0B3E122248EBD00C9D584 /* test_helpers.cpp */; };
 		2C1CEFD4231415AE00DE9A77 /* benchmark_soundsystem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1CEFD2231415AE00DE9A77 /* benchmark_soundsystem.cpp */; };
+		2C2B51CD233E348A001D59D9 /* types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C2B51CC233E348A001D59D9 /* types.cpp */; };
 		2C2FB296232A9F1B006105E4 /* process_test1.floyd in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2C2FB28D232A9CFF006105E4 /* process_test1.floyd */; };
 		2C2FB297232A9F1B006105E4 /* hello_world.floyd in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2C2FB28E232A9CFF006105E4 /* hello_world.floyd */; };
 		2C2FB298232A9F1B006105E4 /* benchmarks.floyd in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2C2FB28F232A9CFF006105E4 /* benchmarks.floyd */; };
@@ -269,6 +270,8 @@
 		2C1CEFD5231415FB00DE9A77 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		2C1CEFD623141B4200DE9A77 /* floyd_benchmarks.floyd */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = floyd_benchmarks.floyd; sourceTree = "<group>"; };
 		2C1D84DD1CA765A90042F0A8 /* floyd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = floyd; sourceTree = BUILT_PRODUCTS_DIR; };
+		2C2B51CC233E348A001D59D9 /* types.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = types.cpp; sourceTree = "<group>"; };
+		2C2B51CE233E3495001D59D9 /* types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = types.h; sourceTree = "<group>"; };
 		2C2FB272232A9CFF006105E4 /* floyd_preso.key */ = {isa = PBXFileReference; lastKnownFileType = file; path = floyd_preso.key; sourceTree = "<group>"; };
 		2C2FB273232A9CFF006105E4 /* floyd_logo_banner.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_logo_banner.png; sourceTree = "<group>"; };
 		2C2FB274232A9CFF006105E4 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -870,6 +873,8 @@
 				2CDA9AE12317DC9000231AA8 /* type_interner.h */,
 				2C574E48203107D80035EA62 /* typeid.cpp */,
 				2C574E49203107D80035EA62 /* typeid.h */,
+				2C2B51CC233E348A001D59D9 /* types.cpp */,
+				2C2B51CE233E3495001D59D9 /* types.h */,
 			);
 			path = floyd_basics;
 			sourceTree = "<group>";
@@ -1814,6 +1819,7 @@
 				2C18048E208B947C00F62480 /* ast.cpp in Sources */,
 				2CB9AFA52315E2C400836EC3 /* floyd_llvm_runtime_functions.cpp in Sources */,
 				2CC9B79F2309FD1D00B195C8 /* value_backend.cpp in Sources */,
+				2C2B51CD233E348A001D59D9 /* types.cpp in Sources */,
 				2C4DA09223035A0100190C37 /* format_table.cpp in Sources */,
 				2C6CDA9522FD92FD008F65C7 /* floyd_command_line_parser.cpp in Sources */,
 				2C180477208B939800F62480 /* parse_expression.cpp in Sources */,

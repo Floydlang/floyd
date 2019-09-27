@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include "typeid.h"
+#include "types.h"
 #include "json_support.h"
 #include "compiler_basics.h"
 #include "quark.h"
