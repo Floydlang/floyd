@@ -40,7 +40,7 @@ static const bool k_trace_process_messaging = false;
 struct llvm_bind_t {
 	link_name_t link_name;
 	void* address;
-	typeid_t type;
+	itype_t type;
 };
 
 
@@ -72,7 +72,7 @@ struct function_link_entry_t {
 	//??? Rename llvm_function_node;
 	llvm::Function* llvm_codegen_f;
 
-	typeid_t function_type_or_undef;
+	itype_t function_type_or_undef;
 
 	//??? better to use vector<string>
 	std::vector<member_t> arg_names_or_empty;
@@ -170,10 +170,10 @@ const function_link_entry_t& find_function_def_from_link_name(const std::vector<
 void* get_global_ptr(const llvm_execution_engine_t& ee, const std::string& name);
 
 
-std::pair<void*, typeid_t> bind_global(const llvm_execution_engine_t& ee, const std::string& name);
-value_t load_global(const llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& v);
+std::pair<void*, itype_t> bind_global(const llvm_execution_engine_t& ee, const std::string& name);
+value_t load_global(const llvm_execution_engine_t& ee, const std::pair<void*, itype_t>& v);
 
-void store_via_ptr(llvm_execution_engine_t& runtime, const typeid_t& member_type, void* value_ptr, const value_t& value);
+void store_via_ptr(llvm_execution_engine_t& runtime, const itype_t& member_type, void* value_ptr, const value_t& value);
 
 llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name);
 
@@ -186,7 +186,7 @@ inline llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp);
 
 
 
-inline value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
+inline value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const itype_t& type){
 	return from_runtime_value2(runtime.backend, encoded_value, type);
 }
 

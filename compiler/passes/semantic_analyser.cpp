@@ -2327,18 +2327,16 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 
 
 
-	std::vector<member_t> members2;
+	std::vector<member_itype_t> members2;
 	for(const auto& m: details.def->_members){
-		members2.push_back(member_t(resolve_and_intern_typeid_from_typeid(a_acc, parent.location, m._type), m._name));
+		members2.push_back(member_itype_t{ resolve_and_intern_itype_from_typeid(a_acc, parent.location, m._type), m._name } );
 	}
-	const auto struct_typeid1 = typeid_t::make_struct2(members2);
+	const auto struct_typeid1 = make_struct(a_acc._types, struct_def_itype_t{ members2 } );
 
 	//	Update our temporary.
 	const auto named_itype2 = update_tagged_type(a_acc._types, named_itype, struct_typeid1);
 
-
-
-	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid1);
+	const auto struct_typeid_value = value_t::make_typeid_value(flatten_type_description1(a_acc._types, struct_typeid1));
 
 	const auto r = expression_t::make_literal(struct_typeid_value, to_asttype(named_itype2));
 

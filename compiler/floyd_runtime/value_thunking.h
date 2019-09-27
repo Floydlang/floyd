@@ -16,7 +16,7 @@ namespace floyd {
 struct value_backend_t;
 struct value_t;
 union runtime_value_t;
-struct typeid_t;
+struct itype_t;
 
 runtime_value_t alloc_carray_8bit(value_backend_t& backend, const uint8_t data[], std::size_t count);
 
@@ -25,7 +25,7 @@ std::string from_runtime_string2(const value_backend_t& backend, runtime_value_t
 
 
 runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value);
-value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_t encoded_value, const typeid_t& type);
+value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_t encoded_value, const itype_t& type);
 
 
 }	// floyd

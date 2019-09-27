@@ -1140,7 +1140,7 @@ static void floydrt_release_vector_carray_pod(floyd_runtime_t* frp, runtime_valu
 	const auto& type = lookup_type_ref(r.backend, type0);
 	QUARK_ASSERT(type.is_string() || is_vector_carray(r.backend.config, itype_t(type0)));
 	if(itype_t(type0).is_vector()){
-		QUARK_ASSERT(is_rc_value(lookup_itype(r.backend, type.get_vector_element_type())) == false);
+		QUARK_ASSERT(is_rc_value(type.get_vector_element_type(r.backend.type_interner)) == false);
 	}
 #endif
 
@@ -1152,7 +1152,7 @@ static void floydrt_release_vector_carray_nonpod(floyd_runtime_t* frp, runtime_v
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
 	QUARK_ASSERT(is_vector_carray(r.backend.config, itype_t(type0)));
-	QUARK_ASSERT(is_rc_value(lookup_itype(r.backend, type.get_vector_element_type())) == true);
+	QUARK_ASSERT(is_rc_value(type.get_vector_element_type(r.backend.type_interner)) == true);
 #endif
 
 	release_vector_carray_nonpod(r.backend, vec, itype_t(type0));
@@ -1163,7 +1163,7 @@ static void floydrt_release_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
 	QUARK_ASSERT(is_vector_hamt(r.backend.config, itype_t(type0)));
-	QUARK_ASSERT(is_rc_value(lookup_itype(r.backend, type.get_vector_element_type())) == false);
+	QUARK_ASSERT(is_rc_value(type.get_vector_element_type(r.backend.type_interner)) == false);
 #endif
 
 	release_vector_hamt_pod(r.backend, vec, itype_t(type0));
@@ -1174,7 +1174,7 @@ static void floydrt_release_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_val
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
 	QUARK_ASSERT(is_vector_hamt(r.backend.config, itype_t(type0)));
-	QUARK_ASSERT(is_rc_value(lookup_itype(r.backend, type.get_vector_element_type())) == true);
+	QUARK_ASSERT(is_rc_value(type.get_vector_element_type(r.backend.type_interner)) == true);
 #endif
 
 	release_vector_hamt_nonpod(r.backend, vec, itype_t(type0));

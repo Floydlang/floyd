@@ -175,6 +175,7 @@ itype_t lookup_itype(const llvm_type_lookup& type_lookup, const typeid_t& type);
 
 
 //	Returns the exact LLVM struct layout that maps to the struct members, without any alloc-64 header. Not a pointer.
+llvm::StructType* get_exact_struct_type_byvalue(const llvm_type_lookup& i, const itype_t& type);
 llvm::StructType* get_exact_struct_type_byvalue(const llvm_type_lookup& type_lookup, const typeid_t& type);
 
 

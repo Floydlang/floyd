@@ -13,6 +13,7 @@
 	Infrastructure primitives under the compiler.
 */
 #include "typeid.h"
+#include "type_interner.h"
 #include "ast_value.h"
 
 #include "quark.h"
@@ -70,10 +71,10 @@ inline typeid_t get_main_signature_no_arg_pure(){
 }
 
 //	T x_init() impure
-typeid_t make_process_init_type(const typeid_t& t);
+itype_t make_process_init_type(const type_interner_t& interner, const itype_t& t);
 
 //	T x(T state, json message) impure
-typeid_t make_process_message_handler_type(const typeid_t& t);
+itype_t make_process_message_handler_type(const type_interner_t& interner, const itype_t& t);
 
 
 

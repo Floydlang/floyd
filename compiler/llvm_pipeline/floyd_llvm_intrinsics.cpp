@@ -187,7 +187,7 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 	if(is_dict_cppmap(r.backend.config, itype_t(coll_type))){
 		const auto& dict = unpack_dict_cppmap_arg(r.backend, coll_value, coll_type);
 
-		const auto value_type = type0.get_dict_value_type();
+		const auto value_type = type0.get_dict_value_type(r.backend.type_interner);
 
 		//	Deep copy dict.
 		auto dict2 = alloc_dict_cppmap(r.backend.heap, itype_t(coll_type));
@@ -197,10 +197,9 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 		const auto key_string = from_runtime_string(r, key_value);
 		m.erase(key_string);
 
-		const auto value_itype = lookup_itype(r.backend, value_type);
-		if(is_rc_value(value_itype)){
+		if(is_rc_value(value_type)){
 			for(auto& e: m){
-				retain_value(r.backend, e.second, value_itype);
+				retain_value(r.backend, e.second, value_type);
 			}
 		}
 		return dict2;
@@ -208,7 +207,7 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 	else if(is_dict_hamt(r.backend.config, itype_t(coll_type))){
 		const auto& dict = *coll_value.dict_hamt_ptr;
 
-		const auto value_type = type0.get_dict_value_type();
+		const auto value_type = type0.get_dict_value_type(r.backend.type_interner);
 
 		//	Deep copy dict.
 		auto dict2 = alloc_dict_hamt(r.backend.heap, itype_t(coll_type));
@@ -218,10 +217,9 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 		const auto key_string = from_runtime_string(r, key_value);
 		m = m.erase(key_string);
 
-		const auto value_itype = lookup_itype(r.backend, value_type);
-		if(is_rc_value(value_itype)){
+		if(is_rc_value(value_type)){
 			for(auto& e: m){
-				retain_value(r.backend, e.second, value_itype);
+				retain_value(r.backend, e.second, value_type);
 			}
 		}
 		return dict2;
@@ -384,7 +382,7 @@ static runtime_value_t floyd_llvm_intrinsic__from_json(floyd_runtime_t* frp, JSO
 	const auto& json = json_ptr->get_json();
 	const auto& target_type2 = lookup_type_ref(r.backend, target_type);
 
-	const auto result = unflatten_json_to_specific_type(json, target_type2);
+	const auto result = unflatten_json_to_specific_type(json, lookup_typeid_from_itype(r.backend.type_interner, target_type2));
 	const auto result2 = to_runtime_value(r, result);
 	return result2;
 }
@@ -411,10 +409,10 @@ static runtime_value_t map__carray(floyd_runtime_t* frp, runtime_value_t element
 
 	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
 	const auto& type2 = lookup_type_ref(backend, context_type);
-	QUARK_ASSERT(check_map_func_type(type0, type1, type2));
+//	QUARK_ASSERT(check_map_func_type(type0, type1, type2));
 
-	const auto e_type = type0.get_vector_element_type();
-	const auto f_arg_types = type1.get_function_args();
+	const auto e_type = type0.get_vector_element_type(r.backend.type_interner);
+	const auto f_arg_types = type1.get_function_args(r.backend.type_interner);
 #endif
 
 	const auto f = reinterpret_cast<MAP_F>(f_value.function_ptr);
@@ -439,10 +437,10 @@ static runtime_value_t map__hamt(floyd_runtime_t* frp, runtime_value_t elements_
 
 	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
 	const auto& type2 = lookup_type_ref(backend, context_type);
-	QUARK_ASSERT(check_map_func_type(type0, type1, type2));
+//	QUARK_ASSERT(check_map_func_type(type0, type1, type2));
 
-	const auto e_type = type0.get_vector_element_type();
-	const auto f_arg_types = type1.get_function_args();
+	const auto e_type = type0.get_vector_element_type(r.backend.type_interner);
+	const auto f_arg_types = type1.get_function_args(r.backend.type_interner);
 #endif
 
 	const auto f = reinterpret_cast<MAP_F>(f_value.function_ptr);
@@ -538,11 +536,13 @@ typedef runtime_value_t (*MAP_STRING_F)(floyd_runtime_t* frp, runtime_value_t s,
 static runtime_value_t floyd_llvm_intrinsic__map_string(floyd_runtime_t* frp, runtime_value_t input_string0, runtime_value_t func, runtime_type_t func_type, runtime_value_t context, runtime_type_t context_type){
 	auto& r = get_floyd_runtime(frp);
 
+/*
 	QUARK_ASSERT(check_map_string_func_type(
 		typeid_t::make_string(),
 		lookup_type_ref(r.backend, func_type),
 		lookup_type_ref(r.backend, context_type)
 	));
+*/
 
 	const auto f = reinterpret_cast<MAP_STRING_F>(func.function_ptr);
 
@@ -591,22 +591,22 @@ static runtime_value_t map_dag__carray(
 	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
 	const auto& type1 = lookup_type_ref(backend, depends_on_vec_type);
 	const auto& type2 = lookup_type_ref(backend, f_value_type);
-	QUARK_ASSERT(check_map_dag_func_type(type0, type1, type2, lookup_type_ref(backend, context_type)));
+//	QUARK_ASSERT(check_map_dag_func_type(type0, type1, type2, lookup_type_ref(backend, context_type)));
 
 	const auto& elements = elements_vec;
 #if DEBUG
-	const auto& e_type = type0.get_vector_element_type();
+	const auto& e_type = type0.get_vector_element_type(backend.type_interner);
 #endif
 	const auto& parents = depends_on_vec;
 	const auto& f = f_value;
-	const auto& r_type = type2.get_function_return();
+	const auto& r_type = type2.get_function_return(backend.type_interner);
 
-	QUARK_ASSERT(e_type == type2.get_function_args()[0] && r_type == type2.get_function_args()[1].get_vector_element_type());
+	QUARK_ASSERT(e_type == type2.get_function_args(backend.type_interner)[0] && r_type == type2.get_function_args(backend.type_interner)[1].get_vector_element_type(backend.type_interner));
 
 //	QUARK_ASSERT(is_vector_carray(typeid_t::make_vector(e_type)));
 //	QUARK_ASSERT(is_vector_carray(typeid_t::make_vector(r_type)));
 
-	const auto return_type = typeid_t::make_vector(r_type);
+	const auto return_type = make_vector(backend.type_interner, r_type);
 
 	const auto f2 = reinterpret_cast<map_dag_F>(f.function_ptr);
 
@@ -667,7 +667,7 @@ static runtime_value_t map_dag__carray(
 				}
 			}
 
-			auto solved_deps2 = alloc_vector_carray(backend.heap, solved_deps.size(), solved_deps.size(), lookup_itype(backend, return_type));
+			auto solved_deps2 = alloc_vector_carray(backend.heap, solved_deps.size(), solved_deps.size(), return_type);
 			for(int i = 0 ; i < solved_deps.size() ; i++){
 				solved_deps2.vector_carray_ptr->store(i, solved_deps[i]);
 			}
@@ -691,7 +691,7 @@ static runtime_value_t map_dag__carray(
 
 	//??? No need to copy all elements -- could store them directly into the VEC_T.
 	const auto count = complete.size();
-	auto result_vec = alloc_vector_carray(backend.heap, count, count, lookup_itype(backend, return_type));
+	auto result_vec = alloc_vector_carray(backend.heap, count, count, return_type);
 	for(int i = 0 ; i < count ; i++){
 //		retain_value(r, complete[i], r_type);
 		result_vec.vector_carray_ptr->store(i, complete[i]);
@@ -719,22 +719,22 @@ static runtime_value_t map_dag__hamt(
 	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
 	const auto& type1 = lookup_type_ref(backend, depends_on_vec_type);
 	const auto& type2 = lookup_type_ref(backend, f_value_type);
-	QUARK_ASSERT(check_map_dag_func_type(type0, type1, type2, lookup_type_ref(backend, context_type)));
+//	QUARK_ASSERT(check_map_dag_func_type(type0, type1, type2, lookup_type_ref(backend, context_type)));
 
 	const auto& elements = elements_vec;
 #if DEBUG
-	const auto& e_type = type0.get_vector_element_type();
+	const auto& e_type = type0.get_vector_element_type(backend.type_interner);
 #endif
 	const auto& parents = depends_on_vec;
 	const auto& f = f_value;
-	const auto& r_type = type2.get_function_return();
+	const auto& r_type = type2.get_function_return(backend.type_interner);
 
-	QUARK_ASSERT(e_type == type2.get_function_args()[0] && r_type == type2.get_function_args()[1].get_vector_element_type());
+	QUARK_ASSERT(e_type == type2.get_function_args(backend.type_interner)[0] && r_type == type2.get_function_args(backend.type_interner)[1].get_vector_element_type(backend.type_interner));
 
 //	QUARK_ASSERT(is_vector_hamt(typeid_t::make_vector(e_type)));
 //	QUARK_ASSERT(is_vector_hamt(typeid_t::make_vector(r_type)));
 
-	const auto return_type = typeid_t::make_vector(r_type);
+	const auto return_type = make_vector(backend.type_interner, r_type);
 
 	const auto f2 = reinterpret_cast<map_dag_F>(f.function_ptr);
 
@@ -796,7 +796,7 @@ static runtime_value_t map_dag__hamt(
 				}
 			}
 
-			auto solved_deps2 = alloc_vector_hamt(backend.heap, solved_deps.size(), solved_deps.size(), lookup_itype(backend, return_type));
+			auto solved_deps2 = alloc_vector_hamt(backend.heap, solved_deps.size(), solved_deps.size(), return_type);
 			for(int i = 0 ; i < solved_deps.size() ; i++){
 				solved_deps2.vector_hamt_ptr->store_mutate(i, solved_deps[i]);
 			}
@@ -820,7 +820,7 @@ static runtime_value_t map_dag__hamt(
 
 	//??? No need to copy all elements -- could store them directly into the VEC_T.
 	const auto count = complete.size();
-	auto result_vec = alloc_vector_hamt(backend.heap, count, count, lookup_itype(backend, return_type));
+	auto result_vec = alloc_vector_hamt(backend.heap, count, count, return_type);
 	for(int i = 0 ; i < count ; i++){
 //		retain_value(r, complete[i], r_type);
 		result_vec.vector_hamt_ptr->store_mutate(i, complete[i]);
@@ -876,7 +876,7 @@ static runtime_value_t filter__carray(floyd_runtime_t* frp, value_backend_t& bac
 	const auto& type2 = lookup_type_ref(r.backend, context_type);
 	const auto& return_type = type0;
 
-	QUARK_ASSERT(check_filter_func_type(type0, type1, type2));
+//	QUARK_ASSERT(check_filter_func_type(type0, type1, type2));
 	QUARK_ASSERT(is_vector_carray(r.backend.config, itype_t(elements_vec_type)));
 
 	const auto& vec = *elements_vec.vector_carray_ptr;
@@ -902,7 +902,7 @@ static runtime_value_t filter__carray(floyd_runtime_t* frp, value_backend_t& bac
 	}
 
 	const auto count2 = acc.size();
-	auto result_vec = alloc_vector_carray(r.backend.heap, count2, count2, lookup_itype(backend, return_type));
+	auto result_vec = alloc_vector_carray(r.backend.heap, count2, count2, return_type);
 
 	if(count2 > 0){
 		//	Count > 0 required to get address to first element in acc.
@@ -922,7 +922,7 @@ static runtime_value_t filter__hamt(floyd_runtime_t* frp, value_backend_t& backe
 	const auto& type2 = lookup_type_ref(r.backend, context_type);
 	const auto& return_type = type0;
 
-	QUARK_ASSERT(check_filter_func_type(type0, type1, type2));
+//	QUARK_ASSERT(check_filter_func_type(type0, type1, type2));
 	QUARK_ASSERT(is_vector_hamt(r.backend.config, itype_t(elements_vec_type)));
 
 	const auto& vec = *elements_vec.vector_hamt_ptr;
@@ -948,7 +948,7 @@ static runtime_value_t filter__hamt(floyd_runtime_t* frp, value_backend_t& backe
 	}
 
 	const auto count2 = acc.size();
-	auto result_vec = alloc_vector_hamt(r.backend.heap, &acc[0], count2, lookup_itype(backend, return_type));
+	auto result_vec = alloc_vector_hamt(r.backend.heap, &acc[0], count2, return_type);
 	return result_vec;
 }
 
@@ -986,7 +986,7 @@ static runtime_value_t reduce__carray(floyd_runtime_t* frp, value_backend_t& bac
 	const auto& type1 = lookup_type_ref(backend, init_value_type);
 	const auto& type2 = lookup_type_ref(backend, f_type);
 
-	QUARK_ASSERT(check_reduce_func_type(type0, type1, type2, lookup_type_ref(backend, f_type)));
+//	QUARK_ASSERT(check_reduce_func_type(type0, type1, type2, lookup_type_ref(backend, f_type)));
 	QUARK_ASSERT(is_vector_carray(backend.config, itype_t(elements_vec_type)));
 
 	const auto& vec = *elements_vec.vector_carray_ptr;
@@ -1017,7 +1017,7 @@ static runtime_value_t reduce__hamt(floyd_runtime_t* frp, value_backend_t& backe
 	const auto& type1 = lookup_type_ref(backend, init_value_type);
 	const auto& type2 = lookup_type_ref(backend, f_type);
 
-	QUARK_ASSERT(check_reduce_func_type(type0, type1, type2, lookup_type_ref(backend, f_type)));
+//	QUARK_ASSERT(check_reduce_func_type(type0, type1, type2, lookup_type_ref(backend, f_type)));
 	QUARK_ASSERT(is_vector_hamt(backend.config, itype_t(elements_vec_type)));
 
 	const auto& vec = *elements_vec.vector_hamt_ptr;
@@ -1085,7 +1085,7 @@ static runtime_value_t stable_sort__carray(
 	const auto& type1 = lookup_type_ref(backend, f_value_type);
 	const auto& type2 = lookup_type_ref(backend, context_value_type);
 
-	QUARK_ASSERT(check_stable_sort_func_type(type0, type1, type2));
+//	QUARK_ASSERT(check_stable_sort_func_type(type0, type1, type2));
 	QUARK_ASSERT(is_vector_carray(backend.config, itype_t(elements_vec_type)));
 
 	const auto& elements = elements_vec;
@@ -1115,7 +1115,7 @@ static runtime_value_t stable_sort__carray(
 	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
 
 	//??? optimize
-	const auto result = to_runtime_value2(backend, value_t::make_vector_value(type0.get_vector_element_type(), mutate_inplace_elements));
+	const auto result = to_runtime_value2(backend, value_t::make_vector_value(lookup_typeid_from_itype(backend.type_interner, type0.get_vector_element_type(backend.type_interner)), mutate_inplace_elements));
 	return result;
 }
 
@@ -1138,7 +1138,7 @@ static runtime_value_t stable_sort__hamt(
 	const auto& type1 = lookup_type_ref(backend, f_value_type);
 	const auto& type2 = lookup_type_ref(backend, context_value_type);
 
-	QUARK_ASSERT(check_stable_sort_func_type(type0, type1, type2));
+//	QUARK_ASSERT(check_stable_sort_func_type(type0, type1, type2));
 	QUARK_ASSERT(is_vector_hamt(backend.config, itype_t(elements_vec_type)));
 
 	const auto& elements = elements_vec;
@@ -1168,7 +1168,7 @@ static runtime_value_t stable_sort__hamt(
 	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
 
 	//??? optimize
-	const auto result = to_runtime_value2(backend, value_t::make_vector_value(type0.get_vector_element_type(), mutate_inplace_elements));
+	const auto result = to_runtime_value2(backend, value_t::make_vector_value(lookup_typeid_from_itype(backend.type_interner, type0.get_vector_element_type(backend.type_interner)), mutate_inplace_elements));
 	return result;
 }
 
@@ -1231,7 +1231,7 @@ static runtime_value_t push_back__string(floyd_runtime_t* frp, runtime_value_t v
 
 #if DEBUG
 	const auto& type0 = lookup_type_ref(r.backend, vec_type);
-	QUARK_ASSERT(type0 == typeid_t::make_string());
+	QUARK_ASSERT(type0.is_string());
 #endif
 
 	auto value = from_runtime_string(r, vec);
@@ -1439,7 +1439,7 @@ static int64_t size__string(floyd_runtime_t* frp, runtime_value_t vec, runtime_t
 
 #if DEBUG
 	const auto& type0 = lookup_type_ref(r.backend, vec_type);
-	QUARK_ASSERT(type0 == typeid_t::make_string());
+	QUARK_ASSERT(type0.is_string());
 #endif
 
 	return vec.vector_carray_ptr->get_element_count();
@@ -1941,13 +1941,15 @@ static std::map<std::string, void*> get_intrinsic_binds(){
 }
 
 //	Skips duplicates.
-std::vector<function_link_entry_t> make_entries(const std::vector<function_bind_t>& binds){
+static std::vector<function_link_entry_t> make_entries(const type_interner_t& interner, const std::vector<function_bind_t>& binds){
+	QUARK_ASSERT(interner.check_invariant());
 	const auto& intrinsic_signatures = get_intrinsic_signatures();
 
 	std::vector<function_link_entry_t> result;
 	for(const auto& bind: binds){
 		auto signature_it = std::find_if(intrinsic_signatures.begin(), intrinsic_signatures.end(), [&] (const intrinsic_signature_t& m) { return m.name == bind.name; } );
-		const auto function_type = signature_it != intrinsic_signatures.end() ? signature_it->_function_type : typeid_t::make_undefined(); 
+		const auto function_type0 = signature_it != intrinsic_signatures.end() ? signature_it->_function_type : typeid_t::make_undefined();
+		const auto function_type = lookup_itype_from_typeid(interner, function_type0);
 
 		const auto link_name = encode_intrinsic_link_name(bind.name);
 		const auto exists_it = std::find_if(result.begin(), result.end(), [&](const function_link_entry_t& e){ return e.link_name == link_name; });
@@ -1961,9 +1963,11 @@ std::vector<function_link_entry_t> make_entries(const std::vector<function_bind_
 	return result;
 }
 
-static std::vector<function_link_entry_t> make_entries2(const std::vector<specialization_t>& specializations){
+static std::vector<function_link_entry_t> make_entries2(const type_interner_t& interner, const std::vector<specialization_t>& specializations){
+	QUARK_ASSERT(interner.check_invariant());
+
 	const auto binds = mapf<function_bind_t>(specializations, [](auto& e){ return e.bind; });
-	return make_entries(binds);
+	return make_entries(interner, binds);
 }
 
 std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -1978,17 +1982,17 @@ std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& c
 		QUARK_ASSERT(signature_it != intrinsic_signatures.end());
 
 		const auto link_name = encode_intrinsic_link_name(bind.first);
-		const auto function_type = signature_it->_function_type;
-		llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
+		const auto function_type = lookup_itype_from_typeid(type_lookup.state.type_interner, signature_it->_function_type);
+		llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, signature_it->_function_type);
 		const auto function_byvalue_type = deref_ptr(function_ptr_type);
 		const auto def = function_link_entry_t{ "intrinsic", link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, {}, bind.second };
 		result.push_back(def);
 	}
 
-	result = concat(result, make_entries2(make_push_back_specializations(context, type_lookup)));
-	result = concat(result, make_entries2(make_size_specializations(context, type_lookup)));
-	result = concat(result, make_entries2(make_update_specializations(context, type_lookup)));
-	result = concat(result, make_entries2(make_map_specializations(context, type_lookup)));
+	result = concat(result, make_entries2(type_lookup.state.type_interner, make_push_back_specializations(context, type_lookup)));
+	result = concat(result, make_entries2(type_lookup.state.type_interner, make_size_specializations(context, type_lookup)));
+	result = concat(result, make_entries2(type_lookup.state.type_interner, make_update_specializations(context, type_lookup)));
+	result = concat(result, make_entries2(type_lookup.state.type_interner, make_map_specializations(context, type_lookup)));
 
 	if(k_trace_function_link_map){
 		trace_function_link_map(result);

@@ -33,11 +33,12 @@ struct native_sha1_t {
 };
 
 
-
+//??? Should find the symbol for "benchmark_result2_t".
 static runtime_value_t llvm_corelib__make_benchmark_report(floyd_runtime_t* frp, const runtime_value_t b){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto b2 = from_runtime_value(r, b, typeid_t::make_vector(make_benchmark_result2_t()));
+	const auto benchmark_result2_t__itype = lookup_itype_from_typeid(r.backend.type_interner, make_benchmark_result2_t());
+	const auto b2 = from_runtime_value(r, b, make_vector(r.backend.type_interner, benchmark_result2_t__itype));
 	const auto test_results = unpack_vec_benchmark_result2_t(b2);
 	const auto report = make_benchmark_report(test_results);
 	auto result = to_runtime_string(r, report);
@@ -65,7 +66,8 @@ static DICT_CPPMAP_T* llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
 runtime_value_t llvm_corelib__make_hardware_caps_report(floyd_runtime_t* frp, runtime_value_t caps0){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto b2 = from_runtime_value(r, caps0, typeid_t::make_dict(typeid_t::make_json()));
+	const auto type = lookup_itype_from_typeid(r.backend.type_interner, typeid_t::make_dict(typeid_t::make_json()));
+	const auto b2 = from_runtime_value(r, caps0, type);
 	const auto m = b2.get_dict_value();
 	std::vector<std::pair<std::string, json_t>> caps;
 	for(const auto& e: m){
@@ -77,7 +79,7 @@ runtime_value_t llvm_corelib__make_hardware_caps_report(floyd_runtime_t* frp, ru
 runtime_value_t llvm_corelib__make_hardware_caps_report_brief(floyd_runtime_t* frp, runtime_value_t caps0){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto b2 = from_runtime_value(r, caps0, typeid_t::make_dict(typeid_t::make_json()));
+	const auto b2 = from_runtime_value(r, caps0, lookup_itype_from_typeid(r.backend.type_interner, typeid_t::make_dict(typeid_t::make_json())));
 	const auto m = b2.get_dict_value();
 	std::vector<std::pair<std::string, json_t>> caps;
 	for(const auto& e: m){

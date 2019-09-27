@@ -392,14 +392,11 @@ llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const type_intern
 
 	builder_t builder { context, acc };
 
-	for(const auto& e: acc.type_interner.interned2){
-		QUARK_ASSERT(builder.acc.type_interner.check_invariant());
-		QUARK_ASSERT(e.type.check_invariant());
-
-		const auto itype = lookup_itype_from_typeid(builder.acc.type_interner, e.type);
-		const auto index = itype.get_lookup_index();
-		const auto entry = make_type(builder, e.type);
-		builder.acc.types[index] = entry;
+	QUARK_ASSERT(builder.acc.type_interner.check_invariant());
+	for(type_lookup_index_t i = 0 ; i < acc.type_interner.interned2.size() ; i++){
+		const auto& type = lookup_itype_from_index(acc.type_interner,i);
+		QUARK_ASSERT(type.check_invariant());
+		builder.acc.types[i] = make_type(builder, flatten_type_description_deep(type_interner, type));
 	}
 
 	state = builder.acc;
@@ -450,7 +447,7 @@ void trace_llvm_type_lookup(const llvm_type_lookup& type_lookup){
 
 	for(int i = 0 ; i < type_lookup.state.types.size() ; i++){
 		const auto& e = type_lookup.state.types[i];
-		const auto type = type_lookup.state.type_interner.interned2[i].type;
+		const auto type = lookup_itype_from_index(type_lookup.state.type_interner, i);
 		const auto l = line_t {
 			{
 				std::to_string(i),
@@ -512,6 +509,16 @@ itype_t lookup_itype(const llvm_type_lookup& type_lookup, const typeid_t& type){
 }
 
 
+
+llvm::StructType* get_exact_struct_type_byvalue(const llvm_type_lookup& i, const itype_t& type){
+	QUARK_ASSERT(i.check_invariant());
+	QUARK_ASSERT(type.is_struct());
+
+	const auto& entry = i.find_from_itype(type);
+	auto result = entry.llvm_type_specific;
+	auto result2 = deref_ptr(result);
+	return llvm::cast<llvm::StructType>(result2);
+}
 
 llvm::StructType* get_exact_struct_type_byvalue(const llvm_type_lookup& i, const typeid_t& type){
 	QUARK_ASSERT(i.check_invariant());

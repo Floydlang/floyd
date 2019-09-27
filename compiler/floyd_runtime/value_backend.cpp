@@ -882,120 +882,120 @@ bool is_rc_value(const typeid_t& type){
 
 
 // IMPORTANT: Different types will access different number of bytes, for example a BYTE. We cannot dereference pointer as a uint64*!!
-runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type){
+runtime_value_t load_via_ptr2(const void* value_ptr, const itype_t& type){
 	QUARK_ASSERT(value_ptr != nullptr);
 	QUARK_ASSERT(type.check_invariant());
 
 	struct visitor_t {
 		const void* value_ptr;
 
-		runtime_value_t operator()(const typeid_t::undefined_t& e) const{
+		runtime_value_t operator()(const undefined_t& e) const{
 			UNSUPPORTED();
 		}
-		runtime_value_t operator()(const typeid_t::any_t& e) const{
+		runtime_value_t operator()(const any_t& e) const{
 			UNSUPPORTED();
 		}
 
-		runtime_value_t operator()(const typeid_t::void_t& e) const{
+		runtime_value_t operator()(const void_t& e) const{
 			UNSUPPORTED();
 		}
-		runtime_value_t operator()(const typeid_t::bool_t& e) const{
+		runtime_value_t operator()(const bool_t& e) const{
 			const auto temp = *static_cast<const uint8_t*>(value_ptr);
 			return make_runtime_bool(temp == 0 ? false : true);
 		}
-		runtime_value_t operator()(const typeid_t::int_t& e) const{
+		runtime_value_t operator()(const int_t& e) const{
 			const auto temp = *static_cast<const uint64_t*>(value_ptr);
 			return make_runtime_int(temp);
 		}
-		runtime_value_t operator()(const typeid_t::double_t& e) const{
+		runtime_value_t operator()(const double_t& e) const{
 			const auto temp = *static_cast<const double*>(value_ptr);
 			return make_runtime_double(temp);
 		}
-		runtime_value_t operator()(const typeid_t::string_t& e) const{
+		runtime_value_t operator()(const string_t& e) const{
 			return *static_cast<const runtime_value_t*>(value_ptr);
 		}
 
-		runtime_value_t operator()(const typeid_t::json_type_t& e) const{
+		runtime_value_t operator()(const json_type_t& e) const{
 			return *static_cast<const runtime_value_t*>(value_ptr);
 		}
-		runtime_value_t operator()(const typeid_t::typeid_type_t& e) const{
+		runtime_value_t operator()(const typeid_type_t& e) const{
 			const auto value = *static_cast<const int32_t*>(value_ptr);
 			return make_runtime_typeid(itype_t(value));
 		}
 
-		runtime_value_t operator()(const typeid_t::struct_t& e) const{
+		runtime_value_t operator()(const struct_t& e) const{
 			STRUCT_T* struct_ptr = *reinterpret_cast<STRUCT_T* const *>(value_ptr);
 			return make_runtime_struct(struct_ptr);
 		}
-		runtime_value_t operator()(const typeid_t::vector_t& e) const{
+		runtime_value_t operator()(const vector_t& e) const{
 			return *static_cast<const runtime_value_t*>(value_ptr);
 		}
-		runtime_value_t operator()(const typeid_t::dict_t& e) const{
+		runtime_value_t operator()(const dict_t& e) const{
 			return *static_cast<const runtime_value_t*>(value_ptr);
 		}
-		runtime_value_t operator()(const typeid_t::function_t& e) const{
+		runtime_value_t operator()(const function_t& e) const{
 			return *static_cast<const runtime_value_t*>(value_ptr);
 		}
-		runtime_value_t operator()(const typeid_t::identifier_t& e) const {
+		runtime_value_t operator()(const identifier_t& e) const {
 			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
-	return std::visit(visitor_t{ value_ptr }, type._contents);
+	return std::visit(visitor_t{ value_ptr }, get_itype_variant(type));
 }
 
 // IMPORTANT: Different types will access different number of bytes, for example a BYTE. We cannot dereference pointer as a uint64*!!
-void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t& value){
+void store_via_ptr2(void* value_ptr, const itype_t& type, const runtime_value_t& value){
 	struct visitor_t {
 		void* value_ptr;
 		const runtime_value_t& value;
 
-		void operator()(const typeid_t::undefined_t& e) const{
+		void operator()(const undefined_t& e) const{
 			UNSUPPORTED();
 		}
-		void operator()(const typeid_t::any_t& e) const{
+		void operator()(const any_t& e) const{
 			UNSUPPORTED();
 		}
 
-		void operator()(const typeid_t::void_t& e) const{
+		void operator()(const void_t& e) const{
 			UNSUPPORTED();
 		}
-		void operator()(const typeid_t::bool_t& e) const{
+		void operator()(const bool_t& e) const{
 			*static_cast<uint8_t*>(value_ptr) = value.bool_value;
 		}
-		void operator()(const typeid_t::int_t& e) const{
+		void operator()(const int_t& e) const{
 			*(int64_t*)value_ptr = value.int_value;
 		}
-		void operator()(const typeid_t::double_t& e) const{
+		void operator()(const double_t& e) const{
 			*static_cast<double*>(value_ptr) = value.double_value;
 		}
-		void operator()(const typeid_t::string_t& e) const{
+		void operator()(const string_t& e) const{
 			*static_cast<runtime_value_t*>(value_ptr) = value;
 		}
 
-		void operator()(const typeid_t::json_type_t& e) const{
+		void operator()(const json_type_t& e) const{
 			*static_cast<runtime_value_t*>(value_ptr) = value;
 		}
-		void operator()(const typeid_t::typeid_type_t& e) const{
+		void operator()(const typeid_type_t& e) const{
 			*static_cast<int32_t*>(value_ptr) = static_cast<int32_t>(value.typeid_itype);
 		}
 
-		void operator()(const typeid_t::struct_t& e) const{
+		void operator()(const struct_t& e) const{
 			*reinterpret_cast<STRUCT_T**>(value_ptr) = value.struct_ptr;
 		}
-		void operator()(const typeid_t::vector_t& e) const{
+		void operator()(const vector_t& e) const{
 			*static_cast<runtime_value_t*>(value_ptr) = value;
 		}
-		void operator()(const typeid_t::dict_t& e) const{
+		void operator()(const dict_t& e) const{
 			*static_cast<runtime_value_t*>(value_ptr) = value;
 		}
-		void operator()(const typeid_t::function_t& e) const{
+		void operator()(const function_t& e) const{
 			*static_cast<runtime_value_t*>(value_ptr) = value;
 		}
-		void operator()(const typeid_t::identifier_t& e) const {
+		void operator()(const identifier_t& e) const {
 			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
-	std::visit(visitor_t{ value_ptr, value }, type._contents);
+	std::visit(visitor_t{ value_ptr, value }, get_itype_variant(type));
 }
 
 
@@ -1036,15 +1036,14 @@ value_backend_t::value_backend_t(
 {
 	QUARK_ASSERT(config.check_invariant());
 
-	for(const auto& e: type_interner.interned2){
-		if(e.type.is_vector()){
-			const auto& type = e.type.get_vector_element_type();
-			const auto itype = lookup_itype_from_typeid(type_interner, type);
+	for(type_lookup_index_t i = 0 ; i < type_interner.interned2.size() ; i++){
+		const auto itype0 = lookup_itype_from_index(type_interner, i);
+		if(itype0.is_vector()){
+			const auto& itype = itype0.get_vector_element_type(type_interner);
 			child_type.push_back(itype);
 		}
-		else if(e.type.is_dict()){
-			const auto& type = e.type.get_dict_value_type();
-			const auto itype = lookup_itype_from_typeid(type_interner, type);
+		else if(itype0.is_dict()){
+			const auto& itype = itype0.get_dict_value_type(type_interner);
 			child_type.push_back(itype);
 		}
 		else{
@@ -1066,18 +1065,20 @@ itype_t lookup_itype(const value_backend_t& backend, const typeid_t& type){
 	return lookup_itype_from_typeid(backend.type_interner, type);
 }
 
-const typeid_t& lookup_type_ref(const value_backend_t& backend, runtime_type_t type){
+itype_t lookup_type_ref(const value_backend_t& backend, runtime_type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	return lookup_type_ref(backend, itype_t(type));
+	//	return flatten_type_description_deep(backend.type_interner, itype_t(type));
+	return itype_t(type);
 }
 
-const typeid_t& lookup_type_ref(const value_backend_t& backend, itype_t itype){
+itype_t lookup_type_ref(const value_backend_t& backend, itype_t type){
 	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
 
-	return lookup_typeid_from_itype__only_anonymous(backend.type_interner, itype);
+//	return flatten_type_description_deep(backend.type_interner, itype);
+	return type;
 }
-
 
 
 
@@ -1086,8 +1087,7 @@ const typeid_t& lookup_type_ref(const value_backend_t& backend, itype_t itype){
 const std::pair<itype_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, itype_t type){
 #if DEBUG
 	QUARK_ASSERT(backend.check_invariant());
-	const auto& type2 = lookup_type_ref(backend, type);
-	QUARK_ASSERT(type2.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
 #endif
 
 	const auto& vec = backend.struct_layouts;
@@ -1155,12 +1155,9 @@ void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, itype_t it
 void retain_struct(value_backend_t& backend, runtime_value_t s, itype_t itype){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(s.check_invariant());
-#if DEBUG
-	const auto& type = lookup_type_ref(backend, itype);
-#endif
-	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(itype.check_invariant());
 	QUARK_ASSERT(is_rc_value(itype));
-	QUARK_ASSERT(type.is_struct());
+	QUARK_ASSERT(itype.is_struct());
 
 	inc_rc(s.struct_ptr->alloc);
 }
@@ -1350,25 +1347,23 @@ void release_vec(value_backend_t& backend, runtime_value_t vec, itype_t itype){
 }
 
 //??? prep data, inluding member types as itypes -- so we don't need to acces struct_def and its typeid_t:s.
-void release_struct(value_backend_t& backend, runtime_value_t str, itype_t itype){
+void release_struct(value_backend_t& backend, runtime_value_t str, itype_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(str.check_invariant());
-
-	const auto& type = lookup_type_ref(backend, itype);
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(type.is_struct());
 
 	auto s = str.struct_ptr;
-	QUARK_ASSERT(itype.check_invariant());
-	QUARK_ASSERT(itype.is_struct());
 
 	if(dec_rc(s->alloc) == 0){
-		const auto& struct_def = type.get_struct();
+		const auto& struct_def = type.get_struct(backend.type_interner);
 		const auto struct_base_ptr = s->get_data_ptr();
 
-		const auto& struct_layout = find_struct_layout(backend, itype);
+		const auto& struct_layout = find_struct_layout(backend, type);
 
 		int member_index = 0;
 		for(const auto& e: struct_def._members){
-			const auto member_itype = lookup_itype(backend, e._type);
+			const auto member_itype = e._type;
 			if(is_rc_value(member_itype)){
 				const auto offset = struct_layout.second.members[member_index].offset;
 				const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
@@ -1380,31 +1375,30 @@ void release_struct(value_backend_t& backend, runtime_value_t str, itype_t itype
 	}
 }
 
-void release_value(value_backend_t& backend, runtime_value_t value, itype_t itype){
+void release_value(value_backend_t& backend, runtime_value_t value, itype_t type){
 #if DEBUG
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
-	const auto& type = lookup_type_ref(backend, itype);
 	QUARK_ASSERT(type.check_invariant());
 #endif
-	QUARK_ASSERT(is_rc_value(itype));
+	QUARK_ASSERT(is_rc_value(type));
 
-	if(itype.is_string()){
-		release_vec(backend, value, itype);
+	if(type.is_string()){
+		release_vec(backend, value, type);
 	}
-	else if(itype.is_vector()){
-		release_vec(backend, value, itype);
+	else if(type.is_vector()){
+		release_vec(backend, value, type);
 	}
-	else if(itype.is_dict()){
-		release_dict(backend, value, itype);
+	else if(type.is_dict()){
+		release_dict(backend, value, type);
 	}
-	else if(itype.is_json()){
+	else if(type.is_json()){
 		if(dec_rc(value.json_ptr->alloc) == 0){
 			dispose_json(*value.json_ptr);
 		}
 	}
-	else if(itype.is_struct()){
-		release_struct(backend, value, itype);
+	else if(type.is_struct()){
+		release_struct(backend, value, type);
 	}
 	else{
 		QUARK_ASSERT(false);

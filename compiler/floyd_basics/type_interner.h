@@ -29,6 +29,7 @@ struct type_interner_t;
 
 
 
+typedef int32_t type_lookup_index_t;
 
 //////////////////////////////////////////////////		itype_t
 
@@ -54,49 +55,49 @@ struct itype_t {
 	}
 
 	static itype_t make_undefined(){
-		return itype_t(assemble((int)base_type::k_undefined, base_type::k_undefined, base_type::k_undefined));
+		return itype_t(assemble((type_lookup_index_t)base_type::k_undefined, base_type::k_undefined, base_type::k_undefined));
 	}
 	static itype_t make_any(){
-		return itype_t(assemble((int)base_type::k_any, base_type::k_any, base_type::k_undefined));
+		return itype_t(assemble((type_lookup_index_t)base_type::k_any, base_type::k_any, base_type::k_undefined));
 	}
 	static itype_t make_void(){
-		return itype_t(assemble((int)base_type::k_void, base_type::k_void, base_type::k_undefined));
+		return itype_t(assemble((type_lookup_index_t)base_type::k_void, base_type::k_void, base_type::k_undefined));
 	}
 	static itype_t make_bool(){
-		return itype_t(assemble((int)base_type::k_bool, base_type::k_bool, base_type::k_undefined));
+		return itype_t(assemble((type_lookup_index_t)base_type::k_bool, base_type::k_bool, base_type::k_undefined));
 	}
 	static itype_t make_int(){
-		return itype_t(assemble((int)base_type::k_int, base_type::k_int, base_type::k_undefined));
+		return itype_t(assemble((type_lookup_index_t)base_type::k_int, base_type::k_int, base_type::k_undefined));
 	}
 	static itype_t make_double(){
-		return itype_t(assemble((int)base_type::k_double, base_type::k_double, base_type::k_undefined));
+		return itype_t(assemble((type_lookup_index_t)base_type::k_double, base_type::k_double, base_type::k_undefined));
 	}
 	static itype_t make_string(){
-		return itype_t(assemble((int)base_type::k_string, base_type::k_string, base_type::k_undefined));
+		return itype_t(assemble((type_lookup_index_t)base_type::k_string, base_type::k_string, base_type::k_undefined));
 	}
 	static itype_t make_json(){
-		return itype_t(assemble((int)base_type::k_json, base_type::k_json, base_type::k_undefined));
+		return itype_t(assemble((type_lookup_index_t)base_type::k_json, base_type::k_json, base_type::k_undefined));
 	}
 
 	static itype_t make_typeid(){
-		return itype_t(assemble((int)base_type::k_typeid, base_type::k_typeid, base_type::k_undefined));
+		return itype_t(assemble((type_lookup_index_t)base_type::k_typeid, base_type::k_typeid, base_type::k_undefined));
 	}
 
-	static itype_t make_struct(uint32_t lookup_index){
+	static itype_t make_struct(type_lookup_index_t lookup_index){
 		return itype_t(assemble(lookup_index, base_type::k_struct, base_type::k_undefined));
 	}
 
-	static itype_t make_vector(uint32_t lookup_index, base_type element_bt){
+	static itype_t make_vector(type_lookup_index_t lookup_index, base_type element_bt){
 		return itype_t(assemble(lookup_index, base_type::k_vector, element_bt));
 	}
-	static itype_t make_dict(uint32_t lookup_index, base_type value_bt){
+	static itype_t make_dict(type_lookup_index_t lookup_index, base_type value_bt){
 		return itype_t(assemble(lookup_index, base_type::k_dict, value_bt));
 	}
-	static itype_t make_function(uint32_t lookup_index){
+	static itype_t make_function(type_lookup_index_t lookup_index){
 		return itype_t(assemble(lookup_index, base_type::k_function, base_type::k_undefined));
 	}
 
-	static itype_t make_identifier(uint32_t lookup_index){
+	static itype_t make_identifier(type_lookup_index_t lookup_index){
 		return itype_t(assemble(lookup_index, base_type::k_identifier, base_type::k_undefined));
 	}
 
@@ -245,7 +246,7 @@ struct itype_t {
 		return bt;
 	}
 
-	inline uint32_t get_lookup_index() const {
+	inline type_lookup_index_t get_lookup_index() const {
 		QUARK_ASSERT(check_invariant());
 
 		return data & 0b00000000'11111111'11111111'11111111;
@@ -256,14 +257,14 @@ struct itype_t {
 		return data;
 	}
 
-	static uint32_t assemble(uint32_t lookup_index, base_type bt1, base_type bt2){
+	static uint32_t assemble(type_lookup_index_t lookup_index, base_type bt1, base_type bt2){
 		const auto a = static_cast<uint32_t>(bt1);
 		const auto b = static_cast<uint32_t>(bt2);
 
 		return (a << 28) | (b << 24) | lookup_index;
 	}
 
-	static itype_t assemble2(uint32_t lookup_index, base_type bt1, base_type bt2){
+	static itype_t assemble2(type_lookup_index_t lookup_index, base_type bt1, base_type bt2){
 		return itype_t(assemble(lookup_index, bt1, bt2));
 	}
 
@@ -272,7 +273,7 @@ struct itype_t {
 	private: uint32_t data;
 #if DEBUG
 	private: base_type debug_bt0;
-	private: uint32_t debug_lookup_index;
+	private: type_lookup_index_t debug_lookup_index;
 #endif
 };
 
@@ -308,14 +309,22 @@ std::string typeid_to_compact_string(const itype_t& itype);
 
 
 struct member_itype_t {
-	std::string _name;
 	itype_t _type;
+	std::string _name;
 };
+
+inline bool operator==(const member_itype_t& lhs, const member_itype_t& rhs){
+	return lhs._name == rhs._name
+	&& lhs._type == rhs._type;
+}
 
 struct struct_def_itype_t {
 	std::vector<member_itype_t> _members;
 };
 
+inline bool operator==(const struct_def_itype_t& lhs, const struct_def_itype_t& rhs){
+	return lhs._members == rhs._members;
+}
 
 int find_struct_member_index(const struct_def_itype_t& def, const std::string& name);
 
@@ -323,7 +332,7 @@ int find_struct_member_index(const struct_def_itype_t& def, const std::string& n
 
 
 
-//////////////////////////////////////////////////		type_interner_t
+//////////////////////////////////////////////////		type_node_t
 
 
 
@@ -333,15 +342,14 @@ int find_struct_member_index(const struct_def_itype_t& def, const std::string& n
 //	Automatically insert all basetype-types so they ALWAYS have EXPLICIT integer IDs as itypes.
 
 struct type_node_t {
+	//	If optional_tag is used, this node is a tag node and child_type_indexes[0] will be undefined or hold the real type.
 	type_tag_t optional_tag;
-	typeid_t type;
 
-/*
 	base_type bt;
-	type_tag_t optional_tag;
-	std::vector<int> child_type_indexes;
+	std::vector<itype_t> child_types;
 
 
+	struct_def_itype_t struct_def;
 
 	//	Only used when bt == k_function.
 	epure func_pure;
@@ -349,23 +357,27 @@ struct type_node_t {
 	//	Only used when bt == k_function.
 	//??? I think we can lose this field now that we have intrinsics handling in semast.
 	typeid_t::return_dyn_type func_return_dyn_type;
-*/
+
+	std::string identifier_str;
 };
 
 inline bool operator==(const type_node_t& lhs, const type_node_t& rhs){
-	return lhs.optional_tag == rhs.optional_tag && lhs.type == rhs.type;
-
-/*
 	return
-		lhs.bt == rhs.bt
-		&& lhs.optional_tag == rhs.optional_tag
-		&& lhs.child_type_indexes == rhs.child_type_indexes
+		lhs.optional_tag == rhs.optional_tag
+		&& lhs.bt == rhs.bt
+		&& lhs.child_types == rhs.child_types
 
+		&& lhs.struct_def == rhs.struct_def
 		&& lhs.func_pure == rhs.func_pure
 		&& lhs.func_return_dyn_type == rhs.func_return_dyn_type
 		;
-*/
 }
+
+
+
+//////////////////////////////////////////////////		type_interner_t
+
+
 
 struct type_interner_t {
 	type_interner_t();
@@ -381,41 +393,39 @@ struct type_interner_t {
 };
 
 
-//	Records AND resolves the type. The returned type may be improved over input type.
 itype_t intern_anonymous_type(type_interner_t& interner, const typeid_t& type);
 
+itype_t make_struct(type_interner_t& interner, const struct_def_itype_t& struct_def);
+itype_t make_vector(type_interner_t& interner, const itype_t& element_type);
+itype_t make_vector(const type_interner_t& interner, const itype_t& element_type);
+itype_t make_dict(type_interner_t& interner, const itype_t& value_type);
+itype_t make_function3(type_interner_t& interner, const itype_t& ret, const std::vector<itype_t>& args, epure pure, typeid_t::return_dyn_type dyn_return);
 
+itype_t make_function3(const type_interner_t& interner, const itype_t& ret, const std::vector<itype_t>& args, epure pure, typeid_t::return_dyn_type dyn_return);
 
-//	Allocates a new itype for this tag. The tag must not already exist.
-//	Interns the type for this tag. You can use typeid_t::make_undefined() and
-//	later update the type using update_tagged_type()
-itype_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag);
-itype_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag, const itype_t& type);
+itype_t make_function_dyn_return(type_interner_t& interner, const std::vector<itype_t>& args, epure pure, typeid_t::return_dyn_type dyn_return);
+itype_t make_function(type_interner_t& interner, const itype_t& ret, const std::vector<itype_t>& args, epure pure);
 
-//	Update the tagged type's type. The tagged type must already exist. Any usage of this
-//	tag will also get the new type.
-itype_t update_tagged_type(type_interner_t& interner, const itype_t& named, const typeid_t& type);
+itype_t make_identifier(type_interner_t& interner, const std::string& identifier);
+itype_t make_identifier_symbol(type_interner_t& interner, const std::string& identifier);
+itype_t make_identifier_typetag(type_interner_t& interner, const std::string& identifier);
 
-const type_node_t& get_tagged_type(const type_interner_t& interner, const type_tag_t& tag);
-
-itype_t get_tagged_type2(const type_interner_t& interner, const type_tag_t& tag);
-
-
-itype_t lookup_itype_from_index(const type_interner_t& interner, int type_index);
 
 
 itype_t lookup_itype_from_typeid(const type_interner_t& interner, const typeid_t& type);
 typeid_t lookup_typeid_from_itype(const type_interner_t& interner, const itype_t& type);
-const typeid_t& lookup_typeid_from_itype__only_anonymous(const type_interner_t& interner, const itype_t& type);
 const type_node_t& lookup_typeinfo_from_itype(const type_interner_t& interner, const itype_t& type);
 type_node_t& lookup_typeinfo_from_itype(type_interner_t& interner, const itype_t& type);
 itype_t lookup_itype_from_tagged_type(const type_interner_t& interner, const type_tag_t& tag);
+
+itype_t lookup_itype_from_index(const type_interner_t& interner, type_lookup_index_t type_index);
 
 void trace_type_interner(const type_interner_t& interner);
 
 
 //	Makes the type concrete by expanding any indirections via identifiers.
 typeid_t flatten_type_description_deep(const type_interner_t& interner, const itype_t& type);
+typeid_t flatten_type_description1(const type_interner_t& interner, const itype_t& type);
 
 
 itype_t peek(const type_interner_t& interner, const itype_t& type);
@@ -426,6 +436,68 @@ itype_t refresh_itype(const type_interner_t& interner, const itype_t& type);
 
 json_t type_interner_to_json(const type_interner_t& interner);
 type_interner_t type_interner_from_json(const json_t& j);
+
+
+
+
+//////////////////////////////////////////////////		TAGGED TYPES
+
+
+//	Allocates a new itype for this tag. The tag must not already exist.
+//	Interns the type for this tag. You can use typeid_t::make_undefined() and
+//	later update the type using update_tagged_type()
+itype_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag);
+itype_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag, const itype_t& type);
+
+//	Update the tagged type's type. The tagged type must already exist. Any usage of this
+//	tag will also get the new type.
+itype_t update_tagged_type(type_interner_t& interner, const itype_t& named, const itype_t& type);
+
+itype_t get_tagged_type2(const type_interner_t& interner, const type_tag_t& tag);
+
+
+
+
+
+struct undefined_t {};
+struct any_t {};
+struct void_t {};
+struct bool_t {};
+struct int_t {};
+struct double_t {};
+struct string_t {};
+struct json_type_t {};
+struct typeid_type_t {};
+
+struct struct_t {};
+struct vector_t {};
+struct dict_t {};
+struct function_t {};
+struct identifier_t {};
+
+typedef std::variant<
+	undefined_t,
+	any_t,
+	void_t,
+	bool_t,
+	int_t,
+	double_t,
+	string_t,
+	json_type_t,
+	typeid_type_t,
+
+	struct_t,
+	vector_t,
+	dict_t,
+	function_t,
+	identifier_t
+> itype_variant_t;
+
+
+itype_variant_t get_itype_variant(const itype_t& type);
+
+
+
 
 
 
@@ -529,39 +601,6 @@ itype_t intern_anonymous_type(type_interner_t& interner, const ast_type_t& type)
 
 //	Returns typeid_t::make_undefined() if ast_type_t is in monostate mode
 itype_t lookup_itype_from_asttype(const type_interner_t& interner, const ast_type_t& type);
-
-
-
-
-
-/*
-Do this without using typeid_t at all.
-inline itype_t get_vector_element_type_quick(const type_interner_t& interner, itype_t vec){
-	QUARK_ASSERT(vec.check_invariant());
-	QUARK_ASSERT(vec.is_vector());
-
-	const auto lookup_index = type.get_lookup_index();
-	QUARK_ASSERT(lookup_index >= 0);
-	QUARK_ASSERT(lookup_index < interner.interned.size());
-
-	const auto& result = interner.interned[lookup_index];
-	return result;
-
-
-	const auto value = (data >> 24) & 15;
-	const auto bt = static_cast<base_type>(value);
-	return bt;
-}
-
-inline itype_t get_dict_value_type(const type_interner_t& interner, itype_t vec) const {
-	QUARK_ASSERT(vec.check_invariant());
-	QUARK_ASSERT(vec.is_vector());
-
-	const auto value = (data >> 24) & 15;
-	const auto bt = static_cast<base_type>(value);
-	return bt;
-}
-*/
 
 
 

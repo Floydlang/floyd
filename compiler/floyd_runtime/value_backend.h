@@ -64,7 +64,7 @@ namespace floyd {
 ////////////////////////////////	FORWARD DECL
 
 
-struct typeid_t;
+struct itype_t;
 struct heap_alloc_64_t;
 
 
@@ -648,8 +648,8 @@ void dispose_struct(STRUCT_T& v);
 
 
 
-runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type);
-void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t& value);
+runtime_value_t load_via_ptr2(const void* value_ptr, const itype_t& type);
+void store_via_ptr2(void* value_ptr, const itype_t& type, const runtime_value_t& value);
 
 
 
@@ -713,8 +713,8 @@ struct value_backend_t {
 itype_t lookup_itype(const value_backend_t& backend, const typeid_t& type);
 
 //	WARNING: We are using typeid_t here in the runtime code. This type is slow and allocates memory. Always use const&!
-const typeid_t& lookup_type_ref(const value_backend_t& backend, itype_t itype);
-const typeid_t& lookup_type_ref(const value_backend_t& backend, runtime_type_t type);
+itype_t lookup_type_ref(const value_backend_t& backend, itype_t itype);
+itype_t lookup_type_ref(const value_backend_t& backend, runtime_type_t type);
 
 inline itype_t lookup_vector_element_itype(const value_backend_t& backend, itype_t itype);
 inline itype_t lookup_dict_value_itype(const value_backend_t& backend, itype_t itype);

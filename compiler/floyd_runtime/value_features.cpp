@@ -132,7 +132,7 @@ const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_valu
 	const auto dict = unpack_dict_cppmap_arg(backend, coll_value, coll_type);
 
 	//??? compile time
-	const auto value_itype = lookup_itype(backend, type0.get_dict_value_type());
+	const auto value_itype = type0.get_dict_value_type(backend.type_interner);
 
 	//	Deep copy dict.
 	auto dict2 = alloc_dict_cppmap(backend.heap, itype_t(coll_type));
@@ -159,7 +159,7 @@ const runtime_value_t update__dict_hamt(value_backend_t& backend, runtime_value_
 	const auto dict = coll_value.dict_hamt_ptr;
 
 	//??? compile time
-	const auto value_itype = lookup_itype(backend, type0.get_dict_value_type());
+	const auto value_itype = type0.get_dict_value_type(backend.type_interner);
 
 	//	Deep copy dict.
 	auto dict2 = alloc_dict_hamt(backend.heap, itype_t(coll_type));
@@ -188,7 +188,6 @@ const runtime_value_t subset__string(value_backend_t& backend, runtime_value_t c
 		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
 	}
 
-	const auto& type0 = lookup_type_ref(backend, coll_type);
 	const auto value = from_runtime_string2(backend, coll_value);
 	const auto len = get_vec_string_size(coll_value);
 	const auto end2 = std::min(end, len);
@@ -218,7 +217,7 @@ const runtime_value_t subset__carray(value_backend_t& backend, runtime_value_t c
 
 	const auto element_itype = lookup_vector_element_itype(backend, itype_t(coll_type));
 
-	auto vec2 = alloc_vector_carray(backend.heap, len2, len2, lookup_itype(backend, type0));
+	auto vec2 = alloc_vector_carray(backend.heap, len2, len2, type0);
 	if(is_rc_value(element_itype)){
 		for(int i = 0 ; i < len2 ; i++){
 			const auto& value = vec->get_element_ptr()[start2 + i];
@@ -242,7 +241,6 @@ const runtime_value_t subset__hamt(value_backend_t& backend, runtime_value_t col
 		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
 	}
 
-	const auto& type0 = lookup_type_ref(backend, coll_type);
 	const auto& vec = *coll_value.vector_hamt_ptr;
 	const auto end2 = std::min(end, vec.get_element_count());
 	const auto start2 = std::min(start, end2);
@@ -340,7 +338,7 @@ const runtime_value_t replace__carray(value_backend_t& backend, runtime_value_t 
 	const auto section3_len = vec->get_element_count() - end2;
 
 	const auto len2 = section1_len + section2_len + section3_len;
-	auto vec2 = alloc_vector_carray(backend.heap, len2, len2, lookup_itype(backend, type0));
+	auto vec2 = alloc_vector_carray(backend.heap, len2, len2, type0);
 	copy_elements(&vec2.vector_carray_ptr->get_element_ptr()[0], &vec->get_element_ptr()[0], section1_len);
 	copy_elements(&vec2.vector_carray_ptr->get_element_ptr()[section1_len], &replace_vec->get_element_ptr()[0], section2_len);
 	copy_elements(&vec2.vector_carray_ptr->get_element_ptr()[section1_len + section2_len], &vec->get_element_ptr()[end2], section3_len);
@@ -408,7 +406,6 @@ const runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t co
 int64_t find__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const auto& type0 = lookup_type_ref(backend, coll_type);
 	const auto& type1 = lookup_type_ref(backend, value_type);
 
 	QUARK_ASSERT(type1.is_string());
@@ -425,7 +422,7 @@ int64_t find__carray(value_backend_t& backend, runtime_value_t coll_value, runti
 	const auto& type0 = lookup_type_ref(backend, coll_type);
 	const auto& type1 = lookup_type_ref(backend, value_type);
 
-	QUARK_ASSERT(type1 == type0.get_vector_element_type());
+	QUARK_ASSERT(type1 == type0.get_vector_element_type(backend.type_interner));
 
 	const auto vec = unpack_vector_carray_arg(backend, coll_value, coll_type);
 
@@ -451,7 +448,7 @@ int64_t find__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime
 	const auto& type0 = lookup_type_ref(backend, coll_type);
 	const auto& type1 = lookup_type_ref(backend, value_type);
 
-	QUARK_ASSERT(type1 == type0.get_vector_element_type());
+	QUARK_ASSERT(type1 == type0.get_vector_element_type(backend.type_interner));
 
 	const auto& vec = *coll_value.vector_hamt_ptr;
 	QUARK_ASSERT(vec.check_invariant());

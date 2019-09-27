@@ -2323,7 +2323,7 @@ static void generate_all_floyd_function_bodies(llvm_code_generator_t& gen_acc, c
 	}
 }
 
-//	Generate LLVM function nodes and add them in returned link map.
+//	Generate LLVM function nodes and merge them into link map.
 static std::vector<function_link_entry_t> generate_function_nodes(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<function_link_entry_t>& link_map1){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
@@ -2340,7 +2340,7 @@ static std::vector<function_link_entry_t> generate_function_nodes(llvm::Module& 
 
 		//	Set names for all function defintion's arguments - makes IR easier to read.
 		if(e.function_type_or_undef.is_undefined() == false && e.arg_names_or_empty.empty() == false){
-			const auto unnamed_mapping_ptr = type_lookup.find_from_type(e.function_type_or_undef).optional_function_def;
+			const auto unnamed_mapping_ptr = type_lookup.find_from_itype(e.function_type_or_undef).optional_function_def;
 			if(unnamed_mapping_ptr != nullptr){
 				const auto named_mapping = name_args(*unnamed_mapping_ptr, e.arg_names_or_empty);
 

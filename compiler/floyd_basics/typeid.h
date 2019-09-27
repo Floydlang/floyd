@@ -145,15 +145,6 @@ inline bool is_atomic_type(base_type type){
 
 
 
-//////////////////////////////////////////////////		identifier_t
-
-
-//	Simple string used in source code or symbol table to specify a local name.
-
-struct identifier_t {
-	std::string s;
-};
-
 
 
 //////////////////////////////////////////////////		get_json_type()
@@ -282,6 +273,7 @@ struct typeid_t {
 		undefined_t,
 		any_t,
 		void_t,
+
 		bool_t,
 		int_t,
 		double_t,
