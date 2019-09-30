@@ -71,7 +71,7 @@ std::string symbol_to_string(const symbol_t& s){
 	std::stringstream out;
 	out << "{ "
 		<< symbol_type_to_string(s._symbol_type)
-		<< ", type: " << ast_type_to_string(to_asttype(s._value_type))
+		<< ", type: " << typeid_to_compact_string(s._value_type)
 		<< ", init: " << (s._init.is_undefined() ? "<none>" : value_and_type_to_string(s._init))
 	<< " }";
 	return out.str();
@@ -99,10 +99,7 @@ static symbol_t json_to_symbol(const type_interner_t& interner, const json_t& e)
 
 	const auto symbol_type2 = symbol_type_from_string(symbol_type);
 	const auto value_type2 = itype_from_json(value_type);
-
-//??? use intern_type() not lookup
-	const auto value_type1 = lookup_typeid_from_itype(interner, value_type2);
-
+	const auto value_type1 = value_type2;
 	value_t init_value2 = init.is_null() ? value_t::make_undefined() : ast_json_to_value(value_type1, init);
 
 	const auto result = symbol_t(symbol_type2, value_type2, init_value2);
@@ -249,7 +246,7 @@ static statement_t ast_json_to_statement(const type_interner_t& interner, const 
 		const auto expr = statement.get_array_n(3);
 		const auto meta = statement.get_array_size() >= 5 ? statement.get_array_n(4) : json_t();
 
-		const auto bind_type2 = ast_type_from_json(bind_type);
+		const auto bind_type2 = itype_from_json(bind_type);
 		const auto name2 = name.get_string();
 		const auto expr2 = ast_json_to_expression(interner, expr);
 		bool mutable_flag = !meta.is_null() && meta.does_object_element_exist("mutable");
@@ -417,7 +414,7 @@ json_t statement_to_json(const statement_t& e){
 				statement_opcode_t::k_init_local,
 				{
 					s._new_local_name,
-					ast_type_to_json(s._bindtype),
+					itype_to_json(s._bindtype),
 					expression_to_json(s._expression),
 					meta
 				}

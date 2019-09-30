@@ -149,7 +149,7 @@ void test_floyd(const quark::call_context_t& context, const compilation_unit_t& 
 	QUARK_ASSERT(cu.check_invariant());
 	QUARK_ASSERT(settings.check_invariant());
 
-	semantic_ast_t semast( {} );
+	semantic_ast_t semast( {}, {} );
 
 	try {
 		const auto temp_semast = compile_to_sematic_ast__errors(cu);

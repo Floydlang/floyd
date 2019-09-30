@@ -78,7 +78,7 @@ bc_value_t bc_intrinsic__typeof(interpreter_t& vm, const bc_value_t args[], int 
 
 	const auto& value = args[0];
 	const auto type = value._type;
-	const auto result = value_t::make_typeid_value(lookup_typeid_from_itype(vm._imm->_program._types, type));
+	const auto result = value_t::make_typeid_value(type);
 	return value_to_bc(vm._imm->_program._types, result);
 }
 
@@ -292,10 +292,7 @@ bc_value_t bc_intrinsic__get_keys(interpreter_t& vm, const bc_value_t args[], in
 		}
 	}
 
-
-
-
-	const auto keys2 = value_t::make_vector_value(typeid_t::make_string(), keys);
+	const auto keys2 = value_t::make_vector_value(vm._imm->_program._types, typeid_t::make_string(), keys);
 	const auto result = value_to_bc(vm._imm->_program._types, keys2);
 	return result;
 }
@@ -512,7 +509,7 @@ bc_value_t bc_intrinsic__from_json(interpreter_t& vm, const bc_value_t args[], i
 
 	const auto json = args[0].get_json();
 	const auto target_type = args[1].get_typeid_value();
-	const auto result = unflatten_json_to_specific_type(json, lookup_typeid_from_itype(vm._imm->_program._types, target_type));
+	const auto result = unflatten_json_to_specific_type(vm._imm->_program._types, json, target_type);
 	return value_to_bc(vm._imm->_program._types, result);
 }
 
@@ -1073,57 +1070,59 @@ bc_value_t bc_intrinsic__bw_shift_right_arithmetic(interpreter_t& vm, const bc_v
 
 
 
-static std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics_internal(){
+static std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics_internal(type_interner_t& interner){
+	QUARK_ASSERT(interner.check_invariant());
+
 	std::vector<std::pair<intrinsic_signature_t, BC_NATIVE_FUNCTION_PTR>> log;
 
-	log.push_back({ make_assert_signature(), bc_intrinsic__assert });
-	log.push_back({ make_to_string_signature(), bc_intrinsic__to_string });
-	log.push_back({ make_to_pretty_string_signature(), bc_intrinsic__to_pretty_string });
-	log.push_back({ make_typeof_signature(), bc_intrinsic__typeof });
+	log.push_back({ make_assert_signature(interner), bc_intrinsic__assert });
+	log.push_back({ make_to_string_signature(interner), bc_intrinsic__to_string });
+	log.push_back({ make_to_pretty_string_signature(interner), bc_intrinsic__to_pretty_string });
+	log.push_back({ make_typeof_signature(interner), bc_intrinsic__typeof });
 
-	log.push_back({ make_update_signature(), bc_intrinsic__update });
+	log.push_back({ make_update_signature(interner), bc_intrinsic__update });
 
-	//	size() is translated to bc_opcode::k_get_size_vector_w_external_elements() etc.
+	//	size(interner) is translated to bc_opcode::k_get_size_vector_w_external_elements(interner) etc.
 
-	log.push_back({ make_find_signature(), bc_intrinsic__find });
-	log.push_back({ make_exists_signature(), bc_intrinsic__exists });
-	log.push_back({ make_erase_signature(), bc_intrinsic__erase });
-	log.push_back({ make_get_keys_signature(), bc_intrinsic__get_keys });
+	log.push_back({ make_find_signature(interner), bc_intrinsic__find });
+	log.push_back({ make_exists_signature(interner), bc_intrinsic__exists });
+	log.push_back({ make_erase_signature(interner), bc_intrinsic__erase });
+	log.push_back({ make_get_keys_signature(interner), bc_intrinsic__get_keys });
 
-	//	push_back() is translated to bc_opcode::k_pushback_vector_w_inplace_elements() etc.
+	//	push_back(interner) is translated to bc_opcode::k_pushback_vector_w_inplace_elements(interner) etc.
 
-	log.push_back({ make_subset_signature(), bc_intrinsic__subset });
-	log.push_back({ make_replace_signature(), bc_intrinsic__replace });
-
-
-	log.push_back({ make_parse_json_script_signature(), bc_intrinsic__parse_json_script });
-	log.push_back({ make_generate_json_script_signature(), bc_intrinsic__generate_json_script });
-	log.push_back({ make_to_json_signature(), bc_intrinsic__to_json });
-
-	log.push_back({ make_from_json_signature(), bc_intrinsic__from_json });
-
-	log.push_back({ make_get_json_type_signature(), bc_intrinsic__get_json_type });
-
-	log.push_back({ make_map_signature(), bc_intrinsic__map });
-	log.push_back({ make_map_string_signature(), bc_intrinsic__map_string });
-	log.push_back({ make_filter_signature(), bc_intrinsic__filter });
-	log.push_back({ make_reduce_signature(), bc_intrinsic__reduce });
-	log.push_back({ make_map_dag_signature(), bc_intrinsic__map_dag });
-
-	log.push_back({ make_stable_sort_signature(), bc_intrinsic__stable_sort });
+	log.push_back({ make_subset_signature(interner), bc_intrinsic__subset });
+	log.push_back({ make_replace_signature(interner), bc_intrinsic__replace });
 
 
-	log.push_back({ make_print_signature(), bc_intrinsic__print });
-	log.push_back({ make_send_signature(), bc_intrinsic__send });
+	log.push_back({ make_parse_json_script_signature(interner), bc_intrinsic__parse_json_script });
+	log.push_back({ make_generate_json_script_signature(interner), bc_intrinsic__generate_json_script });
+	log.push_back({ make_to_json_signature(interner), bc_intrinsic__to_json });
+
+	log.push_back({ make_from_json_signature(interner), bc_intrinsic__from_json });
+
+	log.push_back({ make_get_json_type_signature(interner), bc_intrinsic__get_json_type });
+
+	log.push_back({ make_map_signature(interner), bc_intrinsic__map });
+	log.push_back({ make_map_string_signature(interner), bc_intrinsic__map_string });
+	log.push_back({ make_filter_signature(interner), bc_intrinsic__filter });
+	log.push_back({ make_reduce_signature(interner), bc_intrinsic__reduce });
+	log.push_back({ make_map_dag_signature(interner), bc_intrinsic__map_dag });
+
+	log.push_back({ make_stable_sort_signature(interner), bc_intrinsic__stable_sort });
 
 
-	log.push_back({ make_bw_not_signature(), bc_intrinsic__bw_not });
-	log.push_back({ make_bw_and_signature(), bc_intrinsic__bw_and });
-	log.push_back({ make_bw_or_signature(), bc_intrinsic__bw_or });
-	log.push_back({ make_bw_xor_signature(), bc_intrinsic__bw_xor });
-	log.push_back({ make_bw_shift_left_signature(), bc_intrinsic__bw_shift_left });
-	log.push_back({ make_bw_shift_right_signature(), bc_intrinsic__bw_shift_right });
-	log.push_back({ make_bw_shift_right_arithmetic_signature(), bc_intrinsic__bw_shift_right_arithmetic });
+	log.push_back({ make_print_signature(interner), bc_intrinsic__print });
+	log.push_back({ make_send_signature(interner), bc_intrinsic__send });
+
+
+	log.push_back({ make_bw_not_signature(interner), bc_intrinsic__bw_not });
+	log.push_back({ make_bw_and_signature(interner), bc_intrinsic__bw_and });
+	log.push_back({ make_bw_or_signature(interner), bc_intrinsic__bw_or });
+	log.push_back({ make_bw_xor_signature(interner), bc_intrinsic__bw_xor });
+	log.push_back({ make_bw_shift_left_signature(interner), bc_intrinsic__bw_shift_left });
+	log.push_back({ make_bw_shift_right_signature(interner), bc_intrinsic__bw_shift_right });
+	log.push_back({ make_bw_shift_right_arithmetic_signature(interner), bc_intrinsic__bw_shift_right_arithmetic });
 
 
 	std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> result;
@@ -1133,8 +1132,10 @@ static std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics_interna
 	return result;
 }
 
-std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics(){
-	static const auto f = bc_get_intrinsics_internal();
+std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics(type_interner_t& interner){
+	QUARK_ASSERT(interner.check_invariant());
+
+	static const auto f = bc_get_intrinsics_internal(interner);
 	return f;
 }
 

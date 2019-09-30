@@ -125,8 +125,7 @@ semantic_ast_t compile_to_sematic_ast__errors(const compilation_unit_t& cu){
 //	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
 	const auto parse_tree = parse_program__errors(cu);
 	const auto unchecked_ast = parse_tree_to_ast(parse_tree);
-	const auto unchecked_ast2 = desugar_pass(unchecked_ast);
-	const auto sem_ast = run_semantic_analysis__errors(unchecked_ast2, cu);
+	const auto sem_ast = run_semantic_analysis__errors(unchecked_ast, cu);
 	return sem_ast;
 }
 

@@ -648,8 +648,8 @@ void dispose_struct(STRUCT_T& v);
 
 
 
-runtime_value_t load_via_ptr2(const void* value_ptr, const itype_t& type);
-void store_via_ptr2(void* value_ptr, const itype_t& type, const runtime_value_t& value);
+runtime_value_t load_via_ptr2(const type_interner_t& interner, const void* value_ptr, const itype_t& type);
+void store_via_ptr2(const type_interner_t& interner, void* value_ptr, const itype_t& type, const runtime_value_t& value);
 
 
 
@@ -710,7 +710,7 @@ struct value_backend_t {
 };
 
 
-itype_t lookup_itype(const value_backend_t& backend, const typeid_t& type);
+//itype_t lookup_itype(const value_backend_t& backend, const typeid_t& type);
 
 //	WARNING: We are using typeid_t here in the runtime code. This type is slow and allocates memory. Always use const&!
 itype_t lookup_type_ref(const value_backend_t& backend, itype_t itype);
@@ -728,7 +728,6 @@ const std::pair<itype_t, struct_layout_t>& find_struct_layout(const value_backen
 
 //	Tells if this type uses reference counting for its values.
 bool is_rc_value(const itype_t& type);
-bool is_rc_value(const typeid_t& type);
 
 
 
@@ -797,31 +796,6 @@ inline bool is_dict_hamt(const config_t& config, itype_t t){
 
 
 
-inline bool is_vector_carray(const config_t& config, const typeid_t& t){
-	QUARK_ASSERT(config.check_invariant());
-	QUARK_ASSERT(t.check_invariant());
-
-	return t.is_vector() && config.vector_backend_mode == vector_backend::carray;
-}
-inline bool is_vector_hamt(const config_t& config, const typeid_t& t){
-	QUARK_ASSERT(config.check_invariant());
-	QUARK_ASSERT(t.check_invariant());
-
-	return t.is_vector() && config.vector_backend_mode == vector_backend::hamt;
-}
-
-inline bool is_dict_cppmap(const config_t& config, const typeid_t& t){
-	QUARK_ASSERT(config.check_invariant());
-	QUARK_ASSERT(t.check_invariant());
-
-	return t.is_dict() && config.dict_backend_mode == dict_backend::cppmap;
-}
-inline bool is_dict_hamt(const config_t& config, const typeid_t& t){
-	QUARK_ASSERT(config.check_invariant());
-	QUARK_ASSERT(t.check_invariant());
-
-	return t.is_dict() && config.dict_backend_mode == dict_backend::hamt;
-}
 
 
 

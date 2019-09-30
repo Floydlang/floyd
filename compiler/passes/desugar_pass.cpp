@@ -13,6 +13,7 @@
 
 namespace floyd {
 
+#if 0
 struct desugar_t {
 	bool check_invariant() const {
 		return true;
@@ -282,6 +283,6 @@ unchecked_ast_t desugar_pass(const unchecked_ast_t& unchecked_ast){
 //	QUARK_TRACE_SS("OUTPUT:  " << json_to_pretty_string(gp_ast_to_json(result)));
 	return unchecked_ast_t { result };
 }
-
+#endif
 
 }	// floyd

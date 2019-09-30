@@ -381,7 +381,8 @@ static implicit_statement detect_implicit_statement_lookahead(const seq_t& s){
 		//	Detect "int test = 123" which is common illegal syntax, where you forgot "mutable" or "let".
 
 		try {
-			const auto maybe_type = read_type(s);
+			type_interner_t temp;
+			const auto maybe_type = read_type(temp, s);
 			if(maybe_type.first != nullptr){
 				if(maybe_type.first->is_function()){
 					throw_compiler_error_nopos("Function types not supported.");

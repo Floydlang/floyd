@@ -155,8 +155,7 @@ bool check_types_resolved(const type_interner_t& interner, const body_t& body){
 	for(const auto& s: body._symbol_table._symbols){
 		QUARK_ASSERT(s.second.check_invariant());
 
-		const auto value_type0 = s.second._value_type;
-		const auto value_type = lookup_typeid_from_itype(interner, value_type0);
+		const auto value_type = s.second._value_type;
 
 /*
 		if(s._symbol_type == symbol_t::symbol_type::immutable_reserve){
@@ -280,7 +279,7 @@ bool check_types_resolved(const type_interner_t& interner, const statement_t& s)
 }
 
 
-bool check_types_resolved(const type_interner_t& interner, const struct_definition_t& s){
+bool check_types_resolved(const type_interner_t& interner, const struct_def_itype_t& s){
 	QUARK_ASSERT(s.check_invariant());
 
 	for(const auto& e: s._members){
@@ -293,7 +292,7 @@ bool check_types_resolved(const type_interner_t& interner, const struct_definiti
 }
 
 
-bool check_types_resolved__type_vector(const type_interner_t& interner, const std::vector<typeid_t>& elements){
+bool check_types_resolved__type_vector(const type_interner_t& interner, const std::vector<itype_t>& elements){
 	QUARK_ASSERT(interner.check_invariant());
 
 	for(const auto& e: elements){
@@ -304,32 +303,7 @@ bool check_types_resolved__type_vector(const type_interner_t& interner, const st
 	return true;
 }
 
-bool check_types_resolved(const type_interner_t& interner, const ast_type_t& type){
-	QUARK_ASSERT(interner.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	if(std::holds_alternative<typeid_t>(type._contents)){
-		const auto& typeid0 = std::get<typeid_t>(type._contents);
-		try {
-			const auto itype = lookup_itype_from_typeid(interner, typeid0);
-			return check_types_resolved(interner, typeid0);
-		}
-		catch(...){
-			return false;
-		}
-	}
-	else if(std::holds_alternative<itype_t>(type._contents)){
-		const auto& itype0 = std::get<itype_t>(type._contents);
-		const auto typeid0 = lookup_typeid_from_itype(interner, itype0);
-		return check_types_resolved(interner, typeid0);
-	}
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-}
-
-bool check_types_resolved(const type_interner_t& interner, const typeid_t& t){
+bool check_types_resolved(const type_interner_t& interner, const itype_t& t){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(t.check_invariant());
 
@@ -337,55 +311,55 @@ bool check_types_resolved(const type_interner_t& interner, const typeid_t& t){
 		const type_interner_t interner;
 
 
-		bool operator()(const typeid_t::undefined_t& e) const{
+		bool operator()(const undefined_t& e) const{
 			return false;
 		}
-		bool operator()(const typeid_t::any_t& e) const{
+		bool operator()(const any_t& e) const{
 			return true;
 		}
 
-		bool operator()(const typeid_t::void_t& e) const{
+		bool operator()(const void_t& e) const{
 			return true;
 		}
-		bool operator()(const typeid_t::bool_t& e) const{
+		bool operator()(const bool_t& e) const{
 			return true;
 		}
-		bool operator()(const typeid_t::int_t& e) const{
+		bool operator()(const int_t& e) const{
 			return true;
 		}
-		bool operator()(const typeid_t::double_t& e) const{
+		bool operator()(const double_t& e) const{
 			return true;
 		}
-		bool operator()(const typeid_t::string_t& e) const{
-			return true;
-		}
-
-		bool operator()(const typeid_t::json_type_t& e) const{
-			return true;
-		}
-		bool operator()(const typeid_t::typeid_type_t& e) const{
+		bool operator()(const string_t& e) const{
 			return true;
 		}
 
-		bool operator()(const typeid_t::struct_t& e) const{
-			return check_types_resolved(interner, *e._struct_def);
+		bool operator()(const json_type_t& e) const{
+			return true;
 		}
-		bool operator()(const typeid_t::vector_t& e) const{
+		bool operator()(const typeid_type_t& e) const{
+			return true;
+		}
+
+		bool operator()(const struct_t& e) const{
+			return check_types_resolved(interner, e.def);
+		}
+		bool operator()(const vector_t& e) const{
 			return check_types_resolved__type_vector(interner, e._parts);
 		}
-		bool operator()(const typeid_t::dict_t& e) const{
+		bool operator()(const dict_t& e) const{
 			return check_types_resolved__type_vector(interner, e._parts);
 		}
-		bool operator()(const typeid_t::function_t& e) const{
+		bool operator()(const function_t& e) const{
 			return check_types_resolved__type_vector(interner, e._parts);
 		}
-		bool operator()(const typeid_t::identifier_t& e) const {
+		bool operator()(const identifier_t& e) const {
 
 //???
 			return true;
 		}
 	};
-	return std::visit(visitor_t { interner }, t._contents);
+	return std::visit(visitor_t { interner }, get_itype_variant(interner, t));
 }
 
 

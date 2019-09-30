@@ -111,7 +111,7 @@ static value_t load_via_ptr(const llvm_execution_engine_t& runtime, const void* 
 	QUARK_ASSERT(value_ptr != nullptr);
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto result = load_via_ptr2(value_ptr, type);
+	const auto result = load_via_ptr2(runtime.backend.type_interner, value_ptr, type);
 	const auto result2 = from_runtime_value(runtime, result, type);
 	return result2;
 }
@@ -130,7 +130,7 @@ void store_via_ptr(llvm_execution_engine_t& runtime, const itype_t& member_type,
 	QUARK_ASSERT(value.check_invariant());
 
 	const auto value2 = to_runtime_value(runtime, value);
-	store_via_ptr2(value_ptr, member_type, value2);
+	store_via_ptr2(runtime.backend.type_interner, value_ptr, member_type, value2);
 }
 
 
@@ -239,7 +239,7 @@ static std::vector<function_link_entry_t> make_floyd_code_and_corelib_link_map(l
 			const auto function_type = function_def._function_type;
 			llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
 			const auto function_byvalue_type = deref_ptr(function_ptr_type);
-			const auto def = function_link_entry_t{ "program", link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, lookup_itype_from_typeid(type_lookup.state.type_interner, function_type), function_def._named_args, nullptr };
+			const auto def = function_link_entry_t{ "program", link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, function_def._named_args, nullptr };
 			result0.push_back(def);
 		}
 	}
@@ -275,11 +275,11 @@ static std::vector<function_link_entry_t> make_floyd_code_and_corelib_link_map(l
 
 
 
-std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
+std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs, const std::vector<intrinsic_signature_t>& intrinsic_signatures){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	const auto runtime_functions_link_map = make_runtime_function_link_map(context, type_lookup);
-	const auto intrinsics_link_map = make_intrinsics_link_map(context, type_lookup);
+	const auto intrinsics_link_map = make_intrinsics_link_map(context, type_lookup, intrinsic_signatures);
 	const auto init_deinit_link_map = make_init_deinit_link_map(context, type_lookup);
 	const auto floyd_code_and_corelib_link_map = make_floyd_code_and_corelib_link_map(context, type_lookup, ast_function_defs);
 
@@ -335,8 +335,10 @@ void trace_function_link_map(const std::vector<function_link_entry_t>& defs){
 int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const std::vector<std::string>& main_args){
 	QUARK_ASSERT(f.address != nullptr);
 
+	auto& interner = ee.type_lookup.state.type_interner;
+
 	//??? Check this earlier.
-	if(f.type == lookup_itype_from_typeid(ee.type_lookup.state.type_interner, get_main_signature_arg_impure()) || f.type == lookup_itype_from_typeid(ee.type_lookup.state.type_interner, get_main_signature_arg_pure())){
+	if(f.type == get_main_signature_arg_impure(interner) || f.type == get_main_signature_arg_pure(interner)){
 		const auto f2 = reinterpret_cast<FLOYD_RUNTIME_MAIN_ARGS_IMPURE>(f.address);
 
 		//??? Slow path via value_t
@@ -344,17 +346,17 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 		for(const auto& e: main_args){
 			main_args2.push_back(value_t::make_string(e));
 		}
-		const auto main_args3 = value_t::make_vector_value(typeid_t::make_string(), main_args2);
+		const auto main_args3 = value_t::make_vector_value(interner, typeid_t::make_string(), main_args2);
 		const auto main_args4 = to_runtime_value(ee, main_args3);
 		const auto main_result_int = (*f2)(make_runtime_ptr(&ee), main_args4);
 
-		const auto return_itype = lookup_itype(ee.backend, typeid_t::make_vector(typeid_t::make_string()));
+		const auto return_itype = typeid_t::make_vector(interner, typeid_t::make_string());
 		if(is_rc_value(return_itype)){
 			release_value(ee.backend, main_args4, return_itype);
 		}
 		return main_result_int;
 	}
-	else if(f.type == lookup_itype_from_typeid(ee.type_lookup.state.type_interner, get_main_signature_no_arg_impure()) || f.type == lookup_itype_from_typeid(ee.type_lookup.state.type_interner, get_main_signature_no_arg_pure())){
+	else if(f.type == get_main_signature_no_arg_impure(interner) || f.type == get_main_signature_no_arg_pure(interner)){
 		const auto f2 = reinterpret_cast<FLOYD_RUNTIME_MAIN_NO_ARGS_IMPURE>(f.address);
 		const auto main_result_int = (*f2)(make_runtime_ptr(&ee));
 		return main_result_int;
@@ -371,7 +373,7 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 static void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p){
 	int index = 0;
 	for(const auto& e: p.debug_globals._symbols){
-		const auto t = lookup_typeid_from_itype(ee2.type_lookup.state.type_interner, e.second.get_value_type());
+		const auto t = e.second.get_value_type();
 		if(t.is_function()){
 			const auto global_var = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(ee2, e.first);
 			QUARK_ASSERT(global_var != nullptr);
@@ -881,11 +883,11 @@ run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::str
 
 
 
-
-std::vector<bench_t> collect_benchmarks(const llvm_execution_engine_t& ee){
+///??? should lookup structs via their name in symbol table!
+std::vector<bench_t> collect_benchmarks(llvm_execution_engine_t& ee){
 	std::pair<void*, itype_t> benchmark_registry_bind = bind_global(ee, k_global_benchmark_registry);
 	QUARK_ASSERT(benchmark_registry_bind.first != nullptr);
-	QUARK_ASSERT(benchmark_registry_bind.second == make_vector(ee.backend.type_interner, lookup_itype_from_typeid(ee.backend.type_interner, make_benchmark_def_t())));
+	QUARK_ASSERT(benchmark_registry_bind.second == make_vector(ee.backend.type_interner, make_benchmark_def_t(ee.backend.type_interner)));
 
 	const value_t reg = load_global(ee, benchmark_registry_bind);
 	const auto v = reg.get_vector_value();
@@ -901,6 +903,7 @@ std::vector<bench_t> collect_benchmarks(const llvm_execution_engine_t& ee){
 	return result;
 }
 
+///??? should lookup structs via their name in symbol table!
 std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, const std::vector<bench_t>& tests){
 	std::vector<benchmark_result2_t> result;
 	for(const auto& b: tests){
@@ -911,7 +914,7 @@ std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, con
 		QUARK_ASSERT(f_bind.address != nullptr);
 		auto f2 = reinterpret_cast<FLOYD_BENCHMARK_F>(f_bind.address);
 		const auto bench_result = (*f2)(make_runtime_ptr(&ee));
-		const auto result2 = from_runtime_value(ee, bench_result, make_vector(ee.backend.type_interner, lookup_itype_from_typeid(ee.backend.type_interner, make_benchmark_result_t())));
+		const auto result2 = from_runtime_value(ee, bench_result, make_vector(ee.backend.type_interner, make_benchmark_result_t(ee.backend.type_interner)));
 
 //			QUARK_TRACE(value_and_type_to_string(result2));
 

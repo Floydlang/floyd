@@ -871,18 +871,13 @@ void dispose_struct(STRUCT_T& s){
 
 
 bool is_rc_value(const itype_t& type){
-	const auto b = type.get_base_type();
-	return b == base_type::k_string || b == base_type::k_vector || b == base_type::k_dict || b == base_type::k_struct || b == base_type::k_json;
-}
-
-bool is_rc_value(const typeid_t& type){
 	return type.is_string() || type.is_vector() || type.is_dict() || type.is_struct() || type.is_json();
 }
 
 
 
 // IMPORTANT: Different types will access different number of bytes, for example a BYTE. We cannot dereference pointer as a uint64*!!
-runtime_value_t load_via_ptr2(const void* value_ptr, const itype_t& type){
+runtime_value_t load_via_ptr2(const type_interner_t& interner, const void* value_ptr, const itype_t& type){
 	QUARK_ASSERT(value_ptr != nullptr);
 	QUARK_ASSERT(type.check_invariant());
 
@@ -940,11 +935,11 @@ runtime_value_t load_via_ptr2(const void* value_ptr, const itype_t& type){
 			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
-	return std::visit(visitor_t{ value_ptr }, get_itype_variant(type));
+	return std::visit(visitor_t{ value_ptr }, get_itype_variant(interner, type));
 }
 
 // IMPORTANT: Different types will access different number of bytes, for example a BYTE. We cannot dereference pointer as a uint64*!!
-void store_via_ptr2(void* value_ptr, const itype_t& type, const runtime_value_t& value){
+void store_via_ptr2(const type_interner_t& interner, void* value_ptr, const itype_t& type, const runtime_value_t& value){
 	struct visitor_t {
 		void* value_ptr;
 		const runtime_value_t& value;
@@ -995,7 +990,7 @@ void store_via_ptr2(void* value_ptr, const itype_t& type, const runtime_value_t&
 			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
-	std::visit(visitor_t{ value_ptr, value }, get_itype_variant(type));
+	std::visit(visitor_t{ value_ptr, value }, get_itype_variant(interner, type));
 }
 
 
@@ -1058,12 +1053,14 @@ value_backend_t::value_backend_t(
 
 
 
+/*
 itype_t lookup_itype(const value_backend_t& backend, const typeid_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
 	return lookup_itype_from_typeid(backend.type_interner, type);
 }
+*/
 
 itype_t lookup_type_ref(const value_backend_t& backend, runtime_type_t type){
 	QUARK_ASSERT(backend.check_invariant());

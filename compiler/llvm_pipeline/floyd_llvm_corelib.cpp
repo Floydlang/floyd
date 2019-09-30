@@ -36,10 +36,11 @@ struct native_sha1_t {
 //??? Should find the symbol for "benchmark_result2_t".
 static runtime_value_t llvm_corelib__make_benchmark_report(floyd_runtime_t* frp, const runtime_value_t b){
 	auto& r = get_floyd_runtime(frp);
+	auto& interner = r.backend.type_interner;
 
-	const auto benchmark_result2_t__itype = lookup_itype_from_typeid(r.backend.type_interner, make_benchmark_result2_t());
-	const auto b2 = from_runtime_value(r, b, make_vector(r.backend.type_interner, benchmark_result2_t__itype));
-	const auto test_results = unpack_vec_benchmark_result2_t(b2);
+	const auto benchmark_result2_t__itype = make_benchmark_result2_t(interner);
+	const auto b2 = from_runtime_value(r, b, make_vector(interner, benchmark_result2_t__itype));
+	const auto test_results = unpack_vec_benchmark_result2_t(interner, b2);
 	const auto report = make_benchmark_report(test_results);
 	auto result = to_runtime_string(r, report);
 	return result;
@@ -51,6 +52,7 @@ static runtime_value_t llvm_corelib__make_benchmark_report(floyd_runtime_t* frp,
 static DICT_CPPMAP_T* llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
 
+	const auto& interner = r.backend.type_interner;
 	const std::vector<std::pair<std::string, json_t>> caps = corelib_detect_hardware_caps();
 
 	std::map<std::string, value_t> caps_map;
@@ -58,15 +60,16 @@ static DICT_CPPMAP_T* llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
   		caps_map.insert({ e.first, value_t::make_json(e.second) });
 	}
 
-	const auto a = value_t::make_dict_value(typeid_t::make_json(), caps_map);
+	const auto a = value_t::make_dict_value(interner, typeid_t::make_json(), caps_map);
 	auto result = to_runtime_value(r, a);
 	return result.dict_cppmap_ptr;
 }
 
 runtime_value_t llvm_corelib__make_hardware_caps_report(floyd_runtime_t* frp, runtime_value_t caps0){
 	auto& r = get_floyd_runtime(frp);
+	auto& interner = r.backend.type_interner;
 
-	const auto type = lookup_itype_from_typeid(r.backend.type_interner, typeid_t::make_dict(typeid_t::make_json()));
+	const auto type = typeid_t::make_dict(interner, typeid_t::make_json());
 	const auto b2 = from_runtime_value(r, caps0, type);
 	const auto m = b2.get_dict_value();
 	std::vector<std::pair<std::string, json_t>> caps;
@@ -78,8 +81,9 @@ runtime_value_t llvm_corelib__make_hardware_caps_report(floyd_runtime_t* frp, ru
 }
 runtime_value_t llvm_corelib__make_hardware_caps_report_brief(floyd_runtime_t* frp, runtime_value_t caps0){
 	auto& r = get_floyd_runtime(frp);
+	auto& interner = r.backend.type_interner;
 
-	const auto b2 = from_runtime_value(r, caps0, lookup_itype_from_typeid(r.backend.type_interner, typeid_t::make_dict(typeid_t::make_json())));
+	const auto b2 = from_runtime_value(r, caps0, typeid_t::make_dict(interner, typeid_t::make_json()));
 	const auto m = b2.get_dict_value();
 	std::vector<std::pair<std::string, json_t>> caps;
 	for(const auto& e: m){
@@ -104,12 +108,14 @@ runtime_value_t llvm_corelib__get_current_date_and_time_string(floyd_runtime_t* 
 
 static STRUCT_T* llvm_corelib__calc_string_sha1(floyd_runtime_t* frp, runtime_value_t s0){
 	auto& r = get_floyd_runtime(frp);
+	auto& interner = r.backend.type_interner;
 
 	const auto& s = from_runtime_string(r, s0);
 	const auto ascii40 = corelib_calc_string_sha1(s);
 
 	const auto a = value_t::make_struct_value(
-		typeid_t::make_struct2({ member_t{ typeid_t::make_string(), "ascii40" } }),
+		interner,
+		typeid_t::make_struct2(interner, { member_t{ typeid_t::make_string(), "ascii40" } }),
 		{ value_t::make_string(ascii40) }
 	);
 
@@ -120,6 +126,7 @@ static STRUCT_T* llvm_corelib__calc_string_sha1(floyd_runtime_t* frp, runtime_va
 static STRUCT_T* llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* binary_ptr){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(binary_ptr != nullptr);
+	auto& interner = r.backend.type_interner;
 
 	const auto& binary = *reinterpret_cast<const native_binary_t*>(binary_ptr->get_data_ptr());
 
@@ -127,7 +134,8 @@ static STRUCT_T* llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* 
 	const auto ascii40 = corelib_calc_string_sha1(s);
 
 	const auto a = value_t::make_struct_value(
-		typeid_t::make_struct2({ member_t{ typeid_t::make_string(), "ascii40" } }),
+		interner,
+		typeid_t::make_struct2(interner, { member_t{ typeid_t::make_string(), "ascii40" } }),
 		{ value_t::make_string(ascii40) }
 	);
 
@@ -166,14 +174,15 @@ static void llvm_corelib__write_text_file(floyd_runtime_t* frp, runtime_value_t 
 
 static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
+	auto& interner = r.backend.type_interner;
 
 	const auto path = from_runtime_string(r, path0);
 
 	const auto a = corelib_get_fsentries_shallow(path);
 
-	const auto elements = directory_entries_to_values(a);
-	const auto k_fsentry_t__type = make__fsentry_t__type();
-	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
+	const auto elements = directory_entries_to_values(interner, a);
+	const auto k_fsentry_t__type = make__fsentry_t__type(interner);
+	const auto vec2 = value_t::make_vector_value(interner, k_fsentry_t__type, elements);
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(vec2);
@@ -186,14 +195,15 @@ static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp
 
 static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
+	auto& interner = r.backend.type_interner;
 
 	const auto path = from_runtime_string(r, path0);
 
 	const auto a = corelib_get_fsentries_deep(path);
 
-	const auto elements = directory_entries_to_values(a);
-	const auto k_fsentry_t__type = make__fsentry_t__type();
-	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
+	const auto elements = directory_entries_to_values(interner, a);
+	const auto k_fsentry_t__type = make__fsentry_t__type(interner);
+	const auto vec2 = value_t::make_vector_value(interner, k_fsentry_t__type, elements);
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(vec2);
@@ -206,11 +216,12 @@ static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, r
 
 static STRUCT_T* llvm_corelib__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
+	auto& interner = r.backend.type_interner;
 	const auto path = from_runtime_string(r, path0);
 
 	const auto info = corelib_get_fsentry_info(path);
 
-	const auto info2 = pack_fsentry_info(info);
+	const auto info2 = pack_fsentry_info(interner, info);
 
 	const auto v = to_runtime_value(r, info2);
 	return v.struct_ptr;
@@ -218,10 +229,11 @@ static STRUCT_T* llvm_corelib__get_fsentry_info(floyd_runtime_t* frp, runtime_va
 
 static runtime_value_t llvm_corelib__get_fs_environment(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
+	auto& interner = r.backend.type_interner;
 
 	const auto env = corelib_get_fs_environment();
 
-	const auto result = pack_fs_environment_t(env);
+	const auto result = pack_fs_environment_t(interner, env);
 	const auto v = to_runtime_value(r, result);
 	return v;
 }
@@ -231,6 +243,7 @@ static runtime_value_t llvm_corelib__get_fs_environment(floyd_runtime_t* frp){
 
 static uint8_t llvm_corelib__does_fsentry_exist(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
+	auto& interner = r.backend.type_interner;
 	const auto path = from_runtime_string(r, path0);
 
 	bool exists = corelib_does_fsentry_exist(path);

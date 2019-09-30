@@ -74,12 +74,15 @@ llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, const typei
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(callee_function_type.check_invariant());
 	QUARK_ASSERT(resolved_function_type.check_invariant());
-	QUARK_ASSERT(callee_function_type.get_function_args().size() == floyd_args.size());
+
+	const auto& interner = gen_acc.gen.type_lookup.state.type_interner;
+
+	QUARK_ASSERT(callee_function_type.get_function_args(interner).size() == floyd_args.size());
 
 	auto& builder = gen_acc.get_builder();
 
 	//	Callee, as LLVM function signature. It gets the param #0 runtime pointer and each ANY is expanded to valye/type pairs.
-	const auto& callee_mapping = *gen_acc.gen.type_lookup.find_from_type(callee_function_type).optional_function_def;
+	const auto& callee_mapping = *gen_acc.gen.type_lookup.find_from_itype(callee_function_type).optional_function_def;
 
 	//	Generate code that evaluates all argument expressions.
 	std::vector<llvm::Value*> arg_regs;
@@ -95,7 +98,7 @@ llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, const typei
 		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_known_value_type){
 			QUARK_ASSERT(out_arg.floyd_arg_index >= 0 && out_arg.floyd_arg_index < floyd_args.size());
 			auto floyd_arg_reg = floyd_args[out_arg.floyd_arg_index];
-			const auto arg_type = resolved_function_type.get_function_args()[out_arg.floyd_arg_index];
+			const auto arg_type = resolved_function_type.get_function_args(interner)[out_arg.floyd_arg_index];
 
 			arg_regs.push_back(floyd_arg_reg);
 			destroy.push_back({ floyd_arg_reg, arg_type });
@@ -104,7 +107,7 @@ llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, const typei
 		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_value){
 			QUARK_ASSERT(out_arg.floyd_arg_index >= 0 && out_arg.floyd_arg_index < floyd_args.size());
 			auto floyd_arg_reg = floyd_args[out_arg.floyd_arg_index];
-			const auto arg_type = resolved_function_type.get_function_args()[out_arg.floyd_arg_index];
+			const auto arg_type = resolved_function_type.get_function_args(interner)[out_arg.floyd_arg_index];
 
 			destroy.push_back({ floyd_arg_reg, arg_type });
 
@@ -132,8 +135,8 @@ llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, const typei
 	//	If the return type is dynamic, cast the returned runtime_value_t to the correct type.
 	//	It must be retained already.
 	llvm::Value* result_reg = result0_reg;
-	if(callee_function_type.get_function_return().is_any()){
-		result_reg = generate_cast_from_runtime_value(gen_acc.gen, *result0_reg, resolved_function_type.get_function_return());
+	if(callee_function_type.get_function_return(interner).is_any()){
+		result_reg = generate_cast_from_runtime_value(gen_acc.gen, *result0_reg, resolved_function_type.get_function_return(interner));
 	}
 	else{
 	}

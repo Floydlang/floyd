@@ -389,53 +389,53 @@ llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const l
 		const llvm_type_lookup& type_lookup;
 		llvm::Value& value;
 
-		llvm::Value* operator()(const typeid_t::undefined_t& e) const{
+		llvm::Value* operator()(const undefined_t& e) const{
 			UNSUPPORTED();
 		}
-		llvm::Value* operator()(const typeid_t::any_t& e) const{
+		llvm::Value* operator()(const any_t& e) const{
 			UNSUPPORTED();
 		}
 
-		llvm::Value* operator()(const typeid_t::void_t& e) const{
+		llvm::Value* operator()(const void_t& e) const{
 			UNSUPPORTED();
 		}
-		llvm::Value* operator()(const typeid_t::bool_t& e) const{
+		llvm::Value* operator()(const bool_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, make_runtime_value_type(type_lookup), "");
 		}
-		llvm::Value* operator()(const typeid_t::int_t& e) const{
+		llvm::Value* operator()(const int_t& e) const{
 			return &value;
 		}
-		llvm::Value* operator()(const typeid_t::double_t& e) const{
+		llvm::Value* operator()(const double_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value, make_runtime_value_type(type_lookup), "");
 		}
-		llvm::Value* operator()(const typeid_t::string_t& e) const{
+		llvm::Value* operator()(const string_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(type_lookup), "");
 		}
 
-		llvm::Value* operator()(const typeid_t::json_type_t& e) const{
+		llvm::Value* operator()(const json_type_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(type_lookup), "");
 		}
-		llvm::Value* operator()(const typeid_t::typeid_type_t& e) const{
+		llvm::Value* operator()(const typeid_type_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, make_runtime_value_type(type_lookup), "");
 		}
 
-		llvm::Value* operator()(const typeid_t::struct_t& e) const{
+		llvm::Value* operator()(const struct_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(type_lookup), "");
 		}
-		llvm::Value* operator()(const typeid_t::vector_t& e) const{
+		llvm::Value* operator()(const vector_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(type_lookup), "");
 		}
-		llvm::Value* operator()(const typeid_t::dict_t& e) const{
+		llvm::Value* operator()(const dict_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(type_lookup), "");
 		}
-		llvm::Value* operator()(const typeid_t::function_t& e) const{
+		llvm::Value* operator()(const function_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(type_lookup), "");
 		}
-		llvm::Value* operator()(const typeid_t::identifier_t& e) const {
+		llvm::Value* operator()(const identifier_t& e) const {
 			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
-	return std::visit(visitor_t{ builder, context, type_lookup, value }, floyd_type._contents);
+	return std::visit(visitor_t{ builder, context, type_lookup, value }, get_itype_variant(type_lookup.state.type_interner, floyd_type));
 }
 
 llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& runtime_value_reg, const typeid_t& type){
@@ -450,53 +450,53 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const
 		llvm::Value& runtime_value_reg;
 		const typeid_t& type;
 
-		llvm::Value* operator()(const typeid_t::undefined_t& e) const{
+		llvm::Value* operator()(const undefined_t& e) const{
 			UNSUPPORTED();
 		}
-		llvm::Value* operator()(const typeid_t::any_t& e) const{
+		llvm::Value* operator()(const any_t& e) const{
 			UNSUPPORTED();
 		}
 
-		llvm::Value* operator()(const typeid_t::void_t& e) const{
+		llvm::Value* operator()(const void_t& e) const{
 			UNSUPPORTED();
 		}
-		llvm::Value* operator()(const typeid_t::bool_t& e) const{
+		llvm::Value* operator()(const bool_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::Trunc, &runtime_value_reg, llvm::Type::getInt1Ty(context), "");
 		}
-		llvm::Value* operator()(const typeid_t::int_t& e) const{
+		llvm::Value* operator()(const int_t& e) const{
 			return &runtime_value_reg;
 		}
-		llvm::Value* operator()(const typeid_t::double_t& e) const{
+		llvm::Value* operator()(const double_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::BitCast, &runtime_value_reg, llvm::Type::getDoubleTy(context), "");
 		}
-		llvm::Value* operator()(const typeid_t::string_t& e) const{
+		llvm::Value* operator()(const string_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_vec_type_byvalue(type_lookup)->getPointerTo(), "");
 		}
 
-		llvm::Value* operator()(const typeid_t::json_type_t& e) const{
+		llvm::Value* operator()(const json_type_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_json_type_byvalue(type_lookup)->getPointerTo(), "");
 		}
-		llvm::Value* operator()(const typeid_t::typeid_type_t& e) const{
+		llvm::Value* operator()(const typeid_type_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::Trunc, &runtime_value_reg, llvm::Type::getInt32Ty(context), "");
 		}
 
-		llvm::Value* operator()(const typeid_t::struct_t& e) const{
+		llvm::Value* operator()(const struct_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, get_generic_struct_type_byvalue(type_lookup)->getPointerTo(), "");
 		}
-		llvm::Value* operator()(const typeid_t::vector_t& e) const{
+		llvm::Value* operator()(const vector_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_vec_type_byvalue(type_lookup)->getPointerTo(), "");
 		}
-		llvm::Value* operator()(const typeid_t::dict_t& e) const{
+		llvm::Value* operator()(const dict_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_dict_type_byvalue(type_lookup)->getPointerTo(), "");
 		}
-		llvm::Value* operator()(const typeid_t::function_t& e) const{
+		llvm::Value* operator()(const function_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, get_llvm_type_as_arg(type_lookup, type), "");
 		}
-		llvm::Value* operator()(const typeid_t::identifier_t& e) const {
+		llvm::Value* operator()(const identifier_t& e) const {
 			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
-	return std::visit(visitor_t{ builder, type_lookup, context, runtime_value_reg, type }, type._contents);
+	return std::visit(visitor_t{ builder, type_lookup, context, runtime_value_reg, type }, get_itype_variant(type_lookup.state.type_interner, type) );
 }
 
 }	//	floyd

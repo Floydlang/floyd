@@ -1283,7 +1283,8 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 			throw_compiler_error(location_t(p2.pos()), "Illegal vector, use {} to make a dictionary!");
 		}
 		else{
-			const auto element_type2 = typeid_to_ast_json(typeid_t::make_vector(typeid_t::make_undefined()));
+			type_interner_t temp;
+			const auto element_type2 = itype_to_json(typeid_t::make_vector(temp, typeid_t::make_undefined()));
 			const auto result = make_parser_node(
 				floyd::k_no_location,
 				parse_tree_expression_opcode_t::k_value_constructor,
@@ -1306,7 +1307,8 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 			flat_dict.push_back(b._value);
 		}
 
-		const auto element_type2 = typeid_to_ast_json(typeid_t::make_dict(typeid_t::make_undefined()));
+		type_interner_t temp;
+		const auto element_type2 = itype_to_json(typeid_t::make_dict(temp, typeid_t::make_undefined()));
 		const auto result = make_parser_node(floyd::k_no_location, parse_tree_expression_opcode_t::k_value_constructor, { element_type2, json_t::make_array(flat_dict) } );
 		return {result, a.second };
 	}
@@ -1332,12 +1334,13 @@ QUARK_TEST("parser", "parse_lhs_atom()", "", ""){
 }
 
 QUARK_TEST("parser", "parse_lhs_atom()", "", ""){
+	type_interner_t temp;
 	const auto a = parse_lhs_atom(seq_t("[3]"));
 	QUARK_UT_VERIFY(a.first == make_parser_node(
 		floyd::k_no_location,
 		parse_tree_expression_opcode_t::k_value_constructor,
 		{
-			typeid_to_ast_json(typeid_t::make_vector(typeid_t::make_undefined())),
+			itype_to_json(typeid_t::make_vector(temp, typeid_t::make_undefined())),
 			std::vector<json_t>{ parser__make_literal(value_t::make_int(3)) }
 		}
 	));

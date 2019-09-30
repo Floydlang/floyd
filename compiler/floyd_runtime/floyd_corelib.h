@@ -22,18 +22,17 @@
 namespace floyd {
 
 struct value_t;
-struct typeid_t;
 
 
 extern const std::string k_corelib_builtin_types_and_constants;
 
 
-typeid_t make__fsentry_t__type();
-typeid_t make__fsentry_info_t__type();
-typeid_t make__fs_environment_t__type();
+typeid_t make__fsentry_t__type(type_interner_t& type_interner);
+typeid_t make__fsentry_info_t__type(type_interner_t& type_interner);
+typeid_t make__fs_environment_t__type(type_interner_t& type_interner);
 
 bool is_valid_absolute_dir_path(const std::string& s);
-std::vector<value_t> directory_entries_to_values(const std::vector<TDirEntry>& v);
+std::vector<value_t> directory_entries_to_values(type_interner_t& type_interner, const std::vector<TDirEntry>& v);
 
 
 /*
@@ -41,14 +40,14 @@ std::vector<value_t> directory_entries_to_values(const std::vector<TDirEntry>& v
 		string ascii40
 	}
 */
-typeid_t make__sha1_t__type();
+typeid_t make__sha1_t__type(type_interner_t& type_interner);
 
 /*
 	struct binary_t {
 		string bytes
 	}
 */
-typeid_t make__binary_t__type();
+typeid_t make__binary_t__type(type_interner_t& type_interner);
 
 
 
@@ -89,7 +88,7 @@ struct fsentry_info_t {
 
 fsentry_info_t corelib_get_fsentry_info(const std::string& abs_path);
 
-value_t pack_fsentry_info(const fsentry_info_t& info);
+value_t pack_fsentry_info(type_interner_t& type_interner, const fsentry_info_t& info);
 
 
 struct fs_environment_t {
@@ -106,7 +105,7 @@ struct fs_environment_t {
 };
 
 fs_environment_t corelib_get_fs_environment();
-value_t pack_fs_environment_t(const fs_environment_t& env);
+value_t pack_fs_environment_t(type_interner_t& type_interner, const fs_environment_t& env);
 
 bool corelib_does_fsentry_exist(const std::string& abs_path);
 void corelib_create_directory_branch(const std::string& abs_path);

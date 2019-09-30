@@ -812,14 +812,17 @@ bool is_valid_absolute_dir_path(const std::string& s){
 }
 
 
-std::vector<value_t> directory_entries_to_values(const std::vector<TDirEntry>& v){
-	const auto k_fsentry_t__type = make__fsentry_t__type();
+std::vector<value_t> directory_entries_to_values(type_interner_t& type_interner, const std::vector<TDirEntry>& v){
+	QUARK_ASSERT(type_interner.check_invariant());
+
+	const auto k_fsentry_t__type = make__fsentry_t__type(type_interner);
 	const auto elements = mapf<value_t>(
 		v,
-		[&k_fsentry_t__type](const auto& e){
+		[&](const auto& e){
 //			const auto t = value_t::make_string(e.fName);
 			const auto type_string = e.fType == TDirEntry::kFile ? "file": "dir";
 			const auto t2 = value_t::make_struct_value(
+				type_interner,
 				k_fsentry_t__type,
 				{
 					value_t::make_string(type_string),
@@ -834,12 +837,15 @@ std::vector<value_t> directory_entries_to_values(const std::vector<TDirEntry>& v
 }
 
 
-typeid_t make__fsentry_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "type" },
-		{ typeid_t::make_string(), "abs_parent_path" },
-		{ typeid_t::make_string(), "name" }
-	});
+typeid_t make__fsentry_t__type(type_interner_t& type_interner){
+	const auto temp = typeid_t::make_struct2(
+		type_interner,
+		{
+			{ typeid_t::make_string(), "type" },
+			{ typeid_t::make_string(), "abs_parent_path" },
+			{ typeid_t::make_string(), "name" }
+		}
+	);
 	return temp;
 }
 
@@ -854,35 +860,41 @@ typeid_t make__fsentry_t__type(){
 		file_pos_t file_size
 	}
 */
-typeid_t make__fsentry_info_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "type" },
-		{ typeid_t::make_string(), "name" },
-		{ typeid_t::make_string(), "abs_parent_path" },
+typeid_t make__fsentry_info_t__type(type_interner_t& type_interner){
+	const auto temp = typeid_t::make_struct2(
+		type_interner,
+		{
+			{ typeid_t::make_string(), "type" },
+			{ typeid_t::make_string(), "name" },
+			{ typeid_t::make_string(), "abs_parent_path" },
 
-		{ typeid_t::make_string(), "creation_date" },
-		{ typeid_t::make_string(), "modification_date" },
-		{ typeid_t::make_int(), "file_size" }
-	});
+			{ typeid_t::make_string(), "creation_date" },
+			{ typeid_t::make_string(), "modification_date" },
+			{ typeid_t::make_int(), "file_size" }
+		}
+	);
 	return temp;
 }
 
 
 
 
-typeid_t make__fs_environment_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "home_dir" },
-		{ typeid_t::make_string(), "documents_dir" },
-		{ typeid_t::make_string(), "desktop_dir" },
+typeid_t make__fs_environment_t__type(type_interner_t& type_interner){
+	const auto temp = typeid_t::make_struct2(
+		type_interner,
+		{
+			{ typeid_t::make_string(), "home_dir" },
+			{ typeid_t::make_string(), "documents_dir" },
+			{ typeid_t::make_string(), "desktop_dir" },
 
-		{ typeid_t::make_string(), "hidden_persistence_dir" },
-		{ typeid_t::make_string(), "preferences_dir" },
-		{ typeid_t::make_string(), "cache_dir" },
-		{ typeid_t::make_string(), "temp_dir" },
+			{ typeid_t::make_string(), "hidden_persistence_dir" },
+			{ typeid_t::make_string(), "preferences_dir" },
+			{ typeid_t::make_string(), "cache_dir" },
+			{ typeid_t::make_string(), "temp_dir" },
 
-		{ typeid_t::make_string(), "executable_dir" }
-	});
+			{ typeid_t::make_string(), "executable_dir" }
+		}
+	);
 	return temp;
 }
 
@@ -892,22 +904,28 @@ typeid_t make__fs_environment_t__type(){
 		string utd_date
 	}
 */
-typeid_t make__date_t__type(){
-	const auto temp = typeid_t::make_struct2({
+typeid_t make__date_t__type(type_interner_t& type_interner){
+	const auto temp = typeid_t::make_struct2(
+		type_interner,
+	{
 		{ typeid_t::make_string(), "utd_date" }
 	});
 	return temp;
 }
 
-typeid_t make__sha1_t__type(){
-	const auto temp = typeid_t::make_struct2({
+typeid_t make__sha1_t__type(type_interner_t& type_interner){
+	const auto temp = typeid_t::make_struct2(
+	type_interner,
+	{
 		{ typeid_t::make_string(), "ascii40" }
 	});
 	return temp;
 }
 
-typeid_t make__binary_t__type(){
-	const auto temp = typeid_t::make_struct2({
+typeid_t make__binary_t__type(type_interner_t& type_interner){
+	const auto temp = typeid_t::make_struct2(
+	type_interner,
+	{
 		{ typeid_t::make_string(), "bytes" }
 	});
 	return temp;
@@ -918,8 +936,10 @@ typeid_t make__binary_t__type(){
 		string absolute_path
 	}
 */
-typeid_t make__absolute_path_t__type(){
-	const auto temp = typeid_t::make_struct2({
+typeid_t make__absolute_path_t__type(type_interner_t& type_interner){
+	const auto temp = typeid_t::make_struct2(
+	type_interner,
+	{
 		{ typeid_t::make_string(), "absolute_path" }
 	});
 	return temp;
@@ -930,8 +950,10 @@ typeid_t make__absolute_path_t__type(){
 		int pos
 	}
 */
-typeid_t make__file_pos_t__type(){
-	const auto temp = typeid_t::make_struct2({
+typeid_t make__file_pos_t__type(type_interner_t& type_interner){
+	const auto temp = typeid_t::make_struct2(
+		type_interner,
+	{
 		{ typeid_t::make_int(), "pos" }
 	});
 	return temp;
@@ -1069,9 +1091,10 @@ fsentry_info_t corelib_get_fsentry_info(const std::string& abs_path){
 	return result;
 }
 
-value_t pack_fsentry_info(const fsentry_info_t& info){
+value_t pack_fsentry_info(type_interner_t& type_interner, const fsentry_info_t& info){
 	const auto result = value_t::make_struct_value(
-		make__fsentry_info_t__type(),
+		type_interner,
+		make__fsentry_info_t__type(type_interner),
 		{
 			value_t::make_string(info.type),
 			value_t::make_string(info.name),
@@ -1128,9 +1151,10 @@ fs_environment_t corelib_get_fs_environment(){
 	return result;
 }
 
-value_t pack_fs_environment_t(const fs_environment_t& env){
+value_t pack_fs_environment_t(type_interner_t& type_interner, const fs_environment_t& env){
 	const auto result = value_t::make_struct_value(
-		make__fs_environment_t__type(),
+		type_interner,
+		make__fs_environment_t__type(type_interner),
 		{
 			value_t::make_string(env.home_dir),
 			value_t::make_string(env.documents_dir),

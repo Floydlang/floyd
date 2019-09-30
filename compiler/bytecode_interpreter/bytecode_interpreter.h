@@ -119,7 +119,6 @@ value_encoding type_to_encoding(const type_interner_t& interner, const itype_t& 
 
 //	Will this type of value require an ext ? bc_external_value_t to be used?
 bool encode_as_external(value_encoding encoding);
-bool encode_as_external(const typeid_t& type);
 bool encode_as_external(const itype_t& type);
 
 
@@ -826,7 +825,13 @@ struct bc_program_t {
 	public: type_interner_t _types;
 	public: software_system_t _software_system;
 	public: container_t _container_def;
+	public: std::vector<intrinsic_signature_t> intrinsic_signatures;
+
+	public: itype_t benchmark_result2_t__type;
+	public: itype_t dict_json__type;
 };
+
+
 
 json_t bcprogram_to_json(const bc_program_t& program);
 

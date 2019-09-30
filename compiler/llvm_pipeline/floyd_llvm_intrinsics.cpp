@@ -81,14 +81,16 @@ struct specialization_t {
 	function_bind_t bind;
 };
 
-static bool matches_specialization(const config_t& config, eresolved_type wanted, const typeid_t& arg_type){
+static bool matches_specialization(const config_t& config, const type_interner_t& type_interner, eresolved_type wanted, const typeid_t& arg_type){
 	QUARK_ASSERT(config.check_invariant());
+	QUARK_ASSERT(type_interner.check_invariant());
+	QUARK_ASSERT(arg_type.check_invariant());
 
 	if(arg_type.is_string()){
 		return wanted == eresolved_type::k_string;
 	}
 	else if(is_vector_carray(config, arg_type)){
-		const auto is_rc = is_rc_value(arg_type.get_vector_element_type());
+		const auto is_rc = is_rc_value(arg_type.get_vector_element_type(type_interner));
 		if(is_rc){
 			return wanted == eresolved_type::k_vector_carray_nonpod;
 		}
@@ -97,7 +99,7 @@ static bool matches_specialization(const config_t& config, eresolved_type wanted
 		}
 	}
 	else if(is_vector_hamt(config, arg_type)){
-		const auto is_rc = is_rc_value(arg_type.get_vector_element_type());
+		const auto is_rc = is_rc_value(arg_type.get_vector_element_type(type_interner));
 		if(is_rc){
 			return wanted == eresolved_type::k_vector_hamt_nonpod;
 		}
@@ -107,7 +109,7 @@ static bool matches_specialization(const config_t& config, eresolved_type wanted
 	}
 
 	else if(is_dict_cppmap(config, arg_type)){
-		const auto is_rc = is_rc_value(arg_type.get_dict_value_type());
+		const auto is_rc = is_rc_value(arg_type.get_dict_value_type(type_interner));
 		if(is_rc){
 			return wanted == eresolved_type::k_dict_cppmap_nonpod;
 		}
@@ -116,7 +118,7 @@ static bool matches_specialization(const config_t& config, eresolved_type wanted
 		}
 	}
 	else if(is_dict_hamt(config, arg_type)){
-		const auto is_rc = is_rc_value(arg_type.get_dict_value_type());
+		const auto is_rc = is_rc_value(arg_type.get_dict_value_type(type_interner));
 		if(is_rc){
 			return wanted == eresolved_type::k_dict_hamt_nonpod;
 		}
@@ -138,10 +140,10 @@ static bool matches_specialization(const config_t& config, eresolved_type wanted
 
 
 
-static const function_link_entry_t& lookup_link_map(const config_t& config, const std::vector<function_link_entry_t>& link_map, const std::vector<specialization_t>& specialisations, const typeid_t& type){
+static const function_link_entry_t& lookup_link_map(const config_t& config, const type_interner_t& type_interner, const std::vector<function_link_entry_t>& link_map, const std::vector<specialization_t>& specialisations, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto it = std::find_if(specialisations.begin(), specialisations.end(), [&](const specialization_t& s) { return matches_specialization(config, s.required_arg_type, type); });
+	const auto it = std::find_if(specialisations.begin(), specialisations.end(), [&](const specialization_t& s) { return matches_specialization(config, type_interner, s.required_arg_type, type); });
 	if(it == specialisations.end()){
 		QUARK_ASSERT(false);
 		throw std::exception();
@@ -382,7 +384,7 @@ static runtime_value_t floyd_llvm_intrinsic__from_json(floyd_runtime_t* frp, JSO
 	const auto& json = json_ptr->get_json();
 	const auto& target_type2 = lookup_type_ref(r.backend, target_type);
 
-	const auto result = unflatten_json_to_specific_type(json, lookup_typeid_from_itype(r.backend.type_interner, target_type2));
+	const auto result = unflatten_json_to_specific_type(r.backend.type_interner, json, target_type2);
 	const auto result2 = to_runtime_value(r, result);
 	return result2;
 }
@@ -496,10 +498,11 @@ llvm::Value* generate_instrinsic_map(
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(elements_vec_type.check_invariant());
 
+	const auto& interner = gen_acc.gen.type_lookup.state.type_interner;
 	auto& builder = gen_acc.get_builder();
-	const auto res = lookup_link_map(gen_acc.gen.settings.config, gen_acc.gen.link_map, make_map_specializations(builder.getContext(), gen_acc.gen.type_lookup), elements_vec_type);
+	const auto res = lookup_link_map(gen_acc.gen.settings.config, interner, gen_acc.gen.link_map, make_map_specializations(builder.getContext(), gen_acc.gen.type_lookup), elements_vec_type);
 
-	const auto result_vec_type = resolved_call_type.get_function_return();
+	const auto result_vec_type = resolved_call_type.get_function_return(interner);
 	return builder.CreateCall(
 		res.llvm_codegen_f,
 		{
@@ -1081,6 +1084,8 @@ static runtime_value_t stable_sort__carray(
 	QUARK_ASSERT(frp != nullptr);
 	QUARK_ASSERT(backend.check_invariant());
 
+	const auto& interner = backend.type_interner;
+
 	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
 	const auto& type1 = lookup_type_ref(backend, f_value_type);
 	const auto& type2 = lookup_type_ref(backend, context_value_type);
@@ -1115,7 +1120,7 @@ static runtime_value_t stable_sort__carray(
 	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
 
 	//??? optimize
-	const auto result = to_runtime_value2(backend, value_t::make_vector_value(lookup_typeid_from_itype(backend.type_interner, type0.get_vector_element_type(backend.type_interner)), mutate_inplace_elements));
+	const auto result = to_runtime_value2(backend, value_t::make_vector_value(interner, type0.get_vector_element_type(interner), mutate_inplace_elements));
 	return result;
 }
 
@@ -1133,6 +1138,8 @@ static runtime_value_t stable_sort__hamt(
 ){
 	QUARK_ASSERT(frp != nullptr);
 	QUARK_ASSERT(backend.check_invariant());
+
+	const auto& interner = backend.type_interner;
 
 	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
 	const auto& type1 = lookup_type_ref(backend, f_value_type);
@@ -1168,7 +1175,7 @@ static runtime_value_t stable_sort__hamt(
 	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
 
 	//??? optimize
-	const auto result = to_runtime_value2(backend, value_t::make_vector_value(lookup_typeid_from_itype(backend.type_interner, type0.get_vector_element_type(backend.type_interner)), mutate_inplace_elements));
+	const auto result = to_runtime_value2(backend, value_t::make_vector_value(interner, type0.get_vector_element_type(interner), mutate_inplace_elements));
 	return result;
 }
 
@@ -1327,7 +1334,9 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 	QUARK_ASSERT(collection_type.check_invariant());
 
 	auto& builder = gen_acc.get_builder();
-	const auto res = lookup_link_map(gen_acc.gen.settings.config, gen_acc.gen.link_map, make_push_back_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
+	const auto& interner = gen_acc.gen.type_lookup.state.type_interner;
+
+	const auto res = lookup_link_map(gen_acc.gen.settings.config, interner, gen_acc.gen.link_map, make_push_back_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
 
 	if(collection_type.is_string()){
 		const auto vector_itype_reg = generate_itype_constant(gen_acc.gen, collection_type);
@@ -1339,7 +1348,7 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 		);
 	}
 	else if(collection_type.is_vector()){
-		const auto element_type = collection_type.get_vector_element_type();
+		const auto element_type = collection_type.get_vector_element_type(interner);
 		const auto vector_itype_reg = generate_itype_constant(gen_acc.gen, collection_type);
 		const auto packed_value_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
 		return builder.CreateCall(
@@ -1536,8 +1545,9 @@ llvm::Value* generate_instrinsic_size(llvm_function_generator_t& gen_acc, const 
 	QUARK_ASSERT(collection_type.check_invariant());
 
 	auto& builder = gen_acc.get_builder();
+	const auto& interner = gen_acc.gen.type_lookup.state.type_interner;
 
-	const auto res = lookup_link_map(gen_acc.gen.settings.config, gen_acc.gen.link_map, make_size_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
+	const auto res = lookup_link_map(gen_acc.gen.settings.config, interner, gen_acc.gen.link_map, make_size_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
 	const auto collection_itype = generate_itype_constant(gen_acc.gen, collection_type);
 	return builder.CreateCall(
 		res.llvm_codegen_f,
@@ -1825,8 +1835,9 @@ llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, cons
 	QUARK_ASSERT(collection_type.check_invariant());
 
 	auto& builder = gen_acc.get_builder();
+	const auto& interner = gen_acc.gen.type_lookup.state.type_interner;
 
-	const auto res = lookup_link_map(gen_acc.gen.settings.config, gen_acc.gen.link_map, make_update_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
+	const auto res = lookup_link_map(gen_acc.gen.settings.config, interner, gen_acc.gen.link_map, make_update_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
 	const auto collection_itype = generate_itype_constant(gen_acc.gen, collection_type);
 
 	if(collection_type.is_string()){
@@ -1840,7 +1851,7 @@ llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, cons
 	}
 	else if(collection_type.is_vector()){
 		const auto key_itype = generate_itype_constant(gen_acc.gen, typeid_t::make_int());
-		const auto element_type = collection_type.get_vector_element_type();
+		const auto element_type = collection_type.get_vector_element_type(interner);
 
 		const auto packed_value_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
 		const auto value_itype = generate_itype_constant(gen_acc.gen, element_type);
@@ -1852,7 +1863,7 @@ llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, cons
 	}
 	else if(collection_type.is_dict()){
 		const auto key_itype = generate_itype_constant(gen_acc.gen, typeid_t::make_string());
-		const auto element_type = collection_type.get_dict_value_type();
+		const auto element_type = collection_type.get_dict_value_type(interner);
 		const auto value_itype = generate_itype_constant(gen_acc.gen, element_type);
 		const auto packed_value_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
 		return builder.CreateCall(
@@ -1941,15 +1952,11 @@ static std::map<std::string, void*> get_intrinsic_binds(){
 }
 
 //	Skips duplicates.
-static std::vector<function_link_entry_t> make_entries(const type_interner_t& interner, const std::vector<function_bind_t>& binds){
-	QUARK_ASSERT(interner.check_invariant());
-	const auto& intrinsic_signatures = get_intrinsic_signatures();
-
+static std::vector<function_link_entry_t> make_entries(const std::vector<intrinsic_signature_t>& intrinsic_signatures, const std::vector<function_bind_t>& binds){
 	std::vector<function_link_entry_t> result;
 	for(const auto& bind: binds){
 		auto signature_it = std::find_if(intrinsic_signatures.begin(), intrinsic_signatures.end(), [&] (const intrinsic_signature_t& m) { return m.name == bind.name; } );
-		const auto function_type0 = signature_it != intrinsic_signatures.end() ? signature_it->_function_type : typeid_t::make_undefined();
-		const auto function_type = lookup_itype_from_typeid(interner, function_type0);
+		const auto function_type = signature_it != intrinsic_signatures.end() ? signature_it->_function_type : typeid_t::make_undefined();
 
 		const auto link_name = encode_intrinsic_link_name(bind.name);
 		const auto exists_it = std::find_if(result.begin(), result.end(), [&](const function_link_entry_t& e){ return e.link_name == link_name; });
@@ -1963,17 +1970,16 @@ static std::vector<function_link_entry_t> make_entries(const type_interner_t& in
 	return result;
 }
 
-static std::vector<function_link_entry_t> make_entries2(const type_interner_t& interner, const std::vector<specialization_t>& specializations){
-	QUARK_ASSERT(interner.check_invariant());
-
+static std::vector<function_link_entry_t> make_entries2(const std::vector<intrinsic_signature_t>& intrinsic_signatures, const std::vector<specialization_t>& specializations){
 	const auto binds = mapf<function_bind_t>(specializations, [](auto& e){ return e.bind; });
-	return make_entries(interner, binds);
+	return make_entries(intrinsic_signatures, binds);
 }
 
-std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<intrinsic_signature_t>& intrinsic_signatures){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	const auto& intrinsic_signatures = get_intrinsic_signatures();
+	const auto& interner = type_lookup.state.type_interner;
+
 	const auto binds = get_intrinsic_binds();
 
 	std::vector<function_link_entry_t> result;
@@ -1982,17 +1988,17 @@ std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& c
 		QUARK_ASSERT(signature_it != intrinsic_signatures.end());
 
 		const auto link_name = encode_intrinsic_link_name(bind.first);
-		const auto function_type = lookup_itype_from_typeid(type_lookup.state.type_interner, signature_it->_function_type);
+		const auto function_type = signature_it->_function_type;
 		llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, signature_it->_function_type);
 		const auto function_byvalue_type = deref_ptr(function_ptr_type);
 		const auto def = function_link_entry_t{ "intrinsic", link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, {}, bind.second };
 		result.push_back(def);
 	}
 
-	result = concat(result, make_entries2(type_lookup.state.type_interner, make_push_back_specializations(context, type_lookup)));
-	result = concat(result, make_entries2(type_lookup.state.type_interner, make_size_specializations(context, type_lookup)));
-	result = concat(result, make_entries2(type_lookup.state.type_interner, make_update_specializations(context, type_lookup)));
-	result = concat(result, make_entries2(type_lookup.state.type_interner, make_map_specializations(context, type_lookup)));
+	result = concat(result, make_entries2(intrinsic_signatures, make_push_back_specializations(context, type_lookup)));
+	result = concat(result, make_entries2(intrinsic_signatures, make_size_specializations(context, type_lookup)));
+	result = concat(result, make_entries2(intrinsic_signatures, make_update_specializations(context, type_lookup)));
+	result = concat(result, make_entries2(intrinsic_signatures, make_map_specializations(context, type_lookup)));
 
 	if(k_trace_function_link_map){
 		trace_function_link_map(result);

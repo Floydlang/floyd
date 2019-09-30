@@ -338,15 +338,17 @@ static int64_t bc_call_main(interpreter_t& interpreter, const floyd::value_t& f,
 	QUARK_ASSERT(interpreter.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
 
+	const auto& interner = interpreter._imm->_program._types;
+
 	//??? Check this earlier.
-	if(f.get_type() == get_main_signature_arg_impure() || f.get_type() == get_main_signature_arg_pure()){
+	if(f.get_type() == get_main_signature_arg_impure(interner) || f.get_type() == get_main_signature_arg_pure(interner)){
 		const auto main_args2 = mapf<value_t>(main_args, [](auto& e){ return value_t::make_string(e); });
-		const auto main_args3 = value_t::make_vector_value(typeid_t::make_string(), main_args2);
+		const auto main_args3 = value_t::make_vector_value(interner, typeid_t::make_string(), main_args2);
 		const auto main_result = call_function(interpreter, f, { main_args3 });
 		const auto main_result_int = main_result.get_int_value();
 		return main_result_int;
 	}
-	else if(f.get_type() == get_main_signature_no_arg_impure() || f.get_type() == get_main_signature_no_arg_pure()){
+	else if(f.get_type() == get_main_signature_no_arg_impure(interner) || f.get_type() == get_main_signature_no_arg_pure(interner)){
 		const auto main_result = call_function(interpreter, f, {});
 		const auto main_result_int = main_result.get_int_value();
 		return main_result_int;

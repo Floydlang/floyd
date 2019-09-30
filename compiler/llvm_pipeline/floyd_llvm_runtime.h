@@ -210,7 +210,8 @@ inline runtime_value_t to_runtime_string(llvm_execution_engine_t& runtime, const
 std::vector<function_link_entry_t> make_function_link_map1(
 	llvm::LLVMContext& context,
 	const llvm_type_lookup& type_lookup,
-	const std::vector<floyd::function_definition_t>& ast_function_defs
+	const std::vector<floyd::function_definition_t>& ast_function_defs,
+	const std::vector<intrinsic_signature_t>& intrinsic_signatures
 );
 
 
@@ -233,7 +234,7 @@ struct bench_t {
 };
 inline bool operator==(const bench_t& lhs, const bench_t& rhs){ return lhs.benchmark_id == rhs.benchmark_id && lhs.f == rhs.f; }
 
-std::vector<bench_t> collect_benchmarks(const llvm_execution_engine_t& ee);
+std::vector<bench_t> collect_benchmarks(llvm_execution_engine_t& ee);
 std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, const std::vector<bench_t>& tests);
 std::vector<bench_t> filter_benchmarks(const std::vector<bench_t>& b, const std::vector<std::string>& run_tests);
 

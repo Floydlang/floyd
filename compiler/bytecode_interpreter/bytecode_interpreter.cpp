@@ -518,19 +518,6 @@ bool encode_as_external(value_encoding encoding){
 		;
 }
 
-bool encode_as_external(const typeid_t& type){
-	const auto basetype = type.get_base_type();
-	return false
-		|| basetype == base_type::k_string
-		|| basetype == base_type::k_json
-		|| basetype == base_type::k_typeid
-		|| basetype == base_type::k_struct
-		|| basetype == base_type::k_vector
-		|| basetype == base_type::k_dict
-		|| basetype == base_type::k_function
-		;
-}
-
 bool encode_as_external(const itype_t& type){
 	const auto basetype = type.get_base_type();
 	return false
@@ -900,7 +887,7 @@ bc_value_t make_vector(const type_interner_t& interner, const itype_t& element_t
 	}
 #endif
 
-	const auto vector_type = lookup_itype_from_typeid(interner, typeid_t::make_vector(lookup_typeid_from_itype(interner, element_type)));
+	const auto vector_type = typeid_t::make_vector(interner, element_type);
 	if(encode_as_vector_w_inplace_elements(interner, vector_type)){
 		immer::vector<bc_inplace_value_t> elements2;
 		for(const auto& e: elements){
@@ -936,7 +923,7 @@ bc_value_t make_vector(const type_interner_t& interner, const itype_t& element_t
 	}
 #endif
 
-	const auto vector_type = lookup_itype_from_typeid(interner, typeid_t::make_vector(lookup_typeid_from_itype(interner, element_type)));
+	const auto vector_type = typeid_t::make_vector(interner, element_type);
 	QUARK_ASSERT(encode_as_vector_w_inplace_elements(interner, vector_type) == false);
 
 	bc_value_t temp;
@@ -950,7 +937,7 @@ bc_value_t make_vector(const type_interner_t& interner, const itype_t& element_t
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(element_type.check_invariant());
 
-	const auto vector_type = lookup_itype_from_typeid(interner, typeid_t::make_vector(lookup_typeid_from_itype(interner, element_type)));
+	const auto vector_type = typeid_t::make_vector(interner, element_type);
 	QUARK_ASSERT(encode_as_vector_w_inplace_elements(interner, vector_type) == true);
 
 	bc_value_t temp;
@@ -985,7 +972,7 @@ bc_value_t make_dict(const type_interner_t& interner, const itype_t& value_type,
 #endif
 
 	bc_value_t temp;
-	temp._type = lookup_itype_from_typeid(interner, typeid_t::make_dict(lookup_typeid_from_itype(interner, value_type)));
+	temp._type = make_dict(interner, value_type);
 	temp._pod._external = new bc_external_value_t{ temp._type, entries };
 	QUARK_ASSERT(temp.check_invariant());
 	return temp;
@@ -995,7 +982,7 @@ bc_value_t make_dict(const type_interner_t& interner, const itype_t& value_type,
 	QUARK_ASSERT(value_type.check_invariant());
 
 	bc_value_t temp;
-	temp._type = lookup_itype_from_typeid(interner, typeid_t::make_dict(lookup_typeid_from_itype(interner, value_type)));
+	temp._type = make_dict(interner, value_type);
 	temp._pod._external = new bc_external_value_t{ temp._type, entries };
 	QUARK_ASSERT(temp.check_invariant());
 	return temp;
@@ -1004,13 +991,10 @@ bc_value_t make_dict(const type_interner_t& interner, const itype_t& value_type,
 
 
 typeid_t lookup_full_type0(const interpreter_t& vm, const bc_typeid_t& type){
-	const auto t = lookup_itype_from_index(vm._imm->_program._types, type);
-	return lookup_typeid_from_itype(vm._imm->_program._types, t);
-//	return vm._imm->_program._types[type];
+	return lookup_itype_from_index(vm._imm->_program._types, type);
 }
 itype_t lookup_full_type(const interpreter_t& vm, const bc_typeid_t& type){
-	const auto t = lookup_itype_from_index(vm._imm->_program._types, type);
-	return t;
+	return lookup_itype_from_index(vm._imm->_program._types, type);
 }
 const base_type lookup_full_basetype(const interpreter_t& vm, const bc_typeid_t& type){
 	const auto t = lookup_itype_from_index(vm._imm->_program._types, type);
@@ -2012,7 +1996,7 @@ bc_static_frame_t::bc_static_frame_t(const type_interner_t& interner, const std:
 				_locals.push_back(value);
 			}
 			else{
-				const auto value = make_def(lookup_typeid_from_itype(interner, symbol.second._value_type));
+				const auto value = make_def(symbol.second._value_type);
 				const auto bc = value_to_bc(interner, value);
 				_locals.push_back(bc);
 			}
@@ -2408,8 +2392,10 @@ interpreter_t::interpreter_t(const bc_program_t& program, runtime_handler_i* han
 
 	const auto start_time = std::chrono::high_resolution_clock::now();
 
+	type_interner_t temp_interner = program._types;
+	const auto intrinsics = bc_get_intrinsics(temp_interner);
+	QUARK_ASSERT(temp_interner.interned2.size() == program._types.interned2.size());
 
-	const auto intrinsics = bc_get_intrinsics();
 	const auto corelib_calls = bc_get_corelib_calls();
 	auto host_functions = intrinsics;
 	host_functions.insert(corelib_calls.begin(), corelib_calls.end());
@@ -2691,14 +2677,13 @@ static void do_call(interpreter_t& vm, const bc_instruction_t& i){
 
 	//	Can't find this functions -- it could be an intrinsic.
 	if(function_def_it != vm._imm->_program._function_defs.end() == false){
-		//??? Don't call every time!
-		const auto intrinsic_signatures = get_intrinsic_signatures();
+		const auto& intrinsics = vm._imm->_program.intrinsic_signatures;
 
 		//	Find function
-		const auto it = std::find_if(intrinsic_signatures.begin(), intrinsic_signatures.end(), [&](const intrinsic_signature_t& e) { return e.name == function_id.name; } );
-		QUARK_ASSERT(it != intrinsic_signatures.end());
+		const auto it = std::find_if(intrinsics.begin(), intrinsics.end(), [&](const intrinsic_signature_t& e) { return e.name == function_id.name; } );
+		QUARK_ASSERT(it != intrinsics.end());
 		const auto& function_type = it->_function_type;
-		call_native(vm, i, lookup_itype_from_typeid(vm._imm->_program._types, function_type));
+		call_native(vm, i, function_type);
 	}
 	else{
 		const auto& function_def = function_def_it->second;
@@ -3846,7 +3831,7 @@ json_t types_to_json(const std::vector<typeid_t>& types){
 	for(const auto& e: types){
 		const auto i = json_t::make_array({
 			id,
-			typeid_to_ast_json(e)
+			itype_to_json(e)
 		});
 		r.push_back(i);
 		id++;

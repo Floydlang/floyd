@@ -167,13 +167,14 @@ bool function_definition_t::floyd_func_t::operator==(const floyd_func_t& other) 
 
 bool function_definition_t::check_invariant() const {
 	QUARK_ASSERT(_function_type.is_function());
-	QUARK_ASSERT(_function_type.get_function_args().size() == _named_args.size());
+//	QUARK_ASSERT(_function_type.get_function_args().size() == _named_args.size());
 
+/*
 	const auto args0 = _function_type.get_function_args();
 	for(int i = 0 ; i < args0.size(); i++){
 		QUARK_ASSERT(args0[i] == _named_args[i]._type);
 	}
-
+*/
 	if(_optional_body){
 		QUARK_ASSERT(_optional_body->check_invariant());
 	}
@@ -194,15 +195,15 @@ bool operator==(const function_definition_t& lhs, const function_definition_t& r
 
 
 
-const typeid_t& get_function_type(const function_definition_t& f){
+const itype_t& get_function_type(const function_definition_t& f){
 	return f._function_type;
 }
 
 json_t function_def_to_ast_json(const function_definition_t& v) {
-	typeid_t function_type = get_function_type(v);
+	itype_t function_type = get_function_type(v);
 
 	auto result = std::vector<json_t>{
-		typeid_to_ast_json(function_type),
+		itype_to_json(function_type),
 		v._definition_name,
 		members_to_json(v._named_args)
 	};
@@ -223,7 +224,7 @@ function_definition_t json_to_function_def(const type_interner_t& interner, cons
 
 	const location_t location1 = k_no_location;
 	const std::string definition_name1 = definition_name0.get_string();
-	const typeid_t function_type1 = typeid_from_ast_json(function_type0);
+	const itype_t function_type1 = itype_from_json(function_type0);
 	const std::vector<member_t> args1 = members_from_json(args0);
 	const std::shared_ptr<body_t> body1 = body0.is_null() ? std::shared_ptr<body_t>() : std::make_shared<body_t>(json_to_body(interner, body0));
 
@@ -234,6 +235,17 @@ function_definition_t json_to_function_def(const type_interner_t& interner, cons
 		args1,
 		body1
 	);
+}
+
+static std::string members_to_string(const std::vector<member_itype_t>& m){
+	std::string result;
+	for(const auto& e: m){
+		const std::string s = std::string("(") + itype_to_compact_string(e._type) + " " + e._name + std::string(")");
+		result = result + s;
+	}
+
+	//	Remove trailing ',' character, if any.
+	return result == "" ? "" : result.substr(0, result.size() - 1);
 }
 
 void trace_function_definition_t(const function_definition_t& def){
@@ -247,10 +259,9 @@ void trace_function_definition_t(const function_definition_t& def){
 }
 
 QUARK_TEST("", "", "", ""){
-	
-	const auto a = function_definition_t::make_func(k_no_location, "definition_name", typeid_t::make_function(typeid_t::make_string(), {}, epure::pure), {}, std::make_shared<body_t>());
+	type_interner_t interner;
+	const auto a = function_definition_t::make_func(k_no_location, "definition_name", itype_t::make_function(interner, itype_t::make_string(), {}, epure::pure), {}, std::make_shared<body_t>());
 	QUARK_UT_VERIFY(a._named_args.empty());
-
 
 	QUARK_UT_VERIFY(a == a);
 }
@@ -263,7 +274,7 @@ QUARK_TEST("", "", "", ""){
 
 
 
-expression_t::expression_t(const expression_variant_t& contents, const ast_type_t& output_type) :
+expression_t::expression_t(const expression_variant_t& contents, const itype_t& output_type) :
 #if DEBUG_DEEP
 	_debug(""),
 #endif
@@ -297,11 +308,12 @@ QUARK_TEST("expression", "expression_to_json()", "literals", ""){
 }
 
 QUARK_TEST("expression_t", "expression_to_json()", "math2", ""){
+	type_interner_t interner;
 	ut_verify(
 		QUARK_POS,
 		expression_to_json_string(
 			expression_t::make_arithmetic(
-				expression_type::k_arithmetic_add, expression_t::make_literal_int(2), expression_t::make_literal_int(3), make_no_asttype())
+				expression_type::k_arithmetic_add, expression_t::make_literal_int(2), expression_t::make_literal_int(3), itype_t::make_undefined())
 			),
 		R"(["+", ["k", 2, "^int"], ["k", 3, "^int"]])"
 	);
@@ -312,12 +324,12 @@ QUARK_TEST("expression_t", "expression_to_json()", "call", ""){
 		QUARK_POS,
 		expression_to_json_string(
 			expression_t::make_call(
-				expression_t::make_load("my_func", make_no_asttype()),
+				expression_t::make_load("my_func", itype_t::make_undefined()),
 				{
 					expression_t::make_literal_string("xyz"),
 					expression_t::make_literal_int(123)
 				},
-				make_no_asttype()
+				itype_t::make_undefined()
 			)
 		),
 		R"(["call", ["@", "my_func"], [["k", "xyz", "^string"], ["k", 123, "^int"]]])"
@@ -328,9 +340,9 @@ QUARK_TEST("expression_t", "expression_to_json()", "lookup", ""){
 	ut_verify(QUARK_POS, 
 		expression_to_json_string(
 			expression_t::make_lookup(
-				expression_t::make_load("hello", make_no_asttype()),
+				expression_t::make_load("hello", itype_t::make_undefined()),
 				expression_t::make_literal_string("xyz"),
-				make_no_asttype()
+				itype_t::make_undefined()
 			)
 		),
 		R"(["[]", ["@", "hello"], ["k", "xyz", "^string"]])"
@@ -347,7 +359,7 @@ json_t expression_to_json(const expression_t& e){
 				expression_opcode_t::k_literal,
 				{
 					value_to_ast_json(e.value),
-					typeid_to_ast_json(e.value.get_type())
+					itype_to_json(e.value.get_type())
 				}
 			);
 		}
@@ -404,7 +416,11 @@ json_t expression_to_json(const expression_t& e){
 
 
 		json_t operator()(const expression_t::struct_definition_expr_t& e) const{
-			return make_ast_node(expr.location, expression_opcode_t::k_struct_def, { e.name, struct_definition_to_ast_json(*e.def) } );
+			return make_ast_node(
+				expr.location,
+				expression_opcode_t::k_struct_def,
+				{ e.name, json_t::make_array( { members_to_json(e.def->_members) } ) }
+			);
 		}
 		json_t operator()(const expression_t::function_definition_expr_t& e) const{
 			return make_ast_node(
@@ -457,7 +473,7 @@ json_t expression_to_json(const expression_t& e){
 				expr.location,
 				expression_opcode_t::k_value_constructor,
 				{
-					ast_type_to_json(e.value_type),
+					itype_to_json(e.value_type),
 					expressions_to_json(e.elements)
 				}
 			);
@@ -473,7 +489,7 @@ json_t expression_to_json(const expression_t& e){
 	if(e.is_annotated_shallow() && e.has_builtin_type() == false){
 		const auto t = e.get_output_type();
 		auto a2 = result0.get_array();
-		const auto type_json = ast_type_to_json(t);
+		const auto type_json = itype_to_json(t);
 		a2.push_back(type_json);
 		return json_t::make_array(a2);
 	}
@@ -491,14 +507,14 @@ json_t expressions_to_json(const std::vector<expression_t> v){
 }
 
 
-static ast_type_t get_optional_typeid(const json_t& json_array, int optional_index){
+static itype_t get_optional_typeid(const json_t& json_array, int optional_index){
 	if(optional_index < json_array.get_array_size()){
 		const auto e = json_array.get_array_n(optional_index);
-		const auto t = typeid_from_ast_json(e);
+		const auto t = itype_from_json(e);
 		return to_asttype(t);
 	}
 	else{
-		return make_no_asttype();
+		return itype_t::make_undefined();
 	}
 }
 
@@ -519,7 +535,7 @@ expression_t ast_json_to_expression(const type_interner_t& interner, const json_
 
 		const auto value = e.get_array_n(1);
 		const auto type = e.get_array_n(2);
-		const auto type2 = typeid_from_ast_json(type);
+		const auto type2 = itype_from_json(type);
 
 
 		const auto value2 = ast_json_to_value(type2, value);
@@ -632,12 +648,13 @@ expression_t ast_json_to_expression(const type_interner_t& interner, const json_
 
 		const auto struct_name = e.get_array_n(1).get_string();
 		const auto members = members_from_json(e.get_array_n(2));
-		return expression_t::make_struct_definition(struct_name, std::make_shared<struct_definition_t>(members));
+		auto def = std::make_shared<struct_def_itype_t>(members);
+		return expression_t::make_struct_definition(interner, struct_name, def);
 	}
 	else if(op == expression_opcode_t::k_function_def){
 		QUARK_ASSERT(e.get_array_size() == 5);
 
-		const auto function_type = typeid_from_ast_json(e.get_array_n(1));
+		const auto function_type = itype_from_json(e.get_array_n(1));
 		const auto function_name = e.get_array_n(2).get_string();
 		const auto named_args = members_from_json(e.get_array_n(3));
 
@@ -658,8 +675,7 @@ expression_t ast_json_to_expression(const type_interner_t& interner, const json_
 	else if(op == expression_opcode_t::k_value_constructor){
 		QUARK_ASSERT(e.get_array_size() == 3);
 
-//??? changeall JSON code to use ast_type_from_json() instead of goin via typeid with typeid_from_ast_json() 
-		const auto value_type = ast_type_from_json(e.get_array_n(1));
+		const auto value_type = itype_from_json(e.get_array_n(1));
 		const auto args = e.get_array_n(2).get_array();
 
 		std::vector<expression_t> args2;

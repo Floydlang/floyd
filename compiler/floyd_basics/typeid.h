@@ -66,12 +66,12 @@
 struct json_t;
 
 namespace floyd {
-struct typeid_t;
-struct member_t;
+//struct typeid_t;
+//struct member_t;
 
 
 
-std::string typeid_to_compact_string(const typeid_t& t);
+//std::string typeid_to_compact_string(const typeid_t& t);
 
 
 
@@ -157,7 +157,7 @@ int get_json_type(const json_t& value);
 
 //////////////////////////////////////////////////		struct_definition_t
 
-
+/*
 //??? This struct should be *separate* from the actual struct_definition_t. Rename struct_type_description_t
 //	which should go next to function_definition_t in expression.h
 
@@ -180,7 +180,7 @@ std::string to_compact_string(const struct_definition_t& v);
 
 //	Returns -1 if not found.
 int find_struct_member_index(const struct_definition_t& def, const std::string& name);
-
+*/
 
 
 
@@ -192,11 +192,11 @@ enum class epure {
 
 
 
-
 //////////////////////////////////////		typeid_t
 
 
 struct typeid_t {
+/*
 	public: enum class return_dyn_type {
 		none = 0,
 		arg0 = 1,
@@ -505,13 +505,13 @@ struct typeid_t {
 
 		return std::get<identifier_t>(_contents).name;
 	}
-
+*/
 
 
 	////////////////////////////////////////		BASICS
 
 
-
+/*
 	public: floyd::base_type get_base_type() const{
 		struct visitor_t {
 			base_type operator()(const undefined_t& e) const{
@@ -599,15 +599,19 @@ struct typeid_t {
 	private: std::string _DEBUG_string;
 #endif
 	public: type_variant_t _contents;
+*/
+
 };
 
-std::string typeid_to_compact_string(const typeid_t& t);
+//std::string typeid_to_compact_string(const typeid_t& t);
 
 
 
 
 
 //////////////////////////////////////		dynamic function
+
+#if 0
 
 //	Dynamic values are "fat" values that also keep their type. This is used right now for Floyd's instrinsic functions
 //	that accepts many/any type of arguments. Like size().
@@ -633,7 +637,7 @@ struct member_t {
 
 
 	/////////////////////////////		STATE
-	public: floyd::typeid_t _type;
+	public: floyd::itype_t _type;
 	public: std::string _name;
 };
 
@@ -641,9 +645,10 @@ std::vector<floyd::typeid_t> get_member_types(const std::vector<member_t>& m);
 
 std::string members_to_string(const std::vector<member_t>& m);
 
+#endif
 
 
-
+#if 0
 
 json_t struct_definition_to_ast_json(const struct_definition_t& v);
 
@@ -660,6 +665,7 @@ void ut_verify(const quark::call_context_t& context, const typeid_t& result, con
 
 
 
+#endif
 
 
 //////////////////////////////////////		type_tag_t

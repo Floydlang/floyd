@@ -391,9 +391,11 @@ llvm::Value* generate_lookup_dict(llvm_function_generator_t& gen_acc, llvm::Valu
 	QUARK_ASSERT(dict_type.check_invariant());
 	QUARK_ASSERT(is_dict_cppmap(gen_acc.gen.settings.config, dict_type) || is_dict_hamt(gen_acc.gen.settings.config, dict_type));
 
+	auto& interner = gen_acc.gen.type_lookup.state.type_interner;
+
 	const auto res = resolve_func(gen_acc.gen.link_map, dict_mode == dict_backend::hamt ? "lookup_dict_hamt" : "lookup_dict_cppmap");
 
-	const auto element_type0 = dict_type.get_dict_value_type();
+	const auto element_type0 = dict_type.get_dict_value_type(interner);
 	const auto dict_itype_reg = generate_itype_constant(gen_acc.gen, dict_type);
 	auto& builder = gen_acc.get_builder();
 
@@ -453,9 +455,10 @@ void generate_store_dict_mutable(llvm_function_generator_t& gen_acc, llvm::Value
 	QUARK_ASSERT(dict_type.check_invariant());
 	QUARK_ASSERT(is_dict_cppmap(gen_acc.gen.settings.config, dict_type) || is_dict_hamt(gen_acc.gen.settings.config, dict_type));
 
+	auto& interner = gen_acc.gen.type_lookup.state.type_interner;
 	const auto res = resolve_func(gen_acc.gen.link_map, dict_mode == dict_backend::hamt ? "store_dict_mutable_hamt" : "store_dict_mutable_cppmap");
 
-	const auto& element_type0 = dict_type.get_dict_value_type();
+	const auto& element_type0 = dict_type.get_dict_value_type(interner);
 	auto& dict_itype_reg = *generate_itype_constant(gen_acc.gen, dict_type);
 	auto& builder = gen_acc.get_builder();
 
@@ -646,7 +649,10 @@ llvm::Value* generate_load_struct_member(llvm_function_generator_t& gen_acc, llv
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(struct_type.check_invariant());
 	QUARK_ASSERT(struct_type.is_struct());
-	QUARK_ASSERT(member_index >= 0 && member_index < struct_type.get_struct()._members.size());
+
+	auto& interner = gen_acc.gen.type_lookup.state.type_interner;
+
+	QUARK_ASSERT(member_index >= 0 && member_index < struct_type.get_struct(interner)._members.size());
 
 	auto& builder = gen_acc.get_builder();
 	auto& struct_type_llvm = *get_exact_struct_type_byvalue(gen_acc.gen.type_lookup, struct_type);
@@ -675,7 +681,7 @@ llvm::Value* generate_load_struct_member(llvm_function_generator_t& gen_acc, llv
 
 
 
-static bool is_struct_pod(const struct_definition_t& struct_def){
+static bool is_struct_pod(const struct_def_itype_t& struct_def){
 	QUARK_ASSERT(struct_def.check_invariant());
 
 	for(const auto& e: struct_def._members){
@@ -776,11 +782,13 @@ static std::vector<function_bind_t> floydrt_update_struct_member__make(llvm::LLV
 static void generate_store_struct_member_mutate(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const typeid_t& struct_type, int member_index, llvm::Value& value_reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(struct_type.check_invariant());
-	QUARK_ASSERT(member_index >= 0 && member_index < struct_type.get_struct()._members.size());
+
+	const auto& interner = gen_acc.gen.type_lookup.state.type_interner;
+	QUARK_ASSERT(member_index >= 0 && member_index < struct_type.get_struct(interner)._members.size());
 
 	auto& builder = gen_acc.get_builder();
 
-	const auto& struct_def = struct_type.get_struct();
+	const auto& struct_def = struct_type.get_struct(interner);
 	const auto member_type = struct_def._members[member_index]._type;
 
 
@@ -801,11 +809,13 @@ static void generate_store_struct_member_mutate(llvm_function_generator_t& gen_a
 llvm::Value* generate_update_struct_member(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const typeid_t& struct_type, int member_index, llvm::Value& value_reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(struct_type.check_invariant());
-	QUARK_ASSERT(member_index >= 0 && member_index < struct_type.get_struct()._members.size());
+
+	const auto& interner = gen_acc.gen.type_lookup.state.type_interner;
+	QUARK_ASSERT(member_index >= 0 && member_index < struct_type.get_struct(interner)._members.size());
 
 	auto& builder = gen_acc.get_builder();
 
-	const auto& struct_def = struct_type.get_struct();
+	const auto& struct_def = struct_type.get_struct(interner);
 
 	auto member_index_reg = llvm::ConstantInt::get(builder.getInt64Ty(), member_index);
 	const auto member_type = struct_def._members[member_index]._type;
@@ -1262,6 +1272,7 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 	auto& frp_reg = *gen_acc.get_callers_fcp();
 	auto& itype_reg = *generate_itype_constant(gen_acc.gen, type);
 	auto& builder = gen_acc.get_builder();
+	const auto& interner = gen_acc.gen.type_lookup.state.type_interner;
 
 	if(is_rc_value(type)){
 		if(type.is_string()){
@@ -1269,7 +1280,7 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 		}
 		else if(type.is_vector()){
-			const bool is_element_pod = is_rc_value(type.get_vector_element_type()) ? false : true;
+			const bool is_element_pod = is_rc_value(type.get_vector_element_type(interner)) ? false : true;
 
 			if(is_vector_carray(gen_acc.gen.settings.config, type) && is_element_pod == true){
 				const auto res = resolve_func(gen_acc.gen.link_map, "release_vector_carray_pod");
