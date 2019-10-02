@@ -47,7 +47,7 @@ QUARK_TEST("", "parse_statement_body()", "", ""){
 		parse_json(seq_t(
 			R"(
 				[
-					[2, "init-local","^int","y",["k",11,"^int"]]
+					[2, "init-local","int","y",["k",11,"int"]]
 				]
 			)"
 		)).first
@@ -59,8 +59,8 @@ QUARK_TEST("", "parse_statement_body()", "", ""){
 		parse_json(seq_t(
 			R"(
 				[
-					[2, "init-local","^int","y",["k",11,"^int"]],
-					[18, "expression-statement", ["call",["@", "print"],[["k",3, "^int"]]] ]
+					[2, "init-local","int","y",["k",11,"int"]],
+					[18, "expression-statement", ["call",["@", "print"],[["k",3, "int"]]] ]
 				]
 			)"
 		)).first
@@ -74,8 +74,8 @@ QUARK_TEST("", "parse_statement_body()", "", ""){
 		parse_json(seq_t(
 			R"(
 				[
-					[3, "init-local","^int","x",["k",1,"^int"]],
-					[18, "init-local","^int","y",["k",2,"^int"]]
+					[3, "init-local","int","x",["k",1,"int"]],
+					[18, "init-local","int","y",["k",2,"int"]]
 				]
 			)"
 		)).first
@@ -101,8 +101,8 @@ QUARK_TEST("", "parse_block()", "Block with two binds", ""){
 					1,
 					"block",
 					[
-						[3, "init-local","^int","x",["k",1,"^int"]],
-						[18, "init-local","^int","y",["k",2,"^int"]]
+						[3, "init-local","int","x",["k",1,"int"]],
+						[18, "init-local","int","y",["k",2,"int"]]
 					]
 				]
 			)"
@@ -131,7 +131,7 @@ QUARK_TEST("", "parse_block()", "Block with two binds", ""){
 		parse_return_statement(seq_t("return 0;")).first,
 		parse_json(seq_t(
 			R"(
-				[0, "return", ["k", 0, "^int"]]
+				[0, "return", ["k", 0, "int"]]
 			)"
 		)).first
 	);
@@ -274,7 +274,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 			QUARK_POS,
 			parse_bind_statement(seq_t(input)),
 			R"(
-				[ 0, "init-local", "^int", "test", ["k", 123, "^int"]]
+				[ 0, "init-local", "int", "test", ["k", 123, "int"]]
 			)",
 			" let int a = 4 "
 		);
@@ -292,7 +292,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 		QUARK_POS,
 		parse_bind_statement(seq_t("let int test = 123 let int a = 4 ")),
 		R"(
-			[ 0, "init-local", "^int", "test", ["k", 123, "^int"]]
+			[ 0, "init-local", "int", "test", ["k", 123, "int"]]
 		)",
 		" let int a = 4 "
 	);
@@ -305,7 +305,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 		parse_bind_statement(seq_t("let bool bb = true")).first,
 		parse_json(seq_t(
 			R"(
-				[ 0, "init-local", "^bool", "bb", ["k", true, "^bool"]]
+				[ 0, "init-local", "bool", "bb", ["k", true, "bool"]]
 			)"
 		)).first
 	);
@@ -315,7 +315,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 		parse_bind_statement(seq_t("let int hello = 3")).first,
 		parse_json(seq_t(
 			R"(
-				[ 0, "init-local", "^int", "hello", ["k", 3, "^int"]]
+				[ 0, "init-local", "int", "hello", ["k", 3, "int"]]
 			)"
 		)).first
 	);
@@ -326,7 +326,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 		parse_bind_statement(seq_t("mutable int a = 14")).first,
 		parse_json(seq_t(
 			R"(
-				[ 0, "init-local", "^int", "a", ["k", 14, "^int"], { "mutable": true }]
+				[ 0, "init-local", "int", "a", ["k", 14, "int"], { "mutable": true }]
 			)"
 		)).first
 	);
@@ -337,7 +337,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 		parse_bind_statement(seq_t("mutable hello = 3")).first,
 		parse_json(seq_t(
 			R"(
-				[ 0, "init-local", "^undef", "hello", ["k", 3, "^int"], { "mutable": true }]
+				[ 0, "init-local", "undef", "hello", ["k", 3, "int"], { "mutable": true }]
 			)"
 		)).first
 	);
@@ -348,7 +348,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 		QUARK_POS,
 		parse_bind_statement(seq_t("let int (double, [string]) test = 123 let int a = 4 ")),
 		R"(
-			[0, "init-local", ["func", "^int", ["^double", ["vector", "^string"]], true], "test", ["k", 123, "^int"]]
+			[0, "init-local", ["func", "int", ["double", ["vector", "string"]], true], "test", ["k", 123, "int"]]
 		)",
 		" let int a = 4 "
 	);
@@ -380,7 +380,7 @@ QUARK_TEST("", "parse_assign_statement()", "", ""){
 		parse_assign_statement(seq_t("x = 10;")).first,
 		parse_json(seq_t(
 			R"(
-				[ 0, "assign","x",["k",10,"^int"] ]
+				[ 0, "assign","x",["k",10,"int"] ]
 			)"
 		)).first
 	);
@@ -403,7 +403,7 @@ QUARK_TEST("", "parse_expression_statement()", "", ""){
 		parse_expression_statement(seq_t("print(14);")).first,
 		parse_json(seq_t(
 			R"(
-				[ 0, "expression-statement", [ "call", ["@", "print"], [["k", 14, "^int"]] ] ]
+				[ 0, "expression-statement", [ "call", ["@", "print"], [["k", 14, "int"]] ] ]
 			)"
 		)).first
 	);
@@ -490,9 +490,9 @@ QUARK_TEST("", "parse_function_definition_statement()", "Minimal function IMPURE
 		[
 			0,
 			"init-local",
-			["func", "^int", [], false],
+			["func", "int", [], false],
 			"f",
-			["function-def", ["func", "^int", [], false], "f", [], { "statements": [[21, "return", ["k", 3, "^int"]]], "symbols": null }]
+			["function-def", ["func", "int", [], false], "f", [], { "statements": [[21, "return", ["k", 3, "int"]]], "symbols": null }]
 		]
 	)";
 	ut_verify(QUARK_POS, parse_function_definition_statement(seq_t(input)).first, parse_json(seq_t(expected)).first);
@@ -509,9 +509,9 @@ QUARK_TEST("", "parse_function_definition_statement()", "function", "Correct out
 				[
 					0,
 					"init-local",
-					["func", "^int", [], true],
+					["func", "int", [], true],
 					"f",
-					["function-def", ["func", "^int", [], true], "f", [], { "statements": [[14, "return", ["k", 3, "^int"]]], "symbols": null }]
+					["function-def", ["func", "int", [], true], "f", [], { "statements": [[14, "return", ["k", 3, "int"]]], "symbols": null }]
 				]
 
 			)___"
@@ -530,14 +530,14 @@ QUARK_TEST("", "parse_function_definition_statement()", "3 args of different typ
 				[
 					0,
 					"init-local",
-					["func", "^int", ["^string", "^double", "^int"], true],
+					["func", "int", ["string", "double", "int"], true],
 					"printf",
 					[
 						"function-def",
-						["func", "^int", ["^string", "^double", "^int"], true],
+						["func", "int", ["string", "double", "int"], true],
 						"printf",
-						[{ "name": "a", "type": "^string" }, { "name": "barry", "type": "^double" }, { "name": "c", "type": "^int" }],
-						{ "statements": [[48, "return", ["k", 3, "^int"]]], "symbols": null }
+						[{ "name": "a", "type": "string" }, { "name": "barry", "type": "double" }, { "name": "c", "type": "int" }],
+						{ "statements": [[48, "return", ["k", 3, "int"]]], "symbols": null }
 					]
 				]
 
@@ -557,14 +557,14 @@ QUARK_TEST("", "parse_function_definition_statement()", "Max whitespace", "Corre
 				[
 					1,
 					"init-local",
-					["func", "^int", ["^string", "^double"], true],
+					["func", "int", ["string", "double"], true],
 					"printf",
 					[
 						"function-def",
-						["func", "^int", ["^string", "^double"], true],
+						["func", "int", ["string", "double"], true],
 						"printf",
-						[{ "name": "a", "type": "^string" }, { "name": "b", "type": "^double" }],
-						{ "statements": [[60, "return", ["k", 3, "^int"]]], "symbols": null }
+						[{ "name": "a", "type": "string" }, { "name": "b", "type": "double" }],
+						{ "statements": [[60, "return", ["k", 3, "int"]]], "symbols": null }
 					]
 				]
 
@@ -583,14 +583,14 @@ QUARK_TEST("", "parse_function_definition_statement()", "Min whitespace", "Corre
 				[
 					0,
 					"init-local",
-					["func", "^int", ["^string", "^double"], true],
+					["func", "int", ["string", "double"], true],
 					"printf",
 					[
 						"function-def",
-						["func", "^int", ["^string", "^double"], true],
+						["func", "int", ["string", "double"], true],
 						"printf",
-						[{ "name": "a", "type": "^string" }, { "name": "b", "type": "^double" }],
-						{ "statements": [[35, "return", ["k", 3, "^int"]]], "symbols": null }
+						[{ "name": "a", "type": "string" }, { "name": "b", "type": "double" }],
+						{ "statements": [[35, "return", ["k", 3, "int"]]], "symbols": null }
 					]
 				]
 
@@ -660,7 +660,7 @@ QUARK_TEST("parser", "parse_struct_definition_statement", "", ""){
 			[
 				9,
 				"expression-statement",
-				["struct-def", "a", [{ "name": "x", "type": "^int" }, { "name": "y", "type": "^string" }, { "name": "z", "type": "^double" }]]
+				["struct-def", "a", [{ "name": "x", "type": "int" }, { "name": "y", "type": "string" }, { "name": "z", "type": "double" }]]
 			]
 
 		)___"
@@ -752,14 +752,14 @@ OFF_QUARK_UNIT_TEST("parse_protocol_definition_statement", "", "", ""){
 						{ "name", "f"},
 						{
 							"type",
-							json_t::make_array({ "func", "^int", json_t::make_array({"^string", "^double"}), true })
+							json_t::make_array({ "func", "int", json_t::make_array({"string", "double"}), true })
 						}
 					}),
 					json_t::make_object({
 						{ "name", "g"},
 						{
 							"type",
-							json_t::make_array({ "func", "^string", json_t::make_array({"^bool"}), true })
+							json_t::make_array({ "func", "string", json_t::make_array({"bool"}), true })
 						}
 					})
 				})
@@ -862,9 +862,9 @@ QUARK_TEST("", "parse_if_statement()", "if(){}", ""){
 				[
 					0,
 					"if",
-					[">",["k",1,"^int"],["k",2,"^int"]],
+					[">",["k",1,"int"],["k",2,"int"]],
 					[
-						[13, "return", ["k", 3, "^int"]]
+						[13, "return", ["k", 3, "int"]]
 					]
 				]
 			)"
@@ -880,12 +880,12 @@ QUARK_TEST("", "parse_if_statement()", "if(){}else{}", ""){
 				[
 					0,
 					"if",
-					[">",["k",1,"^int"],["k",2,"^int"]],
+					[">",["k",1,"int"],["k",2,"int"]],
 					[
-						[13, "return", ["k", 3, "^int"]]
+						[13, "return", ["k", 3, "int"]]
 					],
 					[
-						[31, "return", ["k", 4, "^int"]]
+						[31, "return", ["k", 4, "int"]]
 					]
 				]
 			)"
@@ -901,12 +901,12 @@ QUARK_TEST("", "parse_if_statement()", "if(){}else{}", ""){
 				[
 					0,
 					"if",
-					[">",["k",1,"^int"],["k",2,"^int"]],
+					[">",["k",1,"int"],["k",2,"int"]],
 					[
-						[13, "return", ["k", 3, "^int"]]
+						[13, "return", ["k", 3, "int"]]
 					],
 					[
-						[31, "return", ["k", 4, "^int"]]
+						[31, "return", ["k", 4, "int"]]
 					]
 				]
 			)"
@@ -923,22 +923,22 @@ QUARK_TEST("", "parse_if_statement()", "if(){} else if(){} else {}", ""){
 			R"(
 				[
 					0,
-					"if", ["==",["k",1,"^int"],["k",1,"^int"]],
+					"if", ["==",["k",1,"int"],["k",1,"int"]],
 					[
-						[14, "return", ["k", 1, "^int"]]
+						[14, "return", ["k", 1, "int"]]
 					],
 					[
-						[ 30, "if", ["==",["k",2,"^int"],["k",2,"^int"]],
+						[ 30, "if", ["==",["k",2,"int"],["k",2,"int"]],
 							[
-								[43, "return", ["k", 2, "^int"]]
+								[43, "return", ["k", 2, "int"]]
 							],
 							[
-								[ 59, "if", ["==",["k",3,"^int"],["k",3,"^int"]],
+								[ 59, "if", ["==",["k",3,"int"],["k",3,"int"]],
 									[
-										[72, "return", ["k", 3, "^int"]]
+										[72, "return", ["k", 3, "int"]]
 									],
 									[
-										[90, "return", ["k", 4, "^int"]]
+										[90, "return", ["k", 4, "int"]]
 									]
 								]
 							]
@@ -1029,10 +1029,10 @@ QUARK_TEST("", "parse_for_statement()", "for(){}", ""){
 					"for",
 					"closed-range",
 					"index",
-					["k",1,"^int"],
-					["k",5,"^int"],
+					["k",1,"int"],
+					["k",5,"int"],
 					[
-						[25, "init-local","^int","y",["k",11,"^int"]]
+						[25, "init-local","int","y",["k",11,"int"]]
 					]
 				]
 			)"
@@ -1049,10 +1049,10 @@ QUARK_TEST("", "parse_for_statement()", "for(){}", ""){
 					"for",
 					"open-range",
 					"index",
-					["k",1,"^int"],
-					["k",5,"^int"],
+					["k",1,"int"],
+					["k",5,"int"],
 					[
-						[25, "init-local","^int","y",["k",11,"^int"]]
+						[25, "init-local","int","y",["k",11,"int"]]
 					]
 				]
 			)"
@@ -1091,7 +1091,7 @@ QUARK_TEST("", "parse_while_statement()", "while(){}", ""){
 				[
 					0,
 					"while",
-					["<", ["@", "a"], ["k",10,"^int"]],
+					["<", ["@", "a"], ["k",10,"int"]],
 					[
 						[17, "expression-statement",
 							["call",
@@ -1150,7 +1150,7 @@ QUARK_TEST("", "parse_benchmark_def_statement()", "while(){}", ""){
 					5,
 					"benchmark-def",
 					"Linear veq 0",
-					[[40, "expression-statement", ["call", ["@", "print"], [["k", 1234, "^int"]]]], [56, "return", ["k", 2000, "^int"]]]
+					[[40, "expression-statement", ["call", ["@", "print"], [["k", 1234, "int"]]]], [56, "return", ["k", 2000, "int"]]]
 				]
 			)"
 		)).first
