@@ -1041,14 +1041,6 @@ static typeid_t calc_resolved_function_type(const llvm_code_generator_t& gen, co
 	return resolved_call_function_type;
 }
 
-//	Call functon type and callee function types are identical, except the callee function type can use ANY-types.
-static typeid_t calc_call_expression_function_type(const llvm_code_generator_t& gen, const expression_t& e, const expression_t::call_t& details){
-	QUARK_ASSERT(gen.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-
-	return calc_resolved_function_type(gen, e, get_expr_output(gen, *details.callee), details.args);
-}
-
 /*
 	NOTICE: The function signature for the callee can hold DYNs.
 	The actual arguments will be explicit types, never DYNs.
@@ -1068,8 +1060,7 @@ static llvm::Value* generate_call_expression(llvm_function_generator_t& gen_acc,
 	QUARK_ASSERT(e0.check_invariant());
 
 	const auto callee_function_type = get_expr_output(gen_acc.gen, *details.callee);
-	const auto resolved_function_type = calc_call_expression_function_type(gen_acc.gen, e0, details);
-
+	const auto resolved_function_type = calc_resolved_function_type(gen_acc.gen, e0, get_expr_output(gen_acc.gen, *details.callee), details.args);
 	auto callee_reg = generate_expression(gen_acc, *details.callee);
 
 	std::vector<llvm::Value*> floyd_args;
@@ -1085,13 +1076,15 @@ llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& gen_acc, 
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	auto& interner = gen_acc.gen.type_lookup.state.type_interner;
+	const auto& interner = gen_acc.gen.type_lookup.state.type_interner;
+
+	if(true) trace_type_interner(interner);
 
 	const auto& intrinsic_signatures = gen_acc.gen.intrinsic_signatures;
 
 	//	Find function
-    const auto it = std::find_if(intrinsic_signatures.begin(), intrinsic_signatures.end(), [&details](const intrinsic_signature_t& e) { return get_intrinsic_opcode(e) == details.call_name; } );
-    QUARK_ASSERT(it != intrinsic_signatures.end());
+    const auto it = std::find_if(intrinsic_signatures.vec.begin(), intrinsic_signatures.vec.end(), [&details](const intrinsic_signature_t& e) { return get_intrinsic_opcode(e) == details.call_name; } );
+    QUARK_ASSERT(it != intrinsic_signatures.vec.end());
 	const auto callee_function_type = it->_function_type;
 
 	//	Verify that the actual argument expressions, their count and output types -- all match callee_function_type.
@@ -1118,9 +1111,9 @@ static llvm::Value* generate_push_back_expression(llvm_function_generator_t& gen
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(get_expr_output(gen_acc.gen, e).is_vector() || get_expr_output(gen_acc.gen, e).is_string());
 
-	auto& interner = gen_acc.gen.type_lookup.state.type_interner;
+	const auto it = std::find_if(gen_acc.gen.intrinsic_signatures.vec.begin(), gen_acc.gen.intrinsic_signatures.vec.end(), [&](const intrinsic_signature_t& s){ return s.name == "push_back"; } );
 
-	const auto resolved_call_type = calc_resolved_function_type(gen_acc.gen, e, make_push_back_signature(interner)._function_type, details.args);
+	const auto resolved_call_type = calc_resolved_function_type(gen_acc.gen, e, it->_function_type, details.args);
 	const auto collection_type = get_expr_output(gen_acc.gen, details.args[0]);
 	auto vector_reg = generate_expression(gen_acc, details.args[0]);
 	auto element_reg = generate_expression(gen_acc, details.args[1]);
@@ -1131,12 +1124,12 @@ static llvm::Value* generate_size_expression(llvm_function_generator_t& gen_acc,
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	auto& interner = gen_acc.gen.type_lookup.state.type_interner;
+	const auto it = std::find_if(gen_acc.gen.intrinsic_signatures.vec.begin(), gen_acc.gen.intrinsic_signatures.vec.end(), [&](const intrinsic_signature_t& s){ return s.name == "size"; } );
 
 	const auto collection_type = get_expr_output(gen_acc.gen, details.args[0]);
 	QUARK_ASSERT(collection_type.is_vector() || collection_type.is_string() || collection_type.is_dict() || collection_type.is_json());
 
-	const auto resolved_call_type = calc_resolved_function_type(gen_acc.gen, e, make_size_signature(interner)._function_type, details.args);
+	const auto resolved_call_type = calc_resolved_function_type(gen_acc.gen, e, it->_function_type, details.args);
 	auto collection_reg = generate_expression(gen_acc, details.args[0]);
 	return generate_instrinsic_size(gen_acc, resolved_call_type, *collection_reg, collection_type);
 }
@@ -1146,9 +1139,9 @@ static llvm::Value* generate_update_expression(llvm_function_generator_t& gen_ac
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(get_expr_output(gen_acc.gen, e).is_vector() || get_expr_output(gen_acc.gen, e).is_string() || get_expr_output(gen_acc.gen, e).is_dict());
 
-	auto& interner = gen_acc.gen.type_lookup.state.type_interner;
+	const auto it = std::find_if(gen_acc.gen.intrinsic_signatures.vec.begin(), gen_acc.gen.intrinsic_signatures.vec.end(), [&](const intrinsic_signature_t& s){ return s.name == "update"; } );
 
-	const auto resolved_call_type = calc_resolved_function_type(gen_acc.gen, e, make_update_signature(interner)._function_type, details.args);
+	const auto resolved_call_type = calc_resolved_function_type(gen_acc.gen, e, it->_function_type, details.args);
 	const auto collection_type = get_expr_output(gen_acc.gen, details.args[0]);
 	auto vector_reg = generate_expression(gen_acc, details.args[0]);
 	auto index_reg = generate_expression(gen_acc, details.args[1]);
@@ -1161,9 +1154,9 @@ static llvm::Value* generate_map_expression(llvm_function_generator_t& gen_acc, 
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(get_expr_output(gen_acc.gen, e).is_vector());
 
-	auto& interner = gen_acc.gen.type_lookup.state.type_interner;
+	const auto it = std::find_if(gen_acc.gen.intrinsic_signatures.vec.begin(), gen_acc.gen.intrinsic_signatures.vec.end(), [&](const intrinsic_signature_t& s){ return s.name == "map"; } );
 
-	const auto resolved_call_type = calc_resolved_function_type(gen_acc.gen, e, make_update_signature(interner)._function_type, details.args);
+	const auto resolved_call_type = calc_resolved_function_type(gen_acc.gen, e, it->_function_type, details.args);
 
 	auto vector_reg = generate_expression(gen_acc, details.args[0]);
 	const auto collection_type = get_expr_output(gen_acc.gen, details.args[0]);
@@ -1183,117 +1176,112 @@ static llvm::Value* generate_intrinsic_expression(llvm_function_generator_t& gen
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	auto& interner = gen_acc.gen.type_lookup.state.type_interner;
-
-	if(details.call_name == get_intrinsic_opcode(make_assert_signature(interner))){
+	if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.assert)){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_to_string_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.to_string)){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_to_pretty_string_signature(interner))){
-		return generate_fallthrough_intrinsic(gen_acc, e, details);
-	}
-
-	else if(details.call_name == get_intrinsic_opcode(make_typeof_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.to_pretty_string)){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
 
-	else if(details.call_name == get_intrinsic_opcode(make_update_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.typeof_sign)){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
+
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.update)){
 		return generate_update_expression(gen_acc, e, details);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_size_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.size)){
 		return generate_size_expression(gen_acc, e, details);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_find_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.find)){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_exists_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.exists)){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_erase_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.erase)){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_get_keys_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.get_keys)){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_push_back_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.push_back)){
 		return generate_push_back_expression(gen_acc, e, details);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_subset_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.subset)){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_replace_signature(interner))){
-		return generate_fallthrough_intrinsic(gen_acc, e, details);
-	}
-
-	else if(details.call_name == get_intrinsic_opcode(make_parse_json_script_signature(interner))){
-		return generate_fallthrough_intrinsic(gen_acc, e, details);
-	}
-	else if(details.call_name == get_intrinsic_opcode(make_generate_json_script_signature(interner))){
-		return generate_fallthrough_intrinsic(gen_acc, e, details);
-	}
-	else if(details.call_name == get_intrinsic_opcode(make_to_json_signature(interner))){
-		return generate_fallthrough_intrinsic(gen_acc, e, details);
-	}
-	else if(details.call_name == get_intrinsic_opcode(make_from_json_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.replace)){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
 
-	else if(details.call_name == get_intrinsic_opcode(make_get_json_type_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.parse_json_script)){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.generate_json_script)){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.to_json)){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.from_json)){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
+
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.get_json_type)){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
 
 
 
-	else if(details.call_name == get_intrinsic_opcode(make_map_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.map)){
 		return generate_map_expression(gen_acc, e, details);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_map_string_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.map_dag)){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_map_dag_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.filter)){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_filter_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.reduce)){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_reduce_signature(interner))){
-		return generate_fallthrough_intrinsic(gen_acc, e, details);
-	}
-	else if(details.call_name == get_intrinsic_opcode(make_stable_sort_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.stable_sort)){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
 
 
 
-	else if(details.call_name == get_intrinsic_opcode(make_print_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.print)){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_send_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.send)){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
 
 
-	else if(details.call_name == get_intrinsic_opcode(make_bw_not_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.bw_not)){
 		return generate_bitwize_expression(gen_acc, bitwize_operator::bw_not, e, details.args);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_bw_and_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.bw_and)){
 		return generate_bitwize_expression(gen_acc, bitwize_operator::bw_and, e, details.args);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_bw_or_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.bw_or)){
 		return generate_bitwize_expression(gen_acc, bitwize_operator::bw_or, e, details.args);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_bw_xor_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.bw_xor)){
 		return generate_bitwize_expression(gen_acc, bitwize_operator::bw_xor, e, details.args);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_bw_shift_left_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.bw_shift_left)){
 		return generate_bitwize_expression(gen_acc, bitwize_operator::bw_shift_left, e, details.args);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_bw_shift_right_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.bw_shift_right)){
 		return generate_bitwize_expression(gen_acc, bitwize_operator::bw_shift_right, e, details.args);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_bw_shift_right_arithmetic_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.bw_shift_right_arithmetic)){
 		return generate_bitwize_expression(gen_acc, bitwize_operator::bw_shift_right_arithmetic, e, details.args);
 	}
 

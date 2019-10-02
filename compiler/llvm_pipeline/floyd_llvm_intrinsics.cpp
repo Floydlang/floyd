@@ -1952,11 +1952,11 @@ static std::map<std::string, void*> get_intrinsic_binds(){
 }
 
 //	Skips duplicates.
-static std::vector<function_link_entry_t> make_entries(const std::vector<intrinsic_signature_t>& intrinsic_signatures, const std::vector<function_bind_t>& binds){
+static std::vector<function_link_entry_t> make_entries(const intrinsic_signatures_t& intrinsic_signatures, const std::vector<function_bind_t>& binds){
 	std::vector<function_link_entry_t> result;
 	for(const auto& bind: binds){
-		auto signature_it = std::find_if(intrinsic_signatures.begin(), intrinsic_signatures.end(), [&] (const intrinsic_signature_t& m) { return m.name == bind.name; } );
-		const auto function_type = signature_it != intrinsic_signatures.end() ? signature_it->_function_type : typeid_t::make_undefined();
+		auto signature_it = std::find_if(intrinsic_signatures.vec.begin(), intrinsic_signatures.vec.end(), [&] (const intrinsic_signature_t& m) { return m.name == bind.name; } );
+		const auto function_type = signature_it != intrinsic_signatures.vec.end() ? signature_it->_function_type : typeid_t::make_undefined();
 
 		const auto link_name = encode_intrinsic_link_name(bind.name);
 		const auto exists_it = std::find_if(result.begin(), result.end(), [&](const function_link_entry_t& e){ return e.link_name == link_name; });
@@ -1970,12 +1970,12 @@ static std::vector<function_link_entry_t> make_entries(const std::vector<intrins
 	return result;
 }
 
-static std::vector<function_link_entry_t> make_entries2(const std::vector<intrinsic_signature_t>& intrinsic_signatures, const std::vector<specialization_t>& specializations){
+static std::vector<function_link_entry_t> make_entries2(const intrinsic_signatures_t& intrinsic_signatures, const std::vector<specialization_t>& specializations){
 	const auto binds = mapf<function_bind_t>(specializations, [](auto& e){ return e.bind; });
 	return make_entries(intrinsic_signatures, binds);
 }
 
-std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<intrinsic_signature_t>& intrinsic_signatures){
+std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const intrinsic_signatures_t& intrinsic_signatures){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	const auto& interner = type_lookup.state.type_interner;
@@ -1984,8 +1984,8 @@ std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& c
 
 	std::vector<function_link_entry_t> result;
 	for(const auto& bind: binds){
-		auto signature_it = std::find_if(intrinsic_signatures.begin(), intrinsic_signatures.end(), [&] (const intrinsic_signature_t& e) { return e.name == bind.first; } );
-		QUARK_ASSERT(signature_it != intrinsic_signatures.end());
+		auto signature_it = std::find_if(intrinsic_signatures.vec.begin(), intrinsic_signatures.vec.end(), [&] (const intrinsic_signature_t& e) { return e.name == bind.first; } );
+		QUARK_ASSERT(signature_it != intrinsic_signatures.vec.end());
 
 		const auto link_name = encode_intrinsic_link_name(bind.first);
 		const auto function_type = signature_it->_function_type;

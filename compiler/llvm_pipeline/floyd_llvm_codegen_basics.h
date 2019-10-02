@@ -65,7 +65,7 @@ struct resolved_symbol_t {
 
 
 struct llvm_code_generator_t {
-	public: llvm_code_generator_t(llvm_instance_t& i, llvm::Module* module, const type_interner_t& interner, const llvm_type_lookup& type_lookup, const std::vector<function_link_entry_t>& link_map, const compiler_settings_t& settings, const std::vector<intrinsic_signature_t>& intrinsic_signatures) :
+	public: llvm_code_generator_t(llvm_instance_t& i, llvm::Module* module, const type_interner_t& interner, const llvm_type_lookup& type_lookup, const std::vector<function_link_entry_t>& link_map, const compiler_settings_t& settings, const intrinsic_signatures_t& intrinsic_signatures) :
 		instance(&i),
 		module(module),
 		builder(i.context),
@@ -102,7 +102,7 @@ struct llvm_code_generator_t {
 	llvm_instance_t* instance;
 	llvm::Module* module;
 	llvm::IRBuilder<> builder;
-	llvm_type_lookup type_lookup;
+	const llvm_type_lookup type_lookup;
 	std::vector<function_link_entry_t> link_map;
 
 	/*
@@ -119,7 +119,7 @@ struct llvm_code_generator_t {
 	compiler_settings_t settings;
 
 
-	const std::vector<intrinsic_signature_t> intrinsic_signatures;
+	const intrinsic_signatures_t intrinsic_signatures;
 };
 
 

@@ -278,7 +278,7 @@ static std::vector<function_link_entry_t> make_floyd_code_and_corelib_link_map(l
 
 
 
-std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs, const std::vector<intrinsic_signature_t>& intrinsic_signatures){
+std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs, const intrinsic_signatures_t& intrinsic_signatures){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	const auto runtime_functions_link_map = make_runtime_function_link_map(context, type_lookup);

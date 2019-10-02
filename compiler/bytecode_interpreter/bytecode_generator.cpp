@@ -779,11 +779,11 @@ expression_gen_t bcgen_make_fallthrough_intrinsic(bcgenerator_t& gen_acc, const 
 	const auto& intrinsic_signatures = gen_acc._ast_imm->intrinsic_signatures;
 
 	//	Find function
-    const auto it = std::find_if(intrinsic_signatures.begin(), intrinsic_signatures.end(), [&details](const intrinsic_signature_t& e) { return get_intrinsic_opcode(e) == details.call_name; } );
-    QUARK_ASSERT(it != intrinsic_signatures.end());
+    const auto it = std::find_if(intrinsic_signatures.vec.begin(), intrinsic_signatures.vec.end(), [&details](const intrinsic_signature_t& e) { return get_intrinsic_opcode(e) == details.call_name; } );
+    QUARK_ASSERT(it != intrinsic_signatures.vec.end());
 	const auto function_type = std::make_shared<typeid_t>(it->_function_type);
 
-	const auto index = it - intrinsic_signatures.begin();
+	const auto index = it - intrinsic_signatures.vec.begin();
 	const auto addr = symbol_pos_t::make_stack_pos(symbol_pos_t::k_intrinsic, static_cast<int>(index));
 
 	const auto call_details = expression_t::call_t {
@@ -1140,8 +1140,8 @@ static expression_gen_t generate_callee(bcgenerator_t& gen_acc, const expression
 	const auto load2 = std::get_if<expression_t::load2_t>(&details.callee->_expression_variant);
 	if(load2 != nullptr && load2->address._parent_steps == symbol_pos_t::k_intrinsic){
 		const auto& intrinsic_signatures = gen_acc._ast_imm->intrinsic_signatures;
-		QUARK_ASSERT(load2->address._index >= 0 && load2->address._index < intrinsic_signatures.size());
-		const auto& intrinsic = intrinsic_signatures[load2->address._index];
+		QUARK_ASSERT(load2->address._index >= 0 && load2->address._index < intrinsic_signatures.vec.size());
+		const auto& intrinsic = intrinsic_signatures.vec[load2->address._index];
 
 		const auto name = intrinsic.name;
 

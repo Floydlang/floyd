@@ -79,6 +79,12 @@ std::vector<itype_t> get_member_types(const std::vector<member_itype_t>& m);
 */
 
 struct itype_t {
+	itype_t() :
+		itype_t(assemble((type_lookup_index_t)base_type::k_undefined, base_type::k_undefined, base_type::k_undefined))
+	{
+		QUARK_ASSERT(check_invariant());
+	}
+
 
 	bool check_invariant() const {
 //		QUARK_ASSERT(get_base_type() != base_type::k_identifier);

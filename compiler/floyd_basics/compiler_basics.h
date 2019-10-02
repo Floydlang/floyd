@@ -184,11 +184,11 @@ const std::string k_global_benchmark_registry = "benchmark_registry";
 //////////////////////////////////////		INTRINSICS
 
 
-//??? move to compiler_basics
+
 
 struct intrinsic_signature_t {
 	std::string name;
-	floyd::itype_t _function_type;
+	itype_t _function_type;
 };
 std::string get_intrinsic_opcode(const intrinsic_signature_t& signature);
 
@@ -268,7 +268,55 @@ intrinsic_signature_t make_bw_shift_left_signature(type_interner_t& interner);
 intrinsic_signature_t make_bw_shift_right_signature(type_interner_t& interner);
 intrinsic_signature_t make_bw_shift_right_arithmetic_signature(type_interner_t& interner);
 
-std::vector<intrinsic_signature_t> get_intrinsic_signatures(type_interner_t& interner);
+
+struct intrinsic_signatures_t {
+	std::vector<intrinsic_signature_t> vec;
+
+	intrinsic_signature_t assert;
+	intrinsic_signature_t to_string;
+	intrinsic_signature_t to_pretty_string;
+
+	intrinsic_signature_t typeof_sign;
+
+	intrinsic_signature_t update;
+	intrinsic_signature_t size;
+	intrinsic_signature_t find;
+	intrinsic_signature_t exists;
+	intrinsic_signature_t erase;
+	intrinsic_signature_t get_keys;
+	intrinsic_signature_t push_back;
+	intrinsic_signature_t subset;
+	intrinsic_signature_t replace;
+
+	intrinsic_signature_t parse_json_script;
+	intrinsic_signature_t generate_json_script;
+	intrinsic_signature_t to_json;
+	intrinsic_signature_t from_json;
+
+	intrinsic_signature_t get_json_type;
+
+
+
+	intrinsic_signature_t map;
+	intrinsic_signature_t filter;
+	intrinsic_signature_t reduce;
+	intrinsic_signature_t map_dag;
+
+	intrinsic_signature_t stable_sort;
+
+	intrinsic_signature_t print;
+	intrinsic_signature_t send;
+
+	intrinsic_signature_t bw_not;
+	intrinsic_signature_t bw_and;
+	intrinsic_signature_t bw_or;
+	intrinsic_signature_t bw_xor;
+	intrinsic_signature_t bw_shift_left;
+	intrinsic_signature_t bw_shift_right;
+	intrinsic_signature_t bw_shift_right_arithmetic;
+};
+
+intrinsic_signatures_t make_intrinsic_signatures(type_interner_t& interner);
 
 
 

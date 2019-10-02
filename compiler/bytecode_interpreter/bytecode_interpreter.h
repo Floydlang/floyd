@@ -824,7 +824,7 @@ struct bc_program_t {
 	public: type_interner_t _types;
 	public: software_system_t _software_system;
 	public: container_t _container_def;
-	public: std::vector<intrinsic_signature_t> intrinsic_signatures;
+	public: intrinsic_signatures_t intrinsic_signatures;
 };
 
 

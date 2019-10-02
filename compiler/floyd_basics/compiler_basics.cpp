@@ -538,8 +538,53 @@ std::string get_intrinsic_opcode(const intrinsic_signature_t& signature){
 	return std::string() + "$" + signature.name;
 }
 
-std::vector<intrinsic_signature_t> get_intrinsic_signatures(type_interner_t& interner){
-	const std::vector<intrinsic_signature_t> result = {
+intrinsic_signatures_t make_intrinsic_signatures(type_interner_t& interner){
+	intrinsic_signatures_t result;
+
+	result.assert = make_assert_signature(interner);
+	result.to_string = make_to_string_signature(interner);
+	result.to_pretty_string = make_to_pretty_string_signature(interner);
+	result.typeof_sign = make_typeof_signature(interner);
+
+	result.update = make_update_signature(interner);
+	result.size = make_size_signature(interner);
+	result.find = make_find_signature(interner);
+	result.exists = make_exists_signature(interner);
+	result.erase = make_erase_signature(interner);
+	result.get_keys = make_get_keys_signature(interner);
+	result.push_back = make_push_back_signature(interner);
+	result.subset = make_subset_signature(interner);
+	result.replace = make_replace_signature(interner);
+
+	result.parse_json_script = make_parse_json_script_signature(interner);
+	result.generate_json_script = make_generate_json_script_signature(interner);
+	result.to_json = make_to_json_signature(interner);
+	result.from_json = make_from_json_signature(interner);
+
+	result.get_json_type = make_get_json_type_signature(interner);
+
+
+	result.map = make_map_signature(interner);
+//	result.xxx = make_map_string_signature(interner);
+	result.filter = make_filter_signature(interner);
+	result.reduce = make_reduce_signature(interner);
+	result.map_dag = make_map_dag_signature(interner);
+
+	result.stable_sort = make_stable_sort_signature(interner);
+
+	result.print = make_print_signature(interner);
+	result.send = make_send_signature(interner);
+
+	result.bw_not = make_bw_not_signature(interner);
+	result.bw_and = make_bw_and_signature(interner);
+	result.bw_or = make_bw_or_signature(interner);
+	result.bw_xor = make_bw_xor_signature(interner);
+	result.bw_shift_left = make_bw_shift_left_signature(interner);
+	result.bw_shift_right = make_bw_shift_right_signature(interner);
+	result.bw_shift_right_arithmetic = make_bw_shift_right_arithmetic_signature(interner);
+
+
+	const std::vector<intrinsic_signature_t> vec = {
 		make_assert_signature(interner),
 		make_to_string_signature(interner),
 		make_to_pretty_string_signature(interner),
@@ -581,6 +626,7 @@ std::vector<intrinsic_signature_t> get_intrinsic_signatures(type_interner_t& int
 		make_bw_shift_right_signature(interner),
 		make_bw_shift_right_arithmetic_signature(interner)
 	};
+	result.vec = vec;
 	return result;
 }
 

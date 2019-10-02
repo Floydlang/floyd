@@ -23,7 +23,7 @@ namespace floyd {
 
 //////////////////////////////////////		semantic_ast_t
 
-semantic_ast_t::semantic_ast_t(const general_purpose_ast_t& tree, const std::vector<intrinsic_signature_t>& intrinsic_signatures) :
+semantic_ast_t::semantic_ast_t(const general_purpose_ast_t& tree, const intrinsic_signatures_t& intrinsic_signatures) :
 	_tree(tree),
 	intrinsic_signatures(intrinsic_signatures)
 {

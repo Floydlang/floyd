@@ -24,7 +24,7 @@ struct unchecked_ast_t;
 	The semantic_ast_t is a correct program, all symbols resolved, all types resolved, all semantics are OK.
 */
 struct semantic_ast_t {
-	public: explicit semantic_ast_t(const general_purpose_ast_t& tree, const std::vector<intrinsic_signature_t>& intrinsic_signatures);
+	public: explicit semantic_ast_t(const general_purpose_ast_t& tree, const intrinsic_signatures_t& intrinsic_signatures);
 
 #if DEBUG
 	public: bool check_invariant() const;
@@ -33,7 +33,7 @@ struct semantic_ast_t {
 
 	////////////////////////////////	STATE
 	public: general_purpose_ast_t _tree;
-	public: std::vector<intrinsic_signature_t> intrinsic_signatures;
+	public: intrinsic_signatures_t intrinsic_signatures;
 };
 
 json_t semantic_ast_to_json(const semantic_ast_t& ast);

@@ -2684,8 +2684,8 @@ static void do_call(interpreter_t& vm, const bc_instruction_t& i){
 		const auto& intrinsics = vm._imm->_program.intrinsic_signatures;
 
 		//	Find function
-		const auto it = std::find_if(intrinsics.begin(), intrinsics.end(), [&](const intrinsic_signature_t& e) { return e.name == function_id.name; } );
-		QUARK_ASSERT(it != intrinsics.end());
+		const auto it = std::find_if(intrinsics.vec.begin(), intrinsics.vec.end(), [&](const intrinsic_signature_t& e) { return e.name == function_id.name; } );
+		QUARK_ASSERT(it != intrinsics.vec.end());
 		const auto& function_type = it->_function_type;
 		call_native(vm, i, function_type);
 	}

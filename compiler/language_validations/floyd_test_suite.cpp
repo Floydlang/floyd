@@ -3387,7 +3387,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [string] constructor", "", ""){
 }
 
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "vector [typeid] constructor", "", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "vector [typeid] constructor", "", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(		assert(to_string([int, bool, string]) == "[int, bool, string]")		)");
 }
 
