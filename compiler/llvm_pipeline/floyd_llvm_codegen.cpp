@@ -1028,6 +1028,10 @@ static typeid_t calc_resolved_function_type(const llvm_code_generator_t& gen, co
 	const auto resolved_call_return_type = get_expr_output(gen, e);
 
 	const auto resolved_call_arguments = mapf<typeid_t>(args, [&gen](auto& e){ return get_expr_output(gen, e); });
+
+
+	if(true) trace_type_interner(interner);
+
 	const auto resolved_call_function_type = typeid_t::make_function(
 		interner,
 		resolved_call_return_type,
@@ -1037,6 +1041,8 @@ static typeid_t calc_resolved_function_type(const llvm_code_generator_t& gen, co
 
 	//	Verify that the actual argument expressions, their count and output types -- all match callee_function_type.
 	QUARK_ASSERT(args.size() == callee_function_type.get_function_args(interner).size());
+
+	if(true) trace_type_interner(interner);
 
 	return resolved_call_function_type;
 }

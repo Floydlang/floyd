@@ -955,23 +955,37 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 	}
 }
 
+
+
+/*
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, sign._function_type);
+	a_acc = resolved_call.first;
+	return {
+		a_acc,
+		expression_t::make_intrinsic(
+			get_intrinsic_opcode(sign),
+			resolved_call.second.args,
+			to_asttype(resolved_call.second.function_type.get_function_return(a_acc._types))
+		)
+	};
+*/
 std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
 	const auto sign = make_update_signature(a_acc._types);
-	const auto collection_expr = analyse_expression_no_target(a_acc, parent, args[0]);
-	a_acc = collection_expr.first;
+
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	a_acc = resolved_call.first;
 
 	//	IMPORTANT: For structs we manipulate the key-expression. We can't analyse key expression - it's encoded as a variable resolve.
 
-	const auto new_value_expr = analyse_expression_no_target(a_acc, parent, args[2]);
-	a_acc = new_value_expr.first;
-	const auto collection_type = analyze_expr_output_type(a_acc, collection_expr.second);
+	const auto collection_expr = resolved_call.second.args[0];
+	const auto key_expr = resolved_call.second.args[1];
+	const auto new_value_expr = resolved_call.second.args[2];
 
-
-	const auto& key = args[1];
-	const auto new_value_type = analyze_expr_output_type(a_acc, new_value_expr.second);
+	const auto collection_type = analyze_expr_output_type(a_acc, collection_expr);
+	const auto new_value_type = analyze_expr_output_type(a_acc, new_value_expr);
 
 	if(collection_type.is_struct()){
 		const auto struct_def = collection_type.get_struct(a_acc._types);
@@ -979,8 +993,8 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 		//	The key needs to be the name of an identifier. It's a compile-time constant.
 		//	It's encoded as a load which is confusing.
 
-		if(get_expression_type(key) == expression_type::k_load){
-			const auto member_name = std::get<expression_t::load_t>(key._expression_variant).variable_name;
+		if(get_expression_type(key_expr) == expression_type::k_load){
+			const auto member_name = std::get<expression_t::load_t>(key_expr._expression_variant).variable_name;
 			int member_index = find_struct_member_index(struct_def, member_name);
 			if(member_index == -1){
 				std::stringstream what;
@@ -994,7 +1008,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 
 			return {
 				a_acc,
-				expression_t::make_update_member(collection_expr.second, member_index, new_value_expr.second, collection_type)
+				expression_t::make_update_member(collection_expr, member_index, new_value_expr, collection_type)
 			};
 		}
 		else{
@@ -1004,9 +1018,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 		}
 	}
 	else if(collection_type.is_string()){
-		const auto key_expr = analyse_expression_no_target(a_acc, parent, key);
-		a_acc = key_expr.first;
-		const auto key_type = analyze_expr_output_type(a_acc, key_expr.second);
+		const auto key_type = key_expr.get_output_type();
 
 		if(key_type.is_int() == false){
 			std::stringstream what;
@@ -1022,13 +1034,11 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 
 		return {
 			a_acc,
-			expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
+			expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr, key_expr, new_value_expr }, collection_type)
 		};
 	}
 	else if(collection_type.is_vector()){
-		const auto key_expr = analyse_expression_no_target(a_acc, parent, key);
-		a_acc = key_expr.first;
-		const auto key_type = analyze_expr_output_type(a_acc, key_expr.second);
+		const auto key_type = analyze_expr_output_type(a_acc, key_expr);
 
 		if(key_type.is_int() == false){
 			std::stringstream what;
@@ -1043,13 +1053,11 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 
 		return {
 			a_acc,
-			expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
+			expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr, key_expr, new_value_expr }, collection_type)
 		};
 	}
 	else if(collection_type.is_dict()){
-		const auto key_expr = analyse_expression_no_target(a_acc, parent, key);
-		a_acc = key_expr.first;
-		const auto key_type = analyze_expr_output_type(a_acc, key_expr.second);
+		const auto key_type = analyze_expr_output_type(a_acc, key_expr);
 
 		if(key_type.is_string() == false){
 			std::stringstream what;
@@ -1064,7 +1072,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 
 		return {
 			a_acc,
-			expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
+			expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr, key_expr, new_value_expr }, collection_type)
 		};
 	}
 
@@ -2069,7 +2077,6 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 		//	Detect use of intrinsics.
 		if(callee_expr_load2){
 			if(callee_expr_load2->address._parent_steps == symbol_pos_t::k_intrinsic){
-
 				const intrinsic_signatures_t& intrinsic_signatures = a0._imm->intrinsic_signatures;
 				const auto index = callee_expr_load2->address._index;
 				QUARK_ASSERT(index >= 0 && index < intrinsic_signatures.vec.size());
