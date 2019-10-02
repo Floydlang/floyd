@@ -331,8 +331,7 @@ int bc_compare_value_exts(const type_interner_t& interner, const bc_external_han
 struct bc_symbol_t {
 	enum class type {
 		immutable = 10,
-		mutable1,
-		named_type
+		mutable1
 	};
 
 	public: bool check_invariant() const {

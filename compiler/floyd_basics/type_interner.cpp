@@ -752,7 +752,7 @@ itype_t peek(const type_interner_t& interner, const itype_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	if(true) trace_type_interner(interner);
+	if(false) trace_type_interner(interner);
 
 	const auto& info = lookup_typeinfo_from_itype(interner, type);
 	if(info.bt == base_type::k_named_type){
@@ -1020,15 +1020,20 @@ void trace_type_interner(const type_interner_t& interner){
 				const auto& itype = lookup_itype_from_index(interner, i);
 
 				const auto& e = interner.interned2[i];
+				const auto contents = e.bt == base_type::k_named_type
+					? std::to_string(e.child_types[0].get_lookup_index())
+					: itype_to_compact_string(interner, itype, resolve_named_types::dont_resolve);
+
 				const auto line = std::vector<std::string>{
 					std::to_string(i),
 					pack_type_tag(e.optional_tag),
-					itype_to_compact_string(interner, itype, resolve_named_types::dont_resolve),
+					base_type_to_opcode(e.bt),
+					contents,
 				};
 				matrix.push_back(line);
 			}
 
-			const auto result = generate_table_type1({ "itype_t", "tag (optional)", "typeid_t" }, matrix);
+			const auto result = generate_table_type1({ "itype_t", "name-tag", "base_type", "contents" }, matrix);
 			QUARK_TRACE(result);
 		}
 	}

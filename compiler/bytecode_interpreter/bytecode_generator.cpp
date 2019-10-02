@@ -33,7 +33,7 @@
 #include <algorithm>
 #include <cstdint>
 
-const auto trace_io_flag = false;
+const auto trace_io_flag = true;
 
 namespace floyd {
 struct semantic_ast_t;
@@ -165,18 +165,16 @@ static itype_t get_expr_output_itype(const bcgenerator_t& gen, const expression_
 	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	return e.get_output_type();
+	const auto& interner = gen._ast_imm->_tree._interned_types;
+	const auto result = e.get_output_type();
+	return peek(interner, result);
 }
 
 static itype_t get_expr_output(const bcgenerator_t& gen, const expression_t& e){
 	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-//	auto& interner = gen._ast_imm->_tree._interned_types;
-	const auto result = get_expr_output_itype(gen, e);
-//	const auto result = lookup_typeid_from_itype(interner, get_expr_output_itype(gen, e));
-//	const auto result = flatten_type_description_deep(interner, get_expr_output_itype(gen, e));
-	return result;
+	return get_expr_output_itype(gen, e);
 }
 
 static itype_t dummy_func(const type_interner_t& interner, const itype_t& type){ return type; }
@@ -1894,15 +1892,25 @@ static bc_static_frame_t make_frame(const type_interner_t& interner, const bcgen
 
 	std::vector<std::pair<std::string, bc_symbol_t>> symbols2;
 	for(const auto& e: body._symbol_table._symbols){
-		//???named-type
-		const auto t = dummy_func(interner, e.second.get_value_type());
+		const auto t0 = e.second.get_value_type();
+		const auto t = peek(interner, t0);
 		if(e.second._symbol_type == symbol_t::symbol_type::named_type){
+/*
 			const auto e2 = std::pair<std::string, bc_symbol_t>{
 				e.first,
 				bc_symbol_t{
 					bc_symbol_t::type::named_type,
 					itype_t::make_typeid(),
 					bc_value_t::make_typeid_value(t)
+				}
+			};
+*/
+			const auto e2 = std::pair<std::string, bc_symbol_t>{
+				e.first,
+				bc_symbol_t{
+					bc_symbol_t::type::immutable,
+					t,
+					value_to_bc(interner, e.second._init)
 				}
 			};
 			symbols2.push_back(e2);

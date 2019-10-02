@@ -2587,7 +2587,8 @@ void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t target_ityp
 	const auto& struct_def = target_type.get_struct(vm._imm->_program._types);
 	std::vector<bc_value_t> elements2;
 	for(int i = 0 ; i < arg_count ; i++){
-		const auto member_type = struct_def._members[i]._type;
+		const auto member_type0 = struct_def._members[i]._type;
+		const auto member_type = peek(vm._imm->_program._types, member_type0);
 		const auto value = vm._stack.load_value(arg0_stack_pos + i, member_type);
 		elements2.push_back(value);
 	}
