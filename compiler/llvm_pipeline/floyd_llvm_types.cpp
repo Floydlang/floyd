@@ -258,7 +258,9 @@ static llvm::StructType* make_exact_struct_type(const builder_t& builder, const 
 
 	std::vector<llvm::Type*> members;
 	for(const auto& m: type.get_struct(builder.acc.type_interner)._members){
-		const auto& a = find_type(builder, m._type);
+		const auto member_type = m._type;
+		const auto member_type1 = peek(builder.acc.type_interner, member_type);
+		const auto& a = find_type(builder, member_type1);
 		const auto m2 = get_llvm_type_prefer_generic(a);
 		members.push_back(m2);
 	}
@@ -321,7 +323,9 @@ static llvm::Type* make_llvm_type(const builder_t& builder, const typeid_t& type
 //			QUARK_ASSERT(false); throw std::exception();
 		}
 		llvm::Type* operator()(const named_type_t& e) const {
-			return llvm::Type::getInt16Ty(builder.context);
+			const auto dest_type = peek(builder.acc.type_interner, e.destination_type);
+			return make_llvm_type(builder, dest_type);
+//			return llvm::Type::getInt16Ty(builder.context);
 //			QUARK_ASSERT(false); throw std::exception();
 		}
 	};

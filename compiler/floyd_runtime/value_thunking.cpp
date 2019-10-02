@@ -477,7 +477,7 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 			QUARK_ASSERT(false); throw std::exception();
 		}
 		value_t operator()(const named_type_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			return from_runtime_value2(backend, encoded_value, peek(backend.type_interner, e.destination_type));
 		}
 	};
 	return std::visit(visitor_t{ backend, encoded_value, type }, get_itype_variant(backend.type_interner, type));

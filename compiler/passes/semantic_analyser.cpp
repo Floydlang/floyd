@@ -283,13 +283,6 @@ static itype_t resolve_symbols(analyser_t& acc, const location_t& loc, const ity
 			return result;
 		}
 		itype_t operator()(const named_type_t& e) const{
-/*
-#if DEBUG
-			if(false) trace_analyser(acc);
-#endif
-			const auto tag = unpack_type_tag(e.s);
-			result = get_tagged_type2(acc._types, tag);
-*/
 			return type;
 		}
 	};
@@ -329,16 +322,13 @@ static itype_t resolve_and_intern_itype(analyser_t& acc, const location_t& loc, 
 
 
 //	Pushes the expression type through recording, resolving and interning.
-static itype_t analyze_expr_output_itype(analyser_t& a, const expression_t& e){
+static itype_t analyze_expr_output_type(analyser_t& a, const expression_t& e){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
 	return resolve_and_intern_itype(a, k_no_location, e.get_output_type());
 }
 
-static itype_t analyze_expr_output_type(analyser_t& a, const expression_t& e){
-	return analyze_expr_output_itype(a, e);
-}
 
 
 
@@ -614,7 +604,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 			: analyse_expression_to_target(a_acc, s, statement._expression, lhs_itype);
 		a_acc = rhs_expr_pair.first;
 
-		const auto rhs_itype = analyze_expr_output_itype(a_acc, rhs_expr_pair.second);
+		const auto rhs_itype = analyze_expr_output_type(a_acc, rhs_expr_pair.second);
 		const auto lhs_itype2 = lhs_itype.is_undefined() ? rhs_itype : lhs_itype;
 
 		//??? make test that checks I got this test + error right.
@@ -932,9 +922,8 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 	const auto parent_expr = analyse_expression_no_target(a_acc, parent, *details.parent_address);
 	a_acc = parent_expr.first;
 
-	const auto parent_itype = analyze_expr_output_itype(a_acc, parent_expr.second);
-
-	const auto parent_type = parent_itype;
+	const auto parent_type0 = analyze_expr_output_type(a_acc, parent_expr.second);
+	const auto parent_type = peek(a_acc._types, parent_type0);
 	if(parent_type.is_struct()){
 		const auto struct_def = parent_type.get_struct(a_acc._types);
 
@@ -1581,7 +1570,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 
 	auto a_acc = a;
 
-	auto type = analyze_expr_output_itype(a_acc, e);
+	auto type = analyze_expr_output_type(a_acc, e);
 	QUARK_ASSERT(type == details.value_type);
 
 	while(type.is_named_type()){
@@ -2065,7 +2054,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 	auto callee_expr_load2 = std::get_if<expression_t::load2_t>(&callee_expr._expression_variant);
 
 	//	This is a call to a function-value. Callee is a function-type.
-	const auto callee_itype = analyze_expr_output_itype(a_acc, callee_expr);
+	const auto callee_itype = analyze_expr_output_type(a_acc, callee_expr);
 	const auto callee_type = callee_itype;
 
 	if(callee_itype.is_function()){
