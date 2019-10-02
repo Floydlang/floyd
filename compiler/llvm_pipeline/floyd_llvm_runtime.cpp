@@ -233,7 +233,7 @@ static std::vector<function_link_entry_t> make_floyd_code_and_corelib_link_map(l
 
 	std::vector<function_link_entry_t> result0;
 	std::map<link_name_t, void*> binds0;
-	auto& interner = type_lookup.state.type_interner;
+	const auto& interner = type_lookup.state.type_interner;
 
 	//	Make function def for all functions inside the floyd program (floyd source code).
 	{
