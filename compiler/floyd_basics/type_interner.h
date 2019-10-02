@@ -69,7 +69,9 @@ itype_t make_named_type(type_interner_t& interner, const type_tag_t& type);
 std::vector<itype_t> get_member_types(const std::vector<member_itype_t>& m);
 
 
+
 //////////////////////////////////////////////////		itype_t
+
 
 //	IMPORTANT: Collect all used types in a vector so we can use itype_t as an index into it for O(1)
 /*
@@ -135,6 +137,7 @@ struct itype_t {
 
 
 	//////////////////////////////////////////////////		BOOL
+
 
 	static itype_t make_bool(){
 		return itype_t(assemble((type_lookup_index_t)base_type::k_bool, base_type::k_bool, base_type::k_undefined));
@@ -202,6 +205,7 @@ struct itype_t {
 		return get_base_type() == base_type::k_json;
 	}
 
+
 	//////////////////////////////////////////////////		TYPEID
 
 
@@ -214,7 +218,6 @@ struct itype_t {
 
 		return get_base_type() == base_type::k_typeid;
 	}
-
 
 
 	//////////////////////////////////////////////////		STRUCT
@@ -237,7 +240,6 @@ struct itype_t {
 	}
 
 	struct_def_itype_t get_struct(const type_interner_t& interner) const;
-
 
 
 
@@ -271,10 +273,6 @@ struct itype_t {
 	}
 
 
-
-
-
-
 	//////////////////////////////////////////////////		DICT
 
 
@@ -300,7 +298,6 @@ struct itype_t {
 	}
 
 
-
 	//////////////////////////////////////////////////		FUNCTION
 
 
@@ -319,7 +316,6 @@ struct itype_t {
 		return floyd::make_function(interner, ret, args, pure);
 	}
 
-
 	bool is_function() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -334,10 +330,8 @@ struct itype_t {
 	public: epure get_function_pure(const type_interner_t& interner) const;
 
 
-
-
-
 	//////////////////////////////////////////////////		SYMBOL
+
 
 	static itype_t make_symbol_ref(type_interner_t& interner, const std::string& s){
 		return floyd::make_symbol_ref(interner, s);
@@ -352,8 +346,8 @@ struct itype_t {
 	std::string get_symbol_ref(const type_interner_t& interner) const;
 
 
-
 	//////////////////////////////////////////////////		NAMED TYPE
+
 
 	static itype_t make_named_type(type_interner_t& interner, const type_tag_t& type){
 		return floyd::make_named_type(interner, type);
@@ -368,10 +362,8 @@ struct itype_t {
 	type_tag_t get_named_type(const type_interner_t& interner) const;
 
 
-
-
-
 	//////////////////////////////////////////////////		BASETYPE
+
 
 	base_type get_base_type() const {
 //		QUARK_ASSERT(check_invariant());
@@ -382,14 +374,7 @@ struct itype_t {
 	}
 
 
-
-
-	
-
-
 	//////////////////////////////////////////////////		INTERNALS
-
-
 
 	explicit itype_t(int32_t data) :
 		data(data)
@@ -415,12 +400,6 @@ struct itype_t {
 	static itype_t make_function(type_lookup_index_t lookup_index){
 		return itype_t(assemble(lookup_index, base_type::k_function, base_type::k_undefined));
 	}
-
-/*
-	static itype_t make_identifier_int(type_lookup_index_t lookup_index){
-		return itype_t(assemble(lookup_index, base_type::k_identifier, base_type::k_undefined));
-	}
-*/
 
 
 	inline type_lookup_index_t get_lookup_index() const {
@@ -492,6 +471,11 @@ enum class resolve_named_types { resolve, dont_resolve };
 std::string itype_to_compact_string(const type_interner_t& interner, const itype_t& itype, resolve_named_types resolve = resolve_named_types::dont_resolve);
 
 
+
+//////////////////////////////////////////////////		member_itype_t
+
+
+
 struct member_itype_t {
 	member_itype_t(itype_t type, const std::string& name) :
 		_type(type),
@@ -507,6 +491,12 @@ inline bool operator==(const member_itype_t& lhs, const member_itype_t& rhs){
 	return lhs._name == rhs._name
 	&& lhs._type == rhs._type;
 }
+
+
+
+//////////////////////////////////////////////////		struct_def_itype_t
+
+
 
 struct struct_def_itype_t {
 	struct_def_itype_t(const std::vector<member_itype_t>& members) :
@@ -533,7 +523,6 @@ int find_struct_member_index(const struct_def_itype_t& def, const std::string& n
 
 json_t members_to_json(const type_interner_t& interner, const std::vector<member_itype_t>& members);
 std::vector<member_itype_t> members_from_json(type_interner_t& interner, const json_t& members);
-
 
 
 
@@ -599,14 +588,6 @@ struct type_interner_t {
 };
 
 
-//??? dummy
-inline itype_t intern_anonymous_type(type_interner_t& interner, const itype_t& type){
-	return type;
-}
-
-
-//itype_t lookup_itype_from_typeid(const type_interner_t& interner, const typeid_t& type);
-//typeid_t lookup_typeid_from_itype(const type_interner_t& interner, const itype_t& type);
 const type_node_t& lookup_typeinfo_from_itype(const type_interner_t& interner, const itype_t& type);
 type_node_t& lookup_typeinfo_from_itype(type_interner_t& interner, const itype_t& type);
 itype_t lookup_itype_from_tagged_type(const type_interner_t& interner, const type_tag_t& tag);
@@ -631,6 +612,7 @@ inline itype_t to_asttype(const itype_t& a){
 }
 
 
+
 //////////////////////////////////////////////////		TAGGED TYPES
 
 
@@ -646,6 +628,9 @@ itype_t update_tagged_type(type_interner_t& interner, const itype_t& named, cons
 
 itype_t get_tagged_type2(const type_interner_t& interner, const type_tag_t& tag);
 
+
+
+//////////////////////////////////////////////////		get_itype_variant()
 
 
 
@@ -699,7 +684,6 @@ typedef std::variant<
 
 
 itype_variant_t get_itype_variant(const type_interner_t& interner, const itype_t& type);
-
 
 
 }	//	floyd

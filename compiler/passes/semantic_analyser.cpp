@@ -1312,7 +1312,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_expression(const analy
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto expected = intern_anonymous_type(a_acc._types, harden_map_func_type(a_acc._types, resolved_call.second.function_type));
+	const auto expected = resolved_call.second.function_type;
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to map() uses signature \"" + itype_to_compact_string(a_acc._types, resolved_call.second.function_type, resolve_named_types::dont_resolve) + "\", needs to be \"" + itype_to_compact_string(a_acc._types, expected, resolve_named_types::dont_resolve) + "\".");
@@ -1334,7 +1334,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_string_expression(cons
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto expected = intern_anonymous_type(a_acc._types, harden_map_string_func_type(a_acc._types, resolved_call.second.function_type));
+	const auto expected = resolved_call.second.function_type;
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to map_string() uses signature \"" + itype_to_compact_string(a_acc._types, resolved_call.second.function_type, resolve_named_types::dont_resolve) + "\", needs to be \"" + itype_to_compact_string(a_acc._types, expected, resolve_named_types::dont_resolve) + "\".");
@@ -1356,7 +1356,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_dag_expression(const a
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto expected = intern_anonymous_type(a_acc._types, harden_map_dag_func_type(a_acc._types, resolved_call.second.function_type));
+	const auto expected = resolved_call.second.function_type;
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to map_dag() uses signature \"" + itype_to_compact_string(a_acc._types, resolved_call.second.function_type, resolve_named_types::dont_resolve) + "\", needs to be \"" + itype_to_compact_string(a_acc._types, expected, resolve_named_types::dont_resolve) + "\".");
@@ -1377,7 +1377,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_filter_expression(const an
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto expected = intern_anonymous_type(a_acc._types, harden_filter_func_type(a_acc._types, resolved_call.second.function_type));
+	const auto expected = resolved_call.second.function_type;
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to filter() uses signature \"" + itype_to_compact_string(a_acc._types, resolved_call.second.function_type, resolve_named_types::dont_resolve) + "\", expected to be \"" + itype_to_compact_string(a_acc._types, expected, resolve_named_types::dont_resolve) + "\".");
@@ -1399,7 +1399,8 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_reduce_expression(const an
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto expected = intern_anonymous_type(a_acc._types, harden_reduce_func_type(a_acc._types, resolved_call.second.function_type));
+	const auto expected = resolved_call.second.function_type;
+
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to reduce() uses signature \"" + itype_to_compact_string(a_acc._types, resolved_call.second.function_type, resolve_named_types::dont_resolve) + "\", expected to be \"" + itype_to_compact_string(a_acc._types, expected, resolve_named_types::dont_resolve) + "\".");
 	}
@@ -1420,7 +1421,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_stable_sort_expression(con
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto expected = intern_anonymous_type(a_acc._types, harden_stable_sort_func_type(a_acc._types, resolved_call.second.function_type));
+	const auto expected = resolved_call.second.function_type;
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to stable_sort() uses signature \"" + itype_to_compact_string(a_acc._types, resolved_call.second.function_type, resolve_named_types::dont_resolve) + "\", needs to be \"" + itype_to_compact_string(a_acc._types, expected, resolve_named_types::dont_resolve) + "\".");
@@ -1722,7 +1723,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 	else if(type.is_struct()){
 		const auto& def = type.get_struct(a_acc._types);
 		const auto struct_constructor_callee_type = typeid_t::make_function(a_acc._types, type, get_member_types(def._members), epure::pure);
-		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, details.elements, intern_anonymous_type(a_acc._types, struct_constructor_callee_type));
+		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, details.elements, struct_constructor_callee_type);
 		a_acc = resolved_call.first;
 		return { a_acc, expression_t::make_construct_value_expr(type, resolved_call.second.args) };
 	}
