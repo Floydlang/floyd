@@ -67,30 +67,30 @@ static symbol_t::symbol_type symbol_type_from_string(const std::string& s){
 	}
 }
 
-std::string symbol_to_string(const symbol_t& s){
+std::string symbol_to_string(const type_interner_t& interner, const symbol_t& s){
 	std::stringstream out;
 	out << "{ "
 		<< symbol_type_to_string(s._symbol_type)
-		<< ", type: " << typeid_to_compact_string(s._value_type)
-		<< ", init: " << (s._init.is_undefined() ? "<none>" : value_and_type_to_string(s._init))
+		<< ", type: " << itype_to_compact_string(interner, s._value_type)
+		<< ", init: " << (s._init.is_undefined() ? "<none>" : value_and_type_to_string(interner, s._init))
 	<< " }";
 	return out.str();
 }
 
 
-json_t symbol_to_json(const symbol_t& symbol){
+static json_t symbol_to_json(const type_interner_t& interner, const symbol_t& symbol){
 	const auto symbol_type_str = symbol_type_to_string(symbol._symbol_type);
-	const auto value_type = itype_to_json(symbol._value_type);
+	const auto value_type = itype_to_json(interner, symbol._value_type);
 
 	const auto e2 = json_t::make_object({
 		{ "symbol_type", symbol_type_str },
 		{ "value_type", value_type },
-		{ "init", value_to_ast_json(symbol._init) }
+		{ "init", value_to_ast_json(interner, symbol._init) }
 	});
 	return e2;
 }
 
-static symbol_t json_to_symbol(const type_interner_t& interner, const json_t& e){
+static symbol_t json_to_symbol(type_interner_t& interner, const json_t& e){
 	QUARK_ASSERT(interner.check_invariant());
 
 	const auto symbol_type = e.get_object_element("symbol_type").get_string();
@@ -98,9 +98,9 @@ static symbol_t json_to_symbol(const type_interner_t& interner, const json_t& e)
 	const auto init = e.get_object_element("init");
 
 	const auto symbol_type2 = symbol_type_from_string(symbol_type);
-	const auto value_type2 = itype_from_json(value_type);
+	const auto value_type2 = itype_from_json(interner, value_type);
 	const auto value_type1 = value_type2;
-	value_t init_value2 = init.is_null() ? value_t::make_undefined() : ast_json_to_value(value_type1, init);
+	value_t init_value2 = init.is_null() ? value_t::make_undefined() : ast_json_to_value(interner, value_type1, init);
 
 	const auto result = symbol_t(symbol_type2, value_type2, init_value2);
 	return result;
@@ -132,11 +132,11 @@ const symbol_t& find_symbol_required(const symbol_table_t& symbol_table, const s
 	return it->second;
 }
 
-std::vector<json_t> symbols_to_json(const symbol_table_t& symbol_table){
+std::vector<json_t> symbols_to_json(const type_interner_t& interner, const symbol_table_t& symbol_table){
 	std::vector<json_t> r;
 	int symbol_index = 0;
 	for(const auto& e: symbol_table._symbols){
-		const auto symbol1 = symbol_to_json(e.second);
+		const auto symbol1 = symbol_to_json(interner, e.second);
 		const auto e2 = json_t::make_array({
 			symbol_index,
 			e.first,
@@ -148,7 +148,7 @@ std::vector<json_t> symbols_to_json(const symbol_table_t& symbol_table){
 	return r;
 }
 
-symbol_table_t ast_json_to_symbols(const type_interner_t& interner, const json_t& p){
+symbol_table_t ast_json_to_symbols(type_interner_t& interner, const json_t& p){
 	QUARK_ASSERT(interner.check_invariant());
 
 	std::vector<std::pair<std::string, symbol_t>> result;
@@ -183,13 +183,13 @@ bool body_t::check_invariant() const {
 	return true;
 }
 
-json_t body_to_json(const body_t& e){
+json_t body_to_json(const type_interner_t& interner, const body_t& e){
 	std::vector<json_t> statements;
 	for(const auto& i: e._statements){
-		statements.push_back(statement_to_json(i));
+		statements.push_back(statement_to_json(interner, i));
 	}
 
-	const auto symbols = symbols_to_json(e._symbol_table);
+	const auto symbols = symbols_to_json(interner, e._symbol_table);
 
 	return json_t::make_object({
 		std::pair<std::string, json_t>{ "statements", json_t::make_array(statements) },
@@ -197,7 +197,7 @@ json_t body_to_json(const body_t& e){
 	});
 }
 
-body_t json_to_body(const type_interner_t& interner, const json_t& json){
+body_t json_to_body(type_interner_t& interner, const json_t& json){
 	QUARK_ASSERT(interner.check_invariant());
 
 	const auto statements = json.does_object_element_exist("statements") ? json.get_object_element("statements") : json_t();
@@ -222,7 +222,7 @@ bool operator==(const body_t& lhs, const body_t& rhs){
 
 
 
-static statement_t ast_json_to_statement(const type_interner_t& interner, const json_t& statement0){
+static statement_t ast_json_to_statement(type_interner_t& interner, const json_t& statement0){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(statement0.check_invariant());
 	QUARK_ASSERT(statement0.is_array());
@@ -246,7 +246,7 @@ static statement_t ast_json_to_statement(const type_interner_t& interner, const 
 		const auto expr = statement.get_array_n(3);
 		const auto meta = statement.get_array_size() >= 5 ? statement.get_array_n(4) : json_t();
 
-		const auto bind_type2 = itype_from_json(bind_type);
+		const auto bind_type2 = itype_from_json(interner, bind_type);
 		const auto name2 = name.get_string();
 		const auto expr2 = ast_json_to_expression(interner, expr);
 		bool mutable_flag = !meta.is_null() && meta.does_object_element_exist("mutable");
@@ -378,7 +378,7 @@ static statement_t ast_json_to_statement(const type_interner_t& interner, const 
 	}
 }
 
-const std::vector<statement_t> ast_json_to_statements(const type_interner_t& interner, const json_t& p){
+const std::vector<statement_t> ast_json_to_statements(type_interner_t& interner, const json_t& p){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(p.check_invariant());
 	QUARK_ASSERT(p.is_array());
@@ -391,14 +391,15 @@ const std::vector<statement_t> ast_json_to_statements(const type_interner_t& int
 	return statements2;
 }
 
-json_t statement_to_json(const statement_t& e){
+json_t statement_to_json(const type_interner_t& interner, const statement_t& e){
 	QUARK_ASSERT(e.check_invariant());
 
 	struct visitor_t {
+		const type_interner_t& interner;
 		const statement_t& statement;
 
 		json_t operator()(const statement_t::return_statement_t& s) const{
-			return make_ast_node(k_no_location, statement_opcode_t::k_return, { expression_to_json(s._expression) });
+			return make_ast_node(k_no_location, statement_opcode_t::k_return, { expression_to_json(interner, s._expression) });
 		}
 
 		json_t operator()(const statement_t::bind_local_t& s) const{
@@ -414,8 +415,8 @@ json_t statement_to_json(const statement_t& e){
 				statement_opcode_t::k_init_local,
 				{
 					s._new_local_name,
-					itype_to_json(s._bindtype),
-					expression_to_json(s._expression),
+					itype_to_json(interner, s._bindtype),
+					expression_to_json(interner, s._expression),
 					meta
 				}
 			);
@@ -426,7 +427,7 @@ json_t statement_to_json(const statement_t& e){
 				statement_opcode_t::k_assign,
 				{
 					s._local_name,
-					expression_to_json(s._expression)
+					expression_to_json(interner, s._expression)
 				}
 			);
 		}
@@ -437,7 +438,7 @@ json_t statement_to_json(const statement_t& e){
 				{
 					s._dest_variable._parent_steps,
 					s._dest_variable._index,
-					expression_to_json(s._expression)
+					expression_to_json(interner, s._expression)
 				}
 			);
 		}
@@ -448,12 +449,12 @@ json_t statement_to_json(const statement_t& e){
 				{
 					s._dest_variable._parent_steps,
 					s._dest_variable._index,
-					expression_to_json(s._expression)
+					expression_to_json(interner, s._expression)
 				}
 			);
 		}
 		json_t operator()(const statement_t::block_statement_t& s) const{
-			return make_ast_node(k_no_location, statement_opcode_t::k_block, { body_to_json(s._body) } );
+			return make_ast_node(k_no_location, statement_opcode_t::k_block, { body_to_json(interner, s._body) } );
 		}
 
 		json_t operator()(const statement_t::ifelse_statement_t& s) const{
@@ -461,9 +462,9 @@ json_t statement_to_json(const statement_t& e){
 				statement.location,
 				statement_opcode_t::k_if,
 				{
-					expression_to_json(s._condition),
-					body_to_json(s._then_body),
-					body_to_json(s._else_body)
+					expression_to_json(interner, s._condition),
+					body_to_json(interner, s._then_body),
+					body_to_json(interner, s._else_body)
 				}
 			);
 		}
@@ -473,9 +474,9 @@ json_t statement_to_json(const statement_t& e){
 				statement_opcode_t::k_for,
 				{
 					s._range_type == statement_t::for_statement_t::k_open_range ? json_t("open_range") : json_t("closed_range"),
-					expression_to_json(s._start_expression),
-					expression_to_json(s._end_expression),
-					body_to_json(s._body)
+					expression_to_json(interner, s._start_expression),
+					expression_to_json(interner, s._end_expression),
+					body_to_json(interner, s._body)
 				}
 			);
 		}
@@ -484,8 +485,8 @@ json_t statement_to_json(const statement_t& e){
 				statement.location,
 				statement_opcode_t::k_while,
 				{
-					expression_to_json(s._condition),
-					body_to_json(s._body)
+					expression_to_json(interner, s._condition),
+					body_to_json(interner, s._body)
 				}
 			);
 		}
@@ -495,7 +496,7 @@ json_t statement_to_json(const statement_t& e){
 			return make_ast_node(
 				statement.location,
 				statement_opcode_t::k_expression_statement,
-				{ expression_to_json(s._expression) }
+				{ expression_to_json(interner, s._expression) }
 			);
 		}
 		json_t operator()(const statement_t::software_system_statement_t& s) const{
@@ -516,12 +517,12 @@ json_t statement_to_json(const statement_t& e){
 			return make_ast_node(
 				statement.location,
 				statement_opcode_t::k_benchmark_def,
-				{ s.name, body_to_json(s._body) }
+				{ s.name, body_to_json(interner, s._body) }
 			);
 		}
 	};
 
-	return std::visit(visitor_t{ e }, e._contents);
+	return std::visit(visitor_t{ interner, e }, e._contents);
 }
 
 

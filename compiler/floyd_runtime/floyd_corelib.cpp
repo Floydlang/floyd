@@ -67,12 +67,10 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 		string test
 	}
 
-/*
 	struct benchmark_result2_t {
 		benchmark_id_t test_id
 		benchmark_result_t result
 	}
-*/
 
 
 
@@ -1108,7 +1106,7 @@ value_t pack_fsentry_info(type_interner_t& type_interner, const fsentry_info_t& 
 	);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(result);
+	const auto debug = value_and_type_to_ast_json(type_interner, result);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
@@ -1170,7 +1168,7 @@ value_t pack_fs_environment_t(type_interner_t& type_interner, const fs_environme
 	);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(result);
+	const auto debug = value_and_type_to_ast_json(type_interner, result);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 

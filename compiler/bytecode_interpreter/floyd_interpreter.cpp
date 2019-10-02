@@ -338,7 +338,7 @@ static int64_t bc_call_main(interpreter_t& interpreter, const floyd::value_t& f,
 	QUARK_ASSERT(interpreter.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
 
-	const auto& interner = interpreter._imm->_program._types;
+	auto interner = interpreter._imm->_program._types;
 
 	//??? Check this earlier.
 	if(f.get_type() == get_main_signature_arg_impure(interner) || f.get_type() == get_main_signature_arg_pure(interner)){

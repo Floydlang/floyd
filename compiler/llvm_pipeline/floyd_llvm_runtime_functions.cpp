@@ -499,7 +499,7 @@ static JSON_T* floydrt_allocate_json(floyd_runtime_t* frp, runtime_value_t arg0_
 
 	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
 	const auto value = from_runtime_value(r, arg0_value, type0);
-	const auto a = value_to_ast_json(value);
+	const auto a = value_to_ast_json(r.backend.type_interner, value);
 	auto result = alloc_json(r.backend.heap, a);
 	return result;
 }

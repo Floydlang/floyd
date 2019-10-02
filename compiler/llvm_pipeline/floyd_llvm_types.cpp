@@ -443,7 +443,7 @@ void trace_llvm_type_lookup(const llvm_type_lookup& type_lookup){
 			{
 				std::to_string(i),
 				std::to_string(i),
-				typeid_to_compact_string(type),
+				itype_to_compact_string(type_lookup.state.type_interner, type),
 				print_type(e.llvm_type_specific),
 				print_type(e.llvm_type_generic),
 				e.optional_function_def != nullptr ? "YES" : ""

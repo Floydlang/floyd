@@ -462,14 +462,16 @@ inline bool is_empty(const itype_t& type){
 bool is_atomic_type(itype_t type);
 
 
-json_t itype_to_json(const itype_t& itype);
-itype_t itype_from_json(const json_t& j);
+json_t itype_to_json_shallow(const itype_t& itype);
+itype_t itype_from_json_shallow(const json_t& j);
+
+json_t itype_to_json(const type_interner_t& interner, const itype_t& type);
+itype_t itype_from_json(type_interner_t& interner, const json_t& j);
 
 
 std::string itype_to_debug_string(const itype_t& itype);
 
-std::string typeid_to_compact_string(const itype_t& itype);
-std::string itype_to_compact_string(const itype_t& itype);
+std::string itype_to_compact_string(const type_interner_t& interner, const itype_t& itype);
 
 
 struct member_itype_t {
@@ -511,8 +513,8 @@ inline bool operator==(const struct_def_itype_t& lhs, const struct_def_itype_t& 
 
 int find_struct_member_index(const struct_def_itype_t& def, const std::string& name);
 
-json_t members_to_json(const std::vector<member_itype_t>& members);
-std::vector<member_itype_t> members_from_json(const json_t& members);
+json_t members_to_json(const type_interner_t& interner, const std::vector<member_itype_t>& members);
+std::vector<member_itype_t> members_from_json(type_interner_t& interner, const json_t& members);
 
 
 
@@ -555,6 +557,7 @@ inline bool operator==(const type_node_t& lhs, const type_node_t& rhs){
 		&& lhs.struct_def == rhs.struct_def
 		&& lhs.func_pure == rhs.func_pure
 		&& lhs.func_return_dyn_type == rhs.func_return_dyn_type
+		&& lhs.identifier_str == rhs.identifier_str
 		;
 }
 
@@ -594,10 +597,6 @@ itype_t lookup_itype_from_index(const type_interner_t& interner, type_lookup_ind
 
 void trace_type_interner(const type_interner_t& interner);
 
-
-//	Makes the type concrete by expanding any indirections via identifiers.
-//typeid_t flatten_type_description_deep(const type_interner_t& interner, const itype_t& type);
-//typeid_t flatten_type_description1(const type_interner_t& interner, const itype_t& type);
 
 
 itype_t peek(const type_interner_t& interner, const itype_t& type);

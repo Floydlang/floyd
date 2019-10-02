@@ -170,6 +170,7 @@ static std::vector<function_link_entry_t> make_runtime_function_link_map(llvm::L
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	const auto runtime_function_binds = get_runtime_function_binds(context, type_lookup);
+	auto& interner = type_lookup.state.type_interner;
 
 	std::vector<function_link_entry_t> result;
 	for(const auto& e: runtime_function_binds){
@@ -179,7 +180,7 @@ static std::vector<function_link_entry_t> make_runtime_function_link_map(llvm::L
 	}
 
 	if(k_trace_function_link_map){
-		trace_function_link_map(result);
+		trace_function_link_map(interner, result);
 	}
 
 	return result;
@@ -189,6 +190,7 @@ static std::vector<function_link_entry_t> make_init_deinit_link_map(llvm::LLVMCo
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	std::vector<function_link_entry_t> result;
+	auto& interner = type_lookup.state.type_interner;
 
 	//	init()
 	{
@@ -219,7 +221,7 @@ static std::vector<function_link_entry_t> make_init_deinit_link_map(llvm::LLVMCo
 	}
 
 	if(k_trace_function_link_map){
-		trace_function_link_map(result);
+		trace_function_link_map(interner, result);
 	}
 
 	return result;
@@ -231,6 +233,7 @@ static std::vector<function_link_entry_t> make_floyd_code_and_corelib_link_map(l
 
 	std::vector<function_link_entry_t> result0;
 	std::map<link_name_t, void*> binds0;
+	auto& interner = type_lookup.state.type_interner;
 
 	//	Make function def for all functions inside the floyd program (floyd source code).
 	{
@@ -267,7 +270,7 @@ static std::vector<function_link_entry_t> make_floyd_code_and_corelib_link_map(l
 	}
 
 	if(k_trace_function_link_map){
-		trace_function_link_map(result);
+		trace_function_link_map(interner, result);
 	}
 
 	return result;
@@ -292,12 +295,12 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 }
 
 
-void trace_function_link_map(const std::vector<function_link_entry_t>& defs){
+void trace_function_link_map(const type_interner_t& interner, const std::vector<function_link_entry_t>& defs){
 	QUARK_SCOPED_TRACE("FUNCTION LINK MAP");
 
 	std::vector<std::vector<std::string>> matrix;
 	for(const auto& e: defs){
-		const auto f0 = e.function_type_or_undef.is_undefined() ? "" : json_to_compact_string(typeid_to_compact_string(e.function_type_or_undef));
+		const auto f0 = e.function_type_or_undef.is_undefined() ? "" : json_to_compact_string(itype_to_compact_string(interner, e.function_type_or_undef));
 
 		std::string arg_names;
 		for(const auto& m: e.arg_names_or_empty){
@@ -503,7 +506,8 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 	QUARK_ASSERT(program_breaks.check_invariant());
 
 	if(k_trace_function_link_map){
-		trace_function_link_map(program_breaks.function_link_map);
+		const auto& interner = program_breaks.type_lookup.state.type_interner;
+		trace_function_link_map(interner, program_breaks.function_link_map);
 	}
 
 	std::string collectedErrors;
@@ -595,7 +599,8 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 #endif
 
 	if(k_trace_function_link_map){
-		trace_function_link_map(ee2->function_link_map);
+		const auto& interner = program_breaks.type_lookup.state.type_interner;
+		trace_function_link_map(interner, ee2->function_link_map);
 	}
 
 	return ee2;

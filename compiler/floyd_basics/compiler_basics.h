@@ -52,28 +52,28 @@ enum class epod_type {
 ////////////////////////////////////////		main() init() and message handler
 
 
-inline itype_t get_main_signature_arg_impure(const type_interner_t& type_interner){
+inline itype_t get_main_signature_arg_impure(type_interner_t& type_interner){
 	return itype_t::make_function(type_interner, itype_t::make_int(), { itype_t::make_vector(type_interner, itype_t::make_string()) }, epure::impure);
 }
 
-inline itype_t get_main_signature_no_arg_impure(const type_interner_t& type_interner){
+inline itype_t get_main_signature_no_arg_impure(type_interner_t& type_interner){
  	return itype_t::make_function(type_interner, itype_t::make_int(), { }, epure::impure);
 }
 
 
-inline itype_t get_main_signature_arg_pure(const type_interner_t& type_interner){
+inline itype_t get_main_signature_arg_pure(type_interner_t& type_interner){
 	return itype_t::make_function(type_interner, itype_t::make_int(), { itype_t::make_vector(type_interner, itype_t::make_string()) }, epure::pure);
 }
 
-inline itype_t get_main_signature_no_arg_pure(const type_interner_t& type_interner){
+inline itype_t get_main_signature_no_arg_pure(type_interner_t& type_interner){
 	return itype_t::make_function(type_interner, itype_t::make_int(), { }, epure::pure);
 }
 
 //	T x_init() impure
-itype_t make_process_init_type(const type_interner_t& interner, const itype_t& t);
+itype_t make_process_init_type(type_interner_t& interner, const itype_t& t);
 
 //	T x(T state, json message) impure
-itype_t make_process_message_handler_type(const type_interner_t& interner, const itype_t& t);
+itype_t make_process_message_handler_type(type_interner_t& interner, const itype_t& t);
 
 
 

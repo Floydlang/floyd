@@ -31,7 +31,7 @@ static std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value
 
 	const auto& type = lookup_type_ref(runtime.backend, arg_type);
 	const auto value = from_runtime_value(runtime, arg_value, type);
-	const auto a = to_compact_string2(value);
+	const auto a = to_compact_string2(runtime.backend.type_interner, value);
 	return a;
 }
 
@@ -1593,7 +1593,7 @@ static runtime_value_t floyd_llvm_intrinsic__to_pretty_string(floyd_runtime_t* f
 
 	const auto& type0 = lookup_type_ref(r.backend, value_type);
 	const auto& value2 = from_runtime_value(r, value, type0);
-	const auto json = value_to_ast_json(value2);
+	const auto json = value_to_ast_json(r.backend.type_interner, value2);
 	const auto s = json_to_pretty_string(json, 0, pretty_t{ 80, 4 });
 	return to_runtime_string(r, s);
 }
@@ -1889,7 +1889,7 @@ static JSON_T* floyd_llvm_intrinsic__to_json(floyd_runtime_t* frp, runtime_value
 
 	const auto& type0 = lookup_type_ref(r.backend, value_type);
 	const auto value0 = from_runtime_value(r, value, type0);
-	const auto j = value_to_ast_json(value0);
+	const auto j = value_to_ast_json(r.backend.type_interner, value0);
 	auto result = alloc_json(r.backend.heap, j);
 	return result;
 }
@@ -2001,7 +2001,7 @@ std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& c
 	result = concat(result, make_entries2(intrinsic_signatures, make_map_specializations(context, type_lookup)));
 
 	if(k_trace_function_link_map){
-		trace_function_link_map(result);
+		trace_function_link_map(interner, result);
 	}
 
 	return result;

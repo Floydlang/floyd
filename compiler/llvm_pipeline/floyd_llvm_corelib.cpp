@@ -185,7 +185,7 @@ static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp
 	const auto vec2 = value_t::make_vector_value(interner, k_fsentry_t__type, elements);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(vec2);
+	const auto debug = value_and_type_to_ast_json(interner, vec2);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
@@ -206,7 +206,7 @@ static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, r
 	const auto vec2 = value_t::make_vector_value(interner, k_fsentry_t__type, elements);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(vec2);
+	const auto debug = value_and_type_to_ast_json(interner, vec2);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
@@ -250,7 +250,7 @@ static uint8_t llvm_corelib__does_fsentry_exist(floyd_runtime_t* frp, runtime_va
 
 	const auto result = value_t::make_bool(exists);
 #if 1
-	const auto debug = value_and_type_to_ast_json(result);
+	const auto debug = value_and_type_to_ast_json(interner, result);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 	return exists ? 0x01 : 0x00;

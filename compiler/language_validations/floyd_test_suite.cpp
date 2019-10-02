@@ -104,7 +104,7 @@ static value_t make_double_vec(type_interner_t& interner, const std::vector<doub
 }
 
 #if 0
-FLOYD_LANG_PROOF_VIP("NOP", "See if we leak memory", "", ""){
+FLOYD_LANG_PROOF("NOP", "See if we leak memory", "", ""){
     usleep(11 * 1000000);
 }
 #endif
@@ -3135,7 +3135,11 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] constructor expression", "", 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] constructor expression", "", ""){
 	type_interner_t temp;
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let [int] result = [10, 20, 30]		)",		value_t::make_vector_value(temp, typeid_t::make_int(), { value_t::make_int(10), value_t::make_int(20), value_t::make_int(30) }) );
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(		let [int] result = [10, 20, 30]		)",
+		value_t::make_vector_value(temp, typeid_t::make_int(), { value_t::make_int(10), value_t::make_int(20), value_t::make_int(30) })
+	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] constructor", "", "3"){
 	ut_verify_global_result_nolib(
@@ -4313,7 +4317,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "update without quoting member na
 
 
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "struct", "return struct from function", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "return struct from function", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(

@@ -1934,16 +1934,22 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 
 	bcgenerator_t a(ast);
 
-	type_interner_t temp = ast._tree._interned_types;
-	auto& interner = temp;
+/*
+	type_interner_t interner2 = ast._tree._interned_types;
 
 
+	//???	benchmark_result2_t and benchmark_id_t etc are part of standard library and defines in k_corelib_builtin_types_and_constants. Find those symbols instead of making new types here.
 	//	??? move this code to semantic analyser to share it for all backends AND allow new types to be added.
 
-	const auto benchmark_result2_t__type = make_benchmark_result2_t(interner);
-	const auto dict_json__type = typeid_t::make_dict(interner, typeid_t::make_json());
-	QUARK_ASSERT(temp.interned2.size() == ast._tree._interned_types.interned2.size());
+	const auto benchmark_result2_t__type = make_benchmark_result2_t(interner2);
+	const auto dict_json__type = typeid_t::make_dict(interner2, typeid_t::make_json());
 
+
+
+	trace_type_interner(ast._tree._interned_types);
+	trace_type_interner(interner2);
+//	QUARK_ASSERT(interner2.interned2.size() == ast._tree._interned_types.interned2.size());
+*/
 
 	bcgen_globals(a, a._ast_imm->_tree._globals);
 
@@ -1954,11 +1960,11 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 		if(function_def._optional_body){
 			const auto body2 = bcgen_function(a, function_def);
 
-			const auto args2 = function_def._function_type.get_function_args(interner);
+			const auto args2 = function_def._function_type.get_function_args(ast._tree._interned_types);
 
-			const auto frame = make_frame(interner, body2, args2);
+			const auto frame = make_frame(ast._tree._interned_types, body2, args2);
 			const auto f = bc_function_definition_t{
-				interner,
+				ast._tree._interned_types,
 				function_def._function_type,
 				function_def._named_args,
 				std::make_shared<bc_static_frame_t>(frame),
@@ -1968,7 +1974,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 		}
 		else{
 			const auto f = bc_function_definition_t{
-				interner,
+				ast._tree._interned_types,
 				function_def._function_type,
 				function_def._named_args,
 //						std::shared_ptr<bc_static_frame_t>(),
@@ -1979,16 +1985,14 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 		}
 	}
 
-	const auto globals2 = make_frame(interner, a._globals, std::vector<itype_t>{});
+	const auto globals2 = make_frame(ast._tree._interned_types, a._globals, std::vector<itype_t>{});
 	const auto result = bc_program_t{
 		globals2,
 		function_defs2,
 		ast._tree._interned_types,
 		ast._tree._software_system,
 		ast._tree._container_def,
-		ast.intrinsic_signatures,
-		benchmark_result2_t__type,
-		dict_json__type
+		ast.intrinsic_signatures
 	};
 
 	if(trace_io_flag){

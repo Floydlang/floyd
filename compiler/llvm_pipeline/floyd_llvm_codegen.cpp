@@ -7,7 +7,7 @@
 //
 
 
-const bool k_trace_pass_io = true;
+const bool k_trace_pass_io = false;
 
 const bool k_trace_input_output = false;
 static const bool k_trace_function_link_map = false;
@@ -385,6 +385,7 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_genera
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(symbol_table.check_invariant());
 
+	const auto& interner = gen_acc.gen.type_lookup.state.type_interner;
 	std::vector<resolved_symbol_t> result;
 	for(const auto& e: symbol_table._symbols){
 		const auto type = e.second.get_value_type();
@@ -398,7 +399,7 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_genera
 			llvm::Value* c = generate_constant(gen_acc, e.second._init);
 			gen_acc.get_builder().CreateStore(c, dest);
 		}
-		const auto debug_str = "<LOCAL> name:" + e.first + " symbol_t: " + symbol_to_string(e.second);
+		const auto debug_str = "<LOCAL> name:" + e.first + " symbol_t: " + symbol_to_string(interner, e.second);
 		result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_local, e.first, e.second));
 	}
 	return result;
@@ -2143,6 +2144,7 @@ std::vector<resolved_symbol_t> generate_function_local_symbols(llvm_function_gen
 
 	QUARK_ASSERT(function_def._optional_body);
 	const symbol_table_t& symbol_table = function_def._optional_body->_symbol_table;
+	const auto& interner = gen_acc.gen.type_lookup.state.type_interner;
 
 	const auto mapping0 = *gen_acc.gen.type_lookup.find_from_itype(function_def._function_type).optional_function_def;
 	const auto mapping = name_args(mapping0, function_def._named_args);
@@ -2181,7 +2183,7 @@ std::vector<resolved_symbol_t> generate_function_local_symbols(llvm_function_gen
 			//	The argument is used as the llvm::Value*.
 			llvm::Value* dest = f_arg_ptr;
 
-			const auto debug_str = "<ARGUMENT> name:" + e.first + " symbol_t: " + symbol_to_string(e.second);
+			const auto debug_str = "<ARGUMENT> name:" + e.first + " symbol_t: " + symbol_to_string(interner, e.second);
 
 			result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_function_argument, e.first, e.second));
 		}
@@ -2193,7 +2195,7 @@ std::vector<resolved_symbol_t> generate_function_local_symbols(llvm_function_gen
 				llvm::Value* c = generate_constant(gen_acc, e.second._init);
 				gen_acc.get_builder().CreateStore(c, dest);
 			}
-			const auto debug_str = "<LOCAL> name:" + e.first + " symbol_t: " + symbol_to_string(e.second);
+			const auto debug_str = "<LOCAL> name:" + e.first + " symbol_t: " + symbol_to_string(interner, e.second);
 			result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_local, e.first, e.second));
 		}
 	}
@@ -2285,9 +2287,10 @@ static std::vector<resolved_symbol_t> generate_globals_from_symbols(llvm_functio
 //	QUARK_TRACE_SS("result = " << floyd::print_program(gen_acc.program_acc));
 
 	std::vector<resolved_symbol_t> result;
+	const auto& interner = gen_acc.gen.type_lookup.state.type_interner;
 
 	for(const auto& e: symbol_table._symbols){
-		const auto debug_str = "name:" + e.first + " symbol_t: " + symbol_to_string(e.second);
+		const auto debug_str = "name:" + e.first + " symbol_t: " + symbol_to_string(interner, e.second);
 		llvm::Value* value = generate_global(gen_acc, e.first, e.second);
 		const auto resolved_symbol = make_resolved_symbol(value, debug_str, resolved_symbol_t::esymtype::k_global, e.first, e.second);
 		result.push_back(resolved_symbol);
@@ -2383,7 +2386,8 @@ static std::vector<function_link_entry_t> generate_function_nodes(llvm::Module& 
 		result.push_back(function_link_entry_t{ e.module, e.link_name, e.llvm_function_type, f, e.function_type_or_undef, e.arg_names_or_empty, e.native_f });
 	}
 	if(k_trace_function_link_map){
-		trace_function_link_map(result);
+		const auto& interner = type_lookup.state.type_interner;
+		trace_function_link_map(interner, result);
 	}
 	return result;
 }
@@ -2523,7 +2527,8 @@ static module_output_t generate_module(llvm_instance_t& instance, const std::str
 	//	This lets all other code reference them, even if they're not filled up with code yet.
 	const auto link_map1 = make_function_link_map1(module->getContext(), type_lookup, semantic_ast._tree._function_defs, semantic_ast.intrinsic_signatures);
 	if(k_trace_function_link_map){
-		trace_function_link_map(link_map1);
+		const auto& interner = type_lookup.state.type_interner;
+		trace_function_link_map(interner, link_map1);
 	}
 	const auto link_map2 = generate_function_nodes(*module, type_lookup, link_map1);
 
@@ -2644,7 +2649,7 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 			}
 			{
 				QUARK_SCOPED_TRACE("LLVM CODE GENERATION -- OUTPUT LINK MAP");
-				trace_function_link_map(result->function_link_map);
+				trace_function_link_map(result->type_lookup.state.type_interner, result->function_link_map);
 			}
 		}
 		return result;

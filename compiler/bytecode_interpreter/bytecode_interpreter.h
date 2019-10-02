@@ -826,9 +826,6 @@ struct bc_program_t {
 	public: software_system_t _software_system;
 	public: container_t _container_def;
 	public: std::vector<intrinsic_signature_t> intrinsic_signatures;
-
-	public: itype_t benchmark_result2_t__type;
-	public: itype_t dict_json__type;
 };
 
 

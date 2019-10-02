@@ -222,10 +222,10 @@ bool operator==(const function_definition_t& lhs, const function_definition_t& r
 
 const itype_t& get_function_type(const function_definition_t& f);
 
-json_t function_def_to_ast_json(const function_definition_t& v);
-function_definition_t json_to_function_def(const type_interner_t& interner, const json_t& p);
+json_t function_def_to_ast_json(const type_interner_t& interner, const function_definition_t& v);
+function_definition_t json_to_function_def(type_interner_t& interner, const json_t& p);
 
-void trace_function_definition_t(const function_definition_t& def);
+void trace_function_definition_t(const type_interner_t& interner, const function_definition_t& def);
 
 
 struct struct_definition2_t {
@@ -389,8 +389,8 @@ struct expression_t {
 		std::shared_ptr<const struct_def_itype_t> def;
 	};
 
-	public: static expression_t make_struct_definition(const type_interner_t& type_interner, const std::string& name, const std::shared_ptr<const struct_def_itype_t>& def){
-		return expression_t({ struct_definition_expr_t{ name, def } }, make_struct(type_interner, *def));
+	public: static expression_t make_struct_definition(const type_interner_t& interner, const std::string& name, const std::shared_ptr<const struct_def_itype_t>& def){
+		return expression_t({ struct_definition_expr_t{ name, def } }, make_struct(interner, *def));
 	}
 
 
@@ -602,10 +602,10 @@ struct expression_t {
 
 
 
-json_t expression_to_json(const expression_t& e);
-expression_t ast_json_to_expression(const type_interner_t& interner, const json_t& e);
+json_t expression_to_json(const type_interner_t& interner, const expression_t& e);
+expression_t ast_json_to_expression(type_interner_t& interner, const json_t& e);
 
-std::string expression_to_json_string(const expression_t& e);
+std::string expression_to_json_string(const type_interner_t& interner, const expression_t& e);
 
 expression_type get_expression_type(const expression_t& e);
 

@@ -86,11 +86,11 @@ bool is_preinitliteral(const itype_t& type){
 
 
 
-itype_t make_process_init_type(const type_interner_t& interner, const itype_t& t){
+itype_t make_process_init_type(type_interner_t& interner, const itype_t& t){
 	return make_function3(interner, t, {}, epure::impure, return_dyn_type::none);
 }
 
-itype_t make_process_message_handler_type(const type_interner_t& interner, const itype_t& t){
+itype_t make_process_message_handler_type(type_interner_t& interner, const itype_t& t){
 	return make_function3(interner, t, { t, itype_t::make_json() }, epure::impure, return_dyn_type::none);
 }
 

@@ -2166,7 +2166,7 @@ json_t interpreter_stack_t::stack_to_json(const type_interner_t& interner) const
 
 		auto a = json_t::make_array({
 			json_t(i),
-			itype_to_json(debug_type),
+			itype_to_json(interner, debug_type),
 			unwritten ? json_t("UNWRITTEN") : bcvalue_to_json(interner, bc_value_t{ bc })
 		});
 		elements.push_back(a);
@@ -2288,7 +2288,7 @@ json_t bcvalue_to_json(const type_interner_t& interner, const bc_value_t& v){
 		return v.get_json();
 	}
 	else if(v._type.is_typeid()){
-		return itype_to_json(v.get_typeid_value());
+		return itype_to_json(interner, v.get_typeid_value());
 	}
 	else if(v._type.is_struct()){
 		const auto& struct_value = v.get_struct_value();
@@ -2359,7 +2359,7 @@ json_t bcvalue_to_json(const type_interner_t& interner, const bc_value_t& v){
 	else if(v._type.is_function()){
 		return json_t::make_object(
 			{
-				{ "funtyp", itype_to_json(v._type) }
+				{ "funtyp", itype_to_json(interner, v._type) }
 			}
 		);
 	}
@@ -2373,7 +2373,7 @@ static json_t bcvalue_and_type_to_json(const type_interner_t& interner, const bc
 	QUARK_ASSERT(interner.check_invariant());
 
 	return json_t::make_array({
-		itype_to_json(v._type),
+		itype_to_json(interner, v._type),
 		bcvalue_to_json(interner, v)
 	});
 }
@@ -2394,6 +2394,9 @@ interpreter_t::interpreter_t(const bc_program_t& program, runtime_handler_i* han
 
 	type_interner_t temp_interner = program._types;
 	const auto intrinsics = bc_get_intrinsics(temp_interner);
+
+//	trace_type_interner(program._types);
+//	trace_type_interner(temp_interner);
 	QUARK_ASSERT(temp_interner.interned2.size() == program._types.interned2.size());
 
 	const auto corelib_calls = bc_get_corelib_calls();
@@ -3780,7 +3783,7 @@ static std::vector<json_t> bc_symbols_to_json(const type_interner_t& interner, c
 				e.first,
 				"LOCAL",
 				json_t::make_object({
-					{ "value_type", itype_to_json(symbol._value_type) },
+					{ "value_type", itype_to_json(interner, symbol._value_type) },
 					{ "type", symbol_type_str }
 				})
 			});
@@ -3825,13 +3828,13 @@ static json_t frame_to_json(const type_interner_t& interner, const bc_static_fra
 	});
 }
 
-json_t types_to_json(const std::vector<typeid_t>& types){
+static json_t types_to_json(const type_interner_t& interner, const std::vector<typeid_t>& types){
 	std::vector<json_t> r;
 	int id = 0;
 	for(const auto& e: types){
 		const auto i = json_t::make_array({
 			id,
-			itype_to_json(e)
+			itype_to_json(interner, e)
 		});
 		r.push_back(i);
 		id++;
@@ -3843,8 +3846,8 @@ json_t functiondef_to_json(const type_interner_t& interner, const bc_function_de
 	QUARK_ASSERT(interner.check_invariant());
 
 	return json_t::make_array({
-		json_t(typeid_to_compact_string(def._function_type)),
-		members_to_json(def._args),
+		json_t(itype_to_compact_string(interner, def._function_type)),
+		members_to_json(interner, def._args),
 		def._frame_ptr ? frame_to_json(interner, *def._frame_ptr) : json_t(),
 		json_t(def._function_id.name)
 	});

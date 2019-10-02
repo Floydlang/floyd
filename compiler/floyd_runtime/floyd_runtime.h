@@ -35,7 +35,7 @@ struct runtime_handler_i {
 };
 
 
-value_t unflatten_json_to_specific_type(const type_interner_t& type_interner, const json_t& v, const itype_t& target_type);
+value_t unflatten_json_to_specific_type(type_interner_t& interner, const json_t& v, const itype_t& target_type);
 
 
 

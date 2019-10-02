@@ -28,7 +28,7 @@ json_t gp_ast_to_json(const general_purpose_ast_t& ast){
 
 	std::vector<json_t> fds;
 	for(const auto& e: ast._function_defs){
-		const auto fd = function_def_to_ast_json(e);
+		const auto fd = function_def_to_ast_json(ast._interned_types, e);
 		fds.push_back(fd);
 	}
 
@@ -37,7 +37,7 @@ json_t gp_ast_to_json(const general_purpose_ast_t& ast){
 
 	return json_t::make_object(
 		{
-			{ "globals", body_to_json(ast._globals) },
+			{ "globals", body_to_json(ast._interned_types, ast._globals) },
 			{ "function_defs", function_defs_json },
 			{ "types", types }
 		}
@@ -55,7 +55,7 @@ general_purpose_ast_t json_to_gp_ast(const json_t& json){
 
 
 	//	Fix types first, before globals and functions.
-	const auto interner = type_interner_from_json(types0);
+	auto interner = type_interner_from_json(types0);
 
 	body_t globals1 = json_to_body(interner, globals0);
 

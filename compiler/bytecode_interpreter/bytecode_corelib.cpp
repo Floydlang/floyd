@@ -27,7 +27,13 @@ bc_value_t bc_corelib__make_benchmark_report(interpreter_t& vm, const bc_value_t
 	QUARK_ASSERT(arg_count == 1);
 
 	auto temp_interner = vm._imm->_program._types;
-	QUARK_ASSERT(args[0]._type == vm._imm->_program.benchmark_result2_t__type);
+
+
+
+	const auto benchmark_result2_t__type = get_tagged_type2(temp_interner, type_tag_t { { "global_xyz_saft", "benchmark_result2_t" } });
+//	const auto dict_json__type = typeid_t::make_dict(interner2, typeid_t::make_json());
+
+	QUARK_ASSERT(args[0]._type == benchmark_result2_t__type);
 
 	const auto b2 = bc_to_value(temp_interner, args[0]);
 	const auto test_results = unpack_vec_benchmark_result2_t(temp_interner, b2);
@@ -126,7 +132,7 @@ bc_value_t bc_corelib__calc_string_sha1(interpreter_t& vm, const bc_value_t args
 	);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(result);
+	const auto debug = value_and_type_to_ast_json(vm._imm->_program._types, result);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
@@ -158,7 +164,7 @@ bc_value_t bc_corelib__calc_binary_sha1(interpreter_t& vm, const bc_value_t args
 	);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(result);
+	const auto debug = value_and_type_to_ast_json(temp_interner, result);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
@@ -230,7 +236,7 @@ bc_value_t bc_corelib__get_fsentries_shallow(interpreter_t& vm, const bc_value_t
 	const auto vec2 = value_t::make_vector_value(temp_interner, k_fsentry_t__type, elements);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(vec2);
+	const auto debug = value_and_type_to_ast_json(temp_interner, vec2);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
@@ -297,13 +303,14 @@ bc_value_t bc_corelib__does_fsentry_exist(interpreter_t& vm, const bc_value_t ar
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_string());
 
+	auto temp_interner = vm._imm->_program._types;
 	const std::string path = args[0].get_string_value();
 
 	bool exists = corelib_does_fsentry_exist(path);
 
 	const auto result = value_t::make_bool(exists);
 #if 1
-	const auto debug = value_and_type_to_ast_json(result);
+	const auto debug = value_and_type_to_ast_json(temp_interner, result);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 

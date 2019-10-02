@@ -104,8 +104,8 @@ std::pair<std::string, seq_t> read_required_identifier(const seq_t& s);
 	Does NOT make sure this a known type-identifier.
 	String must not be empty.
 */
-std::pair<std::shared_ptr<itype_t>, seq_t> read_type(type_interner_t& type_interner, const seq_t& s);
-std::pair<itype_t, seq_t> read_required_type(type_interner_t& type_interner, const seq_t& s);
+std::pair<std::shared_ptr<itype_t>, seq_t> read_type(type_interner_t& interner, const seq_t& s);
+std::pair<itype_t, seq_t> read_required_type(type_interner_t& interner, const seq_t& s);
 
 
 ////////////////////////////////		HIGH LEVEL
@@ -126,10 +126,10 @@ std::pair<itype_t, seq_t> read_required_type(type_interner_t& type_interner, con
 
 	(int, int)
 */
-std::pair<std::vector<member_itype_t>, seq_t> read_functiondef_arg_parantheses(const seq_t& s);
+std::pair<std::vector<member_itype_t>, seq_t> read_functiondef_arg_parantheses(type_interner_t& interner, const seq_t& s);
 
 //	Member names may be left blank.
-std::pair<std::vector<member_itype_t>, seq_t> read_function_type_args(const seq_t& s);
+std::pair<std::vector<member_itype_t>, seq_t> read_function_type_args(type_interner_t& interner, const seq_t& s);
 
 std::pair<std::vector<member_itype_t>, seq_t> read_call_args(const seq_t& s);
 

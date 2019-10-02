@@ -128,7 +128,7 @@ static void trace_analyser(const analyser_t& a){
 
 			for(int i = 0 ; i < scope.symbols._symbols.size() ; i++){
 				const auto& symbol = scope.symbols._symbols[i];
-				QUARK_TRACE_SS(i << "\t " << symbol.first << ":\t" << symbol_to_string(symbol.second));
+				QUARK_TRACE_SS(i << "\t " << symbol.first << ":\t" << symbol_to_string(a._types, symbol.second));
 			}
 
 			index++;
@@ -271,7 +271,7 @@ static itype_t resolve_symbols(analyser_t& acc, const location_t& loc, const ity
 
 			auto result = itype_t::make_undefined();
 #if DEBUG
-			if(true) trace_analyser(acc);
+			if(false) trace_analyser(acc);
 #endif
 
 			if(is_type_tag(e.s)){
@@ -286,7 +286,7 @@ static itype_t resolve_symbols(analyser_t& acc, const location_t& loc, const ity
 				result = get_tagged_type_symbol(acc._types, *existing_value_deep_ptr.first);
 			}
 #if DEBUG
-			if(true) trace_analyser(acc);
+			if(false) trace_analyser(acc);
 #endif
 
 			return result;
@@ -549,7 +549,7 @@ std::pair<analyser_t, statement_t> analyse_assign_statement(const analyser_t& a,
 			if(lhs_type != analyze_expr_output_type(a_acc, rhs_expr3)){
 				std::stringstream what;
 				what << "Types not compatible in assignment - cannot convert '"
-				<< typeid_to_compact_string(analyze_expr_output_type(a_acc, rhs_expr3)) << "' to '" << typeid_to_compact_string(lhs_type) << ".";
+				<< itype_to_compact_string(a_acc._types, analyze_expr_output_type(a_acc, rhs_expr3)) << "' to '" << itype_to_compact_string(a_acc._types, lhs_type) << ".";
 				throw_compiler_error(s.location, what.str());
 			}
 			else{
@@ -619,7 +619,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 		if((lhs_itype2 == rhs_itype) == false){
 			std::stringstream what;
 			what << "Types not compatible in bind - cannot convert '"
-			<< typeid_to_compact_string(lhs_itype) << "' to '" << typeid_to_compact_string(lhs_itype2) << ".";
+			<< itype_to_compact_string(a_acc._types, lhs_itype) << "' to '" << itype_to_compact_string(a_acc._types, lhs_itype2) << ".";
 			throw_compiler_error(s.location, what.str());
 		}
 		else{
@@ -723,7 +723,7 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, co
 
 	if(analyze_expr_output_type(a_acc, start_expr2.second).is_int() == false){
 		std::stringstream what;
-		what << "For-loop requires integer iterator, start type is " <<  typeid_to_compact_string(analyze_expr_output_type(a_acc, start_expr2.second)) << ".";
+		what << "For-loop requires integer iterator, start type is " <<  itype_to_compact_string(a_acc._types, analyze_expr_output_type(a_acc, start_expr2.second)) << ".";
 		throw_compiler_error(s.location, what.str());
 	}
 
@@ -732,7 +732,7 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, co
 
 	if(analyze_expr_output_type(a_acc, end_expr2.second).is_int() == false){
 		std::stringstream what;
-		what << "For-loop requires integer iterator, end type is " <<  typeid_to_compact_string(analyze_expr_output_type(a_acc, end_expr2.second)) << ".";
+		what << "For-loop requires integer iterator, end type is " <<  itype_to_compact_string(a_acc._types, analyze_expr_output_type(a_acc, end_expr2.second)) << ".";
 		throw_compiler_error(s.location, what.str());
 	}
 
@@ -944,7 +944,7 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 	}
 	else{
 		std::stringstream what;
-		what << "Left hand side is not a struct value, it's of type \"" + typeid_to_compact_string(parent_type) + "\".";
+		what << "Left hand side is not a struct value, it's of type \"" + itype_to_compact_string(a_acc._types, parent_type) + "\".";
 		throw_compiler_error(parent.location, what.str());
 	}
 }
@@ -1004,13 +1004,13 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 
 		if(key_type.is_int() == false){
 			std::stringstream what;
-			what << "Updating string needs an integer index, not a \"" + typeid_to_compact_string(key_type) + "\".";
+			what << "Updating string needs an integer index, not a \"" + itype_to_compact_string(a_acc._types, key_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
 		}
 
 		if(new_value_type.is_int() == false){
 			std::stringstream what;
-			what << "Updating string needs an integer value, not a \"" + typeid_to_compact_string(key_type) + "\".";
+			what << "Updating string needs an integer value, not a \"" + itype_to_compact_string(a_acc._types, key_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
 		}
 
@@ -1026,7 +1026,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 
 		if(key_type.is_int() == false){
 			std::stringstream what;
-			what << "Updating vector needs and integer index, not a \"" + typeid_to_compact_string(key_type) + "\".";
+			what << "Updating vector needs and integer index, not a \"" + itype_to_compact_string(a_acc._types, key_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
 		}
 
@@ -1047,7 +1047,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 
 		if(key_type.is_string() == false){
 			std::stringstream what;
-			what << "Updating dictionary requires string key, not a \"" + typeid_to_compact_string(key_type) + "\".";
+			what << "Updating dictionary requires string key, not a \"" + itype_to_compact_string(a_acc._types, key_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
 		}
 
@@ -1064,7 +1064,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 
 	else{
 		std::stringstream what;
-		what << "Left hand side does not support update() - it's of type \"" + typeid_to_compact_string(collection_type) + "\".";
+		what << "Left hand side does not support update() - it's of type \"" + itype_to_compact_string(a_acc._types, collection_type) + "\".";
 		throw_compiler_error(parent.location, what.str());
 	}
 }
@@ -1083,20 +1083,20 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_push_back_expression(const
 	if(parent_type.is_string()){
 		if(value_type.is_int() == false){
 			std::stringstream what;
-			what << "string push_back() needs an integer element, not a \"" + typeid_to_compact_string(value_type) + "\".";
+			what << "string push_back() needs an integer element, not a \"" + itype_to_compact_string(a_acc._types, value_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
 		}
 	}
 	else if(parent_type.is_vector()){
 		if(value_type != parent_type.get_vector_element_type(a_acc._types)){
 			std::stringstream what;
-			what << "Vector push_back() has mismatching element type vs supplies a \"" + typeid_to_compact_string(value_type) + "\".";
+			what << "Vector push_back() has mismatching element type vs supplies a \"" + itype_to_compact_string(a_acc._types, value_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
 		}
 	}
 	else{
 		std::stringstream what;
-		what << "Left hand side does not support push_back() - it's of type \"" + typeid_to_compact_string(parent_type) + "\".";
+		what << "Left hand side does not support push_back() - it's of type \"" + itype_to_compact_string(a_acc._types, parent_type) + "\".";
 		throw_compiler_error(parent.location, what.str());
 	}
 
@@ -1120,7 +1120,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_size_expression(const anal
 	}
 	else{
 		std::stringstream what;
-		what << "Left hand side does not support size() - it's of type \"" + typeid_to_compact_string(parent_type) + "\".";
+		what << "Left hand side does not support size() - it's of type \"" + itype_to_compact_string(a_acc._types, parent_type) + "\".";
 		throw_compiler_error(parent.location, what.str());
 	}
 
@@ -1154,7 +1154,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_find_expression(const anal
 	}
 	else{
 		std::stringstream what;
-		what << "Function find() doesn not work on type \"" + typeid_to_compact_string(parent_type) + "\".";
+		what << "Function find() doesn not work on type \"" + itype_to_compact_string(a_acc._types, parent_type) + "\".";
 		throw_compiler_error(parent.location, what.str());
 	}
 
@@ -1247,7 +1247,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_subset_expression(const an
 	a_acc = resolved_call.first;
 
 	const auto parent_type = resolved_call.second.function_type.get_function_args(a_acc._types)[0];
-	const auto key_type = resolved_call.second.function_type.get_function_args(a_acc._types)[1];
+//	const auto key_type = resolved_call.second.function_type.get_function_args(a_acc._types)[1];
 
 	if(parent_type.is_string() == false && parent_type.is_vector() == false){
 		throw_compiler_error(parent.location, "subset([]) requires a string or a vector.");
@@ -1301,7 +1301,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_expression(const analy
 	const auto expected = intern_anonymous_type(a_acc._types, harden_map_func_type(a_acc._types, resolved_call.second.function_type));
 
 	if(resolved_call.second.function_type != expected){
-		throw_compiler_error(parent.location, "Call to map() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
+		throw_compiler_error(parent.location, "Call to map() uses signature \"" + itype_to_compact_string(a_acc._types, resolved_call.second.function_type) + "\", needs to be \"" + itype_to_compact_string(a_acc._types, expected) + "\".");
 	}
 
 	return {
@@ -1323,7 +1323,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_string_expression(cons
 	const auto expected = intern_anonymous_type(a_acc._types, harden_map_string_func_type(a_acc._types, resolved_call.second.function_type));
 
 	if(resolved_call.second.function_type != expected){
-		throw_compiler_error(parent.location, "Call to map_string() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
+		throw_compiler_error(parent.location, "Call to map_string() uses signature \"" + itype_to_compact_string(a_acc._types, resolved_call.second.function_type) + "\", needs to be \"" + itype_to_compact_string(a_acc._types, expected) + "\".");
 	}
 
 	return {
@@ -1345,7 +1345,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_dag_expression(const a
 	const auto expected = intern_anonymous_type(a_acc._types, harden_map_dag_func_type(a_acc._types, resolved_call.second.function_type));
 
 	if(resolved_call.second.function_type != expected){
-		throw_compiler_error(parent.location, "Call to map_dag() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
+		throw_compiler_error(parent.location, "Call to map_dag() uses signature \"" + itype_to_compact_string(a_acc._types, resolved_call.second.function_type) + "\", needs to be \"" + itype_to_compact_string(a_acc._types, expected) + "\".");
 	}
 
 	return {
@@ -1366,7 +1366,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_filter_expression(const an
 	const auto expected = intern_anonymous_type(a_acc._types, harden_filter_func_type(a_acc._types, resolved_call.second.function_type));
 
 	if(resolved_call.second.function_type != expected){
-		throw_compiler_error(parent.location, "Call to filter() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", expected to be \"" + typeid_to_compact_string(expected) + "\".");
+		throw_compiler_error(parent.location, "Call to filter() uses signature \"" + itype_to_compact_string(a_acc._types, resolved_call.second.function_type) + "\", expected to be \"" + itype_to_compact_string(a_acc._types, expected) + "\".");
 	}
 
 	return {
@@ -1387,7 +1387,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_reduce_expression(const an
 
 	const auto expected = intern_anonymous_type(a_acc._types, harden_reduce_func_type(a_acc._types, resolved_call.second.function_type));
 	if(resolved_call.second.function_type != expected){
-		throw_compiler_error(parent.location, "Call to reduce() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", expected to be \"" + typeid_to_compact_string(expected) + "\".");
+		throw_compiler_error(parent.location, "Call to reduce() uses signature \"" + itype_to_compact_string(a_acc._types, resolved_call.second.function_type) + "\", expected to be \"" + itype_to_compact_string(a_acc._types, expected) + "\".");
 	}
 
 	return {
@@ -1409,7 +1409,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_stable_sort_expression(con
 	const auto expected = intern_anonymous_type(a_acc._types, harden_stable_sort_func_type(a_acc._types, resolved_call.second.function_type));
 
 	if(resolved_call.second.function_type != expected){
-		throw_compiler_error(parent.location, "Call to stable_sort() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
+		throw_compiler_error(parent.location, "Call to stable_sort() uses signature \"" + itype_to_compact_string(a_acc._types, resolved_call.second.function_type) + "\", needs to be \"" + itype_to_compact_string(a_acc._types, expected) + "\".");
 	}
 
 	return {
@@ -1440,7 +1440,7 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 	if(parent_type.is_string()){
 		if(key_type.is_int() == false){
 			std::stringstream what;
-			what << "Strings can only be indexed by integers, not a \"" + typeid_to_compact_string(key_type) + "\".";
+			what << "Strings can only be indexed by integers, not a \"" + itype_to_compact_string(a_acc._types, key_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
 		}
 		else{
@@ -1453,7 +1453,7 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 	else if(parent_type.is_vector()){
 		if(key_type.is_int() == false){
 			std::stringstream what;
-			what << "Vector can only be indexed by integers, not a \"" + typeid_to_compact_string(key_type) + "\".";
+			what << "Vector can only be indexed by integers, not a \"" + itype_to_compact_string(a_acc._types, key_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
 		}
 		else{
@@ -1463,7 +1463,7 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 	else if(parent_type.is_dict()){
 		if(key_type.is_string() == false){
 			std::stringstream what;
-			what << "Dictionary can only be looked up using string keys, not a \"" + typeid_to_compact_string(key_type) + "\".";
+			what << "Dictionary can only be looked up using string keys, not a \"" + itype_to_compact_string(a_acc._types, key_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
 		}
 		else{
@@ -1472,7 +1472,7 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 	}
 	else {
 		std::stringstream what;
-		what << "Lookup using [] only works with strings, vectors, dicts and json - not a \"" + typeid_to_compact_string(parent_type) + "\".";
+		what << "Lookup using [] only works with strings, vectors, dicts and json - not a \"" + itype_to_compact_string(a_acc._types, parent_type) + "\".";
 		throw_compiler_error(parent.location, what.str());
 	}
 }
@@ -1618,7 +1618,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			for(const auto& m: elements2){
 				if(analyze_expr_output_type(a_acc, m) != element_type2){
 					std::stringstream what;
-					what << "Vector of type " << typeid_to_compact_string(final_type) << " cannot hold an element of type " << typeid_to_compact_string(analyze_expr_output_type(a_acc, m)) << ".";
+					what << "Vector of type " << itype_to_compact_string(a_acc._types, final_type) << " cannot hold an element of type " << itype_to_compact_string(a_acc._types, analyze_expr_output_type(a_acc, m)) << ".";
 					throw_compiler_error(parent.location, what.str());
 				}
 			}
@@ -1692,7 +1692,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				const auto element_type0 = analyze_expr_output_type(a_acc, elements2[i * 2 + 1]);
 				if(element_type0 != element_type2){
 					std::stringstream what;
-					what << "Dictionary of type " << typeid_to_compact_string(final_type) << " cannot hold an element of type " << typeid_to_compact_string(element_type0) << ".";
+					what << "Dictionary of type " << itype_to_compact_string(a_acc._types, final_type) << " cannot hold an element of type " << itype_to_compact_string(a_acc._types, element_type0) << ".";
 					throw_compiler_error(parent.location, what.str());
 				}
 			}
@@ -1751,7 +1751,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(co
 	}
 	else{
 		std::stringstream what;
-		what << "Unary minus don't work on expressions of type \"" << typeid_to_compact_string(type) << "\"" << ", only int and double.";
+		what << "Unary minus don't work on expressions of type \"" << itype_to_compact_string(a_acc._types, type) << "\"" << ", only int and double.";
 		throw_compiler_error(parent.location, what.str());
 	}
 }
@@ -1759,33 +1759,33 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(co
 std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(const analyser_t& analyser, const statement_t& parent, const expression_t& e, const expression_t::conditional_t& details){
 	QUARK_ASSERT(analyser.check_invariant());
 
-	auto analyser_acc = analyser;
+	auto a_acc = analyser;
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
-	const auto cond_result = analyse_expression_no_target(analyser_acc, parent, *details.condition);
-	analyser_acc = cond_result.first;
+	const auto cond_result = analyse_expression_no_target(a_acc, parent, *details.condition);
+	a_acc = cond_result.first;
 
-	const auto a = analyse_expression_no_target(analyser_acc, parent, *details.a);
-	analyser_acc = a.first;
+	const auto a = analyse_expression_no_target(a_acc, parent, *details.a);
+	a_acc = a.first;
 
-	const auto b = analyse_expression_no_target(analyser_acc, parent, *details.b);
-	analyser_acc = b.first;
+	const auto b = analyse_expression_no_target(a_acc, parent, *details.b);
+	a_acc = b.first;
 
-	const auto type = analyze_expr_output_type(analyser_acc, cond_result.second);
+	const auto type = analyze_expr_output_type(a_acc, cond_result.second);
 	if(type.is_bool() == false){
 		std::stringstream what;
-		what << "Conditional expression needs to be a bool, not a " << typeid_to_compact_string(type) << ".";
+		what << "Conditional expression needs to be a bool, not a " << itype_to_compact_string(a_acc._types, type) << ".";
 		throw_compiler_error(parent.location, what.str());
 	}
-	else if(analyze_expr_output_type(analyser_acc, a.second) != analyze_expr_output_type(analyser_acc, b.second)){
+	else if(analyze_expr_output_type(a_acc, a.second) != analyze_expr_output_type(a_acc, b.second)){
 		std::stringstream what;
-		what << "Conditional expression requires true/false expressions to have the same type, currently " << typeid_to_compact_string(analyze_expr_output_type(analyser_acc, a.second)) << " : " << typeid_to_compact_string(analyze_expr_output_type(analyser_acc, b.second)) << ".";
+		what << "Conditional expression requires true/false expressions to have the same type, currently " << itype_to_compact_string(a_acc._types, analyze_expr_output_type(a_acc, a.second)) << " : " << itype_to_compact_string(a_acc._types, analyze_expr_output_type(a_acc, b.second)) << ".";
 		throw_compiler_error(parent.location, what.str());
 	}
 	else{
-		const auto final_expression_type = analyze_expr_output_type(analyser_acc, a.second);
+		const auto final_expression_type = analyze_expr_output_type(a_acc, a.second);
 		return {
-			analyser_acc,
+			a_acc,
 			expression_t::make_conditional_operator(
 				cond_result.second,
 				a.second,
@@ -1815,7 +1815,7 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 
 	if(lhs_type != rhs_type || (lhs_type.is_undefined() == true || rhs_type.is_undefined() == true)){
 		std::stringstream what;
-		what << "Left and right expressions must be same type in comparison, " << typeid_to_compact_string(lhs_type) << " " << expression_type_to_opcode(op) << typeid_to_compact_string(rhs_type) << ".";
+		what << "Left and right expressions must be same type in comparison, " << itype_to_compact_string(a_acc._types, lhs_type) << " " << expression_type_to_opcode(op) << itype_to_compact_string(a_acc._types, rhs_type) << ".";
 		throw_compiler_error(parent.location, what.str());
 	}
 	else{
@@ -1884,7 +1884,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 
 	if(lhs_type != rhs_type){
 		std::stringstream what;
-		what << "Artithmetics: Left and right expressions must be same type, currently " << typeid_to_compact_string(lhs_type) << " : " << typeid_to_compact_string(rhs_type) << ".";
+		what << "Artithmetics: Left and right expressions must be same type, currently " << itype_to_compact_string(a_acc._types, lhs_type) << " : " << itype_to_compact_string(a_acc._types, rhs_type) << ".";
 		throw_compiler_error(parent.location, what.str());
 	}
 	else{
@@ -2224,7 +2224,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 
 	{
 		std::stringstream what;
-		what << "Cannot call non-function, its type is " << typeid_to_compact_string(callee_type) << ".";
+		what << "Cannot call non-function, its type is " << itype_to_compact_string(a_acc._types, callee_type) << ".";
 		throw_compiler_error(parent.location, what.str());
 	}
 }
@@ -2273,7 +2273,7 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 	const auto r = expression_t::make_literal(struct_typeid_value, to_asttype(named_itype2));
 
 #if DEBUG
-	if(true) trace_analyser(a_acc);
+	if(false) trace_analyser(a_acc);
 #endif
 
 	return { a_acc, r };
@@ -2525,7 +2525,7 @@ static std::pair<analyser_t, expression_t> analyse_expression_to_target(const an
 		std::stringstream what;
 		what << "Expression type mismatch - cannot convert '"
 		//??? missing a trailing '
-		<< typeid_to_compact_string(analyze_expr_output_type(a_acc, e4)) << "' to '" << typeid_to_compact_string(target_type) << ".";
+		<< itype_to_compact_string(a_acc._types, analyze_expr_output_type(a_acc, e4)) << "' to '" << itype_to_compact_string(a_acc._types, target_type) << ".";
 		throw_compiler_error(parent.location, what.str());
 	}
 
@@ -2546,7 +2546,8 @@ void test__analyse_expression(const statement_t& parent, const expression_t& e, 
 	const analyser_t interpreter(ast);
 	const auto e3 = analyse_expression_no_target(interpreter, parent, e);
 
-	ut_verify(QUARK_POS, expression_to_json(e3.second), expression_to_json(expected));
+	const type_interner_t temp;
+	ut_verify(QUARK_POS, expression_to_json(temp, e3.second), expression_to_json(temp, expected));
 }
 
 
@@ -2559,6 +2560,7 @@ QUARK_TEST("analyse_expression_no_target()", "literal 1234 == 1234", "", "") {
 }
 
 QUARK_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
+	const type_interner_t temp;
 	const unchecked_ast_t ast;
 	const analyser_t interpreter(ast);
 	const auto e3 = analyse_expression_no_target(
@@ -2573,7 +2575,7 @@ QUARK_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
 	);
 
 	ut_verify(QUARK_POS,
-		expression_to_json(e3.second),
+		expression_to_json(temp, e3.second),
 		parse_json(seq_t(R"(   ["+", ["k", 1, "^int"], ["k", 2, "^int"], "^int"]   )")).first
 	);
 }
@@ -2663,7 +2665,7 @@ const body_t make_global_body(analyser_t& a){
 
 	const auto body2 = body_t(result.second, result.first._lexical_scope_stack.back().symbols);
 
-	trace_analyser(a);
+	if(false) trace_analyser(a);
 
 	auto global_body3 = body2;
 
@@ -2685,7 +2687,7 @@ const body_t make_global_body(analyser_t& a){
 		global_body3._statements.insert(global_body3._statements.begin(), s);
 	}
 
-	trace_analyser(a);
+	if(false) trace_analyser(a);
 
 	a._lexical_scope_stack.pop_back();
 
@@ -2701,10 +2703,18 @@ const body_t make_global_body(analyser_t& a){
 
 analyser_t::analyser_t(const unchecked_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
+
+	_types = ast._tree._interned_types;
+	const auto instrinsic_signatures = get_intrinsic_signatures(_types);
+	_imm = std::make_shared<analyzer_imm_t>(analyzer_imm_t{ ast, instrinsic_signatures });
+	scope_id_generator = 1000;
+
+	QUARK_ASSERT(check_invariant());
 }
 
 #if DEBUG
 bool analyser_t::check_invariant() const {
+	QUARK_ASSERT(_imm != nullptr);
 	QUARK_ASSERT(_imm->_ast.check_invariant());
 	QUARK_ASSERT(_types.check_invariant());
 	return true;
@@ -2719,12 +2729,6 @@ static semantic_ast_t run_semantic_analysis0(const unchecked_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
 	analyser_t a(ast);
-
-	a._types = ast._tree._interned_types;
-	const auto instrinsic_signatures = get_intrinsic_signatures(a._types);
-	a._imm = std::make_shared<analyzer_imm_t>(analyzer_imm_t{ ast, instrinsic_signatures });
-	a.scope_id_generator = 1000;
-
 	const auto global_body3 = make_global_body(a);
 
 	std::vector<floyd::function_definition_t> function_defs_vec;
@@ -2739,7 +2743,7 @@ static semantic_ast_t run_semantic_analysis0(const unchecked_ast_t& ast){
 		._software_system = a._software_system,
 		._container_def = a._container_def
 	};
-	const auto ast3 = semantic_ast_t(ast2, instrinsic_signatures);
+	const auto ast3 = semantic_ast_t(ast2, a._imm->intrinsic_signatures);
 
 	if(false){
 		{
