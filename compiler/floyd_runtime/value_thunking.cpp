@@ -292,7 +292,7 @@ static value_t from_runtime_dict(const value_backend_t& backend, const runtime_v
 			const auto value = from_runtime_value2(backend, e.second, value_type);
 			values.insert({ e.first, value} );
 		}
-		const auto val = value_t::make_dict_value(backend.type_interner, type, values);
+		const auto val = value_t::make_dict_value(backend.type_interner, value_type, values);
 		return val;
 	}
 	else if(is_dict_hamt(backend.config, itype)){
@@ -305,7 +305,7 @@ static value_t from_runtime_dict(const value_backend_t& backend, const runtime_v
 			const auto value = from_runtime_value2(backend, e.second, value_type);
 			values.insert({ e.first, value} );
 		}
-		const auto val = value_t::make_dict_value(backend.type_interner, type, values);
+		const auto val = value_t::make_dict_value(backend.type_interner, value_type, values);
 		return val;
 	}
 	else{
