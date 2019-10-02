@@ -71,7 +71,7 @@ std::string symbol_to_string(const type_interner_t& interner, const symbol_t& s)
 	std::stringstream out;
 	out << "{ "
 		<< symbol_type_to_string(s._symbol_type)
-		<< ", type: " << itype_to_compact_string(interner, s._value_type)
+		<< ", type: " << itype_to_compact_string(interner, s._value_type, resolve_named_types::dont_resolve)
 		<< ", init: " << (s._init.is_undefined() ? "<none>" : value_and_type_to_string(interner, s._init))
 	<< " }";
 	return out.str();

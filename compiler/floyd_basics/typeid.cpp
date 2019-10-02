@@ -135,8 +135,11 @@ std::string base_type_to_opcode(const base_type t){
 	else if(t == base_type::k_function){
 		return "func";
 	}
-	else if(t == base_type::k_identifier){
-		return "identifier";
+	else if(t == base_type::k_symbol_ref){
+		return "symbol-ref";
+	}
+	else if(t == base_type::k_named_type){
+		return "named-type";
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -188,7 +191,10 @@ QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_function) == "func");
 }
 QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_identifier) == "identifier");
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_symbol_ref) == "symbol-ref");
+}
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_named_type) == "named-type");
 }
 
 
@@ -235,8 +241,11 @@ base_type opcode_to_base_type(const std::string& s){
 	else if(s == "func"){
 		return base_type::k_function;
 	}
-	else if(s == "identifier"){
-		return base_type::k_identifier;
+	else if(s == "symbol"){
+		return base_type::k_symbol_ref;
+	}
+	else if(s == "named-type"){
+		return base_type::k_named_type;
 	}
 
 	else{

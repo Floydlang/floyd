@@ -931,7 +931,10 @@ runtime_value_t load_via_ptr2(const type_interner_t& interner, const void* value
 		runtime_value_t operator()(const function_t& e) const{
 			return *static_cast<const runtime_value_t*>(value_ptr);
 		}
-		runtime_value_t operator()(const identifier_t& e) const {
+		runtime_value_t operator()(const symbol_ref_t& e) const {
+			QUARK_ASSERT(false); throw std::exception();
+		}
+		runtime_value_t operator()(const named_type_t& e) const {
 			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
@@ -986,7 +989,10 @@ void store_via_ptr2(const type_interner_t& interner, void* value_ptr, const ityp
 		void operator()(const function_t& e) const{
 			*static_cast<runtime_value_t*>(value_ptr) = value;
 		}
-		void operator()(const identifier_t& e) const {
+		void operator()(const symbol_ref_t& e) const {
+			QUARK_ASSERT(false); throw std::exception();
+		}
+		void operator()(const named_type_t& e) const {
 			QUARK_ASSERT(false); throw std::exception();
 		}
 	};

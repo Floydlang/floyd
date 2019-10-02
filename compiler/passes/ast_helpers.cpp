@@ -353,9 +353,10 @@ bool check_types_resolved(const type_interner_t& interner, const itype_t& t){
 		bool operator()(const function_t& e) const{
 			return check_types_resolved__type_vector(interner, e._parts);
 		}
-		bool operator()(const identifier_t& e) const {
-
-//???
+		bool operator()(const symbol_ref_t& e) const {
+			return true;
+		}
+		bool operator()(const named_type_t& e) const {
 			return true;
 		}
 	};

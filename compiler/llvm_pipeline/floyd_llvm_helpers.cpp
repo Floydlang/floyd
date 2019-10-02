@@ -431,7 +431,10 @@ llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const l
 		llvm::Value* operator()(const function_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(type_lookup), "");
 		}
-		llvm::Value* operator()(const identifier_t& e) const {
+		llvm::Value* operator()(const symbol_ref_t& e) const {
+			QUARK_ASSERT(false); throw std::exception();
+		}
+		llvm::Value* operator()(const named_type_t& e) const {
 			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
@@ -492,7 +495,10 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const
 		llvm::Value* operator()(const function_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, get_llvm_type_as_arg(type_lookup, type), "");
 		}
-		llvm::Value* operator()(const identifier_t& e) const {
+		llvm::Value* operator()(const symbol_ref_t& e) const {
+			QUARK_ASSERT(false); throw std::exception();
+		}
+		llvm::Value* operator()(const named_type_t& e) const {
 			QUARK_ASSERT(false); throw std::exception();
 		}
 	};

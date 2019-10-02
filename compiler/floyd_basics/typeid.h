@@ -109,7 +109,8 @@ enum class base_type {
 	k_dict = 11,
 	k_function = 12,
 
-	k_identifier = 13
+	k_symbol_ref = 13,
+	k_named_type = 14
 };
 
 std::string base_type_to_opcode(const base_type t);

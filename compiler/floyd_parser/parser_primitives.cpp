@@ -361,7 +361,7 @@ std::pair<std::shared_ptr<typeid_t>, seq_t> read_basic_type(type_interner_t& int
 		return { std::make_shared<typeid_t>(typeid_t::make_json()), pos1.second };
 	}
 	else{
-		return { std::make_shared<typeid_t>(typeid_t::make_identifier(interner, pos1.first)), pos1.second };
+		return { std::make_shared<typeid_t>(typeid_t::make_symbol_ref(interner, pos1.first)), pos1.second };
 	}
 }
 
@@ -562,7 +562,7 @@ QUARK_TEST("", "read_type()", "", ""){
 QUARK_TEST("", "read_type()", "identifier", ""){
 	type_interner_t i;
 	const auto r = read_type(i, seq_t("temp"));
-	QUARK_TEST_VERIFY(*r.first ==  typeid_t::make_identifier(i, "temp"));
+	QUARK_TEST_VERIFY(*r.first ==  typeid_t::make_symbol_ref(i, "temp"));
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
 QUARK_TEST("", "read_type()", "vector", ""){

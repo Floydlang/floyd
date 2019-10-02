@@ -373,7 +373,10 @@ static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const 
 			llvm::PointerType* ptr_type = llvm::cast<llvm::PointerType>(itype);
 			return llvm::ConstantPointerNull::get(ptr_type);
 		}
-		llvm::Value* operator()(const identifier_t& e) const {
+		llvm::Value* operator()(const symbol_ref_t& e) const {
+			QUARK_ASSERT(false); throw std::exception();
+		}
+		llvm::Value* operator()(const named_type_t& e) const {
 			QUARK_ASSERT(false); throw std::exception();
 		}
 	};

@@ -179,10 +179,10 @@ static a_result_t parse_a(type_interner_t& interner, const seq_t& p, const locat
 	}
 	else if(!optional_type_pos.first && identifier_pos.first != ""){
 		QUARK_ASSERT(false);
-		return a_result_t{ typeid_t::make_undefined(), optional_type_pos.first->get_identifier(interner), identifier_pos.second };
+		return a_result_t{ typeid_t::make_undefined(), optional_type_pos.first->get_symbol_ref(interner), identifier_pos.second };
 	}
-	else if(optional_type_pos.first && optional_type_pos.first->is_identifier() && identifier_pos.first == ""){
-		return a_result_t{ typeid_t::make_undefined(), optional_type_pos.first->get_identifier(interner), identifier_pos.second };
+	else if(optional_type_pos.first && optional_type_pos.first->is_symbol_ref() && identifier_pos.first == ""){
+		return a_result_t{ typeid_t::make_undefined(), optional_type_pos.first->get_symbol_ref(interner), identifier_pos.second };
 	}
 	else{
 		throw_compiler_error(loc, "Require a value for new bind.");

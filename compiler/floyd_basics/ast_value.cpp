@@ -552,7 +552,7 @@ std::string to_compact_string2(const type_interner_t& interner, const value_t& v
 		return json_to_compact_string(value.get_json());
 	}
 	else if(base_type == base_type::k_typeid){
-		return itype_to_compact_string(interner, value.get_typeid_value());
+		return itype_to_compact_string(interner, value.get_typeid_value(), resolve_named_types::resolve);
 	}
 	else if(base_type == base_type::k_struct){
 		return struct_instance_to_compact_string(interner, *value.get_struct_value());
@@ -565,7 +565,7 @@ std::string to_compact_string2(const type_interner_t& interner, const value_t& v
 	}
 	else if(base_type == base_type::k_function){
 		//??? include link name.
-		return itype_to_compact_string(interner, value.get_type());
+		return itype_to_compact_string(interner, value.get_type(), resolve_named_types::dont_resolve);
 	}
 
 	else{
@@ -588,7 +588,7 @@ std::string to_compact_string_quote_strings(const type_interner_t& interner, con
 std::string value_and_type_to_string(const type_interner_t& interner, const value_t& value) {
 	QUARK_ASSERT(interner.check_invariant());
 
-	std::string type_string = itype_to_compact_string(interner, value.get_type());
+	std::string type_string = itype_to_compact_string(interner, value.get_type(), resolve_named_types::dont_resolve);
 	if(value.is_undefined()){
 		return type_string;
 	}

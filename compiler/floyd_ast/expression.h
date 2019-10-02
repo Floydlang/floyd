@@ -389,7 +389,7 @@ struct expression_t {
 		std::shared_ptr<const struct_def_itype_t> def;
 	};
 
-	public: static expression_t make_struct_definition(const type_interner_t& interner, const std::string& name, const std::shared_ptr<const struct_def_itype_t>& def){
+	public: static expression_t make_struct_definition(type_interner_t& interner, const std::string& name, const std::shared_ptr<const struct_def_itype_t>& def){
 		return expression_t({ struct_definition_expr_t{ name, def } }, make_struct(interner, *def));
 	}
 

@@ -119,13 +119,14 @@ itype_variant_t get_itype_variant(const type_interner_t& interner, const itype_t
 		const auto& info = lookup_typeinfo_from_itype(interner, type);
 		return function_t { info.child_types };
 	}
-	else if(type.is_identifier()){
+	else if(type.is_symbol_ref()){
 		const auto& info = lookup_typeinfo_from_itype(interner, type);
-		return identifier_t { info.identifier_str };
+		return symbol_ref_t { info.identifier_str };
 	}
-
-
-
+	else if(type.is_named_type()){
+		const auto& info = lookup_typeinfo_from_itype(interner, type);
+		return named_type_t { info.child_types[0] };
+	}
 	else{
 		QUARK_ASSERT(false);
 		throw std::exception();
@@ -213,12 +214,21 @@ epure itype_t::get_function_pure(const type_interner_t& interner) const{
 
 
 
-std::string itype_t::get_identifier(const type_interner_t& interner) const {
+std::string itype_t::get_symbol_ref(const type_interner_t& interner) const {
 	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(is_identifier());
+	QUARK_ASSERT(is_symbol_ref());
 
 	const auto& info = lookup_typeinfo_from_itype(interner, *this);
 	return info.identifier_str;
+}
+
+
+type_tag_t itype_t::get_named_type(const type_interner_t& interner) const {
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(is_named_type());
+
+	const auto& info = lookup_typeinfo_from_itype(interner, *this);
+	return info.optional_tag;
 }
 
 
@@ -282,7 +292,8 @@ type_interner_t::type_interner_t(){
 	interned2.push_back(make_entry(base_type::k_undefined));
 	interned2.push_back(make_entry(base_type::k_undefined));
 
-	interned2.push_back(make_entry(base_type::k_identifier));
+	interned2.push_back(make_entry(base_type::k_symbol_ref));
+	interned2.push_back(make_entry(base_type::k_undefined));
 
 	QUARK_ASSERT(check_invariant());
 }
@@ -307,7 +318,8 @@ bool type_interner_t::check_invariant() const {
 	QUARK_ASSERT(interned2[(type_lookup_index_t)base_type::k_dict] == make_entry(base_type::k_undefined));
 	QUARK_ASSERT(interned2[(type_lookup_index_t)base_type::k_function] == make_entry(base_type::k_undefined));
 
-	QUARK_ASSERT(interned2[(type_lookup_index_t)base_type::k_identifier] == make_entry(base_type::k_identifier));
+	QUARK_ASSERT(interned2[(type_lookup_index_t)base_type::k_symbol_ref] == make_entry(base_type::k_symbol_ref));
+	QUARK_ASSERT(interned2[(type_lookup_index_t)base_type::k_named_type] == make_entry(base_type::k_undefined));
 
 
 	//??? Add other common combinations, like vectors with each atomic type, dict with each atomic
@@ -493,14 +505,19 @@ itype_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag, const 
 
 	const auto node = type_node_t{
 		tag,
-		base_type::k_any,
+		base_type::k_named_type,
 		{ type },
 		{},
 		epure::pure,
 		return_dyn_type::none,
 		""
 	};
-	return intern_node(interner, node);
+
+	QUARK_ASSERT(node.child_types.size() == 1);
+
+	//	Can't use intern_node() since we have a tag.
+	interner.interned2.push_back(node);
+	return lookup_itype_from_index_it(interner, interner.interned2.size() - 1);
 }
 
 itype_t update_tagged_type(type_interner_t& interner, const itype_t& named, const itype_t& type){
@@ -509,7 +526,8 @@ itype_t update_tagged_type(type_interner_t& interner, const itype_t& named, cons
 	QUARK_ASSERT(type.check_invariant());
 
 	auto& node = lookup_typeinfo_from_itype(interner, named);
-	QUARK_ASSERT(node.bt == base_type::k_any);
+	QUARK_ASSERT(node.bt == base_type::k_named_type);
+	QUARK_ASSERT(node.child_types.size() == 1);
 
 	node.child_types = { type };
 
@@ -529,6 +547,7 @@ itype_t get_tagged_type2(const type_interner_t& interner, const type_tag_t& tag)
 	if(it == interner.interned2.end()){
 		throw std::exception();
 	}
+	QUARK_ASSERT(it->child_types.size() == 1);
 	return lookup_itype_from_index_it(interner, it - interner.interned2.begin());
 }
 
@@ -733,25 +752,15 @@ itype_t peek(const type_interner_t& interner, const itype_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
+	if(true) trace_type_interner(interner);
+
 	const auto& info = lookup_typeinfo_from_itype(interner, type);
-	if(info.bt == base_type::k_identifier){
-		QUARK_ASSERT(is_type_tag(info.identifier_str));
-		const auto tag = unpack_type_tag(info.identifier_str);
-
-		//	Find the itype the current itype refers to using its name.
-		const auto it = std::find_if(
-			interner.interned2.begin(),
-			interner.interned2.end(),
-			[&tag](const auto& m){ return m.optional_tag == tag; }
-		);
-		if(it == interner.interned2.end()){
-			throw std::exception();
-		}
-
-		const auto result = lookup_itype_from_index_it(interner, it - interner.interned2.begin());
+	if(info.bt == base_type::k_named_type){
+		QUARK_ASSERT(info.child_types.size() == 1);
+		const auto dest = info.child_types[0];
 
 		//	Support many linked tags.
-		return peek(interner, result);
+		return peek(interner, dest);
 	}
 	else{
 		return type;
@@ -962,12 +971,15 @@ itype_t lookup_itype_from_index(const type_interner_t& interner, type_lookup_ind
 	else if(node.bt == base_type::k_function){
 		return itype_t::make_function(type_index);
 	}
-	else if(node.bt == base_type::k_identifier){
-		return itype_t::make_identifier_int(type_index);
+	else if(node.bt == base_type::k_symbol_ref){
+		return itype_t::assemble2(type_index, base_type::k_symbol_ref, base_type::k_undefined);
+	}
+	else if(node.bt == base_type::k_named_type){
+		return itype_t::assemble2(type_index, base_type::k_named_type, base_type::k_undefined);
 	}
 	else{
 		const auto bt = node.bt;
-		return itype_t::assemble2((type_lookup_index_t)bt, bt, base_type::k_undefined);
+		return itype_t::assemble2((type_lookup_index_t)type_index, bt, base_type::k_undefined);
 	}
 }
 
@@ -1011,7 +1023,7 @@ void trace_type_interner(const type_interner_t& interner){
 				const auto line = std::vector<std::string>{
 					std::to_string(i),
 					pack_type_tag(e.optional_tag),
-					itype_to_compact_string(interner, itype),
+					itype_to_compact_string(interner, itype, resolve_named_types::dont_resolve),
 				};
 				matrix.push_back(line);
 			}
@@ -1220,10 +1232,7 @@ json_t itype_to_json(const type_interner_t& interner, const itype_t& type){
 			const auto pure = type.get_function_pure(interner);
 			const auto dyn = type.get_function_dyn_return_type(interner);
 
-
-
 			//	Only include dyn-type it it's different than return_dyn_type::none.
-
 			const auto dyn_type = dyn != return_dyn_type::none ? json_t(static_cast<int>(dyn)) : json_t();
 			return make_array_skip_nulls({
 				basetype_str,
@@ -1233,27 +1242,20 @@ json_t itype_to_json(const type_interner_t& interner, const itype_t& type){
 				dyn_type
 			});
 
-
 			std::vector<std::string> args_str;
 			for(const auto& a: args){
-				args_str.push_back(itype_to_compact_string(interner, a));
+				args_str.push_back(itype_to_compact_string(interner, a, resolve_named_types::dont_resolve));
 			}
 
-			return std::string() + "func " + itype_to_compact_string(interner, ret) + "(" + concat_strings_with_divider(args_str, ",") + ") " + (pure == epure::pure ? "pure" : "impure");
+			return std::string() + "func " + itype_to_compact_string(interner, ret, resolve_named_types::dont_resolve) + "(" + concat_strings_with_divider(args_str, ",") + ") " + (pure == epure::pure ? "pure" : "impure");
 		}
-		json_t operator()(const identifier_t& e) const {
+		json_t operator()(const symbol_ref_t& e) const {
 			const auto identifier = e.s;
-			if(is_type_tag(identifier)){
-				return json_t(identifier);
-			}
-			else {
-				return json_t(std::string("%") + identifier);
-			}
-
+			return json_t(std::string("%") + identifier);
+		}
+		json_t operator()(const named_type_t& e) const {
+			return itype_to_json(interner, e.destination_type);
 /*
-			QUARK_ASSERT(is_type_tag(identifier));
-			const auto tag = unpack_type_tag(identifier);
-
 			//	Find the itype the current itype refers to using its name.
 			const auto it = std::find_if(
 				interner.interned2.begin(),
@@ -1263,10 +1265,7 @@ json_t itype_to_json(const type_interner_t& interner, const itype_t& type){
 			if(it == interner.interned2.end()){
 				throw std::exception();
 			}
-
-			return flatten_type_description_internal(interner, it->type);
 */
-			return identifier;
 		}
 	};
 
@@ -1279,23 +1278,21 @@ itype_t itype_from_json(type_interner_t& interner, const json_t& t){
 	QUARK_ASSERT(t.check_invariant());
 
 	if(t.is_string()){
-		const auto s0 = t.get_string();
+		const auto s = t.get_string();
 
 		//	Identifier.
-		if(s0.front() == '%'){
-			const auto s = s0.substr(1);
-			return typeid_t::make_identifier(interner, s);
+		if(s.front() == '%'){
+			return typeid_t::make_symbol_ref(interner, s.substr(1));
 		}
 
 		//	Tagged type.
-		else if(is_type_tag(s0)){
-			return typeid_t::make_identifier(interner, s0);
+		else if(is_type_tag(s)){
+			return typeid_t::make_named_type(interner, unpack_type_tag(s));
 		}
 
 		//	Other types.
 		else {
-			const auto s = s0;
-			if(s0 == ""){
+			if(s == ""){
 				return typeid_t::make_undefined();
 			}
 
@@ -1336,10 +1333,12 @@ itype_t itype_from_json(type_interner_t& interner, const json_t& t){
 	}
 	else if(t.is_array()){
 		const auto a = t.get_array();
-		const auto s0 = a[0].get_string();
-		QUARK_ASSERT(s0.front() != '#');
+		const auto s = a[0].get_string();
+		QUARK_ASSERT(s.front() != '#');
+		QUARK_ASSERT(s.front() != '^');
+		QUARK_ASSERT(s.front() != '%');
+		QUARK_ASSERT(s.front() != '/');
 
-		const auto s = s0.front() == '^' ? s0.substr(1) : s0;
 		if(s == "struct"){
 			const auto struct_def_array = a[1].get_array();
 			const auto member_array = struct_def_array[0].get_array();
@@ -1418,13 +1417,14 @@ std::string itype_to_debug_string(const itype_t& itype){
 	return s.str();
 }
 
-std::string itype_to_compact_string(const type_interner_t& interner, const itype_t& type){
+std::string itype_to_compact_string(const type_interner_t& interner, const itype_t& type, resolve_named_types resolve){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
 	struct visitor_t {
 		const type_interner_t& interner;
 		const itype_t& type;
+		const resolve_named_types resolve;
 
 
 		std::string operator()(const undefined_t& e) const{
@@ -1460,19 +1460,19 @@ std::string itype_to_compact_string(const type_interner_t& interner, const itype
 		std::string operator()(const struct_t& e) const{
 			std::string members_acc;
 			for(const auto& m: e.def._members){
-				members_acc = members_acc + m._name + " " + itype_to_compact_string(interner, m._type) + ";";
+				members_acc = itype_to_compact_string(interner, m._type, resolve) + " " + members_acc + m._name + ";";
 			}
-			return "struct { " + members_acc + "}";
+			return "struct {" + members_acc + "}";
 		}
 		std::string operator()(const vector_t& e) const{
 			QUARK_ASSERT(e._parts.size() == 1);
 
-			return "[" + itype_to_compact_string(interner, e._parts[0]) + "]";
+			return "[" + itype_to_compact_string(interner, e._parts[0], resolve) + "]";
 		}
 		std::string operator()(const dict_t& e) const{
 			QUARK_ASSERT(e._parts.size() == 1);
 
-			return "[string:" + itype_to_compact_string(interner, e._parts[0]) + "]";
+			return "[string:" + itype_to_compact_string(interner, e._parts[0], resolve) + "]";
 		}
 		std::string operator()(const function_t& e) const{
 			const auto ret = type.get_function_return(interner);
@@ -1481,36 +1481,34 @@ std::string itype_to_compact_string(const type_interner_t& interner, const itype
 
 			std::vector<std::string> args_str;
 			for(const auto& a: args){
-				args_str.push_back(itype_to_compact_string(interner, a));
+				args_str.push_back(itype_to_compact_string(interner, a, resolve));
 			}
 
-			return std::string() + "func " + itype_to_compact_string(interner, ret) + "(" + concat_strings_with_divider(args_str, ",") + ") " + (pure == epure::pure ? "pure" : "impure");
+			return std::string() + "func " + itype_to_compact_string(interner, ret, resolve) + "(" + concat_strings_with_divider(args_str, ",") + ") " + (pure == epure::pure ? "pure" : "impure");
 		}
-		std::string operator()(const identifier_t& e) const {
-			const auto identifier = e.s;
-//			QUARK_ASSERT(identifier != "");
+		std::string operator()(const symbol_ref_t& e) const {
+//			QUARK_ASSERT(e.s != "");
+			return std::string("%") + e.s;
+		}
+		std::string operator()(const named_type_t& e) const {
+			if(resolve == resolve_named_types::resolve){
+				const auto p = peek(interner, type);
+				return itype_to_compact_string(interner, p, resolve);
+			}
 
-/*
-			QUARK_ASSERT(is_type_tag(identifier));
-			const auto tag = unpack_type_tag(identifier);
-
-			//	Find the itype the current itype refers to using its name.
-			const auto it = std::find_if(
-				interner.interned2.begin(),
-				interner.interned2.end(),
-				[&tag](const auto& m){ return m.optional_tag == tag; }
-			);
-			if(it == interner.interned2.end()){
+			//	Return the name of the type.
+			else if(resolve == resolve_named_types::dont_resolve){
+				const auto& info = lookup_typeinfo_from_itype(interner, type);
+				return info.optional_tag.lexical_path.back();
+			}
+			else{
+				QUARK_ASSERT(false);
 				throw std::exception();
 			}
-
-			return flatten_type_description_internal(interner, it->type);
-*/
-			return identifier;
 		}
 	};
 
-	const auto result = std::visit(visitor_t{ interner, type }, get_itype_variant(interner, type));
+	const auto result = std::visit(visitor_t{ interner, type, resolve }, get_itype_variant(interner, type));
 	return result;
 }
 
@@ -1650,24 +1648,30 @@ itype_t make_function(const type_interner_t& interner, const itype_t& ret, const
 
 
 
-itype_t make_identifier(type_interner_t& interner, const std::string& identifier){
+itype_t make_symbol_ref(type_interner_t& interner, const std::string& s){
 	const auto node = type_node_t{
 		make_empty_type_tag(),
-		base_type::k_identifier,
+		base_type::k_symbol_ref,
 		std::vector<itype_t>{},
 		{},
 		epure::pure,
 		return_dyn_type::none,
-		identifier
+		s
 	};
 	return intern_node(interner, node);
 }
 
-itype_t make_identifier_symbol(type_interner_t& interner, const std::string& identifier){
-	return make_identifier(interner, identifier);
-}
-itype_t make_identifier_typetag(type_interner_t& interner, const std::string& identifier){
-	return make_identifier(interner, identifier);
+itype_t make_named_type(type_interner_t& interner, const type_tag_t& type){
+	const auto node = type_node_t{
+		type,
+		base_type::k_symbol_ref,
+		std::vector<itype_t>{},
+		{},
+		epure::pure,
+		return_dyn_type::none,
+		""
+	};
+	return intern_node(interner, node);
 }
 
 
@@ -1753,7 +1757,8 @@ bool is_atomic_type(itype_t type){
 		|| bt == base_type::k_json
 
 		|| bt == base_type::k_typeid
-		|| bt == base_type::k_identifier
+		|| bt == base_type::k_symbol_ref
+//		|| bt == base_type::k_named_type
 	){
 		return true;
 	}

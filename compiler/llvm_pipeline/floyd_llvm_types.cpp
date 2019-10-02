@@ -316,8 +316,12 @@ static llvm::Type* make_llvm_type(const builder_t& builder, const typeid_t& type
 		llvm::Type* operator()(const function_t& e) const{
 			return deref_ptr(make_function_type(builder, type));
 		}
-		llvm::Type* operator()(const identifier_t& e) const {
+		llvm::Type* operator()(const symbol_ref_t& e) const {
 			return llvm::Type::getInt8Ty(builder.context);
+//			QUARK_ASSERT(false); throw std::exception();
+		}
+		llvm::Type* operator()(const named_type_t& e) const {
+			return llvm::Type::getInt16Ty(builder.context);
 //			QUARK_ASSERT(false); throw std::exception();
 		}
 	};

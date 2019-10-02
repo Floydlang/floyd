@@ -35,7 +35,7 @@ struct itype_t;
 
 typedef int32_t type_lookup_index_t;
 
-
+//??? Should not need to store dyn-type inside function types anymore, confirm and remove from here.
 enum class return_dyn_type {
 	none = 0,
 	arg0 = 1,
@@ -62,12 +62,12 @@ itype_t make_function_dyn_return(type_interner_t& interner, const std::vector<it
 itype_t make_function(type_interner_t& interner, const itype_t& ret, const std::vector<itype_t>& args, epure pure);
 itype_t make_function(const type_interner_t& interner, const itype_t& ret, const std::vector<itype_t>& args, epure pure);
 
-itype_t make_identifier(type_interner_t& interner, const std::string& identifier);
-itype_t make_identifier_symbol(type_interner_t& interner, const std::string& identifier);
-itype_t make_identifier_typetag(type_interner_t& interner, const std::string& identifier);
+itype_t make_symbol_ref(type_interner_t& interner, const std::string& s);
+itype_t make_named_type(type_interner_t& interner, const type_tag_t& type);
 
 
 std::vector<itype_t> get_member_types(const std::vector<member_itype_t>& m);
+
 
 //////////////////////////////////////////////////		itype_t
 
@@ -79,11 +79,6 @@ std::vector<itype_t> get_member_types(const std::vector<member_itype_t>& m);
 */
 
 struct itype_t {
-
-
-
-
-
 
 	bool check_invariant() const {
 //		QUARK_ASSERT(get_base_type() != base_type::k_identifier);
@@ -274,11 +269,6 @@ struct itype_t {
 
 
 
-
-
-
-
-
 	//////////////////////////////////////////////////		DICT
 
 
@@ -341,19 +331,37 @@ struct itype_t {
 
 
 
-	//////////////////////////////////////////////////		IDENTIFIER
+	//////////////////////////////////////////////////		SYMBOL
 
-	static itype_t make_identifier(type_interner_t& interner, const std::string& s){
-		return floyd::make_identifier(interner, s);
+	static itype_t make_symbol_ref(type_interner_t& interner, const std::string& s){
+		return floyd::make_symbol_ref(interner, s);
 	}
 
-	bool is_identifier() const {
+	bool is_symbol_ref() const {
 		QUARK_ASSERT(check_invariant());
 
-		return get_base_type() == base_type::k_identifier;
+		return get_base_type() == base_type::k_symbol_ref;
 	}
 
-	std::string get_identifier(const type_interner_t& interner) const;
+	std::string get_symbol_ref(const type_interner_t& interner) const;
+
+
+
+	//////////////////////////////////////////////////		NAMED TYPE
+
+	static itype_t make_named_type(type_interner_t& interner, const type_tag_t& type){
+		return floyd::make_named_type(interner, type);
+	}
+
+	bool is_named_type() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_named_type;
+	}
+
+	type_tag_t get_named_type(const type_interner_t& interner) const;
+
+
 
 
 
@@ -402,9 +410,11 @@ struct itype_t {
 		return itype_t(assemble(lookup_index, base_type::k_function, base_type::k_undefined));
 	}
 
+/*
 	static itype_t make_identifier_int(type_lookup_index_t lookup_index){
 		return itype_t(assemble(lookup_index, base_type::k_identifier, base_type::k_undefined));
 	}
+*/
 
 
 	inline type_lookup_index_t get_lookup_index() const {
@@ -471,7 +481,9 @@ itype_t itype_from_json(type_interner_t& interner, const json_t& j);
 
 std::string itype_to_debug_string(const itype_t& itype);
 
-std::string itype_to_compact_string(const type_interner_t& interner, const itype_t& itype);
+enum class resolve_named_types { resolve, dont_resolve };
+
+std::string itype_to_compact_string(const type_interner_t& interner, const itype_t& itype, resolve_named_types resolve = resolve_named_types::dont_resolve);
 
 
 struct member_itype_t {
@@ -631,7 +643,6 @@ itype_t get_tagged_type2(const type_interner_t& interner, const type_tag_t& tag)
 
 
 
-
 struct undefined_t {};
 struct any_t {};
 struct void_t {};
@@ -654,8 +665,11 @@ struct dict_t {
 struct function_t {
 	std::vector<itype_t> _parts;
 };
-struct identifier_t {
+struct symbol_ref_t {
 	std::string s;
+};
+struct named_type_t {
+	itype_t destination_type;
 };
 
 typedef std::variant<
@@ -673,7 +687,8 @@ typedef std::variant<
 	vector_t,
 	dict_t,
 	function_t,
-	identifier_t
+	symbol_ref_t,
+	named_type_t
 > itype_variant_t;
 
 

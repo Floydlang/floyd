@@ -108,7 +108,7 @@ inline itype_t make_benchmark_result_t(type_interner_t& type_interner){
 
 inline itype_t make_benchmark_function_t(type_interner_t& type_interner){
 //	return itype_t::make_function(itype_t::make_vector(make_benchmark_result_t()), {}, epure::pure);
-	return itype_t::make_function(type_interner, make_identifier_symbol(type_interner, "benchmark_result_t"), {}, epure::pure);
+	return itype_t::make_function(type_interner, make_symbol_ref(type_interner, "benchmark_result_t"), {}, epure::pure);
 }
 
 inline itype_t make_benchmark_def_t(type_interner_t& type_interner){
@@ -162,7 +162,7 @@ inline itype_t make_benchmark_result2_t(type_interner_t& type_interner){
 		type_interner,
 		{
 			member_itype_t{ make_benchmark_id_t(type_interner), "test_id" },
-			member_itype_t{ make_identifier_symbol(type_interner, "benchmark_result_t"), "result" }
+			member_itype_t{ make_symbol_ref(type_interner, "benchmark_result_t"), "result" }
 		}
 	);
 	return x;
