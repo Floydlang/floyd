@@ -459,12 +459,6 @@ static function_return_mode generate_block(llvm_function_generator_t& gen_acc, c
 }
 
 
-static typeid_t get_expr_output_typeid(const type_interner_t& interner, const expression_t& e){
-	QUARK_ASSERT(interner.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-
-	return e.get_output_type();
-}
 static typeid_t get_expr_output(const llvm_code_generator_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -502,14 +496,14 @@ static llvm::Value* generate_resolve_member_expression(llvm_function_generator_t
 	auto struct_ptr_reg = generate_expression(gen_acc, *details.parent_address);
 
 
-	const auto parent_type = get_expr_output(gen_acc.gen, *details.parent_address);
+	const auto parent_type = peek(interner, get_expr_output(gen_acc.gen, *details.parent_address));
 	QUARK_ASSERT(parent_type.is_struct());
 
-	const auto& struct_def = get_expr_output(gen_acc.gen, *details.parent_address).get_struct(interner);
+	const auto& struct_def = parent_type.get_struct(interner);
 	int member_index = find_struct_member_index(struct_def, details.member_name);
 	QUARK_ASSERT(member_index != -1);
 
-	const auto& member_type = struct_def._members[member_index]._type;
+	const auto& member_type = peek(interner, struct_def._members[member_index]._type);
 
 /*
 	auto base_ptr_reg = generate_get_struct_base_ptr(gen_acc, *struct_ptr_reg, parent_type);
