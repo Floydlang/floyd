@@ -60,16 +60,21 @@ QUARK_TEST("", "is_type_tag()", "", ""){
 type_tag_t unpack_type_tag(const std::string& tag){
 	QUARK_ASSERT(is_type_tag(tag));
 
-	std::vector<std::string> path;
-	size_t pos = 0;
-	while(pos != tag.size()){
-		const auto next_pos = tag.find("/", pos + 1);
-		const auto next_pos2 = next_pos == std::string::npos ? tag.size() : next_pos;
-		const auto s = tag.substr(pos + 1, next_pos2 - 1);
-		path.push_back(s);
-		pos = next_pos2;
+	if(tag == "/"){
+		return type_tag_t { } ;
 	}
-	return type_tag_t { path } ;
+	else{
+		std::vector<std::string> path;
+		size_t pos = 0;
+		while(pos != tag.size()){
+			const auto next_pos = tag.find("/", pos + 1);
+			const auto next_pos2 = next_pos == std::string::npos ? tag.size() : next_pos;
+			const auto s = tag.substr(pos + 1, next_pos2 - 1);
+			path.push_back(s);
+			pos = next_pos2;
+		}
+		return type_tag_t { path } ;
+	}
 }
 
 QUARK_TEST("", "pack_type_tag()", "", ""){

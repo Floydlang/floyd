@@ -293,23 +293,23 @@ expression_t::expression_t(const expression_variant_t& contents, const itype_t& 
 
 QUARK_TEST("expression_t", "expression_to_json()", "literals", ""){
 	const type_interner_t interner;
-	ut_verify(QUARK_POS, expression_to_json_string(interner, expression_t::make_literal_int(13)), R"(["k", 13, "^int"])");
+	ut_verify(QUARK_POS, expression_to_json_string(interner, expression_t::make_literal_int(13)), R"(["k", 13, "int"])");
 }
 QUARK_TEST("expression", "expression_to_json()", "literals", ""){
 	const type_interner_t interner;
-	ut_verify(QUARK_POS, expression_to_json_string(interner, expression_t::make_literal_string("xyz")), R"(["k", "xyz", "^string"])");
+	ut_verify(QUARK_POS, expression_to_json_string(interner, expression_t::make_literal_string("xyz")), R"(["k", "xyz", "string"])");
 }
 QUARK_TEST("expression", "expression_to_json()", "literals", ""){
 	const type_interner_t interner;
-	ut_verify(QUARK_POS, expression_to_json_string(interner, expression_t::make_literal_double(14.0f)), R"(["k", 14, "^double"])");
+	ut_verify(QUARK_POS, expression_to_json_string(interner, expression_t::make_literal_double(14.0f)), R"(["k", 14, "double"])");
 }
 QUARK_TEST("expression", "expression_to_json()", "literals", ""){
 	const type_interner_t interner;
-	ut_verify(QUARK_POS, expression_to_json_string(interner, expression_t::make_literal_bool(true)), R"(["k", true, "^bool"])");
+	ut_verify(QUARK_POS, expression_to_json_string(interner, expression_t::make_literal_bool(true)), R"(["k", true, "bool"])");
 }
 QUARK_TEST("expression", "expression_to_json()", "literals", ""){
 	const type_interner_t interner;
-	ut_verify(QUARK_POS, expression_to_json_string(interner, expression_t::make_literal_bool(false)), R"(["k", false, "^bool"])");
+	ut_verify(QUARK_POS, expression_to_json_string(interner, expression_t::make_literal_bool(false)), R"(["k", false, "bool"])");
 }
 
 QUARK_TEST("expression_t", "expression_to_json()", "math2", ""){
@@ -321,7 +321,7 @@ QUARK_TEST("expression_t", "expression_to_json()", "math2", ""){
 			expression_t::make_arithmetic(
 				expression_type::k_arithmetic_add, expression_t::make_literal_int(2), expression_t::make_literal_int(3), itype_t::make_undefined())
 			),
-		R"(["+", ["k", 2, "^int"], ["k", 3, "^int"]])"
+		R"(["+", ["k", 2, "int"], ["k", 3, "int"]])"
 	);
 }
 
@@ -340,7 +340,7 @@ QUARK_TEST("expression_t", "expression_to_json()", "call", ""){
 				itype_t::make_undefined()
 			)
 		),
-		R"(["call", ["@", "my_func"], [["k", "xyz", "^string"], ["k", 123, "^int"]]])"
+		R"(["call", ["@", "my_func"], [["k", "xyz", "string"], ["k", 123, "int"]]])"
 	);
 }
 
@@ -355,7 +355,7 @@ QUARK_TEST("expression_t", "expression_to_json()", "lookup", ""){
 				itype_t::make_undefined()
 			)
 		),
-		R"(["[]", ["@", "hello"], ["k", "xyz", "^string"]])"
+		R"(["[]", ["@", "hello"], ["k", "xyz", "string"]])"
 	);
 }
 
