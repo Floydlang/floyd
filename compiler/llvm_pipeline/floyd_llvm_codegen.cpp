@@ -463,7 +463,7 @@ static typeid_t get_expr_output_type(const llvm_code_generator_t& gen_acc, const
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-#if 0
+#if 1
 	return e.get_output_type();
 #else
 	const auto& interner = gen_acc.type_lookup.state.type_interner;

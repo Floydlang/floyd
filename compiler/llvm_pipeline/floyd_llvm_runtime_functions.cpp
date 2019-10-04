@@ -1056,25 +1056,27 @@ static void floydrt_retain_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_typ
 
 
 
-void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const typeid_t& type){
+void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const typeid_t& type0){
 	QUARK_ASSERT(gen_acc.gen.type_lookup.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(type0.check_invariant());
+
+	const auto type_peek = peek(gen_acc.gen.type_lookup.state.type_interner, type0);
 
 	auto& frp_reg = *gen_acc.get_callers_fcp();
-	auto& itype_reg = *generate_itype_constant(gen_acc.gen, type);
+	auto& itype_reg = *generate_itype_constant(gen_acc.gen, type_peek);
 	auto& builder = gen_acc.get_builder();
 
-	if(is_rc_value(type)){
-		if(type.is_string()){
+	if(is_rc_value(type_peek)){
+		if(type_peek.is_string()){
 			const auto res = resolve_func(gen_acc.gen.link_map, "retain_vector_carray");
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 		}
-		else if(type.is_vector()){
-			if(is_vector_carray(gen_acc.gen.settings.config, type)){
+		else if(type_peek.is_vector()){
+			if(is_vector_carray(gen_acc.gen.settings.config, type_peek)){
 				const auto res = resolve_func(gen_acc.gen.link_map, "retain_vector_carray");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
-			else if(is_vector_hamt(gen_acc.gen.settings.config, type)){
+			else if(is_vector_hamt(gen_acc.gen.settings.config, type_peek)){
 				const auto res = resolve_func(gen_acc.gen.link_map, "retain_vector_hamt");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
@@ -1082,12 +1084,12 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 				QUARK_ASSERT(false);
 			}
 		}
-		else if(type.is_dict()){
-			if(is_dict_cppmap(gen_acc.gen.settings.config, type)){
+		else if(type_peek.is_dict()){
+			if(is_dict_cppmap(gen_acc.gen.settings.config, type_peek)){
 				const auto res = resolve_func(gen_acc.gen.link_map, "retain_dict_cppmap");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
-			else if(is_dict_hamt(gen_acc.gen.settings.config, type)){
+			else if(is_dict_hamt(gen_acc.gen.settings.config, type_peek)){
 				const auto res = resolve_func(gen_acc.gen.link_map, "retain_dict_hamt");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
@@ -1095,11 +1097,11 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 				QUARK_ASSERT(false);
 			}
 		}
-		else if(type.is_json()){
+		else if(type_peek.is_json()){
 			const auto res = resolve_func(gen_acc.gen.link_map, "retain_json");
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 		}
-		else if(type.is_struct()){
+		else if(type_peek.is_struct()){
 			auto generic_vec_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value_reg, get_generic_struct_type_byvalue(gen_acc.gen.type_lookup)->getPointerTo(), "");
 			const auto res = resolve_func(gen_acc.gen.link_map, "retain_struct");
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, generic_vec_reg, &itype_reg }, "");
