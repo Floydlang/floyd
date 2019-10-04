@@ -594,7 +594,7 @@ QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func void()", ""){
 
 	const auto r = map_function_arguments(
 		interner,
-		type_t::make_function(type_t::make_void(), {}, epure::pure)
+		make_function(type_t::make_void(), {}, epure::pure)
 	);
 
 	QUARK_UT_VERIFY(r.return_type != nullptr);
@@ -614,7 +614,7 @@ QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func int()", ""){
 	auto interner = make_basic_interner(context);
 	auto module = std::make_unique<llvm::Module>("test", context);
 
-	const auto r = map_function_arguments(interner, type_t::make_function(type_t::make_int(), {}, epure::pure));
+	const auto r = map_function_arguments(interner, make_function(type_t::make_int(), {}, epure::pure));
 
 	QUARK_UT_VERIFY(r.return_type != nullptr);
 	QUARK_UT_VERIFY(r.return_type->isIntegerTy(64));
@@ -633,7 +633,7 @@ QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""){
 	const auto interner = make_basic_interner(context);
 	auto module = std::make_unique<llvm::Module>("test", context);
 
-	const auto r = map_function_arguments(interner, type_t::make_function(type_t::make_void(), { type_t::make_int() }, epure::pure));
+	const auto r = map_function_arguments(interner, make_function(type_t::make_void(), { type_t::make_int() }, epure::pure));
 
 	QUARK_UT_VERIFY(r.return_type != nullptr);
 	QUARK_UT_VERIFY(r.return_type->isVoidTy());
@@ -659,7 +659,7 @@ QUARK_TEST
 	const auto interner = make_basic_interner(context);
 	auto module = std::make_unique<llvm::Module>("test", context);
 
-	const auto r = map_function_arguments(interner, type_t::make_function(type_t::make_void(), { type_t::make_int(), type_t::make_any(), type_t::make_bool() }, epure::pure));
+	const auto r = map_function_arguments(interner, make_function(type_t::make_void(), { type_t::make_int(), type_t::make_any(), type_t::make_bool() }, epure::pure));
 
 	QUARK_UT_VERIFY(r.return_type != nullptr);
 	QUARK_UT_VERIFY(r.return_type->isVoidTy());

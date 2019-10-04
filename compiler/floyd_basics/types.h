@@ -214,49 +214,6 @@ enum class return_dyn_type {
 //??? store type_variant_t inside type_info_t!
 //??? Name into make_x() vs get_x()
 
-type_t make_struct(type_interner_t& interner, const struct_type_desc_t& def);
-type_t make_struct(const type_interner_t& interner, const struct_type_desc_t& def);
-type_t make_vector(type_interner_t& interner, const type_t& element_type);
-type_t make_vector(const type_interner_t& interner, const type_t& element_type);
-type_t make_dict(type_interner_t& interner, const type_t& value_type);
-type_t make_dict(const type_interner_t& interner, const type_t& value_type);
-
-type_t make_function3(
-	type_interner_t& interner,
-	const type_t& ret,
-	const std::vector<type_t>& args,
-	epure pure,
-	return_dyn_type dyn_return
-);
-
-type_t make_function3(
-	const type_interner_t& interner,
-	const type_t& ret,
-	const std::vector<type_t>& args,
-	epure pure,
-	return_dyn_type dyn_return
-);
-type_t make_function_dyn_return(
-	type_interner_t& interner,
-	const std::vector<type_t>& args,
-	epure pure,
-	return_dyn_type dyn_return
-);
-type_t make_function(
-	type_interner_t& interner,
-	const type_t& ret,
-	const std::vector<type_t>& args,
-	epure pure
-);
-type_t make_function(
-	const type_interner_t& interner,
-	const type_t& ret,
-	const std::vector<type_t>& args,
-	epure pure
-);
-
-type_t make_symbol_ref(type_interner_t& interner, const std::string& s);
-type_t make_named_type(type_interner_t& interner, const type_name_t& type);
 
 
 std::vector<type_t> get_member_types(const std::vector<member_t>& m);
@@ -459,7 +416,6 @@ struct type_t {
 	//////////////////////////////////////////////////		DICT
 
 
-
 	bool is_dict() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -479,42 +435,6 @@ struct type_t {
 	//////////////////////////////////////////////////		FUNCTION
 
 
-	static type_t make_function3(
-		type_interner_t& interner,
-		const type_t& ret,
-		const std::vector<type_t>& args,
-		epure pure,
-		return_dyn_type dyn_return
-	){
-		return floyd::make_function3(interner, ret, args, pure, dyn_return);
-	}
-	
-	static type_t make_function_dyn_return(
-		type_interner_t& interner,
-		const std::vector<type_t>& args,
-		epure pure,
-		return_dyn_type dyn_return
-	){
-		return floyd::make_function_dyn_return(interner, args, pure, dyn_return);
-	}
-
-	static type_t make_function(
-		type_interner_t& interner,
-		const type_t& ret,
-		const std::vector<type_t>& args,
-		epure pure)
-	{
-		return floyd::make_function(interner, ret, args, pure);
-	}
-	static type_t make_function(
-		const type_interner_t& interner,
-		const type_t& ret,
-		const std::vector<type_t>& args,
-		epure pure
-	){
-		return floyd::make_function(interner, ret, args, pure);
-	}
-
 	bool is_function() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -532,10 +452,6 @@ struct type_t {
 	//////////////////////////////////////////////////		SYMBOL
 
 
-	static type_t make_symbol_ref(type_interner_t& interner, const std::string& s){
-		return floyd::make_symbol_ref(interner, s);
-	}
-
 	bool is_symbol_ref() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -547,10 +463,6 @@ struct type_t {
 
 	//////////////////////////////////////////////////		NAMED TYPE
 
-	//??? rethink  make_named_type() VS new_tagged_type()
-	static type_t make_named_type(type_interner_t& interner, const type_name_t& type){
-		return floyd::make_named_type(interner, type);
-	}
 
 	bool is_named_type() const {
 		QUARK_ASSERT(check_invariant());
@@ -665,12 +577,64 @@ inline bool operator==(type_t lhs, type_t rhs){
 }
 inline bool operator!=(type_t lhs, type_t rhs){ return (lhs == rhs) == false; };
 
-inline type_t get_undefined_type(){
+
+
+inline type_t make_undefined(){
 	return type_t::make_undefined();
 }
-inline type_t get_json_type(){
+inline type_t make_json_type(){
 	return type_t::make_json();
 }
+
+type_t make_struct(type_interner_t& interner, const struct_type_desc_t& def);
+type_t make_struct(const type_interner_t& interner, const struct_type_desc_t& def);
+type_t make_vector(type_interner_t& interner, const type_t& element_type);
+type_t make_vector(const type_interner_t& interner, const type_t& element_type);
+type_t make_dict(type_interner_t& interner, const type_t& value_type);
+type_t make_dict(const type_interner_t& interner, const type_t& value_type);
+
+type_t make_function3(
+	type_interner_t& interner,
+	const type_t& ret,
+	const std::vector<type_t>& args,
+	epure pure,
+	return_dyn_type dyn_return
+);
+
+type_t make_function3(
+	const type_interner_t& interner,
+	const type_t& ret,
+	const std::vector<type_t>& args,
+	epure pure,
+	return_dyn_type dyn_return
+);
+type_t make_function_dyn_return(
+	type_interner_t& interner,
+	const std::vector<type_t>& args,
+	epure pure,
+	return_dyn_type dyn_return
+);
+type_t make_function(
+	type_interner_t& interner,
+	const type_t& ret,
+	const std::vector<type_t>& args,
+	epure pure
+);
+type_t make_function(
+	const type_interner_t& interner,
+	const type_t& ret,
+	const std::vector<type_t>& args,
+	epure pure
+);
+
+type_t make_symbol_ref(type_interner_t& interner, const std::string& s);
+
+//??? rethink  make_named_type() VS new_tagged_type()
+type_t make_named_type(type_interner_t& interner, const type_name_t& type);
+
+
+
+
 
 inline bool is_empty(const type_t& type){
 	return type == type_t::make_undefined();

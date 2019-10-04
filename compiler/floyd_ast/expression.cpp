@@ -261,7 +261,7 @@ void trace_function_definition_t(const type_interner_t& interner, const function
 
 QUARK_TEST("", "", "", ""){
 	type_interner_t interner;
-	const auto a = function_definition_t::make_func(k_no_location, "definition_name", type_t::make_function(interner, type_t::make_string(), {}, epure::pure), {}, std::make_shared<body_t>());
+	const auto a = function_definition_t::make_func(k_no_location, "definition_name", make_function(interner, type_t::make_string(), {}, epure::pure), {}, std::make_shared<body_t>());
 	QUARK_UT_VERIFY(a._named_args.empty());
 
 	QUARK_UT_VERIFY(a == a);

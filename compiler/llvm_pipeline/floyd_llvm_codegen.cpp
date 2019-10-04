@@ -1032,7 +1032,7 @@ static type_t calc_resolved_function_type(const llvm_code_generator_t& gen, cons
 
 	if(true) trace_type_interner(interner);
 
-	const auto resolved_call_function_type = type_t::make_function(
+	const auto resolved_call_function_type = make_function(
 		interner,
 		resolved_call_return_type,
 		resolved_call_arguments,

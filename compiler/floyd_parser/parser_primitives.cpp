@@ -361,7 +361,7 @@ std::pair<std::shared_ptr<type_t>, seq_t> read_basic_type(type_interner_t& inter
 		return { std::make_shared<type_t>(type_t::make_json()), pos1.second };
 	}
 	else{
-		return { std::make_shared<type_t>(type_t::make_symbol_ref(interner, pos1.first)), pos1.second };
+		return { std::make_shared<type_t>(make_symbol_ref(interner, pos1.first)), pos1.second };
 	}
 }
 
@@ -508,7 +508,7 @@ static std::pair<std::shared_ptr<type_t>, seq_t> read_optional_trailing_function
 		const auto impure_pos = if_first(skip_whitespace(function_args_pos.second), keyword_t::k_impure);
 
 		const auto pos = function_args_pos.second;
-		const auto function_type = type_t::make_function(interner, type, nameless_args, impure_pos.first ? epure::impure : epure::pure);
+		const auto function_type = make_function(interner, type, nameless_args, impure_pos.first ? epure::impure : epure::pure);
 		const auto result = read_optional_trailing_function_type_args(interner, function_type, pos);
 		return result;
 	}
@@ -562,7 +562,7 @@ QUARK_TEST("", "read_type()", "", ""){
 QUARK_TEST("", "read_type()", "identifier", ""){
 	type_interner_t i;
 	const auto r = read_type(i, seq_t("temp"));
-	QUARK_TEST_VERIFY(*r.first ==  type_t::make_symbol_ref(i, "temp"));
+	QUARK_TEST_VERIFY(*r.first ==  make_symbol_ref(i, "temp"));
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
 QUARK_TEST("", "read_type()", "vector", ""){
@@ -589,23 +589,23 @@ QUARK_TEST("", "read_type()", "dict", ""){
 QUARK_TEST("", "read_type()", "", ""){
 	type_interner_t i;
 	const auto r = read_type(i, seq_t("int ()"));
-	QUARK_TEST_VERIFY(*r.first ==  type_t::make_function(i, type_t::make_int(), {}, epure::pure));
+	QUARK_TEST_VERIFY(*r.first ==  make_function(i, type_t::make_int(), {}, epure::pure));
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
 
 QUARK_TEST("", "read_type()", "", ""){
 	type_interner_t i;
 	const auto r = read_type(i, seq_t("string (double a, double b)"));
-	QUARK_TEST_VERIFY(	*r.first ==  type_t::make_function(i, type_t::make_string(), { type_t::make_double(), type_t::make_double() }, epure::pure)	);
+	QUARK_TEST_VERIFY(	*r.first ==  make_function(i, type_t::make_string(), { type_t::make_double(), type_t::make_double() }, epure::pure)	);
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
 QUARK_TEST("", "read_type()", "", ""){
 	type_interner_t i;
 	const auto r = read_type(i, seq_t("int (double a) ()"));
 
-	QUARK_TEST_VERIFY( *r.first == type_t::make_function(
+	QUARK_TEST_VERIFY( *r.first == make_function(
 		i,
-		type_t::make_function(i, type_t::make_int(), { type_t::make_double() }, epure::pure),
+		make_function(i, type_t::make_int(), { type_t::make_double() }, epure::pure),
 		{},
 		epure::pure
 	));
@@ -618,11 +618,11 @@ QUARK_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(
 		*r.first
 		==
-		type_t::make_function(
+		make_function(
 			i,
 			type_t::make_bool(),
 			{
-				type_t::make_function(i, type_t::make_int(), { type_t::make_double() }, epure::pure)
+				make_function(i, type_t::make_int(), { type_t::make_double() }, epure::pure)
 			},
 			epure::pure
 		)

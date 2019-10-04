@@ -165,7 +165,7 @@ QUARK_TEST("heap_t", "alloc_64()", "", ""){
 
 QUARK_TEST("heap_t", "alloc_64()", "", ""){
 	heap_t heap(false);
-	auto a = alloc_64(heap, 0, get_undefined_type(), "test");
+	auto a = alloc_64(heap, 0, make_undefined(), "test");
 	QUARK_UT_VERIFY(a != nullptr);
 	QUARK_UT_VERIFY(a->check_invariant());
 	QUARK_UT_VERIFY(a->rc == 1);
@@ -179,7 +179,7 @@ QUARK_TEST("heap_t", "alloc_64()", "", ""){
 
 QUARK_TEST("heap_t", "add_ref()", "", ""){
 	heap_t heap(false);
-	auto a = alloc_64(heap, 0, get_undefined_type(), "test");
+	auto a = alloc_64(heap, 0, make_undefined(), "test");
 	add_ref(*a);
 	QUARK_UT_VERIFY(a->rc == 2);
 
@@ -189,7 +189,7 @@ QUARK_TEST("heap_t", "add_ref()", "", ""){
 
 QUARK_TEST("heap_t", "release_ref()", "", ""){
 	heap_t heap(false);
-	auto a = alloc_64(heap, 0, get_undefined_type(), "test");
+	auto a = alloc_64(heap, 0, make_undefined(), "test");
 
 	QUARK_UT_VERIFY(a->rc == 1);
 	release_ref(*a);
@@ -491,7 +491,7 @@ QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
 	heap_t heap(false);
 	detect_leaks(heap);
 
-	auto v = alloc_vector_carray(heap, 3, 3, get_undefined_type());
+	auto v = alloc_vector_carray(heap, 3, 3, make_undefined());
 	QUARK_UT_VERIFY(v.vector_carray_ptr != nullptr);
 
 	if(dec_rc(v.vector_carray_ptr->alloc) == 0){
@@ -582,7 +582,7 @@ runtime_value_t store_immutable(const runtime_value_t& vec0, const uint64_t inde
 	QUARK_ASSERT(index < vec1.get_element_count());
 	auto& heap = *vec1.alloc.heap;
 
-	heap_alloc_64_t* alloc = alloc_64(heap, 0, get_undefined_type(), "vechamt");
+	heap_alloc_64_t* alloc = alloc_64(heap, 0, make_undefined(), "vechamt");
 
 	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
 
@@ -605,7 +605,7 @@ runtime_value_t push_back_immutable(const runtime_value_t& vec0, runtime_value_t
 	const auto& vec1 = *vec0.vector_hamt_ptr;
 	auto& heap = *vec1.alloc.heap;
 
-	heap_alloc_64_t* alloc = alloc_64(heap, 0, get_undefined_type(), "vechamt");
+	heap_alloc_64_t* alloc = alloc_64(heap, 0, make_undefined(), "vechamt");
 	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
 	auto buffer_ptr = reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc->data[0]);
 
@@ -788,7 +788,7 @@ JSON_T* alloc_json(heap_t& heap, const json_t& init){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(init.check_invariant());
 
-	heap_alloc_64_t* alloc = alloc_64(heap, 0, get_json_type(), "JSON");
+	heap_alloc_64_t* alloc = alloc_64(heap, 0, make_json_type(), "JSON");
 
 	auto json = reinterpret_cast<JSON_T*>(alloc);
 	auto copy = new json_t(init);

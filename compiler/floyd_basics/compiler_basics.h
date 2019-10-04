@@ -53,20 +53,20 @@ enum class epod_type {
 
 
 inline type_t get_main_signature_arg_impure(type_interner_t& type_interner){
-	return type_t::make_function(type_interner, type_t::make_int(), { make_vector(type_interner, type_t::make_string()) }, epure::impure);
+	return make_function(type_interner, type_t::make_int(), { make_vector(type_interner, type_t::make_string()) }, epure::impure);
 }
 
 inline type_t get_main_signature_no_arg_impure(type_interner_t& type_interner){
- 	return type_t::make_function(type_interner, type_t::make_int(), { }, epure::impure);
+ 	return make_function(type_interner, type_t::make_int(), { }, epure::impure);
 }
 
 
 inline type_t get_main_signature_arg_pure(type_interner_t& type_interner){
-	return type_t::make_function(type_interner, type_t::make_int(), { make_vector(type_interner, type_t::make_string()) }, epure::pure);
+	return make_function(type_interner, type_t::make_int(), { make_vector(type_interner, type_t::make_string()) }, epure::pure);
 }
 
 inline type_t get_main_signature_no_arg_pure(type_interner_t& type_interner){
-	return type_t::make_function(type_interner, type_t::make_int(), { }, epure::pure);
+	return make_function(type_interner, type_t::make_int(), { }, epure::pure);
 }
 
 //	T x_init() impure
@@ -108,8 +108,8 @@ inline type_t make_benchmark_result_t(type_interner_t& type_interner){
 
 
 inline type_t make_benchmark_function_t(type_interner_t& type_interner){
-//	return type_t::make_function(make_vector(make_benchmark_result_t()), {}, epure::pure);
-	return type_t::make_function(type_interner, make_symbol_ref(type_interner, "benchmark_result_t"), {}, epure::pure);
+//	return make_function(make_vector(make_benchmark_result_t()), {}, epure::pure);
+	return make_function(type_interner, make_symbol_ref(type_interner, "benchmark_result_t"), {}, epure::pure);
 }
 
 inline type_t make_benchmark_def_t(type_interner_t& type_interner){

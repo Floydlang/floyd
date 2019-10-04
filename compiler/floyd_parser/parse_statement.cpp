@@ -454,7 +454,7 @@ std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos){
 		arg_types.push_back(e._type);
 	}
 
-	const auto function_type = type_t::make_function(temp, return_type_pos.first, arg_types, impure_pos.first ? epure::impure : epure::pure);
+	const auto function_type = make_function(temp, return_type_pos.first, arg_types, impure_pos.first ? epure::impure : epure::pure);
 	const auto func_def_expr = make_parser_node(
 		location_t(k_no_location),
 		parse_tree_expression_opcode_t::k_function_def,
@@ -697,7 +697,7 @@ std::pair<json_t, seq_t>  parse_protocol_definition_body(const seq_t& p, const s
 			arg_types.push_back(e._type);
 		}
 		const member_t f = {
-			type_t::make_function(return_type_pos.first, arg_types, epure::pure),
+			make_function(return_type_pos.first, arg_types, epure::pure),
 			function_name_pos.first
 		};
 		functions.push_back(f);

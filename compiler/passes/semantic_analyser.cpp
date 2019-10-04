@@ -453,7 +453,7 @@ static std::pair<analyser_t, fully_resolved_call_t> analyze_resolve_call_type(co
 	for(const auto& e: call_args2){
 		resolved_arg_types.push_back(analyze_expr_output_type(a_acc, e));
 	}
-	const auto resolved_function_type = type_t::make_function(
+	const auto resolved_function_type = make_function(
 		a_acc._types,
 		callee_return_type,
 		resolved_arg_types,
@@ -782,7 +782,7 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 	const auto test_name = statement.name;
 	const auto function_link_name = "benchmark__" + test_name;
 
-	const auto benchmark_def_itype = resolve_and_intern_itype(a_acc, k_no_location, type_t::make_symbol_ref(a_acc._types, "benchmark_def"));
+	const auto benchmark_def_itype = resolve_and_intern_itype(a_acc, k_no_location, make_symbol_ref(a_acc._types, "benchmark_def"));
 //	const auto benchmark_result_itype = resolve_and_intern_itype(a_acc, k_no_location, type_t::make_identifier("benchmark_result"));
 	const auto f_itype = resolve_and_intern_itype(a_acc, k_no_location, make_benchmark_function_t(a_acc._types));
 
@@ -1006,7 +1006,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 			const auto callee_return_type = collection_type0;
 
 			const auto resolved_arg_types = { collection_type0, type_t::make_int(), new_value_type  };
-			const auto resolved_function_type = type_t::make_function(
+			const auto resolved_function_type = make_function(
 				a_acc._types,
 				callee_return_type,
 				resolved_arg_types,
@@ -1743,7 +1743,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 	}
 	else if(type_peek.is_struct()){
 		const auto& def = type_peek.get_struct(a_acc._types);
-		const auto f_type = type_t::make_function(a_acc._types, type0, get_member_types(def._members), epure::pure);
+		const auto f_type = make_function(a_acc._types, type0, get_member_types(def._members), epure::pure);
 		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, details.elements, f_type);
 		a_acc = resolved_call.first;
 		return { a_acc, expression_t::make_construct_value_expr(type0, resolved_call.second.args) };
@@ -1754,7 +1754,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			what << "Construct value of primitive type requires exactly 1 argument.";
 			throw_compiler_error(parent.location, what.str());
 		}
-		const auto struct_constructor_callee_type = type_t::make_function(a_acc._types, type0, { type0 }, epure::pure);
+		const auto struct_constructor_callee_type = make_function(a_acc._types, type0, { type0 }, epure::pure);
 		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, details.elements, struct_constructor_callee_type);
 		a_acc = resolved_call.first;
 		return { a_acc, expression_t::make_construct_value_expr(type0, resolved_call.second.args) };
@@ -2669,7 +2669,7 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 
 	//	Reserve a symbol table entry for benchmark_registry instance.
 	{
-		const auto benchmark_registry_type = make_vector(a._types, type_t::make_symbol_ref(a._types, "benchmark_def_t"));
+		const auto benchmark_registry_type = make_vector(a._types, make_symbol_ref(a._types, "benchmark_def_t"));
 		symbol_map.push_back( {
 			k_global_benchmark_registry,
 			symbol_t::make_immutable_reserve(
