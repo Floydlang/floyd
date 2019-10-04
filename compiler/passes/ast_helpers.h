@@ -19,7 +19,7 @@ struct function_definition_t;
 struct expression_t;
 struct statement_t;
 struct body_t;
-struct itype_t;
+struct type_t;
 struct ast_type_t;
 struct type_interner_t;
 struct struct_def_itype_t;
@@ -41,12 +41,12 @@ bool check_types_resolved(const type_interner_t& interner, const statement_t& s)
 bool check_types_resolved(const type_interner_t& interner, const std::vector<std::shared_ptr<statement_t>>& s);
 
 bool check_types_resolved(const type_interner_t& interner, const struct_def_itype_t& s);
-bool check_types_resolved(const type_interner_t& interner, const itype_t& t);
+bool check_types_resolved(const type_interner_t& interner, const type_t& t);
 
 bool check_types_resolved(const type_interner_t& interner);
 bool check_types_resolved(const general_purpose_ast_t& ast);
 
-bool check_types_resolved__type_vector(const type_interner_t& interner, const std::vector<itype_t>& elements);
+bool check_types_resolved__type_vector(const type_interner_t& interner, const std::vector<type_t>& elements);
 
 
 }	//	floyd

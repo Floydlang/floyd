@@ -21,7 +21,7 @@ runtime_value_t alloc_carray_8bit(value_backend_t& backend, const uint8_t data[]
 	QUARK_ASSERT(data != nullptr || count == 0);
 
 	const auto allocation_count = size_to_allocation_blocks(count);
-	auto result = alloc_vector_carray(backend.heap, allocation_count, count, itype_t::make_string());
+	auto result = alloc_vector_carray(backend.heap, allocation_count, count, type_t::make_string());
 
 	size_t char_pos = 0;
 	int element_index = 0;
@@ -135,7 +135,7 @@ static runtime_value_t to_runtime_struct(value_backend_t& backend, const struct_
 	return make_runtime_struct(s);
 }
 
-static value_t from_runtime_struct(const value_backend_t& backend, const runtime_value_t encoded_value, const itype_t& type){
+static value_t from_runtime_struct(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(encoded_value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -196,7 +196,7 @@ static runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t
 	}
 }
 
-static value_t from_runtime_vector(const value_backend_t& backend, const runtime_value_t encoded_value, const itype_t& type){
+static value_t from_runtime_vector(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(encoded_value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -276,7 +276,7 @@ static runtime_value_t to_runtime_dict(value_backend_t& backend, const dict_t& e
 	}
 }
 
-static value_t from_runtime_dict(const value_backend_t& backend, const runtime_value_t encoded_value, const itype_t& type){
+static value_t from_runtime_dict(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(encoded_value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -412,7 +412,7 @@ static link_name_t native_func_ptr_to_link_name(const value_backend_t& backend, 
 	}
 }
 
-value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_t encoded_value, const itype_t& type){
+value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(encoded_value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -420,7 +420,7 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 	struct visitor_t {
 		const value_backend_t& backend;
 		const runtime_value_t& encoded_value;
-		const itype_t& type;
+		const type_t& type;
 
 		value_t operator()(const undefined_t& e) const{
 			UNSUPPORTED();

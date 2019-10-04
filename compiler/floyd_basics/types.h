@@ -75,10 +75,11 @@ namespace floyd {
 struct member_t;
 struct struct_def_itype_t;
 struct type_interner_t;
-struct itype_t;
+struct type_t;
 
 
-#define typeid_t itype_t
+#define typeid_t type_t
+#define itype_t type_t
 
 
 
@@ -266,7 +267,7 @@ std::vector<itype_t> get_member_types(const std::vector<member_t>& m);
 	(bt0 * 100 + bt1) * 10.000.000
 */
 
-struct itype_t {
+struct type_t {
 	itype_t() :
 		itype_t(assemble((type_lookup_index_t)base_type::k_undefined, base_type::k_undefined, base_type::k_undefined))
 	{

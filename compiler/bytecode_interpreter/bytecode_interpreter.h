@@ -42,7 +42,7 @@
 
 namespace floyd {
 
-struct itype_t;
+struct type_t;
 struct type_interner_t;
 
 struct interpreter_t;

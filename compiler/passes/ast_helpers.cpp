@@ -11,6 +11,7 @@
 #include "ast.h"
 #include "expression.h"
 #include "statement.h"
+#include "types.h"
 
 
 
@@ -292,7 +293,7 @@ bool check_types_resolved(const type_interner_t& interner, const struct_def_ityp
 }
 
 
-bool check_types_resolved__type_vector(const type_interner_t& interner, const std::vector<itype_t>& elements){
+bool check_types_resolved__type_vector(const type_interner_t& interner, const std::vector<type_t>& elements){
 	QUARK_ASSERT(interner.check_invariant());
 
 	for(const auto& e: elements){
@@ -303,7 +304,7 @@ bool check_types_resolved__type_vector(const type_interner_t& interner, const st
 	return true;
 }
 
-bool check_types_resolved(const type_interner_t& interner, const itype_t& t){
+bool check_types_resolved(const type_interner_t& interner, const type_t& t){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(t.check_invariant());
 

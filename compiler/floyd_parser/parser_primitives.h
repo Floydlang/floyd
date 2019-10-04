@@ -25,7 +25,7 @@
 namespace floyd {
 
 struct value_t;
-struct itype_t;
+struct type_t;
 struct location_t;
 struct member_t;
 struct type_interner_t;
@@ -104,8 +104,8 @@ std::pair<std::string, seq_t> read_required_identifier(const seq_t& s);
 	Does NOT make sure this a known type-identifier.
 	String must not be empty.
 */
-std::pair<std::shared_ptr<itype_t>, seq_t> read_type(type_interner_t& interner, const seq_t& s);
-std::pair<itype_t, seq_t> read_required_type(type_interner_t& interner, const seq_t& s);
+std::pair<std::shared_ptr<type_t>, seq_t> read_type(type_interner_t& interner, const seq_t& s);
+std::pair<type_t, seq_t> read_required_type(type_interner_t& interner, const seq_t& s);
 
 
 ////////////////////////////////		HIGH LEVEL

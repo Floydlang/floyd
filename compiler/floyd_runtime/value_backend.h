@@ -64,7 +64,7 @@ namespace floyd {
 ////////////////////////////////	FORWARD DECL
 
 
-struct itype_t;
+struct type_t;
 struct heap_alloc_64_t;
 
 

@@ -503,12 +503,12 @@ static std::pair<std::shared_ptr<typeid_t>, seq_t> read_optional_trailing_functi
 	const auto more_pos = skip_whitespace(s);
 	if(more_pos.first1() == "("){
 		const auto function_args_pos = read_function_type_args(interner, more_pos);
-		std::vector<itype_t> nameless_args = get_member_types(function_args_pos.first);
+		std::vector<type_t> nameless_args = get_member_types(function_args_pos.first);
 
 		const auto impure_pos = if_first(skip_whitespace(function_args_pos.second), keyword_t::k_impure);
 
 		const auto pos = function_args_pos.second;
-		const auto function_type = itype_t::make_function(interner, type, nameless_args, impure_pos.first ? epure::impure : epure::pure);
+		const auto function_type = type_t::make_function(interner, type, nameless_args, impure_pos.first ? epure::impure : epure::pure);
 		const auto result = read_optional_trailing_function_type_args(interner, function_type, pos);
 		return result;
 	}
