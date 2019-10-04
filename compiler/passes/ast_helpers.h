@@ -22,7 +22,7 @@ struct body_t;
 struct type_t;
 struct ast_type_t;
 struct type_interner_t;
-struct struct_def_type_t;
+struct struct_type_desc_t;
 
 /*
 	All types can be resolved in type_interner (or defect)
@@ -39,7 +39,7 @@ bool check_types_resolved(const type_interner_t& interner, const body_t& body);
 bool check_types_resolved(const type_interner_t& interner, const statement_t& s);
 bool check_types_resolved(const type_interner_t& interner, const std::vector<std::shared_ptr<statement_t>>& s);
 
-bool check_types_resolved(const type_interner_t& interner, const struct_def_type_t& s);
+bool check_types_resolved(const type_interner_t& interner, const struct_type_desc_t& s);
 bool check_types_resolved(const type_interner_t& interner, const type_t& t);
 
 bool check_types_resolved(const type_interner_t& interner);

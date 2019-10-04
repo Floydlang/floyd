@@ -1140,7 +1140,7 @@ static type_t typeid_from_json0(const json_t& t){
 			const auto member_array = struct_def_array[0].get_array();
 
 			const std::vector<member_t> struct_members = members_from_json(member_array);
-			return type_t::make_struct(struct_def_type_t { struct_members });
+			return type_t::make_struct(struct_type_desc_t { struct_members });
 		}
 		else if(s == "vector"){
 			const auto element_type = typeid_from_ast_json(a[1]);
@@ -1451,7 +1451,7 @@ type_t type_t::get_dict_value_type(const type_interner_t& interner) const{
 
 
 
-struct_def_type_t type_t::get_struct(const type_interner_t& interner) const{
+struct_type_desc_t type_t::get_struct(const type_interner_t& interner) const{
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(is_struct());
@@ -1519,7 +1519,7 @@ type_name_t type_t::get_named_type(const type_interner_t& interner) const {
 
 
 
-int find_struct_member_index(const struct_def_type_t& def, const std::string& name){
+int find_struct_member_index(const struct_type_desc_t& def, const std::string& name){
 	int index = 0;
 	while(index < def._members.size() && def._members[index]._name != name){
 		index++;
@@ -1849,7 +1849,7 @@ json_t type_to_json_shallow(const type_t& type){
 	return json_t(s);
 }
 
-static json_t struct_definition_to_json(const type_interner_t& interner, const struct_def_type_t& v){
+static json_t struct_definition_to_json(const type_interner_t& interner, const struct_type_desc_t& v){
 	QUARK_ASSERT(v.check_invariant());
 
 	return json_t::make_array({
@@ -2207,7 +2207,7 @@ std::string type_to_compact_string(const type_interner_t& interner, const type_t
 }
 
 
-type_t make_struct(type_interner_t& interner, const struct_def_type_t& struct_def){
+type_t make_struct(type_interner_t& interner, const struct_type_desc_t& struct_def){
 	const auto node = type_node_t{
 		make_empty_type_name(),
 		base_type::k_struct,
@@ -2220,7 +2220,7 @@ type_t make_struct(type_interner_t& interner, const struct_def_type_t& struct_de
 	return intern_node(interner, node);
 }
 
-type_t make_struct(const type_interner_t& interner, const struct_def_type_t& struct_def){
+type_t make_struct(const type_interner_t& interner, const struct_type_desc_t& struct_def){
 	const auto node = type_node_t{
 		make_empty_type_name(),
 		base_type::k_struct,

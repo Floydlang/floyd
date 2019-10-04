@@ -839,7 +839,7 @@ std::vector<value_t> directory_entries_to_values(type_interner_t& type_interner,
 type_t make__fsentry_t__type(type_interner_t& type_interner){
 	const auto temp = make_struct(
 		type_interner,
-		struct_def_type_t({
+		struct_type_desc_t({
 			{ type_t::make_string(), "type" },
 			{ type_t::make_string(), "abs_parent_path" },
 			{ type_t::make_string(), "name" }
@@ -862,7 +862,7 @@ type_t make__fsentry_t__type(type_interner_t& type_interner){
 type_t make__fsentry_info_t__type(type_interner_t& type_interner){
 	const auto temp = make_struct(
 		type_interner,
-		struct_def_type_t({
+		struct_type_desc_t({
 			{ type_t::make_string(), "type" },
 			{ type_t::make_string(), "name" },
 			{ type_t::make_string(), "abs_parent_path" },
@@ -881,7 +881,7 @@ type_t make__fsentry_info_t__type(type_interner_t& type_interner){
 type_t make__fs_environment_t__type(type_interner_t& type_interner){
 	const auto temp = make_struct(
 		type_interner,
-		struct_def_type_t({
+		struct_type_desc_t({
 			{ type_t::make_string(), "home_dir" },
 			{ type_t::make_string(), "documents_dir" },
 			{ type_t::make_string(), "desktop_dir" },
@@ -906,7 +906,7 @@ type_t make__fs_environment_t__type(type_interner_t& type_interner){
 type_t make__date_t__type(type_interner_t& type_interner){
 	const auto temp = make_struct(
 		type_interner,
-		struct_def_type_t({
+		struct_type_desc_t({
 			{ type_t::make_string(), "utd_date" }
 		})
 	);
@@ -916,7 +916,7 @@ type_t make__date_t__type(type_interner_t& type_interner){
 type_t make__sha1_t__type(type_interner_t& type_interner){
 	const auto temp = make_struct(
 		type_interner,
-		struct_def_type_t({
+		struct_type_desc_t({
 			{ type_t::make_string(), "ascii40" }
 		})
 	);
@@ -926,7 +926,7 @@ type_t make__sha1_t__type(type_interner_t& type_interner){
 type_t make__binary_t__type(type_interner_t& type_interner){
 	const auto temp = make_struct(
 		type_interner,
-		struct_def_type_t({
+		struct_type_desc_t({
 			{ type_t::make_string(), "bytes" }
 		})
 	);
@@ -941,7 +941,7 @@ type_t make__binary_t__type(type_interner_t& type_interner){
 type_t make__absolute_path_t__type(type_interner_t& type_interner){
 	const auto temp = make_struct(
 		type_interner,
-		struct_def_type_t({
+		struct_type_desc_t({
 			{ type_t::make_string(), "absolute_path" }
 		})
 	);
@@ -956,7 +956,7 @@ type_t make__absolute_path_t__type(type_interner_t& type_interner){
 type_t make__file_pos_t__type(type_interner_t& type_interner){
 	const auto temp = make_struct(
 		type_interner,
-		struct_def_type_t({
+		struct_type_desc_t({
 			{ type_t::make_int(), "pos" }
 		})
 	);

@@ -5198,7 +5198,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "point_t", ""){
 	};
 	const auto expected = value_t::make_struct_value(
 		temp,
-		make_struct(temp, struct_def_type_t(point_t_def)),
+		make_struct(temp, struct_type_desc_t(point_t_def)),
 		{ value_t::make_double(1), value_t::make_double(3) }
 	);
 
@@ -6066,7 +6066,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "", "pixel_t()", ""){
 
 		value_t::make_struct_value(
 			temp,
-			make_struct(temp, struct_def_type_t(pixel_t__def)),
+			make_struct(temp, struct_type_desc_t(pixel_t__def)),
 			std::vector<value_t>{ value_t::make_int(1), value_t::make_int(2), value_t::make_int(3) }
 		)
 	);

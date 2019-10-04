@@ -280,7 +280,7 @@ bool check_types_resolved(const type_interner_t& interner, const statement_t& s)
 }
 
 
-bool check_types_resolved(const type_interner_t& interner, const struct_def_type_t& s){
+bool check_types_resolved(const type_interner_t& interner, const struct_type_desc_t& s){
 	QUARK_ASSERT(s.check_invariant());
 
 	for(const auto& e: s._members){

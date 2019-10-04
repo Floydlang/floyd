@@ -95,7 +95,7 @@ inline bool operator==(const benchmark_result_t& lhs, const benchmark_result_t& 
 inline type_t make_benchmark_result_t(type_interner_t& type_interner){
 	const auto x = make_struct(
 		type_interner,
-		struct_def_type_t({
+		struct_type_desc_t({
 			member_t{ type_t::make_int(), "dur" },
 			member_t{ type_t::make_json(), "more" }
 		})
@@ -115,7 +115,7 @@ inline type_t make_benchmark_function_t(type_interner_t& type_interner){
 inline type_t make_benchmark_def_t(type_interner_t& type_interner){
 	const auto x = make_struct(
 		type_interner,
-		struct_def_type_t({
+		struct_type_desc_t({
 			member_t{ type_t::make_string(), "name" },
 			member_t{ make_benchmark_function_t(type_interner), "f" }
 		})
@@ -137,7 +137,7 @@ inline bool operator==(const benchmark_id_t& lhs, const benchmark_id_t& rhs){
 inline type_t make_benchmark_id_t(type_interner_t& type_interner){
 	const auto x = make_struct(
 		type_interner,
-		struct_def_type_t({
+		struct_type_desc_t({
 			member_t{ type_t::make_string(), "module" },
 			member_t{ type_t::make_string(), "test" }
 		})
@@ -161,7 +161,7 @@ inline bool operator==(const benchmark_result2_t& lhs, const benchmark_result2_t
 inline type_t make_benchmark_result2_t(type_interner_t& type_interner){
 	const auto x = make_struct(
 		type_interner,
-		struct_def_type_t({
+		struct_type_desc_t({
 			member_t{ make_benchmark_id_t(type_interner), "test_id" },
 			member_t{ make_symbol_ref(type_interner, "benchmark_result_t"), "result" }
 			})

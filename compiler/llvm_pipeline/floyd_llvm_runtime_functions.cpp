@@ -681,7 +681,7 @@ llvm::Value* generate_load_struct_member(llvm_function_generator_t& gen_acc, llv
 
 
 
-static bool is_struct_pod(const struct_def_type_t& struct_def){
+static bool is_struct_pod(const struct_type_desc_t& struct_def){
 	QUARK_ASSERT(struct_def.check_invariant());
 
 	for(const auto& e: struct_def._members){

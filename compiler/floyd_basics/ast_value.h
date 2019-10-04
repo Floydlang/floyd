@@ -114,7 +114,7 @@ const function_id_t k_no_function_id = function_id_t { "" };
 	An instance of a struct-type = a value of this struct.
 */
 struct struct_value_t {
-	public: struct_value_t(const struct_def_type_t& def, const std::vector<value_t>& member_values) :
+	public: struct_value_t(const struct_type_desc_t& def, const std::vector<value_t>& member_values) :
 		_def(def),
 		_member_values(member_values)
 	{
@@ -127,7 +127,7 @@ struct struct_value_t {
 
 
 	////////////////////////////////////////		STATE
-	public: struct_def_type_t _def;
+	public: struct_type_desc_t _def;
 	public: std::vector<value_t> _member_values;
 };
 

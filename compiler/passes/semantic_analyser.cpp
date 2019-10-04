@@ -245,7 +245,7 @@ static type_t resolve_symbols(analyser_t& acc, const location_t& loc, const type
 			for(const auto& m: e.def._members){
 				members2.push_back(member_t { resolve_symbols(acc, loc, m._type), m._name } );
 			}
-			return make_struct(acc._types, struct_def_type_t(members2));
+			return make_struct(acc._types, struct_type_desc_t(members2));
 		}
 		type_t operator()(const vector_t& e) const{
 			return make_vector(acc._types, resolve_symbols(acc, loc, type.get_vector_element_type(acc._types)));
@@ -2299,7 +2299,7 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 	for(const auto& m: details.def->_members){
 		members2.push_back(member_t{ resolve_and_intern_itype(a_acc, parent.location, m._type), m._name } );
 	}
-	const auto struct_type1 = make_struct(a_acc._types, struct_def_type_t{ members2 } );
+	const auto struct_type1 = make_struct(a_acc._types, struct_type_desc_t{ members2 } );
 
 	//	Update our temporary.
 	const auto named_type2 = update_tagged_type(a_acc._types, named_type, struct_type1);

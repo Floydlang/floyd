@@ -661,7 +661,7 @@ expression_t ast_json_to_expression(type_interner_t& interner, const json_t& e){
 
 		const auto struct_name = e.get_array_n(1).get_string();
 		const auto members = members_from_json(interner, e.get_array_n(2));
-		auto def = std::make_shared<struct_def_type_t>(members);
+		auto def = std::make_shared<struct_type_desc_t>(members);
 		return expression_t::make_struct_definition(interner, struct_name, def);
 	}
 	else if(op == expression_opcode_t::k_function_def){

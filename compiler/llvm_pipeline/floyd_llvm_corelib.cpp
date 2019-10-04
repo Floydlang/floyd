@@ -115,7 +115,7 @@ static STRUCT_T* llvm_corelib__calc_string_sha1(floyd_runtime_t* frp, runtime_va
 
 	const auto a = value_t::make_struct_value(
 		interner,
-		make_struct(interner, struct_def_type_t({ member_t{ type_t::make_string(), "ascii40" } }) ),
+		make_struct(interner, struct_type_desc_t({ member_t{ type_t::make_string(), "ascii40" } }) ),
 		{ value_t::make_string(ascii40) }
 	);
 
@@ -135,7 +135,7 @@ static STRUCT_T* llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* 
 
 	const auto a = value_t::make_struct_value(
 		interner,
-		make_struct(interner, struct_def_type_t({ member_t{ type_t::make_string(), "ascii40" } })),
+		make_struct(interner, struct_type_desc_t({ member_t{ type_t::make_string(), "ascii40" } })),
 		{ value_t::make_string(ascii40) }
 	);
 

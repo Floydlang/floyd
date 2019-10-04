@@ -48,7 +48,7 @@ int (double, [string])			k_function								["function", "int", ["double", ["vect
 randomize_player			k_identifier		["identifier", "randomize_player"]
 
 
-AST JSON ??? rename to just "json".
+AST JSON
 This is the JSON format we use to pass AST around. Use typeid_to_ast_json() and typeid_from_ast_json().
 
 COMPACT_STRING
@@ -75,8 +75,8 @@ struct json_t;
 namespace floyd {
 
 struct member_t;
-struct struct_def_type_t;
-struct type_interner_t;
+struct struct_type_desc_t;
+struct type_interner_t;//??? rename to types_t
 struct type_t;
 
 //////////////////////////////////////		base_type
@@ -198,11 +198,9 @@ inline bool is_empty_type_name(const type_name_t& n){
 
 
 
-
 typedef int32_t type_lookup_index_t;
 
 
-//??? Should not need to store dyn-type inside function types anymore, confirm and remove from here.
 enum class return_dyn_type {
 	none = 0,
 	arg0 = 1,
@@ -212,12 +210,12 @@ enum class return_dyn_type {
 	vector_of_arg2func_return = 5
 };
 
-//??? store type_variant_t inside type_info_t!
-//??? struct_def_type_t => struct_type_t
 
+//??? store type_variant_t inside type_info_t!
 //??? Name into make_x() vs get_x()
-type_t make_struct(type_interner_t& interner, const struct_def_type_t& def);
-type_t make_struct(const type_interner_t& interner, const struct_def_type_t& def);
+
+type_t make_struct(type_interner_t& interner, const struct_type_desc_t& def);
+type_t make_struct(const type_interner_t& interner, const struct_type_desc_t& def);
 type_t make_vector(type_interner_t& interner, const type_t& element_type);
 type_t make_vector(const type_interner_t& interner, const type_t& element_type);
 type_t make_dict(type_interner_t& interner, const type_t& value_type);
@@ -434,7 +432,7 @@ struct type_t {
 		return get_base_type() == base_type::k_struct;
 	}
 
-	struct_def_type_t get_struct(const type_interner_t& interner) const;
+	struct_type_desc_t get_struct(const type_interner_t& interner) const;
 
 
 
@@ -549,7 +547,7 @@ struct type_t {
 
 	//////////////////////////////////////////////////		NAMED TYPE
 
-//??? rethink  make_named_type() VS new_tagged_type()
+	//??? rethink  make_named_type() VS new_tagged_type()
 	static type_t make_named_type(type_interner_t& interner, const type_name_t& type){
 		return floyd::make_named_type(interner, type);
 	}
@@ -722,19 +720,17 @@ inline bool operator==(const member_t& lhs, const member_t& rhs){
 
 
 
-//////////////////////////////////////////////////		struct_def_type_t
-
-//??? This struct should be *separate* from the actual struct_definition_t.
-//??? Rename struct_type_description_t
+//////////////////////////////////////////////////		struct_type_desc_t
 
 
-struct struct_def_type_t {
-	struct_def_type_t(const std::vector<member_t>& members) :
+
+struct struct_type_desc_t {
+	struct_type_desc_t(const std::vector<member_t>& members) :
 		_members(members)
 	{
 		QUARK_ASSERT(check_invariant());
 	}
-	struct_def_type_t(){
+	struct_type_desc_t(){
 		QUARK_ASSERT(check_invariant());
 	}
 
@@ -745,11 +741,11 @@ struct struct_def_type_t {
 	std::vector<member_t> _members;
 };
 
-inline bool operator==(const struct_def_type_t& lhs, const struct_def_type_t& rhs){
+inline bool operator==(const struct_type_desc_t& lhs, const struct_type_desc_t& rhs){
 	return lhs._members == rhs._members;
 }
 
-int find_struct_member_index(const struct_def_type_t& def, const std::string& name);
+int find_struct_member_index(const struct_type_desc_t& def, const std::string& name);
 
 json_t members_to_json(const type_interner_t& interner, const std::vector<member_t>& members);
 std::vector<member_t> members_from_json(type_interner_t& interner, const json_t& members);
@@ -774,7 +770,7 @@ struct type_node_t {
 	std::vector<type_t> child_types;
 
 
-	struct_def_type_t struct_def;
+	struct_type_desc_t struct_def;
 
 	//	Only used when bt == k_function.
 	epure func_pure;
@@ -873,7 +869,7 @@ struct json_type_t {};
 struct typeid_type_t {};
 
 struct struct_t {
-	struct_def_type_t def;
+	struct_type_desc_t def;
 };
 struct vector_t {
 	std::vector<type_t> _parts;

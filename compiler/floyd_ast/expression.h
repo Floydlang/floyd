@@ -22,7 +22,7 @@
 
 namespace floyd {
 
-struct struct_def_type_t;
+struct struct_type_desc_t;
 
 bool is_floyd_literal(const type_t& type);
 
@@ -397,10 +397,10 @@ struct expression_t {
 
 	struct struct_definition_expr_t {
 		std::string name;
-		std::shared_ptr<const struct_def_type_t> def;
+		std::shared_ptr<const struct_type_desc_t> def;
 	};
 
-	public: static expression_t make_struct_definition(type_interner_t& interner, const std::string& name, const std::shared_ptr<const struct_def_type_t>& def){
+	public: static expression_t make_struct_definition(type_interner_t& interner, const std::string& name, const std::shared_ptr<const struct_type_desc_t>& def){
 		return expression_t({ struct_definition_expr_t{ name, def } }, make_struct(interner, *def));
 	}
 
