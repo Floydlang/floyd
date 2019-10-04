@@ -368,7 +368,7 @@ bool check_types_resolved(const types_t& types, const type_t& t){
 bool check_types_resolved(const types_t& types){
 	QUARK_ASSERT(types.check_invariant());
 
-	for(auto index = 0 ; index < types.interned2.size() ; index++){
+	for(auto index = 0 ; index < types.nodes.size() ; index++){
 	}
 
 	return true;

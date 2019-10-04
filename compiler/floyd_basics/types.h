@@ -777,8 +777,7 @@ struct types_t {
 
 	//	All types are recorded here, an uniqued. Including named types.
 	//	type uses the INDEX into this array for fast lookups.
-	//??? renameto "nodes"
-	std::vector<type_node_t> interned2;
+	std::vector<type_node_t> nodes;
 };
 
 

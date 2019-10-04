@@ -2397,7 +2397,7 @@ interpreter_t::interpreter_t(const bc_program_t& program, runtime_handler_i* han
 
 //	trace_types(program._types);
 //	trace_types(temp_types);
-	QUARK_ASSERT(temp_types.interned2.size() == program._types.interned2.size());
+	QUARK_ASSERT(temp_types.nodes.size() == program._types.nodes.size());
 
 	const auto corelib_calls = bc_get_corelib_calls();
 	auto host_functions = intrinsics;

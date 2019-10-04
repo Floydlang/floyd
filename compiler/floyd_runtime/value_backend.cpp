@@ -1037,7 +1037,7 @@ value_backend_t::value_backend_t(
 {
 	QUARK_ASSERT(config.check_invariant());
 
-	for(type_lookup_index_t i = 0 ; i < types.interned2.size() ; i++){
+	for(type_lookup_index_t i = 0 ; i < types.nodes.size() ; i++){
 		const auto itype0 = lookup_type_from_index(types, i);
 		if(itype0.is_vector()){
 			const auto& itype = itype0.get_vector_element_type(types);

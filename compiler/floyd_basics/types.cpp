@@ -1315,7 +1315,7 @@ void ut_verify(const quark::call_context_t& context, const type_t& result, const
 
 static type_t lookup_type_from_index_it(const types_t& types, size_t type_index){
 	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(type_index >= 0 && type_index < types.interned2.size());
+	QUARK_ASSERT(type_index >= 0 && type_index < types.nodes.size());
 
 	return lookup_type_from_index(types, static_cast<type_lookup_index_t>(type_index));
 }
@@ -1552,54 +1552,54 @@ static type_node_t make_entry(const base_type& bt){
 }
 
 types_t::types_t(){
-	//	Order is designed to match up the interned2[] with base_type indexes.
-	interned2.push_back(make_entry(base_type::k_undefined));
-	interned2.push_back(make_entry(base_type::k_any));
-	interned2.push_back(make_entry(base_type::k_void));
+	//	Order is designed to match up the nodes[] with base_type indexes.
+	nodes.push_back(make_entry(base_type::k_undefined));
+	nodes.push_back(make_entry(base_type::k_any));
+	nodes.push_back(make_entry(base_type::k_void));
 
 
-	interned2.push_back(make_entry(base_type::k_bool));
-	interned2.push_back(make_entry(base_type::k_int));
-	interned2.push_back(make_entry(base_type::k_double));
-	interned2.push_back(make_entry(base_type::k_string));
-	interned2.push_back(make_entry(base_type::k_json));
+	nodes.push_back(make_entry(base_type::k_bool));
+	nodes.push_back(make_entry(base_type::k_int));
+	nodes.push_back(make_entry(base_type::k_double));
+	nodes.push_back(make_entry(base_type::k_string));
+	nodes.push_back(make_entry(base_type::k_json));
 
-	interned2.push_back(make_entry(base_type::k_typeid));
+	nodes.push_back(make_entry(base_type::k_typeid));
 
-	//	These are complex types and are undefined. We need them to take up space in the interned2-vector.
-	interned2.push_back(make_entry(base_type::k_undefined));
-	interned2.push_back(make_entry(base_type::k_undefined));
-	interned2.push_back(make_entry(base_type::k_undefined));
-	interned2.push_back(make_entry(base_type::k_undefined));
+	//	These are complex types and are undefined. We need them to take up space in the nodes-vector.
+	nodes.push_back(make_entry(base_type::k_undefined));
+	nodes.push_back(make_entry(base_type::k_undefined));
+	nodes.push_back(make_entry(base_type::k_undefined));
+	nodes.push_back(make_entry(base_type::k_undefined));
 
-	interned2.push_back(make_entry(base_type::k_symbol_ref));
-	interned2.push_back(make_entry(base_type::k_undefined));
+	nodes.push_back(make_entry(base_type::k_symbol_ref));
+	nodes.push_back(make_entry(base_type::k_undefined));
 
 	QUARK_ASSERT(check_invariant());
 }
 
 bool types_t::check_invariant() const {
-	QUARK_ASSERT(interned2.size() < INT_MAX);
+	QUARK_ASSERT(nodes.size() < INT_MAX);
 
-	QUARK_ASSERT(interned2[(type_lookup_index_t)base_type::k_undefined] == make_entry(base_type::k_undefined));
-	QUARK_ASSERT(interned2[(type_lookup_index_t)base_type::k_any] == make_entry(base_type::k_any));
-	QUARK_ASSERT(interned2[(type_lookup_index_t)base_type::k_void] == make_entry(base_type::k_void));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_undefined] == make_entry(base_type::k_undefined));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_any] == make_entry(base_type::k_any));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_void] == make_entry(base_type::k_void));
 
-	QUARK_ASSERT(interned2[(type_lookup_index_t)base_type::k_bool] == make_entry(base_type::k_bool));
-	QUARK_ASSERT(interned2[(type_lookup_index_t)base_type::k_int] == make_entry(base_type::k_int));
-	QUARK_ASSERT(interned2[(type_lookup_index_t)base_type::k_double] == make_entry(base_type::k_double));
-	QUARK_ASSERT(interned2[(type_lookup_index_t)base_type::k_string] == make_entry(base_type::k_string));
-	QUARK_ASSERT(interned2[(type_lookup_index_t)base_type::k_json] == make_entry(base_type::k_json));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_bool] == make_entry(base_type::k_bool));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_int] == make_entry(base_type::k_int));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_double] == make_entry(base_type::k_double));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_string] == make_entry(base_type::k_string));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_json] == make_entry(base_type::k_json));
 
-	QUARK_ASSERT(interned2[(type_lookup_index_t)base_type::k_typeid] == make_entry(base_type::k_typeid));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_typeid] == make_entry(base_type::k_typeid));
 
-	QUARK_ASSERT(interned2[(type_lookup_index_t)base_type::k_struct] == make_entry(base_type::k_undefined));
-	QUARK_ASSERT(interned2[(type_lookup_index_t)base_type::k_vector] == make_entry(base_type::k_undefined));
-	QUARK_ASSERT(interned2[(type_lookup_index_t)base_type::k_dict] == make_entry(base_type::k_undefined));
-	QUARK_ASSERT(interned2[(type_lookup_index_t)base_type::k_function] == make_entry(base_type::k_undefined));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_struct] == make_entry(base_type::k_undefined));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_vector] == make_entry(base_type::k_undefined));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_dict] == make_entry(base_type::k_undefined));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_function] == make_entry(base_type::k_undefined));
 
-	QUARK_ASSERT(interned2[(type_lookup_index_t)base_type::k_symbol_ref] == make_entry(base_type::k_symbol_ref));
-	QUARK_ASSERT(interned2[(type_lookup_index_t)base_type::k_named_type] == make_entry(base_type::k_undefined));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_symbol_ref] == make_entry(base_type::k_symbol_ref));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_named_type] == make_entry(base_type::k_undefined));
 
 
 	//??? Add other common combinations, like vectors with each atomic type, dict with each atomic
@@ -1613,13 +1613,13 @@ static type_t lookup_node(const types_t& types, const type_node_t& node){
 	QUARK_ASSERT(types.check_invariant());
 
 	const auto it = std::find_if(
-		types.interned2.begin(),
-		types.interned2.end(),
+		types.nodes.begin(),
+		types.nodes.end(),
 		[&](const auto& e){ return e == node; }
 	);
 
-	if(it != types.interned2.end()){
-		return lookup_type_from_index_it(types, it - types.interned2.begin());
+	if(it != types.nodes.end()){
+		return lookup_type_from_index_it(types, it - types.nodes.begin());
 	}
 	else{
 		throw std::exception();
@@ -1633,21 +1633,21 @@ static type_t intern_node(types_t& types, const type_node_t& node){
 	QUARK_ASSERT(types.check_invariant());
 
 	const auto it = std::find_if(
-		types.interned2.begin(),
-		types.interned2.end(),
+		types.nodes.begin(),
+		types.nodes.end(),
 		[&](const auto& e){ return e == node; }
 	);
 
-	if(it != types.interned2.end()){
-		return lookup_type_from_index_it(types, it - types.interned2.begin());
+	if(it != types.nodes.end()){
+		return lookup_type_from_index_it(types, it - types.nodes.begin());
 	}
 
 	//	New type, store it.
 	else{
 
 		//	All child type are guaranteed to have types already since those are specified using types_t:s.
-		types.interned2.push_back(node);
-		return lookup_type_from_index_it(types, types.interned2.size() - 1);
+		types.nodes.push_back(node);
+		return lookup_type_from_index_it(types, types.nodes.size() - 1);
 	}
 }
 
@@ -1669,11 +1669,11 @@ type_t new_tagged_type(types_t& types, const type_name_t& tag, const type_t& typ
 	if(false) trace_types(types);
 
 	const auto it = std::find_if(
-		types.interned2.begin(),
-		types.interned2.end(),
+		types.nodes.begin(),
+		types.nodes.end(),
 		[&](const auto& e){ return e.optional_name == tag; }
 	);
-	if(it != types.interned2.end()){
+	if(it != types.nodes.end()){
 		throw std::exception();
 	}
 
@@ -1690,8 +1690,8 @@ type_t new_tagged_type(types_t& types, const type_name_t& tag, const type_t& typ
 	QUARK_ASSERT(node.child_types.size() == 1);
 
 	//	Can't use intern_node() since we have a tag.
-	types.interned2.push_back(node);
-	return lookup_type_from_index_it(types, types.interned2.size() - 1);
+	types.nodes.push_back(node);
+	return lookup_type_from_index_it(types, types.nodes.size() - 1);
 }
 
 type_t update_tagged_type(types_t& types, const type_t& named, const type_t& type){
@@ -1714,15 +1714,15 @@ type_t get_tagged_type2(const types_t& types, const type_name_t& tag){
 	QUARK_ASSERT(tag.check_invariant());
 
 	const auto it = std::find_if(
-		types.interned2.begin(),
-		types.interned2.end(),
+		types.nodes.begin(),
+		types.nodes.end(),
 		[&](const auto& e){ return e.optional_name == tag; }
 	);
-	if(it == types.interned2.end()){
+	if(it == types.nodes.end()){
 		throw std::exception();
 	}
 	QUARK_ASSERT(it->child_types.size() == 1);
-	return lookup_type_from_index_it(types, it - types.interned2.begin());
+	return lookup_type_from_index_it(types, it - types.nodes.begin());
 }
 
 
@@ -1748,7 +1748,7 @@ type_t peek(const types_t& types, const type_t& type){
 type_t refresh_type(const types_t& types, const type_t& type){
 	const auto lookup_index = type.get_lookup_index();
 	QUARK_ASSERT(lookup_index >= 0);
-	QUARK_ASSERT(lookup_index < types.interned2.size());
+	QUARK_ASSERT(lookup_index < types.nodes.size());
 
 	return lookup_type_from_index(types, type.get_lookup_index());
 }
@@ -1757,9 +1757,9 @@ type_t refresh_type(const types_t& types, const type_t& type){
 
 type_t lookup_type_from_index(const types_t& types, type_lookup_index_t type_index){
 	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(type_index >= 0 && type_index < types.interned2.size());
+	QUARK_ASSERT(type_index >= 0 && type_index < types.nodes.size());
 
-	const auto& node = types.interned2[type_index];
+	const auto& node = types.nodes[type_index];
 
 	if(node.bt == base_type::k_struct){
 		return type_t(type_t::assemble(type_index, base_type::k_struct, base_type::k_undefined));
@@ -1796,15 +1796,15 @@ type_t lookup_type_from_name(const types_t& types, const type_name_t& tag){
 	}
 	else{
 		const auto it = std::find_if(
-			types.interned2.begin(),
-			types.interned2.end(),
+			types.nodes.begin(),
+			types.nodes.end(),
 			[&](const auto& e){ return e.optional_name == tag; }
 		);
-		if(it == types.interned2.end()){
+		if(it == types.nodes.end()){
 			throw std::exception();
 		}
 
-		return lookup_type_from_index_it(types, it - types.interned2.begin());
+		return lookup_type_from_index_it(types, it - types.nodes.begin());
 	}
 }
 
@@ -1819,10 +1819,10 @@ void trace_types(const types_t& types){
 		{
 			QUARK_SCOPED_TRACE("TYPES");
 			std::vector<std::vector<std::string>> matrix;
-			for(auto i = 0 ; i < types.interned2.size() ; i++){
+			for(auto i = 0 ; i < types.nodes.size() ; i++){
 				const auto& type = lookup_type_from_index(types, i);
 
-				const auto& e = types.interned2[i];
+				const auto& e = types.nodes[i];
 				const auto contents = e.bt == base_type::k_named_type
 					? std::to_string(e.child_types[0].get_lookup_index())
 					: type_to_compact_string(types, type, resolve_named_types::dont_resolve);
@@ -2365,10 +2365,10 @@ type_t make_named_type(types_t& types, const type_name_t& type){
 //??? Doesnt work. Needs to use type_t-style code that genreates contents of type
 json_t types_to_json(const types_t& types){
 	std::vector<json_t> result;
-	for(auto i = 0 ; i < types.interned2.size() ; i++){
+	for(auto i = 0 ; i < types.nodes.size() ; i++){
 		const auto& type = lookup_type_from_index(types, i);
 
-		const auto& e = types.interned2[i];
+		const auto& e = types.nodes[i];
 		const auto tag = pack_type_name(e.optional_name);
 		const auto desc = type_to_json(types, type);
 		const auto x = json_t::make_object({
@@ -2409,9 +2409,9 @@ const type_node_t& lookup_typeinfo_from_type(const types_t& types, const type_t&
 
 	const auto lookup_index = type.get_lookup_index();
 	QUARK_ASSERT(lookup_index >= 0);
-	QUARK_ASSERT(lookup_index < types.interned2.size());
+	QUARK_ASSERT(lookup_index < types.nodes.size());
 
-	const auto& result = types.interned2[lookup_index];
+	const auto& result = types.nodes[lookup_index];
 	return result;
 }
 
@@ -2421,9 +2421,9 @@ type_node_t& lookup_typeinfo_from_type(types_t& types, const type_t& type){
 
 	const auto lookup_index = type.get_lookup_index();
 	QUARK_ASSERT(lookup_index >= 0);
-	QUARK_ASSERT(lookup_index < types.interned2.size());
+	QUARK_ASSERT(lookup_index < types.nodes.size());
 
-	auto& result = types.interned2[lookup_index];
+	auto& result = types.nodes[lookup_index];
 	return result;
 }
 

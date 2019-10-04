@@ -1956,7 +1956,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 
 	trace_types(ast._tree._interned_types);
 	trace_types(types2);
-//	QUARK_ASSERT(types2.interned2.size() == ast._tree._interned_types.interned2.size());
+//	QUARK_ASSERT(types2.nodes.size() == ast._tree._interned_types.nodes.size());
 */
 
 	bcgen_globals(a, a._ast_imm->_tree._globals);

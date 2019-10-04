@@ -383,7 +383,7 @@ llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const types_t& ty
 	acc.types = types;
 
 	//	Make an entry for each entry in types
-	acc.type_entries = std::vector<type_entry_t>(types.interned2.size(), type_entry_t());
+	acc.type_entries = std::vector<type_entry_t>(types.nodes.size(), type_entry_t());
 
 
 	acc.generic_vec_type = make_generic_vec_type_internal(context);
@@ -400,7 +400,7 @@ llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const types_t& ty
 	builder_t builder { context, acc };
 
 	QUARK_ASSERT(builder.acc.types.check_invariant());
-	for(type_lookup_index_t i = 0 ; i < acc.types.interned2.size() ; i++){
+	for(type_lookup_index_t i = 0 ; i < acc.types.nodes.size() ; i++){
 		const auto& type = lookup_type_from_index(acc.types,i);
 		QUARK_ASSERT(type.check_invariant());
 		builder.acc.type_entries[i] = make_type(builder, peek(acc.types, type));
@@ -425,7 +425,7 @@ bool llvm_type_lookup::check_invariant() const {
 	QUARK_ASSERT(state.wide_return_type != nullptr);
 
 	QUARK_ASSERT(state.types.check_invariant());
-	QUARK_ASSERT(state.types.interned2.size() == state.type_entries.size());
+	QUARK_ASSERT(state.types.nodes.size() == state.type_entries.size());
 	return true;
 }
 
