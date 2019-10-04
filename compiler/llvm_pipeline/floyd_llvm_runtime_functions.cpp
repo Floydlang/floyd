@@ -391,11 +391,11 @@ llvm::Value* generate_lookup_dict(llvm_function_generator_t& gen_acc, llvm::Valu
 	QUARK_ASSERT(dict_type.check_invariant());
 	QUARK_ASSERT(is_dict_cppmap(gen_acc.gen.settings.config, dict_type) || is_dict_hamt(gen_acc.gen.settings.config, dict_type));
 
-	auto& interner = gen_acc.gen.type_lookup.state.type_interner;
+	auto& types = gen_acc.gen.type_lookup.state.types;
 
 	const auto res = resolve_func(gen_acc.gen.link_map, dict_mode == dict_backend::hamt ? "lookup_dict_hamt" : "lookup_dict_cppmap");
 
-	const auto element_type0 = dict_type.get_dict_value_type(interner);
+	const auto element_type0 = dict_type.get_dict_value_type(types);
 	const auto dict_itype_reg = generate_itype_constant(gen_acc.gen, dict_type);
 	auto& builder = gen_acc.get_builder();
 
@@ -455,10 +455,10 @@ void generate_store_dict_mutable(llvm_function_generator_t& gen_acc, llvm::Value
 	QUARK_ASSERT(dict_type.check_invariant());
 	QUARK_ASSERT(is_dict_cppmap(gen_acc.gen.settings.config, dict_type) || is_dict_hamt(gen_acc.gen.settings.config, dict_type));
 
-	auto& interner = gen_acc.gen.type_lookup.state.type_interner;
+	auto& types = gen_acc.gen.type_lookup.state.types;
 	const auto res = resolve_func(gen_acc.gen.link_map, dict_mode == dict_backend::hamt ? "store_dict_mutable_hamt" : "store_dict_mutable_cppmap");
 
-	const auto& element_type0 = dict_type.get_dict_value_type(interner);
+	const auto& element_type0 = dict_type.get_dict_value_type(types);
 	auto& dict_itype_reg = *generate_itype_constant(gen_acc.gen, dict_type);
 	auto& builder = gen_acc.get_builder();
 
@@ -499,7 +499,7 @@ static JSON_T* floydrt_allocate_json(floyd_runtime_t* frp, runtime_value_t arg0_
 
 	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
 	const auto value = from_runtime_value(r, arg0_value, type0);
-	const auto a = value_to_ast_json(r.backend.type_interner, value);
+	const auto a = value_to_ast_json(r.backend.types, value);
 	auto result = alloc_json(r.backend.heap, a);
 	return result;
 }
@@ -650,9 +650,9 @@ llvm::Value* generate_load_struct_member(llvm_function_generator_t& gen_acc, llv
 	QUARK_ASSERT(struct_type.check_invariant());
 	QUARK_ASSERT(struct_type.is_struct());
 
-	auto& interner = gen_acc.gen.type_lookup.state.type_interner;
+	auto& types = gen_acc.gen.type_lookup.state.types;
 
-	QUARK_ASSERT(member_index >= 0 && member_index < struct_type.get_struct(interner)._members.size());
+	QUARK_ASSERT(member_index >= 0 && member_index < struct_type.get_struct(types)._members.size());
 
 	auto& builder = gen_acc.get_builder();
 	auto& struct_type_llvm = *get_exact_struct_type_byvalue(gen_acc.gen.type_lookup, struct_type);
@@ -783,12 +783,12 @@ static void generate_store_struct_member_mutate(llvm_function_generator_t& gen_a
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(struct_type.check_invariant());
 
-	const auto& interner = gen_acc.gen.type_lookup.state.type_interner;
-	QUARK_ASSERT(member_index >= 0 && member_index < struct_type.get_struct(interner)._members.size());
+	const auto& types = gen_acc.gen.type_lookup.state.types;
+	QUARK_ASSERT(member_index >= 0 && member_index < struct_type.get_struct(types)._members.size());
 
 	auto& builder = gen_acc.get_builder();
 
-	const auto& struct_def = struct_type.get_struct(interner);
+	const auto& struct_def = struct_type.get_struct(types);
 	const auto member_type = struct_def._members[member_index]._type;
 
 
@@ -810,12 +810,12 @@ llvm::Value* generate_update_struct_member(llvm_function_generator_t& gen_acc, l
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(struct_type.check_invariant());
 
-	const auto& interner = gen_acc.gen.type_lookup.state.type_interner;
-	QUARK_ASSERT(member_index >= 0 && member_index < struct_type.get_struct(interner)._members.size());
+	const auto& types = gen_acc.gen.type_lookup.state.types;
+	QUARK_ASSERT(member_index >= 0 && member_index < struct_type.get_struct(types)._members.size());
 
 	auto& builder = gen_acc.get_builder();
 
-	const auto& struct_def = struct_type.get_struct(interner);
+	const auto& struct_def = struct_type.get_struct(types);
 
 	auto member_index_reg = llvm::ConstantInt::get(builder.getInt64Ty(), member_index);
 	const auto member_type = struct_def._members[member_index]._type;
@@ -1060,7 +1060,7 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 	QUARK_ASSERT(gen_acc.gen.type_lookup.check_invariant());
 	QUARK_ASSERT(type0.check_invariant());
 
-	const auto type_peek = peek(gen_acc.gen.type_lookup.state.type_interner, type0);
+	const auto type_peek = peek(gen_acc.gen.type_lookup.state.types, type0);
 
 	auto& frp_reg = *gen_acc.get_callers_fcp();
 	auto& itype_reg = *generate_itype_constant(gen_acc.gen, type_peek);
@@ -1152,7 +1152,7 @@ static void floydrt_release_vector_carray_pod(floyd_runtime_t* frp, runtime_valu
 	const auto& type = lookup_type_ref(r.backend, type0);
 	QUARK_ASSERT(type.is_string() || is_vector_carray(r.backend.config, type_t(type0)));
 	if(type_t(type0).is_vector()){
-		QUARK_ASSERT(is_rc_value(type.get_vector_element_type(r.backend.type_interner)) == false);
+		QUARK_ASSERT(is_rc_value(type.get_vector_element_type(r.backend.types)) == false);
 	}
 #endif
 
@@ -1164,7 +1164,7 @@ static void floydrt_release_vector_carray_nonpod(floyd_runtime_t* frp, runtime_v
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
 	QUARK_ASSERT(is_vector_carray(r.backend.config, type_t(type0)));
-	QUARK_ASSERT(is_rc_value(type.get_vector_element_type(r.backend.type_interner)) == true);
+	QUARK_ASSERT(is_rc_value(type.get_vector_element_type(r.backend.types)) == true);
 #endif
 
 	release_vector_carray_nonpod(r.backend, vec, type_t(type0));
@@ -1175,7 +1175,7 @@ static void floydrt_release_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
 	QUARK_ASSERT(is_vector_hamt(r.backend.config, type_t(type0)));
-	QUARK_ASSERT(is_rc_value(type.get_vector_element_type(r.backend.type_interner)) == false);
+	QUARK_ASSERT(is_rc_value(type.get_vector_element_type(r.backend.types)) == false);
 #endif
 
 	release_vector_hamt_pod(r.backend, vec, type_t(type0));
@@ -1186,7 +1186,7 @@ static void floydrt_release_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_val
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
 	QUARK_ASSERT(is_vector_hamt(r.backend.config, type_t(type0)));
-	QUARK_ASSERT(is_rc_value(type.get_vector_element_type(r.backend.type_interner)) == true);
+	QUARK_ASSERT(is_rc_value(type.get_vector_element_type(r.backend.types)) == true);
 #endif
 
 	release_vector_hamt_nonpod(r.backend, vec, type_t(type0));
@@ -1274,7 +1274,7 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 	auto& frp_reg = *gen_acc.get_callers_fcp();
 	auto& itype_reg = *generate_itype_constant(gen_acc.gen, type);
 	auto& builder = gen_acc.get_builder();
-	const auto& interner = gen_acc.gen.type_lookup.state.type_interner;
+	const auto& types = gen_acc.gen.type_lookup.state.types;
 
 	if(is_rc_value(type)){
 		if(type.is_string()){
@@ -1282,7 +1282,7 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 		}
 		else if(type.is_vector()){
-			const bool is_element_pod = is_rc_value(type.get_vector_element_type(interner)) ? false : true;
+			const bool is_element_pod = is_rc_value(type.get_vector_element_type(types)) ? false : true;
 
 			if(is_vector_carray(gen_acc.gen.settings.config, type) && is_element_pod == true){
 				const auto res = resolve_func(gen_acc.gen.link_map, "release_vector_carray_pod");

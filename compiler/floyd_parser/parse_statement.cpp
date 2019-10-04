@@ -167,11 +167,11 @@ struct a_result_t {
 	seq_t rest;
 };
 
-static a_result_t parse_a(types_t& interner, const seq_t& p, const location_t& loc){
+static a_result_t parse_a(types_t& types, const seq_t& p, const location_t& loc){
 	const auto pos = skip_whitespace(p);
 
 	//	Notice: if there is no type, only and identifier -- then we still get a type back: with an unresolved identifier.
-	const auto optional_type_pos = read_type(interner, pos);
+	const auto optional_type_pos = read_type(types, pos);
 	const auto identifier_pos = read_identifier(optional_type_pos.second);
 
 	if(optional_type_pos.first && identifier_pos.first != ""){
@@ -179,10 +179,10 @@ static a_result_t parse_a(types_t& interner, const seq_t& p, const location_t& l
 	}
 	else if(!optional_type_pos.first && identifier_pos.first != ""){
 		QUARK_ASSERT(false);
-		return a_result_t{ make_undefined(), optional_type_pos.first->get_symbol_ref(interner), identifier_pos.second };
+		return a_result_t{ make_undefined(), optional_type_pos.first->get_symbol_ref(types), identifier_pos.second };
 	}
 	else if(optional_type_pos.first && optional_type_pos.first->is_symbol_ref() && identifier_pos.first == ""){
-		return a_result_t{ make_undefined(), optional_type_pos.first->get_symbol_ref(interner), identifier_pos.second };
+		return a_result_t{ make_undefined(), optional_type_pos.first->get_symbol_ref(types), identifier_pos.second };
 	}
 	else{
 		throw_compiler_error(loc, "Require a value for new bind.");
@@ -190,9 +190,9 @@ static a_result_t parse_a(types_t& interner, const seq_t& p, const location_t& l
 }
 
 std::pair<json_t, seq_t> parse_let(const seq_t& pos, const location_t& loc){
-	types_t interner;
+	types_t types;
 
-	const auto a_result = parse_a(interner, pos, loc);
+	const auto a_result = parse_a(types, pos, loc);
 	if(a_result.rest.empty()){
 		throw_compiler_error(loc, "Require a value for new bind.");
 	}
@@ -200,7 +200,7 @@ std::pair<json_t, seq_t> parse_let(const seq_t& pos, const location_t& loc){
 	const auto expression_pos = parse_expression(equal_sign);
 
 	const auto params = std::vector<json_t>{
-		type_to_json(interner, a_result.type),
+		type_to_json(types, a_result.type),
 		a_result.identifier,
 		expression_pos.first,
 	};
@@ -209,8 +209,8 @@ std::pair<json_t, seq_t> parse_let(const seq_t& pos, const location_t& loc){
 }
 
 std::pair<json_t, seq_t> parse_mutable(const seq_t& pos, const location_t& loc){
-	types_t interner;
-	const auto a_result = parse_a(interner, pos, loc);
+	types_t types;
+	const auto a_result = parse_a(types, pos, loc);
 	if(a_result.rest.empty()){
 		throw_compiler_error(loc, "Require a value for new bind.");
 	}
@@ -220,7 +220,7 @@ std::pair<json_t, seq_t> parse_mutable(const seq_t& pos, const location_t& loc){
 	const auto meta = (json_t::make_object({ std::pair<std::string, json_t>{"mutable", true } }));
 
 	const auto params = std::vector<json_t>{
-		type_to_json(interner, a_result.type),
+		type_to_json(types, a_result.type),
 		a_result.identifier,
 		expression_pos.first,
 		meta
@@ -604,13 +604,13 @@ QUARK_TEST("", "parse_function_definition_statement()", "Min whitespace", "Corre
 //////////////////////////////////////////////////		parse_struct_definition_statement()
 
 
-static std::pair<json_t, seq_t>  parse_struct_definition_body(types_t& type_interner, const seq_t& p, const std::string& name, const location_t& location){
+static std::pair<json_t, seq_t>  parse_struct_definition_body(types_t& types, const seq_t& p, const std::string& name, const location_t& location){
 	const auto s2 = skip_whitespace(p);
 	const auto start = s2;
 	auto pos = read_required_char(s2, '{');
 	std::vector<member_t> members;
 	while(!pos.empty() && pos.first() != "}"){
-		const auto member_type = read_required_type(type_interner, pos);
+		const auto member_type = read_required_type(types, pos);
 		const auto member_name = read_required_identifier(member_type.second);
 		members.push_back(member_t { member_type.first, member_name.first } );
 		pos = read_optional_char(skip_whitespace(member_name.second), ';').second;
@@ -623,7 +623,7 @@ static std::pair<json_t, seq_t>  parse_struct_definition_body(types_t& type_inte
 		parse_tree_expression_opcode_t::k_struct_def,
 		{
 			name,
-			members_to_json(type_interner, members)
+			members_to_json(types, members)
 		}
 	);
 
@@ -638,7 +638,7 @@ static std::pair<json_t, seq_t>  parse_struct_definition_body(types_t& type_inte
 }
 
 std::pair<json_t, seq_t>  parse_struct_definition_statement(const seq_t& pos0){
-	types_t type_interner;
+	types_t types;
 	std::pair<bool, seq_t> token_pos = if_first(pos0, keyword_t::k_struct);
 	QUARK_ASSERT(token_pos.first);
 
@@ -646,7 +646,7 @@ std::pair<json_t, seq_t>  parse_struct_definition_statement(const seq_t& pos0){
 	const auto location = location_t(pos0.pos());
 
 	const auto s2 = skip_whitespace(struct_name_pos.second);
-	const auto b = parse_struct_definition_body(type_interner, s2, struct_name_pos.first, location);
+	const auto b = parse_struct_definition_body(types, s2, struct_name_pos.first, location);
 	return b;
 }
 

@@ -486,12 +486,12 @@ bc_value_t bc_intrinsic__to_json(interpreter_t& vm, const bc_value_t args[], int
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	const auto& interner = vm._imm->_program._types;
+	const auto& types = vm._imm->_program._types;
 
 	const auto value = args[0];
 	const auto value2 = bc_to_value(vm._imm->_program._types, args[0]);
 
-	const auto j = value_to_ast_json(interner, value2);
+	const auto j = value_to_ast_json(types, value2);
 	value_t result = value_t::make_json(j);
 
 	return value_to_bc(vm._imm->_program._types, result);
@@ -534,16 +534,16 @@ bc_value_t bc_intrinsic__map(interpreter_t& vm, const bc_value_t args[], int arg
 	QUARK_ASSERT(arg_count == 3);
 //	QUARK_ASSERT(check_map_func_type(args[0]._type, args[1]._type, args[2]._type));
 
-	const auto& interner = vm._imm->_program._types;
+	const auto& types = vm._imm->_program._types;
 
-	const auto e_type = args[0]._type.get_vector_element_type(interner);
+	const auto e_type = args[0]._type.get_vector_element_type(types);
 	const auto f = args[1];
-	const auto f_arg_types = f._type.get_function_args(interner);
-	const auto r_type = f._type.get_function_return(interner);
+	const auto f_arg_types = f._type.get_function_args(types);
+	const auto r_type = f._type.get_function_return(types);
 
 	const auto& context = args[2];
 
-	const auto input_vec = get_vector(interner, args[0]);
+	const auto input_vec = get_vector(types, args[0]);
 	immer::vector<bc_value_t> vec2;
 	for(const auto& e: input_vec){
 		const bc_value_t f_args[] = { e, context };
@@ -551,10 +551,10 @@ bc_value_t bc_intrinsic__map(interpreter_t& vm, const bc_value_t args[], int arg
 		vec2 = vec2.push_back(result1);
 	}
 
-	const auto result = make_vector(interner, r_type, vec2);
+	const auto result = make_vector(types, r_type, vec2);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(interner, bc_to_value(interner, result));
+	const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
@@ -571,10 +571,10 @@ bc_value_t bc_intrinsic__map_string(interpreter_t& vm, const bc_value_t args[], 
 	QUARK_ASSERT(arg_count == 3);
 //	QUARK_ASSERT(check_map_string_func_type(args[0]._type, args[1]._type, args[2]._type));
 
-	const auto& interner = vm._imm->_program._types;
+	const auto& types = vm._imm->_program._types;
 	const auto f = args[1];
-	const auto f_arg_types = f._type.get_function_args(interner);
-	const auto r_type = f._type.get_function_return(interner);
+	const auto f_arg_types = f._type.get_function_args(types);
+	const auto r_type = f._type.get_function_return(types);
 	const auto& context = args[2];
 
 	const auto input_vec = args[0].get_string_value();
@@ -590,7 +590,7 @@ bc_value_t bc_intrinsic__map_string(interpreter_t& vm, const bc_value_t args[], 
 	const auto result = bc_value_t::make_string(vec2);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(interner, bc_to_value(interner, result));
+	const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
@@ -609,16 +609,16 @@ bc_value_t bc_intrinsic__map_dag(interpreter_t& vm, const bc_value_t args[], int
 	QUARK_ASSERT(arg_count == 4);
 //	QUARK_ASSERT(check_map_dag_func_type(args[0]._type, args[1]._type, args[2]._type, args[3]._type));
 
-	const auto& interner = vm._imm->_program._types;
+	const auto& types = vm._imm->_program._types;
 	const auto& elements = args[0];
 //	const auto& e_type = elements._type.get_vector_element_type();
 	const auto& parents = args[1];
 	const auto& f = args[2];
-	const auto& r_type = args[2]._type.get_function_return(interner);
+	const auto& r_type = args[2]._type.get_function_return(types);
 	const auto& context = args[3];
 
-	const auto elements2 = get_vector(interner, elements);
-	const auto parents2 = get_vector(interner, parents);
+	const auto elements2 = get_vector(types, elements);
+	const auto parents2 = get_vector(types, parents);
 
 	if(elements2.size() != parents2.size()) {
 		quark::throw_runtime_error("map_dag() requires elements and parents be the same count.");
@@ -673,7 +673,7 @@ bc_value_t bc_intrinsic__map_dag(interpreter_t& vm, const bc_value_t args[], int
 				}
 			}
 
-			const bc_value_t f_args[] = { e, make_vector(interner, r_type, solved_deps), context };
+			const bc_value_t f_args[] = { e, make_vector(types, r_type, solved_deps), context };
 			const auto result1 = call_function_bc(vm, f, f_args, 3);
 
 			const auto parent_index = parents2[element_index].get_int_value();
@@ -685,10 +685,10 @@ bc_value_t bc_intrinsic__map_dag(interpreter_t& vm, const bc_value_t args[], int
 		}
 	}
 
-	const auto result = make_vector(interner, r_type, complete);
+	const auto result = make_vector(types, r_type, complete);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(interner, bc_to_value(interner, result));
+	const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
@@ -716,26 +716,26 @@ bc_value_t bc_intrinsic__map_dag2(interpreter_t& vm, const bc_value_t args[], in
 	QUARK_ASSERT(arg_count == 4);
 //	QUARK_ASSERT(check_map_dag_func_type(args[0]._type, args[1]._type, args[2]._type, args[3]._type));
 
-	const auto& interner = vm._imm->_program._types;
+	const auto& types = vm._imm->_program._types;
 	const auto& elements = args[0];
-	const auto& e_type = elements._type.get_vector_element_type(interner);
+	const auto& e_type = elements._type.get_vector_element_type(types);
 	const auto& dependencies = args[1];
 	const auto& f = args[2];
-	const auto& r_type = args[2]._type.get_function_return(interner);
+	const auto& r_type = args[2]._type.get_function_return(types);
 
 	const auto& context = args[3];
 
 	if(
-		e_type == f._type.get_function_args(interner)[0]
-		&& r_type == f._type.get_function_args(interner)[1].get_vector_element_type(interner)
+		e_type == f._type.get_function_args(types)[0]
+		&& r_type == f._type.get_function_args(types)[1].get_vector_element_type(types)
 	){
 	}
 	else {
 		quark::throw_runtime_error("R map_dag([E] elements, R init_value, R (R acc, E element) f");
 	}
 
-	const auto elements2 = get_vector(interner, elements);
-	const auto dependencies2 = get_vector(interner, dependencies);
+	const auto elements2 = get_vector(types, elements);
+	const auto dependencies2 = get_vector(types, dependencies);
 
 
 	immer::vector<bc_value_t> complete(elements2.size(), bc_value_t());
@@ -791,7 +791,7 @@ bc_value_t bc_intrinsic__map_dag2(interpreter_t& vm, const bc_value_t args[], in
 				const auto& ready = complete[dep_e];
 				ready_elements = ready_elements.push_back(ready);
 			}
-			const auto ready_elements2 = make_vector(interner, r_type, ready_elements);
+			const auto ready_elements2 = make_vector(types, r_type, ready_elements);
 			const bc_value_t f_args[] = { e, ready_elements2, context };
 
 			const auto result1 = call_function_bc(vm, f, f_args, 3);
@@ -810,10 +810,10 @@ bc_value_t bc_intrinsic__map_dag2(interpreter_t& vm, const bc_value_t args[], in
 		}
 	}
 
-	const auto result = make_vector(interner, r_type, complete);
+	const auto result = make_vector(types, r_type, complete);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(interner, bc_to_value(interner, result));
+	const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
@@ -833,13 +833,13 @@ bc_value_t bc_intrinsic__filter(interpreter_t& vm, const bc_value_t args[], int 
 	QUARK_ASSERT(arg_count == 3);
 //	QUARK_ASSERT(check_filter_func_type(args[0]._type, args[1]._type, args[2]._type));
 
-	const auto& interner = vm._imm->_program._types;
+	const auto& types = vm._imm->_program._types;
 	const auto& elements = args[0];
 	const auto& f = args[1];
-	const auto& e_type = elements._type.get_vector_element_type(interner);
+	const auto& e_type = elements._type.get_vector_element_type(types);
 	const auto& context = args[2];
 
-	const auto input_vec = get_vector(interner, elements);
+	const auto input_vec = get_vector(types, elements);
 	immer::vector<bc_value_t> vec2;
 
 	for(const auto& e: input_vec){
@@ -852,10 +852,10 @@ bc_value_t bc_intrinsic__filter(interpreter_t& vm, const bc_value_t args[], int 
 		}
 	}
 
-	const auto result = make_vector(interner, e_type, vec2);
+	const auto result = make_vector(types, e_type, vec2);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(interner, bc_to_value(interner, result));
+	const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
@@ -874,12 +874,12 @@ bc_value_t bc_intrinsic__reduce(interpreter_t& vm, const bc_value_t args[], int 
 	QUARK_ASSERT(arg_count == 4);
 //	QUARK_ASSERT(check_reduce_func_type(args[0]._type, args[1]._type, args[2]._type, args[3]._type));
 
-	const auto& interner = vm._imm->_program._types;
+	const auto& types = vm._imm->_program._types;
 	const auto& elements = args[0];
 	const auto& init = args[1];
 	const auto& f = args[2];
 	const auto& context = args[3];
-	const auto input_vec = get_vector(interner, elements);
+	const auto input_vec = get_vector(types, elements);
 
 	bc_value_t acc = init;
 	for(const auto& e: input_vec){
@@ -891,7 +891,7 @@ bc_value_t bc_intrinsic__reduce(interpreter_t& vm, const bc_value_t args[], int 
 	const auto result = acc;
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(interner, bc_to_value(interner, result));
+	const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
@@ -910,13 +910,13 @@ bc_value_t bc_intrinsic__stable_sort(interpreter_t& vm, const bc_value_t args[],
 	QUARK_ASSERT(arg_count == 3);
 //	QUARK_ASSERT(check_stable_sort_func_type(args[0]._type, args[1]._type, args[2]._type));
 
-	const auto& interner = vm._imm->_program._types;
+	const auto& types = vm._imm->_program._types;
 	const auto& elements = args[0];
 	const auto& f = args[1];
-	const auto& e_type = elements._type.get_vector_element_type(interner);
+	const auto& e_type = elements._type.get_vector_element_type(types);
 	const auto& context = args[2];
 
-	const auto input_vec = get_vector(interner, elements);
+	const auto input_vec = get_vector(types, elements);
 	std::vector<bc_value_t> mutate_inplace_elements(input_vec.begin(), input_vec.end());
 
 	struct sort_functor_r {
@@ -936,10 +936,10 @@ bc_value_t bc_intrinsic__stable_sort(interpreter_t& vm, const bc_value_t args[],
 	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
 
 	const auto mutate_inplace_elements2 = immer::vector<bc_value_t>(mutate_inplace_elements.begin(), mutate_inplace_elements.end());
-	const auto result = make_vector(interner, e_type, mutate_inplace_elements2);
+	const auto result = make_vector(types, e_type, mutate_inplace_elements2);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(interner, bc_to_value(interner, result));
+	const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
@@ -961,8 +961,8 @@ bc_value_t bc_intrinsic__print(interpreter_t& vm, const bc_value_t args[], int a
 	QUARK_ASSERT(arg_count == 1);
 //	QUARK_ASSERT(args[0]._type.is_string());
 
-	const auto& interner = vm._imm->_program._types;
-	if(false) trace_type_interner(interner);
+	const auto& types = vm._imm->_program._types;
+	if(false) trace_type_interner(types);
 
 	const auto& value = args[0];
 	const auto s = to_compact_string2(vm._imm->_program._types, bc_to_value(vm._imm->_program._types, value));
@@ -1079,59 +1079,59 @@ bc_value_t bc_intrinsic__bw_shift_right_arithmetic(interpreter_t& vm, const bc_v
 
 
 
-static std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics_internal(types_t& interner){
-	QUARK_ASSERT(interner.check_invariant());
+static std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics_internal(types_t& types){
+	QUARK_ASSERT(types.check_invariant());
 
 	std::vector<std::pair<intrinsic_signature_t, BC_NATIVE_FUNCTION_PTR>> log;
 
-	log.push_back({ make_assert_signature(interner), bc_intrinsic__assert });
-	log.push_back({ make_to_string_signature(interner), bc_intrinsic__to_string });
-	log.push_back({ make_to_pretty_string_signature(interner), bc_intrinsic__to_pretty_string });
-	log.push_back({ make_typeof_signature(interner), bc_intrinsic__typeof });
+	log.push_back({ make_assert_signature(types), bc_intrinsic__assert });
+	log.push_back({ make_to_string_signature(types), bc_intrinsic__to_string });
+	log.push_back({ make_to_pretty_string_signature(types), bc_intrinsic__to_pretty_string });
+	log.push_back({ make_typeof_signature(types), bc_intrinsic__typeof });
 
-	log.push_back({ make_update_signature(interner), bc_intrinsic__update });
+	log.push_back({ make_update_signature(types), bc_intrinsic__update });
 
-	//	size(interner) is translated to bc_opcode::k_get_size_vector_w_external_elements(interner) etc.
+	//	size(types) is translated to bc_opcode::k_get_size_vector_w_external_elements(types) etc.
 
-	log.push_back({ make_find_signature(interner), bc_intrinsic__find });
-	log.push_back({ make_exists_signature(interner), bc_intrinsic__exists });
-	log.push_back({ make_erase_signature(interner), bc_intrinsic__erase });
-	log.push_back({ make_get_keys_signature(interner), bc_intrinsic__get_keys });
+	log.push_back({ make_find_signature(types), bc_intrinsic__find });
+	log.push_back({ make_exists_signature(types), bc_intrinsic__exists });
+	log.push_back({ make_erase_signature(types), bc_intrinsic__erase });
+	log.push_back({ make_get_keys_signature(types), bc_intrinsic__get_keys });
 
-	//	push_back(interner) is translated to bc_opcode::k_pushback_vector_w_inplace_elements(interner) etc.
+	//	push_back(types) is translated to bc_opcode::k_pushback_vector_w_inplace_elements(types) etc.
 
-	log.push_back({ make_subset_signature(interner), bc_intrinsic__subset });
-	log.push_back({ make_replace_signature(interner), bc_intrinsic__replace });
-
-
-	log.push_back({ make_parse_json_script_signature(interner), bc_intrinsic__parse_json_script });
-	log.push_back({ make_generate_json_script_signature(interner), bc_intrinsic__generate_json_script });
-	log.push_back({ make_to_json_signature(interner), bc_intrinsic__to_json });
-
-	log.push_back({ make_from_json_signature(interner), bc_intrinsic__from_json });
-
-	log.push_back({ make_get_json_type_signature(interner), bc_intrinsic__get_json_type });
-
-	log.push_back({ make_map_signature(interner), bc_intrinsic__map });
-//	log.push_back({ make_map_string_signature(interner), bc_intrinsic__map_string });
-	log.push_back({ make_filter_signature(interner), bc_intrinsic__filter });
-	log.push_back({ make_reduce_signature(interner), bc_intrinsic__reduce });
-	log.push_back({ make_map_dag_signature(interner), bc_intrinsic__map_dag });
-
-	log.push_back({ make_stable_sort_signature(interner), bc_intrinsic__stable_sort });
+	log.push_back({ make_subset_signature(types), bc_intrinsic__subset });
+	log.push_back({ make_replace_signature(types), bc_intrinsic__replace });
 
 
-	log.push_back({ make_print_signature(interner), bc_intrinsic__print });
-	log.push_back({ make_send_signature(interner), bc_intrinsic__send });
+	log.push_back({ make_parse_json_script_signature(types), bc_intrinsic__parse_json_script });
+	log.push_back({ make_generate_json_script_signature(types), bc_intrinsic__generate_json_script });
+	log.push_back({ make_to_json_signature(types), bc_intrinsic__to_json });
+
+	log.push_back({ make_from_json_signature(types), bc_intrinsic__from_json });
+
+	log.push_back({ make_get_json_type_signature(types), bc_intrinsic__get_json_type });
+
+	log.push_back({ make_map_signature(types), bc_intrinsic__map });
+//	log.push_back({ make_map_string_signature(types), bc_intrinsic__map_string });
+	log.push_back({ make_filter_signature(types), bc_intrinsic__filter });
+	log.push_back({ make_reduce_signature(types), bc_intrinsic__reduce });
+	log.push_back({ make_map_dag_signature(types), bc_intrinsic__map_dag });
+
+	log.push_back({ make_stable_sort_signature(types), bc_intrinsic__stable_sort });
 
 
-	log.push_back({ make_bw_not_signature(interner), bc_intrinsic__bw_not });
-	log.push_back({ make_bw_and_signature(interner), bc_intrinsic__bw_and });
-	log.push_back({ make_bw_or_signature(interner), bc_intrinsic__bw_or });
-	log.push_back({ make_bw_xor_signature(interner), bc_intrinsic__bw_xor });
-	log.push_back({ make_bw_shift_left_signature(interner), bc_intrinsic__bw_shift_left });
-	log.push_back({ make_bw_shift_right_signature(interner), bc_intrinsic__bw_shift_right });
-	log.push_back({ make_bw_shift_right_arithmetic_signature(interner), bc_intrinsic__bw_shift_right_arithmetic });
+	log.push_back({ make_print_signature(types), bc_intrinsic__print });
+	log.push_back({ make_send_signature(types), bc_intrinsic__send });
+
+
+	log.push_back({ make_bw_not_signature(types), bc_intrinsic__bw_not });
+	log.push_back({ make_bw_and_signature(types), bc_intrinsic__bw_and });
+	log.push_back({ make_bw_or_signature(types), bc_intrinsic__bw_or });
+	log.push_back({ make_bw_xor_signature(types), bc_intrinsic__bw_xor });
+	log.push_back({ make_bw_shift_left_signature(types), bc_intrinsic__bw_shift_left });
+	log.push_back({ make_bw_shift_right_signature(types), bc_intrinsic__bw_shift_right });
+	log.push_back({ make_bw_shift_right_arithmetic_signature(types), bc_intrinsic__bw_shift_right_arithmetic });
 
 
 	std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> result;
@@ -1141,10 +1141,10 @@ static std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics_interna
 	return result;
 }
 
-std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics(types_t& interner){
-	QUARK_ASSERT(interner.check_invariant());
+std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics(types_t& types){
+	QUARK_ASSERT(types.check_invariant());
 
-	static const auto f = bc_get_intrinsics_internal(interner);
+	static const auto f = bc_get_intrinsics_internal(types);
 	return f;
 }
 

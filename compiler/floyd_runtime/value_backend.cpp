@@ -877,7 +877,7 @@ bool is_rc_value(const type_t& type){
 
 
 // IMPORTANT: Different types will access different number of bytes, for example a BYTE. We cannot dereference pointer as a uint64*!!
-runtime_value_t load_via_ptr2(const types_t& interner, const void* value_ptr, const type_t& type){
+runtime_value_t load_via_ptr2(const types_t& types, const void* value_ptr, const type_t& type){
 	QUARK_ASSERT(value_ptr != nullptr);
 	QUARK_ASSERT(type.check_invariant());
 
@@ -938,11 +938,11 @@ runtime_value_t load_via_ptr2(const types_t& interner, const void* value_ptr, co
 			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
-	return std::visit(visitor_t{ value_ptr }, get_type_variant(interner, type));
+	return std::visit(visitor_t{ value_ptr }, get_type_variant(types, type));
 }
 
 // IMPORTANT: Different types will access different number of bytes, for example a BYTE. We cannot dereference pointer as a uint64*!!
-void store_via_ptr2(const types_t& interner, void* value_ptr, const type_t& type, const runtime_value_t& value){
+void store_via_ptr2(const types_t& types, void* value_ptr, const type_t& type, const runtime_value_t& value){
 	struct visitor_t {
 		void* value_ptr;
 		const runtime_value_t& value;
@@ -996,7 +996,7 @@ void store_via_ptr2(const types_t& interner, void* value_ptr, const type_t& type
 			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
-	std::visit(visitor_t{ value_ptr, value }, get_type_variant(interner, type));
+	std::visit(visitor_t{ value_ptr, value }, get_type_variant(types, type));
 }
 
 
@@ -1026,25 +1026,25 @@ static std::map<type_t, type_t> make_type_lookup(const llvm_type_lookup& type_lo
 value_backend_t::value_backend_t(
 	const std::vector<std::pair<link_name_t, void*>>& native_func_lookup,
 	const std::vector<std::pair<type_t, struct_layout_t>>& struct_layouts,
-	const types_t& type_interner,
+	const types_t& types,
 	const config_t& config
 ) :
 	heap(config.trace_allocs),
-	type_interner(type_interner),
+	types(types),
 	native_func_lookup(native_func_lookup),
 	struct_layouts(struct_layouts),
 	config(config)
 {
 	QUARK_ASSERT(config.check_invariant());
 
-	for(type_lookup_index_t i = 0 ; i < type_interner.interned2.size() ; i++){
-		const auto itype0 = lookup_type_from_index(type_interner, i);
+	for(type_lookup_index_t i = 0 ; i < types.interned2.size() ; i++){
+		const auto itype0 = lookup_type_from_index(types, i);
 		if(itype0.is_vector()){
-			const auto& itype = itype0.get_vector_element_type(type_interner);
+			const auto& itype = itype0.get_vector_element_type(types);
 			child_type.push_back(itype);
 		}
 		else if(itype0.is_dict()){
-			const auto& itype = itype0.get_dict_value_type(type_interner);
+			const auto& itype = itype0.get_dict_value_type(types);
 			child_type.push_back(itype);
 		}
 		else{
@@ -1064,14 +1064,14 @@ type_t lookup_itype(const value_backend_t& backend, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	return lookup_itype_from_typeid(backend.type_interner, type);
+	return lookup_itype_from_typeid(backend.types, type);
 }
 */
 
 type_t lookup_type_ref(const value_backend_t& backend, runtime_type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 
-	//	return flatten_type_description_deep(backend.type_interner, type_t(type));
+	//	return flatten_type_description_deep(backend.types, type_t(type));
 	return type_t(type);
 }
 
@@ -1079,7 +1079,7 @@ type_t lookup_type_ref(const value_backend_t& backend, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-//	return flatten_type_description_deep(backend.type_interner, itype);
+//	return flatten_type_description_deep(backend.types, itype);
 	return type;
 }
 
@@ -1359,7 +1359,7 @@ void release_struct(value_backend_t& backend, runtime_value_t str, type_t type){
 	auto s = str.struct_ptr;
 
 	if(dec_rc(s->alloc) == 0){
-		const auto& struct_def = type.get_struct(backend.type_interner);
+		const auto& struct_def = type.get_struct(backend.types);
 		const auto struct_base_ptr = s->get_data_ptr();
 
 		const auto& struct_layout = find_struct_layout(backend, type);

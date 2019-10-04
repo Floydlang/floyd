@@ -104,7 +104,7 @@ struct bcgen_body_t {
 	std::vector<bcgen_instruction_t> _instrs;
 };
 
-static bc_static_frame_t make_frame(const types_t& interner, const bcgen_body_t& body, const std::vector<type_t>& args);
+static bc_static_frame_t make_frame(const types_t& types, const bcgen_body_t& body, const std::vector<type_t>& args);
 
 
 //////////////////////////////////////		bcgenerator_t
@@ -165,9 +165,9 @@ static type_t get_expr_output_type(const bcgenerator_t& gen, const expression_t&
 	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	const auto& interner = gen._ast_imm->_tree._interned_types;
+	const auto& types = gen._ast_imm->_tree._interned_types;
 	const auto result = e.get_output_type();
-	return peek(interner, result);
+	return peek(types, result);
 }
 
 static type_t get_expr_output(const bcgenerator_t& gen, const expression_t& e){
@@ -177,13 +177,13 @@ static type_t get_expr_output(const bcgenerator_t& gen, const expression_t& e){
 	return get_expr_output_type(gen, e);
 }
 
-static type_t dummy_func(const types_t& interner, const type_t& type){ return type; }
+static type_t dummy_func(const types_t& types, const type_t& type){ return type; }
 
 
 //??? Don't use the term "symbol" here, since not all symbols should go into stack frames.
 
-static symbol_pos_t add_local_temp(const types_t& interner, bcgen_body_t& body_acc, const type_t& type0, const std::string& name){
-	QUARK_ASSERT(interner.check_invariant());
+static symbol_pos_t add_local_temp(const types_t& types, bcgen_body_t& body_acc, const type_t& type0, const std::string& name){
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(body_acc.check_invariant());
 	QUARK_ASSERT(type0.check_invariant());
 	QUARK_ASSERT(name.empty() == false);
@@ -195,8 +195,8 @@ static symbol_pos_t add_local_temp(const types_t& interner, bcgen_body_t& body_a
 	return symbol_pos_t::make_stack_pos(0, id);
 }
 
-static int add_constant_literal(const types_t& interner, symbol_table_t& symbols, const std::string& name, const floyd::value_t& value){
-	QUARK_ASSERT(interner.check_invariant());
+static int add_constant_literal(const types_t& types, symbol_table_t& symbols, const std::string& name, const floyd::value_t& value){
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 
 	const auto s = symbol_t::make_immutable_precalc(value.get_type(), value);
@@ -204,13 +204,13 @@ static int add_constant_literal(const types_t& interner, symbol_table_t& symbols
 	return static_cast<int>(symbols._symbols.size() - 1);
 }
 
-static symbol_pos_t add_local_const(const types_t& interner, bcgen_body_t& body_acc, const value_t& value, const std::string& name){
-	QUARK_ASSERT(interner.check_invariant());
+static symbol_pos_t add_local_const(const types_t& types, bcgen_body_t& body_acc, const value_t& value, const std::string& name){
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(body_acc.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(name.empty() == false);
 
-	int id = add_constant_literal(interner, body_acc._symbol_table, name, value);
+	int id = add_constant_literal(types, body_acc._symbol_table, name, value);
 	return symbol_pos_t::make_stack_pos(0, id);
 }
 
@@ -774,7 +774,7 @@ expression_gen_t bcgen_make_fallthrough_intrinsic(bcgenerator_t& gen_acc, const 
 	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
-	auto& interner = gen_acc._ast_imm->_tree._interned_types;
+	auto& types = gen_acc._ast_imm->_tree._interned_types;
 
 	const auto& intrinsic_signatures = gen_acc._ast_imm->intrinsic_signatures;
 
@@ -810,22 +810,22 @@ expression_gen_t make_update_call(bcgenerator_t& gen_acc, const symbol_pos_t& ta
 	QUARK_ASSERT(new_value.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-	auto& interner = gen_acc._ast_imm->_tree._interned_types;
+	auto& types = gen_acc._ast_imm->_tree._interned_types;
 
 	const auto intrinsic_details = expression_t::intrinsic_t {
-		get_intrinsic_opcode(make_update_signature(interner)),
+		get_intrinsic_opcode(make_update_signature(types)),
 		{ parent, key, new_value }
 	};
 
 	return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, output_type, intrinsic_details, body);
 }
 
-static bc_opcode convert_call_to_pushback_opcode(const types_t& interner, const type_t& arg1_type){
-	QUARK_ASSERT(interner.check_invariant());
+static bc_opcode convert_call_to_pushback_opcode(const types_t& types, const type_t& arg1_type){
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(arg1_type.check_invariant());
 
 	if(arg1_type.is_vector()){
-		if(encode_as_vector_w_inplace_elements(interner, arg1_type)){
+		if(encode_as_vector_w_inplace_elements(types, arg1_type)){
 			return bc_opcode::k_pushback_vector_w_inplace_elements;
 		}
 		else{
@@ -849,12 +849,12 @@ static expression_gen_t bcgen_intrinsic_push_back_expression(bcgenerator_t& gen_
 	QUARK_ASSERT(details.args.size() == 2);
 
 	auto body_acc = body;
-	auto& interner = gen_acc._ast_imm->_tree._interned_types;
+	auto& types = gen_acc._ast_imm->_tree._interned_types;
 
 	QUARK_ASSERT(call_output_type == get_expr_output(gen_acc, details.args[0]));
 
 	const auto arg1_type = get_expr_output(gen_acc, details.args[0]);
-	bc_opcode opcode = convert_call_to_pushback_opcode(interner, arg1_type);
+	bc_opcode opcode = convert_call_to_pushback_opcode(types, arg1_type);
 	if(opcode != bc_opcode::k_nop){
 		//	push_back() used DYN-arguments which are resolved at runtime. When we make opcodes we need to check at compile time = now.
 		if(arg1_type.is_string() && get_expr_output(gen_acc, details.args[1]).is_int() == false){
@@ -867,7 +867,7 @@ static expression_gen_t bcgen_intrinsic_push_back_expression(bcgenerator_t& gen_
 		const auto& arg2_expr = bcgen_expression(gen_acc, {}, details.args[1], body_acc);
 		body_acc = arg2_expr._body;
 
-		const auto target_reg2 = target_reg.is_empty() ? add_local_temp(interner, body_acc, call_output_type, "temp: result for k_pushback_x") : target_reg;
+		const auto target_reg2 = target_reg.is_empty() ? add_local_temp(types, body_acc, call_output_type, "temp: result for k_pushback_x") : target_reg;
 
 		body_acc._instrs.push_back(bcgen_instruction_t(opcode, target_reg2, arg1_expr._out, arg2_expr._out));
 		QUARK_ASSERT(body_acc.check_invariant());
@@ -881,12 +881,12 @@ static expression_gen_t bcgen_intrinsic_push_back_expression(bcgenerator_t& gen_
 
 
 //	a = size(b)
-static bc_opcode convert_call_to_size_opcode(const types_t& interner, const type_t& arg1_type){
-	QUARK_ASSERT(interner.check_invariant());
+static bc_opcode convert_call_to_size_opcode(const types_t& types, const type_t& arg1_type){
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(arg1_type.check_invariant());
 
 	if(arg1_type.is_vector()){
-		if(encode_as_vector_w_inplace_elements(interner, arg1_type)){
+		if(encode_as_vector_w_inplace_elements(types, arg1_type)){
 			return bc_opcode::k_get_size_vector_w_inplace_elements;
 		}
 		else{
@@ -894,7 +894,7 @@ static bc_opcode convert_call_to_size_opcode(const types_t& interner, const type
 		}
 	}
 	else if(arg1_type.is_dict()){
-		if(encode_as_dict_w_inplace_values(interner, arg1_type)){
+		if(encode_as_dict_w_inplace_values(types, arg1_type)){
 			return bc_opcode::k_get_size_dict_w_inplace_values;
 		}
 		else{
@@ -922,17 +922,17 @@ static expression_gen_t bcgen_intrinsic_size_expression(bcgenerator_t& gen_acc, 
 	const auto arg1_type = get_expr_output(gen_acc, details.args[0]);
 
 	auto body_acc = body;
-	auto& interner = gen_acc._ast_imm->_tree._interned_types;
+	auto& types = gen_acc._ast_imm->_tree._interned_types;
 
-	bc_opcode opcode = convert_call_to_size_opcode(interner, arg1_type);
+	bc_opcode opcode = convert_call_to_size_opcode(types, arg1_type);
 	if(opcode != bc_opcode::k_nop){
 		const auto& arg1_expr = bcgen_expression(gen_acc, {}, details.args[0], body_acc);
 		body_acc = arg1_expr._body;
 
-		const auto target_reg2 = target_reg.is_empty() ? add_local_temp(interner, body_acc, call_output_type, "temp: result for k_get_size_vector_x") : target_reg;
+		const auto target_reg2 = target_reg.is_empty() ? add_local_temp(types, body_acc, call_output_type, "temp: result for k_get_size_vector_x") : target_reg;
 		body_acc._instrs.push_back(bcgen_instruction_t(opcode, target_reg2, arg1_expr._out, make_imm_int(0)));
 		QUARK_ASSERT(body_acc.check_invariant());
-		return { body_acc, target_reg2, make_size_signature(interner)._function_type.get_function_return(interner) };
+		return { body_acc, target_reg2, make_size_signature(types)._function_type.get_function_return(types) };
 	}
 	else{
 		throw std::exception();
@@ -1136,7 +1136,7 @@ static expression_gen_t generate_callee(bcgenerator_t& gen_acc, const expression
 	QUARK_ASSERT(body0.check_invariant());
 
 	auto body_acc = body0;
-	auto& interner = gen_acc._ast_imm->_tree._interned_types;
+	auto& types = gen_acc._ast_imm->_tree._interned_types;
 	const auto load2 = std::get_if<expression_t::load2_t>(&details.callee->_expression_variant);
 	if(load2 != nullptr && load2->address._parent_steps == symbol_pos_t::k_intrinsic){
 		const auto& intrinsic_signatures = gen_acc._ast_imm->intrinsic_signatures;
@@ -1147,7 +1147,7 @@ static expression_gen_t generate_callee(bcgenerator_t& gen_acc, const expression
 
 		const auto function_type = get_expr_output(gen_acc, *details.callee);
 		const auto value = value_t::make_function_value(function_type, function_id_t { name });
-		const auto r = add_local_const(interner, body_acc, value, "temp: intrinsics-" + name);
+		const auto r = add_local_const(types, body_acc, value, "temp: intrinsics-" + name);
 		return expression_gen_t { body_acc, r, function_type };
 	}
 	else{
@@ -1168,12 +1168,12 @@ static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const symb
 	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
-	auto& interner = gen_acc._ast_imm->_tree._interned_types;
+	auto& types = gen_acc._ast_imm->_tree._interned_types;
 
 	const auto callee_arg_count = static_cast<int>(details.args.size());
 
 	const auto function_type = get_expr_output(gen_acc, *details.callee);
-	const auto function_def_arg_types = function_type.get_function_args(interner);
+	const auto function_def_arg_types = function_type.get_function_args(types);
 	QUARK_ASSERT(callee_arg_count == function_def_arg_types.size());
 	const auto return_type = call_output_type;
 
@@ -1188,7 +1188,7 @@ static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const symb
 	const auto call_setup = gen_call_setup(gen_acc, function_def_arg_types, &details.args[0], callee_arg_count, body_acc);
 	body_acc = call_setup._body;
 
-	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(interner, body_acc, call_output_type, "temp: call return") : target_reg;
+	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(types, body_acc, call_output_type, "temp: call return") : target_reg;
 
 	//??? No need to allocate return register if functions returns void.
 	QUARK_ASSERT(return_type.is_any() == false && return_type.is_undefined() == false)
@@ -1221,120 +1221,120 @@ static expression_gen_t bcgen_intrinsic_expression(bcgenerator_t& gen_acc, const
 	QUARK_ASSERT(call_output_type.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-	auto& interner = gen_acc._ast_imm->_tree._interned_types;
+	auto& types = gen_acc._ast_imm->_tree._interned_types;
 
-	if(details.call_name == get_intrinsic_opcode(make_assert_signature(interner))){
+	if(details.call_name == get_intrinsic_opcode(make_assert_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_to_string_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_to_string_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_to_pretty_string_signature(interner))){
-		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
-	}
-
-
-	else if(details.call_name == get_intrinsic_opcode(make_typeof_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_to_pretty_string_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
 
 
-	else if(details.call_name == get_intrinsic_opcode(make_update_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_typeof_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_size_signature(interner))){
+
+
+	else if(details.call_name == get_intrinsic_opcode(make_update_signature(types))){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_size_signature(types))){
 		return bcgen_intrinsic_size_expression(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_find_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_find_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_exists_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_exists_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_erase_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_erase_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_get_keys_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_get_keys_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_push_back_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_push_back_signature(types))){
 		return bcgen_intrinsic_push_back_expression(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_subset_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_subset_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_replace_signature(interner))){
-		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
-	}
-
-
-	else if(details.call_name == get_intrinsic_opcode(make_parse_json_script_signature(interner))){
-		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
-	}
-	else if(details.call_name == get_intrinsic_opcode(make_generate_json_script_signature(interner))){
-		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
-	}
-	else if(details.call_name == get_intrinsic_opcode(make_to_json_signature(interner))){
-		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
-	}
-	else if(details.call_name == get_intrinsic_opcode(make_from_json_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_replace_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
 
 
-	else if(details.call_name == get_intrinsic_opcode(make_get_json_type_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_parse_json_script_signature(types))){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_generate_json_script_signature(types))){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_to_json_signature(types))){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_from_json_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
 
 
-	else if(details.call_name == get_intrinsic_opcode(make_map_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_get_json_type_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_map_string_signature(interner))){
+
+
+	else if(details.call_name == get_intrinsic_opcode(make_map_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_map_dag_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_map_string_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_filter_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_map_dag_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_reduce_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_filter_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_stable_sort_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_reduce_signature(types))){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_stable_sort_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
 
 
 
-	else if(details.call_name == get_intrinsic_opcode(make_print_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_print_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_send_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_send_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
 
 
-	else if(details.call_name == get_intrinsic_opcode(make_bw_not_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_bw_not_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_bw_and_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_bw_and_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_bw_or_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_bw_or_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_bw_xor_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_bw_xor_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_bw_shift_left_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_bw_shift_left_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_bw_shift_right_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_bw_shift_right_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_intrinsic_opcode(make_bw_shift_right_arithmetic_signature(interner))){
+	else if(details.call_name == get_intrinsic_opcode(make_bw_shift_right_arithmetic_signature(types))){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
 
@@ -1881,8 +1881,8 @@ bc_instruction_t squeeze_instruction(const bcgen_instruction_t& instruction){
 	return result;
 }
 
-static bc_static_frame_t make_frame(const types_t& interner, const bcgen_body_t& body, const std::vector<type_t>& args){
-	QUARK_ASSERT(interner.check_invariant());
+static bc_static_frame_t make_frame(const types_t& types, const bcgen_body_t& body, const std::vector<type_t>& args){
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
 	std::vector<bc_instruction_t> instrs2;
@@ -1893,7 +1893,7 @@ static bc_static_frame_t make_frame(const types_t& interner, const bcgen_body_t&
 	std::vector<std::pair<std::string, bc_symbol_t>> symbols2;
 	for(const auto& e: body._symbol_table._symbols){
 		const auto t0 = e.second.get_value_type();
-		const auto t = peek(interner, t0);
+		const auto t = peek(types, t0);
 		if(e.second._symbol_type == symbol_t::symbol_type::named_type){
 /*
 			const auto e2 = std::pair<std::string, bc_symbol_t>{
@@ -1910,7 +1910,7 @@ static bc_static_frame_t make_frame(const types_t& interner, const bcgen_body_t&
 				bc_symbol_t{
 					bc_symbol_t::type::immutable,
 					t,
-					value_to_bc(interner, e.second._init)
+					value_to_bc(types, e.second._init)
 				}
 			};
 			symbols2.push_back(e2);
@@ -1921,15 +1921,15 @@ static bc_static_frame_t make_frame(const types_t& interner, const bcgen_body_t&
 				bc_symbol_t{
 					is_mutable(e.second) ? bc_symbol_t::type::mutable1 : bc_symbol_t::type::immutable,
 					t,
-					value_to_bc(interner, e.second._init)
+					value_to_bc(types, e.second._init)
 				}
 			};
 			symbols2.push_back(e2);
 		}
 	}
 
-//	const auto flat_args = mapf<type_t>(args, [&](const auto& e) { return flatten_type_description_deep(interner, e); });
-	return bc_static_frame_t(interner, instrs2, symbols2, args);
+//	const auto flat_args = mapf<type_t>(args, [&](const auto& e) { return flatten_type_description_deep(types, e); });
+	return bc_static_frame_t(types, instrs2, symbols2, args);
 }
 
 bc_program_t generate_bytecode(const semantic_ast_t& ast){

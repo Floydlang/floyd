@@ -386,7 +386,7 @@ struct type_t {
 		return get_base_type() == base_type::k_struct;
 	}
 
-	struct_type_desc_t get_struct(const types_t& interner) const;
+	struct_type_desc_t get_struct(const types_t& types) const;
 
 
 
@@ -400,7 +400,7 @@ struct type_t {
 	}
 
 
-	type_t get_vector_element_type(const types_t& interner) const;
+	type_t get_vector_element_type(const types_t& types) const;
 
 	base_type get_vector_element_basetype() const {
 		QUARK_ASSERT(check_invariant());
@@ -419,7 +419,7 @@ struct type_t {
 		return get_base_type() == base_type::k_dict;
 	}
 
-	type_t get_dict_value_type(const types_t& interner) const;
+	type_t get_dict_value_type(const types_t& types) const;
 
 	base_type get_dict_value_basetype() const {
 		QUARK_ASSERT(check_invariant());
@@ -438,12 +438,12 @@ struct type_t {
 		return get_base_type() == base_type::k_function;
 	}
 
-	public: type_t get_function_return(const types_t& interner) const;
-	public: std::vector<type_t> get_function_args(const types_t& interner) const;
+	public: type_t get_function_return(const types_t& types) const;
+	public: std::vector<type_t> get_function_args(const types_t& types) const;
 
-	public: return_dyn_type get_function_dyn_return_type(const types_t& interner) const;
+	public: return_dyn_type get_function_dyn_return_type(const types_t& types) const;
 
-	public: epure get_function_pure(const types_t& interner) const;
+	public: epure get_function_pure(const types_t& types) const;
 
 
 	//////////////////////////////////////////////////		SYMBOL
@@ -455,7 +455,7 @@ struct type_t {
 		return get_base_type() == base_type::k_symbol_ref;
 	}
 
-	std::string get_symbol_ref(const types_t& interner) const;
+	std::string get_symbol_ref(const types_t& types) const;
 
 
 	//////////////////////////////////////////////////		NAMED TYPE
@@ -467,7 +467,7 @@ struct type_t {
 		return get_base_type() == base_type::k_named_type;
 	}
 
-	type_name_t get_named_type(const types_t& interner) const;
+	type_name_t get_named_type(const types_t& types) const;
 
 
 	//////////////////////////////////////////////////		BASETYPE
@@ -588,15 +588,15 @@ inline type_t make_json_type(){
 	return type_t::make_json();
 }
 
-type_t make_struct(types_t& interner, const struct_type_desc_t& def);
-type_t make_struct(const types_t& interner, const struct_type_desc_t& def);
-type_t make_vector(types_t& interner, const type_t& element_type);
-type_t make_vector(const types_t& interner, const type_t& element_type);
-type_t make_dict(types_t& interner, const type_t& value_type);
-type_t make_dict(const types_t& interner, const type_t& value_type);
+type_t make_struct(types_t& types, const struct_type_desc_t& def);
+type_t make_struct(const types_t& types, const struct_type_desc_t& def);
+type_t make_vector(types_t& types, const type_t& element_type);
+type_t make_vector(const types_t& types, const type_t& element_type);
+type_t make_dict(types_t& types, const type_t& value_type);
+type_t make_dict(const types_t& types, const type_t& value_type);
 
 type_t make_function3(
-	types_t& interner,
+	types_t& types,
 	const type_t& ret,
 	const std::vector<type_t>& args,
 	epure pure,
@@ -604,35 +604,35 @@ type_t make_function3(
 );
 
 type_t make_function3(
-	const types_t& interner,
+	const types_t& types,
 	const type_t& ret,
 	const std::vector<type_t>& args,
 	epure pure,
 	return_dyn_type dyn_return
 );
 type_t make_function_dyn_return(
-	types_t& interner,
+	types_t& types,
 	const std::vector<type_t>& args,
 	epure pure,
 	return_dyn_type dyn_return
 );
 type_t make_function(
-	types_t& interner,
+	types_t& types,
 	const type_t& ret,
 	const std::vector<type_t>& args,
 	epure pure
 );
 type_t make_function(
-	const types_t& interner,
+	const types_t& types,
 	const type_t& ret,
 	const std::vector<type_t>& args,
 	epure pure
 );
 
-type_t make_symbol_ref(types_t& interner, const std::string& s);
+type_t make_symbol_ref(types_t& types, const std::string& s);
 
 //??? rethink  make_named_type() VS new_tagged_type()
-type_t make_named_type(types_t& interner, const type_name_t& type);
+type_t make_named_type(types_t& types, const type_name_t& type);
 
 
 
@@ -648,8 +648,8 @@ bool is_atomic_type(type_t type);
 json_t type_to_json_shallow(const type_t& type);
 type_t type_from_json_shallow(const json_t& j);
 
-json_t type_to_json(const types_t& interner, const type_t& type);
-type_t type_from_json(types_t& interner, const json_t& j);
+json_t type_to_json(const types_t& types, const type_t& type);
+type_t type_from_json(types_t& types, const json_t& j);
 
 
 std::string type_to_debug_string(const type_t& type);
@@ -657,7 +657,7 @@ std::string type_to_debug_string(const type_t& type);
 enum class resolve_named_types { resolve, dont_resolve };
 
 std::string type_to_compact_string(
-	const types_t& interner,
+	const types_t& types,
 	const type_t& type,
 	resolve_named_types resolve = resolve_named_types::dont_resolve
 );
@@ -713,8 +713,8 @@ inline bool operator==(const struct_type_desc_t& lhs, const struct_type_desc_t& 
 
 int find_struct_member_index(const struct_type_desc_t& def, const std::string& name);
 
-json_t members_to_json(const types_t& interner, const std::vector<member_t>& members);
-std::vector<member_t> members_from_json(types_t& interner, const json_t& members);
+json_t members_to_json(const types_t& types, const std::vector<member_t>& members);
+std::vector<member_t> members_from_json(types_t& types, const json_t& members);
 
 
 
@@ -777,27 +777,28 @@ struct types_t {
 
 	//	All types are recorded here, an uniqued. Including named types.
 	//	type uses the INDEX into this array for fast lookups.
+	//??? renameto "nodes"
 	std::vector<type_node_t> interned2;
 };
 
 
-const type_node_t& lookup_typeinfo_from_type(const types_t& interner, const type_t& type);
-type_node_t& lookup_typeinfo_from_type(types_t& interner, const type_t& type);
-type_t lookup_type_from_name(const types_t& interner, const type_name_t& n);
+const type_node_t& lookup_typeinfo_from_type(const types_t& types, const type_t& type);
+type_node_t& lookup_typeinfo_from_type(types_t& types, const type_t& type);
+type_t lookup_type_from_name(const types_t& types, const type_name_t& n);
 
-type_t lookup_type_from_index(const types_t& interner, type_lookup_index_t type_index);
+type_t lookup_type_from_index(const types_t& types, type_lookup_index_t type_index);
 
-void trace_type_interner(const types_t& interner);
-
-
-
-type_t peek(const types_t& interner, const type_t& type);
-
-type_t refresh_type(const types_t& interner, const type_t& type);
+void trace_type_interner(const types_t& types);
 
 
 
-json_t type_interner_to_json(const types_t& interner);
+type_t peek(const types_t& types, const type_t& type);
+
+type_t refresh_type(const types_t& types, const type_t& type);
+
+
+
+json_t type_interner_to_json(const types_t& types);
 types_t type_interner_from_json(const json_t& j);
 
 
@@ -809,14 +810,14 @@ types_t type_interner_from_json(const json_t& j);
 //	Allocates a new type for this name. The name must not already exist.
 //	You can use type_t::make_undefined() and
 //	later update the type using update_tagged_type()
-type_t new_tagged_type(types_t& interner, const type_name_t& tag);
-type_t new_tagged_type(types_t& interner, const type_name_t& tag, const type_t& type);
+type_t new_tagged_type(types_t& types, const type_name_t& tag);
+type_t new_tagged_type(types_t& types, const type_name_t& tag, const type_t& type);
 
 //	Update the tagged type's type. The tagged type must already exist. Any usage of this
 //	tag will also get the new type.
-type_t update_tagged_type(types_t& interner, const type_t& named, const type_t& type);
+type_t update_tagged_type(types_t& types, const type_t& named, const type_t& type);
 
-type_t get_tagged_type2(const types_t& interner, const type_name_t& tag);
+type_t get_tagged_type2(const types_t& types, const type_name_t& tag);
 
 
 
@@ -873,7 +874,7 @@ typedef std::variant<
 > type_variant_t;
 
 
-type_variant_t get_type_variant(const types_t& interner, const type_t& type);
+type_variant_t get_type_variant(const types_t& types, const type_t& type);
 
 
 

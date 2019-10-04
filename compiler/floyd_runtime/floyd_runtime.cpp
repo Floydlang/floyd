@@ -19,13 +19,13 @@ namespace floyd {
 
 
 //??? remove usage of value_t
-value_t unflatten_json_to_specific_type(types_t& interner, const json_t& v, const type_t& target_type){
-	QUARK_ASSERT(interner.check_invariant());
+value_t unflatten_json_to_specific_type(types_t& types, const json_t& v, const type_t& target_type){
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(v.check_invariant());
 
 
 	struct visitor_t {
-		types_t& interner;
+		types_t& types;
 		const type_t& target_type;
 		const json_t& v;
 
@@ -81,7 +81,7 @@ value_t unflatten_json_to_specific_type(types_t& interner, const json_t& v, cons
 			return value_t::make_json(v);
 		}
 		value_t operator()(const typeid_type_t& e) const{
-			const auto typeid_value = type_from_json(interner, v);
+			const auto typeid_value = type_from_json(types, v);
 			return value_t::make_typeid_value(typeid_value);
 		}
 
@@ -91,10 +91,10 @@ value_t unflatten_json_to_specific_type(types_t& interner, const json_t& v, cons
 				std::vector<value_t> members2;
 				for(const auto& member: struct_def._members){
 					const auto member_value0 = v.get_object_element(member._name);
-					const auto member_value1 = unflatten_json_to_specific_type(interner, member_value0, member._type);
+					const auto member_value1 = unflatten_json_to_specific_type(types, member_value0, member._type);
 					members2.push_back(member_value1);
 				}
-				const auto result = value_t::make_struct_value(interner, target_type, members2);
+				const auto result = value_t::make_struct_value(types, target_type, members2);
 				return result;
 			}
 			else{
@@ -103,14 +103,14 @@ value_t unflatten_json_to_specific_type(types_t& interner, const json_t& v, cons
 		}
 		value_t operator()(const vector_t& e) const{
 			if(v.is_array()){
-				const auto target_element_type = target_type.get_vector_element_type(interner);
+				const auto target_element_type = target_type.get_vector_element_type(types);
 				std::vector<value_t> elements2;
 				for(int i = 0 ; i < v.get_array_size() ; i++){
 					const auto member_value0 = v.get_array_n(i);
-					const auto member_value1 = unflatten_json_to_specific_type(interner, member_value0, target_element_type);
+					const auto member_value1 = unflatten_json_to_specific_type(types, member_value0, target_element_type);
 					elements2.push_back(member_value1);
 				}
-				const auto result = value_t::make_vector_value(interner, target_element_type, elements2);
+				const auto result = value_t::make_vector_value(types, target_element_type, elements2);
 				return result;
 			}
 			else{
@@ -119,16 +119,16 @@ value_t unflatten_json_to_specific_type(types_t& interner, const json_t& v, cons
 		}
 		value_t operator()(const dict_t& e) const{
 			if(v.is_object()){
-				const auto value_type = target_type.get_dict_value_type(interner);
+				const auto value_type = target_type.get_dict_value_type(types);
 				const auto source_obj = v.get_object();
 				std::map<std::string, value_t> obj2;
 				for(const auto& member: source_obj){
 					const auto member_name = member.first;
 					const auto member_value0 = member.second;
-					const auto member_value1 = unflatten_json_to_specific_type(interner, member_value0, value_type);
+					const auto member_value1 = unflatten_json_to_specific_type(types, member_value0, value_type);
 					obj2[member_name] = member_value1;
 				}
-				const auto result = value_t::make_dict_value(interner, value_type, obj2);
+				const auto result = value_t::make_dict_value(types, value_type, obj2);
 				return result;
 			}
 			else{
@@ -145,7 +145,7 @@ value_t unflatten_json_to_specific_type(types_t& interner, const json_t& v, cons
 			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
-	return std::visit(visitor_t{ interner, target_type, v}, get_type_variant(interner, target_type));
+	return std::visit(visitor_t{ types, target_type, v}, get_type_variant(types, target_type));
 }
 
 

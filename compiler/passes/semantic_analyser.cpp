@@ -144,12 +144,12 @@ static void trace_analyser(const analyser_t& a){
 /////////////////////////////////////////			RESOLVE SYMBOL USING LEXICAL SCOPE PATH
 
 
-static type_t get_tagged_type_symbol(const types_t& interner, const symbol_t& symbol){
-	QUARK_ASSERT(interner.check_invariant());
+static type_t get_tagged_type_symbol(const types_t& types, const symbol_t& symbol){
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(symbol._symbol_type == symbol_t::symbol_type::named_type);
 
 	const auto a = symbol._value_type;
-	const auto b = refresh_type(interner, a);
+	const auto b = refresh_type(types, a);
 	return b;
 }
 
@@ -1568,12 +1568,12 @@ std::pair<analyser_t, expression_t> analyse_load2(const analyser_t& a, const exp
 }
 
 
-static type_t select_inferred_type(const types_t& interner, const type_t& target_type_or_any, const type_t& rhs_guess_type){
-	QUARK_ASSERT(interner.check_invariant());
+static type_t select_inferred_type(const types_t& types, const type_t& target_type_or_any, const type_t& rhs_guess_type){
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(target_type_or_any.check_invariant());
 	QUARK_ASSERT(rhs_guess_type.check_invariant());
 
-	const bool rhs_guess_type_valid = check_types_resolved(interner, rhs_guess_type);
+	const bool rhs_guess_type_valid = check_types_resolved(types, rhs_guess_type);
 	const bool have_target_type = target_type_or_any.is_any() == false;
 
 	if(have_target_type && rhs_guess_type_valid == false){
@@ -2625,8 +2625,8 @@ QUARK_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
 
 
 
-static std::pair<std::string, symbol_t> make_builtin_type(types_t& interner, const type_t& type){
-	QUARK_ASSERT(interner.check_invariant());
+static std::pair<std::string, symbol_t> make_builtin_type(types_t& types, const type_t& type){
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto bt = type.get_base_type();

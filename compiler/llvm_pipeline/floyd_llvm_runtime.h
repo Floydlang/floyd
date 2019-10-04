@@ -80,7 +80,7 @@ struct function_link_entry_t {
 	void* native_f;
 };
 
-void trace_function_link_map(const types_t& interner, const std::vector<function_link_entry_t>& defs);
+void trace_function_link_map(const types_t& types, const std::vector<function_link_entry_t>& defs);
 
 
 

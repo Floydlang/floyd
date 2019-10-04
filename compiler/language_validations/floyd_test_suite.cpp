@@ -76,31 +76,31 @@ unsupported syntax
 
 
 
-static value_t make_bool_vec(types_t& interner, const std::vector<bool>& elements){
+static value_t make_bool_vec(types_t& types, const std::vector<bool>& elements){
 	std::vector<value_t> elements2;
 	for(const auto e: elements){
 		elements2.push_back(value_t::make_bool(e));
 	}
 
-	return value_t::make_vector_value(interner, type_t::make_bool(), elements2);
+	return value_t::make_vector_value(types, type_t::make_bool(), elements2);
 }
 
-static value_t make_int_vec(types_t& interner, const std::vector<int64_t>& elements){
+static value_t make_int_vec(types_t& types, const std::vector<int64_t>& elements){
 	std::vector<value_t> elements2;
 	for(const auto& e: elements){
 		elements2.push_back(value_t::make_int(e));
 	}
 
-	return value_t::make_vector_value(interner, type_t::make_int(), elements2);
+	return value_t::make_vector_value(types, type_t::make_int(), elements2);
 }
 
-static value_t make_double_vec(types_t& interner, const std::vector<double>& elements){
+static value_t make_double_vec(types_t& types, const std::vector<double>& elements){
 	std::vector<value_t> elements2;
 	for(const auto& e: elements){
 		elements2.push_back(value_t::make_double(e));
 	}
 
-	return value_t::make_vector_value(interner, type_t::make_double(), elements2);
+	return value_t::make_vector_value(types, type_t::make_double(), elements2);
 }
 
 #if 0

@@ -81,7 +81,7 @@ struct STRUCT_T;
 ////////////////////////////////	runtime_type_t
 
 /*
-	An integer that specifies a unique type a type interner. Use this to specify types in running program.
+	An integer that specifies a unique type a type types. Use this to specify types in running program.
 	Avoid using floyd::type_t
 	It is 1:1 compatible with type_t. Use type_t except in binary situations.
 */
@@ -648,8 +648,8 @@ void dispose_struct(STRUCT_T& v);
 
 
 
-runtime_value_t load_via_ptr2(const types_t& interner, const void* value_ptr, const type_t& type);
-void store_via_ptr2(const types_t& interner, void* value_ptr, const type_t& type, const runtime_value_t& value);
+runtime_value_t load_via_ptr2(const types_t& types, const void* value_ptr, const type_t& type);
+void store_via_ptr2(const types_t& types, void* value_ptr, const type_t& type, const runtime_value_t& value);
 
 
 
@@ -676,13 +676,13 @@ struct value_backend_t {
 	value_backend_t(
 		const std::vector<std::pair<link_name_t, void*>>& native_func_lookup,
 		const std::vector<std::pair<type_t, struct_layout_t>>& struct_layouts,
-		const types_t& type_interner,
+		const types_t& types,
 		const config_t& config
 	);
 
 	bool check_invariant() const {
 		QUARK_ASSERT(heap.check_invariant());
-		QUARK_ASSERT(child_type.size() == type_interner.interned2.size());
+		QUARK_ASSERT(child_type.size() == types.interned2.size());
 		QUARK_ASSERT(config.check_invariant());
 		return true;
 	}
@@ -695,7 +695,7 @@ struct value_backend_t {
 	//	??? Also go from itype -> struct_layout
 	// 	??? also go from itype -> collection element-type without using type_t.
 
-	types_t type_interner;
+	types_t types;
 	std::vector<type_t> child_type;
 
 

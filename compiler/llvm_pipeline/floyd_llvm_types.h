@@ -92,7 +92,7 @@ llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<
 ////////////////////////////////		type_entry_t
 
 
-//	LLVM-specific info for each type_t. Keep a parallell vector with these, alongside the type_interner.
+//	LLVM-specific info for each type_t. Keep a parallell vector with these, alongside the types.
 
 
 struct type_entry_t {
@@ -135,17 +135,17 @@ struct state_t {
 	public: llvm::Type* runtime_type_type;
 	public: llvm::Type* runtime_value_type;
 
-	public: types_t type_interner;
+	public: types_t types;
 
-	//	Elements match the elements inside type_interner.
-	public: std::vector<type_entry_t> types;
+	//	Elements match the elements inside types.
+	public: std::vector<type_entry_t> type_entries;
 };
 
 
 ////////////////////////////////		llvm_type_lookup
 
 /*
-	LLVM Type interner: keeps a list of ALL types used statically in the program, their itype, their LLVM type and their Floyd type.
+	LLVM Type types: keeps a list of ALL types used statically in the program, their itype, their LLVM type and their Floyd type.
 
 	Generic-type: vector (and string), dictionary, json and struct are passed around as 4 different
 	types, not one for each vector type, struct type etc. These generic types are 64 bytes big, the same size as
@@ -153,7 +153,7 @@ struct state_t {
 */
 
 struct llvm_type_lookup {
-	llvm_type_lookup(llvm::LLVMContext& context, const types_t& type_interner);
+	llvm_type_lookup(llvm::LLVMContext& context, const types_t& types);
 	bool check_invariant() const;
 
 	const type_entry_t& find_from_itype(const type_t& itype) const;

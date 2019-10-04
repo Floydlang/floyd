@@ -70,7 +70,7 @@ bool operator==(const test_report_t& lhs, const test_report_t& rhs){
 
 
 void ut_verify_report(const quark::call_context_t& context, const test_report_t& result, const test_report_t& expected){
-	types_t interner;
+	types_t types;
 
 	if(result.exception_what != expected.exception_what){
 		std::cout << "Expected exception what: " << expected.exception_what << std::endl;
@@ -85,8 +85,8 @@ void ut_verify_report(const quark::call_context_t& context, const test_report_t&
 	if(result.result_variable != expected.result_variable){
 		ut_verify(
 			context,
-			value_and_type_to_ast_json(interner, result.result_variable),
-			value_and_type_to_ast_json(interner, expected.result_variable)
+			value_and_type_to_ast_json(types, result.result_variable),
+			value_and_type_to_ast_json(types, expected.result_variable)
 		);
 	}
 

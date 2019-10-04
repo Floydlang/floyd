@@ -811,17 +811,17 @@ bool is_valid_absolute_dir_path(const std::string& s){
 }
 
 
-std::vector<value_t> directory_entries_to_values(types_t& type_interner, const std::vector<TDirEntry>& v){
-	QUARK_ASSERT(type_interner.check_invariant());
+std::vector<value_t> directory_entries_to_values(types_t& types, const std::vector<TDirEntry>& v){
+	QUARK_ASSERT(types.check_invariant());
 
-	const auto k_fsentry_t__type = make__fsentry_t__type(type_interner);
+	const auto k_fsentry_t__type = make__fsentry_t__type(types);
 	const auto elements = mapf<value_t>(
 		v,
 		[&](const auto& e){
 //			const auto t = value_t::make_string(e.fName);
 			const auto type_string = e.fType == TDirEntry::kFile ? "file": "dir";
 			const auto t2 = value_t::make_struct_value(
-				type_interner,
+				types,
 				k_fsentry_t__type,
 				{
 					value_t::make_string(type_string),
@@ -836,9 +836,9 @@ std::vector<value_t> directory_entries_to_values(types_t& type_interner, const s
 }
 
 
-type_t make__fsentry_t__type(types_t& type_interner){
+type_t make__fsentry_t__type(types_t& types){
 	const auto temp = make_struct(
-		type_interner,
+		types,
 		struct_type_desc_t({
 			{ type_t::make_string(), "type" },
 			{ type_t::make_string(), "abs_parent_path" },
@@ -859,9 +859,9 @@ type_t make__fsentry_t__type(types_t& type_interner){
 		file_pos_t file_size
 	}
 */
-type_t make__fsentry_info_t__type(types_t& type_interner){
+type_t make__fsentry_info_t__type(types_t& types){
 	const auto temp = make_struct(
-		type_interner,
+		types,
 		struct_type_desc_t({
 			{ type_t::make_string(), "type" },
 			{ type_t::make_string(), "name" },
@@ -878,9 +878,9 @@ type_t make__fsentry_info_t__type(types_t& type_interner){
 
 
 
-type_t make__fs_environment_t__type(types_t& type_interner){
+type_t make__fs_environment_t__type(types_t& types){
 	const auto temp = make_struct(
-		type_interner,
+		types,
 		struct_type_desc_t({
 			{ type_t::make_string(), "home_dir" },
 			{ type_t::make_string(), "documents_dir" },
@@ -903,9 +903,9 @@ type_t make__fs_environment_t__type(types_t& type_interner){
 		string utd_date
 	}
 */
-type_t make__date_t__type(types_t& type_interner){
+type_t make__date_t__type(types_t& types){
 	const auto temp = make_struct(
-		type_interner,
+		types,
 		struct_type_desc_t({
 			{ type_t::make_string(), "utd_date" }
 		})
@@ -913,9 +913,9 @@ type_t make__date_t__type(types_t& type_interner){
 	return temp;
 }
 
-type_t make__sha1_t__type(types_t& type_interner){
+type_t make__sha1_t__type(types_t& types){
 	const auto temp = make_struct(
-		type_interner,
+		types,
 		struct_type_desc_t({
 			{ type_t::make_string(), "ascii40" }
 		})
@@ -923,9 +923,9 @@ type_t make__sha1_t__type(types_t& type_interner){
 	return temp;
 }
 
-type_t make__binary_t__type(types_t& type_interner){
+type_t make__binary_t__type(types_t& types){
 	const auto temp = make_struct(
-		type_interner,
+		types,
 		struct_type_desc_t({
 			{ type_t::make_string(), "bytes" }
 		})
@@ -938,9 +938,9 @@ type_t make__binary_t__type(types_t& type_interner){
 		string absolute_path
 	}
 */
-type_t make__absolute_path_t__type(types_t& type_interner){
+type_t make__absolute_path_t__type(types_t& types){
 	const auto temp = make_struct(
-		type_interner,
+		types,
 		struct_type_desc_t({
 			{ type_t::make_string(), "absolute_path" }
 		})
@@ -953,9 +953,9 @@ type_t make__absolute_path_t__type(types_t& type_interner){
 		int pos
 	}
 */
-type_t make__file_pos_t__type(types_t& type_interner){
+type_t make__file_pos_t__type(types_t& types){
 	const auto temp = make_struct(
-		type_interner,
+		types,
 		struct_type_desc_t({
 			{ type_t::make_int(), "pos" }
 		})
@@ -1095,10 +1095,10 @@ fsentry_info_t corelib_get_fsentry_info(const std::string& abs_path){
 	return result;
 }
 
-value_t pack_fsentry_info(types_t& type_interner, const fsentry_info_t& info){
+value_t pack_fsentry_info(types_t& types, const fsentry_info_t& info){
 	const auto result = value_t::make_struct_value(
-		type_interner,
-		make__fsentry_info_t__type(type_interner),
+		types,
+		make__fsentry_info_t__type(types),
 		{
 			value_t::make_string(info.type),
 			value_t::make_string(info.name),
@@ -1112,7 +1112,7 @@ value_t pack_fsentry_info(types_t& type_interner, const fsentry_info_t& info){
 	);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(type_interner, result);
+	const auto debug = value_and_type_to_ast_json(types, result);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
@@ -1155,10 +1155,10 @@ fs_environment_t corelib_get_fs_environment(){
 	return result;
 }
 
-value_t pack_fs_environment_t(types_t& type_interner, const fs_environment_t& env){
+value_t pack_fs_environment_t(types_t& types, const fs_environment_t& env){
 	const auto result = value_t::make_struct_value(
-		type_interner,
-		make__fs_environment_t__type(type_interner),
+		types,
+		make__fs_environment_t__type(types),
 		{
 			value_t::make_string(env.home_dir),
 			value_t::make_string(env.documents_dir),
@@ -1174,7 +1174,7 @@ value_t pack_fs_environment_t(types_t& type_interner, const fs_environment_t& en
 	);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(type_interner, result);
+	const auto debug = value_and_type_to_ast_json(types, result);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 

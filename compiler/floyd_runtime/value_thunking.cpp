@@ -129,7 +129,7 @@ static runtime_value_t to_runtime_struct(value_backend_t& backend, const struct_
 		const auto offset = struct_layout.second.members[member_index].offset;
 		const auto member_ptr = reinterpret_cast<void*>(struct_base_ptr + offset);
 		const auto member_type = e.get_type();
-		store_via_ptr2(backend.type_interner, member_ptr, member_type, to_runtime_value2(backend, e));
+		store_via_ptr2(backend.types, member_ptr, member_type, to_runtime_value2(backend, e));
 		member_index++;
 	}
 	return make_runtime_struct(s);
@@ -142,7 +142,7 @@ static value_t from_runtime_struct(const value_backend_t& backend, const runtime
 
 	const auto& struct_layout = find_struct_layout(backend, type);
 
-	const auto& struct_def = type.get_struct(backend.type_interner);
+	const auto& struct_def = type.get_struct(backend.types);
 	const auto struct_base_ptr = encoded_value.struct_ptr->get_data_ptr();
 
 	std::vector<value_t> members;
@@ -154,7 +154,7 @@ static value_t from_runtime_struct(const value_backend_t& backend, const runtime
 		members.push_back(member_value);
 		member_index++;
 	}
-	return value_t::make_struct_value(backend.type_interner, type, members);
+	return value_t::make_struct_value(backend.types, type, members);
 }
 
 
@@ -170,7 +170,7 @@ static runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t
 	if(is_vector_carray(backend.config, itype)){
 		auto result = alloc_vector_carray(backend.heap, count, count, itype);
 
-		const auto element_type = value.get_type().get_vector_element_type(backend.type_interner);
+		const auto element_type = value.get_type().get_vector_element_type(backend.types);
 		auto p = result.vector_carray_ptr->get_element_ptr();
 		for(int i = 0 ; i < count ; i++){
 			const auto& e = v0[i];
@@ -204,7 +204,7 @@ static value_t from_runtime_vector(const value_backend_t& backend, const runtime
 
 	const auto itype = type;
 	if(is_vector_carray(backend.config, itype)){
-		const auto element_type = type.get_vector_element_type(backend.type_interner);
+		const auto element_type = type.get_vector_element_type(backend.types);
 		const auto vec = encoded_value.vector_carray_ptr;
 
 		std::vector<value_t> elements;
@@ -215,11 +215,11 @@ static value_t from_runtime_vector(const value_backend_t& backend, const runtime
 			const auto value = from_runtime_value2(backend, value_encoded, element_type);
 			elements.push_back(value);
 		}
-		const auto val = value_t::make_vector_value(backend.type_interner, element_type, elements);
+		const auto val = value_t::make_vector_value(backend.types, element_type, elements);
 		return val;
 	}
 	else if(is_vector_hamt(backend.config, itype)){
-		const auto element_type = type.get_vector_element_type(backend.type_interner);
+		const auto element_type = type.get_vector_element_type(backend.types);
 		const auto vec = encoded_value.vector_hamt_ptr;
 
 		std::vector<value_t> elements;
@@ -229,7 +229,7 @@ static value_t from_runtime_vector(const value_backend_t& backend, const runtime
 			const auto value = from_runtime_value2(backend, value_encoded, element_type);
 			elements.push_back(value);
 		}
-		const auto val = value_t::make_vector_value(backend.type_interner, element_type, elements);
+		const auto val = value_t::make_vector_value(backend.types, element_type, elements);
 		return val;
 	}
 	else{
@@ -249,7 +249,7 @@ static runtime_value_t to_runtime_dict(value_backend_t& backend, const dict_t& e
 
 		auto result = alloc_dict_cppmap(backend.heap, itype);
 
-		const auto element_type = value.get_type().get_dict_value_type(backend.type_interner);
+		const auto element_type = value.get_type().get_dict_value_type(backend.types);
 		auto& m = result.dict_cppmap_ptr->get_map_mut();
 		for(const auto& e: v0){
 			const auto a = to_runtime_value2(backend, e.second);
@@ -262,7 +262,7 @@ static runtime_value_t to_runtime_dict(value_backend_t& backend, const dict_t& e
 
 		auto result = alloc_dict_hamt(backend.heap, value.get_type());
 
-		const auto element_type = value.get_type().get_dict_value_type(backend.type_interner);
+		const auto element_type = value.get_type().get_dict_value_type(backend.types);
 		auto& m = result.dict_hamt_ptr->get_map_mut();
 		for(const auto& e: v0){
 			const auto a = to_runtime_value2(backend, e.second);
@@ -283,7 +283,7 @@ static value_t from_runtime_dict(const value_backend_t& backend, const runtime_v
 
 	const auto itype = type;
 	if(is_dict_cppmap(backend.config, itype)){
-		const auto value_type = type.get_dict_value_type(backend.type_interner);
+		const auto value_type = type.get_dict_value_type(backend.types);
 		const auto dict = encoded_value.dict_cppmap_ptr;
 
 		std::map<std::string, value_t> values;
@@ -292,11 +292,11 @@ static value_t from_runtime_dict(const value_backend_t& backend, const runtime_v
 			const auto value = from_runtime_value2(backend, e.second, value_type);
 			values.insert({ e.first, value} );
 		}
-		const auto val = value_t::make_dict_value(backend.type_interner, value_type, values);
+		const auto val = value_t::make_dict_value(backend.types, value_type, values);
 		return val;
 	}
 	else if(is_dict_hamt(backend.config, itype)){
-		const auto value_type = type.get_dict_value_type(backend.type_interner);
+		const auto value_type = type.get_dict_value_type(backend.types);
 		const auto dict = encoded_value.dict_hamt_ptr;
 
 		std::map<std::string, value_t> values;
@@ -305,7 +305,7 @@ static value_t from_runtime_dict(const value_backend_t& backend, const runtime_v
 			const auto value = from_runtime_value2(backend, e.second, value_type);
 			values.insert({ e.first, value} );
 		}
-		const auto val = value_t::make_dict_value(backend.type_interner, value_type, values);
+		const auto val = value_t::make_dict_value(backend.types, value_type, values);
 		return val;
 	}
 	else{
@@ -378,7 +378,7 @@ runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value
 			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
-	return std::visit(visitor_t{ backend, value }, get_type_variant(backend.type_interner, type));
+	return std::visit(visitor_t{ backend, value }, get_type_variant(backend.types, type));
 }
 
 
@@ -477,10 +477,10 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 			QUARK_ASSERT(false); throw std::exception();
 		}
 		value_t operator()(const named_type_t& e) const {
-			return from_runtime_value2(backend, encoded_value, peek(backend.type_interner, e.destination_type));
+			return from_runtime_value2(backend, encoded_value, peek(backend.types, e.destination_type));
 		}
 	};
-	return std::visit(visitor_t{ backend, encoded_value, type }, get_type_variant(backend.type_interner, type));
+	return std::visit(visitor_t{ backend, encoded_value, type }, get_type_variant(backend.types, type));
 }
 
 

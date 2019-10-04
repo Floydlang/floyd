@@ -55,20 +55,20 @@ general_purpose_ast_t json_to_gp_ast(const json_t& json){
 
 
 	//	Fix types first, before globals and functions.
-	auto interner = type_interner_from_json(types0);
+	auto types = type_interner_from_json(types0);
 
-	body_t globals1 = json_to_body(interner, globals0);
+	body_t globals1 = json_to_body(types, globals0);
 
 	std::vector<floyd::function_definition_t> function_defs1;
 	for(const auto& f: function_defs.get_array()){
-		const auto f1 = json_to_function_def(interner, f);
+		const auto f1 = json_to_function_def(types, f);
 		function_defs1.push_back(f1);
 	}
 
 	return general_purpose_ast_t {
 		globals1,
 		function_defs1,
-		interner,
+		types,
 		software_system_t{},
 		container_t{}
 	};

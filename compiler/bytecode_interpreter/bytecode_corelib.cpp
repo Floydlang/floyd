@@ -48,7 +48,7 @@ bc_value_t bc_corelib__detect_hardware_caps(interpreter_t& vm, const bc_value_t 
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
 
-	auto& interner = vm._imm->_program._types;
+	auto& types = vm._imm->_program._types;
 	const std::vector<std::pair<std::string, json_t>> caps = corelib_detect_hardware_caps();
 
 	std::map<std::string, value_t> caps_map;
@@ -56,8 +56,8 @@ bc_value_t bc_corelib__detect_hardware_caps(interpreter_t& vm, const bc_value_t 
   		caps_map.insert({ e.first, value_t::make_json(e.second) });
 	}
 	
-	const auto result = value_t::make_dict_value(interner, type_t::make_json(), caps_map);
-	return value_to_bc(interner, result);
+	const auto result = value_t::make_dict_value(types, type_t::make_json(), caps_map);
+	return value_to_bc(types, result);
 }
 
 

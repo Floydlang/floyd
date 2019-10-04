@@ -75,9 +75,9 @@ llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, const type_
 	QUARK_ASSERT(callee_function_type.check_invariant());
 	QUARK_ASSERT(resolved_function_type.check_invariant());
 
-	const auto& interner = gen_acc.gen.type_lookup.state.type_interner;
+	const auto& types = gen_acc.gen.type_lookup.state.types;
 
-	QUARK_ASSERT(callee_function_type.get_function_args(interner).size() == floyd_args.size());
+	QUARK_ASSERT(callee_function_type.get_function_args(types).size() == floyd_args.size());
 
 	auto& builder = gen_acc.get_builder();
 
@@ -98,7 +98,7 @@ llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, const type_
 		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_known_value_type){
 			QUARK_ASSERT(out_arg.floyd_arg_index >= 0 && out_arg.floyd_arg_index < floyd_args.size());
 			auto floyd_arg_reg = floyd_args[out_arg.floyd_arg_index];
-			const auto arg_type = resolved_function_type.get_function_args(interner)[out_arg.floyd_arg_index];
+			const auto arg_type = resolved_function_type.get_function_args(types)[out_arg.floyd_arg_index];
 
 			arg_regs.push_back(floyd_arg_reg);
 			destroy.push_back({ floyd_arg_reg, arg_type });
@@ -107,7 +107,7 @@ llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, const type_
 		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_value){
 			QUARK_ASSERT(out_arg.floyd_arg_index >= 0 && out_arg.floyd_arg_index < floyd_args.size());
 			auto floyd_arg_reg = floyd_args[out_arg.floyd_arg_index];
-			const auto arg_type = resolved_function_type.get_function_args(interner)[out_arg.floyd_arg_index];
+			const auto arg_type = resolved_function_type.get_function_args(types)[out_arg.floyd_arg_index];
 
 			destroy.push_back({ floyd_arg_reg, arg_type });
 
@@ -135,8 +135,8 @@ llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, const type_
 	//	If the return type is dynamic, cast the returned runtime_value_t to the correct type.
 	//	It must be retained already.
 	llvm::Value* result_reg = result0_reg;
-	if(callee_function_type.get_function_return(interner).is_any()){
-		result_reg = generate_cast_from_runtime_value(gen_acc.gen, *result0_reg, resolved_function_type.get_function_return(interner));
+	if(callee_function_type.get_function_return(types).is_any()){
+		result_reg = generate_cast_from_runtime_value(gen_acc.gen, *result0_reg, resolved_function_type.get_function_return(types));
 	}
 	else{
 	}

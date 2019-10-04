@@ -52,28 +52,28 @@ enum class epod_type {
 ////////////////////////////////////////		main() init() and message handler
 
 
-inline type_t get_main_signature_arg_impure(types_t& type_interner){
-	return make_function(type_interner, type_t::make_int(), { make_vector(type_interner, type_t::make_string()) }, epure::impure);
+inline type_t get_main_signature_arg_impure(types_t& types){
+	return make_function(types, type_t::make_int(), { make_vector(types, type_t::make_string()) }, epure::impure);
 }
 
-inline type_t get_main_signature_no_arg_impure(types_t& type_interner){
- 	return make_function(type_interner, type_t::make_int(), { }, epure::impure);
+inline type_t get_main_signature_no_arg_impure(types_t& types){
+ 	return make_function(types, type_t::make_int(), { }, epure::impure);
 }
 
 
-inline type_t get_main_signature_arg_pure(types_t& type_interner){
-	return make_function(type_interner, type_t::make_int(), { make_vector(type_interner, type_t::make_string()) }, epure::pure);
+inline type_t get_main_signature_arg_pure(types_t& types){
+	return make_function(types, type_t::make_int(), { make_vector(types, type_t::make_string()) }, epure::pure);
 }
 
-inline type_t get_main_signature_no_arg_pure(types_t& type_interner){
-	return make_function(type_interner, type_t::make_int(), { }, epure::pure);
+inline type_t get_main_signature_no_arg_pure(types_t& types){
+	return make_function(types, type_t::make_int(), { }, epure::pure);
 }
 
 //	T x_init() impure
-type_t make_process_init_type(types_t& interner, const type_t& t);
+type_t make_process_init_type(types_t& types, const type_t& t);
 
 //	T x(T state, json message) impure
-type_t make_process_message_handler_type(types_t& interner, const type_t& t);
+type_t make_process_message_handler_type(types_t& types, const type_t& t);
 
 
 
@@ -92,9 +92,9 @@ inline bool operator==(const benchmark_result_t& lhs, const benchmark_result_t& 
 	return lhs.dur == rhs.dur && lhs.more == rhs.more;
 }
 
-inline type_t make_benchmark_result_t(types_t& type_interner){
+inline type_t make_benchmark_result_t(types_t& types){
 	const auto x = make_struct(
-		type_interner,
+		types,
 		struct_type_desc_t({
 			member_t{ type_t::make_int(), "dur" },
 			member_t{ type_t::make_json(), "more" }
@@ -107,17 +107,17 @@ inline type_t make_benchmark_result_t(types_t& type_interner){
 //////////////////////////////////////		make_benchmark_def_t
 
 
-inline type_t make_benchmark_function_t(types_t& type_interner){
+inline type_t make_benchmark_function_t(types_t& types){
 //	return make_function(make_vector(make_benchmark_result_t()), {}, epure::pure);
-	return make_function(type_interner, make_symbol_ref(type_interner, "benchmark_result_t"), {}, epure::pure);
+	return make_function(types, make_symbol_ref(types, "benchmark_result_t"), {}, epure::pure);
 }
 
-inline type_t make_benchmark_def_t(types_t& type_interner){
+inline type_t make_benchmark_def_t(types_t& types){
 	const auto x = make_struct(
-		type_interner,
+		types,
 		struct_type_desc_t({
 			member_t{ type_t::make_string(), "name" },
-			member_t{ make_benchmark_function_t(type_interner), "f" }
+			member_t{ make_benchmark_function_t(types), "f" }
 		})
 	);
 	return x;
@@ -134,9 +134,9 @@ struct benchmark_id_t {
 inline bool operator==(const benchmark_id_t& lhs, const benchmark_id_t& rhs){
 	return lhs.module == rhs.module && lhs.test == rhs.test;
 }
-inline type_t make_benchmark_id_t(types_t& type_interner){
+inline type_t make_benchmark_id_t(types_t& types){
 	const auto x = make_struct(
-		type_interner,
+		types,
 		struct_type_desc_t({
 			member_t{ type_t::make_string(), "module" },
 			member_t{ type_t::make_string(), "test" }
@@ -158,18 +158,18 @@ inline bool operator==(const benchmark_result2_t& lhs, const benchmark_result2_t
 	return lhs.test_id == rhs.test_id && lhs.result == rhs.result;
 }
 
-inline type_t make_benchmark_result2_t(types_t& type_interner){
+inline type_t make_benchmark_result2_t(types_t& types){
 	const auto x = make_struct(
-		type_interner,
+		types,
 		struct_type_desc_t({
-			member_t{ make_benchmark_id_t(type_interner), "test_id" },
-			member_t{ make_symbol_ref(type_interner, "benchmark_result_t"), "result" }
+			member_t{ make_benchmark_id_t(types), "test_id" },
+			member_t{ make_symbol_ref(types, "benchmark_result_t"), "result" }
 			})
 	);
 	return x;
 }
 
-std::vector<benchmark_result2_t> unpack_vec_benchmark_result2_t(types_t& type_interner, const value_t& value);
+std::vector<benchmark_result2_t> unpack_vec_benchmark_result2_t(types_t& types, const value_t& value);
 
 //////////////////////////////////////		k_global_benchmark_registry
 
@@ -193,28 +193,28 @@ struct intrinsic_signature_t {
 };
 std::string get_intrinsic_opcode(const intrinsic_signature_t& signature);
 
-intrinsic_signature_t make_assert_signature(types_t& interner);
-intrinsic_signature_t make_to_string_signature(types_t& interner);
-intrinsic_signature_t make_to_pretty_string_signature(types_t& interner);
+intrinsic_signature_t make_assert_signature(types_t& types);
+intrinsic_signature_t make_to_string_signature(types_t& types);
+intrinsic_signature_t make_to_pretty_string_signature(types_t& types);
 
-intrinsic_signature_t make_typeof_signature(types_t& interner);
+intrinsic_signature_t make_typeof_signature(types_t& types);
 
-intrinsic_signature_t make_update_signature(types_t& interner);
-intrinsic_signature_t make_size_signature(types_t& interner);
-intrinsic_signature_t make_find_signature(types_t& interner);
-intrinsic_signature_t make_exists_signature(types_t& interner);
-intrinsic_signature_t make_erase_signature(types_t& interner);
-intrinsic_signature_t make_get_keys_signature(types_t& interner);
-intrinsic_signature_t make_push_back_signature(types_t& interner);
-intrinsic_signature_t make_subset_signature(types_t& interner);
-intrinsic_signature_t make_replace_signature(types_t& interner);
+intrinsic_signature_t make_update_signature(types_t& types);
+intrinsic_signature_t make_size_signature(types_t& types);
+intrinsic_signature_t make_find_signature(types_t& types);
+intrinsic_signature_t make_exists_signature(types_t& types);
+intrinsic_signature_t make_erase_signature(types_t& types);
+intrinsic_signature_t make_get_keys_signature(types_t& types);
+intrinsic_signature_t make_push_back_signature(types_t& types);
+intrinsic_signature_t make_subset_signature(types_t& types);
+intrinsic_signature_t make_replace_signature(types_t& types);
 
-intrinsic_signature_t make_parse_json_script_signature(types_t& interner);
-intrinsic_signature_t make_generate_json_script_signature(types_t& interner);
-intrinsic_signature_t make_to_json_signature(types_t& interner);
-intrinsic_signature_t make_from_json_signature(types_t& interner);
+intrinsic_signature_t make_parse_json_script_signature(types_t& types);
+intrinsic_signature_t make_generate_json_script_signature(types_t& types);
+intrinsic_signature_t make_to_json_signature(types_t& types);
+intrinsic_signature_t make_from_json_signature(types_t& types);
 
-intrinsic_signature_t make_get_json_type_signature(types_t& interner);
+intrinsic_signature_t make_get_json_type_signature(types_t& types);
 
 
 
@@ -223,51 +223,51 @@ intrinsic_signature_t make_get_json_type_signature(types_t& interner);
 
 
 
-intrinsic_signature_t make_map_signature(types_t& interner);
-type_t harden_map_func_type(types_t& interner, const type_t& resolved_call_type);
-bool check_map_func_type(types_t& interner, const type_t& elements, const type_t& f, const type_t& context);
+intrinsic_signature_t make_map_signature(types_t& types);
+type_t harden_map_func_type(types_t& types, const type_t& resolved_call_type);
+bool check_map_func_type(types_t& types, const type_t& elements, const type_t& f, const type_t& context);
 
-intrinsic_signature_t make_map_string_signature(types_t& interner);
-type_t harden_map_string_func_type(types_t& interner, const type_t& resolved_call_type);
-bool check_map_string_func_type(types_t& interner, const type_t& elements, const type_t& f, const type_t& context);
+intrinsic_signature_t make_map_string_signature(types_t& types);
+type_t harden_map_string_func_type(types_t& types, const type_t& resolved_call_type);
+bool check_map_string_func_type(types_t& types, const type_t& elements, const type_t& f, const type_t& context);
 
-intrinsic_signature_t make_map_dag_signature(types_t& interner);
-type_t harden_map_dag_func_type(types_t& interner, const type_t& resolved_call_type);
-bool check_map_dag_func_type(types_t& interner, const type_t& elements, const type_t& depends_on, const type_t& f, const type_t& context);
+intrinsic_signature_t make_map_dag_signature(types_t& types);
+type_t harden_map_dag_func_type(types_t& types, const type_t& resolved_call_type);
+bool check_map_dag_func_type(types_t& types, const type_t& elements, const type_t& depends_on, const type_t& f, const type_t& context);
 
 
-intrinsic_signature_t make_filter_signature(types_t& interner);
-type_t harden_filter_func_type(types_t& interner, const type_t& resolved_call_type);
-bool check_filter_func_type(types_t& interner, const type_t& elements, const type_t& f, const type_t& context);
+intrinsic_signature_t make_filter_signature(types_t& types);
+type_t harden_filter_func_type(types_t& types, const type_t& resolved_call_type);
+bool check_filter_func_type(types_t& types, const type_t& elements, const type_t& f, const type_t& context);
 
-intrinsic_signature_t make_reduce_signature(types_t& interner);
-type_t harden_reduce_func_type(types_t& interner, const type_t& resolved_call_type);
-bool check_reduce_func_type(types_t& interner, const type_t& elements, const type_t& accumulator_init, const type_t& f, const type_t& context);
+intrinsic_signature_t make_reduce_signature(types_t& types);
+type_t harden_reduce_func_type(types_t& types, const type_t& resolved_call_type);
+bool check_reduce_func_type(types_t& types, const type_t& elements, const type_t& accumulator_init, const type_t& f, const type_t& context);
 
-intrinsic_signature_t make_stable_sort_signature(types_t& interner);
-type_t harden_stable_sort_func_type(types_t& interner, const type_t& resolved_call_type);
-bool check_stable_sort_func_type(types_t& interner, const type_t& elements, const type_t& less, const type_t& context);
+intrinsic_signature_t make_stable_sort_signature(types_t& types);
+type_t harden_stable_sort_func_type(types_t& types, const type_t& resolved_call_type);
+bool check_stable_sort_func_type(types_t& types, const type_t& elements, const type_t& less, const type_t& context);
 
 
 //////////////////////////////////////		IMPURE FUNCTIONS
 
 
 
-intrinsic_signature_t make_print_signature(types_t& interner);
-intrinsic_signature_t make_send_signature(types_t& interner);
+intrinsic_signature_t make_print_signature(types_t& types);
+intrinsic_signature_t make_send_signature(types_t& types);
 
 
 
 //////////////////////////////////////		BITWISE
 
 
-intrinsic_signature_t make_bw_not_signature(types_t& interner);
-intrinsic_signature_t make_bw_and_signature(types_t& interner);
-intrinsic_signature_t make_bw_or_signature(types_t& interner);
-intrinsic_signature_t make_bw_xor_signature(types_t& interner);
-intrinsic_signature_t make_bw_shift_left_signature(types_t& interner);
-intrinsic_signature_t make_bw_shift_right_signature(types_t& interner);
-intrinsic_signature_t make_bw_shift_right_arithmetic_signature(types_t& interner);
+intrinsic_signature_t make_bw_not_signature(types_t& types);
+intrinsic_signature_t make_bw_and_signature(types_t& types);
+intrinsic_signature_t make_bw_or_signature(types_t& types);
+intrinsic_signature_t make_bw_xor_signature(types_t& types);
+intrinsic_signature_t make_bw_shift_left_signature(types_t& types);
+intrinsic_signature_t make_bw_shift_right_signature(types_t& types);
+intrinsic_signature_t make_bw_shift_right_arithmetic_signature(types_t& types);
 
 
 struct intrinsic_signatures_t {
@@ -317,7 +317,7 @@ struct intrinsic_signatures_t {
 	intrinsic_signature_t bw_shift_right_arithmetic;
 };
 
-intrinsic_signatures_t make_intrinsic_signatures(types_t& interner);
+intrinsic_signatures_t make_intrinsic_signatures(types_t& types);
 
 
 

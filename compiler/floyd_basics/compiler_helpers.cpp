@@ -32,13 +32,13 @@ void ut_verify_run_output(const quark::call_context_t& context, const run_output
 	if(result == expected){
 	}
 	else{
-		types_t interner;
+		types_t types;
 		{
 			QUARK_SCOPED_TRACE("  result: ");
 			QUARK_TRACE_SS("main_result: " << result.main_result);
 			QUARK_SCOPED_TRACE("process_results");
 			for(const auto& e: result.process_results){
-				QUARK_TRACE_SS(e.first << ":\t" << value_and_type_to_string(interner, e.second));
+				QUARK_TRACE_SS(e.first << ":\t" << value_and_type_to_string(types, e.second));
 			}
 		}
 
@@ -47,7 +47,7 @@ void ut_verify_run_output(const quark::call_context_t& context, const run_output
 			QUARK_TRACE_SS("main_result: " << expected.main_result);
 			QUARK_SCOPED_TRACE("process_results");
 			for(const auto& e: expected.process_results){
-				QUARK_TRACE_SS(e.first << ":\t" << value_and_type_to_string(interner, e.second));
+				QUARK_TRACE_SS(e.first << ":\t" << value_and_type_to_string(types, e.second));
 			}
 		}
 

@@ -176,11 +176,11 @@ struct builder_t {
 };
 
 static const type_entry_t& find_type(const builder_t& builder, const type_t& type){
-	QUARK_ASSERT(builder.acc.type_interner.check_invariant());
+	QUARK_ASSERT(builder.acc.types.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto index = type.get_lookup_index();
-	return builder.acc.types[index];
+	return builder.acc.type_entries[index];
 }
 
 static llvm::Type* get_llvm_type_prefer_generic(const type_entry_t& entry){
@@ -195,7 +195,7 @@ static llvm::Type* get_llvm_type_prefer_generic(const type_entry_t& entry){
 static llvm_function_def_t map_function_arguments_internal(const builder_t& builder, const floyd::type_t& function_type){
 	QUARK_ASSERT(function_type.is_function());
 
-	const auto ret = function_type.get_function_return(builder.acc.type_interner);
+	const auto ret = function_type.get_function_return(builder.acc.types);
 
 	// Notice: we always resolve the return type in semantic analysis -- no need to use WIDE_RETURN and provide a dynamic type. We use int64 here and cast it when calling.
 	llvm::Type* return_type = nullptr;
@@ -207,7 +207,7 @@ static llvm_function_def_t map_function_arguments_internal(const builder_t& buil
 		return_type = get_llvm_type_prefer_generic(a);
 	}
 
-	const auto args = function_type.get_function_args(builder.acc.type_interner);
+	const auto args = function_type.get_function_args(builder.acc.types);
 	std::vector<llvm_arg_mapping_t> arg_results;
 
 	auto frp_type = builder.acc.runtime_ptr_type;
@@ -257,9 +257,9 @@ static llvm::StructType* make_exact_struct_type(const builder_t& builder, const 
 	QUARK_ASSERT(type.is_struct());
 
 	std::vector<llvm::Type*> members;
-	for(const auto& m: type.get_struct(builder.acc.type_interner)._members){
+	for(const auto& m: type.get_struct(builder.acc.types)._members){
 		const auto member_type = m._type;
-		const auto member_type1 = peek(builder.acc.type_interner, member_type);
+		const auto member_type1 = peek(builder.acc.types, member_type);
 		const auto& a = find_type(builder, member_type1);
 		const auto m2 = get_llvm_type_prefer_generic(a);
 		members.push_back(m2);
@@ -323,13 +323,13 @@ static llvm::Type* make_llvm_type(const builder_t& builder, const type_t& type){
 //			QUARK_ASSERT(false); throw std::exception();
 		}
 		llvm::Type* operator()(const named_type_t& e) const {
-			const auto dest_type = peek(builder.acc.type_interner, e.destination_type);
+			const auto dest_type = peek(builder.acc.types, e.destination_type);
 			return make_llvm_type(builder, dest_type);
 //			return llvm::Type::getInt16Ty(builder.context);
 //			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
-	return std::visit(visitor_t{ builder, type }, get_type_variant(builder.acc.type_interner, type));
+	return std::visit(visitor_t{ builder, type }, get_type_variant(builder.acc.types, type));
 }
 
 static llvm::Type* make_generic_type(const builder_t& builder, const type_t& type){
@@ -351,7 +351,7 @@ static llvm::Type* make_generic_type(const builder_t& builder, const type_t& typ
 }
 
 static type_entry_t make_type(const builder_t& builder, const type_t& type){
-	QUARK_ASSERT(builder.acc.type_interner.check_invariant());
+	QUARK_ASSERT(builder.acc.types.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto llvm_type0 = make_llvm_type(builder, type);
@@ -375,15 +375,15 @@ static type_entry_t make_type(const builder_t& builder, const type_t& type){
 	return entry;
 }
 
-//	Notice: the entries in the type_interner may reference eachother = we need to process recursively.
-llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const types_t& type_interner){
-	QUARK_ASSERT(type_interner.check_invariant());
+//	Notice: the entries in the types may reference eachother = we need to process recursively.
+llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const types_t& types){
+	QUARK_ASSERT(types.check_invariant());
 
 	state_t acc;
-	acc.type_interner = type_interner;
+	acc.types = types;
 
-	//	Make an entry for each entry in type_interner
-	acc.types = std::vector<type_entry_t>(type_interner.interned2.size(), type_entry_t());
+	//	Make an entry for each entry in types
+	acc.type_entries = std::vector<type_entry_t>(types.interned2.size(), type_entry_t());
 
 
 	acc.generic_vec_type = make_generic_vec_type_internal(context);
@@ -399,11 +399,11 @@ llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const types_t& ty
 
 	builder_t builder { context, acc };
 
-	QUARK_ASSERT(builder.acc.type_interner.check_invariant());
-	for(type_lookup_index_t i = 0 ; i < acc.type_interner.interned2.size() ; i++){
-		const auto& type = lookup_type_from_index(acc.type_interner,i);
+	QUARK_ASSERT(builder.acc.types.check_invariant());
+	for(type_lookup_index_t i = 0 ; i < acc.types.interned2.size() ; i++){
+		const auto& type = lookup_type_from_index(acc.types,i);
 		QUARK_ASSERT(type.check_invariant());
-		builder.acc.types[i] = make_type(builder, peek(acc.type_interner, type));
+		builder.acc.type_entries[i] = make_type(builder, peek(acc.types, type));
 	}
 
 	state = builder.acc;
@@ -424,8 +424,8 @@ bool llvm_type_lookup::check_invariant() const {
 
 	QUARK_ASSERT(state.wide_return_type != nullptr);
 
-	QUARK_ASSERT(state.type_interner.check_invariant());
-	QUARK_ASSERT(state.type_interner.interned2.size() == state.types.size());
+	QUARK_ASSERT(state.types.check_invariant());
+	QUARK_ASSERT(state.types.interned2.size() == state.type_entries.size());
 	return true;
 }
 
@@ -433,7 +433,7 @@ const type_entry_t& llvm_type_lookup::find_from_itype(const type_t& itype) const
 	QUARK_ASSERT(check_invariant());
 
 	const auto index = itype.get_lookup_index();
-	return state.types[index];
+	return state.type_entries[index];
 }
 
 void trace_llvm_type_lookup(const llvm_type_lookup& type_lookup){
@@ -444,14 +444,14 @@ void trace_llvm_type_lookup(const llvm_type_lookup& type_lookup){
 		line_t( { "", "", "", "", "", "" }, '-', '|'),
 	};
 
-	for(int i = 0 ; i < type_lookup.state.types.size() ; i++){
-		const auto& e = type_lookup.state.types[i];
-		const auto type = lookup_type_from_index(type_lookup.state.type_interner, i);
+	for(int i = 0 ; i < type_lookup.state.type_entries.size() ; i++){
+		const auto& e = type_lookup.state.type_entries[i];
+		const auto type = lookup_type_from_index(type_lookup.state.types, i);
 		const auto l = line_t {
 			{
 				std::to_string(i),
 				std::to_string(i),
-				type_to_compact_string(type_lookup.state.type_interner, type),
+				type_to_compact_string(type_lookup.state.types, type),
 				print_type(e.llvm_type_specific),
 				print_type(e.llvm_type_generic),
 				e.optional_function_def != nullptr ? "YES" : ""
@@ -589,11 +589,11 @@ static llvm_type_lookup make_basic_interner(llvm::LLVMContext& context);
 #if 0
 QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func void()", ""){
 	llvm::LLVMContext context;
-	const auto interner = make_basic_interner(context);
+	const auto types = make_basic_interner(context);
 	auto module = std::make_unique<llvm::Module>("test", context);
 
 	const auto r = map_function_arguments(
-		interner,
+		types,
 		make_function(type_t::make_void(), {}, epure::pure)
 	);
 
@@ -611,10 +611,10 @@ QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func void()", ""){
 
 QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func int()", ""){
 	llvm::LLVMContext context;
-	auto interner = make_basic_interner(context);
+	auto types = make_basic_interner(context);
 	auto module = std::make_unique<llvm::Module>("test", context);
 
-	const auto r = map_function_arguments(interner, make_function(type_t::make_int(), {}, epure::pure));
+	const auto r = map_function_arguments(types, make_function(type_t::make_int(), {}, epure::pure));
 
 	QUARK_UT_VERIFY(r.return_type != nullptr);
 	QUARK_UT_VERIFY(r.return_type->isIntegerTy(64));
@@ -630,10 +630,10 @@ QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func int()", ""){
 
 QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""){
 	llvm::LLVMContext context;
-	const auto interner = make_basic_interner(context);
+	const auto types = make_basic_interner(context);
 	auto module = std::make_unique<llvm::Module>("test", context);
 
-	const auto r = map_function_arguments(interner, make_function(type_t::make_void(), { type_t::make_int() }, epure::pure));
+	const auto r = map_function_arguments(types, make_function(type_t::make_void(), { type_t::make_int() }, epure::pure));
 
 	QUARK_UT_VERIFY(r.return_type != nullptr);
 	QUARK_UT_VERIFY(r.return_type->isVoidTy());
@@ -656,10 +656,10 @@ QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""){
 QUARK_TEST
 ("LLVM Codegen", "map_function_arguments()", "func void(int, DYN, bool)", ""){
 	llvm::LLVMContext context;
-	const auto interner = make_basic_interner(context);
+	const auto types = make_basic_interner(context);
 	auto module = std::make_unique<llvm::Module>("test", context);
 
-	const auto r = map_function_arguments(interner, make_function(type_t::make_void(), { type_t::make_int(), type_t::make_any(), type_t::make_bool() }, epure::pure));
+	const auto r = map_function_arguments(types, make_function(type_t::make_void(), { type_t::make_int(), type_t::make_any(), type_t::make_bool() }, epure::pure));
 
 	QUARK_UT_VERIFY(r.return_type != nullptr);
 	QUARK_UT_VERIFY(r.return_type->isVoidTy());

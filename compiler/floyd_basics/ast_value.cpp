@@ -122,13 +122,13 @@ bool struct_value_t::operator==(const struct_value_t& other) const{
 	return _def == other._def && _member_values == other._member_values;
 }
 
-static std::string struct_instance_to_compact_string(const types_t& interner, const struct_value_t& v){
+static std::string struct_instance_to_compact_string(const types_t& types, const struct_value_t& v){
 	std::vector<std::string> members;
 	for(int i = 0 ; i < v._def._members.size() ; i++){
 		const auto& def = v._def._members[i];
 		const auto& value = v._member_values[i];
 
-		const auto m = /*type_to_compact_string(def._type) + " " +*/ def._name + "=" + to_compact_string_quote_strings(interner, value);
+		const auto m = /*type_to_compact_string(def._type) + " " +*/ def._name + "=" + to_compact_string_quote_strings(types, value);
 		members.push_back(m);
 	}
 //		return "struct {" + concat_strings_with_divider(members, ", ") + "}";
@@ -145,10 +145,10 @@ static std::string struct_instance_to_compact_string(const types_t& interner, co
 
 
 
-static std::string vector_instance_to_compact_string(const types_t& interner, const std::vector<value_t>& elements0){
+static std::string vector_instance_to_compact_string(const types_t& types, const std::vector<value_t>& elements0){
 	std::vector<std::string> elements;
 	for(const auto& e: elements0){
-		const auto es = to_compact_string_quote_strings(interner, e);
+		const auto es = to_compact_string_quote_strings(types, e);
 		elements.push_back(es);
 	}
 //		return "[" + type_to_compact_string(instance._element_type) + "]" + "(" + concat_strings_with_divider(elements, ",") + ")";
@@ -156,11 +156,11 @@ static std::string vector_instance_to_compact_string(const types_t& interner, co
 }
 
 
-std::string dict_instance_to_compact_string(const types_t& interner, const std::map<std::string, value_t>& entries){
+std::string dict_instance_to_compact_string(const types_t& types, const std::map<std::string, value_t>& entries){
 	std::vector<std::string> elements;
 	for(const auto& e: entries){
 		const auto& key_str = quote(e.first);
-		const auto& value_str = to_compact_string_quote_strings(interner, e.second);
+		const auto& value_str = to_compact_string_quote_strings(types, e.second);
 		const auto& es = key_str + ": " + value_str;
 		elements.push_back(es);
 	}
@@ -521,7 +521,7 @@ bool value_t::check_invariant() const{
 }
 
 
-std::string to_compact_string2(const types_t& interner, const value_t& value) {
+std::string to_compact_string2(const types_t& types, const value_t& value) {
 	QUARK_ASSERT(value.check_invariant());
 
 	const auto base_type = value.get_type().get_base_type();
@@ -552,20 +552,20 @@ std::string to_compact_string2(const types_t& interner, const value_t& value) {
 		return json_to_compact_string(value.get_json());
 	}
 	else if(base_type == base_type::k_typeid){
-		return type_to_compact_string(interner, value.get_typeid_value(), resolve_named_types::resolve);
+		return type_to_compact_string(types, value.get_typeid_value(), resolve_named_types::resolve);
 	}
 	else if(base_type == base_type::k_struct){
-		return struct_instance_to_compact_string(interner, *value.get_struct_value());
+		return struct_instance_to_compact_string(types, *value.get_struct_value());
 	}
 	else if(base_type == base_type::k_vector){
-		return vector_instance_to_compact_string(interner, value.get_vector_value());
+		return vector_instance_to_compact_string(types, value.get_vector_value());
 	}
 	else if(base_type == base_type::k_dict){
-		return dict_instance_to_compact_string(interner, value.get_dict_value());
+		return dict_instance_to_compact_string(types, value.get_dict_value());
 	}
 	else if(base_type == base_type::k_function){
 		//??? include link name.
-		return type_to_compact_string(interner, value.get_type(), resolve_named_types::dont_resolve);
+		return type_to_compact_string(types, value.get_type(), resolve_named_types::dont_resolve);
 	}
 
 	else{
@@ -573,10 +573,10 @@ std::string to_compact_string2(const types_t& interner, const value_t& value) {
 	}
 }
 
-std::string to_compact_string_quote_strings(const types_t& interner, const value_t& value) {
-	QUARK_ASSERT(interner.check_invariant());
+std::string to_compact_string_quote_strings(const types_t& types, const value_t& value) {
+	QUARK_ASSERT(types.check_invariant());
 
-	const auto s = to_compact_string2(interner, value);
+	const auto s = to_compact_string2(types, value);
 	if(value.is_string()){
 		return "\"" + s + "\"";
 	}
@@ -585,10 +585,10 @@ std::string to_compact_string_quote_strings(const types_t& interner, const value
 	}
 }
 
-std::string value_and_type_to_string(const types_t& interner, const value_t& value) {
-	QUARK_ASSERT(interner.check_invariant());
+std::string value_and_type_to_string(const types_t& types, const value_t& value) {
+	QUARK_ASSERT(types.check_invariant());
 
-	std::string type_string = type_to_compact_string(interner, value.get_type(), resolve_named_types::dont_resolve);
+	std::string type_string = type_to_compact_string(types, value.get_type(), resolve_named_types::dont_resolve);
 	if(value.is_undefined()){
 		return type_string;
 	}
@@ -599,7 +599,7 @@ std::string value_and_type_to_string(const types_t& interner, const value_t& val
 		return type_string;
 	}
 	else{
-		return type_string + ": " + to_compact_string_quote_strings(interner, value);
+		return type_string + ": " + to_compact_string_quote_strings(types, value);
 	}
 }
 
@@ -752,13 +752,13 @@ value_t::value_t(const type_t& struct_type, std::shared_ptr<struct_value_t>& ins
 
 
 
-value_t::value_t(const types_t& interner, const type_t& element_type, const std::vector<value_t>& elements) :
+value_t::value_t(const types_t& types, const type_t& element_type, const std::vector<value_t>& elements) :
 	_basetype(base_type::k_vector)
 {
-	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(element_type.check_invariant());
 
-	_value_internals._ext = new value_ext_t{ make_vector(interner, element_type), elements };
+	_value_internals._ext = new value_ext_t{ make_vector(types, element_type), elements };
 	QUARK_ASSERT(_value_internals._ext->_rc == 1);
 
 #if DEBUG_DEEP
@@ -767,13 +767,13 @@ value_t::value_t(const types_t& interner, const type_t& element_type, const std:
 
 	QUARK_ASSERT(check_invariant());
 }
-value_t::value_t(types_t& interner, const type_t& element_type, const std::vector<value_t>& elements) :
+value_t::value_t(types_t& types, const type_t& element_type, const std::vector<value_t>& elements) :
 	_basetype(base_type::k_vector)
 {
-	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(element_type.check_invariant());
 
-	_value_internals._ext = new value_ext_t{ make_vector(interner, element_type), elements };
+	_value_internals._ext = new value_ext_t{ make_vector(types, element_type), elements };
 	QUARK_ASSERT(_value_internals._ext->_rc == 1);
 
 #if DEBUG_DEEP
@@ -785,13 +785,13 @@ value_t::value_t(types_t& interner, const type_t& element_type, const std::vecto
 
 
 
-value_t::value_t(const types_t& interner, const type_t& value_type, const std::map<std::string, value_t>& entries) :
+value_t::value_t(const types_t& types, const type_t& value_type, const std::map<std::string, value_t>& entries) :
 	_basetype(base_type::k_dict)
 {
-	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(value_type.check_invariant());
 
-	_value_internals._ext = new value_ext_t{make_dict(interner, value_type), entries};
+	_value_internals._ext = new value_ext_t{make_dict(types, value_type), entries};
 	QUARK_ASSERT(_value_internals._ext->_rc == 1);
 
 #if DEBUG_DEEP
@@ -800,13 +800,13 @@ value_t::value_t(const types_t& interner, const type_t& value_type, const std::m
 
 	QUARK_ASSERT(check_invariant());
 }
-value_t::value_t(types_t& interner, const type_t& value_type, const std::map<std::string, value_t>& entries) :
+value_t::value_t(types_t& types, const type_t& value_type, const std::map<std::string, value_t>& entries) :
 	_basetype(base_type::k_dict)
 {
-	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(value_type.check_invariant());
 
-	_value_internals._ext = new value_ext_t{make_dict(interner, value_type), entries};
+	_value_internals._ext = new value_ext_t{make_dict(types, value_type), entries};
 	QUARK_ASSERT(_value_internals._ext->_rc == 1);
 
 #if DEBUG_DEEP
@@ -835,7 +835,7 @@ value_t::value_t(const type_t& type, function_id_t function_id) :
 //??? swap(), operator=, copy-constructor.
 
 QUARK_TESTQ("value_t::make_undefined()", "undef"){
-	types_t interner;
+	types_t types;
 	const auto a = value_t::make_undefined();
 	QUARK_TEST_VERIFY(a.is_undefined());
 	QUARK_TEST_VERIFY(!a.is_any());
@@ -851,13 +851,13 @@ QUARK_TESTQ("value_t::make_undefined()", "undef"){
 
 	QUARK_TEST_VERIFY(a == value_t::make_undefined());
 	QUARK_TEST_VERIFY(a != value_t::make_string("test"));
-	QUARK_TEST_VERIFY(to_compact_string2(interner, a) == "undef");
-	QUARK_TEST_VERIFY(value_and_type_to_string(interner, a) == "undef");
+	QUARK_TEST_VERIFY(to_compact_string2(types, a) == "undef");
+	QUARK_TEST_VERIFY(value_and_type_to_string(types, a) == "undef");
 }
 
 
 QUARK_TEST("", "value_t::make_any()", "**dynamic**", ""){
-	types_t interner;
+	types_t types;
 	const auto a = value_t::make_any();
 	QUARK_TEST_VERIFY(!a.is_undefined());
 	QUARK_TEST_VERIFY(a.is_any());
@@ -873,13 +873,13 @@ QUARK_TEST("", "value_t::make_any()", "**dynamic**", ""){
 
 	QUARK_TEST_VERIFY(a == value_t::make_any());
 	QUARK_TEST_VERIFY(a != value_t::make_string("test"));
-	QUARK_TEST_VERIFY(to_compact_string2(interner, a) == "any");
-	QUARK_TEST_VERIFY(value_and_type_to_string(interner, a) == "any");
+	QUARK_TEST_VERIFY(to_compact_string2(types, a) == "any");
+	QUARK_TEST_VERIFY(value_and_type_to_string(types, a) == "any");
 }
 
 
 QUARK_TESTQ("value_t::make_void()", "void"){
-	types_t interner;
+	types_t types;
 	const auto a = value_t::make_void();
 	QUARK_TEST_VERIFY(!a.is_undefined());
 	QUARK_TEST_VERIFY(!a.is_any());
@@ -895,13 +895,13 @@ QUARK_TESTQ("value_t::make_void()", "void"){
 
 	QUARK_TEST_VERIFY(a == value_t::make_void());
 	QUARK_TEST_VERIFY(a != value_t::make_string("test"));
-	QUARK_TEST_VERIFY(to_compact_string2(interner, a) == "void");
-	QUARK_TEST_VERIFY(value_and_type_to_string(interner, a) == "void");
+	QUARK_TEST_VERIFY(to_compact_string2(types, a) == "void");
+	QUARK_TEST_VERIFY(value_and_type_to_string(types, a) == "void");
 }
 
 
 QUARK_TESTQ("value_t()", "bool - true"){
-	types_t interner;
+	types_t types;
 	const auto a = value_t::make_bool(true);
 	QUARK_TEST_VERIFY(!a.is_undefined());
 	QUARK_TEST_VERIFY(!a.is_any());
@@ -917,12 +917,12 @@ QUARK_TESTQ("value_t()", "bool - true"){
 
 	QUARK_TEST_VERIFY(a == value_t::make_bool(true));
 	QUARK_TEST_VERIFY(a != value_t::make_bool(false));
-	QUARK_TEST_VERIFY(to_compact_string2(interner, a) == "true");
-	QUARK_TEST_VERIFY(value_and_type_to_string(interner, a) == "bool: true");
+	QUARK_TEST_VERIFY(to_compact_string2(types, a) == "true");
+	QUARK_TEST_VERIFY(value_and_type_to_string(types, a) == "bool: true");
 }
 
 QUARK_TESTQ("value_t()", "bool - false"){
-	types_t interner;
+	types_t types;
 	const auto a = value_t::make_bool(false);
 	QUARK_TEST_VERIFY(!a.is_undefined());
 	QUARK_TEST_VERIFY(!a.is_any());
@@ -938,13 +938,13 @@ QUARK_TESTQ("value_t()", "bool - false"){
 
 	QUARK_TEST_VERIFY(a == value_t::make_bool(false));
 	QUARK_TEST_VERIFY(a != value_t::make_bool(true));
-	QUARK_TEST_VERIFY(to_compact_string2(interner, a) == "false");
-	QUARK_TEST_VERIFY(value_and_type_to_string(interner, a) == "bool: false");
+	QUARK_TEST_VERIFY(to_compact_string2(types, a) == "false");
+	QUARK_TEST_VERIFY(value_and_type_to_string(types, a) == "bool: false");
 }
 
 //??? test full range of int64
 QUARK_TESTQ("value_t()", "int"){
-	types_t interner;
+	types_t types;
 	const auto a = value_t::make_int(13);
 	QUARK_TEST_VERIFY(!a.is_undefined());
 	QUARK_TEST_VERIFY(!a.is_any());
@@ -960,12 +960,12 @@ QUARK_TESTQ("value_t()", "int"){
 
 	QUARK_TEST_VERIFY(a == value_t::make_int(13));
 	QUARK_TEST_VERIFY(a != value_t::make_int(14));
-	QUARK_TEST_VERIFY(to_compact_string2(interner, a) == "13");
-	QUARK_TEST_VERIFY(value_and_type_to_string(interner, a) == "int: 13");
+	QUARK_TEST_VERIFY(to_compact_string2(types, a) == "13");
+	QUARK_TEST_VERIFY(value_and_type_to_string(types, a) == "int: 13");
 }
 
 QUARK_TESTQ("value_t()", "double"){
-	types_t interner;
+	types_t types;
 	const auto a = value_t::make_double(13.5f);
 	QUARK_TEST_VERIFY(!a.is_undefined());
 	QUARK_TEST_VERIFY(!a.is_any());
@@ -981,12 +981,12 @@ QUARK_TESTQ("value_t()", "double"){
 
 	QUARK_TEST_VERIFY(a == value_t::make_double(13.5f));
 	QUARK_TEST_VERIFY(a != value_t::make_double(14.0f));
-	QUARK_TEST_VERIFY(to_compact_string2(interner, a) == "13.5");
-	QUARK_TEST_VERIFY(value_and_type_to_string(interner, a) == "double: 13.5");
+	QUARK_TEST_VERIFY(to_compact_string2(types, a) == "13.5");
+	QUARK_TEST_VERIFY(value_and_type_to_string(types, a) == "double: 13.5");
 }
 
 QUARK_TESTQ("value_t()", "string"){
-	types_t interner;
+	types_t types;
 	const auto a = value_t::make_string("xyz");
 	QUARK_TEST_VERIFY(!a.is_undefined());
 	QUARK_TEST_VERIFY(!a.is_any());
@@ -1002,32 +1002,32 @@ QUARK_TESTQ("value_t()", "string"){
 
 	QUARK_TEST_VERIFY(a == value_t::make_string("xyz"));
 	QUARK_TEST_VERIFY(a != value_t::make_string("xyza"));
-	QUARK_TEST_VERIFY(to_compact_string2(interner, a) == "xyz");
-	QUARK_TEST_VERIFY(value_and_type_to_string(interner, a) == "string: \"xyz\"");
+	QUARK_TEST_VERIFY(to_compact_string2(types, a) == "xyz");
+	QUARK_TEST_VERIFY(value_and_type_to_string(types, a) == "string: \"xyz\"");
 }
 
 
-json_t value_and_type_to_ast_json(const types_t& interner, const value_t& v){
+json_t value_and_type_to_ast_json(const types_t& types, const value_t& v){
 	return
 		json_t::make_array({
-			type_to_json(interner, v.get_type()),
-			value_to_ast_json(interner, v)
+			type_to_json(types, v.get_type()),
+			value_to_ast_json(types, v)
 		});
 }
 
-value_t ast_json_to_value_and_type(types_t& interner, const json_t& v){
+value_t ast_json_to_value_and_type(types_t& types, const json_t& v){
 	const auto type0 = v.get_array_n(0);
 	const auto value0 = v.get_array_n(1);
 
-	const auto type1 = type_from_json(interner, type0);
-	const auto value1 = ast_json_to_value(interner, type1, value0);
+	const auto type1 = type_from_json(types, type0);
+	const auto value1 = ast_json_to_value(types, type1, value0);
 	return value1;
 }
 
 #if DEBUG
 std::string make_value_debug_str(const value_t& value){
-	types_t interner;
-	return value_and_type_to_string(interner, value);
+	types_t types;
+	return value_and_type_to_string(types, value);
 
 //	std::string type_string = type_to_compact_string(value.get_type());
 //	return type_string;
@@ -1035,7 +1035,7 @@ std::string make_value_debug_str(const value_t& value){
 #endif
 
 
-value_t ast_json_to_value(types_t& interner, const type_t& type, const json_t& v){
+value_t ast_json_to_value(types_t& types, const type_t& type, const json_t& v){
 	if(type.is_undefined()){
 		return value_t();
 	}
@@ -1077,7 +1077,7 @@ value_t ast_json_to_value(types_t& interner, const type_t& type, const json_t& v
 		return value_t::make_json(v);
 	}
 	else if(type.is_typeid()){
-		const auto t = type_from_json(interner, v);
+		const auto t = type_from_json(types, v);
 		return value_t::make_typeid_value(t);
 	}
 	else if(type.is_struct()){
@@ -1132,7 +1132,7 @@ value_t ast_json_to_value(types_t& interner, const type_t& type, const json_t& v
 
 
 
-json_t value_to_ast_json(const types_t& interner, const value_t& v){
+json_t value_to_ast_json(const types_t& types, const value_t& v){
 	if(v.is_undefined()){
 		return json_t();
 	}
@@ -1166,7 +1166,7 @@ json_t value_to_ast_json(const types_t& interner, const value_t& v){
 		return v.get_json();
 	}
 	else if(v.is_typeid()){
-		return type_to_json(interner, v.get_typeid_value());
+		return type_to_json(types, v.get_typeid_value());
 	}
 	else if(v.is_struct()){
 		const auto& struct_value = v.get_struct_value();
@@ -1175,20 +1175,20 @@ json_t value_to_ast_json(const types_t& interner, const value_t& v){
 			const auto& member = struct_value->_def._members[i];
 			const auto& key = member._name;
 			const auto& value = struct_value->_member_values[i];
-			const auto& value2 = value_to_ast_json(interner, value);
+			const auto& value2 = value_to_ast_json(types, value);
 			obj2[key] = value2;
 		}
 		return json_t::make_object(obj2);
 	}
 	else if(v.is_vector()){
 		const auto& vec = v.get_vector_value();
-		return values_to_json_array(interner, vec);
+		return values_to_json_array(types, vec);
 	}
 	else if(v.is_dict()){
 		const auto entries = v.get_dict_value();
 		std::map<std::string, json_t> result;
 		for(const auto& e: entries){
-			result[e.first] = value_to_ast_json(interner, e.second);
+			result[e.first] = value_to_ast_json(types, e.second);
 		}
 		return result;
 	}
@@ -1205,28 +1205,28 @@ json_t value_to_ast_json(const types_t& interner, const value_t& v){
 }
 
 QUARK_TESTQ("value_to_ast_json()", ""){
-	types_t interner;
-	ut_verify(QUARK_POS, value_to_ast_json(interner, value_t::make_string("hello")), json_t("hello"));
+	types_t types;
+	ut_verify(QUARK_POS, value_to_ast_json(types, value_t::make_string("hello")), json_t("hello"));
 }
 
 QUARK_TESTQ("value_to_ast_json()", ""){
-	types_t interner;
-	ut_verify(QUARK_POS, value_to_ast_json(interner, value_t::make_int(123)), json_t(123.0));
+	types_t types;
+	ut_verify(QUARK_POS, value_to_ast_json(types, value_t::make_int(123)), json_t(123.0));
 }
 
 QUARK_TESTQ("value_to_ast_json()", ""){
-	types_t interner;
-	ut_verify(QUARK_POS, value_to_ast_json(interner, value_t::make_bool(true)), json_t(true));
+	types_t types;
+	ut_verify(QUARK_POS, value_to_ast_json(types, value_t::make_bool(true)), json_t(true));
 }
 
 QUARK_TESTQ("value_to_ast_json()", ""){
-	types_t interner;
-	ut_verify(QUARK_POS, value_to_ast_json(interner, value_t::make_bool(false)), json_t(false));
+	types_t types;
+	ut_verify(QUARK_POS, value_to_ast_json(types, value_t::make_bool(false)), json_t(false));
 }
 
 QUARK_TESTQ("value_to_ast_json()", ""){
-	types_t interner;
-	ut_verify(QUARK_POS, value_to_ast_json(interner, value_t::make_undefined()), json_t());
+	types_t types;
+	ut_verify(QUARK_POS, value_to_ast_json(types, value_t::make_undefined()), json_t());
 }
 
 
@@ -1278,35 +1278,35 @@ value_t value_t::make_typeid_value(const type_t& type_id){
 	return value_t(type_id);
 }
 
-value_t value_t::make_struct_value(const types_t& interner, const type_t& struct_type, const std::vector<value_t>& values){
-	QUARK_ASSERT(interner.check_invariant());
+value_t value_t::make_struct_value(const types_t& types, const type_t& struct_type, const std::vector<value_t>& values){
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(struct_type.check_invariant());
-	QUARK_ASSERT(struct_type.get_struct(interner)._members.size() == values.size());
+	QUARK_ASSERT(struct_type.get_struct(types)._members.size() == values.size());
 
-	auto instance = std::make_shared<struct_value_t>(struct_value_t{struct_type.get_struct(interner), values});
+	auto instance = std::make_shared<struct_value_t>(struct_value_t{struct_type.get_struct(types), values});
 	return value_t(struct_type, instance);
 }
-value_t value_t::make_struct_value(types_t& interner, const type_t& struct_type, const std::vector<value_t>& values){
-	QUARK_ASSERT(interner.check_invariant());
+value_t value_t::make_struct_value(types_t& types, const type_t& struct_type, const std::vector<value_t>& values){
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(struct_type.check_invariant());
-	QUARK_ASSERT(struct_type.get_struct(interner)._members.size() == values.size());
+	QUARK_ASSERT(struct_type.get_struct(types)._members.size() == values.size());
 
-	auto instance = std::make_shared<struct_value_t>(struct_value_t{struct_type.get_struct(interner), values});
+	auto instance = std::make_shared<struct_value_t>(struct_value_t{struct_type.get_struct(types), values});
 	return value_t(struct_type, instance);
 }
 
-value_t value_t::make_vector_value(const types_t& interner, const type_t& element_type, const std::vector<value_t>& elements){
-	return value_t(interner, element_type, elements);
+value_t value_t::make_vector_value(const types_t& types, const type_t& element_type, const std::vector<value_t>& elements){
+	return value_t(types, element_type, elements);
 }
-value_t value_t::make_vector_value(types_t& interner, const type_t& element_type, const std::vector<value_t>& elements){
-	return value_t(interner, element_type, elements);
+value_t value_t::make_vector_value(types_t& types, const type_t& element_type, const std::vector<value_t>& elements){
+	return value_t(types, element_type, elements);
 }
 
-value_t value_t::make_dict_value(const types_t& interner, const type_t& value_type, const std::map<std::string, value_t>& entries){
-	return value_t(interner, value_type, entries);
+value_t value_t::make_dict_value(const types_t& types, const type_t& value_type, const std::map<std::string, value_t>& entries){
+	return value_t(types, value_type, entries);
 }
-value_t value_t::make_dict_value(types_t& interner, const type_t& value_type, const std::map<std::string, value_t>& entries){
-	return value_t(interner, value_type, entries);
+value_t value_t::make_dict_value(types_t& types, const type_t& value_type, const std::map<std::string, value_t>& entries){
+	return value_t(types, value_type, entries);
 }
 
 value_t value_t::make_function_value(const type_t& function_type, const function_id_t& function_id){
@@ -1315,10 +1315,10 @@ value_t value_t::make_function_value(const type_t& function_type, const function
 }
 
 
-	json_t values_to_json_array(const types_t& interner, const std::vector<value_t>& values){
+	json_t values_to_json_array(const types_t& types, const std::vector<value_t>& values){
 		std::vector<json_t> r;
 		for(const auto& i: values){
-			const auto& j = value_to_ast_json(interner, i);
+			const auto& j = value_to_ast_json(types, i);
 			r.push_back(j);
 		}
 		return json_t::make_array(r);
@@ -1372,11 +1372,11 @@ value_t make_def(const type_t& type){
 
 
 void ut_verify_values(const quark::call_context_t& context, const value_t& result, const value_t& expected){
-	types_t interner;
+	types_t types;
 	ut_verify(
 		context,
-		value_and_type_to_ast_json(interner, result),
-		value_and_type_to_ast_json(interner, expected)
+		value_and_type_to_ast_json(types, result),
+		value_and_type_to_ast_json(types, expected)
 	);
 }
 
