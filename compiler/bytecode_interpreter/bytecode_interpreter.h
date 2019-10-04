@@ -17,7 +17,7 @@
 
 
 
-??? remove usage of typeid_t. Use itype & types[]?
+??? remove usage of type_t. Use itype & types[]?
 ??? All functions should be the same type of function-values: host-functions and Floyd functions: _function_id should be in the VALUE not function definition!
 ??? Less code + faster to generate increc, decref instructions instead of make *_external_value, *_internal_value opcodes.
 */

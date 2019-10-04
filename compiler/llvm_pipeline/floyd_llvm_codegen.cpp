@@ -341,7 +341,7 @@ static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const 
 			//	NOTICE: There is no clean way to embedd a json containing a json-null into the code segment.
 			//	Here we use a nullptr instead of json_t*. This means we have to be prepared for json_t::null AND nullptr.
 			if(json0.is_null()){
-				auto json_type = get_llvm_type_as_arg(gen_acc.gen.type_lookup, typeid_t::make_json());
+				auto json_type = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type_t::make_json());
 				llvm::PointerType* pointer_type = llvm::cast<llvm::PointerType>(json_type);
 				return llvm::ConstantPointerNull::get(pointer_type);
 			}
@@ -459,7 +459,7 @@ static function_return_mode generate_block(llvm_function_generator_t& gen_acc, c
 }
 
 
-static typeid_t get_expr_output_type(const llvm_code_generator_t& gen_acc, const expression_t& e){
+static type_t get_expr_output_type(const llvm_code_generator_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -761,7 +761,7 @@ static llvm::Value* generate_arithmetic_expression(llvm_function_generator_t& ge
 
 
 
-static llvm::Value* generate_compare_values(llvm_function_generator_t& gen_acc, expression_type op, const typeid_t& type, llvm::Value& lhs_reg, llvm::Value& rhs_reg){
+static llvm::Value* generate_compare_values(llvm_function_generator_t& gen_acc, expression_type op, const type_t& type, llvm::Value& lhs_reg, llvm::Value& rhs_reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
 	auto& builder = gen_acc.get_builder();
@@ -1011,13 +1011,13 @@ static llvm::Value* generate_conditional_operator_expression(llvm_function_gener
 	phiNode->addIncoming(else_reg, else_bb2);
 
 	//	Meaningless but shows that we handle condition_reg.
-	generate_release(gen_acc, *condition_reg, typeid_t::make_bool());
+	generate_release(gen_acc, *condition_reg, type_t::make_bool());
 
 	return phiNode;
 }
 
 //	Call functon type and callee function types are identical, except the callee function type can use ANY-types.
-static typeid_t calc_resolved_function_type(const llvm_code_generator_t& gen, const expression_t& e, const typeid_t& callee_function_type, const std::vector<expression_t>& args){
+static type_t calc_resolved_function_type(const llvm_code_generator_t& gen, const expression_t& e, const type_t& callee_function_type, const std::vector<expression_t>& args){
 	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(callee_function_type.check_invariant());
 
@@ -1026,12 +1026,12 @@ static typeid_t calc_resolved_function_type(const llvm_code_generator_t& gen, co
 	//	Callee type can include ANY-arguments. Check the resolved call expression's types to know the types.
 	const auto resolved_call_return_type = get_expr_output_type(gen, e);
 
-	const auto resolved_call_arguments = mapf<typeid_t>(args, [&gen](auto& e){ return get_expr_output_type(gen, e); });
+	const auto resolved_call_arguments = mapf<type_t>(args, [&gen](auto& e){ return get_expr_output_type(gen, e); });
 
 
 	if(true) trace_type_interner(interner);
 
-	const auto resolved_call_function_type = typeid_t::make_function(
+	const auto resolved_call_function_type = type_t::make_function(
 		interner,
 		resolved_call_return_type,
 		resolved_call_arguments,
@@ -1391,7 +1391,7 @@ static llvm::Value* generate_construct_dict(llvm_function_generator_t& gen_acc, 
 		llvm::Value* key0_reg = generate_expression(gen_acc, details.elements[element_index * 2 + 0]);
 		llvm::Value* element0_reg = generate_expression(gen_acc, details.elements[element_index * 2 + 1]);
 		generate_store_dict_mutable(gen_acc, *dict_acc_ptr_reg, construct_type, *key0_reg, *element0_reg, gen_acc.gen.settings.config.dict_backend_mode);
-		generate_release(gen_acc, *key0_reg, typeid_t::make_string());
+		generate_release(gen_acc, *key0_reg, type_t::make_string());
 	}
 	return dict_acc_ptr_reg;
 }
@@ -2259,7 +2259,7 @@ static llvm::Value* generate_global(llvm_function_generator_t& gen_acc, const st
 		}
 	}
 	else if(symbol._symbol_type == symbol_t::symbol_type::named_type){
-		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, typeid_t::make_typeid());
+		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type_t::make_typeid());
 		auto itype_reg = generate_itype_constant(gen_acc.gen, symbol_value_type);
 		return generate_global0(module, symbol_name, *itype, itype_reg);
 	}

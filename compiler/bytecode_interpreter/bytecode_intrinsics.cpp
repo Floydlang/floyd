@@ -283,7 +283,7 @@ bc_value_t bc_intrinsic__get_keys(interpreter_t& vm, const bc_value_t args[], in
 		}
 	}
 
-	const auto keys2 = value_t::make_vector_value(vm._imm->_program._types, typeid_t::make_string(), keys);
+	const auto keys2 = value_t::make_vector_value(vm._imm->_program._types, type_t::make_string(), keys);
 	const auto result = value_to_bc(vm._imm->_program._types, keys2);
 	return result;
 }

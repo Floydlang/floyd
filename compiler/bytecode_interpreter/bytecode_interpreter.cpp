@@ -573,7 +573,7 @@ bool bc_external_value_t::check_invariant() const{
 	else if(encoding == value_encoding::k_external__typeid){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json == nullptr);
-//		QUARK_ASSERT(_typeid_value != typeid_t::make_undefined());
+//		QUARK_ASSERT(_typeid_value != type_t::make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
 		QUARK_ASSERT(_vector_w_external_elements.empty());
 		QUARK_ASSERT(_vector_w_inplace_elements.empty());
@@ -887,7 +887,7 @@ bc_value_t make_vector(const type_interner_t& interner, const itype_t& element_t
 	}
 #endif
 
-	const auto vector_type = typeid_t::make_vector(interner, element_type);
+	const auto vector_type = type_t::make_vector(interner, element_type);
 	if(encode_as_vector_w_inplace_elements(interner, vector_type)){
 		immer::vector<bc_inplace_value_t> elements2;
 		for(const auto& e: elements){
@@ -923,7 +923,7 @@ bc_value_t make_vector(const type_interner_t& interner, const itype_t& element_t
 	}
 #endif
 
-	const auto vector_type = typeid_t::make_vector(interner, element_type);
+	const auto vector_type = type_t::make_vector(interner, element_type);
 	QUARK_ASSERT(encode_as_vector_w_inplace_elements(interner, vector_type) == false);
 
 	bc_value_t temp;
@@ -937,7 +937,7 @@ bc_value_t make_vector(const type_interner_t& interner, const itype_t& element_t
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(element_type.check_invariant());
 
-	const auto vector_type = typeid_t::make_vector(interner, element_type);
+	const auto vector_type = type_t::make_vector(interner, element_type);
 	QUARK_ASSERT(encode_as_vector_w_inplace_elements(interner, vector_type) == true);
 
 	bc_value_t temp;
@@ -990,7 +990,7 @@ bc_value_t make_dict(const type_interner_t& interner, const itype_t& value_type,
 
 
 
-typeid_t lookup_full_type0(const interpreter_t& vm, const bc_typeid_t& type){
+type_t lookup_full_type0(const interpreter_t& vm, const bc_typeid_t& type){
 	return lookup_itype_from_index(vm._imm->_program._types, type);
 }
 itype_t lookup_full_type(const interpreter_t& vm, const bc_typeid_t& type){
@@ -2739,7 +2739,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 	bc_pod_value_t* regs = stack._current_frame_entry_ptr;
 	bc_pod_value_t* globals = &stack._entries[k_frame_overhead];
 
-//	const typeid_t* type_lookup = &vm._imm->_program._types[0];
+//	const type_t* type_lookup = &vm._imm->_program._types[0];
 //	const auto type_count = vm._imm->_program._types.size();
 
 //	QUARK_TRACE_SS("STACK:  " << json_to_pretty_string(stack.stack_to_json()));
@@ -3829,7 +3829,7 @@ static json_t frame_to_json(const type_interner_t& interner, const bc_static_fra
 	});
 }
 
-static json_t types_to_json(const type_interner_t& interner, const std::vector<typeid_t>& types){
+static json_t types_to_json(const type_interner_t& interner, const std::vector<type_t>& types){
 	std::vector<json_t> r;
 	int id = 0;
 	for(const auto& e: types){

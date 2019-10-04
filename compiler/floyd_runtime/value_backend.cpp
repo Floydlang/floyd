@@ -1012,10 +1012,10 @@ void store_via_ptr2(const type_interner_t& interner, void* value_ptr, const ityp
 
 
 /*
-static std::map<itype_t, typeid_t> make_type_lookup(const llvm_type_lookup& type_lookup){
+static std::map<itype_t, type_t> make_type_lookup(const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	std::map<itype_t, typeid_t> result;
+	std::map<itype_t, type_t> result;
 	for(const auto& e: type_lookup.state.types){
 		result.insert( { e.itype, e.type } );
 	}
@@ -1060,7 +1060,7 @@ value_backend_t::value_backend_t(
 
 
 /*
-itype_t lookup_itype(const value_backend_t& backend, const typeid_t& type){
+itype_t lookup_itype(const value_backend_t& backend, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -1349,7 +1349,7 @@ void release_vec(value_backend_t& backend, runtime_value_t vec, itype_t itype){
 	}
 }
 
-//??? prep data, inluding member types as itypes -- so we don't need to acces struct_def and its typeid_t:s.
+//??? prep data, inluding member types as itypes -- so we don't need to acces struct_def and its type_t:s.
 void release_struct(value_backend_t& backend, runtime_value_t str, itype_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(str.check_invariant());

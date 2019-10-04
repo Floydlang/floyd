@@ -21,7 +21,7 @@ namespace floyd {
 llvm::Type* deref_ptr(llvm::Type* type);
 
 //	Returns true if we pass values of this type around via pointers (not by-value).
-bool pass_as_ptr(const typeid_t& type);
+bool pass_as_ptr(const type_t& type);
 
 
 /*
@@ -55,7 +55,7 @@ struct llvm_arg_mapping_t {
 	llvm::Type* llvm_type;
 
 	std::string floyd_name;
-	typeid_t floyd_type;
+	type_t floyd_type;
 
 	// -1 is none. Several elements can specify the same Floyd arg index, since dynamic value use two.
 	int floyd_arg_index;
@@ -169,8 +169,8 @@ void trace_llvm_type_lookup(const llvm_type_lookup& type_lookup);
 llvm::Type* make_runtime_type_type(const llvm_type_lookup& type_lookup);
 llvm::Type* make_runtime_value_type(const llvm_type_lookup& type_lookup);
 
-typeid_t lookup_type(const llvm_type_lookup& type_lookup, const itype_t& type);
-itype_t lookup_itype(const llvm_type_lookup& type_lookup, const typeid_t& type);
+type_t lookup_type(const llvm_type_lookup& type_lookup, const itype_t& type);
+itype_t lookup_itype(const llvm_type_lookup& type_lookup, const type_t& type);
 
 
 //	Returns the exact LLVM struct layout that maps to the struct members, without any alloc-64 header. Not a pointer.
@@ -181,7 +181,7 @@ llvm::StructType* get_exact_struct_type_byvalue(const llvm_type_lookup& i, const
 //	Returns the LLVM type used to pass this type of value around. It uses generic types for vector, dict and struct.
 //	Small types are by-value, large types are pointers.
 /*
-|typeid_t                                                                |llvm_type_specific                                   |llvm_type_generic |
+|type_t                                                                |llvm_type_specific                                   |llvm_type_generic |
 |------------------------------------------------------------------------|-----------------------------------------------------|------------------|
 |undef                                                                   |i16                                                  |nullptr           |
 |any                                                                     |i64                                                  |nullptr           |
@@ -201,9 +201,9 @@ llvm::StructType* get_exact_struct_type_byvalue(const llvm_type_lookup& i, const
 |function [struct {int dur;json more;}]() pure                           |%vec* (%frp*)*                                       |nullptr           |
 |------------------------------------------------------------------------|-----------------------------------------------------|------------------|
 */
-llvm::Type* get_llvm_type_as_arg(const llvm_type_lookup& type_lookup, const typeid_t& type);
+llvm::Type* get_llvm_type_as_arg(const llvm_type_lookup& type_lookup, const type_t& type);
 
-llvm::FunctionType* get_llvm_function_type(const llvm_type_lookup& type_lookup, const typeid_t& type);
+llvm::FunctionType* get_llvm_function_type(const llvm_type_lookup& type_lookup, const type_t& type);
 
 
 //	Returns generic types.

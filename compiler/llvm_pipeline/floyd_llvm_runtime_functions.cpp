@@ -100,7 +100,7 @@ static std::vector<function_bind_t> floydrt_allocate_vector__make(llvm::LLVMCont
 		};
 }
 
-llvm::Value* generate_allocate_vector(llvm_function_generator_t& gen_acc, const typeid_t& vector_type, int64_t element_count, vector_backend vector_backend){
+llvm::Value* generate_allocate_vector(llvm_function_generator_t& gen_acc, const type_t& vector_type, int64_t element_count, vector_backend vector_backend){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(vector_type.check_invariant());
 	QUARK_ASSERT(element_count >= 0);
@@ -365,7 +365,7 @@ static std::vector<function_bind_t> floydrt_lookup_dict_cppmap__make(llvm::LLVMC
 			make_frp_type(type_lookup),
 			make_generic_dict_type_byvalue(type_lookup)->getPointerTo(),
 			make_runtime_type_type(type_lookup),
-			get_llvm_type_as_arg(type_lookup, typeid_t::make_string())
+			get_llvm_type_as_arg(type_lookup, type_t::make_string())
 		},
 		false
 	);
@@ -378,7 +378,7 @@ static std::vector<function_bind_t> floydrt_lookup_dict_hamt__make(llvm::LLVMCon
 			make_frp_type(type_lookup),
 			make_generic_dict_type_byvalue(type_lookup)->getPointerTo(),
 			make_runtime_type_type(type_lookup),
-			get_llvm_type_as_arg(type_lookup, typeid_t::make_string())
+			get_llvm_type_as_arg(type_lookup, type_t::make_string())
 		},
 		false
 	);
@@ -386,7 +386,7 @@ static std::vector<function_bind_t> floydrt_lookup_dict_hamt__make(llvm::LLVMCon
 }
 
 
-llvm::Value* generate_lookup_dict(llvm_function_generator_t& gen_acc, llvm::Value& dict_reg, const typeid_t& dict_type, llvm::Value& key_reg, dict_backend dict_mode){
+llvm::Value* generate_lookup_dict(llvm_function_generator_t& gen_acc, llvm::Value& dict_reg, const type_t& dict_type, llvm::Value& key_reg, dict_backend dict_mode){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(dict_type.check_invariant());
 	QUARK_ASSERT(is_dict_cppmap(gen_acc.gen.settings.config, dict_type) || is_dict_hamt(gen_acc.gen.settings.config, dict_type));
@@ -439,7 +439,7 @@ static std::vector<function_bind_t> floydrt_store_dict_mutable__make(llvm::LLVMC
 			make_frp_type(type_lookup),
 			make_generic_dict_type_byvalue(type_lookup)->getPointerTo(),
 			make_runtime_type_type(type_lookup),
-			get_llvm_type_as_arg(type_lookup, typeid_t::make_string()),
+			get_llvm_type_as_arg(type_lookup, type_t::make_string()),
 			make_runtime_value_type(type_lookup),
 		},
 		false
@@ -450,7 +450,7 @@ static std::vector<function_bind_t> floydrt_store_dict_mutable__make(llvm::LLVMC
 	};
 }
 
-void generate_store_dict_mutable(llvm_function_generator_t& gen_acc, llvm::Value& dict_reg, const typeid_t& dict_type, llvm::Value& key_reg, llvm::Value& value_reg, dict_backend dict_mode){
+void generate_store_dict_mutable(llvm_function_generator_t& gen_acc, llvm::Value& dict_reg, const type_t& dict_type, llvm::Value& key_reg, llvm::Value& value_reg, dict_backend dict_mode){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(dict_type.check_invariant());
 	QUARK_ASSERT(is_dict_cppmap(gen_acc.gen.settings.config, dict_type) || is_dict_hamt(gen_acc.gen.settings.config, dict_type));
@@ -506,7 +506,7 @@ static JSON_T* floydrt_allocate_json(floyd_runtime_t* frp, runtime_value_t arg0_
 
 static std::vector<function_bind_t> floydrt_allocate_json__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		get_llvm_type_as_arg(type_lookup, typeid_t::make_json()),
+		get_llvm_type_as_arg(type_lookup, type_t::make_json()),
 		{
 			make_frp_type(type_lookup),
 			make_runtime_value_type(type_lookup),
@@ -558,10 +558,10 @@ static JSON_T* floydrt_lookup_json(floyd_runtime_t* frp, JSON_T* json_ptr, runti
 
 static std::vector<function_bind_t> floydrt_lookup_json__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		get_llvm_type_as_arg(type_lookup, typeid_t::make_json()),
+		get_llvm_type_as_arg(type_lookup, type_t::make_json()),
 		{
 			make_frp_type(type_lookup),
-			get_llvm_type_as_arg(type_lookup, typeid_t::make_json()),
+			get_llvm_type_as_arg(type_lookup, type_t::make_json()),
 			make_runtime_value_type(type_lookup),
 			make_runtime_type_type(type_lookup)
 		},
@@ -591,10 +591,10 @@ static runtime_value_t floydrt_json_to_string(floyd_runtime_t* frp, JSON_T* json
 
 static std::vector<function_bind_t> floydrt_json_to_string__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		get_llvm_type_as_arg(type_lookup, typeid_t::make_string()),
+		get_llvm_type_as_arg(type_lookup, type_t::make_string()),
 		{
 			make_frp_type(type_lookup),
-			get_llvm_type_as_arg(type_lookup, typeid_t::make_json())
+			get_llvm_type_as_arg(type_lookup, type_t::make_json())
 		},
 		false
 	);
@@ -645,7 +645,7 @@ static std::vector<function_bind_t> floydrt_allocate_struct__make(llvm::LLVMCont
 
 ////////////////////////////////		generate_load_struct_member()
 
-llvm::Value* generate_load_struct_member(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const typeid_t& struct_type, int member_index){
+llvm::Value* generate_load_struct_member(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const type_t& struct_type, int member_index){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(struct_type.check_invariant());
 	QUARK_ASSERT(struct_type.is_struct());
@@ -779,7 +779,7 @@ static std::vector<function_bind_t> floydrt_update_struct_member__make(llvm::LLV
 	};
 }
 
-static void generate_store_struct_member_mutate(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const typeid_t& struct_type, int member_index, llvm::Value& value_reg){
+static void generate_store_struct_member_mutate(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const type_t& struct_type, int member_index, llvm::Value& value_reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(struct_type.check_invariant());
 
@@ -806,7 +806,7 @@ static void generate_store_struct_member_mutate(llvm_function_generator_t& gen_a
 	builder.CreateStore(&value_reg, member_ptr_reg);
 }
 
-llvm::Value* generate_update_struct_member(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const typeid_t& struct_type, int member_index, llvm::Value& value_reg){
+llvm::Value* generate_update_struct_member(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const type_t& struct_type, int member_index, llvm::Value& value_reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(struct_type.check_invariant());
 
@@ -1056,7 +1056,7 @@ static void floydrt_retain_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_typ
 
 
 
-void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const typeid_t& type0){
+void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const type_t& type0){
 	QUARK_ASSERT(gen_acc.gen.type_lookup.check_invariant());
 	QUARK_ASSERT(type0.check_invariant());
 
@@ -1131,7 +1131,7 @@ std::vector<function_bind_t> retain_funcs(llvm::LLVMContext& context, const llvm
 		function_bind_t{ "retain_vector_hamt", make_retain(context, type_lookup, *make_generic_vec_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_vector_hamt) },
 		function_bind_t{ "retain_dict_cppmap", make_retain(context, type_lookup, *make_generic_dict_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_dict_cppmap) },
 		function_bind_t{ "retain_dict_hamt", make_retain(context, type_lookup, *make_generic_dict_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_dict_hamt) },
-		function_bind_t{ "retain_json", make_retain(context, type_lookup, *get_llvm_type_as_arg(type_lookup, typeid_t::make_json())), reinterpret_cast<void*>(floydrt_retain_json) },
+		function_bind_t{ "retain_json", make_retain(context, type_lookup, *get_llvm_type_as_arg(type_lookup, type_t::make_json())), reinterpret_cast<void*>(floydrt_retain_json) },
 		function_bind_t{ "retain_struct", make_retain(context, type_lookup, *get_generic_struct_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_struct) }
 	};
 }
@@ -1262,12 +1262,12 @@ std::vector<function_bind_t> release_funcs(llvm::LLVMContext& context, const llv
 		function_bind_t{ "release_vector_hamt_nonpod", make_release(context, type_lookup, *make_generic_vec_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_vector_hamt_nonpod) },
 		function_bind_t{ "release_dict_cppmap", make_release(context, type_lookup, *make_generic_dict_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_dict_cppmap) },
 		function_bind_t{ "release_dict_hamt", make_release(context, type_lookup, *make_generic_dict_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_dict_hamt) },
-		function_bind_t{ "release_json", make_release(context, type_lookup, *get_llvm_type_as_arg(type_lookup, typeid_t::make_json())), reinterpret_cast<void*>(floydrt_release_json) },
+		function_bind_t{ "release_json", make_release(context, type_lookup, *get_llvm_type_as_arg(type_lookup, type_t::make_json())), reinterpret_cast<void*>(floydrt_release_json) },
 		function_bind_t{ "release_struct", make_release(context, type_lookup, *get_generic_struct_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_struct) }
 	};
 }
 
-void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const typeid_t& type){
+void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const type_t& type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 

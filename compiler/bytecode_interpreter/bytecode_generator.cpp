@@ -222,11 +222,11 @@ symbol_pos_t make_imm_int(int value){
 
 
 /*	
-bc_typeid_t intern_type(bcgenerator_t& gen_acc, const typeid_t& type){
+bc_typeid_t intern_type(bcgenerator_t& gen_acc, const type_t& type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-    const auto it = std::find_if(gen_acc._types.begin(), gen_acc._types.end(), [&type](const typeid_t& e) { return e == type; });
+    const auto it = std::find_if(gen_acc._types.begin(), gen_acc._types.end(), [&type](const type_t& e) { return e == type; });
 	if(it != gen_acc._types.end()){
 		const auto pos = static_cast<bc_typeid_t>(it - gen_acc._types.begin());
 		return pos;
@@ -781,7 +781,7 @@ expression_gen_t bcgen_make_fallthrough_intrinsic(bcgenerator_t& gen_acc, const 
 	//	Find function
     const auto it = std::find_if(intrinsic_signatures.vec.begin(), intrinsic_signatures.vec.end(), [&details](const intrinsic_signature_t& e) { return get_intrinsic_opcode(e) == details.call_name; } );
     QUARK_ASSERT(it != intrinsic_signatures.vec.end());
-	const auto function_type = std::make_shared<typeid_t>(it->_function_type);
+	const auto function_type = std::make_shared<type_t>(it->_function_type);
 
 	const auto index = it - intrinsic_signatures.vec.begin();
 	const auto addr = symbol_pos_t::make_stack_pos(symbol_pos_t::k_intrinsic, static_cast<int>(index));
@@ -1033,8 +1033,8 @@ expression_gen_t bcgen_load2_expression(bcgenerator_t& gen_acc, const symbol_pos
 }
 
 struct call_spec_t {
-	typeid_t _return;
-	std::vector<typeid_t> _args;
+	type_t _return;
+	std::vector<type_t> _args;
 
 	uint32_t _dynbits;
 	uint32_t _extbits;
@@ -1928,7 +1928,7 @@ static bc_static_frame_t make_frame(const type_interner_t& interner, const bcgen
 		}
 	}
 
-//	const auto flat_args = mapf<typeid_t>(args, [&](const auto& e) { return flatten_type_description_deep(interner, e); });
+//	const auto flat_args = mapf<type_t>(args, [&](const auto& e) { return flatten_type_description_deep(interner, e); });
 	return bc_static_frame_t(interner, instrs2, symbols2, args);
 }
 
@@ -1950,7 +1950,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 	//	??? move this code to semantic analyser to share it for all backends AND allow new types to be added.
 
 	const auto benchmark_result2_t__type = make_benchmark_result2_t(interner2);
-	const auto dict_json__type = typeid_t::make_dict(interner2, typeid_t::make_json());
+	const auto dict_json__type = type_t::make_dict(interner2, type_t::make_json());
 
 
 

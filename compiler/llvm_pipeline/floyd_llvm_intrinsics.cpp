@@ -81,7 +81,7 @@ struct specialization_t {
 	function_bind_t bind;
 };
 
-static bool matches_specialization(const config_t& config, const type_interner_t& type_interner, eresolved_type wanted, const typeid_t& arg_type){
+static bool matches_specialization(const config_t& config, const type_interner_t& type_interner, eresolved_type wanted, const type_t& arg_type){
 	QUARK_ASSERT(config.check_invariant());
 	QUARK_ASSERT(type_interner.check_invariant());
 	QUARK_ASSERT(arg_type.check_invariant());
@@ -140,7 +140,7 @@ static bool matches_specialization(const config_t& config, const type_interner_t
 
 
 
-static const function_link_entry_t& lookup_link_map(const config_t& config, const type_interner_t& type_interner, const std::vector<function_link_entry_t>& link_map, const std::vector<specialization_t>& specialisations, const typeid_t& type){
+static const function_link_entry_t& lookup_link_map(const config_t& config, const type_interner_t& type_interner, const std::vector<function_link_entry_t>& link_map, const std::vector<specialization_t>& specialisations, const type_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto it = std::find_if(specialisations.begin(), specialisations.end(), [&](const specialization_t& s) { return matches_specialization(config, type_interner, s.required_arg_type, type); });
@@ -487,13 +487,13 @@ static std::vector<specialization_t> make_map_specializations(llvm::LLVMContext&
 
 llvm::Value* generate_instrinsic_map(
 	llvm_function_generator_t& gen_acc,
-	const typeid_t& resolved_call_type,
+	const type_t& resolved_call_type,
 	llvm::Value& elements_vec_reg,
-	const typeid_t& elements_vec_type,
+	const type_t& elements_vec_type,
 	llvm::Value& f_reg,
-	const typeid_t& f_type,
+	const type_t& f_type,
 	llvm::Value& context_reg,
-	const typeid_t& context_type)
+	const type_t& context_type)
 {
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(elements_vec_type.check_invariant());
@@ -541,7 +541,7 @@ static runtime_value_t floyd_llvm_intrinsic__map_string(floyd_runtime_t* frp, ru
 
 /*
 	QUARK_ASSERT(check_map_string_func_type(
-		typeid_t::make_string(),
+		type_t::make_string(),
 		lookup_type_ref(r.backend, func_type),
 		lookup_type_ref(r.backend, context_type)
 	));
@@ -606,8 +606,8 @@ static runtime_value_t map_dag__carray(
 
 	QUARK_ASSERT(e_type == type2.get_function_args(backend.type_interner)[0] && r_type == type2.get_function_args(backend.type_interner)[1].get_vector_element_type(backend.type_interner));
 
-//	QUARK_ASSERT(is_vector_carray(typeid_t::make_vector(e_type)));
-//	QUARK_ASSERT(is_vector_carray(typeid_t::make_vector(r_type)));
+//	QUARK_ASSERT(is_vector_carray(type_t::make_vector(e_type)));
+//	QUARK_ASSERT(is_vector_carray(type_t::make_vector(r_type)));
 
 	const auto return_type = make_vector(backend.type_interner, r_type);
 
@@ -734,8 +734,8 @@ static runtime_value_t map_dag__hamt(
 
 	QUARK_ASSERT(e_type == type2.get_function_args(backend.type_interner)[0] && r_type == type2.get_function_args(backend.type_interner)[1].get_vector_element_type(backend.type_interner));
 
-//	QUARK_ASSERT(is_vector_hamt(typeid_t::make_vector(e_type)));
-//	QUARK_ASSERT(is_vector_hamt(typeid_t::make_vector(r_type)));
+//	QUARK_ASSERT(is_vector_hamt(type_t::make_vector(e_type)));
+//	QUARK_ASSERT(is_vector_hamt(type_t::make_vector(r_type)));
 
 	const auto return_type = make_vector(backend.type_interner, r_type);
 
@@ -1329,7 +1329,7 @@ static std::vector<specialization_t> make_push_back_specializations(llvm::LLVMCo
 	};
 }
 
-llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, const typeid_t& resolved_call_type, llvm::Value& collection_reg, const typeid_t& collection_type, llvm::Value& value_reg){
+llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, const type_t& resolved_call_type, llvm::Value& collection_reg, const type_t& collection_type, llvm::Value& value_reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(collection_type.check_invariant());
 
@@ -1340,7 +1340,7 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 
 	if(collection_type.is_string()){
 		const auto vector_itype_reg = generate_itype_constant(gen_acc.gen, collection_type);
-		const auto packed_value_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, typeid_t::make_int());
+		const auto packed_value_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, type_t::make_int());
 		return builder.CreateCall(
 			res.llvm_codegen_f,
 			{ gen_acc.get_callers_fcp(), &collection_reg, vector_itype_reg, packed_value_reg },
@@ -1540,7 +1540,7 @@ static std::vector<specialization_t> make_size_specializations(llvm::LLVMContext
 	};
 }
 
-llvm::Value* generate_instrinsic_size(llvm_function_generator_t& gen_acc, const typeid_t& resolved_call_type, llvm::Value& collection_reg, const typeid_t& collection_type){
+llvm::Value* generate_instrinsic_size(llvm_function_generator_t& gen_acc, const type_t& resolved_call_type, llvm::Value& collection_reg, const type_t& collection_type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(collection_type.check_invariant());
 
@@ -1831,7 +1831,7 @@ static std::vector<specialization_t> make_update_specializations(llvm::LLVMConte
 	};
 }
 
-llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, const typeid_t& resolved_call_type, llvm::Value& collection_reg, const typeid_t& collection_type, llvm::Value& key_reg, llvm::Value& value_reg){
+llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, const type_t& resolved_call_type, llvm::Value& collection_reg, const type_t& collection_type, llvm::Value& key_reg, llvm::Value& value_reg){
 	QUARK_ASSERT(collection_type.check_invariant());
 
 	auto& builder = gen_acc.get_builder();
@@ -1841,8 +1841,8 @@ llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, cons
 	const auto collection_itype = generate_itype_constant(gen_acc.gen, collection_type);
 
 	if(collection_type.is_string()){
-		const auto key_itype = generate_itype_constant(gen_acc.gen, typeid_t::make_int());
-		const auto value_itype = generate_itype_constant(gen_acc.gen, typeid_t::make_int());
+		const auto key_itype = generate_itype_constant(gen_acc.gen, type_t::make_int());
+		const auto value_itype = generate_itype_constant(gen_acc.gen, type_t::make_int());
 		return builder.CreateCall(
 			res.llvm_codegen_f,
 			{ gen_acc.get_callers_fcp(), &collection_reg, collection_itype, &key_reg, key_itype, &value_reg, value_itype },
@@ -1850,7 +1850,7 @@ llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, cons
 		);
 	}
 	else if(collection_type.is_vector()){
-		const auto key_itype = generate_itype_constant(gen_acc.gen, typeid_t::make_int());
+		const auto key_itype = generate_itype_constant(gen_acc.gen, type_t::make_int());
 		const auto element_type = collection_type.get_vector_element_type(interner);
 
 		const auto packed_value_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
@@ -1862,7 +1862,7 @@ llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, cons
 		);
 	}
 	else if(collection_type.is_dict()){
-		const auto key_itype = generate_itype_constant(gen_acc.gen, typeid_t::make_string());
+		const auto key_itype = generate_itype_constant(gen_acc.gen, type_t::make_string());
 		const auto element_type = collection_type.get_dict_value_type(interner);
 		const auto value_itype = generate_itype_constant(gen_acc.gen, element_type);
 		const auto packed_value_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
@@ -1956,7 +1956,7 @@ static std::vector<function_link_entry_t> make_entries(const intrinsic_signature
 	std::vector<function_link_entry_t> result;
 	for(const auto& bind: binds){
 		auto signature_it = std::find_if(intrinsic_signatures.vec.begin(), intrinsic_signatures.vec.end(), [&] (const intrinsic_signature_t& m) { return m.name == bind.name; } );
-		const auto function_type = signature_it != intrinsic_signatures.vec.end() ? signature_it->_function_type : typeid_t::make_undefined();
+		const auto function_type = signature_it != intrinsic_signatures.vec.end() ? signature_it->_function_type : type_t::make_undefined();
 
 		const auto link_name = encode_intrinsic_link_name(bind.name);
 		const auto exists_it = std::find_if(result.begin(), result.end(), [&](const function_link_entry_t& e){ return e.link_name == link_name; });

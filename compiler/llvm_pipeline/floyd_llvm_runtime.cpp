@@ -165,7 +165,7 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name)
 
 
 //	Make link entries for all runtime functions, like floydrt_retain_vec().
-//	These have no floyd-style function type, only llvm function type, since they use parameters not expressable with typeid_t.
+//	These have no floyd-style function type, only llvm function type, since they use parameters not expressable with type_t.
 static std::vector<function_link_entry_t> make_runtime_function_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
@@ -349,11 +349,11 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 		for(const auto& e: main_args){
 			main_args2.push_back(value_t::make_string(e));
 		}
-		const auto main_args3 = value_t::make_vector_value(interner, typeid_t::make_string(), main_args2);
+		const auto main_args3 = value_t::make_vector_value(interner, type_t::make_string(), main_args2);
 		const auto main_args4 = to_runtime_value(ee, main_args3);
 		const auto main_result_int = (*f2)(make_runtime_ptr(&ee), main_args4);
 
-		const auto return_itype = typeid_t::make_vector(interner, typeid_t::make_string());
+		const auto return_itype = type_t::make_vector(interner, type_t::make_string());
 		if(is_rc_value(return_itype)){
 			release_value(ee.backend, main_args4, return_itype);
 		}

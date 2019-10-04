@@ -97,7 +97,7 @@ std::pair<std::string, seq_t> read_required_identifier(const seq_t& s);
 
 ////////////////////////////////		TYPES
 /*
-??? move this out of this file -- parser should not know about typeid_t.
+??? move this out of this file -- parser should not know about type_t.
 	Skip leading whitespace, get string while type-char.
 	See language reference
 	Validates that this is a legal string, with legal characters. Exception.

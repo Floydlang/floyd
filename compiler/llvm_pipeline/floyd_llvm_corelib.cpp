@@ -60,7 +60,7 @@ static DICT_CPPMAP_T* llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
   		caps_map.insert({ e.first, value_t::make_json(e.second) });
 	}
 
-	const auto a = value_t::make_dict_value(interner, typeid_t::make_json(), caps_map);
+	const auto a = value_t::make_dict_value(interner, type_t::make_json(), caps_map);
 	auto result = to_runtime_value(r, a);
 	return result.dict_cppmap_ptr;
 }
@@ -69,7 +69,7 @@ runtime_value_t llvm_corelib__make_hardware_caps_report(floyd_runtime_t* frp, ru
 	auto& r = get_floyd_runtime(frp);
 	auto& interner = r.backend.type_interner;
 
-	const auto type = typeid_t::make_dict(interner, typeid_t::make_json());
+	const auto type = type_t::make_dict(interner, type_t::make_json());
 	const auto b2 = from_runtime_value(r, caps0, type);
 	const auto m = b2.get_dict_value();
 	std::vector<std::pair<std::string, json_t>> caps;
@@ -83,7 +83,7 @@ runtime_value_t llvm_corelib__make_hardware_caps_report_brief(floyd_runtime_t* f
 	auto& r = get_floyd_runtime(frp);
 	auto& interner = r.backend.type_interner;
 
-	const auto b2 = from_runtime_value(r, caps0, typeid_t::make_dict(interner, typeid_t::make_json()));
+	const auto b2 = from_runtime_value(r, caps0, type_t::make_dict(interner, type_t::make_json()));
 	const auto m = b2.get_dict_value();
 	std::vector<std::pair<std::string, json_t>> caps;
 	for(const auto& e: m){
@@ -115,7 +115,7 @@ static STRUCT_T* llvm_corelib__calc_string_sha1(floyd_runtime_t* frp, runtime_va
 
 	const auto a = value_t::make_struct_value(
 		interner,
-		typeid_t::make_struct2(interner, { member_t{ typeid_t::make_string(), "ascii40" } }),
+		type_t::make_struct2(interner, { member_t{ type_t::make_string(), "ascii40" } }),
 		{ value_t::make_string(ascii40) }
 	);
 
@@ -135,7 +135,7 @@ static STRUCT_T* llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* 
 
 	const auto a = value_t::make_struct_value(
 		interner,
-		typeid_t::make_struct2(interner, { member_t{ typeid_t::make_string(), "ascii40" } }),
+		type_t::make_struct2(interner, { member_t{ type_t::make_string(), "ascii40" } }),
 		{ value_t::make_string(ascii40) }
 	);
 

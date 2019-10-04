@@ -3138,7 +3138,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] constructor expression", "", 
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(		let [int] result = [10, 20, 30]		)",
-		value_t::make_vector_value(temp, typeid_t::make_int(), { value_t::make_int(10), value_t::make_int(20), value_t::make_int(30) })
+		value_t::make_vector_value(temp, type_t::make_int(), { value_t::make_int(10), value_t::make_int(20), value_t::make_int(30) })
 	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] constructor", "", "3"){
@@ -4984,7 +4984,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
 			let result = typeof(145)
 
 		)",
-		value_t::make_typeid_value(typeid_t::make_int())
+		value_t::make_typeid_value(type_t::make_int())
 	);
 }
 
@@ -4993,7 +4993,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = typeof("hello")		)", value_t::make_typeid_value(typeid_t::make_string()));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = typeof("hello")		)", value_t::make_typeid_value(type_t::make_string()));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
@@ -5002,7 +5002,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
 
 FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
 	type_interner_t temp;
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = typeof([1,2,3])		)", value_t::make_typeid_value(itype_t::make_vector(temp, typeid_t::make_int()))	);
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = typeof([1,2,3])		)", value_t::make_typeid_value(itype_t::make_vector(temp, type_t::make_int()))	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_string(typeof([1,2,3]))		)",value_t::make_string("[int]") );
@@ -5193,12 +5193,12 @@ FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "string", ""){
 FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "point_t", ""){
 	type_interner_t temp;
 	const auto point_t_def = std::vector<member_t>{
-		member_t(typeid_t::make_double(), "x"),
-		member_t(typeid_t::make_double(), "y")
+		member_t(type_t::make_double(), "x"),
+		member_t(type_t::make_double(), "y")
 	};
 	const auto expected = value_t::make_struct_value(
 		temp,
-		typeid_t::make_struct2(temp, point_t_def),
+		type_t::make_struct2(temp, point_t_def),
 		{ value_t::make_double(1), value_t::make_double(3) }
 	);
 
@@ -6054,9 +6054,9 @@ FLOYD_LANG_PROOF("Floyd test suite", "", "pixel_t()", ""){
 	type_interner_t temp;
 
 	const auto pixel_t__def = std::vector<member_t>{
-		member_t(typeid_t::make_int(), "red"),
-		member_t(typeid_t::make_int(), "green"),
-		member_t(typeid_t::make_int(), "blue")
+		member_t(type_t::make_int(), "red"),
+		member_t(type_t::make_int(), "green"),
+		member_t(type_t::make_int(), "blue")
 	};
 
 	ut_verify_global_result_nolib(
@@ -6066,7 +6066,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "", "pixel_t()", ""){
 
 		value_t::make_struct_value(
 			temp,
-			typeid_t::make_struct2(temp, pixel_t__def),
+			type_t::make_struct2(temp, pixel_t__def),
 			std::vector<value_t>{ value_t::make_int(1), value_t::make_int(2), value_t::make_int(3) }
 		)
 	);
@@ -6077,8 +6077,8 @@ FLOYD_LANG_PROOF("Floyd test suite", "", "pixel_t()", ""){
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
 	type_interner_t temp;
-	const auto a = typeid_t::make_vector(temp, typeid_t::make_string());
-	const auto b = typeid_t::make_vector(temp, make__fsentry_t__type(temp));
+	const auto a = type_t::make_vector(temp, type_t::make_string());
+	const auto b = type_t::make_vector(temp, make__fsentry_t__type(temp));
 	ut_verify_auto(QUARK_POS, a != b, true);
 }
 
@@ -6196,7 +6196,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_fsentries_shallow()", "", ""){
 
 		)",
 		value_t::make_typeid_value(
-			typeid_t::make_vector(make__fsentry_t__type())
+			type_t::make_vector(make__fsentry_t__type())
 		)
 	);
 }
@@ -6281,7 +6281,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "does_fsentry_exist()", "", ""){
 			let result = typeof(x)
 
 		)",
-		value_t::make_typeid_value(typeid_t::make_bool())
+		value_t::make_typeid_value(type_t::make_bool())
 	);
 }
 

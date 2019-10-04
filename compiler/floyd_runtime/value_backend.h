@@ -82,7 +82,7 @@ struct STRUCT_T;
 
 /*
 	An integer that specifies a unique type a type interner. Use this to specify types in running program.
-	Avoid using floyd::typeid_t
+	Avoid using floyd::type_t
 	It is 1:1 compatible with itype_t. Use itype_t except in binary situations.
 */
 
@@ -693,7 +693,7 @@ struct value_backend_t {
 	heap_t heap;
 
 	//	??? Also go from itype -> struct_layout
-	// 	??? also go from itype -> collection element-type without using typeid_t.
+	// 	??? also go from itype -> collection element-type without using type_t.
 
 	type_interner_t type_interner;
 	std::vector<itype_t> child_type;
@@ -704,15 +704,15 @@ struct value_backend_t {
 
 	//	Temporary *global* constant that switches between array-based vector backened and HAMT-based vector.
 	//	The string always uses array-based vector.
-	//	There is still only one typeid_t/itype for vector.
+	//	There is still only one type_t/itype for vector.
 	//	Future: make this flag a per-vector setting.
 	config_t config;
 };
 
 
-//itype_t lookup_itype(const value_backend_t& backend, const typeid_t& type);
+//itype_t lookup_itype(const value_backend_t& backend, const type_t& type);
 
-//	WARNING: We are using typeid_t here in the runtime code. This type is slow and allocates memory. Always use const&!
+//	WARNING: We are using type_t here in the runtime code. This type is slow and allocates memory. Always use const&!
 itype_t lookup_type_ref(const value_backend_t& backend, itype_t itype);
 itype_t lookup_type_ref(const value_backend_t& backend, runtime_type_t type);
 

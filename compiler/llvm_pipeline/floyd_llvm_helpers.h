@@ -99,10 +99,10 @@ VECTOR_CARRAY_T* unpack_vector_carray_arg(const value_backend_t& backend, runtim
 DICT_CPPMAP_T* unpack_dict_cppmap_arg(const value_backend_t& backend, runtime_value_t arg_value, runtime_type_t arg_type);
 
 //	Converts the LLVM value into a uint64_t for storing vector, pass as DYN value.
-llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& value, const typeid_t& floyd_type);
+llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& value, const type_t& floyd_type);
 
 //	Returns the specific LLVM type for the value, like VECTOR_CARRAY_T* etc.
-llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& runtime_value_reg, const typeid_t& type);
+llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& runtime_value_reg, const type_t& type);
 
 
 }	//	floyd

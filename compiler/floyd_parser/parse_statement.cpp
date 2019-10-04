@@ -160,7 +160,7 @@ std::size_t split_at_tail_identifier(const std::string& s){
 //	BIND:			int x = 10
 //	BIND:			x = 10
 struct a_result_t {
-	typeid_t type;
+	type_t type;
 	std::string identifier;
 
 	//	Points to "=" or end of sequence if no "=" was found.
@@ -179,10 +179,10 @@ static a_result_t parse_a(type_interner_t& interner, const seq_t& p, const locat
 	}
 	else if(!optional_type_pos.first && identifier_pos.first != ""){
 		QUARK_ASSERT(false);
-		return a_result_t{ typeid_t::make_undefined(), optional_type_pos.first->get_symbol_ref(interner), identifier_pos.second };
+		return a_result_t{ type_t::make_undefined(), optional_type_pos.first->get_symbol_ref(interner), identifier_pos.second };
 	}
 	else if(optional_type_pos.first && optional_type_pos.first->is_symbol_ref() && identifier_pos.first == ""){
-		return a_result_t{ typeid_t::make_undefined(), optional_type_pos.first->get_symbol_ref(interner), identifier_pos.second };
+		return a_result_t{ type_t::make_undefined(), optional_type_pos.first->get_symbol_ref(interner), identifier_pos.second };
 	}
 	else{
 		throw_compiler_error(loc, "Require a value for new bind.");
@@ -449,12 +449,12 @@ std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos){
 		{ "symbols", {} }
 	});
 
-	std::vector<typeid_t> arg_types;
+	std::vector<type_t> arg_types;
 	for(const auto& e: named_args_pos.first){
 		arg_types.push_back(e._type);
 	}
 
-	const auto function_type = typeid_t::make_function(temp, return_type_pos.first, arg_types, impure_pos.first ? epure::impure : epure::pure);
+	const auto function_type = type_t::make_function(temp, return_type_pos.first, arg_types, impure_pos.first ? epure::impure : epure::pure);
 	const auto func_def_expr = make_parser_node(
 		location_t(k_no_location),
 		parse_tree_expression_opcode_t::k_function_def,
@@ -692,12 +692,12 @@ std::pair<json_t, seq_t>  parse_protocol_definition_body(const seq_t& p, const s
 		pos = skip_whitespace(pos);
 
 
-		std::vector<typeid_t> arg_types;
+		std::vector<type_t> arg_types;
 		for(const auto& e: args_pos.first){
 			arg_types.push_back(e._type);
 		}
 		const member_t f = {
-			typeid_t::make_function(return_type_pos.first, arg_types, epure::pure),
+			type_t::make_function(return_type_pos.first, arg_types, epure::pure),
 			function_name_pos.first
 		};
 		functions.push_back(f);

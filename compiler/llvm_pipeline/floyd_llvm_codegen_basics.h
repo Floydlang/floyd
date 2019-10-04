@@ -168,11 +168,11 @@ struct llvm_function_generator_t {
 };
 
 
-llvm::Constant* generate_itype_constant(const llvm_code_generator_t& gen_acc, const typeid_t& type);
+llvm::Constant* generate_itype_constant(const llvm_code_generator_t& gen_acc, const type_t& type);
 
 
-llvm::Value* generate_cast_to_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const typeid_t& floyd_type);
-llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& runtime_value_reg, const typeid_t& type);
+llvm::Value* generate_cast_to_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const type_t& floyd_type);
+llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& runtime_value_reg, const type_t& type);
 
 
 
@@ -182,12 +182,12 @@ llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_acc, ll
 llvm::Value* generate_get_vec_element_ptr_needs_cast(llvm_function_generator_t& gen_acc, llvm::Value& vec_ptr_reg);
 
 //	Returns pointer to the first byte of the first struct member.
-llvm::Value* generate_get_struct_base_ptr(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const typeid_t& final_type);
+llvm::Value* generate_get_struct_base_ptr(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const type_t& final_type);
 
 
 //	Adds argument #0 which is floyd's secret runtime context.
 //	Supports ANY-types by passing TWO arguments: the value then the itype of the value.
-llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, const typeid_t& callee_function_type, const typeid_t& resolved_function_type, llvm::Value& callee_reg, const std::vector<llvm::Value*> floyd_args);
+llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, const type_t& callee_function_type, const type_t& resolved_function_type, llvm::Value& callee_reg, const std::vector<llvm::Value*> floyd_args);
 
 }	//	floyd
 

@@ -377,7 +377,7 @@ void generate_array_element_store(llvm::IRBuilder<>& builder, llvm::Value& array
 
 
 
-llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& value, const typeid_t& floyd_type){
+llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& value, const type_t& floyd_type){
 	QUARK_ASSERT(type_lookup.check_invariant());
 	QUARK_ASSERT(floyd_type.check_invariant());
 
@@ -442,7 +442,7 @@ llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const l
 	return std::visit(visitor_t{ builder, context, type_lookup, value, floyd_type }, get_itype_variant(type_lookup.state.type_interner, floyd_type));
 }
 
-llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& runtime_value_reg, const typeid_t& type){
+llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& runtime_value_reg, const type_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
 	auto& context = builder.getContext();
@@ -452,7 +452,7 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const
 		const llvm_type_lookup& type_lookup;
 		llvm::LLVMContext& context;
 		llvm::Value& runtime_value_reg;
-		const typeid_t& type;
+		const type_t& type;
 
 		llvm::Value* operator()(const undefined_t& e) const{
 			UNSUPPORTED();

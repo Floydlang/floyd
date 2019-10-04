@@ -482,7 +482,7 @@ runtime_value_t get_keys__cppmap_carray(value_backend_t& backend, runtime_value_
 	const auto& m = dict->get_map();
 	const auto count = (uint64_t)m.size();
 
-	auto result_vec = alloc_vector_carray(backend.heap, count, count, typeid_t::make_vector(backend.type_interner, typeid_t::make_string()));
+	auto result_vec = alloc_vector_carray(backend.heap, count, count, type_t::make_vector(backend.type_interner, type_t::make_string()));
 
 	int index = 0;
 	for(const auto& e: m){
@@ -505,7 +505,7 @@ runtime_value_t get_keys__cppmap_hamt(value_backend_t& backend, runtime_value_t 
 	const auto& m = dict->get_map();
 	const auto count = (uint64_t)m.size();
 
-	auto result_vec = alloc_vector_hamt(backend.heap, count, count, typeid_t::make_vector(backend.type_interner, typeid_t::make_string()));
+	auto result_vec = alloc_vector_hamt(backend.heap, count, count, type_t::make_vector(backend.type_interner, type_t::make_string()));
 
 	int index = 0;
 	for(const auto& e: m){
@@ -530,7 +530,7 @@ runtime_value_t get_keys__hamtmap_carray(value_backend_t& backend, runtime_value
 	const auto& m = dict->get_map();
 	const auto count = (uint64_t)m.size();
 
-	auto result_vec = alloc_vector_carray(backend.heap, count, count, typeid_t::make_vector(backend.type_interner, typeid_t::make_string()));
+	auto result_vec = alloc_vector_carray(backend.heap, count, count, type_t::make_vector(backend.type_interner, type_t::make_string()));
 
 	int index = 0;
 	for(const auto& e: m){
@@ -553,7 +553,7 @@ runtime_value_t get_keys__hamtmap_hamt(value_backend_t& backend, runtime_value_t
 	const auto& m = dict->get_map();
 	const auto count = (uint64_t)m.size();
 
-	auto result_vec = alloc_vector_hamt(backend.heap, count, count, typeid_t::make_vector(backend.type_interner, typeid_t::make_string()));
+	auto result_vec = alloc_vector_hamt(backend.heap, count, count, type_t::make_vector(backend.type_interner, type_t::make_string()));
 
 	int index = 0;
 	for(const auto& e: m){

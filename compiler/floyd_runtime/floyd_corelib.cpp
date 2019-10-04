@@ -835,13 +835,13 @@ std::vector<value_t> directory_entries_to_values(type_interner_t& type_interner,
 }
 
 
-typeid_t make__fsentry_t__type(type_interner_t& type_interner){
-	const auto temp = typeid_t::make_struct2(
+type_t make__fsentry_t__type(type_interner_t& type_interner){
+	const auto temp = type_t::make_struct2(
 		type_interner,
 		{
-			{ typeid_t::make_string(), "type" },
-			{ typeid_t::make_string(), "abs_parent_path" },
-			{ typeid_t::make_string(), "name" }
+			{ type_t::make_string(), "type" },
+			{ type_t::make_string(), "abs_parent_path" },
+			{ type_t::make_string(), "name" }
 		}
 	);
 	return temp;
@@ -858,17 +858,17 @@ typeid_t make__fsentry_t__type(type_interner_t& type_interner){
 		file_pos_t file_size
 	}
 */
-typeid_t make__fsentry_info_t__type(type_interner_t& type_interner){
-	const auto temp = typeid_t::make_struct2(
+type_t make__fsentry_info_t__type(type_interner_t& type_interner){
+	const auto temp = type_t::make_struct2(
 		type_interner,
 		{
-			{ typeid_t::make_string(), "type" },
-			{ typeid_t::make_string(), "name" },
-			{ typeid_t::make_string(), "abs_parent_path" },
+			{ type_t::make_string(), "type" },
+			{ type_t::make_string(), "name" },
+			{ type_t::make_string(), "abs_parent_path" },
 
-			{ typeid_t::make_string(), "creation_date" },
-			{ typeid_t::make_string(), "modification_date" },
-			{ typeid_t::make_int(), "file_size" }
+			{ type_t::make_string(), "creation_date" },
+			{ type_t::make_string(), "modification_date" },
+			{ type_t::make_int(), "file_size" }
 		}
 	);
 	return temp;
@@ -877,20 +877,20 @@ typeid_t make__fsentry_info_t__type(type_interner_t& type_interner){
 
 
 
-typeid_t make__fs_environment_t__type(type_interner_t& type_interner){
-	const auto temp = typeid_t::make_struct2(
+type_t make__fs_environment_t__type(type_interner_t& type_interner){
+	const auto temp = type_t::make_struct2(
 		type_interner,
 		{
-			{ typeid_t::make_string(), "home_dir" },
-			{ typeid_t::make_string(), "documents_dir" },
-			{ typeid_t::make_string(), "desktop_dir" },
+			{ type_t::make_string(), "home_dir" },
+			{ type_t::make_string(), "documents_dir" },
+			{ type_t::make_string(), "desktop_dir" },
 
-			{ typeid_t::make_string(), "hidden_persistence_dir" },
-			{ typeid_t::make_string(), "preferences_dir" },
-			{ typeid_t::make_string(), "cache_dir" },
-			{ typeid_t::make_string(), "temp_dir" },
+			{ type_t::make_string(), "hidden_persistence_dir" },
+			{ type_t::make_string(), "preferences_dir" },
+			{ type_t::make_string(), "cache_dir" },
+			{ type_t::make_string(), "temp_dir" },
 
-			{ typeid_t::make_string(), "executable_dir" }
+			{ type_t::make_string(), "executable_dir" }
 		}
 	);
 	return temp;
@@ -902,29 +902,29 @@ typeid_t make__fs_environment_t__type(type_interner_t& type_interner){
 		string utd_date
 	}
 */
-typeid_t make__date_t__type(type_interner_t& type_interner){
-	const auto temp = typeid_t::make_struct2(
+type_t make__date_t__type(type_interner_t& type_interner){
+	const auto temp = type_t::make_struct2(
 		type_interner,
 	{
-		{ typeid_t::make_string(), "utd_date" }
+		{ type_t::make_string(), "utd_date" }
 	});
 	return temp;
 }
 
-typeid_t make__sha1_t__type(type_interner_t& type_interner){
-	const auto temp = typeid_t::make_struct2(
+type_t make__sha1_t__type(type_interner_t& type_interner){
+	const auto temp = type_t::make_struct2(
 	type_interner,
 	{
-		{ typeid_t::make_string(), "ascii40" }
+		{ type_t::make_string(), "ascii40" }
 	});
 	return temp;
 }
 
-typeid_t make__binary_t__type(type_interner_t& type_interner){
-	const auto temp = typeid_t::make_struct2(
+type_t make__binary_t__type(type_interner_t& type_interner){
+	const auto temp = type_t::make_struct2(
 	type_interner,
 	{
-		{ typeid_t::make_string(), "bytes" }
+		{ type_t::make_string(), "bytes" }
 	});
 	return temp;
 }
@@ -934,11 +934,11 @@ typeid_t make__binary_t__type(type_interner_t& type_interner){
 		string absolute_path
 	}
 */
-typeid_t make__absolute_path_t__type(type_interner_t& type_interner){
-	const auto temp = typeid_t::make_struct2(
+type_t make__absolute_path_t__type(type_interner_t& type_interner){
+	const auto temp = type_t::make_struct2(
 	type_interner,
 	{
-		{ typeid_t::make_string(), "absolute_path" }
+		{ type_t::make_string(), "absolute_path" }
 	});
 	return temp;
 }
@@ -948,11 +948,11 @@ typeid_t make__absolute_path_t__type(type_interner_t& type_interner){
 		int pos
 	}
 */
-typeid_t make__file_pos_t__type(type_interner_t& type_interner){
-	const auto temp = typeid_t::make_struct2(
+type_t make__file_pos_t__type(type_interner_t& type_interner){
+	const auto temp = type_t::make_struct2(
 		type_interner,
 	{
-		{ typeid_t::make_int(), "pos" }
+		{ type_t::make_int(), "pos" }
 	});
 	return temp;
 }

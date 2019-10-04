@@ -24,7 +24,7 @@ namespace floyd {
 
 
 /*
-	typeid_t
+	type_t
 
 	This is a very central type in the Floyd compiler.
 
@@ -32,10 +32,10 @@ namespace floyd {
 	like "struct { [float] p; string s }.
 	It can hold *any Floyd type*. It can also hold unresolved type identifiers and a few types internal to compiler.
 
-	typeid_t can be convert to/from JSON and is written in source code according to Floyd source syntax, see table below.
+	type_t can be convert to/from JSON and is written in source code according to Floyd source syntax, see table below.
 
-	typeid_t is an immutable value object.
-	The typeid_t is normalized and can be compared with other typeid_t:s.
+	type_t is an immutable value object.
+	The type_t is normalized and can be compared with other type_t:s.
 
 	Composite types can form trees of types,
 		like:
@@ -63,7 +63,7 @@ namespace floyd {
 	This is the JSON format we use to pass AST around. Use typeid_to_ast_json() and typeid_from_ast_json().
 
 	COMPACT_STRING
-	This is a nice user-visible representation of the typeid_t. It may be lossy. It's for REPLs etc. UI.
+	This is a nice user-visible representation of the type_t. It may be lossy. It's for REPLs etc. UI.
 
 	SOURCE CODE TYPE
 	Use read_type(), read_required_type()
@@ -78,13 +78,13 @@ struct type_interner_t;
 struct type_t;
 
 
-#define typeid_t type_t
+#define type_t type_t
 #define itype_t type_t
 
 
 
 
-//std::string typeid_to_compact_string(const typeid_t& t);
+//std::string typeid_to_compact_string(const type_t& t);
 
 
 
@@ -820,7 +820,7 @@ type_interner_t type_interner_from_json(const json_t& j);
 
 
 //	Allocates a new itype for this tag. The tag must not already exist.
-//	Interns the type for this tag. You can use typeid_t::make_undefined() and
+//	Interns the type for this tag. You can use type_t::make_undefined() and
 //	later update the type using update_tagged_type()
 itype_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag);
 itype_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag, const itype_t& type);

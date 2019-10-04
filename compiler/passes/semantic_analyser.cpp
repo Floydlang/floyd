@@ -260,7 +260,7 @@ static itype_t resolve_symbols(analyser_t& acc, const location_t& loc, const ity
 			const auto dyn_return_type = type.get_function_dyn_return_type(acc._types);
 
 			const auto ret2 = resolve_symbols(acc, loc, ret);
-			std::vector<typeid_t> args2;
+			std::vector<type_t> args2;
 			for(const auto& m: args){
 				args2.push_back(resolve_symbols(acc, loc, m));
 			}
@@ -782,8 +782,8 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 	const auto test_name = statement.name;
 	const auto function_link_name = "benchmark__" + test_name;
 
-	const auto benchmark_def_itype = resolve_and_intern_itype(a_acc, k_no_location, typeid_t::make_symbol_ref(a_acc._types, "benchmark_def"));
-//	const auto benchmark_result_itype = resolve_and_intern_itype(a_acc, k_no_location, typeid_t::make_identifier("benchmark_result"));
+	const auto benchmark_def_itype = resolve_and_intern_itype(a_acc, k_no_location, type_t::make_symbol_ref(a_acc._types, "benchmark_def"));
+//	const auto benchmark_result_itype = resolve_and_intern_itype(a_acc, k_no_location, type_t::make_identifier("benchmark_result"));
 	const auto f_itype = resolve_and_intern_itype(a_acc, k_no_location, make_benchmark_function_t(a_acc._types));
 
 
@@ -1621,7 +1621,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				a_acc = element_expr.first;
 				elements2.push_back(element_expr.second);
 			}
-			const auto result_type = typeid_t::make_vector(a_acc._types, typeid_t::make_json());
+			const auto result_type = type_t::make_vector(a_acc._types, type_t::make_json());
 			if(check_types_resolved(a_acc._types, result_type) == false){
 				std::stringstream what;
 				what << "Cannot infer vector element type, add explicit type.";
@@ -1631,7 +1631,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				a_acc,
 				expression_t::make_construct_value_expr(
 					itype_t::make_json(),
-					{ expression_t::make_construct_value_expr(typeid_t::make_vector(a_acc._types, typeid_t::make_json()), elements2) }
+					{ expression_t::make_construct_value_expr(type_t::make_vector(a_acc._types, type_t::make_json()), elements2) }
 				)
 			};
 		}
@@ -1645,7 +1645,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			}
 
 			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? analyze_expr_output_type(a_acc, elements2[0]) : element_type;
-			const auto rhs_guess_type = resolve_and_intern_itype(a_acc, parent.location, typeid_t::make_vector(a_acc._types, element_type2));
+			const auto rhs_guess_type = resolve_and_intern_itype(a_acc, parent.location, type_t::make_vector(a_acc._types, element_type2));
 			const auto final_type = select_inferred_type(a_acc._types, target_type_peek, rhs_guess_type);
 
 			if(check_types_resolved(a_acc._types, final_type) == false){
@@ -1685,7 +1685,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				elements2.push_back(element_expr.second);
 			}
 
-			const auto rhs_guess_type = resolve_and_intern_itype(a_acc, parent.location, typeid_t::make_dict(a_acc._types, typeid_t::make_json()));
+			const auto rhs_guess_type = resolve_and_intern_itype(a_acc, parent.location, type_t::make_dict(a_acc._types, type_t::make_json()));
 			 auto final_type = select_inferred_type(a_acc._types, target_type_peek, rhs_guess_type);
 
 			if(check_types_resolved(a_acc._types, final_type) == false){
@@ -1698,7 +1698,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				a_acc,
 				expression_t::make_construct_value_expr(
 					itype_t::make_json(),
-					{ expression_t::make_construct_value_expr(typeid_t::make_dict(a_acc._types, typeid_t::make_json()), elements2) }
+					{ expression_t::make_construct_value_expr(type_t::make_dict(a_acc._types, type_t::make_json()), elements2) }
 				)
 			};
 		}
@@ -1719,7 +1719,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 
 			//	Infer type of dictionary based on first value.
 			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? analyze_expr_output_type(a_acc, elements2[0 * 2 + 1]) : element_type;
-			const auto rhs_guess_type = resolve_and_intern_itype(a_acc, parent.location, typeid_t::make_dict(a_acc._types, element_type2));
+			const auto rhs_guess_type = resolve_and_intern_itype(a_acc, parent.location, type_t::make_dict(a_acc._types, element_type2));
 			const auto final_type = select_inferred_type(a_acc._types, target_type_peek, rhs_guess_type);
 
 			if(check_types_resolved(a_acc._types, final_type) == false){
@@ -1743,7 +1743,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 	}
 	else if(type_peek.is_struct()){
 		const auto& def = type_peek.get_struct(a_acc._types);
-		const auto f_type = typeid_t::make_function(a_acc._types, type0, get_member_types(def._members), epure::pure);
+		const auto f_type = type_t::make_function(a_acc._types, type0, get_member_types(def._members), epure::pure);
 		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, details.elements, f_type);
 		a_acc = resolved_call.first;
 		return { a_acc, expression_t::make_construct_value_expr(type0, resolved_call.second.args) };
@@ -1754,7 +1754,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			what << "Construct value of primitive type requires exactly 1 argument.";
 			throw_compiler_error(parent.location, what.str());
 		}
-		const auto struct_constructor_callee_type = typeid_t::make_function(a_acc._types, type0, { type0 }, epure::pure);
+		const auto struct_constructor_callee_type = type_t::make_function(a_acc._types, type0, { type0 }, epure::pure);
 		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, details.elements, struct_constructor_callee_type);
 		a_acc = resolved_call.first;
 		return { a_acc, expression_t::make_construct_value_expr(type0, resolved_call.second.args) };
@@ -2625,7 +2625,7 @@ QUARK_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
 
 
 
-static std::pair<std::string, symbol_t> make_builtin_type(type_interner_t& interner, const typeid_t& type){
+static std::pair<std::string, symbol_t> make_builtin_type(type_interner_t& interner, const type_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -2640,13 +2640,13 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 		Create built-in global symbol map: built in data types, built-in functions (intrinsics).
 	*/
 	auto& symbol_map = a._lexical_scope_stack.back().symbols._symbols;
-	symbol_map.push_back( make_builtin_type(a._types, typeid_t::make_void()) );
-	symbol_map.push_back( make_builtin_type(a._types, typeid_t::make_bool()) );
-	symbol_map.push_back( make_builtin_type(a._types, typeid_t::make_int()) );
-	symbol_map.push_back( make_builtin_type(a._types, typeid_t::make_double()) );
-	symbol_map.push_back( make_builtin_type(a._types, typeid_t::make_string()) );
-	symbol_map.push_back( make_builtin_type(a._types, typeid_t::make_typeid()) );
-	symbol_map.push_back( make_builtin_type(a._types, typeid_t::make_json()) );
+	symbol_map.push_back( make_builtin_type(a._types, type_t::make_void()) );
+	symbol_map.push_back( make_builtin_type(a._types, type_t::make_bool()) );
+	symbol_map.push_back( make_builtin_type(a._types, type_t::make_int()) );
+	symbol_map.push_back( make_builtin_type(a._types, type_t::make_double()) );
+	symbol_map.push_back( make_builtin_type(a._types, type_t::make_string()) );
+	symbol_map.push_back( make_builtin_type(a._types, type_t::make_typeid()) );
+	symbol_map.push_back( make_builtin_type(a._types, type_t::make_json()) );
 
 	//	"null" is equivalent to json::null
 	symbol_map.push_back( { "null", symbol_t::make_immutable_precalc(itype_t::make_json(), value_t::make_json(json_t())) });
@@ -2669,7 +2669,7 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 
 	//	Reserve a symbol table entry for benchmark_registry instance.
 	{
-		const auto benchmark_registry_type = typeid_t::make_vector(a._types, typeid_t::make_symbol_ref(a._types, "benchmark_def_t"));
+		const auto benchmark_registry_type = type_t::make_vector(a._types, type_t::make_symbol_ref(a._types, "benchmark_def_t"));
 		symbol_map.push_back( {
 			k_global_benchmark_registry,
 			symbol_t::make_immutable_reserve(

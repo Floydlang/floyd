@@ -22,7 +22,7 @@ struct desugar_t {
 	general_purpose_ast_t tree;
 };
 
-void intern_type(desugar_t& acc, const typeid_t& type){
+void intern_type(desugar_t& acc, const type_t& type){
 }
 
 

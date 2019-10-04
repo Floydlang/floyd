@@ -27,9 +27,9 @@ struct value_t;
 extern const std::string k_corelib_builtin_types_and_constants;
 
 
-typeid_t make__fsentry_t__type(type_interner_t& type_interner);
-typeid_t make__fsentry_info_t__type(type_interner_t& type_interner);
-typeid_t make__fs_environment_t__type(type_interner_t& type_interner);
+type_t make__fsentry_t__type(type_interner_t& type_interner);
+type_t make__fsentry_info_t__type(type_interner_t& type_interner);
+type_t make__fs_environment_t__type(type_interner_t& type_interner);
 
 bool is_valid_absolute_dir_path(const std::string& s);
 std::vector<value_t> directory_entries_to_values(type_interner_t& type_interner, const std::vector<TDirEntry>& v);
@@ -40,14 +40,14 @@ std::vector<value_t> directory_entries_to_values(type_interner_t& type_interner,
 		string ascii40
 	}
 */
-typeid_t make__sha1_t__type(type_interner_t& type_interner);
+type_t make__sha1_t__type(type_interner_t& type_interner);
 
 /*
 	struct binary_t {
 		string bytes
 	}
 */
-typeid_t make__binary_t__type(type_interner_t& type_interner);
+type_t make__binary_t__type(type_interner_t& type_interner);
 
 
 

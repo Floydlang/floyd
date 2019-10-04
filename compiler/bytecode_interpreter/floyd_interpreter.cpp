@@ -343,7 +343,7 @@ static int64_t bc_call_main(interpreter_t& interpreter, const floyd::value_t& f,
 	//??? Check this earlier.
 	if(f.get_type() == get_main_signature_arg_impure(interner) || f.get_type() == get_main_signature_arg_pure(interner)){
 		const auto main_args2 = mapf<value_t>(main_args, [](auto& e){ return value_t::make_string(e); });
-		const auto main_args3 = value_t::make_vector_value(interner, typeid_t::make_string(), main_args2);
+		const auto main_args3 = value_t::make_vector_value(interner, type_t::make_string(), main_args2);
 		const auto main_result = call_function(interpreter, f, { main_args3 });
 		const auto main_result_int = main_result.get_int_value();
 		return main_result_int;
