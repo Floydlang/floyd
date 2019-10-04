@@ -92,7 +92,7 @@ llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<
 ////////////////////////////////		type_entry_t
 
 
-//	LLVM-specific info for each itype_t. Keep a parallell vector with these, alongside the type_interner.
+//	LLVM-specific info for each type_t. Keep a parallell vector with these, alongside the type_interner.
 
 
 struct type_entry_t {
@@ -156,7 +156,7 @@ struct llvm_type_lookup {
 	llvm_type_lookup(llvm::LLVMContext& context, const type_interner_t& type_interner);
 	bool check_invariant() const;
 
-	const type_entry_t& find_from_itype(const itype_t& itype) const;
+	const type_entry_t& find_from_itype(const type_t& itype) const;
 
 
 	////////////////////////////////		STATE
@@ -169,12 +169,12 @@ void trace_llvm_type_lookup(const llvm_type_lookup& type_lookup);
 llvm::Type* make_runtime_type_type(const llvm_type_lookup& type_lookup);
 llvm::Type* make_runtime_value_type(const llvm_type_lookup& type_lookup);
 
-type_t lookup_type(const llvm_type_lookup& type_lookup, const itype_t& type);
-itype_t lookup_itype(const llvm_type_lookup& type_lookup, const type_t& type);
+type_t lookup_type(const llvm_type_lookup& type_lookup, const type_t& type);
+type_t lookup_itype(const llvm_type_lookup& type_lookup, const type_t& type);
 
 
 //	Returns the exact LLVM struct layout that maps to the struct members, without any alloc-64 header. Not a pointer.
-llvm::StructType* get_exact_struct_type_byvalue(const llvm_type_lookup& i, const itype_t& type);
+llvm::StructType* get_exact_struct_type_byvalue(const llvm_type_lookup& i, const type_t& type);
 
 
 

@@ -280,7 +280,7 @@ bool check_types_resolved(const type_interner_t& interner, const statement_t& s)
 }
 
 
-bool check_types_resolved(const type_interner_t& interner, const struct_def_itype_t& s){
+bool check_types_resolved(const type_interner_t& interner, const struct_def_type_t& s){
 	QUARK_ASSERT(s.check_invariant());
 
 	for(const auto& e: s._members){
@@ -361,7 +361,7 @@ bool check_types_resolved(const type_interner_t& interner, const type_t& t){
 			return true;
 		}
 	};
-	return std::visit(visitor_t { interner }, get_itype_variant(interner, t));
+	return std::visit(visitor_t { interner }, get_type_variant(interner, t));
 }
 
 

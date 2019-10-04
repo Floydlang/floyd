@@ -75,12 +75,12 @@ static std::vector<function_bind_t> floydrt_alloc_kstr__make(llvm::LLVMContext& 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
 static runtime_value_t floydrt_allocate_vector_carray(floyd_runtime_t* frp, runtime_type_t type, uint64_t element_count){
 	auto& r = get_floyd_runtime(frp);
-	return alloc_vector_carray(r.backend.heap, element_count, element_count, itype_t(type));
+	return alloc_vector_carray(r.backend.heap, element_count, element_count, type_t(type));
 }
 
 static runtime_value_t floydrt_allocate_vector_hamt(floyd_runtime_t* frp, runtime_type_t type, uint64_t element_count){
 	auto& r = get_floyd_runtime(frp);
-	return alloc_vector_hamt(r.backend.heap, element_count, element_count, itype_t(type));
+	return alloc_vector_hamt(r.backend.heap, element_count, element_count, type_t(type));
 }
 
 static std::vector<function_bind_t> floydrt_allocate_vector__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -144,11 +144,11 @@ llvm::Value* generate_allocate_vector(llvm_function_generator_t& gen_acc, const 
 static runtime_value_t floydrt_allocate_vector_fill(floyd_runtime_t* frp, runtime_type_t type, runtime_value_t* elements, uint64_t element_count){
 	auto& r = get_floyd_runtime(frp);
 
-	if(is_vector_carray(r.backend.config, itype_t(type))){
-		return alloc_vector_carray(r.backend.heap, element_count, element_count, itype_t(type));
+	if(is_vector_carray(r.backend.config, type_t(type))){
+		return alloc_vector_carray(r.backend.heap, element_count, element_count, type_t(type));
 	}
-	else if(is_vector_hamt(r.backend.config, itype_t(type))){
-		return alloc_vector_hamt(r.backend.heap, element_count, element_count, itype_t(type));
+	else if(is_vector_hamt(r.backend.config, type_t(type))){
+		return alloc_vector_hamt(r.backend.heap, element_count, element_count, type_t(type));
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -183,7 +183,7 @@ static void floydrt_store_vector_element_hamt_mutable(floyd_runtime_t* frp, runt
 	auto& r = get_floyd_runtime(frp);
 	(void)r;
 
-	QUARK_ASSERT(is_vector_hamt(r.backend.config, itype_t(type)));
+	QUARK_ASSERT(is_vector_hamt(r.backend.config, type_t(type)));
 	vec.vector_hamt_ptr->store_mutate(index, element);
 }
 
@@ -214,14 +214,14 @@ static runtime_value_t floydrt_concatunate_vectors(floyd_runtime_t* frp, runtime
 	QUARK_ASSERT(lhs.check_invariant());
 	QUARK_ASSERT(rhs.check_invariant());
 
-	const auto type0 = itype_t(type);
+	const auto type0 = type_t(type);
 	if(type0.is_string()){
 		return concat_strings(r.backend, lhs, rhs);
 	}
-	else if(is_vector_carray(r.backend.config, itype_t(type))){
+	else if(is_vector_carray(r.backend.config, type_t(type))){
 		return concat_vector_carray(r.backend, type0, lhs, rhs);
 	}
-	else if(is_vector_hamt(r.backend.config, itype_t(type))){
+	else if(is_vector_hamt(r.backend.config, type_t(type))){
 		return concat_vector_hamt(r.backend, type0, lhs, rhs);
 	}
 	else{
@@ -253,7 +253,7 @@ static runtime_value_t floydrt_load_vector_element_hamt(floyd_runtime_t* frp, ru
 	auto& r = get_floyd_runtime(frp);
 	(void)r;
 
-	QUARK_ASSERT(is_vector_hamt(r.backend.config, itype_t(type)));
+	QUARK_ASSERT(is_vector_hamt(r.backend.config, type_t(type)));
 
 	return vec.vector_hamt_ptr->load_element(index);
 }
@@ -293,11 +293,11 @@ static std::vector<function_bind_t> floydrt_load_vector_element__make(llvm::LLVM
 static const runtime_value_t floydrt_allocate_dict(floyd_runtime_t* frp, runtime_type_t type){
 	auto& r = get_floyd_runtime(frp);
 
-	if(is_dict_cppmap(r.backend.config, itype_t(type))){
-		return alloc_dict_cppmap(r.backend.heap, itype_t(type));
+	if(is_dict_cppmap(r.backend.config, type_t(type))){
+		return alloc_dict_cppmap(r.backend.heap, type_t(type));
 	}
-	else if(is_dict_hamt(r.backend.config, itype_t(type))){
-		return alloc_dict_hamt(r.backend.heap, itype_t(type));
+	else if(is_dict_hamt(r.backend.config, type_t(type))){
+		return alloc_dict_hamt(r.backend.heap, type_t(type));
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -327,7 +327,7 @@ static std::vector<function_bind_t> floydrt_allocate_dict__make(llvm::LLVMContex
 static runtime_value_t floydrt_lookup_dict_cppmap(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t s){
 	auto& r = get_floyd_runtime(frp);
 
-	QUARK_ASSERT(is_dict_cppmap(r.backend.config, itype_t(type)));
+	QUARK_ASSERT(is_dict_cppmap(r.backend.config, type_t(type)));
 
 	const auto& m = dict.dict_cppmap_ptr->get_map();
 	const auto key_string = from_runtime_string(r, s);
@@ -345,7 +345,7 @@ static runtime_value_t floydrt_lookup_dict_hamt(floyd_runtime_t* frp, runtime_va
 	auto& r = get_floyd_runtime(frp);
 
 //	const auto& type0 = lookup_type_ref(r.backend, type);
-	QUARK_ASSERT(is_dict_hamt(r.backend.config, itype_t(type)));
+	QUARK_ASSERT(is_dict_hamt(r.backend.config, type_t(type)));
 
 	const auto& m = dict.dict_hamt_ptr->get_map();
 	const auto key_string = from_runtime_string(r, s);
@@ -420,14 +420,14 @@ llvm::Value* generate_lookup_dict(llvm_function_generator_t& gen_acc, llvm::Valu
 static void floydrt_store_dict_mutable_cppmap(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t key, runtime_value_t element_value){
 	auto& r = get_floyd_runtime(frp);
 
-	QUARK_ASSERT(is_dict_cppmap(r.backend.config, itype_t(type)));
+	QUARK_ASSERT(is_dict_cppmap(r.backend.config, type_t(type)));
 	const auto key_string = from_runtime_string(r, key);
 	dict.dict_cppmap_ptr->get_map_mut().insert_or_assign(key_string, element_value);
 }
 static void floydrt_store_dict_mutable_hamt(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t key, runtime_value_t element_value){
 	auto& r = get_floyd_runtime(frp);
 
-	QUARK_ASSERT(is_dict_hamt(r.backend.config, itype_t(type)));
+	QUARK_ASSERT(is_dict_hamt(r.backend.config, type_t(type)));
 	const auto key_string = from_runtime_string(r, key);
 	dict.dict_hamt_ptr->get_map_mut() = dict.dict_hamt_ptr->get_map_mut().set(key_string, element_value);
 }
@@ -625,7 +625,7 @@ static STRUCT_T* floydrt_allocate_struct(floyd_runtime_t* frp, const runtime_typ
 	const auto& type0 = lookup_type_ref(r.backend, type);
 	QUARK_ASSERT(type0.check_invariant());
 #endif
-	auto v = alloc_struct(r.backend.heap, size, itype_t(type));
+	auto v = alloc_struct(r.backend.heap, size, type_t(type));
 	return v;
 }
 
@@ -681,7 +681,7 @@ llvm::Value* generate_load_struct_member(llvm_function_generator_t& gen_acc, llv
 
 
 
-static bool is_struct_pod(const struct_def_itype_t& struct_def){
+static bool is_struct_pod(const struct_def_type_t& struct_def){
 	QUARK_ASSERT(struct_def.check_invariant());
 
 	for(const auto& e: struct_def._members){
@@ -707,10 +707,10 @@ static const STRUCT_T* floydrt_update_struct_member_nonpod(floyd_runtime_t* frp,
 	QUARK_ASSERT(s != nullptr);
 	QUARK_ASSERT(member_index != -1);
 
-	const std::pair<itype_t, struct_layout_t>& struct_layout_info = find_struct_layout(r.backend, itype_t(struct_type));
+	const std::pair<type_t, struct_layout_t>& struct_layout_info = find_struct_layout(r.backend, type_t(struct_type));
 
 	const auto struct_bytes = struct_layout_info.second.size;
-	auto struct_ptr = alloc_struct_copy(r.backend.heap, reinterpret_cast<const uint64_t*>(s->get_data_ptr()), struct_bytes, itype_t(struct_type));
+	auto struct_ptr = alloc_struct_copy(r.backend.heap, reinterpret_cast<const uint64_t*>(s->get_data_ptr()), struct_bytes, type_t(struct_type));
 	auto struct_base_ptr = struct_ptr->get_data_ptr();
 
 	const auto member_offset = struct_layout_info.second.members[member_index].offset;
@@ -736,11 +736,11 @@ static const STRUCT_T* floydrt_copy_struct(floyd_runtime_t* frp, STRUCT_T* s, ui
 	QUARK_ASSERT(s != nullptr);
 	QUARK_ASSERT(struct_size > 0);
 #if DEBUG
-	const std::pair<itype_t, struct_layout_t>& struct_layout_info = find_struct_layout(r.backend, itype_t(struct_type));
+	const std::pair<type_t, struct_layout_t>& struct_layout_info = find_struct_layout(r.backend, type_t(struct_type));
 	const auto struct_size2 = struct_layout_info.second.size;
 	QUARK_ASSERT(struct_size == struct_size2);
 #endif
-	auto struct_ptr = alloc_struct_copy(r.backend.heap, reinterpret_cast<const uint64_t*>(s->get_data_ptr()), struct_size, itype_t(struct_type));
+	auto struct_ptr = alloc_struct_copy(r.backend.heap, reinterpret_cast<const uint64_t*>(s->get_data_ptr()), struct_size, type_t(struct_type));
 	return struct_ptr;
 }
 
@@ -980,10 +980,10 @@ static void floydrt_retain_vector_carray(floyd_runtime_t* frp, runtime_value_t v
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
 	QUARK_ASSERT(type.is_string() || type.is_vector());
-	QUARK_ASSERT(is_rc_value(itype_t(type0)));
+	QUARK_ASSERT(is_rc_value(type_t(type0)));
 #endif
 
-	retain_vector_carray(r.backend, vec, itype_t(type0));
+	retain_vector_carray(r.backend, vec, type_t(type0));
 }
 
 static void floydrt_retain_vector_hamt(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
@@ -991,10 +991,10 @@ static void floydrt_retain_vector_hamt(floyd_runtime_t* frp, runtime_value_t vec
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
 	QUARK_ASSERT(type.is_string() || type.is_vector());
-	QUARK_ASSERT(is_rc_value(itype_t(type0)));
+	QUARK_ASSERT(is_rc_value(type_t(type0)));
 #endif
 
-	retain_vector_hamt(r.backend, vec, itype_t(type0));
+	retain_vector_hamt(r.backend, vec, type_t(type0));
 }
 
 
@@ -1003,23 +1003,23 @@ static void floydrt_retain_dict_cppmap(floyd_runtime_t* frp, runtime_value_t dic
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(is_rc_value(itype_t(type0)));
+	QUARK_ASSERT(is_rc_value(type_t(type0)));
 	QUARK_ASSERT(type.is_dict());
 	QUARK_ASSERT(is_dict_cppmap(r.backend.config, type));
 #endif
 
-	retain_dict_cppmap(r.backend, dict, itype_t(type0));
+	retain_dict_cppmap(r.backend, dict, type_t(type0));
 }
 static void floydrt_retain_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(is_rc_value(itype_t(type0)));
+	QUARK_ASSERT(is_rc_value(type_t(type0)));
 	QUARK_ASSERT(type.is_dict());
 	QUARK_ASSERT(is_dict_hamt(r.backend.config, type));
 #endif
 
-	retain_dict_hamt(r.backend, dict, itype_t(type0));
+	retain_dict_hamt(r.backend, dict, type_t(type0));
 }
 
 
@@ -1028,7 +1028,7 @@ static void floydrt_retain_json(floyd_runtime_t* frp, JSON_T* json, runtime_type
 	auto& r = get_floyd_runtime(frp);
 
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(is_rc_value(itype_t(type0)));
+	QUARK_ASSERT(is_rc_value(type_t(type0)));
 
 	//	NOTICE: Floyd runtime() init will destruct globals, including json::null.
 	if(json == nullptr){
@@ -1047,11 +1047,11 @@ static void floydrt_retain_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_typ
 
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(is_rc_value(itype_t(type0)));
+	QUARK_ASSERT(is_rc_value(type_t(type0)));
 	QUARK_ASSERT(type.is_struct());
 #endif
 
-	retain_struct(r.backend, make_runtime_struct(v), itype_t(type0));
+	retain_struct(r.backend, make_runtime_struct(v), type_t(type0));
 }
 
 
@@ -1150,46 +1150,46 @@ static void floydrt_release_vector_carray_pod(floyd_runtime_t* frp, runtime_valu
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(type.is_string() || is_vector_carray(r.backend.config, itype_t(type0)));
-	if(itype_t(type0).is_vector()){
+	QUARK_ASSERT(type.is_string() || is_vector_carray(r.backend.config, type_t(type0)));
+	if(type_t(type0).is_vector()){
 		QUARK_ASSERT(is_rc_value(type.get_vector_element_type(r.backend.type_interner)) == false);
 	}
 #endif
 
-	release_vector_carray_pod(r.backend, vec, itype_t(type0));
+	release_vector_carray_pod(r.backend, vec, type_t(type0));
 }
 
 static void floydrt_release_vector_carray_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(is_vector_carray(r.backend.config, itype_t(type0)));
+	QUARK_ASSERT(is_vector_carray(r.backend.config, type_t(type0)));
 	QUARK_ASSERT(is_rc_value(type.get_vector_element_type(r.backend.type_interner)) == true);
 #endif
 
-	release_vector_carray_nonpod(r.backend, vec, itype_t(type0));
+	release_vector_carray_nonpod(r.backend, vec, type_t(type0));
 }
 
 static void floydrt_release_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(is_vector_hamt(r.backend.config, itype_t(type0)));
+	QUARK_ASSERT(is_vector_hamt(r.backend.config, type_t(type0)));
 	QUARK_ASSERT(is_rc_value(type.get_vector_element_type(r.backend.type_interner)) == false);
 #endif
 
-	release_vector_hamt_pod(r.backend, vec, itype_t(type0));
+	release_vector_hamt_pod(r.backend, vec, type_t(type0));
 }
 
 static void floydrt_release_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(is_vector_hamt(r.backend.config, itype_t(type0)));
+	QUARK_ASSERT(is_vector_hamt(r.backend.config, type_t(type0)));
 	QUARK_ASSERT(is_rc_value(type.get_vector_element_type(r.backend.type_interner)) == true);
 #endif
 
-	release_vector_hamt_nonpod(r.backend, vec, itype_t(type0));
+	release_vector_hamt_nonpod(r.backend, vec, type_t(type0));
 }
 
 
@@ -1200,7 +1200,7 @@ static void floydrt_release_dict_cppmap(floyd_runtime_t* frp, runtime_value_t di
 	QUARK_ASSERT(is_dict_cppmap(r.backend.config, type));
 #endif
 
-	release_dict_cppmap(r.backend, dict, itype_t(type0));
+	release_dict_cppmap(r.backend, dict, type_t(type0));
 }
 static void floydrt_release_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
@@ -1209,7 +1209,7 @@ static void floydrt_release_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict
 	QUARK_ASSERT(is_dict_hamt(r.backend.config, type));
 #endif
 
-	release_dict_hamt(r.backend, dict, itype_t(type0));
+	release_dict_hamt(r.backend, dict, type_t(type0));
 }
 
 
@@ -1238,7 +1238,7 @@ static void floydrt_release_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_ty
 	QUARK_ASSERT(v != nullptr);
 #endif
 
-	release_struct(r.backend, make_runtime_struct(v), itype_t(type0));
+	release_struct(r.backend, make_runtime_struct(v), type_t(type0));
 }
 
 

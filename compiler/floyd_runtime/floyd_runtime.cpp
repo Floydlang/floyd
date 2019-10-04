@@ -19,14 +19,14 @@ namespace floyd {
 
 
 //??? remove usage of value_t
-value_t unflatten_json_to_specific_type(type_interner_t& interner, const json_t& v, const itype_t& target_type){
+value_t unflatten_json_to_specific_type(type_interner_t& interner, const json_t& v, const type_t& target_type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(v.check_invariant());
 
 
 	struct visitor_t {
 		type_interner_t& interner;
-		const itype_t& target_type;
+		const type_t& target_type;
 		const json_t& v;
 
 		value_t operator()(const undefined_t& e) const{
@@ -81,7 +81,7 @@ value_t unflatten_json_to_specific_type(type_interner_t& interner, const json_t&
 			return value_t::make_json(v);
 		}
 		value_t operator()(const typeid_type_t& e) const{
-			const auto typeid_value = itype_from_json(interner, v);
+			const auto typeid_value = type_from_json(interner, v);
 			return value_t::make_typeid_value(typeid_value);
 		}
 
@@ -145,7 +145,7 @@ value_t unflatten_json_to_specific_type(type_interner_t& interner, const json_t&
 			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
-	return std::visit(visitor_t{ interner, target_type, v}, get_itype_variant(interner, target_type));
+	return std::visit(visitor_t{ interner, target_type, v}, get_type_variant(interner, target_type));
 }
 
 

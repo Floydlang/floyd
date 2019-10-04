@@ -71,7 +71,7 @@ std::string symbol_to_string(const type_interner_t& interner, const symbol_t& s)
 	std::stringstream out;
 	out << "{ "
 		<< symbol_type_to_string(s._symbol_type)
-		<< ", type: " << itype_to_compact_string(interner, s._value_type, resolve_named_types::dont_resolve)
+		<< ", type: " << type_to_compact_string(interner, s._value_type, resolve_named_types::dont_resolve)
 		<< ", init: " << (s._init.is_undefined() ? "<none>" : value_and_type_to_string(interner, s._init))
 	<< " }";
 	return out.str();
@@ -80,7 +80,7 @@ std::string symbol_to_string(const type_interner_t& interner, const symbol_t& s)
 
 static json_t symbol_to_json(const type_interner_t& interner, const symbol_t& symbol){
 	const auto symbol_type_str = symbol_type_to_string(symbol._symbol_type);
-	const auto value_type = itype_to_json(interner, symbol._value_type);
+	const auto value_type = type_to_json(interner, symbol._value_type);
 
 	const auto e2 = json_t::make_object({
 		{ "symbol_type", symbol_type_str },
@@ -98,7 +98,7 @@ static symbol_t json_to_symbol(type_interner_t& interner, const json_t& e){
 	const auto init = e.get_object_element("init");
 
 	const auto symbol_type2 = symbol_type_from_string(symbol_type);
-	const auto value_type2 = itype_from_json(interner, value_type);
+	const auto value_type2 = type_from_json(interner, value_type);
 	const auto value_type1 = value_type2;
 	value_t init_value2 = init.is_null() ? value_t::make_undefined() : ast_json_to_value(interner, value_type1, init);
 
@@ -246,7 +246,7 @@ static statement_t ast_json_to_statement(type_interner_t& interner, const json_t
 		const auto expr = statement.get_array_n(3);
 		const auto meta = statement.get_array_size() >= 5 ? statement.get_array_n(4) : json_t();
 
-		const auto bind_type2 = itype_from_json(interner, bind_type);
+		const auto bind_type2 = type_from_json(interner, bind_type);
 		const auto name2 = name.get_string();
 		const auto expr2 = ast_json_to_expression(interner, expr);
 		bool mutable_flag = !meta.is_null() && meta.does_object_element_exist("mutable");
@@ -415,7 +415,7 @@ json_t statement_to_json(const type_interner_t& interner, const statement_t& e){
 				statement_opcode_t::k_init_local,
 				{
 					s._new_local_name,
-					itype_to_json(interner, s._bindtype),
+					type_to_json(interner, s._bindtype),
 					expression_to_json(interner, s._expression),
 					meta
 				}

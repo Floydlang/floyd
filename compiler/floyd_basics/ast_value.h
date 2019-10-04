@@ -113,7 +113,7 @@ const function_id_t k_no_function_id = function_id_t { "" };
 	An instance of a struct-type = a value of this struct.
 */
 struct struct_value_t {
-	public: struct_value_t(const struct_def_itype_t& def, const std::vector<value_t>& member_values) :
+	public: struct_value_t(const struct_def_type_t& def, const std::vector<value_t>& member_values) :
 		_def(def),
 		_member_values(member_values)
 	{
@@ -126,7 +126,7 @@ struct struct_value_t {
 
 
 	////////////////////////////////////////		STATE
-	public: struct_def_itype_t _def;
+	public: struct_def_type_t _def;
 	public: std::vector<value_t> _member_values;
 };
 
@@ -168,7 +168,7 @@ struct value_ext_t {
 		else if(base_type == base_type::k_typeid){
 			QUARK_ASSERT(_string.empty());
 			QUARK_ASSERT(_json == nullptr);
-	//		QUARK_ASSERT(_typeid_value != itype_t::make_undefined());
+	//		QUARK_ASSERT(_typeid_value != type_t::make_undefined());
 			QUARK_ASSERT(_struct == nullptr);
 			QUARK_ASSERT(_vector_elements.empty());
 			QUARK_ASSERT(_dict_entries.empty());
@@ -225,7 +225,7 @@ struct value_ext_t {
 
 	public: value_ext_t(const std::string& s) :
 		_rc(1),
-		_type(itype_t::make_string()),
+		_type(type_t::make_string()),
 		_string(s)
 	{
 		QUARK_ASSERT(check_invariant());
@@ -233,26 +233,26 @@ struct value_ext_t {
 
 	public: value_ext_t(const std::shared_ptr<json_t>& s) :
 		_rc(1),
-		_type(itype_t::make_json()),
+		_type(type_t::make_json()),
 		_json(s)
 	{
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: value_ext_t(const itype_t& s);
+	public: value_ext_t(const type_t& s);
 
-	public: value_ext_t(const itype_t& type, std::shared_ptr<struct_value_t>& s);
-	public: value_ext_t(const itype_t& type, const std::vector<value_t>& s);
-	public: value_ext_t(const itype_t& type, const std::map<std::string, value_t>& s);
-	public: value_ext_t(const itype_t& type, function_id_t function_id);
+	public: value_ext_t(const type_t& type, std::shared_ptr<struct_value_t>& s);
+	public: value_ext_t(const type_t& type, const std::vector<value_t>& s);
+	public: value_ext_t(const type_t& type, const std::map<std::string, value_t>& s);
+	public: value_ext_t(const type_t& type, function_id_t function_id);
 
 
 	//	??? NOTICE: Use std::variant or subclasses.
 	public: int _rc;
-	public: itype_t _type;
+	public: type_t _type;
 	public: std::string _string;
 	public: std::shared_ptr<json_t> _json;
-	public: itype_t _typeid_value = itype_t::make_undefined();
+	public: type_t _typeid_value = type_t::make_undefined();
 	public: std::shared_ptr<struct_value_t> _struct;
 	public: std::vector<value_t> _vector_elements;
 	public: std::map<std::string, value_t> _dict_entries;
@@ -289,7 +289,7 @@ struct value_t {
 	}
 
 	//	Used internally in check_invariant() -- don't call check_invariant().
-	public: itype_t get_type() const;
+	public: type_t get_type() const;
 	public: base_type get_basetype() const{
 		return _basetype;
 	}
@@ -431,20 +431,20 @@ struct value_t {
 	//------------------------------------------------		typeid
 
 
-	public: static value_t make_typeid_value(const itype_t& type_id);
+	public: static value_t make_typeid_value(const type_t& type_id);
 	public: bool is_typeid() const {
 		QUARK_ASSERT(check_invariant());
 
 		return _basetype == base_type::k_typeid;
 	}
-	public: itype_t get_typeid_value() const;
+	public: type_t get_typeid_value() const;
 
 
 	//------------------------------------------------		struct
 
 
-	public: static value_t make_struct_value(const type_interner_t& interner, const itype_t& struct_type, const std::vector<value_t>& values);
-	public: static value_t make_struct_value(type_interner_t& interner, const itype_t& struct_type, const std::vector<value_t>& values);
+	public: static value_t make_struct_value(const type_interner_t& interner, const type_t& struct_type, const std::vector<value_t>& values);
+	public: static value_t make_struct_value(type_interner_t& interner, const type_t& struct_type, const std::vector<value_t>& values);
 	public: bool is_struct() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -456,8 +456,8 @@ struct value_t {
 	//------------------------------------------------		vector
 
 
-	public: static value_t make_vector_value(const type_interner_t& interner, const itype_t& element_type, const std::vector<value_t>& elements);
-	public: static value_t make_vector_value(type_interner_t& interner, const itype_t& element_type, const std::vector<value_t>& elements);
+	public: static value_t make_vector_value(const type_interner_t& interner, const type_t& element_type, const std::vector<value_t>& elements);
+	public: static value_t make_vector_value(type_interner_t& interner, const type_t& element_type, const std::vector<value_t>& elements);
 	public: bool is_vector() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -469,8 +469,8 @@ struct value_t {
 	//------------------------------------------------		dict
 
 
-	public: static value_t make_dict_value(const type_interner_t& interner, const itype_t& value_type, const std::map<std::string, value_t>& entries);
-	public: static value_t make_dict_value(type_interner_t& interner, const itype_t& value_type, const std::map<std::string, value_t>& entries);
+	public: static value_t make_dict_value(const type_interner_t& interner, const type_t& value_type, const std::map<std::string, value_t>& entries);
+	public: static value_t make_dict_value(type_interner_t& interner, const type_t& value_type, const std::map<std::string, value_t>& entries);
 	public: bool is_dict() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -482,7 +482,7 @@ struct value_t {
 	//------------------------------------------------		function
 
 
-	public: static value_t make_function_value(const itype_t& function_type, const function_id_t& function_id);
+	public: static value_t make_function_value(const type_t& function_type, const function_id_t& function_id);
 	public: bool is_function() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -662,18 +662,18 @@ struct value_t {
 	private: explicit value_t(const std::string& s);
 
 	private: explicit value_t(const std::shared_ptr<json_t>& s);
-	private: explicit value_t(const itype_t& type);
+	private: explicit value_t(const type_t& type);
 
-	private: explicit value_t(const itype_t& struct_type, std::shared_ptr<struct_value_t>& instance);
-	private: explicit value_t(itype_t& struct_type, std::shared_ptr<struct_value_t>& instance);
+	private: explicit value_t(const type_t& struct_type, std::shared_ptr<struct_value_t>& instance);
+	private: explicit value_t(type_t& struct_type, std::shared_ptr<struct_value_t>& instance);
 
-	private: explicit value_t(const type_interner_t& interner, const itype_t& element_type, const std::vector<value_t>& elements);
-	private: explicit value_t(type_interner_t& interner, const itype_t& element_type, const std::vector<value_t>& elements);
+	private: explicit value_t(const type_interner_t& interner, const type_t& element_type, const std::vector<value_t>& elements);
+	private: explicit value_t(type_interner_t& interner, const type_t& element_type, const std::vector<value_t>& elements);
 
-	private: explicit value_t(const type_interner_t& interner, const itype_t& value_type, const std::map<std::string, value_t>& entries);
-	private: explicit value_t(type_interner_t& interner, const itype_t& value_type, const std::map<std::string, value_t>& entries);
+	private: explicit value_t(const type_interner_t& interner, const type_t& value_type, const std::map<std::string, value_t>& entries);
+	private: explicit value_t(type_interner_t& interner, const type_t& value_type, const std::map<std::string, value_t>& entries);
 
-	private: explicit value_t(const itype_t& type, function_id_t function_id);
+	private: explicit value_t(const type_t& type, function_id_t function_id);
 
 
 	//////////////////////////////////////////////////		STATE
@@ -718,7 +718,7 @@ std::string to_compact_string_quote_strings(const type_interner_t& interner, con
 std::string value_and_type_to_string(const type_interner_t& interner, const value_t& value);
 
 json_t value_to_ast_json(const type_interner_t& interner, const value_t& v);
-value_t ast_json_to_value(type_interner_t& interner, const itype_t& type, const json_t& v);
+value_t ast_json_to_value(type_interner_t& interner, const type_t& type, const json_t& v);
 
 
 //	json array: [ TYPE, VALUE ]
@@ -731,7 +731,7 @@ value_t ast_json_to_value_and_type(type_interner_t& interner, const json_t& v);
 json_t values_to_json_array(const type_interner_t& interner, const std::vector<value_t>& values);
 
 
-value_t make_def(const itype_t& type);
+value_t make_def(const type_t& type);
 
 void ut_verify_values(const quark::call_context_t& context, const value_t& result, const value_t& expected);
 

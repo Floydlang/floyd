@@ -22,9 +22,9 @@
 
 namespace floyd {
 
-struct struct_def_itype_t;
+struct struct_def_type_t;
 
-bool is_floyd_literal(const itype_t& type);
+bool is_floyd_literal(const type_t& type);
 
 
 ////////////////////////////////////////		expression_opcode_t
@@ -181,7 +181,7 @@ struct function_definition_t {
 	static function_definition_t make_func(
 		const location_t& location,
 		const std::string& definition_name,
-		const itype_t& function_type,
+		const type_t& function_type,
 		const std::vector<member_t>& named_args,
 		const std::shared_ptr<body_t>& body
 	){
@@ -196,7 +196,7 @@ struct function_definition_t {
 	static function_definition_t make_intrinsic(
 		const location_t& location,
 		const std::string& definition_name,
-		const itype_t& function_type,
+		const type_t& function_type,
 		const std::vector<member_t>& named_args
 	){
 		return {
@@ -218,10 +218,10 @@ struct function_definition_t {
 
 	//	This is optional and may be different than the function name in the code.
 	std::string _definition_name;
-	itype_t _function_type;
+	type_t _function_type;
 
 	//	Same types as in _function_type, but augumented with argument names.
-	//??? Remove. Instead have vector of just the argument names. Or update itype_t to contain the argument names of functions!?
+	//??? Remove. Instead have vector of just the argument names. Or update type_t to contain the argument names of functions!?
 	std::vector<member_t> _named_args;
 
 	//	Contains body if this function is implemented using Floyd code.
@@ -231,7 +231,7 @@ struct function_definition_t {
 
 bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);
 
-const itype_t& get_function_type(const function_definition_t& f);
+const type_t& get_function_type(const function_definition_t& f);
 
 json_t function_def_to_ast_json(const type_interner_t& interner, const function_definition_t& v);
 function_definition_t json_to_function_def(type_interner_t& interner, const json_t& p);
@@ -273,7 +273,7 @@ struct expression_t {
 	public: static expression_t make_intrinsic(
 		const std::string& call_name,
 		const std::vector<expression_t>& args,
-		const itype_t& optional_type
+		const type_t& optional_type
 	){
 		return expression_t(
 			{ intrinsic_t { call_name, args } },
@@ -295,7 +295,7 @@ struct expression_t {
 
 		return expression_t({ literal_exp_t{ value } }, value.get_type() );
 	}
-	public: static expression_t make_literal(const value_t& value, const itype_t& optional_type){
+	public: static expression_t make_literal(const value_t& value, const type_t& optional_type){
 		QUARK_ASSERT(is_floyd_literal(value.get_type()));
 
 		return expression_t({ literal_exp_t{ value } }, optional_type );
@@ -327,7 +327,7 @@ struct expression_t {
 		std::shared_ptr<expression_t> rhs;
 	};
 
-	public: static expression_t make_arithmetic(expression_type op, const expression_t& lhs, const expression_t& rhs, const itype_t& optional_type){
+	public: static expression_t make_arithmetic(expression_type op, const expression_t& lhs, const expression_t& rhs, const type_t& optional_type){
 		QUARK_ASSERT(is_arithmetic_expression(op));
 
 		return expression_t({ arithmetic_t{ op, std::make_shared<expression_t>(lhs), std::make_shared<expression_t>(rhs) } }, optional_type);
@@ -342,7 +342,7 @@ struct expression_t {
 		std::shared_ptr<expression_t> rhs;
 	};
 
-	public: static expression_t make_comparison(expression_type op, const expression_t& lhs, const expression_t& rhs, const itype_t& optional_type){
+	public: static expression_t make_comparison(expression_type op, const expression_t& lhs, const expression_t& rhs, const type_t& optional_type){
 		QUARK_ASSERT(is_comparison_expression(op));
 
 		return expression_t({ comparison_t{ op, std::make_shared<expression_t>(lhs), std::make_shared<expression_t>(rhs) } }, optional_type);
@@ -355,7 +355,7 @@ struct expression_t {
 		std::shared_ptr<expression_t> expr;
 	};
 
-	public: static expression_t make_unary_minus(const expression_t expr, const itype_t& optional_type){
+	public: static expression_t make_unary_minus(const expression_t expr, const type_t& optional_type){
 		return expression_t({ unary_minus_t{ std::make_shared<expression_t>(expr) } }, optional_type);
 	}
 
@@ -368,7 +368,7 @@ struct expression_t {
 		std::shared_ptr<expression_t> b;
 	};
 
-	public: static expression_t make_conditional_operator(const expression_t& condition, const expression_t& a, const expression_t& b, const itype_t& optional_type){
+	public: static expression_t make_conditional_operator(const expression_t& condition, const expression_t& a, const expression_t& b, const type_t& optional_type){
 		return expression_t(
 			{ conditional_t{ std::make_shared<expression_t>(condition), std::make_shared<expression_t>(a), std::make_shared<expression_t>(b) } },
 			optional_type
@@ -386,7 +386,7 @@ struct expression_t {
 	public: static expression_t make_call(
 		const expression_t& callee,
 		const std::vector<expression_t>& args,
-		const itype_t& optional_type
+		const type_t& optional_type
 	)
 	{
 		return expression_t({ call_t{ std::make_shared<expression_t>(callee), args } }, optional_type);
@@ -397,10 +397,10 @@ struct expression_t {
 
 	struct struct_definition_expr_t {
 		std::string name;
-		std::shared_ptr<const struct_def_itype_t> def;
+		std::shared_ptr<const struct_def_type_t> def;
 	};
 
-	public: static expression_t make_struct_definition(type_interner_t& interner, const std::string& name, const std::shared_ptr<const struct_def_itype_t>& def){
+	public: static expression_t make_struct_definition(type_interner_t& interner, const std::string& name, const std::shared_ptr<const struct_def_type_t>& def){
 		return expression_t({ struct_definition_expr_t{ name, def } }, make_struct(interner, *def));
 	}
 
@@ -426,7 +426,7 @@ struct expression_t {
 		Specify free variables.
 		It will be resolved via static scopes: (global variable) <-(function argument) <- (function local variable) etc.
 	*/
-	public: static expression_t make_load(const std::string& variable, const itype_t& optional_type){
+	public: static expression_t make_load(const std::string& variable, const type_t& optional_type){
 		return expression_t({ load_t{ variable } }, optional_type);
 	}
 
@@ -437,7 +437,7 @@ struct expression_t {
 		symbol_pos_t address;
 	};
 
-	public: static expression_t make_load2(const symbol_pos_t& address, const itype_t& optional_type){
+	public: static expression_t make_load2(const symbol_pos_t& address, const type_t& optional_type){
 		return expression_t({ load2_t{ address } }, optional_type);
 	}
 
@@ -452,7 +452,7 @@ struct expression_t {
 	public: static expression_t make_resolve_member(
 		const expression_t& parent_address,
 		const std::string& member_name,
-		const itype_t& optional_type
+		const type_t& optional_type
 	){
 		return expression_t({ resolve_member_t{ std::make_shared<expression_t>(parent_address), member_name } }, optional_type);
 	}
@@ -470,7 +470,7 @@ struct expression_t {
 		const expression_t& parent_address,
 		const int member_index,
 		const expression_t& new_value,
-		const itype_t& optional_type
+		const type_t& optional_type
 	){
 		return expression_t({ update_member_t{ std::make_shared<expression_t>(parent_address), member_index, std::make_shared<expression_t>(new_value) } }, optional_type);
 	}
@@ -489,7 +489,7 @@ struct expression_t {
 	public: static expression_t make_lookup(
 		const expression_t& parent_address,
 		const expression_t& lookup_key,
-		const itype_t& optional_type
+		const type_t& optional_type
 	)
 	{
 		return expression_t({ lookup_t{ std::make_shared<expression_t>(parent_address), std::make_shared<expression_t>(lookup_key) } }, optional_type);
@@ -500,12 +500,12 @@ struct expression_t {
 	////////////////////////////////		value_constructor_t
 
 	struct value_constructor_t {
-		itype_t value_type;
+		type_t value_type;
 		std::vector<expression_t> elements;
 	};
 
 	public: static expression_t make_construct_value_expr(
-		const itype_t& value_type,
+		const type_t& value_type,
 		const std::vector<expression_t>& args
 	)
 	{
@@ -523,7 +523,7 @@ struct expression_t {
 		const body_t& body
 	)
 	{
-		return expression_t({ benchmark_expr_t{ std::make_shared<body_t>(body) } }, itype_t::make_int());
+		return expression_t({ benchmark_expr_t{ std::make_shared<body_t>(body) } }, type_t::make_int());
 	}
 
 
@@ -553,7 +553,7 @@ struct expression_t {
 			;
 	}
 
-	public: itype_t get_output_type() const {
+	public: type_t get_output_type() const {
 		QUARK_ASSERT(check_invariant());
 
 		return _output_type;
@@ -598,7 +598,7 @@ struct expression_t {
 		benchmark_expr_t
 	> expression_variant_t;
 
-	private: expression_t(const expression_variant_t& contents, const itype_t& optional_type);
+	private: expression_t(const expression_variant_t& contents, const type_t& optional_type);
 
 
 	//////////////////////////		STATE
@@ -607,7 +607,7 @@ struct expression_t {
 #endif
 	public: location_t location;
 	public: expression_variant_t _expression_variant;
-	public: itype_t _output_type;
+	public: type_t _output_type;
 };
 
 

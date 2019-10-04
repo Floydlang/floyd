@@ -159,16 +159,16 @@ bc_value_t value_to_bc(const type_interner_t& interner, const value_t& value){
 	}
 
 	else if(basetype == base_type::k_vector){
-		const auto element_itype = type.get_vector_element_type(interner);
+		const auto element_type = type.get_vector_element_type(interner);
 
-		if(encode_as_vector_w_inplace_elements(interner, element_itype)){
+		if(encode_as_vector_w_inplace_elements(interner, element_type)){
 			const auto& vec = value.get_vector_value();
 			immer::vector<bc_inplace_value_t> vec2;
 			for(const auto& e: vec){
 				const auto bc = value_to_bc(interner, e);
 				vec2 = vec2.push_back(bc._pod._inplace);
 			}
-			return make_vector(interner, element_itype, vec2);
+			return make_vector(interner, element_type, vec2);
 		}
 		else{
 			const auto& vec = value.get_vector_value();
@@ -178,16 +178,16 @@ bc_value_t value_to_bc(const type_interner_t& interner, const value_t& value){
 				const auto hand = bc_external_handle_t(bc);
 				vec2 = vec2.push_back(hand);
 			}
-			return make_vector(interner, element_itype, vec2);
+			return make_vector(interner, element_type, vec2);
 		}
 	}
 	else if(basetype == base_type::k_dict){
-		const auto value_itype = type.get_vector_element_type(interner);
+		const auto value_type = type.get_vector_element_type(interner);
 
 		const auto elements = value.get_dict_value();
 		immer::map<std::string, bc_external_handle_t> entries2;
 
-		if(encode_as_dict_w_inplace_values(interner, value_itype)){
+		if(encode_as_dict_w_inplace_values(interner, value_type)){
 			QUARK_ASSERT(false);//??? fix
 		}
 		else{

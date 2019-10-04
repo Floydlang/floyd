@@ -82,7 +82,7 @@ static value_t make_bool_vec(type_interner_t& interner, const std::vector<bool>&
 		elements2.push_back(value_t::make_bool(e));
 	}
 
-	return value_t::make_vector_value(interner, itype_t::make_bool(), elements2);
+	return value_t::make_vector_value(interner, type_t::make_bool(), elements2);
 }
 
 static value_t make_int_vec(type_interner_t& interner, const std::vector<int64_t>& elements){
@@ -91,7 +91,7 @@ static value_t make_int_vec(type_interner_t& interner, const std::vector<int64_t
 		elements2.push_back(value_t::make_int(e));
 	}
 
-	return value_t::make_vector_value(interner, itype_t::make_int(), elements2);
+	return value_t::make_vector_value(interner, type_t::make_int(), elements2);
 }
 
 static value_t make_double_vec(type_interner_t& interner, const std::vector<double>& elements){
@@ -100,7 +100,7 @@ static value_t make_double_vec(type_interner_t& interner, const std::vector<doub
 		elements2.push_back(value_t::make_double(e));
 	}
 
-	return value_t::make_vector_value(interner, itype_t::make_double(), elements2);
+	return value_t::make_vector_value(interner, type_t::make_double(), elements2);
 }
 
 #if 0
@@ -5002,7 +5002,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
 
 FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
 	type_interner_t temp;
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = typeof([1,2,3])		)", value_t::make_typeid_value(itype_t::make_vector(temp, type_t::make_int()))	);
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = typeof([1,2,3])		)", value_t::make_typeid_value(type_t::make_vector(temp, type_t::make_int()))	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_string(typeof([1,2,3]))		)",value_t::make_string("[int]") );

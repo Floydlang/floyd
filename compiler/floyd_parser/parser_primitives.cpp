@@ -678,7 +678,7 @@ json_t parser__make_literal(const value_t& value){
 		parse_tree_expression_opcode_t::k_literal,
 		{
 			value_to_ast_json(temp, value),
-			itype_to_json(temp, value.get_type())
+			type_to_json(temp, value.get_type())
 		}
 	);
 }

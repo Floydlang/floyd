@@ -109,17 +109,17 @@ enum class value_encoding {
 	k_external__function
 };
 
-bool encode_as_inplace(const itype_t& type);
+bool encode_as_inplace(const type_t& type);
 
-bool encode_as_vector_w_inplace_elements(const type_interner_t& interner, const itype_t& type);
+bool encode_as_vector_w_inplace_elements(const type_interner_t& interner, const type_t& type);
 
-bool encode_as_dict_w_inplace_values(const type_interner_t& interner, const itype_t& type);
+bool encode_as_dict_w_inplace_values(const type_interner_t& interner, const type_t& type);
 
-value_encoding type_to_encoding(const type_interner_t& interner, const itype_t& type);
+value_encoding type_to_encoding(const type_interner_t& interner, const type_t& type);
 
 //	Will this type of value require an ext ? bc_external_value_t to be used?
 bool encode_as_external(value_encoding encoding);
-bool encode_as_external(const itype_t& type);
+bool encode_as_external(const type_t& type);
 
 
 //////////////////////////////////////		bc_value_t
@@ -143,7 +143,7 @@ struct bc_value_t {
 	enum class mode {
 		k_unwritten_ext_value
 	};
-	public: inline explicit bc_value_t(const itype_t& type, mode mode);
+	public: inline explicit bc_value_t(const type_t& type, mode mode);
 
 
 	//////////////////////////////////////		internal-undefined type
@@ -189,36 +189,36 @@ struct bc_value_t {
 
 
 	//////////////////////////////////////		typeid
-	public: static bc_value_t make_typeid_value(const itype_t& type_id);
-	public: itype_t get_typeid_value() const;
-	private: explicit bc_value_t(const itype_t& type_id);
+	public: static bc_value_t make_typeid_value(const type_t& type_id);
+	public: type_t get_typeid_value() const;
+	private: explicit bc_value_t(const type_t& type_id);
 
 
 	//////////////////////////////////////		struct
-	public: static bc_value_t make_struct_value(const itype_t& struct_type, const std::vector<bc_value_t>& values);
+	public: static bc_value_t make_struct_value(const type_t& struct_type, const std::vector<bc_value_t>& values);
 	public: const std::vector<bc_value_t>& get_struct_value() const;
-	private: explicit bc_value_t(const itype_t& struct_type, const std::vector<bc_value_t>& values, bool struct_tag);
+	private: explicit bc_value_t(const type_t& struct_type, const std::vector<bc_value_t>& values, bool struct_tag);
 
 
 	//////////////////////////////////////		function
-	public: static bc_value_t make_function_value(const itype_t& function_type, const function_id_t& function_id);
+	public: static bc_value_t make_function_value(const type_t& function_type, const function_id_t& function_id);
 	public: function_id_t get_function_value() const;
-	private: explicit bc_value_t(const itype_t& function_type, const function_id_t& function_id, bool dummy);
+	private: explicit bc_value_t(const type_t& function_type, const function_id_t& function_id, bool dummy);
 
 
 	//	Bumps RC if needed.
-	public: explicit bc_value_t(const itype_t& type, const bc_pod_value_t& internals);
+	public: explicit bc_value_t(const type_t& type, const bc_pod_value_t& internals);
 
 	//	Won't bump RC.
-	public: bc_value_t(const itype_t& type, const bc_inplace_value_t& pod64);
+	public: bc_value_t(const type_t& type, const bc_inplace_value_t& pod64);
 
 	//	Bumps RC.
-	public: explicit bc_value_t(const itype_t& type, const bc_external_handle_t& handle);
+	public: explicit bc_value_t(const type_t& type, const bc_external_handle_t& handle);
 
 
 	//////////////////////////////////////		STATE
 	//??? make private, also check other classes.
-	public: itype_t _type;
+	public: type_t _type;
 	public: bc_pod_value_t _pod;
 };
 
@@ -248,7 +248,7 @@ struct bc_external_handle_t {
 };
 
 
-bool check_external_deep(const type_interner_t& interner, const itype_t& type, const bc_external_value_t* ext);
+bool check_external_deep(const type_interner_t& interner, const type_t& type, const bc_external_value_t* ext);
 
 
 //////////////////////////////////////		bc_external_value_t
@@ -263,14 +263,14 @@ bool check_external_deep(const type_interner_t& interner, const itype_t& type, c
 struct bc_external_value_t {
 	public: bc_external_value_t(const std::string& s);
 	public: bc_external_value_t(const std::shared_ptr<json_t>& s);
-	public: bc_external_value_t(const itype_t& type, const function_id_t& function_id);
+	public: bc_external_value_t(const type_t& type, const function_id_t& function_id);
 
-	public: bc_external_value_t(const itype_t& s);
-	public: bc_external_value_t(const itype_t& type, const std::vector<bc_value_t>& s, bool struct_tag);
-	public: bc_external_value_t(const itype_t& type, const immer::vector<bc_external_handle_t>& s);
-	public: bc_external_value_t(const itype_t& type, const immer::vector<bc_inplace_value_t>& s);
-	public: bc_external_value_t(const itype_t& type, const immer::map<std::string, bc_external_handle_t>& s);
-	public: bc_external_value_t(const itype_t& type, const immer::map<std::string, bc_inplace_value_t>& s);
+	public: bc_external_value_t(const type_t& s);
+	public: bc_external_value_t(const type_t& type, const std::vector<bc_value_t>& s, bool struct_tag);
+	public: bc_external_value_t(const type_t& type, const immer::vector<bc_external_handle_t>& s);
+	public: bc_external_value_t(const type_t& type, const immer::vector<bc_inplace_value_t>& s);
+	public: bc_external_value_t(const type_t& type, const immer::map<std::string, bc_external_handle_t>& s);
+	public: bc_external_value_t(const type_t& type, const immer::map<std::string, bc_inplace_value_t>& s);
 
 #if DEBUG
 	public: bool check_invariant() const;
@@ -284,13 +284,13 @@ struct bc_external_value_t {
 	public: bool _debug__is_unwritten_external_value = false;
 #endif
 #if DEBUG
-	public: itype_t _debug_type;
+	public: type_t _debug_type;
 //	public: value_encoding _debug_encoding;
 #endif
 	public: std::string _string;
 	public: std::shared_ptr<json_t> _json;
 	public: function_id_t _function_id;
-	public: itype_t _typeid_value = itype_t::make_undefined();
+	public: type_t _typeid_value = type_t::make_undefined();
 	public: std::vector<bc_value_t> _struct_members;
 	public: immer::vector<bc_external_handle_t> _vector_w_external_elements;
 	public: immer::vector<bc_inplace_value_t> _vector_w_inplace_elements;
@@ -306,19 +306,19 @@ const immer::vector<bc_value_t> get_vector(const type_interner_t& interner, cons
 const immer::vector<bc_external_handle_t>* get_vector_external_elements(const type_interner_t& interner, const bc_value_t& value);
 const immer::vector<bc_inplace_value_t>* get_vector_inplace_elements(const type_interner_t& interner, const bc_value_t& value);
 
-bc_value_t make_vector(const type_interner_t& interner, const itype_t& element_type, const immer::vector<bc_value_t>& elements);
-bc_value_t make_vector(const type_interner_t& interner, const itype_t& element_type, const immer::vector<bc_external_handle_t>& elements);
-bc_value_t make_vector(const type_interner_t& interner, const itype_t& element_type, const immer::vector<bc_inplace_value_t>& elements);
+bc_value_t make_vector(const type_interner_t& interner, const type_t& element_type, const immer::vector<bc_value_t>& elements);
+bc_value_t make_vector(const type_interner_t& interner, const type_t& element_type, const immer::vector<bc_external_handle_t>& elements);
+bc_value_t make_vector(const type_interner_t& interner, const type_t& element_type, const immer::vector<bc_inplace_value_t>& elements);
 
 const immer::map<std::string, bc_external_handle_t>& get_dict_external_values(const type_interner_t& interner, const bc_value_t& value);
 const immer::map<std::string, bc_inplace_value_t>& get_dict_inplace_values(const type_interner_t& interner, const bc_value_t& value);
 
-bc_value_t make_dict(const type_interner_t& interner, const itype_t& value_type, const immer::map<std::string, bc_external_handle_t>& entries);
-bc_value_t make_dict(const type_interner_t& interner, const itype_t& value_type, const immer::map<std::string, bc_inplace_value_t>& entries);
+bc_value_t make_dict(const type_interner_t& interner, const type_t& value_type, const immer::map<std::string, bc_external_handle_t>& entries);
+bc_value_t make_dict(const type_interner_t& interner, const type_t& value_type, const immer::map<std::string, bc_inplace_value_t>& entries);
 
 json_t bcvalue_to_json(const type_interner_t& interner, const bc_value_t& v);
-int bc_compare_value_true_deep(const type_interner_t& interner, const bc_value_t& left, const bc_value_t& right, const itype_t& type);
-int bc_compare_value_exts(const type_interner_t& interner, const bc_external_handle_t& left, const bc_external_handle_t& right, const itype_t& type);
+int bc_compare_value_true_deep(const type_interner_t& interner, const bc_value_t& left, const bc_value_t& right, const type_t& type);
+int bc_compare_value_exts(const type_interner_t& interner, const bc_external_handle_t& left, const bc_external_handle_t& right, const type_t& type);
 
 
 
@@ -342,7 +342,7 @@ struct bc_symbol_t {
 
 	//////////////////////////////////////		STATE
 	type _symbol_type;
-	itype_t _value_type;
+	type_t _value_type;
 	floyd::bc_value_t _const_value;
 };
 
@@ -748,7 +748,7 @@ struct bc_static_frame_t {
 		const type_interner_t& interner,
 		const std::vector<bc_instruction_t>& instrs2,
 		const std::vector<std::pair<std::string, bc_symbol_t>>& symbols,
-		const std::vector<itype_t>& args
+		const std::vector<type_t>& args
 	);
 	bool check_invariant() const;
 
@@ -758,7 +758,7 @@ struct bc_static_frame_t {
 
 	//??? Optimize how we store this data for quick access + compactness.
 	std::vector<std::pair<std::string, bc_symbol_t>> _symbols;
-	std::vector<itype_t> _args;
+	std::vector<type_t> _args;
 
 	//	True if equivalent symbol is an external value.
 	//??? unify with _locals_exts.
@@ -782,7 +782,7 @@ struct bc_static_frame_t {
 struct bc_function_definition_t {
 	bc_function_definition_t(
 		const type_interner_t& interner, 
-		const itype_t& function_type,
+		const type_t& function_type,
 		const std::vector<member_t>& args,
 		const std::shared_ptr<bc_static_frame_t>& frame,
 		function_id_t function_id
@@ -793,7 +793,7 @@ struct bc_function_definition_t {
 
 
 	//////////////////////////////////////		STATE
-	itype_t _function_type;
+	type_t _function_type;
 	std::vector<member_t> _args;
 	std::shared_ptr<bc_static_frame_t> _frame_ptr;
 	function_id_t _function_id;
@@ -1237,7 +1237,7 @@ struct interpreter_stack_t {
 	}
 
 	//	returned value will have ownership of obj, if it's an obj.
-	public: inline bc_value_t load_value(int pos, const itype_t& type) const{
+	public: inline bc_value_t load_value(int pos, const type_t& type) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 		QUARK_ASSERT(type.check_invariant());
@@ -1343,7 +1343,7 @@ struct interpreter_stack_t {
 
 	//	These are DEEP copies = do not share RC with non-debug values.
 #if DEBUG
-	public: std::vector<itype_t> _debug_types;
+	public: std::vector<type_t> _debug_types;
 #endif
 
 	public: const bc_static_frame_t* _current_frame_ptr;

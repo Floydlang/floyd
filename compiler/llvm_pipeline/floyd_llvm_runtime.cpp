@@ -91,7 +91,7 @@ static void* get_function_ptr(const llvm_execution_engine_t& ee, const link_name
 }
 
 
-std::pair<void*, itype_t> bind_global(const llvm_execution_engine_t& ee, const std::string& name){
+std::pair<void*, type_t> bind_global(const llvm_execution_engine_t& ee, const std::string& name){
 	QUARK_ASSERT(ee.check_invariant());
 	QUARK_ASSERT(name.empty() == false);
 
@@ -102,11 +102,11 @@ std::pair<void*, itype_t> bind_global(const llvm_execution_engine_t& ee, const s
 		return { global_ptr, symbol->get_value_type() };
 	}
 	else{
-		return { nullptr, itype_t::make_undefined() };
+		return { nullptr, type_t::make_undefined() };
 	}
 }
 
-static value_t load_via_ptr(const llvm_execution_engine_t& runtime, const void* value_ptr, const itype_t& type){
+static value_t load_via_ptr(const llvm_execution_engine_t& runtime, const void* value_ptr, const type_t& type){
 	QUARK_ASSERT(runtime.check_invariant());
 	QUARK_ASSERT(value_ptr != nullptr);
 	QUARK_ASSERT(type.check_invariant());
@@ -116,14 +116,14 @@ static value_t load_via_ptr(const llvm_execution_engine_t& runtime, const void* 
 	return result2;
 }
 
-value_t load_global(const llvm_execution_engine_t& ee, const std::pair<void*, itype_t>& v){
+value_t load_global(const llvm_execution_engine_t& ee, const std::pair<void*, type_t>& v){
 	QUARK_ASSERT(v.first != nullptr);
 	QUARK_ASSERT(v.second.is_undefined() == false);
 
 	return load_via_ptr(ee, v.first, v.second);
 }
 
-void store_via_ptr(llvm_execution_engine_t& runtime, const itype_t& member_type, void* value_ptr, const value_t& value){
+void store_via_ptr(llvm_execution_engine_t& runtime, const type_t& member_type, void* value_ptr, const value_t& value){
 	QUARK_ASSERT(runtime.check_invariant());
 	QUARK_ASSERT(member_type.check_invariant());
 	QUARK_ASSERT(value_ptr != nullptr);
@@ -152,7 +152,7 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name)
 		return llvm_bind_t {
 			name,
 			nullptr,
-			itype_t::make_undefined()
+			type_t::make_undefined()
 		};
 	}
 }
@@ -175,7 +175,7 @@ static std::vector<function_link_entry_t> make_runtime_function_link_map(llvm::L
 	std::vector<function_link_entry_t> result;
 	for(const auto& e: runtime_function_binds){
 		const auto link_name = encode_runtime_func_link_name(e.name);
-		const auto def = function_link_entry_t{ "runtime", link_name, e.llvm_function_type, nullptr, itype_t::make_undefined(), {}, e.native_f };
+		const auto def = function_link_entry_t{ "runtime", link_name, e.llvm_function_type, nullptr, type_t::make_undefined(), {}, e.native_f };
 		result.push_back(def);
 	}
 
@@ -202,7 +202,7 @@ static std::vector<function_link_entry_t> make_init_deinit_link_map(llvm::LLVMCo
 			},
 			false
 		);
-		const auto def = function_link_entry_t{ "runtime", link_name, function_type, nullptr, itype_t::make_undefined(), {}, nullptr };
+		const auto def = function_link_entry_t{ "runtime", link_name, function_type, nullptr, type_t::make_undefined(), {}, nullptr };
 		result.push_back(def);
 	}
 
@@ -216,7 +216,7 @@ static std::vector<function_link_entry_t> make_init_deinit_link_map(llvm::LLVMCo
 			},
 			false
 		);
-		const auto def = function_link_entry_t{ "runtime", link_name, function_type, nullptr, itype_t::make_undefined(), {}, nullptr };
+		const auto def = function_link_entry_t{ "runtime", link_name, function_type, nullptr, type_t::make_undefined(), {}, nullptr };
 		result.push_back(def);
 	}
 
@@ -300,7 +300,7 @@ void trace_function_link_map(const type_interner_t& interner, const std::vector<
 
 	std::vector<std::vector<std::string>> matrix;
 	for(const auto& e: defs){
-		const auto f0 = e.function_type_or_undef.is_undefined() ? "" : json_to_compact_string(itype_to_compact_string(interner, e.function_type_or_undef));
+		const auto f0 = e.function_type_or_undef.is_undefined() ? "" : json_to_compact_string(type_to_compact_string(interner, e.function_type_or_undef));
 
 		std::string arg_names;
 		for(const auto& m: e.arg_names_or_empty){
@@ -456,13 +456,13 @@ static std::vector<std::pair<link_name_t, void*>> collection_native_func_ptrs(ll
 //??? LLVM codegen unlinks functions not called: need to mark functions external.
 
 
-static std::vector<std::pair<itype_t, struct_layout_t>> make_struct_layouts(const llvm_type_lookup& type_lookup, const llvm::DataLayout& data_layout){
+static std::vector<std::pair<type_t, struct_layout_t>> make_struct_layouts(const llvm_type_lookup& type_lookup, const llvm::DataLayout& data_layout){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	std::vector<std::pair<itype_t, struct_layout_t>> result;
+	std::vector<std::pair<type_t, struct_layout_t>> result;
 
 	for(int i = 0 ; i < type_lookup.state.types.size() ; i++){
-		const auto& type = lookup_itype_from_index(type_lookup.state.type_interner, i);
+		const auto& type = lookup_type_from_index(type_lookup.state.type_interner, i);
 		if(type.is_struct()){
 			auto t2 = get_exact_struct_type_byvalue(type_lookup, type);
 			const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
@@ -587,7 +587,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			{},
 			nullptr,
 			start_time,
-			llvm_bind_t{ link_name_t {}, nullptr, itype_t::make_undefined() },
+			llvm_bind_t{ link_name_t {}, nullptr, type_t::make_undefined() },
 			false,
 			program_breaks.settings.config
 		}
@@ -726,7 +726,7 @@ static void run_process(llvm_process_runtime_t& runtime, int process_id){
 
 	const auto thread_name = get_current_thread_name();
 
-	const itype_t process_state_type = process._init_function != nullptr ? process._init_function->type.get_function_return(runtime.ee->backend.type_interner) : itype_t::make_undefined();
+	const type_t process_state_type = process._init_function != nullptr ? process._init_function->type.get_function_return(runtime.ee->backend.type_interner) : type_t::make_undefined();
 
 	if(process._processor){
 		process._processor->on_init();
@@ -890,7 +890,7 @@ run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::str
 
 ///??? should lookup structs via their name in symbol table!
 std::vector<bench_t> collect_benchmarks(llvm_execution_engine_t& ee){
-	std::pair<void*, itype_t> benchmark_registry_bind = bind_global(ee, k_global_benchmark_registry);
+	std::pair<void*, type_t> benchmark_registry_bind = bind_global(ee, k_global_benchmark_registry);
 	QUARK_ASSERT(benchmark_registry_bind.first != nullptr);
 	QUARK_ASSERT(benchmark_registry_bind.second == make_vector(ee.backend.type_interner, make_benchmark_def_t(ee.backend.type_interner)));
 

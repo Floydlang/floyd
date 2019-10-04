@@ -329,7 +329,7 @@ static llvm::Type* make_llvm_type(const builder_t& builder, const type_t& type){
 //			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
-	return std::visit(visitor_t{ builder, type }, get_itype_variant(builder.acc.type_interner, type));
+	return std::visit(visitor_t{ builder, type }, get_type_variant(builder.acc.type_interner, type));
 }
 
 static llvm::Type* make_generic_type(const builder_t& builder, const type_t& type){
@@ -401,7 +401,7 @@ llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const type_intern
 
 	QUARK_ASSERT(builder.acc.type_interner.check_invariant());
 	for(type_lookup_index_t i = 0 ; i < acc.type_interner.interned2.size() ; i++){
-		const auto& type = lookup_itype_from_index(acc.type_interner,i);
+		const auto& type = lookup_type_from_index(acc.type_interner,i);
 		QUARK_ASSERT(type.check_invariant());
 		builder.acc.types[i] = make_type(builder, peek(acc.type_interner, type));
 	}
@@ -429,7 +429,7 @@ bool llvm_type_lookup::check_invariant() const {
 	return true;
 }
 
-const type_entry_t& llvm_type_lookup::find_from_itype(const itype_t& itype) const {
+const type_entry_t& llvm_type_lookup::find_from_itype(const type_t& itype) const {
 	QUARK_ASSERT(check_invariant());
 
 	const auto index = itype.get_lookup_index();
@@ -446,12 +446,12 @@ void trace_llvm_type_lookup(const llvm_type_lookup& type_lookup){
 
 	for(int i = 0 ; i < type_lookup.state.types.size() ; i++){
 		const auto& e = type_lookup.state.types[i];
-		const auto type = lookup_itype_from_index(type_lookup.state.type_interner, i);
+		const auto type = lookup_type_from_index(type_lookup.state.type_interner, i);
 		const auto l = line_t {
 			{
 				std::to_string(i),
 				std::to_string(i),
-				itype_to_compact_string(type_lookup.state.type_interner, type),
+				type_to_compact_string(type_lookup.state.type_interner, type),
 				print_type(e.llvm_type_specific),
 				print_type(e.llvm_type_generic),
 				e.optional_function_def != nullptr ? "YES" : ""
@@ -493,13 +493,13 @@ llvm::Type* make_runtime_value_type(const llvm_type_lookup& type_lookup){
 }
 
 
-type_t lookup_type(const llvm_type_lookup& type_lookup, const itype_t& itype){
+type_t lookup_type(const llvm_type_lookup& type_lookup, const type_t& itype){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	return itype;
 }
 
-itype_t lookup_itype(const llvm_type_lookup& type_lookup, const type_t& type){
+type_t lookup_itype(const llvm_type_lookup& type_lookup, const type_t& type){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	return type;
@@ -507,7 +507,7 @@ itype_t lookup_itype(const llvm_type_lookup& type_lookup, const type_t& type){
 
 
 
-llvm::StructType* get_exact_struct_type_byvalue(const llvm_type_lookup& i, const itype_t& type){
+llvm::StructType* get_exact_struct_type_byvalue(const llvm_type_lookup& i, const type_t& type){
 	QUARK_ASSERT(i.check_invariant());
 	QUARK_ASSERT(type.is_struct());
 

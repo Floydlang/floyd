@@ -380,7 +380,7 @@ static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const 
 			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
-	return std::visit(visitor_t{ gen_acc, builder, context, itype, value }, get_itype_variant(interner, type));
+	return std::visit(visitor_t{ gen_acc, builder, context, itype, value }, get_type_variant(interner, type));
 }
 
 

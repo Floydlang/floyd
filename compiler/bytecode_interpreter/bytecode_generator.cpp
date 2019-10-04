@@ -104,7 +104,7 @@ struct bcgen_body_t {
 	std::vector<bcgen_instruction_t> _instrs;
 };
 
-static bc_static_frame_t make_frame(const type_interner_t& interner, const bcgen_body_t& body, const std::vector<itype_t>& args);
+static bc_static_frame_t make_frame(const type_interner_t& interner, const bcgen_body_t& body, const std::vector<type_t>& args);
 
 
 //////////////////////////////////////		bcgenerator_t
@@ -145,7 +145,7 @@ struct expression_gen_t {
 	symbol_pos_t _out;
 
 	//	Output type.
-	itype_t _type;
+	type_t _type;
 };
 
 
@@ -158,10 +158,10 @@ expression_gen_t bcgen_expression(bcgenerator_t& gen_acc, const symbol_pos_t& ta
 
 bcgen_body_t bcgen_body_block(bcgenerator_t& gen_acc, const body_t& body);
 
-static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const itype_t& call_output_type, const expression_t::call_t& details, const bcgen_body_t& body);
+static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const type_t& call_output_type, const expression_t::call_t& details, const bcgen_body_t& body);
 
 
-static itype_t get_expr_output_itype(const bcgenerator_t& gen, const expression_t& e){
+static type_t get_expr_output_type(const bcgenerator_t& gen, const expression_t& e){
 	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -170,19 +170,19 @@ static itype_t get_expr_output_itype(const bcgenerator_t& gen, const expression_
 	return peek(interner, result);
 }
 
-static itype_t get_expr_output(const bcgenerator_t& gen, const expression_t& e){
+static type_t get_expr_output(const bcgenerator_t& gen, const expression_t& e){
 	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	return get_expr_output_itype(gen, e);
+	return get_expr_output_type(gen, e);
 }
 
-static itype_t dummy_func(const type_interner_t& interner, const itype_t& type){ return type; }
+static type_t dummy_func(const type_interner_t& interner, const type_t& type){ return type; }
 
 
 //??? Don't use the term "symbol" here, since not all symbols should go into stack frames.
 
-static symbol_pos_t add_local_temp(const type_interner_t& interner, bcgen_body_t& body_acc, const itype_t& type0, const std::string& name){
+static symbol_pos_t add_local_temp(const type_interner_t& interner, bcgen_body_t& body_acc, const type_t& type0, const std::string& name){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(body_acc.check_invariant());
 	QUARK_ASSERT(type0.check_invariant());
@@ -240,7 +240,7 @@ bc_typeid_t intern_type(bcgenerator_t& gen_acc, const type_t& type){
 }
 */
 
-static bc_typeid_t bc_typeid_from_itype(const itype_t& type){
+static bc_typeid_t bc_typeid_from_type(const type_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto r = type.get_lookup_index();
@@ -251,11 +251,11 @@ static bc_typeid_t bc_typeid_from_itype(const itype_t& type){
 }
 
 
-static bc_typeid_t intern_type(bcgenerator_t& gen_acc, const itype_t& type){
+static bc_typeid_t intern_type(bcgenerator_t& gen_acc, const type_t& type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	return bc_typeid_from_itype(type);
+	return bc_typeid_from_type(type);
 }
 
 
@@ -390,7 +390,7 @@ bcgen_body_t flatten_body(const bcgenerator_t& gen, const bcgen_body_t& dest, co
 
 
 //	Supports globals & locals both as dest and sources.
-bcgen_body_t copy_value(const bcgenerator_t& gen, const itype_t& type, const reg_t& dest_reg, const reg_t& source_reg, const bcgen_body_t& body){
+bcgen_body_t copy_value(const bcgenerator_t& gen, const type_t& type, const reg_t& dest_reg, const reg_t& source_reg, const bcgen_body_t& body){
 	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(dest_reg.check_invariant());
@@ -746,10 +746,10 @@ expression_gen_t bcgen_resolve_member_expression(bcgenerator_t& gen_acc, const s
 	const auto& parent_expr = bcgen_expression(gen_acc, {}, *details.parent_address, body);
 	body_acc = parent_expr._body;
 
-	const auto struct_itype = get_expr_output(gen_acc, *details.parent_address);
+	const auto struct_type = get_expr_output(gen_acc, *details.parent_address);
 	const auto expr_output_type = get_expr_output(gen_acc, e);
 
-	const auto& struct_def = struct_itype.get_struct(gen_acc._ast_imm->_tree._interned_types);
+	const auto& struct_def = struct_type.get_struct(gen_acc._ast_imm->_tree._interned_types);
 	int index = find_struct_member_index(struct_def, details.member_name);
 	QUARK_ASSERT(index != -1);
 
@@ -767,7 +767,7 @@ expression_gen_t bcgen_resolve_member_expression(bcgenerator_t& gen_acc, const s
 
 
 //	Generates a call to the global function that implements the intrinsic.
-expression_gen_t bcgen_make_fallthrough_intrinsic(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const itype_t& call_output_type, const expression_t::intrinsic_t& details, const bcgen_body_t& body){
+expression_gen_t bcgen_make_fallthrough_intrinsic(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const type_t& call_output_type, const expression_t::intrinsic_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(target_reg.check_invariant());
 	QUARK_ASSERT(call_output_type.check_invariant());
@@ -802,7 +802,7 @@ expression_gen_t bcgen_make_fallthrough_intrinsic(bcgenerator_t& gen_acc, const 
 
 
 
-expression_gen_t make_update_call(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const itype_t& output_type, const expression_t& parent, const expression_t& key, const expression_t& new_value, const bcgen_body_t& body){
+expression_gen_t make_update_call(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const type_t& output_type, const expression_t& parent, const expression_t& key, const expression_t& new_value, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(output_type.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
@@ -820,7 +820,7 @@ expression_gen_t make_update_call(bcgenerator_t& gen_acc, const symbol_pos_t& ta
 	return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, output_type, intrinsic_details, body);
 }
 
-static bc_opcode convert_call_to_pushback_opcode(const type_interner_t& interner, const itype_t& arg1_type){
+static bc_opcode convert_call_to_pushback_opcode(const type_interner_t& interner, const type_t& arg1_type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(arg1_type.check_invariant());
 
@@ -840,7 +840,7 @@ static bc_opcode convert_call_to_pushback_opcode(const type_interner_t& interner
 	}
 }
 
-static expression_gen_t bcgen_intrinsic_push_back_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const itype_t& call_output_type, const expression_t::intrinsic_t& details, const bcgen_body_t& body){
+static expression_gen_t bcgen_intrinsic_push_back_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const type_t& call_output_type, const expression_t::intrinsic_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(target_reg.check_invariant());
 	QUARK_ASSERT(call_output_type.check_invariant());
@@ -881,7 +881,7 @@ static expression_gen_t bcgen_intrinsic_push_back_expression(bcgenerator_t& gen_
 
 
 //	a = size(b)
-static bc_opcode convert_call_to_size_opcode(const type_interner_t& interner, const itype_t& arg1_type){
+static bc_opcode convert_call_to_size_opcode(const type_interner_t& interner, const type_t& arg1_type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(arg1_type.check_invariant());
 
@@ -912,7 +912,7 @@ static bc_opcode convert_call_to_size_opcode(const type_interner_t& interner, co
 	}
 }
 
-static expression_gen_t bcgen_intrinsic_size_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const itype_t& call_output_type, const expression_t::intrinsic_t& details, const bcgen_body_t& body){
+static expression_gen_t bcgen_intrinsic_size_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const type_t& call_output_type, const expression_t::intrinsic_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(target_reg.check_invariant());
 	QUARK_ASSERT(call_output_type.check_invariant());
@@ -1069,7 +1069,7 @@ struct call_setup_t {
 //??? make different types for register vs stack-pos.
 
 //	NOTICE: extbits are generated for every value on callstack, even for DYN-types. This is correct.
-static call_setup_t gen_call_setup(bcgenerator_t& gen_acc, const std::vector<itype_t>& function_def_arg_type, const expression_t* args, int callee_arg_count, const bcgen_body_t& body){
+static call_setup_t gen_call_setup(bcgenerator_t& gen_acc, const std::vector<type_t>& function_def_arg_type, const expression_t* args, int callee_arg_count, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(args != nullptr || callee_arg_count == 0);
 	QUARK_ASSERT(body.check_invariant());
@@ -1082,11 +1082,11 @@ static call_setup_t gen_call_setup(bcgenerator_t& gen_acc, const std::vector<ity
 
 	//	Generate code / symbols for all arguments to the function call. Record where each arg is kept.
 	//	This might not create instructions or anything, if arguments are available as constants somewhere.
-	std::vector<std::pair<reg_t, itype_t>> argument_regs;
+	std::vector<std::pair<reg_t, type_t>> argument_regs;
 	for(int i = 0 ; i < arg_count ; i++){
 		const auto& m2 = bcgen_expression(gen_acc, {}, args[i], body_acc);
 		body_acc = m2._body;
-		argument_regs.push_back(std::pair<reg_t, itype_t>(m2._out, m2._type));
+		argument_regs.push_back(std::pair<reg_t, type_t>(m2._out, m2._type));
 	}
 
 	//	We have max 16 extbits when popping stack.
@@ -1103,9 +1103,9 @@ static call_setup_t gen_call_setup(bcgenerator_t& gen_acc, const std::vector<ity
 		const auto callee_arg_type = argument_regs[i].second;
 		const auto& func_arg_type = function_def_arg_type[i];
 
-		//	Prepend internal-dynamic arguments with the itype of the actual callee-argument.
+		//	Prepend internal-dynamic arguments with the type of the actual callee-argument.
 		if(func_arg_type.is_any()){
-			const auto arg_type_reg = add_local_const(gen_acc._ast_imm->_tree._interned_types, body_acc, value_t::make_int(bc_typeid_from_itype(callee_arg_type)), "DYN type arg #" + std::to_string(i));
+			const auto arg_type_reg = add_local_const(gen_acc._ast_imm->_tree._interned_types, body_acc, value_t::make_int(bc_typeid_from_type(callee_arg_type)), "DYN type arg #" + std::to_string(i));
 			body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_inplace_value, arg_type_reg, {}, {} ));
 
 			//	Int don't need extbit.
@@ -1162,7 +1162,7 @@ static expression_gen_t generate_callee(bcgenerator_t& gen_acc, const expression
 	- A call expression
 	- A hard-coded opcode like size() and push_back().
 */
-static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const itype_t& call_output_type, const expression_t::call_t& details, const bcgen_body_t& body){
+static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const type_t& call_output_type, const expression_t::call_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(call_output_type.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -1215,7 +1215,7 @@ static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const symb
 
 
 
-static expression_gen_t bcgen_intrinsic_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const itype_t& call_output_type, const expression_t::intrinsic_t& details, const bcgen_body_t& body){
+static expression_gen_t bcgen_intrinsic_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const type_t& call_output_type, const expression_t::intrinsic_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(target_reg.check_invariant());
 	QUARK_ASSERT(call_output_type.check_invariant());
@@ -1348,8 +1348,8 @@ static expression_gen_t bcgen_intrinsic_expression(bcgenerator_t& gen_acc, const
 
 
 //??? Submit dest-register to all gen-functions = minimize temps.
-//??? Wrap itype in struct to make it typesafe.
-//??? Only use itypes in interpreter
+//??? Wrap type in struct to make it typesafe.
+//??? Only use types in interpreter
 
 expression_gen_t bcgen_construct_value_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::value_constructor_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1362,7 +1362,7 @@ expression_gen_t bcgen_construct_value_expression(bcgenerator_t& gen_acc, const 
 	const auto target_itype = intern_type(gen_acc, target_type);
 
 	const auto callee_arg_count = static_cast<int>(details.elements.size());
-	std::vector<itype_t> arg_types;
+	std::vector<type_t> arg_types;
 	for(const auto& m: details.elements){
 		arg_types.push_back(dummy_func(gen_acc._ast_imm->_tree._interned_types, get_expr_output(gen_acc, m)));
 	}
@@ -1601,7 +1601,7 @@ expression_gen_t bcgen_comparison_expression(bcgenerator_t& gen_acc, const symbo
 	}
 
 	QUARK_ASSERT(body_acc.check_invariant());
-	return { body_acc, target_reg2, itype_t::make_bool() };
+	return { body_acc, target_reg2, type_t::make_bool() };
 }
 
 expression_gen_t bcgen_arithmetic_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, expression_type op, const expression_t& e, const expression_t::arithmetic_t& details, const bcgen_body_t& body){
@@ -1881,7 +1881,7 @@ bc_instruction_t squeeze_instruction(const bcgen_instruction_t& instruction){
 	return result;
 }
 
-static bc_static_frame_t make_frame(const type_interner_t& interner, const bcgen_body_t& body, const std::vector<itype_t>& args){
+static bc_static_frame_t make_frame(const type_interner_t& interner, const bcgen_body_t& body, const std::vector<type_t>& args){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -1900,7 +1900,7 @@ static bc_static_frame_t make_frame(const type_interner_t& interner, const bcgen
 				e.first,
 				bc_symbol_t{
 					bc_symbol_t::type::named_type,
-					itype_t::make_typeid(),
+					type_t::make_typeid(),
 					bc_value_t::make_typeid_value(t)
 				}
 			};
@@ -1993,7 +1993,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 		}
 	}
 
-	const auto globals2 = make_frame(ast._tree._interned_types, a._globals, std::vector<itype_t>{});
+	const auto globals2 = make_frame(ast._tree._interned_types, a._globals, std::vector<type_t>{});
 	const auto result = bc_program_t{
 		globals2,
 		function_defs2,

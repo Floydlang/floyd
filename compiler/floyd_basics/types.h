@@ -73,13 +73,11 @@ namespace floyd {
 
 
 struct member_t;
-struct struct_def_itype_t;
+struct struct_def_type_t;
 struct type_interner_t;
 struct type_t;
 
-
-#define type_t type_t
-#define itype_t type_t
+#define DEBUG_DEEP_TYPEID_T 1
 
 
 
@@ -88,7 +86,6 @@ struct type_t;
 
 
 
-#define DEBUG_DEEP_TYPEID_T 1
 
 //////////////////////////////////////		base_type
 
@@ -222,35 +219,35 @@ enum class return_dyn_type {
 	vector_of_arg2func_return = 5
 };
 
-//??? store itype_variant_t inside type_info_t!
+//??? store type_variant_t inside type_info_t!
 
 //??? Name into make_x() vs get_x()
-itype_t make_struct(type_interner_t& interner, const struct_def_itype_t& def);
-itype_t make_struct(const type_interner_t& interner, const struct_def_itype_t& def);
-itype_t make_vector(type_interner_t& interner, const itype_t& element_type);
-itype_t make_vector(const type_interner_t& interner, const itype_t& element_type);
-itype_t make_dict(type_interner_t& interner, const itype_t& value_type);
-itype_t make_dict(const type_interner_t& interner, const itype_t& value_type);
+type_t make_struct(type_interner_t& interner, const struct_def_type_t& def);
+type_t make_struct(const type_interner_t& interner, const struct_def_type_t& def);
+type_t make_vector(type_interner_t& interner, const type_t& element_type);
+type_t make_vector(const type_interner_t& interner, const type_t& element_type);
+type_t make_dict(type_interner_t& interner, const type_t& value_type);
+type_t make_dict(const type_interner_t& interner, const type_t& value_type);
 
-itype_t make_function3(type_interner_t& interner, const itype_t& ret, const std::vector<itype_t>& args, epure pure, return_dyn_type dyn_return);
+type_t make_function3(type_interner_t& interner, const type_t& ret, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return);
 
-itype_t make_function3(const type_interner_t& interner, const itype_t& ret, const std::vector<itype_t>& args, epure pure, return_dyn_type dyn_return);
-itype_t make_function_dyn_return(type_interner_t& interner, const std::vector<itype_t>& args, epure pure, return_dyn_type dyn_return);
-itype_t make_function(type_interner_t& interner, const itype_t& ret, const std::vector<itype_t>& args, epure pure);
-itype_t make_function(const type_interner_t& interner, const itype_t& ret, const std::vector<itype_t>& args, epure pure);
+type_t make_function3(const type_interner_t& interner, const type_t& ret, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return);
+type_t make_function_dyn_return(type_interner_t& interner, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return);
+type_t make_function(type_interner_t& interner, const type_t& ret, const std::vector<type_t>& args, epure pure);
+type_t make_function(const type_interner_t& interner, const type_t& ret, const std::vector<type_t>& args, epure pure);
 
-itype_t make_symbol_ref(type_interner_t& interner, const std::string& s);
-itype_t make_named_type(type_interner_t& interner, const type_tag_t& type);
-
-
-std::vector<itype_t> get_member_types(const std::vector<member_t>& m);
+type_t make_symbol_ref(type_interner_t& interner, const std::string& s);
+type_t make_named_type(type_interner_t& interner, const type_tag_t& type);
 
 
+std::vector<type_t> get_member_types(const std::vector<member_t>& m);
 
-//////////////////////////////////////////////////		itype_t
 
 
-//	IMPORTANT: Collect all used types in a vector so we can use itype_t as an index into it for O(1)
+//////////////////////////////////////////////////		type_t
+
+
+//	IMPORTANT: Collect all used types in a vector so we can use type_t as an index into it for O(1)
 /*
 	A: 0b11110000'00000000'00000000'00000000;
 	B: 0b00001111'00000000'00000000'00000000;
@@ -268,8 +265,8 @@ std::vector<itype_t> get_member_types(const std::vector<member_t>& m);
 */
 
 struct type_t {
-	itype_t() :
-		itype_t(assemble((type_lookup_index_t)base_type::k_undefined, base_type::k_undefined, base_type::k_undefined))
+	type_t() :
+		type_t(assemble((type_lookup_index_t)base_type::k_undefined, base_type::k_undefined, base_type::k_undefined))
 	{
 		QUARK_ASSERT(check_invariant());
 	}
@@ -284,8 +281,8 @@ struct type_t {
 	//////////////////////////////////////////////////		UNDEFINED
 
 
-	static itype_t make_undefined(){
-		return itype_t(assemble((type_lookup_index_t)base_type::k_undefined, base_type::k_undefined, base_type::k_undefined));
+	static type_t make_undefined(){
+		return type_t(assemble((type_lookup_index_t)base_type::k_undefined, base_type::k_undefined, base_type::k_undefined));
 	}
 
 	bool is_undefined() const {
@@ -298,8 +295,8 @@ struct type_t {
 	//////////////////////////////////////////////////		ANY
 
 
-	static itype_t make_any(){
-		return itype_t(assemble((type_lookup_index_t)base_type::k_any, base_type::k_any, base_type::k_undefined));
+	static type_t make_any(){
+		return type_t(assemble((type_lookup_index_t)base_type::k_any, base_type::k_any, base_type::k_undefined));
 	}
 
 	bool is_any() const {
@@ -312,8 +309,8 @@ struct type_t {
 	//////////////////////////////////////////////////		VOID
 
 
-	static itype_t make_void(){
-		return itype_t(assemble((type_lookup_index_t)base_type::k_void, base_type::k_void, base_type::k_undefined));
+	static type_t make_void(){
+		return type_t(assemble((type_lookup_index_t)base_type::k_void, base_type::k_void, base_type::k_undefined));
 	}
 
 	bool is_void() const {
@@ -326,8 +323,8 @@ struct type_t {
 	//////////////////////////////////////////////////		BOOL
 
 
-	static itype_t make_bool(){
-		return itype_t(assemble((type_lookup_index_t)base_type::k_bool, base_type::k_bool, base_type::k_undefined));
+	static type_t make_bool(){
+		return type_t(assemble((type_lookup_index_t)base_type::k_bool, base_type::k_bool, base_type::k_undefined));
 	}
 
 	bool is_bool() const {
@@ -340,8 +337,8 @@ struct type_t {
 	//////////////////////////////////////////////////		INT
 
 
-	static itype_t make_int(){
-		return itype_t(assemble((type_lookup_index_t)base_type::k_int, base_type::k_int, base_type::k_undefined));
+	static type_t make_int(){
+		return type_t(assemble((type_lookup_index_t)base_type::k_int, base_type::k_int, base_type::k_undefined));
 	}
 
 	bool is_int() const {
@@ -354,8 +351,8 @@ struct type_t {
 	//////////////////////////////////////////////////		DOUBLE
 
 
-	static itype_t make_double(){
-		return itype_t(assemble((type_lookup_index_t)base_type::k_double, base_type::k_double, base_type::k_undefined));
+	static type_t make_double(){
+		return type_t(assemble((type_lookup_index_t)base_type::k_double, base_type::k_double, base_type::k_undefined));
 	}
 
 	bool is_double() const {
@@ -368,8 +365,8 @@ struct type_t {
 	//////////////////////////////////////////////////		STRING
 
 
-	static itype_t make_string(){
-		return itype_t(assemble((type_lookup_index_t)base_type::k_string, base_type::k_string, base_type::k_undefined));
+	static type_t make_string(){
+		return type_t(assemble((type_lookup_index_t)base_type::k_string, base_type::k_string, base_type::k_undefined));
 	}
 
 	bool is_string() const {
@@ -382,8 +379,8 @@ struct type_t {
 	//////////////////////////////////////////////////		JSON
 
 
-	static itype_t make_json(){
-		return itype_t(assemble((type_lookup_index_t)base_type::k_json, base_type::k_json, base_type::k_undefined));
+	static type_t make_json(){
+		return type_t(assemble((type_lookup_index_t)base_type::k_json, base_type::k_json, base_type::k_undefined));
 	}
 
 	bool is_json() const {
@@ -396,8 +393,8 @@ struct type_t {
 	//////////////////////////////////////////////////		TYPEID
 
 
-	static itype_t make_typeid(){
-		return itype_t(assemble((type_lookup_index_t)base_type::k_typeid, base_type::k_typeid, base_type::k_undefined));
+	static type_t make_typeid(){
+		return type_t(assemble((type_lookup_index_t)base_type::k_typeid, base_type::k_typeid, base_type::k_undefined));
 	}
 
 	bool is_typeid() const {
@@ -410,15 +407,15 @@ struct type_t {
 	//////////////////////////////////////////////////		STRUCT
 
 
-	static itype_t make_struct(
+	static type_t make_struct(
 		type_interner_t& interner,
-		const struct_def_itype_t& def
+		const struct_def_type_t& def
 	)
 	{
 		return floyd::make_struct(interner, def);
 	}
 
-	static itype_t make_struct2(type_interner_t& interner, const std::vector<member_t>& members);
+	static type_t make_struct2(type_interner_t& interner, const std::vector<member_t>& members);
 
 	bool is_struct() const {
 		QUARK_ASSERT(check_invariant());
@@ -426,18 +423,18 @@ struct type_t {
 		return get_base_type() == base_type::k_struct;
 	}
 
-	struct_def_itype_t get_struct(const type_interner_t& interner) const;
+	struct_def_type_t get_struct(const type_interner_t& interner) const;
 
 
 
 	//////////////////////////////////////////////////		VECTOR
 
 
-	static itype_t make_vector(type_interner_t& interner, const itype_t& element_type){
+	static type_t make_vector(type_interner_t& interner, const type_t& element_type){
 		return floyd::make_vector(interner, element_type);
 	}
 
-	static itype_t make_vector(const type_interner_t& interner, const itype_t& element_type){
+	static type_t make_vector(const type_interner_t& interner, const type_t& element_type){
 		return floyd::make_vector(interner, element_type);
 	}
 
@@ -448,7 +445,7 @@ struct type_t {
 	}
 
 
-	itype_t get_vector_element_type(const type_interner_t& interner) const;
+	type_t get_vector_element_type(const type_interner_t& interner) const;
 
 	base_type get_vector_element_basetype() const {
 		QUARK_ASSERT(check_invariant());
@@ -461,7 +458,7 @@ struct type_t {
 	//////////////////////////////////////////////////		DICT
 
 
-	static itype_t make_dict(type_interner_t& interner, const itype_t& value_type){
+	static type_t make_dict(type_interner_t& interner, const type_t& value_type){
 		return floyd::make_dict(interner, value_type);
 	}
 
@@ -471,7 +468,7 @@ struct type_t {
 		return get_base_type() == base_type::k_dict;
 	}
 
-	itype_t get_dict_value_type(const type_interner_t& interner) const;
+	type_t get_dict_value_type(const type_interner_t& interner) const;
 
 	base_type get_dict_value_basetype() const {
 		QUARK_ASSERT(check_invariant());
@@ -484,18 +481,18 @@ struct type_t {
 	//////////////////////////////////////////////////		FUNCTION
 
 
-	static itype_t make_function3(type_interner_t& interner, const itype_t& ret, const std::vector<itype_t>& args, epure pure, return_dyn_type dyn_return){
+	static type_t make_function3(type_interner_t& interner, const type_t& ret, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return){
 		return floyd::make_function3(interner, ret, args, pure, dyn_return);
 	}
 	
-	static itype_t make_function_dyn_return(type_interner_t& interner, const std::vector<itype_t>& args, epure pure, return_dyn_type dyn_return){
+	static type_t make_function_dyn_return(type_interner_t& interner, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return){
 		return floyd::make_function_dyn_return(interner, args, pure, dyn_return);
 	}
 
-	static itype_t make_function(type_interner_t& interner, const itype_t& ret, const std::vector<itype_t>& args, epure pure){
+	static type_t make_function(type_interner_t& interner, const type_t& ret, const std::vector<type_t>& args, epure pure){
 		return floyd::make_function(interner, ret, args, pure);
 	}
-	static itype_t make_function(const type_interner_t& interner, const itype_t& ret, const std::vector<itype_t>& args, epure pure){
+	static type_t make_function(const type_interner_t& interner, const type_t& ret, const std::vector<type_t>& args, epure pure){
 		return floyd::make_function(interner, ret, args, pure);
 	}
 
@@ -505,8 +502,8 @@ struct type_t {
 		return get_base_type() == base_type::k_function;
 	}
 
-	public: itype_t get_function_return(const type_interner_t& interner) const;
-	public: std::vector<itype_t> get_function_args(const type_interner_t& interner) const;
+	public: type_t get_function_return(const type_interner_t& interner) const;
+	public: std::vector<type_t> get_function_args(const type_interner_t& interner) const;
 
 	public: return_dyn_type get_function_dyn_return_type(const type_interner_t& interner) const;
 
@@ -516,7 +513,7 @@ struct type_t {
 	//////////////////////////////////////////////////		SYMBOL
 
 
-	static itype_t make_symbol_ref(type_interner_t& interner, const std::string& s){
+	static type_t make_symbol_ref(type_interner_t& interner, const std::string& s){
 		return floyd::make_symbol_ref(interner, s);
 	}
 
@@ -532,7 +529,7 @@ struct type_t {
 	//////////////////////////////////////////////////		NAMED TYPE
 
 
-	static itype_t make_named_type(type_interner_t& interner, const type_tag_t& type){
+	static type_t make_named_type(type_interner_t& interner, const type_tag_t& type){
 		return floyd::make_named_type(interner, type);
 	}
 
@@ -558,7 +555,7 @@ struct type_t {
 	//////////////////////////////////////////////////		INTERNALS
 
 
-	explicit itype_t(int32_t data) :
+	explicit type_t(int32_t data) :
 		data(data)
 	{
 #if DEBUG
@@ -581,8 +578,8 @@ struct type_t {
 		return data;
 	}
 
-	public: static itype_t assemble2(type_lookup_index_t lookup_index, base_type bt1, base_type bt2){
-		return itype_t(assemble(lookup_index, bt1, bt2));
+	public: static type_t assemble2(type_lookup_index_t lookup_index, base_type bt1, base_type bt2){
+		return type_t(assemble(lookup_index, bt1, bt2));
 	}
 
 
@@ -641,40 +638,40 @@ struct type_t {
 };
 
 
-inline bool operator<(itype_t lhs, itype_t rhs){
+inline bool operator<(type_t lhs, type_t rhs){
 	return lhs.get_data() < rhs.get_data();
 }
-inline bool operator==(itype_t lhs, itype_t rhs){
+inline bool operator==(type_t lhs, type_t rhs){
 	return lhs.get_data() == rhs.get_data();
 }
-inline bool operator!=(itype_t lhs, itype_t rhs){ return (lhs == rhs) == false; };
+inline bool operator!=(type_t lhs, type_t rhs){ return (lhs == rhs) == false; };
 
-inline itype_t get_undefined_itype(){
-	return itype_t::make_undefined();
+inline type_t get_undefined_type(){
+	return type_t::make_undefined();
 }
-inline itype_t get_json_itype(){
-	return itype_t::make_json();
-}
-
-inline bool is_empty(const itype_t& type){
-	return type == itype_t::make_undefined();
+inline type_t get_json_type(){
+	return type_t::make_json();
 }
 
-bool is_atomic_type(itype_t type);
+inline bool is_empty(const type_t& type){
+	return type == type_t::make_undefined();
+}
+
+bool is_atomic_type(type_t type);
 
 
-json_t itype_to_json_shallow(const itype_t& itype);
-itype_t itype_from_json_shallow(const json_t& j);
+json_t type_to_json_shallow(const type_t& type);
+type_t type_from_json_shallow(const json_t& j);
 
-json_t itype_to_json(const type_interner_t& interner, const itype_t& type);
-itype_t itype_from_json(type_interner_t& interner, const json_t& j);
+json_t type_to_json(const type_interner_t& interner, const type_t& type);
+type_t type_from_json(type_interner_t& interner, const json_t& j);
 
 
-std::string itype_to_debug_string(const itype_t& itype);
+std::string type_to_debug_string(const type_t& type);
 
 enum class resolve_named_types { resolve, dont_resolve };
 
-std::string itype_to_compact_string(const type_interner_t& interner, const itype_t& itype, resolve_named_types resolve = resolve_named_types::dont_resolve);
+std::string type_to_compact_string(const type_interner_t& interner, const type_t& type, resolve_named_types resolve = resolve_named_types::dont_resolve);
 
 
 
@@ -683,13 +680,13 @@ std::string itype_to_compact_string(const type_interner_t& interner, const itype
 
 
 struct member_t {
-	member_t(itype_t type, const std::string& name) :
+	member_t(type_t type, const std::string& name) :
 		_type(type),
 		_name(name)
 	{
 	}
 
-	itype_t _type;
+	type_t _type;
 	std::string _name;
 };
 
@@ -700,17 +697,17 @@ inline bool operator==(const member_t& lhs, const member_t& rhs){
 
 
 
-//////////////////////////////////////////////////		struct_def_itype_t
+//////////////////////////////////////////////////		struct_def_type_t
 
 
 
-struct struct_def_itype_t {
-	struct_def_itype_t(const std::vector<member_t>& members) :
+struct struct_def_type_t {
+	struct_def_type_t(const std::vector<member_t>& members) :
 		_members(members)
 	{
 		QUARK_ASSERT(check_invariant());
 	}
-	struct_def_itype_t(){
+	struct_def_type_t(){
 		QUARK_ASSERT(check_invariant());
 	}
 
@@ -721,11 +718,11 @@ struct struct_def_itype_t {
 	std::vector<member_t> _members;
 };
 
-inline bool operator==(const struct_def_itype_t& lhs, const struct_def_itype_t& rhs){
+inline bool operator==(const struct_def_type_t& lhs, const struct_def_type_t& rhs){
 	return lhs._members == rhs._members;
 }
 
-int find_struct_member_index(const struct_def_itype_t& def, const std::string& name);
+int find_struct_member_index(const struct_def_type_t& def, const std::string& name);
 
 json_t members_to_json(const type_interner_t& interner, const std::vector<member_t>& members);
 std::vector<member_t> members_from_json(type_interner_t& interner, const json_t& members);
@@ -739,17 +736,17 @@ std::vector<member_t> members_from_json(type_interner_t& interner, const json_t&
 //	Assigns 32 bit ID to types. You can lookup the type using the ID.
 //	This allows us to describe a type using a single 32 bit integer (compact, fast to copy around).
 //	Each type has exactly ONE ID.
-//	Automatically insert all basetype-types so they ALWAYS have EXPLICIT integer IDs as itypes.
+//	Automatically insert all basetype-types so they ALWAYS have EXPLICIT integer IDs as types.
 
 struct type_node_t {
 	//	If optional_tag is used, this node is a tag node and child_type_indexes[0] will be undefined or hold the real type.
 	type_tag_t optional_tag;
 
 	base_type bt;
-	std::vector<itype_t> child_types;
+	std::vector<type_t> child_types;
 
 
-	struct_def_itype_t struct_def;
+	struct_def_type_t struct_def;
 
 	//	Only used when bt == k_function.
 	epure func_pure;
@@ -789,24 +786,24 @@ struct type_interner_t {
 	////////////////////////////////	STATE
 
 	//	All types are recorded here, an uniqued. Including tagged types.
-	//	itype uses the INDEX into this array for fast lookups.
+	//	type uses the INDEX into this array for fast lookups.
 	std::vector<type_node_t> interned2;
 };
 
 
-const type_node_t& lookup_typeinfo_from_itype(const type_interner_t& interner, const itype_t& type);
-type_node_t& lookup_typeinfo_from_itype(type_interner_t& interner, const itype_t& type);
-itype_t lookup_itype_from_tagged_type(const type_interner_t& interner, const type_tag_t& tag);
+const type_node_t& lookup_typeinfo_from_type(const type_interner_t& interner, const type_t& type);
+type_node_t& lookup_typeinfo_from_type(type_interner_t& interner, const type_t& type);
+type_t lookup_type_from_tagged_type(const type_interner_t& interner, const type_tag_t& tag);
 
-itype_t lookup_itype_from_index(const type_interner_t& interner, type_lookup_index_t type_index);
+type_t lookup_type_from_index(const type_interner_t& interner, type_lookup_index_t type_index);
 
 void trace_type_interner(const type_interner_t& interner);
 
 
 
-itype_t peek(const type_interner_t& interner, const itype_t& type);
+type_t peek(const type_interner_t& interner, const type_t& type);
 
-itype_t refresh_itype(const type_interner_t& interner, const itype_t& type);
+type_t refresh_type(const type_interner_t& interner, const type_t& type);
 
 
 
@@ -819,21 +816,21 @@ type_interner_t type_interner_from_json(const json_t& j);
 //////////////////////////////////////////////////		TAGGED TYPES
 
 
-//	Allocates a new itype for this tag. The tag must not already exist.
+//	Allocates a new type for this tag. The tag must not already exist.
 //	Interns the type for this tag. You can use type_t::make_undefined() and
 //	later update the type using update_tagged_type()
-itype_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag);
-itype_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag, const itype_t& type);
+type_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag);
+type_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag, const type_t& type);
 
 //	Update the tagged type's type. The tagged type must already exist. Any usage of this
 //	tag will also get the new type.
-itype_t update_tagged_type(type_interner_t& interner, const itype_t& named, const itype_t& type);
+type_t update_tagged_type(type_interner_t& interner, const type_t& named, const type_t& type);
 
-itype_t get_tagged_type2(const type_interner_t& interner, const type_tag_t& tag);
+type_t get_tagged_type2(const type_interner_t& interner, const type_tag_t& tag);
 
 
 
-//////////////////////////////////////////////////		get_itype_variant()
+//////////////////////////////////////////////////		get_type_variant()
 
 
 
@@ -848,22 +845,22 @@ struct json_type_t {};
 struct typeid_type_t {};
 
 struct struct_t {
-	struct_def_itype_t def;
+	struct_def_type_t def;
 };
 struct vector_t {
-	std::vector<itype_t> _parts;
+	std::vector<type_t> _parts;
 };
 struct dict_t {
-	std::vector<itype_t> _parts;
+	std::vector<type_t> _parts;
 };
 struct function_t {
-	std::vector<itype_t> _parts;
+	std::vector<type_t> _parts;
 };
 struct symbol_ref_t {
 	std::string s;
 };
 struct named_type_t {
-	itype_t destination_type;
+	type_t destination_type;
 };
 
 typedef std::variant<
@@ -883,10 +880,10 @@ typedef std::variant<
 	function_t,
 	symbol_ref_t,
 	named_type_t
-> itype_variant_t;
+> type_variant_t;
 
 
-itype_variant_t get_itype_variant(const type_interner_t& interner, const itype_t& type);
+type_variant_t get_type_variant(const type_interner_t& interner, const type_t& type);
 
 
 

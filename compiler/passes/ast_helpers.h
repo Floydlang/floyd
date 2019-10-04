@@ -22,11 +22,10 @@ struct body_t;
 struct type_t;
 struct ast_type_t;
 struct type_interner_t;
-struct struct_def_itype_t;
+struct struct_def_type_t;
 
 /*
-	??? TODO: All ast_type_t:s are itypes.
-	All itypes can be resolved in type_interner (or defect)
+	All types can be resolved in type_interner (or defect)
 	Interned types are fully defined = all their types and subtypes are OK (undefined or identifer not allowed).
 */
 
@@ -40,7 +39,7 @@ bool check_types_resolved(const type_interner_t& interner, const body_t& body);
 bool check_types_resolved(const type_interner_t& interner, const statement_t& s);
 bool check_types_resolved(const type_interner_t& interner, const std::vector<std::shared_ptr<statement_t>>& s);
 
-bool check_types_resolved(const type_interner_t& interner, const struct_def_itype_t& s);
+bool check_types_resolved(const type_interner_t& interner, const struct_def_type_t& s);
 bool check_types_resolved(const type_interner_t& interner, const type_t& t);
 
 bool check_types_resolved(const type_interner_t& interner);

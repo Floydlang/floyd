@@ -388,7 +388,7 @@ llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const l
 		llvm::LLVMContext& context;
 		const llvm_type_lookup& type_lookup;
 		llvm::Value& value;
-		const itype_t type;
+		const type_t type;
 
 		llvm::Value* operator()(const undefined_t& e) const{
 			UNSUPPORTED();
@@ -439,7 +439,7 @@ llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const l
 			return generate_cast_to_runtime_value2(builder, type_lookup, value, peek(type_lookup.state.type_interner, type));
 		}
 	};
-	return std::visit(visitor_t{ builder, context, type_lookup, value, floyd_type }, get_itype_variant(type_lookup.state.type_interner, floyd_type));
+	return std::visit(visitor_t{ builder, context, type_lookup, value, floyd_type }, get_type_variant(type_lookup.state.type_interner, floyd_type));
 }
 
 llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& runtime_value_reg, const type_t& type){
@@ -503,7 +503,7 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const
 			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
-	return std::visit(visitor_t{ builder, type_lookup, context, runtime_value_reg, type }, get_itype_variant(type_lookup.state.type_interner, type) );
+	return std::visit(visitor_t{ builder, type_lookup, context, runtime_value_reg, type }, get_type_variant(type_lookup.state.type_interner, type) );
 }
 
 }	//	floyd
