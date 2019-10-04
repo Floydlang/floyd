@@ -787,7 +787,7 @@ expression_gen_t bcgen_make_fallthrough_intrinsic(bcgenerator_t& gen_acc, const 
 	const auto addr = symbol_pos_t::make_stack_pos(symbol_pos_t::k_intrinsic, static_cast<int>(index));
 
 	const auto call_details = expression_t::call_t {
-		std::make_shared<expression_t>(expression_t::make_load2(addr, to_asttype(*function_type))),
+		std::make_shared<expression_t>(expression_t::make_load2(addr, *function_type)),
 		details.args
 	};
 

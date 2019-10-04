@@ -1535,7 +1535,7 @@ std::pair<analyser_t, expression_t> analyse_load(const analyser_t& a, const stat
 		else{
 			return {
 				a_acc,
-				expression_t::make_load2(found.second, to_asttype(found.first->_value_type))
+				expression_t::make_load2(found.second, found.first->_value_type)
 			};
 		}
 	}
@@ -1550,7 +1550,7 @@ std::pair<analyser_t, expression_t> analyse_load(const analyser_t& a, const stat
 		if(it != intrinsic_signatures.vec.end()){
 			const auto index = it - intrinsic_signatures.vec.begin();
 			const auto addr = symbol_pos_t::make_stack_pos(symbol_pos_t::k_intrinsic, static_cast<int32_t>(index));
-			const auto e2 = expression_t::make_load2(addr, to_asttype(it->_function_type));
+			const auto e2 = expression_t::make_load2(addr, it->_function_type);
 			return { a_acc, e2 };
 		}
 		else{
@@ -1630,8 +1630,8 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			return {
 				a_acc,
 				expression_t::make_construct_value_expr(
-					to_asttype(itype_t::make_json()),
-					{ expression_t::make_construct_value_expr(to_asttype(typeid_t::make_vector(a_acc._types, typeid_t::make_json())), elements2) }
+					itype_t::make_json(),
+					{ expression_t::make_construct_value_expr(typeid_t::make_vector(a_acc._types, typeid_t::make_json()), elements2) }
 				)
 			};
 		}
@@ -1664,7 +1664,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				}
 			}
 			QUARK_ASSERT(check_types_resolved(a_acc._types, final_type));
-			return { a_acc, expression_t::make_construct_value_expr(to_asttype(final_type), elements2) };
+			return { a_acc, expression_t::make_construct_value_expr(final_type, elements2) };
 		}
 	}
 
@@ -1697,8 +1697,8 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			return {
 				a_acc,
 				expression_t::make_construct_value_expr(
-					to_asttype(itype_t::make_json()),
-					{ expression_t::make_construct_value_expr(to_asttype(typeid_t::make_dict(a_acc._types, typeid_t::make_json())), elements2) }
+					itype_t::make_json(),
+					{ expression_t::make_construct_value_expr(typeid_t::make_dict(a_acc._types, typeid_t::make_json()), elements2) }
 				)
 			};
 		}
@@ -1738,7 +1738,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				}
 			}
 			QUARK_ASSERT(check_types_resolved(a_acc._types, final_type));
-			return {a_acc, expression_t::make_construct_value_expr(to_asttype(final_type), elements2)};
+			return {a_acc, expression_t::make_construct_value_expr(final_type, elements2)};
 		}
 	}
 	else if(type_peek.is_struct()){
@@ -1783,7 +1783,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(co
 	//??? We could simplify here and return [ "-", 0, expr]
 	const auto type = analyze_expr_output_type(a_acc, expr2.second);
 	if(type.is_int() || type.is_double()){
-		return {a_acc, expression_t::make_unary_minus(expr2.second, to_asttype(type))  };
+		return {a_acc, expression_t::make_unary_minus(expr2.second, type)  };
 	}
 	else{
 		std::stringstream what;
@@ -1830,7 +1830,7 @@ std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(cons
 				cond_result.second,
 				a.second,
 				b.second,
-				to_asttype(final_expression_type)
+				final_expression_type
 			)
 		};
 	}
@@ -1881,7 +1881,7 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 				op,
 				left_expr.second,
 				right_expr.second,
-				to_asttype(itype_t::make_bool())
+				itype_t::make_bool()
 			)
 		};
 	}
@@ -1897,7 +1897,7 @@ std::pair<analyser_t, expression_t> analyse_literal_expression(const analyser_t&
 
 	auto a_acc = a;
 	const auto e2 = analyze_expr_output_type(a_acc, e);
-	const auto r = expression_t::make_literal(details.value, to_asttype(e2));
+	const auto r = expression_t::make_literal(details.value, e2);
 	return { a_acc, r };
 }
 
@@ -1937,7 +1937,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 				|| op == expression_type::k_logical_and
 				|| op == expression_type::k_logical_or
 			){
-				return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, to_asttype(shared_type)) };
+				return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, shared_type) };
 			}
 			else {
 				throw_compiler_error(parent.location, "Operation not allowed on bool.");
@@ -1946,7 +1946,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 
 		//	int
 		else if(shared_type.is_int()){
-			return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, to_asttype(shared_type)) };
+			return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, shared_type) };
 		}
 
 		//	double
@@ -1954,13 +1954,13 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			if(op == expression_type::k_arithmetic_remainder){
 				throw_compiler_error(parent.location, "Modulo operation on double not supported.");
 			}
-			return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, to_asttype(shared_type)) };
+			return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, shared_type) };
 		}
 
 		//	string
 		else if(shared_type.is_string()){
 			if(op == expression_type::k_arithmetic_add){
-				return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, to_asttype(shared_type)) };
+				return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, shared_type) };
 			}
 			else{
 				throw_compiler_error(parent.location, "Operation not allowed on string.");
@@ -1994,13 +1994,13 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 				throw_compiler_error(parent.location, "Operation not allowed on structs.");
 			}
 
-			return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, to_asttype(shared_type)) };
+			return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, shared_type) };
 		}
 
 		//	vector
 		else if(shared_type.is_vector()){
 			if(op == expression_type::k_arithmetic_add){
-				return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, to_asttype(shared_type)) };
+				return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, shared_type) };
 			}
 			else{
 				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
@@ -2055,7 +2055,7 @@ static std::pair<analyser_t, expression_t> analyse_intrinsic_fallthrough_express
 		expression_t::make_intrinsic(
 			get_intrinsic_opcode(sign),
 			resolved_call.second.args,
-			to_asttype(resolved_call.second.function_type.get_function_return(a_acc._types))
+			resolved_call.second.function_type.get_function_return(a_acc._types)
 		)
 	};
 }
@@ -2225,7 +2225,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 
 		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, callee_type);
 		a_acc = resolved_call.first;
-		return { a_acc, expression_t::make_call(callee_expr, resolved_call.second.args, to_asttype(resolved_call.second.function_type.get_function_return(a_acc._types))) };
+		return { a_acc, expression_t::make_call(callee_expr, resolved_call.second.args, resolved_call.second.function_type.get_function_return(a_acc._types)) };
 	}
 
 	//	Attempting to call a TYPE? Then this may be a constructor call.
@@ -2242,14 +2242,14 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 
 			//	Convert calls to struct-type into construct-value expression.
 			if(construct_value_type.is_struct()){
-				const auto construct_value_expr = expression_t::make_construct_value_expr(to_asttype(construct_value_type), details.args);
+				const auto construct_value_expr = expression_t::make_construct_value_expr(construct_value_type, details.args);
 				const auto result_pair = analyse_expression_to_target(a_acc, parent, construct_value_expr, construct_value_type);
 				return { result_pair.first, result_pair.second };
 			}
 
 			//	One argument for primitive types.
 			else{
-				const auto construct_value_expr = expression_t::make_construct_value_expr(to_asttype(construct_value_type), details.args);
+				const auto construct_value_expr = expression_t::make_construct_value_expr(construct_value_type, details.args);
 				const auto result_pair = analyse_expression_to_target(a_acc, parent, construct_value_expr, construct_value_type);
 				return { result_pair.first, result_pair.second };
 			}
@@ -2359,7 +2359,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 
 	a_acc._function_defs.insert({ function_id, function_def2 });
 
-	const auto r = expression_t::make_literal(value_t::make_function_value(function_type2, function_id), to_asttype(function_type2));
+	const auto r = expression_t::make_literal(value_t::make_function_value(function_type2, function_id), function_type2);
 
 	return { a_acc, r };
 }
@@ -2496,7 +2496,7 @@ expression_t auto_cast_expression_type(analyser_t& a, const expression_t& e, con
 	}
 	else if(wanted_type.is_string()){
 		if(current_type.is_json()){
-			return expression_t::make_construct_value_expr(to_asttype(wanted_type), { e });
+			return expression_t::make_construct_value_expr(wanted_type, { e });
 		}
 		else{
 			return e;
@@ -2504,13 +2504,13 @@ expression_t auto_cast_expression_type(analyser_t& a, const expression_t& e, con
 	}
 	else if(wanted_type.is_json()){
 		if(current_type.is_int() || current_type.is_double() || current_type.is_string() || current_type.is_bool()){
-			return expression_t::make_construct_value_expr(to_asttype(wanted_type), { e });
+			return expression_t::make_construct_value_expr(wanted_type, { e });
 		}
 		else if(current_type.is_vector()){
-			return expression_t::make_construct_value_expr(to_asttype(wanted_type), { e });
+			return expression_t::make_construct_value_expr(wanted_type, { e });
 		}
 		else if(current_type.is_dict()){
-			return expression_t::make_construct_value_expr(to_asttype(wanted_type), { e });
+			return expression_t::make_construct_value_expr(wanted_type, { e });
 		}
 		else{
 			return e;
@@ -2720,7 +2720,7 @@ const body_t make_global_body(analyser_t& a){
 			k_no_location,
 			symbol_ptr.second,
 			expression_t::make_construct_value_expr(
-				to_asttype(symbol_ptr.first->_value_type),
+				symbol_ptr.first->_value_type,
 				a.benchmark_defs
 			)
 		);

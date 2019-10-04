@@ -523,7 +523,7 @@ static itype_t get_optional_typeid(type_interner_t& interner, const json_t& json
 	if(optional_index < json_array.get_array_size()){
 		const auto e = json_array.get_array_n(optional_index);
 		const auto t = itype_from_json(interner, e);
-		return to_asttype(t);
+		return t;
 	}
 	else{
 		return itype_t::make_undefined();

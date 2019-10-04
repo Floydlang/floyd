@@ -809,9 +809,6 @@ itype_t refresh_itype(const type_interner_t& interner, const itype_t& type);
 json_t type_interner_to_json(const type_interner_t& interner);
 type_interner_t type_interner_from_json(const json_t& j);
 
-inline itype_t to_asttype(const itype_t& a){
-	return a;
-}
 
 
 
