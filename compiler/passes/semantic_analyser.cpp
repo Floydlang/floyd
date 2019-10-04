@@ -245,7 +245,7 @@ static type_t resolve_symbols(analyser_t& acc, const location_t& loc, const type
 			for(const auto& m: e.def._members){
 				members2.push_back(member_t { resolve_symbols(acc, loc, m._type), m._name } );
 			}
-			return type_t::make_struct2(acc._types, members2);
+			return make_struct(acc._types, struct_def_type_t(members2));
 		}
 		type_t operator()(const vector_t& e) const{
 			return make_vector(acc._types, resolve_symbols(acc, loc, type.get_vector_element_type(acc._types)));
@@ -391,7 +391,7 @@ static const type_t figure_out_callee_return_type(analyser_t& a, const statement
 				QUARK_ASSERT(call_args.size() >= 2);
 
 				const auto f = analyze_expr_output_type(a, call_args[1]).get_function_return(a._types);
-				const auto ret = type_t::make_vector(a._types, f);
+				const auto ret = make_vector(a._types, f);
 				return ret;
 			}
 			break;
@@ -400,7 +400,7 @@ static const type_t figure_out_callee_return_type(analyser_t& a, const statement
 			//	x = make_vector(arg2.get_function_return());
 				QUARK_ASSERT(call_args.size() >= 3);
 				const auto f = analyze_expr_output_type(a, call_args[2]).get_function_return(a._types);
-				const auto ret = type_t::make_vector(a._types, f);
+				const auto ret = make_vector(a._types, f);
 				return ret;
 			}
 			break;
@@ -1621,7 +1621,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				a_acc = element_expr.first;
 				elements2.push_back(element_expr.second);
 			}
-			const auto result_type = type_t::make_vector(a_acc._types, type_t::make_json());
+			const auto result_type = make_vector(a_acc._types, type_t::make_json());
 			if(check_types_resolved(a_acc._types, result_type) == false){
 				std::stringstream what;
 				what << "Cannot infer vector element type, add explicit type.";
@@ -1631,7 +1631,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				a_acc,
 				expression_t::make_construct_value_expr(
 					type_t::make_json(),
-					{ expression_t::make_construct_value_expr(type_t::make_vector(a_acc._types, type_t::make_json()), elements2) }
+					{ expression_t::make_construct_value_expr(make_vector(a_acc._types, type_t::make_json()), elements2) }
 				)
 			};
 		}
@@ -1645,7 +1645,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			}
 
 			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? analyze_expr_output_type(a_acc, elements2[0]) : element_type;
-			const auto rhs_guess_type = resolve_and_intern_itype(a_acc, parent.location, type_t::make_vector(a_acc._types, element_type2));
+			const auto rhs_guess_type = resolve_and_intern_itype(a_acc, parent.location, make_vector(a_acc._types, element_type2));
 			const auto final_type = select_inferred_type(a_acc._types, target_type_peek, rhs_guess_type);
 
 			if(check_types_resolved(a_acc._types, final_type) == false){
@@ -1685,7 +1685,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				elements2.push_back(element_expr.second);
 			}
 
-			const auto rhs_guess_type = resolve_and_intern_itype(a_acc, parent.location, type_t::make_dict(a_acc._types, type_t::make_json()));
+			const auto rhs_guess_type = resolve_and_intern_itype(a_acc, parent.location, make_dict(a_acc._types, type_t::make_json()));
 			 auto final_type = select_inferred_type(a_acc._types, target_type_peek, rhs_guess_type);
 
 			if(check_types_resolved(a_acc._types, final_type) == false){
@@ -1698,7 +1698,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				a_acc,
 				expression_t::make_construct_value_expr(
 					type_t::make_json(),
-					{ expression_t::make_construct_value_expr(type_t::make_dict(a_acc._types, type_t::make_json()), elements2) }
+					{ expression_t::make_construct_value_expr(make_dict(a_acc._types, type_t::make_json()), elements2) }
 				)
 			};
 		}
@@ -1719,7 +1719,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 
 			//	Infer type of dictionary based on first value.
 			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? analyze_expr_output_type(a_acc, elements2[0 * 2 + 1]) : element_type;
-			const auto rhs_guess_type = resolve_and_intern_itype(a_acc, parent.location, type_t::make_dict(a_acc._types, element_type2));
+			const auto rhs_guess_type = resolve_and_intern_itype(a_acc, parent.location, make_dict(a_acc._types, element_type2));
 			const auto final_type = select_inferred_type(a_acc._types, target_type_peek, rhs_guess_type);
 
 			if(check_types_resolved(a_acc._types, final_type) == false){
@@ -2669,7 +2669,7 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 
 	//	Reserve a symbol table entry for benchmark_registry instance.
 	{
-		const auto benchmark_registry_type = type_t::make_vector(a._types, type_t::make_symbol_ref(a._types, "benchmark_def_t"));
+		const auto benchmark_registry_type = make_vector(a._types, type_t::make_symbol_ref(a._types, "benchmark_def_t"));
 		symbol_map.push_back( {
 			k_global_benchmark_registry,
 			symbol_t::make_immutable_reserve(

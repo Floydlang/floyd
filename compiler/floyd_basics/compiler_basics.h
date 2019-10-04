@@ -53,7 +53,7 @@ enum class epod_type {
 
 
 inline type_t get_main_signature_arg_impure(type_interner_t& type_interner){
-	return type_t::make_function(type_interner, type_t::make_int(), { type_t::make_vector(type_interner, type_t::make_string()) }, epure::impure);
+	return type_t::make_function(type_interner, type_t::make_int(), { make_vector(type_interner, type_t::make_string()) }, epure::impure);
 }
 
 inline type_t get_main_signature_no_arg_impure(type_interner_t& type_interner){
@@ -62,7 +62,7 @@ inline type_t get_main_signature_no_arg_impure(type_interner_t& type_interner){
 
 
 inline type_t get_main_signature_arg_pure(type_interner_t& type_interner){
-	return type_t::make_function(type_interner, type_t::make_int(), { type_t::make_vector(type_interner, type_t::make_string()) }, epure::pure);
+	return type_t::make_function(type_interner, type_t::make_int(), { make_vector(type_interner, type_t::make_string()) }, epure::pure);
 }
 
 inline type_t get_main_signature_no_arg_pure(type_interner_t& type_interner){
@@ -93,11 +93,12 @@ inline bool operator==(const benchmark_result_t& lhs, const benchmark_result_t& 
 }
 
 inline type_t make_benchmark_result_t(type_interner_t& type_interner){
-	const auto x = type_t::make_struct2(type_interner,
-		{
+	const auto x = make_struct(
+		type_interner,
+		struct_def_type_t({
 			member_t{ type_t::make_int(), "dur" },
 			member_t{ type_t::make_json(), "more" }
-		}
+		})
 	);
 	return x;
 }
@@ -107,17 +108,17 @@ inline type_t make_benchmark_result_t(type_interner_t& type_interner){
 
 
 inline type_t make_benchmark_function_t(type_interner_t& type_interner){
-//	return type_t::make_function(type_t::make_vector(make_benchmark_result_t()), {}, epure::pure);
+//	return type_t::make_function(make_vector(make_benchmark_result_t()), {}, epure::pure);
 	return type_t::make_function(type_interner, make_symbol_ref(type_interner, "benchmark_result_t"), {}, epure::pure);
 }
 
 inline type_t make_benchmark_def_t(type_interner_t& type_interner){
-	const auto x = type_t::make_struct2(
+	const auto x = make_struct(
 		type_interner,
-		{
+		struct_def_type_t({
 			member_t{ type_t::make_string(), "name" },
 			member_t{ make_benchmark_function_t(type_interner), "f" }
-		}
+		})
 	);
 	return x;
 }
@@ -134,12 +135,12 @@ inline bool operator==(const benchmark_id_t& lhs, const benchmark_id_t& rhs){
 	return lhs.module == rhs.module && lhs.test == rhs.test;
 }
 inline type_t make_benchmark_id_t(type_interner_t& type_interner){
-	const auto x = type_t::make_struct2(
+	const auto x = make_struct(
 		type_interner,
-		{
+		struct_def_type_t({
 			member_t{ type_t::make_string(), "module" },
 			member_t{ type_t::make_string(), "test" }
-		}
+		})
 	);
 	return x;
 }
@@ -158,12 +159,12 @@ inline bool operator==(const benchmark_result2_t& lhs, const benchmark_result2_t
 }
 
 inline type_t make_benchmark_result2_t(type_interner_t& type_interner){
-	const auto x = type_t::make_struct2(
+	const auto x = make_struct(
 		type_interner,
-		{
+		struct_def_type_t({
 			member_t{ make_benchmark_id_t(type_interner), "test_id" },
 			member_t{ make_symbol_ref(type_interner, "benchmark_result_t"), "result" }
-		}
+			})
 	);
 	return x;
 }

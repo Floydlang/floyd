@@ -12,6 +12,7 @@
 #include "ast_helpers.h"
 
 #include "text_parser.h"
+#include "utils.h"
 
 
 namespace floyd {

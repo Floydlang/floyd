@@ -32,6 +32,8 @@
 
 #include "floyd_command_line_parser.h"
 
+#include "utils.h"
+
 /*
 https://www.raywenderlich.com/511-command-line-programs-on-macos-tutorial
 */

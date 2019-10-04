@@ -37,6 +37,7 @@
 		Dictionary instance
 */
 
+#include "utils.h"
 #include "quark.h"
 
 #include "types.h"

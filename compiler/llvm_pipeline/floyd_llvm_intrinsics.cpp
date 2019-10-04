@@ -16,6 +16,8 @@
 #include "floyd_runtime.h"
 #include "text_parser.h"
 
+#include "utils.h"
+
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 
 namespace floyd {
@@ -606,8 +608,8 @@ static runtime_value_t map_dag__carray(
 
 	QUARK_ASSERT(e_type == type2.get_function_args(backend.type_interner)[0] && r_type == type2.get_function_args(backend.type_interner)[1].get_vector_element_type(backend.type_interner));
 
-//	QUARK_ASSERT(is_vector_carray(type_t::make_vector(e_type)));
-//	QUARK_ASSERT(is_vector_carray(type_t::make_vector(r_type)));
+//	QUARK_ASSERT(is_vector_carray(make_vector(e_type)));
+//	QUARK_ASSERT(is_vector_carray(make_vector(r_type)));
 
 	const auto return_type = make_vector(backend.type_interner, r_type);
 
@@ -734,8 +736,8 @@ static runtime_value_t map_dag__hamt(
 
 	QUARK_ASSERT(e_type == type2.get_function_args(backend.type_interner)[0] && r_type == type2.get_function_args(backend.type_interner)[1].get_vector_element_type(backend.type_interner));
 
-//	QUARK_ASSERT(is_vector_hamt(type_t::make_vector(e_type)));
-//	QUARK_ASSERT(is_vector_hamt(type_t::make_vector(r_type)));
+//	QUARK_ASSERT(is_vector_hamt(make_vector(e_type)));
+//	QUARK_ASSERT(is_vector_hamt(make_vector(r_type)));
 
 	const auto return_type = make_vector(backend.type_interner, r_type);
 

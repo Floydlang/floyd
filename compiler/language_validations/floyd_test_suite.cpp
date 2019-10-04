@@ -5002,7 +5002,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
 
 FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
 	type_interner_t temp;
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = typeof([1,2,3])		)", value_t::make_typeid_value(type_t::make_vector(temp, type_t::make_int()))	);
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = typeof([1,2,3])		)", value_t::make_typeid_value(make_vector(temp, type_t::make_int()))	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_string(typeof([1,2,3]))		)",value_t::make_string("[int]") );
@@ -5198,7 +5198,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "point_t", ""){
 	};
 	const auto expected = value_t::make_struct_value(
 		temp,
-		type_t::make_struct2(temp, point_t_def),
+		make_struct(temp, struct_def_type_t(point_t_def)),
 		{ value_t::make_double(1), value_t::make_double(3) }
 	);
 
@@ -6066,7 +6066,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "", "pixel_t()", ""){
 
 		value_t::make_struct_value(
 			temp,
-			type_t::make_struct2(temp, pixel_t__def),
+			make_struct(temp, struct_def_type_t(pixel_t__def)),
 			std::vector<value_t>{ value_t::make_int(1), value_t::make_int(2), value_t::make_int(3) }
 		)
 	);
@@ -6077,8 +6077,8 @@ FLOYD_LANG_PROOF("Floyd test suite", "", "pixel_t()", ""){
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
 	type_interner_t temp;
-	const auto a = type_t::make_vector(temp, type_t::make_string());
-	const auto b = type_t::make_vector(temp, make__fsentry_t__type(temp));
+	const auto a = make_vector(temp, type_t::make_string());
+	const auto b = make_vector(temp, make__fsentry_t__type(temp));
 	ut_verify_auto(QUARK_POS, a != b, true);
 }
 
@@ -6196,7 +6196,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_fsentries_shallow()", "", ""){
 
 		)",
 		value_t::make_typeid_value(
-			type_t::make_vector(make__fsentry_t__type())
+			make_vector(make__fsentry_t__type())
 		)
 	);
 }

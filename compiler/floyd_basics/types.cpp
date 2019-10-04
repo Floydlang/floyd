@@ -25,9 +25,6 @@
 namespace floyd {
 
 
-
-
-
 std::string pack_type_name(const type_name_t& tag){
 	if(tag.lexical_path.empty()){
 		return "/";
@@ -504,7 +501,7 @@ QUARK_TESTQ("type_t", "is_typeid()"){
 
 
 type_t make_empty_struct(){
-	return type_t::make_struct2({});
+	return make_struct({});
 }
 
 const auto k_struct_test_members_b = std::vector<member_t>({
@@ -1143,7 +1140,7 @@ static type_t typeid_from_json0(const json_t& t){
 			const auto member_array = struct_def_array[0].get_array();
 
 			const std::vector<member_t> struct_members = members_from_json(member_array);
-			return type_t::make_struct2(struct_members);
+			return type_t::make_struct(struct_def_type_t { struct_members });
 		}
 		else if(s == "vector"){
 			const auto element_type = typeid_from_ast_json(a[1]);
@@ -1432,9 +1429,6 @@ type_variant_t get_type_variant(const type_interner_t& interner, const type_t& t
 
 
 
-type_t type_t::make_struct2(type_interner_t& interner, const std::vector<member_t>& members){
-	return type_t::make_struct(interner, struct_def_type_t{ members });
-}
 
 
 type_t type_t::get_vector_element_type(const type_interner_t& interner) const{
@@ -2044,15 +2038,15 @@ type_t type_from_json(type_interner_t& interner, const json_t& t){
 			const auto member_array = struct_def_array[0].get_array();
 
 			const std::vector<member_t> struct_members = members_from_json(interner, member_array);
-			return type_t::make_struct2(interner, struct_members);
+			return make_struct(interner, struct_members);
 		}
 		else if(s == "vector"){
 			const auto element_type = type_from_json(interner, a[1]);
-			return type_t::make_vector(interner, element_type);
+			return make_vector(interner, element_type);
 		}
 		else if(s == "dict"){
 			const auto value_type = type_from_json(interner, a[1]);
-			return type_t::make_dict(interner, value_type);
+			return make_dict(interner, value_type);
 		}
 		else if(s == "func"){
 			const auto ret_type = type_from_json(interner, a[1]);

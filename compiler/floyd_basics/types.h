@@ -9,90 +9,83 @@
 #ifndef types_h
 #define types_h
 
-#include "utils.h"
-#include "quark.h"
-
-#include <string>
-#include <vector>
-#include <map>
-#include <variant>
-
-
-struct json_t;
-
-namespace floyd {
-
 
 /*
-	type_t
+type_t
 
-	This is a very central type in the Floyd compiler.
+This is a very central type in the Floyd compiler.
 
-	It specifies an exact Floyd type. Both for base types like "int" and "string" and composite types
-	like "struct { [float] p; string s }.
-	It can hold *any Floyd type*. It can also hold unresolved type identifiers and a few types internal to compiler.
+It specifies an exact Floyd type. Both for base types like "int" and "string" and composite types
+like "struct { [float] p; string s }.
+It can hold *any Floyd type*. It can also hold unresolved type identifiers and a few types internal
+to compiler.
 
-	type_t can be convert to/from JSON and is written in source code according to Floyd source syntax, see table below.
+type_t can be convert to/from JSON and is written in source code according to Floyd source syntax,
+see table below.
 
-	type_t is an immutable value object.
-	The type_t is normalized and can be compared with other type_t:s.
+type_t is an immutable value object.
+The type_t is normalized and can be compared with other type_t:s.
 
-	Composite types can form trees of types,
-		like:
-			"[string: struct {int x; int y}]"
-		This is a dictionary with structs, each holding two integers.
+Composite types can form trees of types,
+	like:
+		"[string: struct {int x; int y}]"
+	This is a dictionary with structs, each holding two integers.
 
-	Source code						base_type								AST JSON
-	================================================================================================================
-	null							k_undefined					"null"
-	bool							k_bool									"bool"
-	int								k_int									"int"
-	double							k_double								"double"
-	string							k_string								"string"
-	json						k_json							"json"
-	"typeid"						k_typeid								"typeid"
-	struct red { int x;float y}		k_struct								["struct", [{"type": "in", "name": "x"}, {"type": "float", "name": "y"}]]
-	[int]							k_vector								["vector", "int"]
-	[string: int]					k_dict									["dict", "int"]
-	int ()							k_function								["function", "int", []]
-	int (double, [string])			k_function								["function", "int", ["double", ["vector", "string"]]]
-	randomize_player			k_identifier		["identifier", "randomize_player"]
+Source code						base_type								AST JSON
+================================================================================================================
+null							k_undefined					"null"
+bool							k_bool									"bool"
+int								k_int									"int"
+double							k_double								"double"
+string							k_string								"string"
+json						k_json							"json"
+"typeid"						k_typeid								"typeid"
+struct red { int x;float y}		k_struct								["struct", [{"type": "in", "name": "x"}, {"type": "float", "name": "y"}]]
+[int]							k_vector								["vector", "int"]
+[string: int]					k_dict									["dict", "int"]
+int ()							k_function								["function", "int", []]
+int (double, [string])			k_function								["function", "int", ["double", ["vector", "string"]]]
+randomize_player			k_identifier		["identifier", "randomize_player"]
 
 
-	AST JSON
-	This is the JSON format we use to pass AST around. Use typeid_to_ast_json() and typeid_from_ast_json().
+AST JSON ??? rename to just "json".
+This is the JSON format we use to pass AST around. Use typeid_to_ast_json() and typeid_from_ast_json().
 
-	COMPACT_STRING
-	This is a nice user-visible representation of the type_t. It may be lossy. It's for REPLs etc. UI.
+COMPACT_STRING
+This is a nice user-visible representation of the type_t. It may be lossy. It's for REPLs etc. UI.
 
-	SOURCE CODE TYPE
-	Use read_type(), read_required_type()
+SOURCE CODE TYPE
+Use read_type(), read_required_type()
 */
-
-
-
-
-struct member_t;
-struct struct_def_type_t;
-struct type_interner_t;
-struct type_t;
 
 #define DEBUG_DEEP_TYPEID_T 1
 
 
 
 
-//std::string typeid_to_compact_string(const type_t& t);
 
+#include "quark.h"
 
+#include <string>
+#include <vector>
+#include <variant>
 
+struct json_t;
+
+namespace floyd {
+
+struct member_t;
+struct struct_def_type_t;
+struct type_interner_t;
+struct type_t;
 
 //////////////////////////////////////		base_type
 
 /*
 	The atomic building block of all types.
 	Some of the types are ready as-is, like bool or double.
-	Some types needs further information to be 100% defined, like struct (needs its members), vector needs its element-type.
+	Some types needs further information to be 100% defined, like struct (needs its members),
+	vector needs its element-type.
 */
 
 enum class base_type {
@@ -129,7 +122,8 @@ base_type opcode_to_base_type(const std::string& s);
 void ut_verify(const quark::call_context_t& context, const base_type& result, const base_type& expected);
 
 
-//	Is this type final and has no variations? True for int. False for struct or vector because those needs more definition.
+//	Is this type final and has no variations? True for int. False for struct or vector because
+//	those needs more definition.
 inline bool is_atomic_type(base_type type){
 	return false
 		|| type == base_type::k_undefined
@@ -160,9 +154,6 @@ inline bool is_atomic_type(base_type type){
 int get_json_type(const json_t& value);
 
 
-//??? This struct should be *separate* from the actual struct_definition_t. Rename struct_type_description_t
-
-
 
 enum class epure {
 	pure,
@@ -175,7 +166,8 @@ enum class epure {
 
 
 //	Internal name that uniquely names a type in a program. Used for name-equivalence.
-//	A type name is a unique string that names a type that should only type-equivalent to itself, no other types.
+//	A type name is a unique string that names a type that should only type-equivalent to itself,
+//	no other types.
 
 struct type_name_t {
 	bool check_invariant() const {
@@ -221,6 +213,7 @@ enum class return_dyn_type {
 };
 
 //??? store type_variant_t inside type_info_t!
+//??? struct_def_type_t => struct_type_t
 
 //??? Name into make_x() vs get_x()
 type_t make_struct(type_interner_t& interner, const struct_def_type_t& def);
@@ -230,12 +223,39 @@ type_t make_vector(const type_interner_t& interner, const type_t& element_type);
 type_t make_dict(type_interner_t& interner, const type_t& value_type);
 type_t make_dict(const type_interner_t& interner, const type_t& value_type);
 
-type_t make_function3(type_interner_t& interner, const type_t& ret, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return);
+type_t make_function3(
+	type_interner_t& interner,
+	const type_t& ret,
+	const std::vector<type_t>& args,
+	epure pure,
+	return_dyn_type dyn_return
+);
 
-type_t make_function3(const type_interner_t& interner, const type_t& ret, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return);
-type_t make_function_dyn_return(type_interner_t& interner, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return);
-type_t make_function(type_interner_t& interner, const type_t& ret, const std::vector<type_t>& args, epure pure);
-type_t make_function(const type_interner_t& interner, const type_t& ret, const std::vector<type_t>& args, epure pure);
+type_t make_function3(
+	const type_interner_t& interner,
+	const type_t& ret,
+	const std::vector<type_t>& args,
+	epure pure,
+	return_dyn_type dyn_return
+);
+type_t make_function_dyn_return(
+	type_interner_t& interner,
+	const std::vector<type_t>& args,
+	epure pure,
+	return_dyn_type dyn_return
+);
+type_t make_function(
+	type_interner_t& interner,
+	const type_t& ret,
+	const std::vector<type_t>& args,
+	epure pure
+);
+type_t make_function(
+	const type_interner_t& interner,
+	const type_t& ret,
+	const std::vector<type_t>& args,
+	epure pure
+);
 
 type_t make_symbol_ref(type_interner_t& interner, const std::string& s);
 type_t make_named_type(type_interner_t& interner, const type_name_t& type);
@@ -408,16 +428,6 @@ struct type_t {
 	//////////////////////////////////////////////////		STRUCT
 
 
-	static type_t make_struct(
-		type_interner_t& interner,
-		const struct_def_type_t& def
-	)
-	{
-		return floyd::make_struct(interner, def);
-	}
-
-	static type_t make_struct2(type_interner_t& interner, const std::vector<member_t>& members);
-
 	bool is_struct() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -430,14 +440,6 @@ struct type_t {
 
 	//////////////////////////////////////////////////		VECTOR
 
-
-	static type_t make_vector(type_interner_t& interner, const type_t& element_type){
-		return floyd::make_vector(interner, element_type);
-	}
-
-	static type_t make_vector(const type_interner_t& interner, const type_t& element_type){
-		return floyd::make_vector(interner, element_type);
-	}
 
 	bool is_vector() const {
 		QUARK_ASSERT(check_invariant());
@@ -459,9 +461,6 @@ struct type_t {
 	//////////////////////////////////////////////////		DICT
 
 
-	static type_t make_dict(type_interner_t& interner, const type_t& value_type){
-		return floyd::make_dict(interner, value_type);
-	}
 
 	bool is_dict() const {
 		QUARK_ASSERT(check_invariant());
@@ -482,18 +481,39 @@ struct type_t {
 	//////////////////////////////////////////////////		FUNCTION
 
 
-	static type_t make_function3(type_interner_t& interner, const type_t& ret, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return){
+	static type_t make_function3(
+		type_interner_t& interner,
+		const type_t& ret,
+		const std::vector<type_t>& args,
+		epure pure,
+		return_dyn_type dyn_return
+	){
 		return floyd::make_function3(interner, ret, args, pure, dyn_return);
 	}
 	
-	static type_t make_function_dyn_return(type_interner_t& interner, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return){
+	static type_t make_function_dyn_return(
+		type_interner_t& interner,
+		const std::vector<type_t>& args,
+		epure pure,
+		return_dyn_type dyn_return
+	){
 		return floyd::make_function_dyn_return(interner, args, pure, dyn_return);
 	}
 
-	static type_t make_function(type_interner_t& interner, const type_t& ret, const std::vector<type_t>& args, epure pure){
+	static type_t make_function(
+		type_interner_t& interner,
+		const type_t& ret,
+		const std::vector<type_t>& args,
+		epure pure)
+	{
 		return floyd::make_function(interner, ret, args, pure);
 	}
-	static type_t make_function(const type_interner_t& interner, const type_t& ret, const std::vector<type_t>& args, epure pure){
+	static type_t make_function(
+		const type_interner_t& interner,
+		const type_t& ret,
+		const std::vector<type_t>& args,
+		epure pure
+	){
 		return floyd::make_function(interner, ret, args, pure);
 	}
 
@@ -672,7 +692,11 @@ std::string type_to_debug_string(const type_t& type);
 
 enum class resolve_named_types { resolve, dont_resolve };
 
-std::string type_to_compact_string(const type_interner_t& interner, const type_t& type, resolve_named_types resolve = resolve_named_types::dont_resolve);
+std::string type_to_compact_string(
+	const type_interner_t& interner,
+	const type_t& type,
+	resolve_named_types resolve = resolve_named_types::dont_resolve
+);
 
 
 
@@ -700,6 +724,8 @@ inline bool operator==(const member_t& lhs, const member_t& rhs){
 
 //////////////////////////////////////////////////		struct_def_type_t
 
+//??? This struct should be *separate* from the actual struct_definition_t.
+//??? Rename struct_type_description_t
 
 
 struct struct_def_type_t {
@@ -740,7 +766,8 @@ std::vector<member_t> members_from_json(type_interner_t& interner, const json_t&
 //	Automatically insert all basetype-types so they ALWAYS have EXPLICIT integer IDs as types.
 
 struct type_node_t {
-	//	If optional_name is used, this node is a named node and child_type_indexes[0] will be undefined or hold the real type.
+	//	If optional_name is used, this node is a named node and child_type_indexes[0] will be
+	//	undefined or hold the real type.
 	type_name_t optional_name;
 
 	base_type bt;

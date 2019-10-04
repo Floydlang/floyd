@@ -14,6 +14,7 @@
 #include "os_process.h"
 #include "bytecode_helpers.h"
 #include "semantic_ast.h"
+#include "utils.h"
 
 #include <thread>
 #include <deque>

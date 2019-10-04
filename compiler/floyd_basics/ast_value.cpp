@@ -758,7 +758,7 @@ value_t::value_t(const type_interner_t& interner, const type_t& element_type, co
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(element_type.check_invariant());
 
-	_value_internals._ext = new value_ext_t{ type_t::make_vector(interner, element_type), elements };
+	_value_internals._ext = new value_ext_t{ make_vector(interner, element_type), elements };
 	QUARK_ASSERT(_value_internals._ext->_rc == 1);
 
 #if DEBUG_DEEP
@@ -773,7 +773,7 @@ value_t::value_t(type_interner_t& interner, const type_t& element_type, const st
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(element_type.check_invariant());
 
-	_value_internals._ext = new value_ext_t{ type_t::make_vector(interner, element_type), elements };
+	_value_internals._ext = new value_ext_t{ make_vector(interner, element_type), elements };
 	QUARK_ASSERT(_value_internals._ext->_rc == 1);
 
 #if DEBUG_DEEP

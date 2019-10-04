@@ -887,7 +887,7 @@ bc_value_t make_vector(const type_interner_t& interner, const type_t& element_ty
 	}
 #endif
 
-	const auto vector_type = type_t::make_vector(interner, element_type);
+	const auto vector_type = make_vector(interner, element_type);
 	if(encode_as_vector_w_inplace_elements(interner, vector_type)){
 		immer::vector<bc_inplace_value_t> elements2;
 		for(const auto& e: elements){
@@ -923,7 +923,7 @@ bc_value_t make_vector(const type_interner_t& interner, const type_t& element_ty
 	}
 #endif
 
-	const auto vector_type = type_t::make_vector(interner, element_type);
+	const auto vector_type = make_vector(interner, element_type);
 	QUARK_ASSERT(encode_as_vector_w_inplace_elements(interner, vector_type) == false);
 
 	bc_value_t temp;
@@ -937,7 +937,7 @@ bc_value_t make_vector(const type_interner_t& interner, const type_t& element_ty
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(element_type.check_invariant());
 
-	const auto vector_type = type_t::make_vector(interner, element_type);
+	const auto vector_type = make_vector(interner, element_type);
 	QUARK_ASSERT(encode_as_vector_w_inplace_elements(interner, vector_type) == true);
 
 	bc_value_t temp;

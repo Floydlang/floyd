@@ -146,7 +146,7 @@ intrinsic_signature_t make_erase_signature(type_interner_t& interner){
 	return make_intrinsic("erase", type_t::make_function_dyn_return(interner, { ANY_TYPE, ANY_TYPE }, epure::pure, return_dyn_type::arg0) );
 }
 intrinsic_signature_t make_get_keys_signature(type_interner_t& interner){
-	return make_intrinsic("get_keys", type_t::make_function(interner, type_t::make_vector(interner, type_t::make_string()), { ANY_TYPE }, epure::pure) );
+	return make_intrinsic("get_keys", type_t::make_function(interner, make_vector(interner, type_t::make_string()), { ANY_TYPE }, epure::pure) );
 }
 
 
@@ -216,9 +216,9 @@ type_t harden_map_func_type(type_interner_t& interner, const type_t& resolved_ca
 	const auto context_type = resolved_call_type.get_function_args(interner)[2];
 
 	const auto expected = type_t::make_function(interner,
-		type_t::make_vector(interner, r_type),
+		make_vector(interner, r_type),
 		{
-			type_t::make_vector(interner, e_type),
+			make_vector(interner, e_type),
 			type_t::make_function(interner, r_type, { e_type, context_type }, epure::pure),
 			context_type
 		},
@@ -314,11 +314,11 @@ type_t harden_map_dag_func_type(type_interner_t& interner, const type_t& resolve
 
 	const auto expected = type_t::make_function(
 		interner,
-		type_t::make_vector(interner, r_type),
+		make_vector(interner, r_type),
 		{
-			type_t::make_vector(interner, e_type),
-			type_t::make_vector(interner, type_t::make_int()),
-			type_t::make_function(interner, r_type, { e_type, type_t::make_vector(interner, r_type), context_type }, epure::pure),
+			make_vector(interner, e_type),
+			make_vector(interner, type_t::make_int()),
+			type_t::make_function(interner, r_type, { e_type, make_vector(interner, r_type), context_type }, epure::pure),
 			context_type
 		},
 		epure::pure
@@ -329,10 +329,10 @@ type_t harden_map_dag_func_type(type_interner_t& interner, const type_t& resolve
 bool check_map_dag_func_type(type_interner_t& interner, const type_t& elements, const type_t& depends_on, const type_t& f, const type_t& context){
 	//	Check topology.
 	QUARK_ASSERT(elements.is_vector());
-	QUARK_ASSERT(depends_on == type_t::make_vector(interner, type_t::make_int()));
+	QUARK_ASSERT(depends_on == make_vector(interner, type_t::make_int()));
 	QUARK_ASSERT(f.is_function() && f.get_function_args(interner).size () == 3);
 	QUARK_ASSERT(f.get_function_args(interner)[0] == elements.get_vector_element_type(interner));
-	QUARK_ASSERT(f.get_function_args(interner)[1] == type_t::make_vector(interner, f.get_function_return(interner)));
+	QUARK_ASSERT(f.get_function_args(interner)[1] == make_vector(interner, f.get_function_return(interner)));
 	QUARK_ASSERT(f.get_function_args(interner)[2] == context);
 	return true;
 }
@@ -360,9 +360,9 @@ type_t harden_filter_func_type(type_interner_t& interner, const type_t& resolved
 
 	const auto expected = type_t::make_function(
 		interner,
-		type_t::make_vector(interner, e_type),
+		make_vector(interner, e_type),
 		{
-			type_t::make_vector(interner, e_type),
+			make_vector(interner, e_type),
 			type_t::make_function(interner, type_t::make_bool(), { e_type, context_type }, epure::pure),
 			context_type
 		},
@@ -406,7 +406,7 @@ type_t harden_reduce_func_type(type_interner_t& interner, const type_t& resolved
 		interner,
 		r_type,
 		{
-			type_t::make_vector(interner, e_type),
+			make_vector(interner, e_type),
 			r_type,
 			type_t::make_function(interner, r_type, { r_type, e_type, context_type }, epure::pure),
 			context_type

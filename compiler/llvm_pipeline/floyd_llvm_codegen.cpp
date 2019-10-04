@@ -22,6 +22,7 @@ static const bool k_trace_function_link_map = false;
 #include "floyd_llvm_intrinsics.h"
 #include "floyd_llvm_helpers.h"
 #include "compiler_basics.h"
+#include "utils.h"
 
 #include "ast_value.h"
 

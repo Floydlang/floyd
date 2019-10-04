@@ -473,7 +473,7 @@ static std::pair<std::shared_ptr<type_t>, seq_t> read_basic_or_vector(type_inter
 				if(element_type2_pos.second.first1() == "]"){
 					return {
 						std::make_shared<type_t>(
-							type_t::make_dict(interner, element_type2_pos.first)
+							make_dict(interner, element_type2_pos.first)
 						),
 						element_type2_pos.second.rest1()
 					};
@@ -484,7 +484,7 @@ static std::pair<std::shared_ptr<type_t>, seq_t> read_basic_or_vector(type_inter
 			}
 		}
 		else if(pos3.first1() == "]"){
-			return { std::make_shared<type_t>(type_t::make_vector(interner, element_type_pos.first)), pos3.rest1() };
+			return { std::make_shared<type_t>(make_vector(interner, element_type_pos.first)), pos3.rest1() };
 		}
 		else{
 			throw_compiler_error_nopos("unbalanced [].");
@@ -568,20 +568,20 @@ QUARK_TEST("", "read_type()", "identifier", ""){
 QUARK_TEST("", "read_type()", "vector", ""){
 	type_interner_t i;
 	const auto r = read_type(i, seq_t("[int]"));
-	QUARK_TEST_VERIFY(	*r.first ==  type_t::make_vector(i, type_t::make_int())		);
+	QUARK_TEST_VERIFY(	*r.first ==  make_vector(i, type_t::make_int())		);
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
 QUARK_TEST("", "read_type()", "vector", ""){
 	type_interner_t i;
 	const auto r = read_type(i, seq_t("[[int]]"));
-	QUARK_TEST_VERIFY(	*r.first ==  type_t::make_vector(i, type_t::make_vector(i, type_t::make_int()))		);
+	QUARK_TEST_VERIFY(	*r.first ==  make_vector(i, make_vector(i, type_t::make_int()))		);
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
 
 QUARK_TEST("", "read_type()", "dict", ""){
 	type_interner_t i;
 	const auto r = read_type(i, seq_t("[string: int]"));
-	QUARK_TEST_VERIFY(	*r.first ==  type_t::make_dict(i, type_t::make_int())		);
+	QUARK_TEST_VERIFY(	*r.first ==  make_dict(i, type_t::make_int())		);
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
 

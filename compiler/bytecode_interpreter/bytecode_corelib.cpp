@@ -31,7 +31,7 @@ bc_value_t bc_corelib__make_benchmark_report(interpreter_t& vm, const bc_value_t
 
 
 	const auto benchmark_result2_t__type = get_tagged_type2(temp_interner, type_name_t { { "global_xyz_saft", "benchmark_result2_t" } });
-//	const auto dict_json__type = type_t::make_dict(interner2, type_t::make_json());
+//	const auto dict_json__type = make_dict(interner2, type_t::make_json());
 
 	QUARK_ASSERT(args[0]._type == benchmark_result2_t__type);
 
@@ -67,7 +67,7 @@ bc_value_t bc_corelib__make_hardware_caps_report(interpreter_t& vm, const bc_val
 	QUARK_ASSERT(arg_count == 1);
 
 	auto temp_interner = vm._imm->_program._types;
-	QUARK_ASSERT(args[0]._type == type_t::make_dict(temp_interner, type_t::make_json()));
+	QUARK_ASSERT(args[0]._type == make_dict(temp_interner, type_t::make_json()));
 
 	const auto b2 = bc_to_value(temp_interner, args[0]);
 	const auto m = b2.get_dict_value();
@@ -83,7 +83,7 @@ bc_value_t bc_corelib__make_hardware_caps_report_brief(interpreter_t& vm, const 
 	QUARK_ASSERT(arg_count == 1);
 
 	auto temp_interner = vm._imm->_program._types;
-	QUARK_ASSERT(args[0]._type == type_t::make_dict(temp_interner, type_t::make_json()));
+	QUARK_ASSERT(args[0]._type == make_dict(temp_interner, type_t::make_json()));
 
 	const auto b2 = bc_to_value(temp_interner, args[0]);
 	const auto m = b2.get_dict_value();

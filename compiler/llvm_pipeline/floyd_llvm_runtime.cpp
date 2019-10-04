@@ -21,6 +21,7 @@ static const bool k_trace_function_link_map = false;
 #include "os_process.h"
 #include "compiler_helpers.h"
 #include "format_table.h"
+#include "utils.h"
 
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/GenericValue.h>
@@ -353,7 +354,7 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 		const auto main_args4 = to_runtime_value(ee, main_args3);
 		const auto main_result_int = (*f2)(make_runtime_ptr(&ee), main_args4);
 
-		const auto return_itype = type_t::make_vector(interner, type_t::make_string());
+		const auto return_itype = make_vector(interner, type_t::make_string());
 		if(is_rc_value(return_itype)){
 			release_value(ee.backend, main_args4, return_itype);
 		}
