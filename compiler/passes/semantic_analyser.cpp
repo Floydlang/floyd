@@ -2265,7 +2265,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 	}
 }
 
-static type_tag_t make_type_tag(analyser_t& a, const std::string& identifier){
+static type_name_t make_type_tag(analyser_t& a, const std::string& identifier){
 //	const auto id = a.scope_id_generator++;
 	const auto id = 1;
 
@@ -2273,7 +2273,7 @@ static type_tag_t make_type_tag(analyser_t& a, const std::string& identifier){
 
 	const auto b = std::string() + "lexical_scope" + std::to_string(id);
 
-	return type_tag_t { { b, identifier } };
+	return type_name_t { { b, identifier } };
 }
 
 static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const analyser_t& a, const statement_t& parent, const expression_t& e0, const expression_t::struct_definition_expr_t& details){

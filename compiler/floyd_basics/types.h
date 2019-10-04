@@ -171,12 +171,13 @@ enum class epure {
 
 
 
-//////////////////////////////////////		type_tag_t
+//////////////////////////////////////		type_name_t
 
 
 //	Internal name that uniquely names a type in a program. Used for name-equivalence.
+//	A type name is a unique string that names a type that should only type-equivalent to itself, no other types.
 
-struct type_tag_t {
+struct type_name_t {
 	bool check_invariant() const {
 //		QUARK_ASSERT(lexical_path.size() > 0);
 		return true;
@@ -186,27 +187,27 @@ struct type_tag_t {
 };
 
 
-inline bool operator==(const type_tag_t& lhs, const type_tag_t& rhs){
+inline bool operator==(const type_name_t& lhs, const type_name_t& rhs){
 	return lhs.lexical_path == rhs.lexical_path;
 }
-inline bool operator<(const type_tag_t& lhs, const type_tag_t& rhs){
+inline bool operator<(const type_name_t& lhs, const type_name_t& rhs){
 	return lhs.lexical_path < rhs.lexical_path;
 }
 
-//	A type tag is a unique string that names a type that should only type-equivalent to itself, no other types.
-std::string pack_type_tag(const type_tag_t& path);
-type_tag_t unpack_type_tag(const std::string& tag);
-bool is_type_tag(const std::string& s);
+std::string pack_type_name(const type_name_t& path);
+type_name_t unpack_type_name(const std::string& s);
+bool is_type_name(const std::string& s);
 
-type_tag_t make_empty_type_tag();
-inline bool is_empty_type_tag(const type_tag_t& tag){
-	return tag.lexical_path.empty();
+type_name_t make_empty_type_name();
+inline bool is_empty_type_name(const type_name_t& n){
+	return n.lexical_path.empty();
 }
+
+
 
 
 
 typedef int32_t type_lookup_index_t;
-
 
 
 //??? Should not need to store dyn-type inside function types anymore, confirm and remove from here.
@@ -237,7 +238,7 @@ type_t make_function(type_interner_t& interner, const type_t& ret, const std::ve
 type_t make_function(const type_interner_t& interner, const type_t& ret, const std::vector<type_t>& args, epure pure);
 
 type_t make_symbol_ref(type_interner_t& interner, const std::string& s);
-type_t make_named_type(type_interner_t& interner, const type_tag_t& type);
+type_t make_named_type(type_interner_t& interner, const type_name_t& type);
 
 
 std::vector<type_t> get_member_types(const std::vector<member_t>& m);
@@ -528,8 +529,8 @@ struct type_t {
 
 	//////////////////////////////////////////////////		NAMED TYPE
 
-
-	static type_t make_named_type(type_interner_t& interner, const type_tag_t& type){
+//??? rethink  make_named_type() VS new_tagged_type()
+	static type_t make_named_type(type_interner_t& interner, const type_name_t& type){
 		return floyd::make_named_type(interner, type);
 	}
 
@@ -539,7 +540,7 @@ struct type_t {
 		return get_base_type() == base_type::k_named_type;
 	}
 
-	type_tag_t get_named_type(const type_interner_t& interner) const;
+	type_name_t get_named_type(const type_interner_t& interner) const;
 
 
 	//////////////////////////////////////////////////		BASETYPE
@@ -739,8 +740,8 @@ std::vector<member_t> members_from_json(type_interner_t& interner, const json_t&
 //	Automatically insert all basetype-types so they ALWAYS have EXPLICIT integer IDs as types.
 
 struct type_node_t {
-	//	If optional_tag is used, this node is a tag node and child_type_indexes[0] will be undefined or hold the real type.
-	type_tag_t optional_tag;
+	//	If optional_name is used, this node is a named node and child_type_indexes[0] will be undefined or hold the real type.
+	type_name_t optional_name;
 
 	base_type bt;
 	std::vector<type_t> child_types;
@@ -760,7 +761,7 @@ struct type_node_t {
 
 inline bool operator==(const type_node_t& lhs, const type_node_t& rhs){
 	return
-		lhs.optional_tag == rhs.optional_tag
+		lhs.optional_name == rhs.optional_name
 		&& lhs.bt == rhs.bt
 		&& lhs.child_types == rhs.child_types
 
@@ -785,7 +786,7 @@ struct type_interner_t {
 
 	////////////////////////////////	STATE
 
-	//	All types are recorded here, an uniqued. Including tagged types.
+	//	All types are recorded here, an uniqued. Including named types.
 	//	type uses the INDEX into this array for fast lookups.
 	std::vector<type_node_t> interned2;
 };
@@ -793,7 +794,7 @@ struct type_interner_t {
 
 const type_node_t& lookup_typeinfo_from_type(const type_interner_t& interner, const type_t& type);
 type_node_t& lookup_typeinfo_from_type(type_interner_t& interner, const type_t& type);
-type_t lookup_type_from_tagged_type(const type_interner_t& interner, const type_tag_t& tag);
+type_t lookup_type_from_name(const type_interner_t& interner, const type_name_t& n);
 
 type_t lookup_type_from_index(const type_interner_t& interner, type_lookup_index_t type_index);
 
@@ -813,20 +814,20 @@ type_interner_t type_interner_from_json(const json_t& j);
 
 
 
-//////////////////////////////////////////////////		TAGGED TYPES
+//////////////////////////////////////////////////		NAMED TYPES
 
 
-//	Allocates a new type for this tag. The tag must not already exist.
-//	Interns the type for this tag. You can use type_t::make_undefined() and
+//	Allocates a new type for this name. The name must not already exist.
+//	You can use type_t::make_undefined() and
 //	later update the type using update_tagged_type()
-type_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag);
-type_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag, const type_t& type);
+type_t new_tagged_type(type_interner_t& interner, const type_name_t& tag);
+type_t new_tagged_type(type_interner_t& interner, const type_name_t& tag, const type_t& type);
 
 //	Update the tagged type's type. The tagged type must already exist. Any usage of this
 //	tag will also get the new type.
 type_t update_tagged_type(type_interner_t& interner, const type_t& named, const type_t& type);
 
-type_t get_tagged_type2(const type_interner_t& interner, const type_tag_t& tag);
+type_t get_tagged_type2(const type_interner_t& interner, const type_name_t& tag);
 
 
 

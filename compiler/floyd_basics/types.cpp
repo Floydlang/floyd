@@ -28,7 +28,7 @@ namespace floyd {
 
 
 
-std::string pack_type_tag(const type_tag_t& tag){
+std::string pack_type_name(const type_name_t& tag){
 	if(tag.lexical_path.empty()){
 		return "/";
 	}
@@ -41,37 +41,37 @@ std::string pack_type_tag(const type_tag_t& tag){
 	}
 }
 
-QUARK_TEST("", "pack_type_tag()", "", ""){
-	QUARK_TEST_VERIFY(pack_type_tag(type_tag_t{{ "hello" }} ) == "/hello");
+QUARK_TEST("", "pack_type_name()", "", ""){
+	QUARK_TEST_VERIFY(pack_type_name(type_name_t{{ "hello" }} ) == "/hello");
 }
-QUARK_TEST("", "pack_type_tag()", "", ""){
-	QUARK_TEST_VERIFY(pack_type_tag(type_tag_t{{ "hello", "goodbye" }} ) == "/hello/goodbye");
+QUARK_TEST("", "pack_type_name()", "", ""){
+	QUARK_TEST_VERIFY(pack_type_name(type_name_t{{ "hello", "goodbye" }} ) == "/hello/goodbye");
 }
-QUARK_TEST("", "pack_type_tag()", "", ""){
-	QUARK_TEST_VERIFY(pack_type_tag(type_tag_t{{ "" }} ) == "/");
+QUARK_TEST("", "pack_type_name()", "", ""){
+	QUARK_TEST_VERIFY(pack_type_name(type_name_t{{ "" }} ) == "/");
 }
 
 
-bool is_type_tag(const std::string& s){
+bool is_type_name(const std::string& s){
 	return s.size() > 0 && s[0] == '/';
 }
 
-QUARK_TEST("", "is_type_tag()", "", ""){
-	QUARK_TEST_VERIFY(is_type_tag("hello") == false);
+QUARK_TEST("", "is_type_name()", "", ""){
+	QUARK_TEST_VERIFY(is_type_name("hello") == false);
 }
-QUARK_TEST("", "is_type_tag()", "", ""){
-	QUARK_TEST_VERIFY(is_type_tag("/hello") == true);
+QUARK_TEST("", "is_type_name()", "", ""){
+	QUARK_TEST_VERIFY(is_type_name("/hello") == true);
 }
-QUARK_TEST("", "is_type_tag()", "", ""){
-	QUARK_TEST_VERIFY(is_type_tag("/hello/goodbye") == true);
+QUARK_TEST("", "is_type_name()", "", ""){
+	QUARK_TEST_VERIFY(is_type_name("/hello/goodbye") == true);
 }
 
 
-type_tag_t unpack_type_tag(const std::string& tag){
-	QUARK_ASSERT(is_type_tag(tag));
+type_name_t unpack_type_name(const std::string& tag){
+	QUARK_ASSERT(is_type_name(tag));
 
 	if(tag == "/"){
-		return type_tag_t { } ;
+		return type_name_t { } ;
 	}
 	else{
 		std::vector<std::string> path;
@@ -83,23 +83,23 @@ type_tag_t unpack_type_tag(const std::string& tag){
 			path.push_back(s);
 			pos = next_pos2;
 		}
-		return type_tag_t { path } ;
+		return type_name_t { path } ;
 	}
 }
 
-QUARK_TEST("", "pack_type_tag()", "", ""){
-	QUARK_TEST_VERIFY(unpack_type_tag("/hello") == type_tag_t{{ "hello" }} );
+QUARK_TEST("", "pack_type_name()", "", ""){
+	QUARK_TEST_VERIFY(unpack_type_name("/hello") == type_name_t{{ "hello" }} );
 }
-QUARK_TEST("", "pack_type_tag()", "", ""){
-	QUARK_TEST_VERIFY(unpack_type_tag("/hello/goodbye") == ( type_tag_t{{ "hello", "goodbye" }} ) );
+QUARK_TEST("", "pack_type_name()", "", ""){
+	QUARK_TEST_VERIFY(unpack_type_name("/hello/goodbye") == ( type_name_t{{ "hello", "goodbye" }} ) );
 }
-QUARK_TEST("", "pack_type_tag()", "", ""){
-	QUARK_TEST_VERIFY(unpack_type_tag("/") == type_tag_t{{ }} );
+QUARK_TEST("", "pack_type_name()", "", ""){
+	QUARK_TEST_VERIFY(unpack_type_name("/") == type_name_t{{ }} );
 }
 
 
-type_tag_t make_empty_type_tag(){
-	return type_tag_t { };
+type_name_t make_empty_type_name(){
+	return type_name_t { };
 }
 
 
@@ -1029,7 +1029,7 @@ json_t typeid_to_ast_json(const type_t& t){
 	}
 	else if(b == base_type::k_identifier){
 		const auto identifier = t.get_identifier();
-		if(is_type_tag(identifier)){
+		if(is_type_name(identifier)){
 			return json_t(t.get_identifier());
 		}
 		else {
@@ -1079,7 +1079,7 @@ static type_t typeid_from_json0(const json_t& t){
 		}
 
 		//	Tagged type.
-		else if(is_type_tag(s0)){
+		else if(is_type_name(s0)){
 			return type_t::make_identifier(s0);
 		}
 
@@ -1515,12 +1515,12 @@ std::string type_t::get_symbol_ref(const type_interner_t& interner) const {
 }
 
 
-type_tag_t type_t::get_named_type(const type_interner_t& interner) const {
+type_name_t type_t::get_named_type(const type_interner_t& interner) const {
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(is_named_type());
 
 	const auto& info = lookup_typeinfo_from_type(interner, *this);
-	return info.optional_tag;
+	return info.optional_name;
 }
 
 
@@ -1547,7 +1547,7 @@ int find_struct_member_index(const struct_def_type_t& def, const std::string& na
 
 static type_node_t make_entry(const base_type& bt){
 	return type_node_t{
-		make_empty_type_tag(),
+		make_empty_type_name(),
 		bt,
 		std::vector<type_t>{},
 		{},
@@ -1658,7 +1658,7 @@ static type_t intern_node(type_interner_t& interner, const type_node_t& node){
 }
 
 
-type_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag){
+type_t new_tagged_type(type_interner_t& interner, const type_name_t& tag){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(tag.check_invariant());
 
@@ -1667,7 +1667,7 @@ type_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag){
 	return result;
 }
 
-type_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag, const type_t& type){
+type_t new_tagged_type(type_interner_t& interner, const type_name_t& tag, const type_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(tag.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -1677,7 +1677,7 @@ type_t new_tagged_type(type_interner_t& interner, const type_tag_t& tag, const t
 	const auto it = std::find_if(
 		interner.interned2.begin(),
 		interner.interned2.end(),
-		[&](const auto& e){ return e.optional_tag == tag; }
+		[&](const auto& e){ return e.optional_name == tag; }
 	);
 	if(it != interner.interned2.end()){
 		throw std::exception();
@@ -1715,14 +1715,14 @@ type_t update_tagged_type(type_interner_t& interner, const type_t& named, const 
 	return lookup_type_from_index(interner, named.get_lookup_index());
 }
 
-type_t get_tagged_type2(const type_interner_t& interner, const type_tag_t& tag){
+type_t get_tagged_type2(const type_interner_t& interner, const type_name_t& tag){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(tag.check_invariant());
 
 	const auto it = std::find_if(
 		interner.interned2.begin(),
 		interner.interned2.end(),
-		[&](const auto& e){ return e.optional_tag == tag; }
+		[&](const auto& e){ return e.optional_name == tag; }
 	);
 	if(it == interner.interned2.end()){
 		throw std::exception();
@@ -1794,7 +1794,7 @@ type_t lookup_type_from_index(const type_interner_t& interner, type_lookup_index
 	}
 }
 
-type_t lookup_type_from_tagged_type(const type_interner_t& interner, const type_tag_t& tag){
+type_t lookup_type_from_name(const type_interner_t& interner, const type_name_t& tag){
 	QUARK_ASSERT(interner.check_invariant());
 
 	if(tag.lexical_path.empty()){
@@ -1804,7 +1804,7 @@ type_t lookup_type_from_tagged_type(const type_interner_t& interner, const type_
 		const auto it = std::find_if(
 			interner.interned2.begin(),
 			interner.interned2.end(),
-			[&](const auto& e){ return e.optional_tag == tag; }
+			[&](const auto& e){ return e.optional_name == tag; }
 		);
 		if(it == interner.interned2.end()){
 			throw std::exception();
@@ -1835,7 +1835,7 @@ void trace_type_interner(const type_interner_t& interner){
 
 				const auto line = std::vector<std::string>{
 					std::to_string(i),
-					pack_type_tag(e.optional_tag),
+					pack_type_name(e.optional_name),
 					base_type_to_opcode(e.bt),
 					contents,
 				};
@@ -1966,7 +1966,7 @@ json_t type_to_json(const type_interner_t& interner, const type_t& type){
 		}
 		json_t operator()(const named_type_t& e) const {
 			const auto& tag = type.get_named_type(interner);
-			return pack_type_tag(tag);
+			return pack_type_name(tag);
 //			return type_to_json_shallow(e.destination_type);
 		}
 	};
@@ -1988,8 +1988,8 @@ type_t type_from_json(type_interner_t& interner, const json_t& t){
 		}
 
 		//	Tagged type.
-		else if(is_type_tag(s)){
-			return type_t::make_named_type(interner, unpack_type_tag(s));
+		else if(is_type_name(s)){
+			return type_t::make_named_type(interner, unpack_type_name(s));
 		}
 
 		//	Other types.
@@ -2199,7 +2199,7 @@ std::string type_to_compact_string(const type_interner_t& interner, const type_t
 			//	Return the name of the type.
 			else if(resolve == resolve_named_types::dont_resolve){
 				const auto& info = lookup_typeinfo_from_type(interner, type);
-				return info.optional_tag.lexical_path.back();
+				return info.optional_name.lexical_path.back();
 			}
 			else{
 				QUARK_ASSERT(false);
@@ -2215,7 +2215,7 @@ std::string type_to_compact_string(const type_interner_t& interner, const type_t
 
 type_t make_struct(type_interner_t& interner, const struct_def_type_t& struct_def){
 	const auto node = type_node_t{
-		make_empty_type_tag(),
+		make_empty_type_name(),
 		base_type::k_struct,
 		std::vector<type_t>{},
 		struct_def,
@@ -2228,7 +2228,7 @@ type_t make_struct(type_interner_t& interner, const struct_def_type_t& struct_de
 
 type_t make_struct(const type_interner_t& interner, const struct_def_type_t& struct_def){
 	const auto node = type_node_t{
-		make_empty_type_tag(),
+		make_empty_type_name(),
 		base_type::k_struct,
 		std::vector<type_t>{},
 		struct_def,
@@ -2242,7 +2242,7 @@ type_t make_struct(const type_interner_t& interner, const struct_def_type_t& str
 
 type_t make_vector(type_interner_t& interner, const type_t& element_type){
 	const auto node = type_node_t{
-		make_empty_type_tag(),
+		make_empty_type_name(),
 		base_type::k_vector,
 		{ element_type },
 		{},
@@ -2254,7 +2254,7 @@ type_t make_vector(type_interner_t& interner, const type_t& element_type){
 }
 type_t make_vector(const type_interner_t& interner, const type_t& element_type){
 	const auto node = type_node_t{
-		make_empty_type_tag(),
+		make_empty_type_name(),
 		base_type::k_vector,
 		{ element_type },
 		{},
@@ -2267,7 +2267,7 @@ type_t make_vector(const type_interner_t& interner, const type_t& element_type){
 
 type_t make_dict(type_interner_t& interner, const type_t& value_type){
 	const auto node = type_node_t{
-		make_empty_type_tag(),
+		make_empty_type_name(),
 		base_type::k_dict,
 		{ value_type },
 		{},
@@ -2280,7 +2280,7 @@ type_t make_dict(type_interner_t& interner, const type_t& value_type){
 
 type_t make_dict(const type_interner_t& interner, const type_t& value_type){
 	const auto node = type_node_t{
-		make_empty_type_tag(),
+		make_empty_type_name(),
 		base_type::k_dict,
 		{ value_type },
 		{},
@@ -2293,7 +2293,7 @@ type_t make_dict(const type_interner_t& interner, const type_t& value_type){
 
 type_t make_function3(type_interner_t& interner, const type_t& ret, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return){
 	const auto node = type_node_t{
-		make_empty_type_tag(),
+		make_empty_type_name(),
 		base_type::k_function,
 		concat(
 			std::vector<type_t>{ ret },
@@ -2310,7 +2310,7 @@ type_t make_function3(type_interner_t& interner, const type_t& ret, const std::v
 
 type_t make_function3(const type_interner_t& interner, const type_t& ret, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return){
 	const auto node = type_node_t{
-		make_empty_type_tag(),
+		make_empty_type_name(),
 		base_type::k_function,
 		concat(
 			std::vector<type_t>{ ret },
@@ -2343,7 +2343,7 @@ type_t make_function(const type_interner_t& interner, const type_t& ret, const s
 
 type_t make_symbol_ref(type_interner_t& interner, const std::string& s){
 	const auto node = type_node_t{
-		make_empty_type_tag(),
+		make_empty_type_name(),
 		base_type::k_symbol_ref,
 		std::vector<type_t>{},
 		{},
@@ -2354,7 +2354,7 @@ type_t make_symbol_ref(type_interner_t& interner, const std::string& s){
 	return intern_node(interner, node);
 }
 
-type_t make_named_type(type_interner_t& interner, const type_tag_t& type){
+type_t make_named_type(type_interner_t& interner, const type_name_t& type){
 	const auto node = type_node_t{
 		type,
 		base_type::k_symbol_ref,
@@ -2375,7 +2375,7 @@ json_t type_interner_to_json(const type_interner_t& interner){
 		const auto& type = lookup_type_from_index(interner, i);
 
 		const auto& e = interner.interned2[i];
-		const auto tag = pack_type_tag(e.optional_tag);
+		const auto tag = pack_type_name(e.optional_name);
 		const auto desc = type_to_json(interner, type);
 		const auto x = json_t::make_object({
 			{ "tag", tag },
@@ -2397,7 +2397,7 @@ type_interner_t type_interner_from_json(const json_t& j){
 		const auto tag = t.get_object_element("tag").get_string();
 		const auto desc = t.get_object_element("desc");
 
-		const auto tag2 = unpack_type_tag(tag);
+		const auto tag2 = unpack_type_name(tag);
 		const auto type2 = type_from_json(interner, desc);
 		(void)type2;
 //		types.push_back(type_node_t { tag2, type2 });
