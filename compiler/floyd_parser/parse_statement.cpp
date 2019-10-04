@@ -608,11 +608,11 @@ static std::pair<json_t, seq_t>  parse_struct_definition_body(type_interner_t& t
 	const auto s2 = skip_whitespace(p);
 	const auto start = s2;
 	auto pos = read_required_char(s2, '{');
-	std::vector<member_itype_t> members;
+	std::vector<member_t> members;
 	while(!pos.empty() && pos.first() != "}"){
 		const auto member_type = read_required_type(type_interner, pos);
 		const auto member_name = read_required_identifier(member_type.second);
-		members.push_back(member_itype_t { member_type.first, member_name.first } );
+		members.push_back(member_t { member_type.first, member_name.first } );
 		pos = read_optional_char(skip_whitespace(member_name.second), ';').second;
 		pos = skip_whitespace(pos);
 	}

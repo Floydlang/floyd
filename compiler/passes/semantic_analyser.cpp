@@ -241,9 +241,9 @@ static itype_t resolve_symbols(analyser_t& acc, const location_t& loc, const ity
 		}
 
 		itype_t operator()(const struct_t& e) const{
-			std::vector<member_itype_t> members2;
+			std::vector<member_t> members2;
 			for(const auto& m: e.def._members){
-				members2.push_back(member_itype_t { resolve_symbols(acc, loc, m._type), m._name } );
+				members2.push_back(member_t { resolve_symbols(acc, loc, m._type), m._name } );
 			}
 			return itype_t::make_struct2(acc._types, members2);
 		}
@@ -2295,9 +2295,9 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ identifier, type_name_symbol });
 
 
-	std::vector<member_itype_t> members2;
+	std::vector<member_t> members2;
 	for(const auto& m: details.def->_members){
-		members2.push_back(member_itype_t{ resolve_and_intern_itype(a_acc, parent.location, m._type), m._name } );
+		members2.push_back(member_t{ resolve_and_intern_itype(a_acc, parent.location, m._type), m._name } );
 	}
 	const auto struct_type1 = make_struct(a_acc._types, struct_def_itype_t{ members2 } );
 
@@ -2328,7 +2328,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	std::vector<member_t> args2;
 	for(const auto& arg: function_def._named_args){
 		const auto arg_type2 = resolve_and_intern_itype(a_acc, parent.location, arg._type);
-		args2.push_back(member_itype_t { arg_type2, arg._name } );
+		args2.push_back(member_t { arg_type2, arg._name } );
 	}
 
 	//??? Can there be a pure function inside an impure lexical scope?

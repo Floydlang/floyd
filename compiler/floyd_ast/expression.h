@@ -178,7 +178,13 @@ inline bool operator==(const symbol_pos_t& lhs, const symbol_pos_t& rhs){
 
 
 struct function_definition_t {
-	static function_definition_t make_func(const location_t& location, const std::string& definition_name, const itype_t& function_type, const std::vector<member_itype_t>& named_args, const std::shared_ptr<body_t>& body){
+	static function_definition_t make_func(
+		const location_t& location,
+		const std::string& definition_name,
+		const itype_t& function_type,
+		const std::vector<member_t>& named_args,
+		const std::shared_ptr<body_t>& body
+	){
 		return {
 			location,
 			definition_name,
@@ -187,7 +193,12 @@ struct function_definition_t {
 			body
 		};
 	}
-	static function_definition_t make_intrinsic(const location_t& location, const std::string& definition_name, const itype_t& function_type, const std::vector<member_itype_t>& named_args){
+	static function_definition_t make_intrinsic(
+		const location_t& location,
+		const std::string& definition_name,
+		const itype_t& function_type,
+		const std::vector<member_t>& named_args
+	){
 		return {
 			location,
 			definition_name,
@@ -211,7 +222,7 @@ struct function_definition_t {
 
 	//	Same types as in _function_type, but augumented with argument names.
 	//??? Remove. Instead have vector of just the argument names. Or update itype_t to contain the argument names of functions!?
-	std::vector<member_itype_t> _named_args;
+	std::vector<member_t> _named_args;
 
 	//	Contains body if this function is implemented using Floyd code.
 	//	Else the implementation needs to be linked in.
@@ -229,7 +240,7 @@ void trace_function_definition_t(const type_interner_t& interner, const function
 
 
 struct struct_definition2_t {
-	public: struct_definition2_t(const std::vector<member_itype_t>& members) :
+	public: struct_definition2_t(const std::vector<member_t>& members) :
 		_members(members)
 	{
 		QUARK_ASSERT(check_invariant());
@@ -239,7 +250,7 @@ struct struct_definition2_t {
 
 
 	////////////////////////////////////////		STATE
-	public: std::vector<member_itype_t> _members;
+	public: std::vector<member_t> _members;
 };
 
 

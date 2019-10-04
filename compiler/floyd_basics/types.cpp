@@ -1334,7 +1334,7 @@ static itype_t lookup_itype_from_index_it(const type_interner_t& interner, size_
 }
 
 
-std::vector<itype_t> get_member_types(const std::vector<member_itype_t>& m){
+std::vector<itype_t> get_member_types(const std::vector<member_t>& m){
 	std::vector<itype_t> r;
 	for(const auto& a: m){
 		r.push_back(a._type);
@@ -1343,7 +1343,7 @@ std::vector<itype_t> get_member_types(const std::vector<member_itype_t>& m){
 }
 
 
-json_t members_to_json(const type_interner_t& interner, const std::vector<member_itype_t>& members){
+json_t members_to_json(const type_interner_t& interner, const std::vector<member_t>& members){
 	std::vector<json_t> r;
 	for(const auto& i: members){
 		const auto member = make_object({
@@ -1355,12 +1355,12 @@ json_t members_to_json(const type_interner_t& interner, const std::vector<member
 	return r;
 }
 
-std::vector<member_itype_t> members_from_json(type_interner_t& interner, const json_t& members){
+std::vector<member_t> members_from_json(type_interner_t& interner, const json_t& members){
 	QUARK_ASSERT(members.check_invariant());
 
-	std::vector<member_itype_t> r;
+	std::vector<member_t> r;
 	for(const auto& i: members.get_array()){
-		const auto m = member_itype_t {
+		const auto m = member_t {
 			itype_from_json(interner, i.get_object_element("type")),
 			i.get_object_element("name").get_string()
 		};
@@ -1442,7 +1442,7 @@ itype_variant_t get_itype_variant(const type_interner_t& interner, const itype_t
 
 
 
-itype_t itype_t::make_struct2(type_interner_t& interner, const std::vector<member_itype_t>& members){
+itype_t itype_t::make_struct2(type_interner_t& interner, const std::vector<member_t>& members){
 	return itype_t::make_struct(interner, struct_def_itype_t{ members });
 }
 

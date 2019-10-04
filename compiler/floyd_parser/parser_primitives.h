@@ -27,7 +27,7 @@ namespace floyd {
 struct value_t;
 struct itype_t;
 struct location_t;
-struct member_itype_t;
+struct member_t;
 struct type_interner_t;
 
 namespace parser {
@@ -126,12 +126,12 @@ std::pair<itype_t, seq_t> read_required_type(type_interner_t& interner, const se
 
 	(int, int)
 */
-std::pair<std::vector<member_itype_t>, seq_t> read_functiondef_arg_parantheses(type_interner_t& interner, const seq_t& s);
+std::pair<std::vector<member_t>, seq_t> read_functiondef_arg_parantheses(type_interner_t& interner, const seq_t& s);
 
 //	Member names may be left blank.
-std::pair<std::vector<member_itype_t>, seq_t> read_function_type_args(type_interner_t& interner, const seq_t& s);
+std::pair<std::vector<member_t>, seq_t> read_function_type_args(type_interner_t& interner, const seq_t& s);
 
-std::pair<std::vector<member_itype_t>, seq_t> read_call_args(const seq_t& s);
+std::pair<std::vector<member_t>, seq_t> read_call_args(const seq_t& s);
 
 
 ////////////////////////////////		parse_result_t

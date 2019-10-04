@@ -237,7 +237,7 @@ function_definition_t json_to_function_def(type_interner_t& interner, const json
 	);
 }
 
-static std::string members_to_string(const type_interner_t& interner, const std::vector<member_itype_t>& m){
+static std::string members_to_string(const type_interner_t& interner, const std::vector<member_t>& m){
 	std::string result;
 	for(const auto& e: m){
 		const std::string s = std::string("(") + itype_to_compact_string(interner, e._type) + " " + e._name + std::string(")");

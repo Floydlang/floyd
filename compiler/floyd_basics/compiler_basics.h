@@ -95,8 +95,8 @@ inline bool operator==(const benchmark_result_t& lhs, const benchmark_result_t& 
 inline itype_t make_benchmark_result_t(type_interner_t& type_interner){
 	const auto x = itype_t::make_struct2(type_interner,
 		{
-			member_itype_t{ itype_t::make_int(), "dur" },
-			member_itype_t{ itype_t::make_json(), "more" }
+			member_t{ itype_t::make_int(), "dur" },
+			member_t{ itype_t::make_json(), "more" }
 		}
 	);
 	return x;
@@ -115,8 +115,8 @@ inline itype_t make_benchmark_def_t(type_interner_t& type_interner){
 	const auto x = itype_t::make_struct2(
 		type_interner,
 		{
-			member_itype_t{ itype_t::make_string(), "name" },
-			member_itype_t{ make_benchmark_function_t(type_interner), "f" }
+			member_t{ itype_t::make_string(), "name" },
+			member_t{ make_benchmark_function_t(type_interner), "f" }
 		}
 	);
 	return x;
@@ -137,8 +137,8 @@ inline itype_t make_benchmark_id_t(type_interner_t& type_interner){
 	const auto x = itype_t::make_struct2(
 		type_interner,
 		{
-			member_itype_t{ itype_t::make_string(), "module" },
-			member_itype_t{ itype_t::make_string(), "test" }
+			member_t{ itype_t::make_string(), "module" },
+			member_t{ itype_t::make_string(), "test" }
 		}
 	);
 	return x;
@@ -161,8 +161,8 @@ inline itype_t make_benchmark_result2_t(type_interner_t& type_interner){
 	const auto x = itype_t::make_struct2(
 		type_interner,
 		{
-			member_itype_t{ make_benchmark_id_t(type_interner), "test_id" },
-			member_itype_t{ make_symbol_ref(type_interner, "benchmark_result_t"), "result" }
+			member_t{ make_benchmark_id_t(type_interner), "test_id" },
+			member_t{ make_symbol_ref(type_interner, "benchmark_result_t"), "result" }
 		}
 	);
 	return x;

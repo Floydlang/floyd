@@ -366,13 +366,13 @@ std::pair<std::shared_ptr<typeid_t>, seq_t> read_basic_type(type_interner_t& int
 }
 
 
-static std::vector<member_itype_t> parse_functiondef_arguments2(type_interner_t& interner, const std::string& s, bool require_arg_names){
+static std::vector<member_t> parse_functiondef_arguments2(type_interner_t& interner, const std::string& s, bool require_arg_names){
 	QUARK_ASSERT(s.size() >= 2);
 	QUARK_ASSERT(s[0] == '(');
 	QUARK_ASSERT(s.back() == ')');
 
 	const auto s2 = seq_t(trim_ends(s));
-	std::vector<member_itype_t> args;
+	std::vector<member_t> args;
 	auto pos = skip_whitespace(s2);
 	while(!pos.empty()){
 		const auto arg_type = read_required_type(interner, pos);
@@ -389,15 +389,15 @@ static std::vector<member_itype_t> parse_functiondef_arguments2(type_interner_t&
 
 QUARK_TEST("", "parse_functiondef_arguments2()", "", ""){
 	type_interner_t interner;
-	QUARK_TEST_VERIFY((		parse_functiondef_arguments2(interner, "()", true) == std::vector<member_itype_t>{}		));
+	QUARK_TEST_VERIFY((		parse_functiondef_arguments2(interner, "()", true) == std::vector<member_t>{}		));
 }
 QUARK_TEST("", "parse_functiondef_arguments2()", "", ""){
 	type_interner_t interner;
-	QUARK_TEST_VERIFY((		parse_functiondef_arguments2(interner, "(int a)", true) == std::vector<member_itype_t>{ { typeid_t::make_int(), "a" }}		));
+	QUARK_TEST_VERIFY((		parse_functiondef_arguments2(interner, "(int a)", true) == std::vector<member_t>{ { typeid_t::make_int(), "a" }}		));
 }
 QUARK_TEST("", "parse_functiondef_arguments2()", "", ""){
 	type_interner_t interner;
-	QUARK_TEST_VERIFY((		parse_functiondef_arguments2(interner, "(int x, string y, double z)", true) == std::vector<member_itype_t>{
+	QUARK_TEST_VERIFY((		parse_functiondef_arguments2(interner, "(int x, string y, double z)", true) == std::vector<member_t>{
 		{ typeid_t::make_int(), "x" },
 		{ typeid_t::make_string(), "y" },
 		{ typeid_t::make_double(), "z" }
@@ -405,7 +405,7 @@ QUARK_TEST("", "parse_functiondef_arguments2()", "", ""){
 	}		));
 }
 
-std::pair<std::vector<member_itype_t>, seq_t> read_functiondef_arg_parantheses(type_interner_t& interner, const seq_t& s){
+std::pair<std::vector<member_t>, seq_t> read_functiondef_arg_parantheses(type_interner_t& interner, const seq_t& s){
 	QUARK_ASSERT(s.first1() == "(");
 
 	std::pair<std::string, seq_t> args_pos = read_balanced2(s, k_bracket_pairs);
@@ -417,7 +417,7 @@ std::pair<std::vector<member_itype_t>, seq_t> read_functiondef_arg_parantheses(t
 }
 
 
-std::pair<std::vector<member_itype_t>, seq_t> read_function_type_args(type_interner_t& interner, const seq_t& s){
+std::pair<std::vector<member_t>, seq_t> read_function_type_args(type_interner_t& interner, const seq_t& s){
 	QUARK_ASSERT(s.first1() == "(");
 
 	std::pair<std::string, seq_t> args_pos = read_balanced2(s, k_bracket_pairs);

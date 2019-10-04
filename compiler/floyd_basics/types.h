@@ -22,6 +22,7 @@ struct json_t;
 
 namespace floyd {
 
+
 /*
 	typeid_t
 
@@ -67,6 +68,18 @@ namespace floyd {
 	SOURCE CODE TYPE
 	Use read_type(), read_required_type()
 */
+
+
+
+
+struct member_t;
+struct struct_def_itype_t;
+struct type_interner_t;
+struct itype_t;
+
+
+#define typeid_t itype_t
+
 
 
 
@@ -194,16 +207,6 @@ inline bool is_empty_type_tag(const type_tag_t& tag){
 
 
 
-struct member_itype_t;
-struct struct_def_itype_t;
-struct type_interner_t;
-struct itype_t;
-
-
-#define typeid_t itype_t
-#define member_t member_itype_t
-
-
 typedef int32_t type_lookup_index_t;
 
 
@@ -239,7 +242,7 @@ itype_t make_symbol_ref(type_interner_t& interner, const std::string& s);
 itype_t make_named_type(type_interner_t& interner, const type_tag_t& type);
 
 
-std::vector<itype_t> get_member_types(const std::vector<member_itype_t>& m);
+std::vector<itype_t> get_member_types(const std::vector<member_t>& m);
 
 
 
@@ -414,7 +417,7 @@ struct itype_t {
 		return floyd::make_struct(interner, def);
 	}
 
-	static itype_t make_struct2(type_interner_t& interner, const std::vector<member_itype_t>& members);
+	static itype_t make_struct2(type_interner_t& interner, const std::vector<member_t>& members);
 
 	bool is_struct() const {
 		QUARK_ASSERT(check_invariant());
@@ -674,12 +677,12 @@ std::string itype_to_compact_string(const type_interner_t& interner, const itype
 
 
 
-//////////////////////////////////////////////////		member_itype_t
+//////////////////////////////////////////////////		member_t
 
 
 
-struct member_itype_t {
-	member_itype_t(itype_t type, const std::string& name) :
+struct member_t {
+	member_t(itype_t type, const std::string& name) :
 		_type(type),
 		_name(name)
 	{
@@ -689,7 +692,7 @@ struct member_itype_t {
 	std::string _name;
 };
 
-inline bool operator==(const member_itype_t& lhs, const member_itype_t& rhs){
+inline bool operator==(const member_t& lhs, const member_t& rhs){
 	return lhs._name == rhs._name
 	&& lhs._type == rhs._type;
 }
@@ -701,7 +704,7 @@ inline bool operator==(const member_itype_t& lhs, const member_itype_t& rhs){
 
 
 struct struct_def_itype_t {
-	struct_def_itype_t(const std::vector<member_itype_t>& members) :
+	struct_def_itype_t(const std::vector<member_t>& members) :
 		_members(members)
 	{
 		QUARK_ASSERT(check_invariant());
@@ -714,7 +717,7 @@ struct struct_def_itype_t {
 		return true;
 	}
 
-	std::vector<member_itype_t> _members;
+	std::vector<member_t> _members;
 };
 
 inline bool operator==(const struct_def_itype_t& lhs, const struct_def_itype_t& rhs){
@@ -723,8 +726,8 @@ inline bool operator==(const struct_def_itype_t& lhs, const struct_def_itype_t& 
 
 int find_struct_member_index(const struct_def_itype_t& def, const std::string& name);
 
-json_t members_to_json(const type_interner_t& interner, const std::vector<member_itype_t>& members);
-std::vector<member_itype_t> members_from_json(type_interner_t& interner, const json_t& members);
+json_t members_to_json(const type_interner_t& interner, const std::vector<member_t>& members);
+std::vector<member_t> members_from_json(type_interner_t& interner, const json_t& members);
 
 
 
