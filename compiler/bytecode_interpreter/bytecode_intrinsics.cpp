@@ -962,7 +962,7 @@ bc_value_t bc_intrinsic__print(interpreter_t& vm, const bc_value_t args[], int a
 //	QUARK_ASSERT(args[0]._type.is_string());
 
 	const auto& types = vm._imm->_program._types;
-	if(false) trace_type_interner(types);
+	if(false) trace_types(types);
 
 	const auto& value = args[0];
 	const auto s = to_compact_string2(vm._imm->_program._types, bc_to_value(vm._imm->_program._types, value));

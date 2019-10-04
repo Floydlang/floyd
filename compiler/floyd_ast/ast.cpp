@@ -33,7 +33,7 @@ json_t gp_ast_to_json(const general_purpose_ast_t& ast){
 	}
 
 	const auto function_defs_json = json_t::make_array(fds);
-	const auto types = type_interner_to_json(ast._interned_types);
+	const auto types = types_to_json(ast._interned_types);
 
 	return json_t::make_object(
 		{
@@ -55,7 +55,7 @@ general_purpose_ast_t json_to_gp_ast(const json_t& json){
 
 
 	//	Fix types first, before globals and functions.
-	auto types = type_interner_from_json(types0);
+	auto types = types_from_json(types0);
 
 	body_t globals1 = json_to_body(types, globals0);
 

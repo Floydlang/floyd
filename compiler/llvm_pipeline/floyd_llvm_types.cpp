@@ -578,18 +578,18 @@ llvm::Type* make_frp_type(const llvm_type_lookup& type_lookup){
 
 
 
-static llvm_type_lookup make_basic_interner(llvm::LLVMContext& context){
+static llvm_type_lookup make_basic_types(llvm::LLVMContext& context){
 	types_t temp;
 	return llvm_type_lookup(context, temp);
 }
 
 
-static llvm_type_lookup make_basic_interner(llvm::LLVMContext& context);
+static llvm_type_lookup make_basic_types(llvm::LLVMContext& context);
 
 #if 0
 QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func void()", ""){
 	llvm::LLVMContext context;
-	const auto types = make_basic_interner(context);
+	const auto types = make_basic_types(context);
 	auto module = std::make_unique<llvm::Module>("test", context);
 
 	const auto r = map_function_arguments(
@@ -611,7 +611,7 @@ QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func void()", ""){
 
 QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func int()", ""){
 	llvm::LLVMContext context;
-	auto types = make_basic_interner(context);
+	auto types = make_basic_types(context);
 	auto module = std::make_unique<llvm::Module>("test", context);
 
 	const auto r = map_function_arguments(types, make_function(type_t::make_int(), {}, epure::pure));
@@ -630,7 +630,7 @@ QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func int()", ""){
 
 QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""){
 	llvm::LLVMContext context;
-	const auto types = make_basic_interner(context);
+	const auto types = make_basic_types(context);
 	auto module = std::make_unique<llvm::Module>("test", context);
 
 	const auto r = map_function_arguments(types, make_function(type_t::make_void(), { type_t::make_int() }, epure::pure));
@@ -656,7 +656,7 @@ QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""){
 QUARK_TEST
 ("LLVM Codegen", "map_function_arguments()", "func void(int, DYN, bool)", ""){
 	llvm::LLVMContext context;
-	const auto types = make_basic_interner(context);
+	const auto types = make_basic_types(context);
 	auto module = std::make_unique<llvm::Module>("test", context);
 
 	const auto r = map_function_arguments(types, make_function(type_t::make_void(), { type_t::make_int(), type_t::make_any(), type_t::make_bool() }, epure::pure));

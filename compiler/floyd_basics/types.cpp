@@ -1666,7 +1666,7 @@ type_t new_tagged_type(types_t& types, const type_name_t& tag, const type_t& typ
 	QUARK_ASSERT(tag.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	if(false) trace_type_interner(types);
+	if(false) trace_types(types);
 
 	const auto it = std::find_if(
 		types.interned2.begin(),
@@ -1730,7 +1730,7 @@ type_t peek(const types_t& types, const type_t& type){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	if(false) trace_type_interner(types);
+	if(false) trace_types(types);
 
 	const auto& info = lookup_typeinfo_from_type(types, type);
 	if(info.bt == base_type::k_named_type){
@@ -1810,7 +1810,7 @@ type_t lookup_type_from_name(const types_t& types, const type_name_t& tag){
 
 
 
-void trace_type_interner(const types_t& types){
+void trace_types(const types_t& types){
 	QUARK_ASSERT(types.check_invariant());
 
 	{
@@ -2363,7 +2363,7 @@ type_t make_named_type(types_t& types, const type_name_t& type){
 
 
 //??? Doesnt work. Needs to use type_t-style code that genreates contents of type
-json_t type_interner_to_json(const types_t& types){
+json_t types_to_json(const types_t& types){
 	std::vector<json_t> result;
 	for(auto i = 0 ; i < types.interned2.size() ; i++){
 		const auto& type = lookup_type_from_index(types, i);
@@ -2385,7 +2385,7 @@ json_t type_interner_to_json(const types_t& types){
 
 //??? Doesnt work. Needs to use type_t-style code that genreates contents of type
 //??? support tags!
-types_t type_interner_from_json(const json_t& j){
+types_t types_from_json(const json_t& j){
 	types_t types;
 	for(const auto& t: j.get_array()){
 		const auto tag = t.get_object_element("tag").get_string();

@@ -2392,12 +2392,12 @@ interpreter_t::interpreter_t(const bc_program_t& program, runtime_handler_i* han
 
 	const auto start_time = std::chrono::high_resolution_clock::now();
 
-	types_t temp_interner = program._types;
-	const auto intrinsics = bc_get_intrinsics(temp_interner);
+	types_t temp_types = program._types;
+	const auto intrinsics = bc_get_intrinsics(temp_types);
 
-//	trace_type_interner(program._types);
-//	trace_type_interner(temp_interner);
-	QUARK_ASSERT(temp_interner.interned2.size() == program._types.interned2.size());
+//	trace_types(program._types);
+//	trace_types(temp_types);
+	QUARK_ASSERT(temp_types.interned2.size() == program._types.interned2.size());
 
 	const auto corelib_calls = bc_get_corelib_calls();
 	auto host_functions = intrinsics;
@@ -3867,7 +3867,7 @@ json_t bcprogram_to_json(const bc_program_t& program){
 
 	return json_t::make_object({
 		{ "globals", frame_to_json(program._types, program._globals) },
-		{ "types", type_interner_to_json(program._types) },
+		{ "types", types_to_json(program._types) },
 		{ "function_defs", json_t::make_array(function_defs) }
 //		{ "callstack", json_t::make_array(callstack) }
 	});

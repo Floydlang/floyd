@@ -1030,7 +1030,7 @@ static type_t calc_resolved_function_type(const llvm_code_generator_t& gen, cons
 	const auto resolved_call_arguments = mapf<type_t>(args, [&gen](auto& e){ return get_expr_output_type(gen, e); });
 
 
-	if(true) trace_type_interner(types);
+	if(true) trace_types(types);
 
 	const auto resolved_call_function_type = make_function(
 		types,
@@ -1042,7 +1042,7 @@ static type_t calc_resolved_function_type(const llvm_code_generator_t& gen, cons
 	//	Verify that the actual argument expressions, their count and output types -- all match callee_function_type.
 	QUARK_ASSERT(args.size() == callee_function_type.get_function_args(types).size());
 
-	if(true) trace_type_interner(types);
+	if(true) trace_types(types);
 
 	return resolved_call_function_type;
 }
@@ -1084,7 +1084,7 @@ llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& gen_acc, 
 
 	const auto& types = gen_acc.gen.type_lookup.state.types;
 
-	if(true) trace_type_interner(types);
+	if(true) trace_types(types);
 
 	const auto& intrinsic_signatures = gen_acc.gen.intrinsic_signatures;
 
@@ -2632,7 +2632,7 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 
 		{
 			QUARK_SCOPED_TRACE("LLVM CODE GENERATION -- INPUT TYPES");
-			trace_type_interner(ast0._tree._interned_types);
+			trace_types(ast0._tree._interned_types);
 		}
 
 		auto result = generate_llvm_ir_program_internal(instance, ast0, module_name, settings);

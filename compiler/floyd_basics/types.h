@@ -213,7 +213,7 @@ enum class return_dyn_type {
 
 //??? store type_variant_t inside type_info_t!
 //??? Name into make_x() vs get_x()
-
+//??? type_t should be opaque value type. Use peek to get a type_desc_t you can query for details.
 
 
 std::vector<type_t> get_member_types(const std::vector<member_t>& m);
@@ -788,7 +788,7 @@ type_t lookup_type_from_name(const types_t& types, const type_name_t& n);
 
 type_t lookup_type_from_index(const types_t& types, type_lookup_index_t type_index);
 
-void trace_type_interner(const types_t& types);
+void trace_types(const types_t& types);
 
 
 
@@ -798,8 +798,8 @@ type_t refresh_type(const types_t& types, const type_t& type);
 
 
 
-json_t type_interner_to_json(const types_t& types);
-types_t type_interner_from_json(const json_t& j);
+json_t types_to_json(const types_t& types);
+types_t types_from_json(const json_t& j);
 
 
 

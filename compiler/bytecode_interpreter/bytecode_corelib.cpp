@@ -26,19 +26,19 @@ bc_value_t bc_corelib__make_benchmark_report(interpreter_t& vm, const bc_value_t
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto temp_interner = vm._imm->_program._types;
+	auto temp_types = vm._imm->_program._types;
 
 
 
-	const auto benchmark_result2_t__type = get_tagged_type2(temp_interner, type_name_t { { "global_xyz_saft", "benchmark_result2_t" } });
-//	const auto dict_json__type = make_dict(interner2, type_t::make_json());
+	const auto benchmark_result2_t__type = get_tagged_type2(temp_types, type_name_t { { "global_xyz_saft", "benchmark_result2_t" } });
+//	const auto dict_json__type = make_dict(types2, type_t::make_json());
 
 	QUARK_ASSERT(args[0]._type == benchmark_result2_t__type);
 
-	const auto b2 = bc_to_value(temp_interner, args[0]);
-	const auto test_results = unpack_vec_benchmark_result2_t(temp_interner, b2);
+	const auto b2 = bc_to_value(temp_types, args[0]);
+	const auto test_results = unpack_vec_benchmark_result2_t(temp_types, b2);
 	const auto report = make_benchmark_report(test_results);
-	return value_to_bc(temp_interner, value_t::make_string(report));
+	return value_to_bc(temp_types, value_t::make_string(report));
 }
 
 
@@ -66,41 +66,41 @@ bc_value_t bc_corelib__make_hardware_caps_report(interpreter_t& vm, const bc_val
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto temp_interner = vm._imm->_program._types;
-	QUARK_ASSERT(args[0]._type == make_dict(temp_interner, type_t::make_json()));
+	auto temp_types = vm._imm->_program._types;
+	QUARK_ASSERT(args[0]._type == make_dict(temp_types, type_t::make_json()));
 
-	const auto b2 = bc_to_value(temp_interner, args[0]);
+	const auto b2 = bc_to_value(temp_types, args[0]);
 	const auto m = b2.get_dict_value();
 	std::vector<std::pair<std::string, json_t>> caps;
 	for(const auto& e: m){
 		caps.push_back({ e.first, e.second.get_json() });
 	}
 	const auto s = corelib_make_hardware_caps_report(caps);
-	return value_to_bc(temp_interner, value_t::make_string(s));
+	return value_to_bc(temp_types, value_t::make_string(s));
 }
 bc_value_t bc_corelib__make_hardware_caps_report_brief(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto temp_interner = vm._imm->_program._types;
-	QUARK_ASSERT(args[0]._type == make_dict(temp_interner, type_t::make_json()));
+	auto temp_types = vm._imm->_program._types;
+	QUARK_ASSERT(args[0]._type == make_dict(temp_types, type_t::make_json()));
 
-	const auto b2 = bc_to_value(temp_interner, args[0]);
+	const auto b2 = bc_to_value(temp_types, args[0]);
 	const auto m = b2.get_dict_value();
 	std::vector<std::pair<std::string, json_t>> caps;
 	for(const auto& e: m){
 		caps.push_back({ e.first, e.second.get_json() });
 	}
 	const auto s = corelib_make_hardware_caps_report_brief(caps);
-	return value_to_bc(temp_interner, value_t::make_string(s));
+	return value_to_bc(temp_types, value_t::make_string(s));
 }
 bc_value_t bc_corelib__get_current_date_and_time_string(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
 
-	auto temp_interner = vm._imm->_program._types;
+	auto temp_types = vm._imm->_program._types;
 	const auto s = get_current_date_and_time_string();
-	return value_to_bc(temp_interner, value_t::make_string(s));
+	return value_to_bc(temp_types, value_t::make_string(s));
 }
 
 
@@ -118,14 +118,14 @@ bc_value_t bc_corelib__calc_string_sha1(interpreter_t& vm, const bc_value_t args
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_string());
 
-	auto temp_interner = vm._imm->_program._types;
+	auto temp_types = vm._imm->_program._types;
 
 	const auto& s = args[0].get_string_value();
 	const auto ascii40 = corelib_calc_string_sha1(s);
 
 	const auto result = value_t::make_struct_value(
-		temp_interner,
-		make__sha1_t__type(temp_interner),
+		temp_types,
+		make__sha1_t__type(temp_types),
 		{
 			value_t::make_string(ascii40)
 		}
@@ -147,24 +147,24 @@ bc_value_t bc_corelib__calc_binary_sha1(interpreter_t& vm, const bc_value_t args
 	QUARK_ASSERT(arg_count == 1);
 //	QUARK_ASSERT(args[0]._type == make__binary_t__type());
 
-	auto temp_interner = vm._imm->_program._types;
+	auto temp_types = vm._imm->_program._types;
 	const auto& sha1_struct = args[0].get_struct_value();
-	QUARK_ASSERT(sha1_struct.size() == make__binary_t__type(temp_interner).get_struct(temp_interner)._members.size());
+	QUARK_ASSERT(sha1_struct.size() == make__binary_t__type(temp_types).get_struct(temp_types)._members.size());
 	QUARK_ASSERT(sha1_struct[0]._type.is_string());
 
 	const auto& sha1_string = sha1_struct[0].get_string_value();
 	const auto ascii40 = corelib_calc_string_sha1(sha1_string);
 
 	const auto result = value_t::make_struct_value(
-		temp_interner,
-		make__sha1_t__type(temp_interner),
+		temp_types,
+		make__sha1_t__type(temp_types),
 		{
 			value_t::make_string(ascii40)
 		}
 	);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(temp_interner, result);
+	const auto debug = value_and_type_to_ast_json(temp_types, result);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
@@ -226,17 +226,17 @@ bc_value_t bc_corelib__get_fsentries_shallow(interpreter_t& vm, const bc_value_t
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_string());
 
-	auto temp_interner = vm._imm->_program._types;
+	auto temp_types = vm._imm->_program._types;
 	const std::string path = args[0].get_string_value();
 
 	const auto a = corelib_get_fsentries_shallow(path);
 
-	const auto elements = directory_entries_to_values(temp_interner, a);
-	const auto k_fsentry_t__type = make__fsentry_t__type(temp_interner);
-	const auto vec2 = value_t::make_vector_value(temp_interner, k_fsentry_t__type, elements);
+	const auto elements = directory_entries_to_values(temp_types, a);
+	const auto k_fsentry_t__type = make__fsentry_t__type(temp_types);
+	const auto vec2 = value_t::make_vector_value(temp_types, k_fsentry_t__type, elements);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(temp_interner, vec2);
+	const auto debug = value_and_type_to_ast_json(temp_types, vec2);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
@@ -250,14 +250,14 @@ bc_value_t bc_corelib__get_fsentries_deep(interpreter_t& vm, const bc_value_t ar
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_string());
 
-	auto temp_interner = vm._imm->_program._types;
+	auto temp_types = vm._imm->_program._types;
 	const std::string path = args[0].get_string_value();
 
 	const auto a = corelib_get_fsentries_deep(path);
 
-	const auto elements = directory_entries_to_values(temp_interner, a);
-	const auto k_fsentry_t__type = make__fsentry_t__type(temp_interner);
-	const auto vec2 = value_t::make_vector_value(temp_interner, k_fsentry_t__type, elements);
+	const auto elements = directory_entries_to_values(temp_types, a);
+	const auto k_fsentry_t__type = make__fsentry_t__type(temp_types);
+	const auto vec2 = value_t::make_vector_value(temp_types, k_fsentry_t__type, elements);
 
 #if 0
 	const auto debug = value_and_type_to_ast_json(vec2);
@@ -274,12 +274,12 @@ bc_value_t bc_corelib__get_fsentry_info(interpreter_t& vm, const bc_value_t args
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_string());
 
-	auto temp_interner = vm._imm->_program._types;
+	auto temp_types = vm._imm->_program._types;
 	const std::string path = args[0].get_string_value();
 
 	const auto info = corelib_get_fsentry_info(path);
 
-	const auto info2 = pack_fsentry_info(temp_interner, info);
+	const auto info2 = pack_fsentry_info(temp_types, info);
 	const auto v = value_to_bc(vm._imm->_program._types, info2);
 	return v;
 }
@@ -289,10 +289,10 @@ bc_value_t bc_corelib__get_fs_environment(interpreter_t& vm, const bc_value_t ar
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
 
-	auto temp_interner = vm._imm->_program._types;
+	auto temp_types = vm._imm->_program._types;
 	const auto env = corelib_get_fs_environment();
 
-	const auto result = pack_fs_environment_t(temp_interner, env);
+	const auto result = pack_fs_environment_t(temp_types, env);
 	const auto v = value_to_bc(vm._imm->_program._types, result);
 	return v;
 }
@@ -303,14 +303,14 @@ bc_value_t bc_corelib__does_fsentry_exist(interpreter_t& vm, const bc_value_t ar
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_string());
 
-	auto temp_interner = vm._imm->_program._types;
+	auto temp_types = vm._imm->_program._types;
 	const std::string path = args[0].get_string_value();
 
 	bool exists = corelib_does_fsentry_exist(path);
 
 	const auto result = value_t::make_bool(exists);
 #if 1
-	const auto debug = value_and_type_to_ast_json(temp_interner, result);
+	const auto debug = value_and_type_to_ast_json(temp_types, result);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 

@@ -135,7 +135,7 @@ static void trace_analyser(const analyser_t& a){
 		}
 	}
 	{
-		trace_type_interner(a._types);
+		trace_types(a._types);
 	}
 }
 
@@ -460,7 +460,7 @@ static std::pair<analyser_t, fully_resolved_call_t> analyze_resolve_call_type(co
 		callee_type_peek.get_function_pure(a_acc._types)
 	);
 
-	if(true) trace_type_interner(a_acc._types);
+	if(true) trace_types(a_acc._types);
 
 	return { a_acc, { call_args2, resolved_function_type } };
 }
@@ -1013,7 +1013,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 				callee_type_peek.get_function_pure(a_acc._types)
 			);
 
-			if(true) trace_type_interner(a_acc._types);
+			if(true) trace_types(a_acc._types);
 
 			return {
 				a_acc,
@@ -2536,7 +2536,7 @@ static std::pair<analyser_t, expression_t> analyse_expression_to_target(const an
 
 	auto a_acc = a;
 
-	if(true) trace_type_interner(a_acc._types);
+	if(true) trace_types(a_acc._types);
 
 	const auto target_type_peek = peek(a_acc._types, target_type0);
 
@@ -2825,7 +2825,7 @@ semantic_ast_t run_semantic_analysis(const unchecked_ast_t& ast){
 				}
 				{
 					QUARK_SCOPED_TRACE("OUTPUT TYPES");
-					trace_type_interner(result._tree._interned_types);
+					trace_types(result._tree._interned_types);
 				}
 			}
 

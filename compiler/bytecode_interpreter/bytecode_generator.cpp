@@ -1943,20 +1943,20 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 	bcgenerator_t a(ast);
 
 /*
-	types_t interner2 = ast._tree._interned_types;
+	types_t types2 = ast._tree._interned_types;
 
 
 	//???	benchmark_result2_t and benchmark_id_t etc are part of standard library and defines in k_corelib_builtin_types_and_constants. Find those symbols instead of making new types here.
 	//	??? move this code to semantic analyser to share it for all backends AND allow new types to be added.
 
-	const auto benchmark_result2_t__type = make_benchmark_result2_t(interner2);
-	const auto dict_json__type = type_t::make_dict(interner2, type_t::make_json());
+	const auto benchmark_result2_t__type = make_benchmark_result2_t(types2);
+	const auto dict_json__type = type_t::make_dict(types2, type_t::make_json());
 
 
 
-	trace_type_interner(ast._tree._interned_types);
-	trace_type_interner(interner2);
-//	QUARK_ASSERT(interner2.interned2.size() == ast._tree._interned_types.interned2.size());
+	trace_types(ast._tree._interned_types);
+	trace_types(types2);
+//	QUARK_ASSERT(types2.interned2.size() == ast._tree._interned_types.interned2.size());
 */
 
 	bcgen_globals(a, a._ast_imm->_tree._globals);
