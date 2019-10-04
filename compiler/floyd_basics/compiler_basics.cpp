@@ -31,7 +31,7 @@ compiler_settings_t make_default_compiler_settings(){
 
 
 
-std::vector<benchmark_result2_t> unpack_vec_benchmark_result2_t(type_interner_t& type_interner, const value_t& value){
+std::vector<benchmark_result2_t> unpack_vec_benchmark_result2_t(types_t& type_interner, const value_t& value){
 	QUARK_ASSERT(type_interner.check_invariant());
 	QUARK_ASSERT(value.get_type() == make_vector(type_interner, make_benchmark_result2_t(type_interner)));
 
@@ -86,11 +86,11 @@ bool is_preinitliteral(const type_t& type){
 
 
 
-type_t make_process_init_type(type_interner_t& interner, const type_t& t){
+type_t make_process_init_type(types_t& interner, const type_t& t){
 	return make_function3(interner, t, {}, epure::impure, return_dyn_type::none);
 }
 
-type_t make_process_message_handler_type(type_interner_t& interner, const type_t& t){
+type_t make_process_message_handler_type(types_t& interner, const type_t& t){
 	return make_function3(interner, t, { t, type_t::make_json() }, epure::impure, return_dyn_type::none);
 }
 
@@ -111,77 +111,77 @@ static intrinsic_signature_t make_intrinsic(
 }
 
 
-intrinsic_signature_t make_assert_signature(type_interner_t& interner){
+intrinsic_signature_t make_assert_signature(types_t& interner){
 	return make_intrinsic("assert", make_function(interner, type_t::make_void(), { type_t::make_bool() }, epure::pure) );
 }
-intrinsic_signature_t make_to_string_signature(type_interner_t& interner){
+intrinsic_signature_t make_to_string_signature(types_t& interner){
 	return make_intrinsic("to_string", make_function(interner, type_t::make_string(), { ANY_TYPE }, epure::pure) );
 }
 
-intrinsic_signature_t make_to_pretty_string_signature(type_interner_t& interner){
+intrinsic_signature_t make_to_pretty_string_signature(types_t& interner){
 	return make_intrinsic("to_pretty_string", make_function(interner, type_t::make_string(), { ANY_TYPE }, epure::pure) );
 }
-intrinsic_signature_t make_typeof_signature(type_interner_t& interner){
+intrinsic_signature_t make_typeof_signature(types_t& interner){
 	return make_intrinsic("typeof", make_function(interner, type_t::make_typeid(), { ANY_TYPE }, epure::pure) );
 }
 
 
-intrinsic_signature_t make_update_signature(type_interner_t& interner){
+intrinsic_signature_t make_update_signature(types_t& interner){
 	return make_intrinsic("update", make_function_dyn_return(interner, { ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, return_dyn_type::arg0) );
 }
 
-intrinsic_signature_t make_size_signature(type_interner_t& interner){
+intrinsic_signature_t make_size_signature(types_t& interner){
 	return make_intrinsic("size", make_function(interner, type_t::make_int(), { ANY_TYPE }, epure::pure) );
 }
 
 
-intrinsic_signature_t make_find_signature(type_interner_t& interner){
+intrinsic_signature_t make_find_signature(types_t& interner){
 	return make_intrinsic("find", make_function(interner, type_t::make_int(), { ANY_TYPE, ANY_TYPE }, epure::pure) );
 }
-intrinsic_signature_t make_exists_signature(type_interner_t& interner){
+intrinsic_signature_t make_exists_signature(types_t& interner){
 	return make_intrinsic("exists", make_function(interner, type_t::make_bool(), { ANY_TYPE, ANY_TYPE }, epure::pure) );
 }
 
-intrinsic_signature_t make_erase_signature(type_interner_t& interner){
+intrinsic_signature_t make_erase_signature(types_t& interner){
 	return make_intrinsic("erase", make_function_dyn_return(interner, { ANY_TYPE, ANY_TYPE }, epure::pure, return_dyn_type::arg0) );
 }
-intrinsic_signature_t make_get_keys_signature(type_interner_t& interner){
+intrinsic_signature_t make_get_keys_signature(types_t& interner){
 	return make_intrinsic("get_keys", make_function(interner, make_vector(interner, type_t::make_string()), { ANY_TYPE }, epure::pure) );
 }
 
 
-intrinsic_signature_t make_push_back_signature(type_interner_t& interner){
+intrinsic_signature_t make_push_back_signature(types_t& interner){
 	return make_intrinsic("push_back", make_function_dyn_return(interner, { ANY_TYPE, ANY_TYPE }, epure::pure, return_dyn_type::arg0) );
 }
 
-intrinsic_signature_t make_subset_signature(type_interner_t& interner){
+intrinsic_signature_t make_subset_signature(types_t& interner){
 	return make_intrinsic("subset", make_function_dyn_return(interner, { ANY_TYPE, type_t::make_int(), type_t::make_int() }, epure::pure, return_dyn_type::arg0) );
 }
-intrinsic_signature_t make_replace_signature(type_interner_t& interner){
+intrinsic_signature_t make_replace_signature(types_t& interner){
 	return make_intrinsic("replace", make_function_dyn_return(interner, { ANY_TYPE, type_t::make_int(), type_t::make_int(), ANY_TYPE }, epure::pure, return_dyn_type::arg0) );
 }
 
-intrinsic_signature_t make_parse_json_script_signature(type_interner_t& interner){
+intrinsic_signature_t make_parse_json_script_signature(types_t& interner){
 	return make_intrinsic("parse_json_script", make_function(interner, type_t::make_json(), { type_t::make_string() }, epure::pure) );
 }
 
-intrinsic_signature_t make_generate_json_script_signature(type_interner_t& interner){
+intrinsic_signature_t make_generate_json_script_signature(types_t& interner){
 	return make_intrinsic("generate_json_script", make_function(interner, type_t::make_string(), {type_t::make_json() }, epure::pure) );
 }
 
 
-intrinsic_signature_t make_to_json_signature(type_interner_t& interner){
+intrinsic_signature_t make_to_json_signature(types_t& interner){
 	return make_intrinsic("to_json", make_function(interner, type_t::make_json(), { ANY_TYPE }, epure::pure) );
 }
 
 
-intrinsic_signature_t make_from_json_signature(type_interner_t& interner){
+intrinsic_signature_t make_from_json_signature(types_t& interner){
 	//	??? Tricky. How to we compute the return type from the input arguments?
 	return make_intrinsic("from_json", make_function_dyn_return(interner, { type_t::make_json(), type_t::make_typeid() }, epure::pure, return_dyn_type::arg1_typeid_constant_type) );
 }
 
 
-intrinsic_signature_t make_get_json_type_signature(type_interner_t& interner){
+intrinsic_signature_t make_get_json_type_signature(types_t& interner){
 	return make_intrinsic("get_json_type", make_function(interner, type_t::make_int(), { type_t::make_json() }, epure::pure) );
 }
 
@@ -192,10 +192,10 @@ intrinsic_signature_t make_get_json_type_signature(type_interner_t& interner){
 
 
 
-intrinsic_signature_t make_map_signature(type_interner_t& interner){
+intrinsic_signature_t make_map_signature(types_t& interner){
 	return make_intrinsic("map", make_function_dyn_return(interner, { ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, return_dyn_type::vector_of_arg1func_return) );
 }
-type_t harden_map_func_type(type_interner_t& interner, const type_t& resolved_call_type){
+type_t harden_map_func_type(types_t& interner, const type_t& resolved_call_type){
 	QUARK_ASSERT(resolved_call_type.check_invariant());
 
 	const auto sign = make_map_signature(interner);
@@ -227,7 +227,7 @@ type_t harden_map_func_type(type_interner_t& interner, const type_t& resolved_ca
 	return expected;
 }
 
-bool check_map_func_type(type_interner_t& interner, const type_t& elements, const type_t& f, const type_t& context){
+bool check_map_func_type(types_t& interner, const type_t& elements, const type_t& f, const type_t& context){
 	QUARK_ASSERT(elements.is_vector());
 	QUARK_ASSERT(f.is_function());
 
@@ -240,7 +240,7 @@ bool check_map_func_type(type_interner_t& interner, const type_t& elements, cons
 
 
 //	string map_string(string s, func int(int e, C context) f, C context)
-intrinsic_signature_t make_map_string_signature(type_interner_t& interner){
+intrinsic_signature_t make_map_string_signature(types_t& interner){
 	return make_intrinsic(
 		"map_string",
 		make_function(
@@ -256,7 +256,7 @@ intrinsic_signature_t make_map_string_signature(type_interner_t& interner){
 	);
 }
 
-type_t harden_map_string_func_type(type_interner_t& interner, const type_t& resolved_call_type){
+type_t harden_map_string_func_type(types_t& interner, const type_t& resolved_call_type){
 	QUARK_ASSERT(resolved_call_type.check_invariant());
 
 	const auto sign = make_map_string_signature(interner);
@@ -275,7 +275,7 @@ type_t harden_map_string_func_type(type_interner_t& interner, const type_t& reso
 	return expected;
 }
 
-bool check_map_string_func_type(type_interner_t& interner, const type_t& elements, const type_t& f, const type_t& context){
+bool check_map_string_func_type(types_t& interner, const type_t& elements, const type_t& f, const type_t& context){
 	QUARK_ASSERT(elements.is_string());
 	QUARK_ASSERT(f.is_function());
 	QUARK_ASSERT(f.get_function_args(interner).size() == 2);
@@ -288,11 +288,11 @@ bool check_map_string_func_type(type_interner_t& interner, const type_t& element
 
 
 //	[R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
-intrinsic_signature_t make_map_dag_signature(type_interner_t& interner){
+intrinsic_signature_t make_map_dag_signature(types_t& interner){
 	return make_intrinsic("map_dag", make_function_dyn_return(interner, { ANY_TYPE, ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, return_dyn_type::vector_of_arg2func_return) );
 }
 
-type_t harden_map_dag_func_type(type_interner_t& interner, const type_t& resolved_call_type){
+type_t harden_map_dag_func_type(types_t& interner, const type_t& resolved_call_type){
 	QUARK_ASSERT(resolved_call_type.check_invariant());
 
 	const auto sign = make_map_dag_signature(interner);
@@ -326,7 +326,7 @@ type_t harden_map_dag_func_type(type_interner_t& interner, const type_t& resolve
 	return expected;
 }
 
-bool check_map_dag_func_type(type_interner_t& interner, const type_t& elements, const type_t& depends_on, const type_t& f, const type_t& context){
+bool check_map_dag_func_type(types_t& interner, const type_t& elements, const type_t& depends_on, const type_t& f, const type_t& context){
 	//	Check topology.
 	QUARK_ASSERT(elements.is_vector());
 	QUARK_ASSERT(depends_on == make_vector(interner, type_t::make_int()));
@@ -342,10 +342,10 @@ bool check_map_dag_func_type(type_interner_t& interner, const type_t& elements, 
 
 
 //	[E] filter([E] elements, func bool (E e, C context) f, C context)
-intrinsic_signature_t make_filter_signature(type_interner_t& interner){
+intrinsic_signature_t make_filter_signature(types_t& interner){
 	return make_intrinsic("filter", make_function_dyn_return(interner, { ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, return_dyn_type::arg0) );
 }
-type_t harden_filter_func_type(type_interner_t& interner, const type_t& resolved_call_type){
+type_t harden_filter_func_type(types_t& interner, const type_t& resolved_call_type){
 	QUARK_ASSERT(resolved_call_type.check_invariant());
 
 	const auto sign = make_filter_signature(interner);
@@ -371,7 +371,7 @@ type_t harden_filter_func_type(type_interner_t& interner, const type_t& resolved
 	return expected;
 }
 
-bool check_filter_func_type(type_interner_t& interner, const type_t& elements, const type_t& f, const type_t& context){
+bool check_filter_func_type(types_t& interner, const type_t& elements, const type_t& f, const type_t& context){
 	QUARK_ASSERT(elements.is_vector());
 	QUARK_ASSERT(f.is_function());
 	QUARK_ASSERT(f.get_function_args(interner).size() == 2);
@@ -383,11 +383,11 @@ bool check_filter_func_type(type_interner_t& interner, const type_t& elements, c
 
 
 
-intrinsic_signature_t make_reduce_signature(type_interner_t& interner){
+intrinsic_signature_t make_reduce_signature(types_t& interner){
 	return make_intrinsic("reduce", make_function_dyn_return(interner, { ANY_TYPE, ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, return_dyn_type::arg1) );
 }
 
-type_t harden_reduce_func_type(type_interner_t& interner, const type_t& resolved_call_type){
+type_t harden_reduce_func_type(types_t& interner, const type_t& resolved_call_type){
 	QUARK_ASSERT(resolved_call_type.check_invariant());
 
 	const auto call_function_arg_type = resolved_call_type.get_function_args(interner);
@@ -416,7 +416,7 @@ type_t harden_reduce_func_type(type_interner_t& interner, const type_t& resolved
 	return expected;
 }
 
-bool check_reduce_func_type(type_interner_t& interner, const type_t& elements, const type_t& accumulator_init, const type_t& f, const type_t& context){
+bool check_reduce_func_type(types_t& interner, const type_t& elements, const type_t& accumulator_init, const type_t& f, const type_t& context){
 	QUARK_ASSERT(elements.check_invariant());
 	QUARK_ASSERT(accumulator_init.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
@@ -436,11 +436,11 @@ bool check_reduce_func_type(type_interner_t& interner, const type_t& elements, c
 
 
 //	[T] stable_sort([T] elements, func bool (T left, T right, C context) less, C context)
-intrinsic_signature_t make_stable_sort_signature(type_interner_t& interner){
+intrinsic_signature_t make_stable_sort_signature(types_t& interner){
 	return make_intrinsic("stable_sort", make_function_dyn_return(interner, { ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, return_dyn_type::arg0) );
 }
 
-type_t harden_stable_sort_func_type(type_interner_t& interner, const type_t& resolved_call_type){
+type_t harden_stable_sort_func_type(types_t& interner, const type_t& resolved_call_type){
 	QUARK_ASSERT(resolved_call_type.check_invariant());
 
 	const auto sign = make_stable_sort_signature(interner);
@@ -471,7 +471,7 @@ type_t harden_stable_sort_func_type(type_interner_t& interner, const type_t& res
 	return expected;
 }
 
-bool check_stable_sort_func_type(type_interner_t& interner, const type_t& elements, const type_t& less, const type_t& context){
+bool check_stable_sort_func_type(types_t& interner, const type_t& elements, const type_t& less, const type_t& context){
 	QUARK_ASSERT(elements.is_vector());
 	QUARK_ASSERT(less.is_function());
 	QUARK_ASSERT(less.get_function_args(interner).size() == 3);
@@ -493,10 +493,10 @@ bool check_stable_sort_func_type(type_interner_t& interner, const type_t& elemen
 
 
 
-intrinsic_signature_t make_print_signature(type_interner_t& interner){
+intrinsic_signature_t make_print_signature(types_t& interner){
 	return make_intrinsic("print", make_function(interner, type_t::make_void(), { ANY_TYPE }, epure::pure) );
 }
-intrinsic_signature_t make_send_signature(type_interner_t& interner){
+intrinsic_signature_t make_send_signature(types_t& interner){
 	return make_intrinsic("send", make_function(interner, type_t::make_void(), { type_t::make_string(), type_t::make_json() }, epure::impure) );
 }
 
@@ -506,25 +506,25 @@ intrinsic_signature_t make_send_signature(type_interner_t& interner){
 
 
 
-intrinsic_signature_t make_bw_not_signature(type_interner_t& interner){
+intrinsic_signature_t make_bw_not_signature(types_t& interner){
 	return make_intrinsic("bw_not", make_function(interner, type_t::make_int(), { type_t::make_int() }, epure::pure) );
 }
-intrinsic_signature_t make_bw_and_signature(type_interner_t& interner){
+intrinsic_signature_t make_bw_and_signature(types_t& interner){
 	return make_intrinsic("bw_and", make_function(interner, type_t::make_int(), { type_t::make_int(), type_t::make_int() }, epure::pure) );
 }
-intrinsic_signature_t make_bw_or_signature(type_interner_t& interner){
+intrinsic_signature_t make_bw_or_signature(types_t& interner){
 	return make_intrinsic("bw_or", make_function(interner, type_t::make_int(), { type_t::make_int(), type_t::make_int() }, epure::pure) );
 }
-intrinsic_signature_t make_bw_xor_signature(type_interner_t& interner){
+intrinsic_signature_t make_bw_xor_signature(types_t& interner){
 	return make_intrinsic("bw_xor", make_function(interner, type_t::make_int(), { type_t::make_int(), type_t::make_int() }, epure::pure) );
 }
-intrinsic_signature_t make_bw_shift_left_signature(type_interner_t& interner){
+intrinsic_signature_t make_bw_shift_left_signature(types_t& interner){
 	return make_intrinsic("bw_shift_left", make_function(interner, type_t::make_int(), { type_t::make_int(), type_t::make_int() }, epure::pure) );
 }
-intrinsic_signature_t make_bw_shift_right_signature(type_interner_t& interner){
+intrinsic_signature_t make_bw_shift_right_signature(types_t& interner){
 	return make_intrinsic("bw_shift_right", make_function(interner, type_t::make_int(), { type_t::make_int(), type_t::make_int() }, epure::pure) );
 }
-intrinsic_signature_t make_bw_shift_right_arithmetic_signature(type_interner_t& interner){
+intrinsic_signature_t make_bw_shift_right_arithmetic_signature(types_t& interner){
 	return make_intrinsic("bw_shift_right_arithmetic", make_function(interner, type_t::make_int(), { type_t::make_int(), type_t::make_int() }, epure::pure) );
 }
 
@@ -538,7 +538,7 @@ std::string get_intrinsic_opcode(const intrinsic_signature_t& signature){
 	return std::string() + "$" + signature.name;
 }
 
-intrinsic_signatures_t make_intrinsic_signatures(type_interner_t& interner){
+intrinsic_signatures_t make_intrinsic_signatures(types_t& interner){
 	intrinsic_signatures_t result;
 
 	result.assert = make_assert_signature(interner);

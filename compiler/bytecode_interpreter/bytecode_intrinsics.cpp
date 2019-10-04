@@ -506,7 +506,7 @@ bc_value_t bc_intrinsic__from_json(interpreter_t& vm, const bc_value_t args[], i
 	const auto json = args[0].get_json();
 	const auto target_type = args[1].get_typeid_value();
 
-	type_interner_t temp = vm._imm->_program._types;
+	types_t temp = vm._imm->_program._types;
 	const auto result = unflatten_json_to_specific_type(temp, json, target_type);
 	return value_to_bc(vm._imm->_program._types, result);
 }
@@ -1079,7 +1079,7 @@ bc_value_t bc_intrinsic__bw_shift_right_arithmetic(interpreter_t& vm, const bc_v
 
 
 
-static std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics_internal(type_interner_t& interner){
+static std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics_internal(types_t& interner){
 	QUARK_ASSERT(interner.check_invariant());
 
 	std::vector<std::pair<intrinsic_signature_t, BC_NATIVE_FUNCTION_PTR>> log;
@@ -1141,7 +1141,7 @@ static std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics_interna
 	return result;
 }
 
-std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics(type_interner_t& interner){
+std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics(types_t& interner){
 	QUARK_ASSERT(interner.check_invariant());
 
 	static const auto f = bc_get_intrinsics_internal(interner);

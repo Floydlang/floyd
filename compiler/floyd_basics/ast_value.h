@@ -444,8 +444,8 @@ struct value_t {
 	//------------------------------------------------		struct
 
 
-	public: static value_t make_struct_value(const type_interner_t& interner, const type_t& struct_type, const std::vector<value_t>& values);
-	public: static value_t make_struct_value(type_interner_t& interner, const type_t& struct_type, const std::vector<value_t>& values);
+	public: static value_t make_struct_value(const types_t& interner, const type_t& struct_type, const std::vector<value_t>& values);
+	public: static value_t make_struct_value(types_t& interner, const type_t& struct_type, const std::vector<value_t>& values);
 	public: bool is_struct() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -457,8 +457,8 @@ struct value_t {
 	//------------------------------------------------		vector
 
 
-	public: static value_t make_vector_value(const type_interner_t& interner, const type_t& element_type, const std::vector<value_t>& elements);
-	public: static value_t make_vector_value(type_interner_t& interner, const type_t& element_type, const std::vector<value_t>& elements);
+	public: static value_t make_vector_value(const types_t& interner, const type_t& element_type, const std::vector<value_t>& elements);
+	public: static value_t make_vector_value(types_t& interner, const type_t& element_type, const std::vector<value_t>& elements);
 	public: bool is_vector() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -470,8 +470,8 @@ struct value_t {
 	//------------------------------------------------		dict
 
 
-	public: static value_t make_dict_value(const type_interner_t& interner, const type_t& value_type, const std::map<std::string, value_t>& entries);
-	public: static value_t make_dict_value(type_interner_t& interner, const type_t& value_type, const std::map<std::string, value_t>& entries);
+	public: static value_t make_dict_value(const types_t& interner, const type_t& value_type, const std::map<std::string, value_t>& entries);
+	public: static value_t make_dict_value(types_t& interner, const type_t& value_type, const std::map<std::string, value_t>& entries);
 	public: bool is_dict() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -668,11 +668,11 @@ struct value_t {
 	private: explicit value_t(const type_t& struct_type, std::shared_ptr<struct_value_t>& instance);
 	private: explicit value_t(type_t& struct_type, std::shared_ptr<struct_value_t>& instance);
 
-	private: explicit value_t(const type_interner_t& interner, const type_t& element_type, const std::vector<value_t>& elements);
-	private: explicit value_t(type_interner_t& interner, const type_t& element_type, const std::vector<value_t>& elements);
+	private: explicit value_t(const types_t& interner, const type_t& element_type, const std::vector<value_t>& elements);
+	private: explicit value_t(types_t& interner, const type_t& element_type, const std::vector<value_t>& elements);
 
-	private: explicit value_t(const type_interner_t& interner, const type_t& value_type, const std::map<std::string, value_t>& entries);
-	private: explicit value_t(type_interner_t& interner, const type_t& value_type, const std::map<std::string, value_t>& entries);
+	private: explicit value_t(const types_t& interner, const type_t& value_type, const std::map<std::string, value_t>& entries);
+	private: explicit value_t(types_t& interner, const type_t& value_type, const std::map<std::string, value_t>& entries);
 
 	private: explicit value_t(const type_t& type, function_id_t function_id);
 
@@ -705,10 +705,10 @@ struct value_t {
 	"Hello, world"
 	Notice, strings don't get wrapped in "".
 */
-std::string to_compact_string2(const type_interner_t& interner, const value_t& value);
+std::string to_compact_string2(const types_t& interner, const value_t& value);
 
 //	Special handling of strings, we want to wrap in "".
-std::string to_compact_string_quote_strings(const type_interner_t& interner, const value_t& value);
+std::string to_compact_string_quote_strings(const types_t& interner, const value_t& value);
 
 /*
 	bool: "true"
@@ -716,20 +716,20 @@ std::string to_compact_string_quote_strings(const type_interner_t& interner, con
 	string: "1003"
 	string: "Hello, world"
 */
-std::string value_and_type_to_string(const type_interner_t& interner, const value_t& value);
+std::string value_and_type_to_string(const types_t& interner, const value_t& value);
 
-json_t value_to_ast_json(const type_interner_t& interner, const value_t& v);
-value_t ast_json_to_value(type_interner_t& interner, const type_t& type, const json_t& v);
+json_t value_to_ast_json(const types_t& interner, const value_t& v);
+value_t ast_json_to_value(types_t& interner, const type_t& type, const json_t& v);
 
 
 //	json array: [ TYPE, VALUE ]
-json_t value_and_type_to_ast_json(const type_interner_t& interner, const value_t& v);
+json_t value_and_type_to_ast_json(const types_t& interner, const value_t& v);
 
 //	json array: [ TYPE, VALUE ]
-value_t ast_json_to_value_and_type(type_interner_t& interner, const json_t& v);
+value_t ast_json_to_value_and_type(types_t& interner, const json_t& v);
 
 
-json_t values_to_json_array(const type_interner_t& interner, const std::vector<value_t>& values);
+json_t values_to_json_array(const types_t& interner, const std::vector<value_t>& values);
 
 
 value_t make_def(const type_t& type);

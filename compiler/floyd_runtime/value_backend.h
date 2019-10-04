@@ -648,8 +648,8 @@ void dispose_struct(STRUCT_T& v);
 
 
 
-runtime_value_t load_via_ptr2(const type_interner_t& interner, const void* value_ptr, const type_t& type);
-void store_via_ptr2(const type_interner_t& interner, void* value_ptr, const type_t& type, const runtime_value_t& value);
+runtime_value_t load_via_ptr2(const types_t& interner, const void* value_ptr, const type_t& type);
+void store_via_ptr2(const types_t& interner, void* value_ptr, const type_t& type, const runtime_value_t& value);
 
 
 
@@ -676,7 +676,7 @@ struct value_backend_t {
 	value_backend_t(
 		const std::vector<std::pair<link_name_t, void*>>& native_func_lookup,
 		const std::vector<std::pair<type_t, struct_layout_t>>& struct_layouts,
-		const type_interner_t& type_interner,
+		const types_t& type_interner,
 		const config_t& config
 	);
 
@@ -695,7 +695,7 @@ struct value_backend_t {
 	//	??? Also go from itype -> struct_layout
 	// 	??? also go from itype -> collection element-type without using type_t.
 
-	type_interner_t type_interner;
+	types_t type_interner;
 	std::vector<type_t> child_type;
 
 

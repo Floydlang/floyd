@@ -104,7 +104,7 @@ struct bcgen_body_t {
 	std::vector<bcgen_instruction_t> _instrs;
 };
 
-static bc_static_frame_t make_frame(const type_interner_t& interner, const bcgen_body_t& body, const std::vector<type_t>& args);
+static bc_static_frame_t make_frame(const types_t& interner, const bcgen_body_t& body, const std::vector<type_t>& args);
 
 
 //////////////////////////////////////		bcgenerator_t
@@ -177,12 +177,12 @@ static type_t get_expr_output(const bcgenerator_t& gen, const expression_t& e){
 	return get_expr_output_type(gen, e);
 }
 
-static type_t dummy_func(const type_interner_t& interner, const type_t& type){ return type; }
+static type_t dummy_func(const types_t& interner, const type_t& type){ return type; }
 
 
 //??? Don't use the term "symbol" here, since not all symbols should go into stack frames.
 
-static symbol_pos_t add_local_temp(const type_interner_t& interner, bcgen_body_t& body_acc, const type_t& type0, const std::string& name){
+static symbol_pos_t add_local_temp(const types_t& interner, bcgen_body_t& body_acc, const type_t& type0, const std::string& name){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(body_acc.check_invariant());
 	QUARK_ASSERT(type0.check_invariant());
@@ -195,7 +195,7 @@ static symbol_pos_t add_local_temp(const type_interner_t& interner, bcgen_body_t
 	return symbol_pos_t::make_stack_pos(0, id);
 }
 
-static int add_constant_literal(const type_interner_t& interner, symbol_table_t& symbols, const std::string& name, const floyd::value_t& value){
+static int add_constant_literal(const types_t& interner, symbol_table_t& symbols, const std::string& name, const floyd::value_t& value){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 
@@ -204,7 +204,7 @@ static int add_constant_literal(const type_interner_t& interner, symbol_table_t&
 	return static_cast<int>(symbols._symbols.size() - 1);
 }
 
-static symbol_pos_t add_local_const(const type_interner_t& interner, bcgen_body_t& body_acc, const value_t& value, const std::string& name){
+static symbol_pos_t add_local_const(const types_t& interner, bcgen_body_t& body_acc, const value_t& value, const std::string& name){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(body_acc.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
@@ -820,7 +820,7 @@ expression_gen_t make_update_call(bcgenerator_t& gen_acc, const symbol_pos_t& ta
 	return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, output_type, intrinsic_details, body);
 }
 
-static bc_opcode convert_call_to_pushback_opcode(const type_interner_t& interner, const type_t& arg1_type){
+static bc_opcode convert_call_to_pushback_opcode(const types_t& interner, const type_t& arg1_type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(arg1_type.check_invariant());
 
@@ -881,7 +881,7 @@ static expression_gen_t bcgen_intrinsic_push_back_expression(bcgenerator_t& gen_
 
 
 //	a = size(b)
-static bc_opcode convert_call_to_size_opcode(const type_interner_t& interner, const type_t& arg1_type){
+static bc_opcode convert_call_to_size_opcode(const types_t& interner, const type_t& arg1_type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(arg1_type.check_invariant());
 
@@ -1881,7 +1881,7 @@ bc_instruction_t squeeze_instruction(const bcgen_instruction_t& instruction){
 	return result;
 }
 
-static bc_static_frame_t make_frame(const type_interner_t& interner, const bcgen_body_t& body, const std::vector<type_t>& args){
+static bc_static_frame_t make_frame(const types_t& interner, const bcgen_body_t& body, const std::vector<type_t>& args){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -1943,7 +1943,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 	bcgenerator_t a(ast);
 
 /*
-	type_interner_t interner2 = ast._tree._interned_types;
+	types_t interner2 = ast._tree._interned_types;
 
 
 	//???	benchmark_result2_t and benchmark_id_t etc are part of standard library and defines in k_corelib_builtin_types_and_constants. Find those symbols instead of making new types here.

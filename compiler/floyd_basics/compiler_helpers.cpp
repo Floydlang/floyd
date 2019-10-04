@@ -32,7 +32,7 @@ void ut_verify_run_output(const quark::call_context_t& context, const run_output
 	if(result == expected){
 	}
 	else{
-		type_interner_t interner;
+		types_t interner;
 		{
 			QUARK_SCOPED_TRACE("  result: ");
 			QUARK_TRACE_SS("main_result: " << result.main_result);

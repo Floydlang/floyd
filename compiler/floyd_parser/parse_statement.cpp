@@ -167,7 +167,7 @@ struct a_result_t {
 	seq_t rest;
 };
 
-static a_result_t parse_a(type_interner_t& interner, const seq_t& p, const location_t& loc){
+static a_result_t parse_a(types_t& interner, const seq_t& p, const location_t& loc){
 	const auto pos = skip_whitespace(p);
 
 	//	Notice: if there is no type, only and identifier -- then we still get a type back: with an unresolved identifier.
@@ -190,7 +190,7 @@ static a_result_t parse_a(type_interner_t& interner, const seq_t& p, const locat
 }
 
 std::pair<json_t, seq_t> parse_let(const seq_t& pos, const location_t& loc){
-	type_interner_t interner;
+	types_t interner;
 
 	const auto a_result = parse_a(interner, pos, loc);
 	if(a_result.rest.empty()){
@@ -209,7 +209,7 @@ std::pair<json_t, seq_t> parse_let(const seq_t& pos, const location_t& loc){
 }
 
 std::pair<json_t, seq_t> parse_mutable(const seq_t& pos, const location_t& loc){
-	type_interner_t interner;
+	types_t interner;
 	const auto a_result = parse_a(interner, pos, loc);
 	if(a_result.rest.empty()){
 		throw_compiler_error(loc, "Require a value for new bind.");
@@ -427,7 +427,7 @@ parse_result_t parse_optional_statement_body(const seq_t& s){
 
 
 std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos){
-	type_interner_t temp;
+	types_t temp;
 
 	const auto start = skip_whitespace(pos);
 	const auto func_pos = read_required(start, keyword_t::k_func);
@@ -604,7 +604,7 @@ QUARK_TEST("", "parse_function_definition_statement()", "Min whitespace", "Corre
 //////////////////////////////////////////////////		parse_struct_definition_statement()
 
 
-static std::pair<json_t, seq_t>  parse_struct_definition_body(type_interner_t& type_interner, const seq_t& p, const std::string& name, const location_t& location){
+static std::pair<json_t, seq_t>  parse_struct_definition_body(types_t& type_interner, const seq_t& p, const std::string& name, const location_t& location){
 	const auto s2 = skip_whitespace(p);
 	const auto start = s2;
 	auto pos = read_required_char(s2, '{');
@@ -638,7 +638,7 @@ static std::pair<json_t, seq_t>  parse_struct_definition_body(type_interner_t& t
 }
 
 std::pair<json_t, seq_t>  parse_struct_definition_statement(const seq_t& pos0){
-	type_interner_t type_interner;
+	types_t type_interner;
 	std::pair<bool, seq_t> token_pos = if_first(pos0, keyword_t::k_struct);
 	QUARK_ASSERT(token_pos.first);
 

@@ -70,7 +70,7 @@ bool operator==(const test_report_t& lhs, const test_report_t& rhs){
 
 
 void ut_verify_report(const quark::call_context_t& context, const test_report_t& result, const test_report_t& expected){
-	type_interner_t interner;
+	types_t interner;
 
 	if(result.exception_what != expected.exception_what){
 		std::cout << "Expected exception what: " << expected.exception_what << std::endl;

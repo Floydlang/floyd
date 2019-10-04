@@ -67,7 +67,7 @@ static symbol_t::symbol_type symbol_type_from_string(const std::string& s){
 	}
 }
 
-std::string symbol_to_string(const type_interner_t& interner, const symbol_t& s){
+std::string symbol_to_string(const types_t& interner, const symbol_t& s){
 	std::stringstream out;
 	out << "{ "
 		<< symbol_type_to_string(s._symbol_type)
@@ -78,7 +78,7 @@ std::string symbol_to_string(const type_interner_t& interner, const symbol_t& s)
 }
 
 
-static json_t symbol_to_json(const type_interner_t& interner, const symbol_t& symbol){
+static json_t symbol_to_json(const types_t& interner, const symbol_t& symbol){
 	const auto symbol_type_str = symbol_type_to_string(symbol._symbol_type);
 	const auto value_type = type_to_json(interner, symbol._value_type);
 
@@ -90,7 +90,7 @@ static json_t symbol_to_json(const type_interner_t& interner, const symbol_t& sy
 	return e2;
 }
 
-static symbol_t json_to_symbol(type_interner_t& interner, const json_t& e){
+static symbol_t json_to_symbol(types_t& interner, const json_t& e){
 	QUARK_ASSERT(interner.check_invariant());
 
 	const auto symbol_type = e.get_object_element("symbol_type").get_string();
@@ -132,7 +132,7 @@ const symbol_t& find_symbol_required(const symbol_table_t& symbol_table, const s
 	return it->second;
 }
 
-std::vector<json_t> symbols_to_json(const type_interner_t& interner, const symbol_table_t& symbol_table){
+std::vector<json_t> symbols_to_json(const types_t& interner, const symbol_table_t& symbol_table){
 	std::vector<json_t> r;
 	int symbol_index = 0;
 	for(const auto& e: symbol_table._symbols){
@@ -148,7 +148,7 @@ std::vector<json_t> symbols_to_json(const type_interner_t& interner, const symbo
 	return r;
 }
 
-symbol_table_t ast_json_to_symbols(type_interner_t& interner, const json_t& p){
+symbol_table_t ast_json_to_symbols(types_t& interner, const json_t& p){
 	QUARK_ASSERT(interner.check_invariant());
 
 	std::vector<std::pair<std::string, symbol_t>> result;
@@ -183,7 +183,7 @@ bool body_t::check_invariant() const {
 	return true;
 }
 
-json_t body_to_json(const type_interner_t& interner, const body_t& e){
+json_t body_to_json(const types_t& interner, const body_t& e){
 	std::vector<json_t> statements;
 	for(const auto& i: e._statements){
 		statements.push_back(statement_to_json(interner, i));
@@ -197,7 +197,7 @@ json_t body_to_json(const type_interner_t& interner, const body_t& e){
 	});
 }
 
-body_t json_to_body(type_interner_t& interner, const json_t& json){
+body_t json_to_body(types_t& interner, const json_t& json){
 	QUARK_ASSERT(interner.check_invariant());
 
 	const auto statements = json.does_object_element_exist("statements") ? json.get_object_element("statements") : json_t();
@@ -222,7 +222,7 @@ bool operator==(const body_t& lhs, const body_t& rhs){
 
 
 
-static statement_t ast_json_to_statement(type_interner_t& interner, const json_t& statement0){
+static statement_t ast_json_to_statement(types_t& interner, const json_t& statement0){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(statement0.check_invariant());
 	QUARK_ASSERT(statement0.is_array());
@@ -378,7 +378,7 @@ static statement_t ast_json_to_statement(type_interner_t& interner, const json_t
 	}
 }
 
-const std::vector<statement_t> ast_json_to_statements(type_interner_t& interner, const json_t& p){
+const std::vector<statement_t> ast_json_to_statements(types_t& interner, const json_t& p){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(p.check_invariant());
 	QUARK_ASSERT(p.is_array());
@@ -391,11 +391,11 @@ const std::vector<statement_t> ast_json_to_statements(type_interner_t& interner,
 	return statements2;
 }
 
-json_t statement_to_json(const type_interner_t& interner, const statement_t& e){
+json_t statement_to_json(const types_t& interner, const statement_t& e){
 	QUARK_ASSERT(e.check_invariant());
 
 	struct visitor_t {
-		const type_interner_t& interner;
+		const types_t& interner;
 		const statement_t& statement;
 
 		json_t operator()(const statement_t::return_statement_t& s) const{

@@ -376,7 +376,7 @@ static type_entry_t make_type(const builder_t& builder, const type_t& type){
 }
 
 //	Notice: the entries in the type_interner may reference eachother = we need to process recursively.
-llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const type_interner_t& type_interner){
+llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const types_t& type_interner){
 	QUARK_ASSERT(type_interner.check_invariant());
 
 	state_t acc;
@@ -579,7 +579,7 @@ llvm::Type* make_frp_type(const llvm_type_lookup& type_lookup){
 
 
 static llvm_type_lookup make_basic_interner(llvm::LLVMContext& context){
-	type_interner_t temp;
+	types_t temp;
 	return llvm_type_lookup(context, temp);
 }
 

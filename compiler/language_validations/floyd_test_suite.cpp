@@ -76,7 +76,7 @@ unsupported syntax
 
 
 
-static value_t make_bool_vec(type_interner_t& interner, const std::vector<bool>& elements){
+static value_t make_bool_vec(types_t& interner, const std::vector<bool>& elements){
 	std::vector<value_t> elements2;
 	for(const auto e: elements){
 		elements2.push_back(value_t::make_bool(e));
@@ -85,7 +85,7 @@ static value_t make_bool_vec(type_interner_t& interner, const std::vector<bool>&
 	return value_t::make_vector_value(interner, type_t::make_bool(), elements2);
 }
 
-static value_t make_int_vec(type_interner_t& interner, const std::vector<int64_t>& elements){
+static value_t make_int_vec(types_t& interner, const std::vector<int64_t>& elements){
 	std::vector<value_t> elements2;
 	for(const auto& e: elements){
 		elements2.push_back(value_t::make_int(e));
@@ -94,7 +94,7 @@ static value_t make_int_vec(type_interner_t& interner, const std::vector<int64_t
 	return value_t::make_vector_value(interner, type_t::make_int(), elements2);
 }
 
-static value_t make_double_vec(type_interner_t& interner, const std::vector<double>& elements){
+static value_t make_double_vec(types_t& interner, const std::vector<double>& elements){
 	std::vector<value_t> elements2;
 	for(const auto& e: elements){
 		elements2.push_back(value_t::make_double(e));
@@ -3134,7 +3134,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] constructor expression", "", 
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] constructor expression", "", ""){
-	type_interner_t temp;
+	types_t temp;
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(		let [int] result = [10, 20, 30]		)",
@@ -3169,7 +3169,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] [] lookup", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] =", "copy", ""){
-	type_interner_t temp;
+	types_t temp;
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let a = [10, 20, 30] let result = a;		)",		make_int_vec(temp, { 10, 20, 30 }) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] ==", "same values", ""){
@@ -3186,7 +3186,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] <", "different values", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] +", "non-empty vectors", ""){
-	type_interner_t temp;
+	types_t temp;
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let [int] result = [1, 2] + [3, 4]		)",		make_int_vec(temp, { 1, 2, 3, 4 }) );
 }
 
@@ -3246,7 +3246,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] find()", "", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] push_back()", "", ""){
-	type_interner_t temp;
+	types_t temp;
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let [int] result = push_back([1, 2], 3)		)",		make_int_vec(temp, { 1, 2, 3 }) );
 }
 
@@ -3299,7 +3299,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] replace()", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] constructor-expression", "", ""){
-	type_interner_t temp;
+	types_t temp;
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let [double] result = [10.5, 20.5, 30.5]		)",	make_double_vec(temp, { 10.5, 20.5, 30.5 }) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector", "Vector can not hold elements of different types.", "exception"){
@@ -3324,7 +3324,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector", "Error: Lookup the unlookupable",
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] =", "copy", ""){
-	type_interner_t temp;
+	types_t temp;
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let a = [10.5, 20.5, 30.5] let result = a		)", make_double_vec(temp, { 10.5, 20.5, 30.5 }) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] ==", "same values", ""){
@@ -3341,7 +3341,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [double] <", "different values", ""
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] +", "non-empty vectors", ""){
-	type_interner_t temp;
+	types_t temp;
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let [double] result = [1.5, 2.5] + [3.5, 4.5]		)", make_double_vec(temp, { 1.5, 2.5, 3.5, 4.5 }) );
 }
 
@@ -3358,7 +3358,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [double] size()", "2", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] push_back()", "", ""){
-	type_interner_t temp;
+	types_t temp;
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let [double] result = push_back([1.5, 2.5], 3.5)		)", make_double_vec(temp, { 1.5, 2.5, 3.5 }) );
 }
 
@@ -5001,7 +5001,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
-	type_interner_t temp;
+	types_t temp;
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = typeof([1,2,3])		)", value_t::make_typeid_value(make_vector(temp, type_t::make_int()))	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
@@ -5191,7 +5191,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "string", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "point_t", ""){
-	type_interner_t temp;
+	types_t temp;
 	const auto point_t_def = std::vector<member_t>{
 		member_t(type_t::make_double(), "x"),
 		member_t(type_t::make_double(), "y")
@@ -6051,7 +6051,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "cmath_pi", "", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "pixel_t()", ""){
-	type_interner_t temp;
+	types_t temp;
 
 	const auto pixel_t__def = std::vector<member_t>{
 		member_t(type_t::make_int(), "red"),
@@ -6076,7 +6076,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "", "pixel_t()", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
-	type_interner_t temp;
+	types_t temp;
 	const auto a = make_vector(temp, type_t::make_string());
 	const auto b = make_vector(temp, make__fsentry_t__type(temp));
 	ut_verify_auto(QUARK_POS, a != b, true);
@@ -6245,7 +6245,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_fsentry_info()", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "get_fs_environment()", "", ""){
-	type_interner_t temp;
+	types_t temp;
 
 	ut_verify_global_result_lib(
 		QUARK_POS,

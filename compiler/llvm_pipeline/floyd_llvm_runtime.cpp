@@ -296,7 +296,7 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 }
 
 
-void trace_function_link_map(const type_interner_t& interner, const std::vector<function_link_entry_t>& defs){
+void trace_function_link_map(const types_t& interner, const std::vector<function_link_entry_t>& defs){
 	QUARK_SCOPED_TRACE("FUNCTION LINK MAP");
 
 	std::vector<std::vector<std::string>> matrix;

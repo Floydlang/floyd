@@ -20,7 +20,7 @@ namespace floyd {
 
 
 
-static std::vector<bc_value_t> values_to_bcs(const type_interner_t& interner, const std::vector<value_t>& values){
+static std::vector<bc_value_t> values_to_bcs(const types_t& interner, const std::vector<value_t>& values){
 	QUARK_ASSERT(interner.check_invariant());
 
 	std::vector<bc_value_t> result;
@@ -30,7 +30,7 @@ static std::vector<bc_value_t> values_to_bcs(const type_interner_t& interner, co
 	return result;
 }
 
-value_t bc_to_value(const type_interner_t& interner, const bc_value_t& value){
+value_t bc_to_value(const types_t& interner, const bc_value_t& value){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 
@@ -116,7 +116,7 @@ value_t bc_to_value(const type_interner_t& interner, const bc_value_t& value){
 	}
 }
 
-bc_value_t value_to_bc(const type_interner_t& interner, const value_t& value){
+bc_value_t value_to_bc(const types_t& interner, const value_t& value){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 

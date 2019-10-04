@@ -28,7 +28,7 @@ struct value_t;
 struct type_t;
 struct location_t;
 struct member_t;
-struct type_interner_t;
+struct types_t;
 
 namespace parser {
 
@@ -104,8 +104,8 @@ std::pair<std::string, seq_t> read_required_identifier(const seq_t& s);
 	Does NOT make sure this a known type-identifier.
 	String must not be empty.
 */
-std::pair<std::shared_ptr<type_t>, seq_t> read_type(type_interner_t& interner, const seq_t& s);
-std::pair<type_t, seq_t> read_required_type(type_interner_t& interner, const seq_t& s);
+std::pair<std::shared_ptr<type_t>, seq_t> read_type(types_t& interner, const seq_t& s);
+std::pair<type_t, seq_t> read_required_type(types_t& interner, const seq_t& s);
 
 
 ////////////////////////////////		HIGH LEVEL
@@ -126,10 +126,10 @@ std::pair<type_t, seq_t> read_required_type(type_interner_t& interner, const seq
 
 	(int, int)
 */
-std::pair<std::vector<member_t>, seq_t> read_functiondef_arg_parantheses(type_interner_t& interner, const seq_t& s);
+std::pair<std::vector<member_t>, seq_t> read_functiondef_arg_parantheses(types_t& interner, const seq_t& s);
 
 //	Member names may be left blank.
-std::pair<std::vector<member_t>, seq_t> read_function_type_args(type_interner_t& interner, const seq_t& s);
+std::pair<std::vector<member_t>, seq_t> read_function_type_args(types_t& interner, const seq_t& s);
 
 std::pair<std::vector<member_t>, seq_t> read_call_args(const seq_t& s);
 

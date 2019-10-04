@@ -20,7 +20,7 @@ namespace floyd {
 
 
 
-bool check_types_resolved(const type_interner_t& interner, const expression_t& e){
+bool check_types_resolved(const types_t& interner, const expression_t& e){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -35,7 +35,7 @@ bool check_types_resolved(const type_interner_t& interner, const expression_t& e
 
 
 	struct visitor_t {
-		const type_interner_t& interner;
+		const types_t& interner;
 
 
 		bool operator()(const expression_t::literal_exp_t& e) const{
@@ -107,7 +107,7 @@ bool check_types_resolved(const type_interner_t& interner, const expression_t& e
 	return result;
 }
 
-bool check_types_resolved(const type_interner_t& interner, const std::vector<expression_t>& expressions){
+bool check_types_resolved(const types_t& interner, const std::vector<expression_t>& expressions){
 	QUARK_ASSERT(interner.check_invariant());
 
 	for(const auto& e: expressions){
@@ -119,7 +119,7 @@ bool check_types_resolved(const type_interner_t& interner, const std::vector<exp
 }
 
 
-bool check_types_resolved(const type_interner_t& interner, const function_definition_t& def){
+bool check_types_resolved(const types_t& interner, const function_definition_t& def){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(def.check_invariant());
 
@@ -144,7 +144,7 @@ bool check_types_resolved(const type_interner_t& interner, const function_defini
 	return true;
 }
 
-bool check_types_resolved(const type_interner_t& interner, const body_t& body){
+bool check_types_resolved(const types_t& interner, const body_t& body){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -199,7 +199,7 @@ bool check_types_resolved(const type_interner_t& interner, const body_t& body){
 
 
 
-bool check_types_resolved(const type_interner_t& interner, const std::vector<std::shared_ptr<statement_t>>& s){
+bool check_types_resolved(const types_t& interner, const std::vector<std::shared_ptr<statement_t>>& s){
 	QUARK_ASSERT(interner.check_invariant());
 
 	for(const auto& e: s){
@@ -210,12 +210,12 @@ bool check_types_resolved(const type_interner_t& interner, const std::vector<std
 	return true;
 }
 
-bool check_types_resolved(const type_interner_t& interner, const statement_t& s){
+bool check_types_resolved(const types_t& interner, const statement_t& s){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(s.check_invariant());
 
 	struct visitor_t {
-		const type_interner_t& interner;
+		const types_t& interner;
 
 
 		bool operator()(const statement_t::return_statement_t& s) const{
@@ -280,7 +280,7 @@ bool check_types_resolved(const type_interner_t& interner, const statement_t& s)
 }
 
 
-bool check_types_resolved(const type_interner_t& interner, const struct_type_desc_t& s){
+bool check_types_resolved(const types_t& interner, const struct_type_desc_t& s){
 	QUARK_ASSERT(s.check_invariant());
 
 	for(const auto& e: s._members){
@@ -293,7 +293,7 @@ bool check_types_resolved(const type_interner_t& interner, const struct_type_des
 }
 
 
-bool check_types_resolved__type_vector(const type_interner_t& interner, const std::vector<type_t>& elements){
+bool check_types_resolved__type_vector(const types_t& interner, const std::vector<type_t>& elements){
 	QUARK_ASSERT(interner.check_invariant());
 
 	for(const auto& e: elements){
@@ -304,12 +304,12 @@ bool check_types_resolved__type_vector(const type_interner_t& interner, const st
 	return true;
 }
 
-bool check_types_resolved(const type_interner_t& interner, const type_t& t){
+bool check_types_resolved(const types_t& interner, const type_t& t){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(t.check_invariant());
 
 	struct visitor_t {
-		const type_interner_t interner;
+		const types_t interner;
 
 
 		bool operator()(const undefined_t& e) const{
@@ -365,7 +365,7 @@ bool check_types_resolved(const type_interner_t& interner, const type_t& t){
 }
 
 
-bool check_types_resolved(const type_interner_t& interner){
+bool check_types_resolved(const types_t& interner){
 	QUARK_ASSERT(interner.check_invariant());
 
 	for(auto index = 0 ; index < interner.interned2.size() ; index++){

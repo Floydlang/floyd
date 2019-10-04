@@ -43,7 +43,7 @@
 namespace floyd {
 
 struct type_t;
-struct type_interner_t;
+struct types_t;
 
 struct interpreter_t;
 struct bc_program_t;
@@ -111,11 +111,11 @@ enum class value_encoding {
 
 bool encode_as_inplace(const type_t& type);
 
-bool encode_as_vector_w_inplace_elements(const type_interner_t& interner, const type_t& type);
+bool encode_as_vector_w_inplace_elements(const types_t& interner, const type_t& type);
 
-bool encode_as_dict_w_inplace_values(const type_interner_t& interner, const type_t& type);
+bool encode_as_dict_w_inplace_values(const types_t& interner, const type_t& type);
 
-value_encoding type_to_encoding(const type_interner_t& interner, const type_t& type);
+value_encoding type_to_encoding(const types_t& interner, const type_t& type);
 
 //	Will this type of value require an ext ? bc_external_value_t to be used?
 bool encode_as_external(value_encoding encoding);
@@ -248,7 +248,7 @@ struct bc_external_handle_t {
 };
 
 
-bool check_external_deep(const type_interner_t& interner, const type_t& type, const bc_external_value_t* ext);
+bool check_external_deep(const types_t& interner, const type_t& type, const bc_external_value_t* ext);
 
 
 //////////////////////////////////////		bc_external_value_t
@@ -302,23 +302,23 @@ struct bc_external_value_t {
 ////////////////////////////////////////////			FREE
 
 
-const immer::vector<bc_value_t> get_vector(const type_interner_t& interner, const bc_value_t& value);
-const immer::vector<bc_external_handle_t>* get_vector_external_elements(const type_interner_t& interner, const bc_value_t& value);
-const immer::vector<bc_inplace_value_t>* get_vector_inplace_elements(const type_interner_t& interner, const bc_value_t& value);
+const immer::vector<bc_value_t> get_vector(const types_t& interner, const bc_value_t& value);
+const immer::vector<bc_external_handle_t>* get_vector_external_elements(const types_t& interner, const bc_value_t& value);
+const immer::vector<bc_inplace_value_t>* get_vector_inplace_elements(const types_t& interner, const bc_value_t& value);
 
-bc_value_t make_vector(const type_interner_t& interner, const type_t& element_type, const immer::vector<bc_value_t>& elements);
-bc_value_t make_vector(const type_interner_t& interner, const type_t& element_type, const immer::vector<bc_external_handle_t>& elements);
-bc_value_t make_vector(const type_interner_t& interner, const type_t& element_type, const immer::vector<bc_inplace_value_t>& elements);
+bc_value_t make_vector(const types_t& interner, const type_t& element_type, const immer::vector<bc_value_t>& elements);
+bc_value_t make_vector(const types_t& interner, const type_t& element_type, const immer::vector<bc_external_handle_t>& elements);
+bc_value_t make_vector(const types_t& interner, const type_t& element_type, const immer::vector<bc_inplace_value_t>& elements);
 
-const immer::map<std::string, bc_external_handle_t>& get_dict_external_values(const type_interner_t& interner, const bc_value_t& value);
-const immer::map<std::string, bc_inplace_value_t>& get_dict_inplace_values(const type_interner_t& interner, const bc_value_t& value);
+const immer::map<std::string, bc_external_handle_t>& get_dict_external_values(const types_t& interner, const bc_value_t& value);
+const immer::map<std::string, bc_inplace_value_t>& get_dict_inplace_values(const types_t& interner, const bc_value_t& value);
 
-bc_value_t make_dict(const type_interner_t& interner, const type_t& value_type, const immer::map<std::string, bc_external_handle_t>& entries);
-bc_value_t make_dict(const type_interner_t& interner, const type_t& value_type, const immer::map<std::string, bc_inplace_value_t>& entries);
+bc_value_t make_dict(const types_t& interner, const type_t& value_type, const immer::map<std::string, bc_external_handle_t>& entries);
+bc_value_t make_dict(const types_t& interner, const type_t& value_type, const immer::map<std::string, bc_inplace_value_t>& entries);
 
-json_t bcvalue_to_json(const type_interner_t& interner, const bc_value_t& v);
-int bc_compare_value_true_deep(const type_interner_t& interner, const bc_value_t& left, const bc_value_t& right, const type_t& type);
-int bc_compare_value_exts(const type_interner_t& interner, const bc_external_handle_t& left, const bc_external_handle_t& right, const type_t& type);
+json_t bcvalue_to_json(const types_t& interner, const bc_value_t& v);
+int bc_compare_value_true_deep(const types_t& interner, const bc_value_t& left, const bc_value_t& right, const type_t& type);
+int bc_compare_value_exts(const types_t& interner, const bc_external_handle_t& left, const bc_external_handle_t& right, const type_t& type);
 
 
 
@@ -745,7 +745,7 @@ struct bc_instruction_t {
 */
 struct bc_static_frame_t {
 	bc_static_frame_t(
-		const type_interner_t& interner,
+		const types_t& interner,
 		const std::vector<bc_instruction_t>& instrs2,
 		const std::vector<std::pair<std::string, bc_symbol_t>>& symbols,
 		const std::vector<type_t>& args
@@ -781,7 +781,7 @@ struct bc_static_frame_t {
 
 struct bc_function_definition_t {
 	bc_function_definition_t(
-		const type_interner_t& interner, 
+		const types_t& interner,
 		const type_t& function_type,
 		const std::vector<member_t>& args,
 		const std::shared_ptr<bc_static_frame_t>& frame,
@@ -821,7 +821,7 @@ struct bc_program_t {
 	//////////////////////////////////////		STATE
 	public: const bc_static_frame_t _globals;
 	public: std::map<function_id_t, bc_function_definition_t> _function_defs;
-	public: type_interner_t _types;
+	public: types_t _types;
 	public: software_system_t _software_system;
 	public: container_t _container_def;
 	public: intrinsic_signatures_t intrinsic_signatures;
@@ -1111,7 +1111,7 @@ struct interpreter_stack_t {
 		return true;
 	}
 
-	public: bool check_reg_vector_w_external_elements(const type_interner_t& interner, const int reg) const{
+	public: bool check_reg_vector_w_external_elements(const types_t& interner, const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(interner.check_invariant());
 		QUARK_ASSERT(check_reg(reg));
@@ -1120,7 +1120,7 @@ struct interpreter_stack_t {
 		return true;
 	}
 
-	public: bool check_reg_vector_w_inplace_elements(const type_interner_t& interner, const int reg) const{
+	public: bool check_reg_vector_w_inplace_elements(const types_t& interner, const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(interner.check_invariant());
 		QUARK_ASSERT(check_reg(reg));
@@ -1129,7 +1129,7 @@ struct interpreter_stack_t {
 		return true;
 	}
 
-	public: bool check_reg_dict_w_external_values(const type_interner_t& interner, const int reg) const{
+	public: bool check_reg_dict_w_external_values(const types_t& interner, const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(interner.check_invariant());
 		QUARK_ASSERT(check_reg(reg));
@@ -1137,7 +1137,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(encode_as_dict_w_inplace_values(interner, _current_frame_ptr->_symbols[reg].second._value_type) == false);
 		return true;
 	}
-	public: bool check_reg_dict_w_inplace_values(const type_interner_t& interner, const int reg) const{
+	public: bool check_reg_dict_w_inplace_values(const types_t& interner, const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(interner.check_invariant());
 		QUARK_ASSERT(check_reg(reg));
@@ -1332,7 +1332,7 @@ struct interpreter_stack_t {
 		return static_cast<int>(frame_pos);
 	}
 
-	public: json_t stack_to_json(const type_interner_t& interner) const;
+	public: json_t stack_to_json(const types_t& interner) const;
 
 
 	////////////////////////		STATE

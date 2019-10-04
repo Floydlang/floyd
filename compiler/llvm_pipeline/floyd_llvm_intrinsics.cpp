@@ -83,7 +83,7 @@ struct specialization_t {
 	function_bind_t bind;
 };
 
-static bool matches_specialization(const config_t& config, const type_interner_t& type_interner, eresolved_type wanted, const type_t& arg_type){
+static bool matches_specialization(const config_t& config, const types_t& type_interner, eresolved_type wanted, const type_t& arg_type){
 	QUARK_ASSERT(config.check_invariant());
 	QUARK_ASSERT(type_interner.check_invariant());
 	QUARK_ASSERT(arg_type.check_invariant());
@@ -142,7 +142,7 @@ static bool matches_specialization(const config_t& config, const type_interner_t
 
 
 
-static const function_link_entry_t& lookup_link_map(const config_t& config, const type_interner_t& type_interner, const std::vector<function_link_entry_t>& link_map, const std::vector<specialization_t>& specialisations, const type_t& type){
+static const function_link_entry_t& lookup_link_map(const config_t& config, const types_t& type_interner, const std::vector<function_link_entry_t>& link_map, const std::vector<specialization_t>& specialisations, const type_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto it = std::find_if(specialisations.begin(), specialisations.end(), [&](const specialization_t& s) { return matches_specialization(config, type_interner, s.required_arg_type, type); });

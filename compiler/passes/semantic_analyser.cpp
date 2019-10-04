@@ -73,7 +73,7 @@ struct analyser_t {
 
 	//	These are output functions, that have been fixed.
 	public: std::map<function_id_t, function_definition_t> _function_defs;
-	public: type_interner_t _types;
+	public: types_t _types;
 
 	public: software_system_t _software_system;
 	public: container_t _container_def;
@@ -144,7 +144,7 @@ static void trace_analyser(const analyser_t& a){
 /////////////////////////////////////////			RESOLVE SYMBOL USING LEXICAL SCOPE PATH
 
 
-static type_t get_tagged_type_symbol(const type_interner_t& interner, const symbol_t& symbol){
+static type_t get_tagged_type_symbol(const types_t& interner, const symbol_t& symbol){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(symbol._symbol_type == symbol_t::symbol_type::named_type);
 
@@ -1568,7 +1568,7 @@ std::pair<analyser_t, expression_t> analyse_load2(const analyser_t& a, const exp
 }
 
 
-static type_t select_inferred_type(const type_interner_t& interner, const type_t& target_type_or_any, const type_t& rhs_guess_type){
+static type_t select_inferred_type(const types_t& interner, const type_t& target_type_or_any, const type_t& rhs_guess_type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(target_type_or_any.check_invariant());
 	QUARK_ASSERT(rhs_guess_type.check_invariant());
@@ -2587,7 +2587,7 @@ void test__analyse_expression(const statement_t& parent, const expression_t& e, 
 	const analyser_t interpreter(ast);
 	const auto e3 = analyse_expression_no_target(interpreter, parent, e);
 
-	const type_interner_t temp;
+	const types_t temp;
 	ut_verify(QUARK_POS, expression_to_json(temp, e3.second), expression_to_json(temp, expected));
 }
 
@@ -2601,7 +2601,7 @@ QUARK_TEST("analyse_expression_no_target()", "literal 1234 == 1234", "", "") {
 }
 
 QUARK_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
-	const type_interner_t temp;
+	const types_t temp;
 	const unchecked_ast_t ast;
 	const analyser_t interpreter(ast);
 	const auto e3 = analyse_expression_no_target(
@@ -2625,7 +2625,7 @@ QUARK_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
 
 
 
-static std::pair<std::string, symbol_t> make_builtin_type(type_interner_t& interner, const type_t& type){
+static std::pair<std::string, symbol_t> make_builtin_type(types_t& interner, const type_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 

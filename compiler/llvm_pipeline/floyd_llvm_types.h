@@ -135,7 +135,7 @@ struct state_t {
 	public: llvm::Type* runtime_type_type;
 	public: llvm::Type* runtime_value_type;
 
-	public: type_interner_t type_interner;
+	public: types_t type_interner;
 
 	//	Elements match the elements inside type_interner.
 	public: std::vector<type_entry_t> types;
@@ -153,7 +153,7 @@ struct state_t {
 */
 
 struct llvm_type_lookup {
-	llvm_type_lookup(llvm::LLVMContext& context, const type_interner_t& type_interner);
+	llvm_type_lookup(llvm::LLVMContext& context, const types_t& type_interner);
 	bool check_invariant() const;
 
 	const type_entry_t& find_from_itype(const type_t& itype) const;

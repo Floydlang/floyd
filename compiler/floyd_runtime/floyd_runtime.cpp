@@ -19,13 +19,13 @@ namespace floyd {
 
 
 //??? remove usage of value_t
-value_t unflatten_json_to_specific_type(type_interner_t& interner, const json_t& v, const type_t& target_type){
+value_t unflatten_json_to_specific_type(types_t& interner, const json_t& v, const type_t& target_type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(v.check_invariant());
 
 
 	struct visitor_t {
-		type_interner_t& interner;
+		types_t& interner;
 		const type_t& target_type;
 		const json_t& v;
 

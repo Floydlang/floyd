@@ -877,7 +877,7 @@ bool is_rc_value(const type_t& type){
 
 
 // IMPORTANT: Different types will access different number of bytes, for example a BYTE. We cannot dereference pointer as a uint64*!!
-runtime_value_t load_via_ptr2(const type_interner_t& interner, const void* value_ptr, const type_t& type){
+runtime_value_t load_via_ptr2(const types_t& interner, const void* value_ptr, const type_t& type){
 	QUARK_ASSERT(value_ptr != nullptr);
 	QUARK_ASSERT(type.check_invariant());
 
@@ -942,7 +942,7 @@ runtime_value_t load_via_ptr2(const type_interner_t& interner, const void* value
 }
 
 // IMPORTANT: Different types will access different number of bytes, for example a BYTE. We cannot dereference pointer as a uint64*!!
-void store_via_ptr2(const type_interner_t& interner, void* value_ptr, const type_t& type, const runtime_value_t& value){
+void store_via_ptr2(const types_t& interner, void* value_ptr, const type_t& type, const runtime_value_t& value){
 	struct visitor_t {
 		void* value_ptr;
 		const runtime_value_t& value;
@@ -1026,7 +1026,7 @@ static std::map<type_t, type_t> make_type_lookup(const llvm_type_lookup& type_lo
 value_backend_t::value_backend_t(
 	const std::vector<std::pair<link_name_t, void*>>& native_func_lookup,
 	const std::vector<std::pair<type_t, struct_layout_t>>& struct_layouts,
-	const type_interner_t& type_interner,
+	const types_t& type_interner,
 	const config_t& config
 ) :
 	heap(config.trace_allocs),
@@ -1117,7 +1117,7 @@ value_backend_t make_test_value_backend(){
 	return value_backend_t(
 		{},
 		{},
-		type_interner_t(),
+		types_t(),
 		make_default_config()
 	);
 }

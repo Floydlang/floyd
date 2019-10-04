@@ -1235,7 +1235,7 @@ static bool is_identifier(const seq_t& p, const std::string identifier){
 std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 	QUARK_ASSERT(p.check_invariant());
 
-	type_interner_t temp;
+	types_t temp;
 
     const auto p2 = skip_whitespace(p);
 	if(p2.empty()){
@@ -1334,7 +1334,7 @@ QUARK_TEST("parser", "parse_lhs_atom()", "", ""){
 }
 
 QUARK_TEST("parser", "parse_lhs_atom()", "", ""){
-	type_interner_t temp;
+	types_t temp;
 	const auto a = parse_lhs_atom(seq_t("[3]"));
 	QUARK_UT_VERIFY(a.first == make_parser_node(
 		floyd::k_no_location,

@@ -25,7 +25,7 @@ namespace floyd {
 struct statement_t;
 struct expression_t;
 
-json_t statement_to_json(const type_interner_t& interner, const statement_t& e);
+json_t statement_to_json(const types_t& interner, const statement_t& e);
 
 
 ////////////////////////////////////////		statement_opcode_t
@@ -165,7 +165,7 @@ inline bool is_mutable(const symbol_t& s){
 }
 
 
-std::string symbol_to_string(const type_interner_t& interner, const symbol_t& symbol);
+std::string symbol_to_string(const types_t& interner, const symbol_t& symbol);
 
 
 
@@ -188,8 +188,8 @@ struct symbol_table_t {
 const symbol_t* find_symbol(const symbol_table_t& symbol_table, const std::string& name);
 const symbol_t& find_symbol_required(const symbol_table_t& symbol_table, const std::string& name);
 
-std::vector<json_t> symbols_to_json(const type_interner_t& interner, const symbol_table_t& symbols);
-symbol_table_t ast_json_to_symbols(type_interner_t& interner, const json_t& p);
+std::vector<json_t> symbols_to_json(const types_t& interner, const symbol_table_t& symbols);
+symbol_table_t ast_json_to_symbols(types_t& interner, const json_t& p);
 
 
 
@@ -224,8 +224,8 @@ struct body_t {
 bool operator==(const body_t& lhs, const body_t& rhs);
 
 
-json_t body_to_json(const type_interner_t& interner, const body_t& e);
-body_t json_to_body(type_interner_t& interner, const json_t& json);
+json_t body_to_json(const types_t& interner, const body_t& e);
+body_t json_to_body(types_t& interner, const json_t& json);
 
 
 
@@ -537,7 +537,7 @@ struct statement_t {
 		benchmark_def_statement_t
 	> statement_variant_t;
 
-	statement_t(/*const type_interner_t& interner,*/ const location_t& location, const statement_variant_t& contents) :
+	statement_t(/*const types_t& interner,*/ const location_t& location, const statement_variant_t& contents) :
 #if DEBUG_STATEMENT_DEBUG_STRING
 		debug_string(""),
 #endif
@@ -569,8 +569,8 @@ static bool operator==(const statement_t& lhs, const statement_t& rhs){
 }
 
 
-const std::vector<statement_t> ast_json_to_statements(type_interner_t& interner, const json_t& p);
-json_t statement_to_json(const type_interner_t& interner, const statement_t& e);
+const std::vector<statement_t> ast_json_to_statements(types_t& interner, const json_t& p);
+json_t statement_to_json(const types_t& interner, const statement_t& e);
 
 
 

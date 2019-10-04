@@ -21,11 +21,11 @@
 
 namespace floyd {
 
-struct type_interner_t;
+struct types_t;
 
 
 //	Create lookup from function id -> C function pointer.
-std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics(type_interner_t& interner);
+std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics(types_t& interner);
 
 
 }	//	floyd
