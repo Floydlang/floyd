@@ -403,14 +403,14 @@ llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const type_intern
 	for(type_lookup_index_t i = 0 ; i < acc.type_interner.interned2.size() ; i++){
 		const auto& type = lookup_itype_from_index(acc.type_interner,i);
 		QUARK_ASSERT(type.check_invariant());
-		builder.acc.types[i] = make_type(builder, type);
+		builder.acc.types[i] = make_type(builder, peek(acc.type_interner, type));
 	}
 
 	state = builder.acc;
 
 	QUARK_ASSERT(check_invariant());
 
-//	trace_llvm_type_lookup(*this);
+	trace_llvm_type_lookup(*this);
 }
 
 

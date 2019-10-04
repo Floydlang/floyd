@@ -75,9 +75,19 @@ std::vector<itype_t> get_member_types(const std::vector<member_itype_t>& m);
 
 //	IMPORTANT: Collect all used types in a vector so we can use itype_t as an index into it for O(1)
 /*
-	bits 31 - 28 base_type (4 bits)
-	bits 27 - 24 base_type 2 (4 bits) -- used to tell basetype of vector element or dictionary value.
-	bits 23 - 0 intern_index (24 bits)
+	A: 0b11110000'00000000'00000000'00000000;
+	B: 0b00001111'00000000'00000000'00000000;
+	C: 0b00000000'11111111'11111111'11111111;
+
+	A: bits 31 - 28 base_type (4 bits)
+	B: bits 27 - 24 base_type 2 (4 bits) -- used to tell basetype of vector element or dictionary value.
+	C: bits 23 - 0 intern_index (24 bits)
+
+	4294967296
+	0-41 = basetype * 1.000.000.000
+
+	Decimal AA BB CCCCC
+	(bt0 * 100 + bt1) * 10.000.000
 */
 
 struct itype_t {
@@ -267,9 +277,7 @@ struct itype_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(is_vector());
 
-		const auto value = (data >> 24) & 15;
-		const auto bt = static_cast<base_type>(value);
-		return bt;
+		return get_bt1(data);
 	}
 
 
@@ -292,9 +300,7 @@ struct itype_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(is_vector());
 
-		const auto value = (data >> 24) & 15;
-		const auto bt = static_cast<base_type>(value);
-		return bt;
+		return get_bt1(data);
 	}
 
 
@@ -368,13 +374,12 @@ struct itype_t {
 	base_type get_base_type() const {
 //		QUARK_ASSERT(check_invariant());
 
-		const auto value = (data >> 28) & 15;
-		const auto bt = static_cast<base_type>(value);
-		return bt;
+		return get_bt0(data);
 	}
 
 
 	//////////////////////////////////////////////////		INTERNALS
+
 
 	explicit itype_t(int32_t data) :
 		data(data)
@@ -387,42 +392,66 @@ struct itype_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	static itype_t make_struct(type_lookup_index_t lookup_index){
-		return itype_t(assemble(lookup_index, base_type::k_struct, base_type::k_undefined));
-	}
-
-	static itype_t make_vector(type_lookup_index_t lookup_index, base_type element_bt){
-		return itype_t(assemble(lookup_index, base_type::k_vector, element_bt));
-	}
-	static itype_t make_dict(type_lookup_index_t lookup_index, base_type value_bt){
-		return itype_t(assemble(lookup_index, base_type::k_dict, value_bt));
-	}
-	static itype_t make_function(type_lookup_index_t lookup_index){
-		return itype_t(assemble(lookup_index, base_type::k_function, base_type::k_undefined));
-	}
-
-
 	inline type_lookup_index_t get_lookup_index() const {
 		QUARK_ASSERT(check_invariant());
 
-		return data & 0b00000000'11111111'11111111'11111111;
+		return get_index(data);
 	}
+
 	int32_t get_data() const {
 		QUARK_ASSERT(check_invariant());
 
 		return data;
 	}
 
-	static uint32_t assemble(type_lookup_index_t lookup_index, base_type bt1, base_type bt2){
+	public: static itype_t assemble2(type_lookup_index_t lookup_index, base_type bt1, base_type bt2){
+		return itype_t(assemble(lookup_index, bt1, bt2));
+	}
+
+
+	//////////////////////////////////////////////////		BIT MANGLING
+
+
+#if 0
+	public: static uint32_t assemble(type_lookup_index_t lookup_index, base_type bt1, base_type bt2){
 		const auto a = static_cast<uint32_t>(bt1);
 		const auto b = static_cast<uint32_t>(bt2);
 
 		return (a << 28) | (b << 24) | lookup_index;
 	}
 
-	static itype_t assemble2(type_lookup_index_t lookup_index, base_type bt1, base_type bt2){
-		return itype_t(assemble(lookup_index, bt1, bt2));
+	private: inline static type_lookup_index_t get_index(uint32_t data) {
+		return data & 0b00000000'11111111'11111111'11111111;
 	}
+	private: inline static base_type get_bt0(uint32_t data){
+		const auto value = (data >> 28) & 0x0f;
+		const auto bt = static_cast<base_type>(value);
+		return bt;
+	}
+	private: inline static base_type get_bt1(uint32_t data){
+		const auto value = (data >> 24) & 0x0f;
+		const auto bt = static_cast<base_type>(value);
+		return bt;
+	}
+#else
+	public: static uint32_t assemble(type_lookup_index_t lookup_index, base_type bt1, base_type bt2){
+		const auto a = static_cast<uint32_t>(bt1);
+		const auto b = static_cast<uint32_t>(bt2);
+		return a * 100 * 10000 + b * 10000 + lookup_index;
+	}
+
+	private: inline static type_lookup_index_t get_index(uint32_t data) {
+		return data % 10000;
+	}
+	private: inline static base_type get_bt0(uint32_t data){
+		const uint32_t result = data / (100 * 10000);
+		return static_cast<base_type>(result);
+	}
+	private: inline static base_type get_bt1(uint32_t data){
+		const uint32_t result = (data / 10000) % 100;
+		return static_cast<base_type>(result);
+	}
+#endif
 
 
 	////////////////////////////////	STATE

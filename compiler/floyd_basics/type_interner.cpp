@@ -474,18 +474,19 @@ itype_t lookup_itype_from_index(const type_interner_t& interner, type_lookup_ind
 	const auto& node = interner.interned2[type_index];
 
 	if(node.bt == base_type::k_struct){
-		return itype_t::make_struct(type_index);
+		return itype_t(itype_t::assemble(type_index, base_type::k_struct, base_type::k_undefined));
 	}
 	else if(node.bt == base_type::k_vector){
 		const auto element_bt = node.child_types[0].get_base_type();
-		return itype_t::make_vector(type_index, element_bt);
+		return itype_t(itype_t::assemble(type_index, base_type::k_vector, element_bt));
 	}
 	else if(node.bt == base_type::k_dict){
 		const auto value_bt = node.child_types[0].get_base_type();
-		return itype_t::make_dict(type_index, value_bt);
+		return itype_t(itype_t::assemble(type_index, base_type::k_dict, value_bt));
 	}
 	else if(node.bt == base_type::k_function){
-		return itype_t::make_function(type_index);
+		//??? We could keep the return type inside the itype
+		return itype_t(itype_t::assemble(type_index, base_type::k_function, base_type::k_undefined));
 	}
 	else if(node.bt == base_type::k_symbol_ref){
 		return itype_t::assemble2(type_index, base_type::k_symbol_ref, base_type::k_undefined);
@@ -556,7 +557,7 @@ void trace_type_interner(const type_interner_t& interner){
 
 
 json_t itype_to_json_shallow(const itype_t& itype){
-	const auto s = std::string("itype:") + std::to_string(itype.get_data());
+	const auto s = std::string("itype:") + std::to_string(itype.get_lookup_index());
 	return json_t(s);
 }
 
@@ -670,7 +671,9 @@ json_t itype_to_json(const type_interner_t& interner, const itype_t& type){
 			return json_t(std::string("%") + identifier);
 		}
 		json_t operator()(const named_type_t& e) const {
-			return itype_to_json(interner, e.destination_type);
+			const auto& tag = type.get_named_type(interner);
+			return pack_type_tag(tag);
+//			return itype_to_json_shallow(e.destination_type);
 		}
 	};
 

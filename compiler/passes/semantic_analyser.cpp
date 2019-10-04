@@ -427,8 +427,8 @@ struct fully_resolved_call_t {
 	Throws errors on type mismatches.
 */
 static std::pair<analyser_t, fully_resolved_call_t> analyze_resolve_call_type(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& call_args, const itype_t& callee_itype){
-	const auto callee_type = peek(a._types, callee_itype);
-	const auto callee_arg_types = callee_type.get_function_args(a._types);
+	const auto callee_type_peek = peek(a._types, callee_itype);
+	const auto callee_arg_types = callee_type_peek.get_function_args(a._types);
 
 	auto a_acc = a;
 
@@ -446,7 +446,7 @@ static std::pair<analyser_t, fully_resolved_call_t> analyze_resolve_call_type(co
 		call_args2.push_back(call_arg_pair.second);
 	}
 
-	const auto callee_return_type = figure_out_callee_return_type(a_acc, parent, callee_type, call_args2);
+	const auto callee_return_type = figure_out_callee_return_type(a_acc, parent, callee_type_peek, call_args2);
 
 
 	std::vector<itype_t> resolved_arg_types;
@@ -457,7 +457,7 @@ static std::pair<analyser_t, fully_resolved_call_t> analyze_resolve_call_type(co
 		a_acc._types,
 		callee_return_type,
 		resolved_arg_types,
-		callee_type.get_function_pure(a_acc._types)
+		callee_type_peek.get_function_pure(a_acc._types)
 	);
 
 	if(true) trace_type_interner(a_acc._types);
@@ -923,9 +923,9 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 	a_acc = parent_expr.first;
 
 	const auto parent_type0 = analyze_expr_output_type(a_acc, parent_expr.second);
-	const auto parent_type = peek(a_acc._types, parent_type0);
-	if(parent_type.is_struct()){
-		const auto struct_def = parent_type.get_struct(a_acc._types);
+	const auto parent_type_peek = peek(a_acc._types, parent_type0);
+	if(parent_type_peek.is_struct()){
+		const auto struct_def = parent_type_peek.get_struct(a_acc._types);
 
 		//??? store index in new expression
 		int index = find_struct_member_index(struct_def, details.member_name);
@@ -939,51 +939,58 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 	}
 	else{
 		std::stringstream what;
-		what << "Left hand side is not a struct value, it's of type \"" + itype_to_compact_string(a_acc._types, parent_type, resolve_named_types::dont_resolve) + "\".";
+		what << "Left hand side is not a struct value, it's of type \"" + itype_to_compact_string(a_acc._types, parent_type0, resolve_named_types::dont_resolve) + "\".";
 		throw_compiler_error(parent.location, what.str());
 	}
 }
 
-
-
-/*
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, sign._function_type);
-	a_acc = resolved_call.first;
-	return {
-		a_acc,
-		expression_t::make_intrinsic(
-			get_intrinsic_opcode(sign),
-			resolved_call.second.args,
-			to_asttype(resolved_call.second.function_type.get_function_return(a_acc._types))
-		)
-	};
-*/
-std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const std::vector<expression_t>& args){
+std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const std::vector<expression_t>& call_args){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
 	const auto sign = make_update_signature(a_acc._types);
 
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
-	a_acc = resolved_call.first;
+	//	IMPORTANT: For structs we manipulate the key-expression. We can't run normal analyse on key-expression - it's encoded as a variable resolve.
+	//	Explore arg0: this is the collection type. We need to detect if it's a struct quickly.
+	const auto collection_expr_kv = analyse_expression_no_target(a_acc, parent, call_args[0]);
+	a_acc = collection_expr_kv.first;
 
-	//	IMPORTANT: For structs we manipulate the key-expression. We can't analyse key expression - it's encoded as a variable resolve.
+	const auto collection_expr = collection_expr_kv.second;
+	const auto collection_type0 = analyze_expr_output_type(a_acc, collection_expr);
+	const auto collection_type_peek = peek(a_acc._types, collection_type0);
 
-	const auto collection_expr = resolved_call.second.args[0];
-	const auto key_expr = resolved_call.second.args[1];
-	const auto new_value_expr = resolved_call.second.args[2];
+	if(collection_type_peek.is_struct()){
+		const auto& struct_def = collection_type_peek.get_struct(a_acc._types);
 
-	const auto collection_type = analyze_expr_output_type(a_acc, collection_expr);
-	const auto new_value_type = analyze_expr_output_type(a_acc, new_value_expr);
+		const auto callee_itype = sign._function_type;
 
-	if(collection_type.is_struct()){
-		const auto struct_def = collection_type.get_struct(a_acc._types);
+		const auto callee_type_peek = peek(a_acc._types, callee_itype);
+		const auto callee_arg_types = callee_type_peek.get_function_args(a_acc._types);
 
-		//	The key needs to be the name of an identifier. It's a compile-time constant.
+
+		const auto new_value_expr_pair = analyse_expression_to_target(a_acc, parent, call_args[2], callee_arg_types[2]);
+		a_acc = new_value_expr_pair.first;
+		const auto new_value_type = analyze_expr_output_type(a_acc, new_value_expr_pair.second);
+
+		const auto new_value_expr = new_value_expr_pair.second;
+
+		//	The key needs to be the name of an symbol. It's a compile-time constant.
 		//	It's encoded as a load which is confusing.
+		//	??? Idea: convert the symbol to an integer and call analyse_intrinsic_update_expression() again. Also support accessing struct members by index.
 
-		if(get_expression_type(key_expr) == expression_type::k_load){
-			const auto member_name = std::get<expression_t::load_t>(key_expr._expression_variant).variable_name;
+
+
+
+		//	arity
+		if(call_args.size() != callee_arg_types.size()){
+			std::stringstream what;
+			what << "Wrong number of arguments in function call, got " << std::to_string(call_args.size()) << ", expected " << std::to_string(callee_arg_types.size()) << ".";
+			throw_compiler_error(parent.location, what.str());
+		}
+
+
+		if(get_expression_type(call_args[1]) == expression_type::k_load){
+			const auto member_name = std::get<expression_t::load_t>(call_args[1]._expression_variant).variable_name;
 			int member_index = find_struct_member_index(struct_def, member_name);
 			if(member_index == -1){
 				std::stringstream what;
@@ -995,9 +1002,22 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 				throw_compiler_error(parent.location, "New value's type does not match struct member's type.");
 			}
 
+
+			const auto callee_return_type = collection_type0;
+
+			const auto resolved_arg_types = { collection_type0, itype_t::make_int(), new_value_type  };
+			const auto resolved_function_type = itype_t::make_function(
+				a_acc._types,
+				callee_return_type,
+				resolved_arg_types,
+				callee_type_peek.get_function_pure(a_acc._types)
+			);
+
+			if(true) trace_type_interner(a_acc._types);
+
 			return {
 				a_acc,
-				expression_t::make_update_member(collection_expr, member_index, new_value_expr, collection_type)
+				expression_t::make_update_member(collection_expr, member_index, new_value_expr, collection_type0)
 			};
 		}
 		else{
@@ -1005,70 +1025,82 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 			what << "Struct member needs to be a string literal.";
 			throw_compiler_error(parent.location, what.str());
 		}
-	}
-	else if(collection_type.is_string()){
-		const auto key_type = key_expr.get_output_type();
 
-		if(key_type.is_int() == false){
+
+	}
+	else {
+		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, sign._function_type);
+		a_acc = resolved_call.first;
+
+		const auto key_expr = resolved_call.second.args[1];
+		const auto new_value_expr = resolved_call.second.args[2];
+
+		const auto new_value_type = analyze_expr_output_type(a_acc, new_value_expr);
+
+		if(collection_type_peek.is_string()){
+			const auto key_type = key_expr.get_output_type();
+
+			if(key_type.is_int() == false){
+				std::stringstream what;
+				what << "Updating string needs an integer index, not a \"" + itype_to_compact_string(a_acc._types, key_type, resolve_named_types::dont_resolve) + "\".";
+				throw_compiler_error(parent.location, what.str());
+			}
+
+			if(new_value_type.is_int() == false){
+				std::stringstream what;
+				what << "Updating string needs an integer value, not a \"" + itype_to_compact_string(a_acc._types, key_type, resolve_named_types::dont_resolve) + "\".";
+				throw_compiler_error(parent.location, what.str());
+			}
+
+			return {
+				a_acc,
+				expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr, key_expr, new_value_expr }, collection_type0)
+			};
+		}
+		else if(collection_type_peek.is_vector()){
+			const auto key_type = analyze_expr_output_type(a_acc, key_expr);
+
+			if(key_type.is_int() == false){
+				std::stringstream what;
+				what << "Updating vector needs and integer index, not a \"" + itype_to_compact_string(a_acc._types, key_type, resolve_named_types::dont_resolve) + "\".";
+				throw_compiler_error(parent.location, what.str());
+			}
+
+			const auto element_type = collection_type_peek.get_vector_element_type(a_acc._types);
+			if(element_type != new_value_type){
+				throw_compiler_error(parent.location, "New value's type must match vector's element type.");
+			}
+
+			return {
+				a_acc,
+				expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr, key_expr, new_value_expr }, collection_type0)
+			};
+		}
+		else if(collection_type_peek.is_dict()){
+			const auto key_type = analyze_expr_output_type(a_acc, key_expr);
+
+			if(key_type.is_string() == false){
+				std::stringstream what;
+				what << "Updating dictionary requires string key, not a \"" + itype_to_compact_string(a_acc._types, key_type, resolve_named_types::dont_resolve) + "\".";
+				throw_compiler_error(parent.location, what.str());
+			}
+
+			const auto element_type = collection_type_peek.get_dict_value_type(a_acc._types);
+			if(element_type != new_value_type){
+				throw_compiler_error(parent.location, "New value's type must match dict's value type.");
+			}
+
+			return {
+				a_acc,
+				expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr, key_expr, new_value_expr }, collection_type0)
+			};
+		}
+
+		else{
 			std::stringstream what;
-			what << "Updating string needs an integer index, not a \"" + itype_to_compact_string(a_acc._types, key_type, resolve_named_types::dont_resolve) + "\".";
+			what << "Left hand side does not support update() - it's of type \"" + itype_to_compact_string(a_acc._types, collection_type0, resolve_named_types::dont_resolve) + "\".";
 			throw_compiler_error(parent.location, what.str());
 		}
-
-		if(new_value_type.is_int() == false){
-			std::stringstream what;
-			what << "Updating string needs an integer value, not a \"" + itype_to_compact_string(a_acc._types, key_type, resolve_named_types::dont_resolve) + "\".";
-			throw_compiler_error(parent.location, what.str());
-		}
-
-		return {
-			a_acc,
-			expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr, key_expr, new_value_expr }, collection_type)
-		};
-	}
-	else if(collection_type.is_vector()){
-		const auto key_type = analyze_expr_output_type(a_acc, key_expr);
-
-		if(key_type.is_int() == false){
-			std::stringstream what;
-			what << "Updating vector needs and integer index, not a \"" + itype_to_compact_string(a_acc._types, key_type, resolve_named_types::dont_resolve) + "\".";
-			throw_compiler_error(parent.location, what.str());
-		}
-
-		const auto element_type = collection_type.get_vector_element_type(a_acc._types);
-		if(element_type != new_value_type){
-			throw_compiler_error(parent.location, "New value's type must match vector's element type.");
-		}
-
-		return {
-			a_acc,
-			expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr, key_expr, new_value_expr }, collection_type)
-		};
-	}
-	else if(collection_type.is_dict()){
-		const auto key_type = analyze_expr_output_type(a_acc, key_expr);
-
-		if(key_type.is_string() == false){
-			std::stringstream what;
-			what << "Updating dictionary requires string key, not a \"" + itype_to_compact_string(a_acc._types, key_type, resolve_named_types::dont_resolve) + "\".";
-			throw_compiler_error(parent.location, what.str());
-		}
-
-		const auto element_type = collection_type.get_dict_value_type(a_acc._types);
-		if(element_type != new_value_type){
-			throw_compiler_error(parent.location, "New value's type must match dict's value type.");
-		}
-
-		return {
-			a_acc,
-			expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr, key_expr, new_value_expr }, collection_type)
-		};
-	}
-
-	else{
-		std::stringstream what;
-		what << "Left hand side does not support update() - it's of type \"" + itype_to_compact_string(a_acc._types, collection_type, resolve_named_types::dont_resolve) + "\".";
-		throw_compiler_error(parent.location, what.str());
 	}
 }
 
@@ -1481,7 +1513,7 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_load(const analyser_t& a, const statement_t& parent,const expression_t& e, const expression_t::load_t& details){
+std::pair<analyser_t, expression_t> analyse_load(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::load_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -1565,22 +1597,22 @@ static itype_t select_inferred_type(const type_interner_t& interner, const itype
 
 	rhs is an invalid dict construction -- you can't mix string/int values in a floyd dict. BUT: it's a valid JSON!
 */
-std::pair<analyser_t, expression_t> analyse_construct_value_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::value_constructor_t& details, const itype_t& target_type){
+std::pair<analyser_t, expression_t> analyse_construct_value_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::value_constructor_t& details, const itype_t& target_type0){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
 
-	auto type = analyze_expr_output_type(a_acc, e);
-	QUARK_ASSERT(type == details.value_type);
+	const auto target_type_peek = peek(a_acc._types, target_type0);
 
-	while(type.is_named_type()){
-		type = peek(a_acc._types, type);
-	}
+	const auto type0 = analyze_expr_output_type(a_acc, e);
+	QUARK_ASSERT(type0 == details.value_type);
 
-	if(type.is_vector()){
+	const auto type_peek = peek(a_acc._types, type0);
+
+	if(type_peek.is_vector()){
 		//	JSON constants supports mixed element types: convert each element into a json.
 		//	Encode as [json]
-		if(target_type.is_json()){
+		if(target_type_peek.is_json()){
 			const auto element_type = itype_t::make_json();
 
 			std::vector<expression_t> elements2;
@@ -1604,7 +1636,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			};
 		}
 		else {
-			const auto element_type = type.get_vector_element_type(a_acc._types);
+			const auto element_type = type_peek.get_vector_element_type(a_acc._types);
 			std::vector<expression_t> elements2;
 			for(const auto& m: details.elements){
 				const auto element_expr = analyse_expression_no_target(a_acc, parent, m);
@@ -1614,7 +1646,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 
 			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? analyze_expr_output_type(a_acc, elements2[0]) : element_type;
 			const auto rhs_guess_type = resolve_and_intern_itype(a_acc, parent.location, typeid_t::make_vector(a_acc._types, element_type2));
-			const auto final_type = select_inferred_type(a_acc._types, target_type, rhs_guess_type);
+			const auto final_type = select_inferred_type(a_acc._types, target_type_peek, rhs_guess_type);
 
 			if(check_types_resolved(a_acc._types, final_type) == false){
 				std::stringstream what;
@@ -1637,10 +1669,10 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 	}
 
 	//	Dicts uses pairs of (string,value). This is stored in _args as interleaved expression: string0, value0, string1, value1.
-	else if(type.is_dict()){
+	else if(type_peek.is_dict()){
 		//	JSON constants supports mixed element types: convert each element into a json.
 		//	Encode as [string:json]
-		if(target_type.is_json()){
+		if(target_type_peek.is_json()){
 			const auto element_type = itype_t::make_json();
 
 			std::vector<expression_t> elements2;
@@ -1654,7 +1686,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			}
 
 			const auto rhs_guess_type = resolve_and_intern_itype(a_acc, parent.location, typeid_t::make_dict(a_acc._types, typeid_t::make_json()));
-			 auto final_type = select_inferred_type(a_acc._types, target_type, rhs_guess_type);
+			 auto final_type = select_inferred_type(a_acc._types, target_type_peek, rhs_guess_type);
 
 			if(check_types_resolved(a_acc._types, final_type) == false){
 				std::stringstream what;
@@ -1673,7 +1705,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 		else {
 			QUARK_ASSERT(details.elements.size() % 2 == 0);
 
-			const auto element_type = type.get_dict_value_type(a_acc._types);
+			const auto element_type = type_peek.get_dict_value_type(a_acc._types);
 
 			std::vector<expression_t> elements2;
 			for(int i = 0 ; i < details.elements.size() / 2 ; i++){
@@ -1688,7 +1720,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			//	Infer type of dictionary based on first value.
 			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? analyze_expr_output_type(a_acc, elements2[0 * 2 + 1]) : element_type;
 			const auto rhs_guess_type = resolve_and_intern_itype(a_acc, parent.location, typeid_t::make_dict(a_acc._types, element_type2));
-			const auto final_type = select_inferred_type(a_acc._types, target_type, rhs_guess_type);
+			const auto final_type = select_inferred_type(a_acc._types, target_type_peek, rhs_guess_type);
 
 			if(check_types_resolved(a_acc._types, final_type) == false){
 				std::stringstream what;
@@ -1709,12 +1741,12 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			return {a_acc, expression_t::make_construct_value_expr(to_asttype(final_type), elements2)};
 		}
 	}
-	else if(type.is_struct()){
-		const auto& def = type.get_struct(a_acc._types);
-		const auto struct_constructor_callee_type = typeid_t::make_function(a_acc._types, type, get_member_types(def._members), epure::pure);
-		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, details.elements, struct_constructor_callee_type);
+	else if(type_peek.is_struct()){
+		const auto& def = type_peek.get_struct(a_acc._types);
+		const auto f_type = typeid_t::make_function(a_acc._types, type0, get_member_types(def._members), epure::pure);
+		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, details.elements, f_type);
 		a_acc = resolved_call.first;
-		return { a_acc, expression_t::make_construct_value_expr(type, resolved_call.second.args) };
+		return { a_acc, expression_t::make_construct_value_expr(type0, resolved_call.second.args) };
 	}
 	else{
 		if(details.elements.size() != 1){
@@ -1722,10 +1754,10 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			what << "Construct value of primitive type requires exactly 1 argument.";
 			throw_compiler_error(parent.location, what.str());
 		}
-		const auto struct_constructor_callee_type = typeid_t::make_function(a_acc._types, type, { type }, epure::pure);
+		const auto struct_constructor_callee_type = typeid_t::make_function(a_acc._types, type0, { type0 }, epure::pure);
 		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, details.elements, struct_constructor_callee_type);
 		a_acc = resolved_call.first;
-		return { a_acc, expression_t::make_construct_value_expr(type, resolved_call.second.args) };
+		return { a_acc, expression_t::make_construct_value_expr(type0, resolved_call.second.args) };
 	}
 }
 
@@ -2257,24 +2289,23 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 	}
 
 	const auto name_tag = make_type_tag(a_acc, identifier);
-	const auto named_itype = new_tagged_type(a_acc._types, name_tag);
+	const auto named_type = new_tagged_type(a_acc._types, name_tag);
 
-	const auto type_name_symbol = symbol_t::make_named_type(named_itype);
+	const auto type_name_symbol = symbol_t::make_named_type(named_type);
 	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ identifier, type_name_symbol });
-
 
 
 	std::vector<member_itype_t> members2;
 	for(const auto& m: details.def->_members){
 		members2.push_back(member_itype_t{ resolve_and_intern_itype(a_acc, parent.location, m._type), m._name } );
 	}
-	const auto struct_typeid1 = make_struct(a_acc._types, struct_def_itype_t{ members2 } );
+	const auto struct_type1 = make_struct(a_acc._types, struct_def_itype_t{ members2 } );
 
 	//	Update our temporary.
-	const auto named_itype2 = update_tagged_type(a_acc._types, named_itype, struct_typeid1);
+	const auto named_type2 = update_tagged_type(a_acc._types, named_type, struct_type1);
 
-	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid1);
-	const auto r = expression_t::make_literal(struct_typeid_value, to_asttype(named_itype2));
+	const auto typeid_value = value_t::make_typeid_value(named_type2);
+	const auto r = expression_t::make_literal(typeid_value, itype_t::make_typeid());
 
 #if DEBUG
 	if(false) trace_analyser(a_acc);
@@ -2503,13 +2534,16 @@ static std::pair<analyser_t, expression_t> analyse_expression_to_target(const an
 	QUARK_ASSERT(parent.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	const auto target_type = peek(a._types, target_type0);
-
-	QUARK_ASSERT(target_type.is_void() == false && target_type.is_undefined() == false);
-	QUARK_ASSERT(check_types_resolved(a._types, target_type));
-
 	auto a_acc = a;
-	const auto e2_pair = analyse_expression__operation_specific(a_acc, parent, e, target_type);
+
+	if(true) trace_type_interner(a_acc._types);
+
+	const auto target_type_peek = peek(a_acc._types, target_type0);
+
+	QUARK_ASSERT(target_type0.is_void() == false && target_type0.is_undefined() == false);
+	QUARK_ASSERT(check_types_resolved(a._types, target_type0));
+
+	const auto e2_pair = analyse_expression__operation_specific(a_acc, parent, e, target_type0);
 	a_acc = e2_pair.first;
 	const auto e3 = e2_pair.second;
 	if(floyd::check_types_resolved(a_acc._types, e3) == false){
@@ -2518,13 +2552,13 @@ static std::pair<analyser_t, expression_t> analyse_expression_to_target(const an
 		throw_compiler_error(parent.location, what.str());
 	}
 
-	const auto e4 = auto_cast_expression_type(a_acc, e3, target_type);
-
-	if(target_type.is_any()){
+	const auto e4 = auto_cast_expression_type(a_acc, e3, target_type0);
+	const auto e4_output_type = e4.get_output_type();
+	if(target_type0.is_any()){
 	}
-	else if(analyze_expr_output_type(a_acc, e4) == target_type){
+	else if(e4_output_type == target_type0){
 	}
-	else if(analyze_expr_output_type(a_acc, e4).is_undefined()){
+	else if(e4_output_type.is_undefined()){
 		QUARK_ASSERT(false);
 		throw_compiler_error(parent.location, "Expression type mismatch.");
 	}
@@ -2532,7 +2566,7 @@ static std::pair<analyser_t, expression_t> analyse_expression_to_target(const an
 		std::stringstream what;
 		what << "Expression type mismatch - cannot convert '"
 		//??? missing a trailing '
-		<< itype_to_compact_string(a_acc._types, analyze_expr_output_type(a_acc, e4)) << "' to '" << itype_to_compact_string(a_acc._types, target_type) << ".";
+		<< itype_to_compact_string(a_acc._types, e4_output_type) << "' to '" << itype_to_compact_string(a_acc._types, target_type0) << ".";
 		throw_compiler_error(parent.location, what.str());
 	}
 
