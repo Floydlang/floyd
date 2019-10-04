@@ -1656,7 +1656,7 @@ type_t new_tagged_type(type_interner_t& interner, const type_name_t& tag){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(tag.check_invariant());
 
-	const auto type = type_t::make_undefined();
+	const auto type = make_undefined();
 	const auto result = new_tagged_type(interner, tag, type);
 	return result;
 }
@@ -1989,12 +1989,12 @@ type_t type_from_json(type_interner_t& interner, const json_t& t){
 		//	Other types.
 		else {
 			if(s == ""){
-				return type_t::make_undefined();
+				return make_undefined();
 			}
 			const auto b = opcode_to_base_type(s);
 
 			if(b == base_type::k_undefined){
-				return type_t::make_undefined();
+				return make_undefined();
 			}
 			else if(b == base_type::k_any){
 				return type_t::make_any();
@@ -2083,7 +2083,7 @@ type_t type_from_json(type_interner_t& interner, const json_t& t){
 	else{
 		quark::throw_runtime_error("Invalid typeid-json.");
 	}
-	return type_t::make_undefined();
+	return make_undefined();
 }
 
 

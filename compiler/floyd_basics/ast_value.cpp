@@ -1235,7 +1235,7 @@ type_t value_t::get_type() const{
 //			QUARK_ASSERT(check_invariant());
 
 	if(_basetype == base_type::k_undefined){
-		return type_t::make_undefined();
+		return floyd::make_undefined();
 	}
 	else if(_basetype == base_type::k_any){
 		return type_t::make_any();

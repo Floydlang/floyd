@@ -257,10 +257,6 @@ struct type_t {
 	//////////////////////////////////////////////////		UNDEFINED
 
 
-	static type_t make_undefined(){
-		return type_t(assemble((type_lookup_index_t)base_type::k_undefined, base_type::k_undefined, base_type::k_undefined));
-	}
-
 	bool is_undefined() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -269,6 +265,7 @@ struct type_t {
 
 
 	//////////////////////////////////////////////////		ANY
+
 
 
 	static type_t make_any(){
@@ -580,8 +577,13 @@ inline bool operator!=(type_t lhs, type_t rhs){ return (lhs == rhs) == false; };
 
 
 inline type_t make_undefined(){
-	return type_t::make_undefined();
+	return type_t::assemble2(
+		(type_lookup_index_t)base_type::k_undefined,
+		base_type::k_undefined,
+		base_type::k_undefined
+	);
 }
+
 inline type_t make_json_type(){
 	return type_t::make_json();
 }
@@ -637,7 +639,7 @@ type_t make_named_type(type_interner_t& interner, const type_name_t& type);
 
 
 inline bool is_empty(const type_t& type){
-	return type == type_t::make_undefined();
+	return type.is_undefined();
 }
 
 bool is_atomic_type(type_t type);

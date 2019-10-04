@@ -290,7 +290,7 @@ struct bc_external_value_t {
 	public: std::string _string;
 	public: std::shared_ptr<json_t> _json;
 	public: function_id_t _function_id;
-	public: type_t _typeid_value = type_t::make_undefined();
+	public: type_t _typeid_value = make_undefined();
 	public: std::vector<bc_value_t> _struct_members;
 	public: immer::vector<bc_external_handle_t> _vector_w_external_elements;
 	public: immer::vector<bc_inplace_value_t> _vector_w_inplace_elements;

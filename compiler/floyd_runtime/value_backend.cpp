@@ -1048,7 +1048,7 @@ value_backend_t::value_backend_t(
 			child_type.push_back(itype);
 		}
 		else{
-			child_type.push_back(type_t::make_undefined());
+			child_type.push_back(make_undefined());
 		}
 	}
 

@@ -103,7 +103,7 @@ std::pair<void*, type_t> bind_global(const llvm_execution_engine_t& ee, const st
 		return { global_ptr, symbol->get_value_type() };
 	}
 	else{
-		return { nullptr, type_t::make_undefined() };
+		return { nullptr, make_undefined() };
 	}
 }
 
@@ -153,7 +153,7 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name)
 		return llvm_bind_t {
 			name,
 			nullptr,
-			type_t::make_undefined()
+			make_undefined()
 		};
 	}
 }
@@ -176,7 +176,7 @@ static std::vector<function_link_entry_t> make_runtime_function_link_map(llvm::L
 	std::vector<function_link_entry_t> result;
 	for(const auto& e: runtime_function_binds){
 		const auto link_name = encode_runtime_func_link_name(e.name);
-		const auto def = function_link_entry_t{ "runtime", link_name, e.llvm_function_type, nullptr, type_t::make_undefined(), {}, e.native_f };
+		const auto def = function_link_entry_t{ "runtime", link_name, e.llvm_function_type, nullptr, make_undefined(), {}, e.native_f };
 		result.push_back(def);
 	}
 
@@ -203,7 +203,7 @@ static std::vector<function_link_entry_t> make_init_deinit_link_map(llvm::LLVMCo
 			},
 			false
 		);
-		const auto def = function_link_entry_t{ "runtime", link_name, function_type, nullptr, type_t::make_undefined(), {}, nullptr };
+		const auto def = function_link_entry_t{ "runtime", link_name, function_type, nullptr, make_undefined(), {}, nullptr };
 		result.push_back(def);
 	}
 
@@ -217,7 +217,7 @@ static std::vector<function_link_entry_t> make_init_deinit_link_map(llvm::LLVMCo
 			},
 			false
 		);
-		const auto def = function_link_entry_t{ "runtime", link_name, function_type, nullptr, type_t::make_undefined(), {}, nullptr };
+		const auto def = function_link_entry_t{ "runtime", link_name, function_type, nullptr, make_undefined(), {}, nullptr };
 		result.push_back(def);
 	}
 
@@ -588,7 +588,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			{},
 			nullptr,
 			start_time,
-			llvm_bind_t{ link_name_t {}, nullptr, type_t::make_undefined() },
+			llvm_bind_t{ link_name_t {}, nullptr, make_undefined() },
 			false,
 			program_breaks.settings.config
 		}
@@ -727,7 +727,7 @@ static void run_process(llvm_process_runtime_t& runtime, int process_id){
 
 	const auto thread_name = get_current_thread_name();
 
-	const type_t process_state_type = process._init_function != nullptr ? process._init_function->type.get_function_return(runtime.ee->backend.type_interner) : type_t::make_undefined();
+	const type_t process_state_type = process._init_function != nullptr ? process._init_function->type.get_function_return(runtime.ee->backend.type_interner) : make_undefined();
 
 	if(process._processor){
 		process._processor->on_init();

@@ -297,7 +297,7 @@ static type_t resolve_and_intern_itype(analyser_t& acc, const location_t& loc, c
 
 	try {
 		if(type.is_undefined()){
-			return type_t::make_undefined();
+			return make_undefined();
 		}
 		else{
 #if DEBUG
@@ -2611,7 +2611,7 @@ QUARK_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
 			expression_type::k_arithmetic_add,
 			expression_t::make_literal_int(1),
 			expression_t::make_literal_int(2),
-			type_t::make_undefined()
+			make_undefined()
 		)
 	);
 

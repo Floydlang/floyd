@@ -36,7 +36,7 @@ void release_pod_external(bc_pod_value_t& value){
 
 
 bc_value_t::bc_value_t() :
-	_type(type_t::make_undefined())
+	_type(floyd::make_undefined())
 {
 	_pod._external = nullptr;
 	QUARK_ASSERT(check_invariant());
@@ -551,7 +551,7 @@ bool bc_external_value_t::check_invariant() const{
 	if(encoding == value_encoding::k_external__string){
 //				QUARK_ASSERT(_string);
 		QUARK_ASSERT(_json == nullptr);
-		QUARK_ASSERT(_typeid_value == type_t::make_undefined());
+		QUARK_ASSERT(_typeid_value == make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
 		QUARK_ASSERT(_vector_w_external_elements.empty());
 		QUARK_ASSERT(_vector_w_inplace_elements.empty());
@@ -561,7 +561,7 @@ bool bc_external_value_t::check_invariant() const{
 	else if(encoding == value_encoding::k_external__json){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json != nullptr);
-		QUARK_ASSERT(_typeid_value == type_t::make_undefined());
+		QUARK_ASSERT(_typeid_value == make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
 		QUARK_ASSERT(_vector_w_external_elements.empty());
 		QUARK_ASSERT(_vector_w_inplace_elements.empty());
@@ -573,7 +573,7 @@ bool bc_external_value_t::check_invariant() const{
 	else if(encoding == value_encoding::k_external__typeid){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json == nullptr);
-//		QUARK_ASSERT(_typeid_value != type_t::make_undefined());
+//		QUARK_ASSERT(_typeid_value != make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
 		QUARK_ASSERT(_vector_w_external_elements.empty());
 		QUARK_ASSERT(_vector_w_inplace_elements.empty());
@@ -585,7 +585,7 @@ bool bc_external_value_t::check_invariant() const{
 	else if(encoding == value_encoding::k_external__struct){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json == nullptr);
-		QUARK_ASSERT(_typeid_value == type_t::make_undefined());
+		QUARK_ASSERT(_typeid_value == make_undefined());
 //				QUARK_ASSERT(_struct != nullptr);
 		QUARK_ASSERT(_vector_w_external_elements.empty());
 		QUARK_ASSERT(_vector_w_inplace_elements.empty());
@@ -599,7 +599,7 @@ bool bc_external_value_t::check_invariant() const{
 	else if(encoding == value_encoding::k_external__vector){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json == nullptr);
-		QUARK_ASSERT(_typeid_value == type_t::make_undefined());
+		QUARK_ASSERT(_typeid_value == make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
 
 		for(const auto& e: _vector_w_external_elements){
@@ -614,7 +614,7 @@ bool bc_external_value_t::check_invariant() const{
 	else if(encoding == value_encoding::k_external__vector_pod64){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json == nullptr);
-		QUARK_ASSERT(_typeid_value == type_t::make_undefined());
+		QUARK_ASSERT(_typeid_value == make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
 		QUARK_ASSERT(_vector_w_external_elements.empty());
 
@@ -627,7 +627,7 @@ bool bc_external_value_t::check_invariant() const{
 	else if(encoding == value_encoding::k_external__dict){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json == nullptr);
-		QUARK_ASSERT(_typeid_value == type_t::make_undefined());
+		QUARK_ASSERT(_typeid_value == make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
 		QUARK_ASSERT(_vector_w_external_elements.empty());
 		QUARK_ASSERT(_vector_w_inplace_elements.empty());
@@ -641,7 +641,7 @@ bool bc_external_value_t::check_invariant() const{
 	else if(encoding == value_encoding::k_external__function){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json == nullptr);
-		QUARK_ASSERT(_typeid_value == type_t::make_undefined());
+		QUARK_ASSERT(_typeid_value == make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
 		QUARK_ASSERT(_vector_w_external_elements.empty());
 		QUARK_ASSERT(_dict_w_external_values.size() == 0);

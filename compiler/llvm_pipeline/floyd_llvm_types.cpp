@@ -213,7 +213,7 @@ static llvm_function_def_t map_function_arguments_internal(const builder_t& buil
 	auto frp_type = builder.acc.runtime_ptr_type;
 
 	//	Pass Floyd runtime as extra, hidden argument #0. It has no representation in Floyd function type.
-	arg_results.push_back({ frp_type, "floyd_runtime_ptr", floyd::type_t::make_undefined(), -1, llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr });
+	arg_results.push_back({ frp_type, "floyd_runtime_ptr", make_undefined(), -1, llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr });
 
 	for(int index = 0 ; index < args.size() ; index++){
 		const auto& arg = args[index];
@@ -223,7 +223,7 @@ static llvm_function_def_t map_function_arguments_internal(const builder_t& buil
 		//	For dynamic values, store its dynamic type as an extra argument.
 		if(arg.is_any()){
 			arg_results.push_back({ builder.acc.runtime_value_type, std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_dyn_value });
-			arg_results.push_back({ builder.acc.runtime_type_type, std::to_string(index), type_t::make_undefined(), index, llvm_arg_mapping_t::map_type::k_dyn_type });
+			arg_results.push_back({ builder.acc.runtime_type_type, std::to_string(index), make_undefined(), index, llvm_arg_mapping_t::map_type::k_dyn_type });
 		}
 		else {
 			const auto& a = find_type(builder, arg);

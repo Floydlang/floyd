@@ -169,7 +169,7 @@ struct value_ext_t {
 		else if(base_type == base_type::k_typeid){
 			QUARK_ASSERT(_string.empty());
 			QUARK_ASSERT(_json == nullptr);
-	//		QUARK_ASSERT(_typeid_value != type_t::make_undefined());
+	//		QUARK_ASSERT(_typeid_value != make_undefined());
 			QUARK_ASSERT(_struct == nullptr);
 			QUARK_ASSERT(_vector_elements.empty());
 			QUARK_ASSERT(_dict_entries.empty());
@@ -253,7 +253,7 @@ struct value_ext_t {
 	public: type_t _type;
 	public: std::string _string;
 	public: std::shared_ptr<json_t> _json;
-	public: type_t _typeid_value = type_t::make_undefined();
+	public: type_t _typeid_value = make_undefined();
 	public: std::shared_ptr<struct_value_t> _struct;
 	public: std::vector<value_t> _vector_elements;
 	public: std::map<std::string, value_t> _dict_entries;
