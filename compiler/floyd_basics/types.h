@@ -25,6 +25,17 @@ Enum with all basic types of types in Floyd. You need to use type_t to fully des
 
 
 
+
+# type_t
+Opaque, immutable value type describing a type. It may be a reference to a named type (like "/main/pixel_t") or a concrete type, like "int".
+You can compare and copy these but you cannot access their contents.
+
+# type_desc_t
+Always holds a concrete type, never a named type. Notice that child-types can be named types.
+You can query its type, get function arguments, get struct members etc.
+
+
+
 # type_t
 Immutable value object.
 Specifies an exact Floyd type. Both for base types like "int" and "string" and composite types
@@ -88,9 +99,6 @@ Use read_type(), read_required_type()
 */
 
 #define DEBUG_DEEP_TYPEID_T 1
-
-
-
 
 
 #include "quark.h"
@@ -429,7 +437,6 @@ struct type_t {
 		return get_base_type() == base_type::k_vector;
 	}
 
-
 	type_t get_vector_element_type(const types_t& types) const;
 
 	base_type get_vector_element_basetype() const {
@@ -603,6 +610,33 @@ inline bool operator==(type_t lhs, type_t rhs){
 	return lhs.get_data() == rhs.get_data();
 }
 inline bool operator!=(type_t lhs, type_t rhs){ return (lhs == rhs) == false; };
+
+
+
+/////////////////////////////////////////////////		type_t
+
+
+struct type_desc_t {
+	bool check_invariant() const {
+//		QUARK_ASSERT(get_base_type() != base_type::k_identifier);
+		return true;
+	}
+
+
+	////////////////////////////////	STATE
+
+	public: type_t type;
+};
+
+inline bool operator<(type_desc_t lhs, type_desc_t rhs){
+	return lhs.type < rhs.type;
+}
+inline bool operator==(type_desc_t lhs, type_desc_t rhs){
+	return lhs.type == rhs.type;
+}
+inline bool operator!=(type_desc_t lhs, type_desc_t rhs){ return (lhs == rhs) == false; };
+
+
 
 
 
@@ -812,8 +846,6 @@ type_t lookup_type_from_index(const types_t& types, type_lookup_index_t type_ind
 
 void trace_types(const types_t& types);
 
-type_t peek(const types_t& types, const type_t& type);
-
 type_t refresh_type(const types_t& types, const type_t& type);
 
 json_t types_to_json(const types_t& types);
@@ -837,6 +869,8 @@ type_t name_named_type(types_t& types, const type_name_t& n, const type_t& desti
 type_t update_named_type(types_t& types, const type_t& named, const type_t& destination_type);
 
 
+type_t peek(const types_t& types, const type_t& type);
+type_desc_t peek2(const types_t& types, const type_t& type);
 
 
 //////////////////////////////////////////////////		get_type_variant()
