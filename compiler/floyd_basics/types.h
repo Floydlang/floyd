@@ -594,6 +594,7 @@ struct type_t {
 
 
 	////////////////////////////////	STATE
+	friend class type_desc_t;
 
 	private: uint32_t data;
 #if DEBUG
@@ -621,6 +622,37 @@ struct type_desc_t {
 //		QUARK_ASSERT(get_base_type() != base_type::k_identifier);
 		return true;
 	}
+
+
+
+
+	//////////////////////////////////////////////////		FUNCTION
+
+
+	bool is_function() const {
+		QUARK_ASSERT(check_invariant());
+
+		return non_name_type.get_base_type() == base_type::k_function;
+	}
+
+	public: type_t get_function_return(const types_t& types) const {
+		return non_name_type.get_function_return(types);
+	}
+	public: std::vector<type_t> get_function_args(const types_t& types) const{
+		return non_name_type.get_function_args(types);
+	}
+
+	public: return_dyn_type get_function_dyn_return_type(const types_t& types) const{
+		return non_name_type.get_function_dyn_return_type(types);
+	}
+
+	public: epure get_function_pure(const types_t& types) const{
+		return non_name_type.get_function_pure(types);
+	}
+
+
+
+	//////////////////////////////////////////////////		INTERNALS
 
 
 
