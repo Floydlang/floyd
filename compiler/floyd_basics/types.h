@@ -631,11 +631,6 @@ type_t make_function(
 
 type_t make_symbol_ref(types_t& types, const std::string& s);
 
-//??? rethink  make_named_type() VS new_tagged_type()
-type_t make_named_type(types_t& types, const type_name_t& type);
-
-
-
 
 
 inline bool is_empty(const type_t& type){
@@ -783,19 +778,13 @@ struct types_t {
 
 const type_node_t& lookup_typeinfo_from_type(const types_t& types, const type_t& type);
 type_node_t& lookup_typeinfo_from_type(types_t& types, const type_t& type);
-type_t lookup_type_from_name(const types_t& types, const type_name_t& n);
-
 type_t lookup_type_from_index(const types_t& types, type_lookup_index_t type_index);
 
 void trace_types(const types_t& types);
 
-
-
 type_t peek(const types_t& types, const type_t& type);
 
 type_t refresh_type(const types_t& types, const type_t& type);
-
-
 
 json_t types_to_json(const types_t& types);
 types_t types_from_json(const json_t& j);
@@ -806,17 +795,17 @@ types_t types_from_json(const json_t& j);
 //////////////////////////////////////////////////		NAMED TYPES
 
 
+type_t lookup_type_from_name(const types_t& types, const type_name_t& n);
+
 //	Allocates a new type for this name. The name must not already exist.
 //	You can use type_t::make_undefined() and
-//	later update the type using update_tagged_type()
-type_t new_tagged_type(types_t& types, const type_name_t& tag);
-type_t new_tagged_type(types_t& types, const type_name_t& tag, const type_t& type);
+//	later update the type using update_named_type()
+type_t name_named_type(types_t& types, const type_name_t& n, const type_t& destination_type);
 
-//	Update the tagged type's type. The tagged type must already exist. Any usage of this
+//	Update the named type's destination type. The tagged type must already exist. Any usage of this
 //	tag will also get the new type.
-type_t update_tagged_type(types_t& types, const type_t& named, const type_t& type);
+type_t update_named_type(types_t& types, const type_t& named, const type_t& destination_type);
 
-type_t get_tagged_type2(const types_t& types, const type_name_t& tag);
 
 
 

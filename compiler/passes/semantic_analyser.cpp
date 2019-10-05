@@ -2289,7 +2289,7 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 	}
 
 	const auto name_tag = make_type_tag(a_acc, identifier);
-	const auto named_type = new_tagged_type(a_acc._types, name_tag);
+	const auto named_type = name_named_type(a_acc._types, name_tag, make_undefined());
 
 	const auto type_name_symbol = symbol_t::make_named_type(named_type);
 	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ identifier, type_name_symbol });
@@ -2302,7 +2302,7 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 	const auto struct_type1 = make_struct(a_acc._types, struct_type_desc_t{ members2 } );
 
 	//	Update our temporary.
-	const auto named_type2 = update_tagged_type(a_acc._types, named_type, struct_type1);
+	const auto named_type2 = update_named_type(a_acc._types, named_type, struct_type1);
 
 	const auto typeid_value = value_t::make_typeid_value(named_type2);
 	const auto r = expression_t::make_literal(typeid_value, type_t::make_typeid());
@@ -2660,11 +2660,11 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 	symbol_map.push_back( { "json_null", symbol_t::make_immutable_precalc(type_t::make_int(), value_t::make_int(7)) });
 
 	const auto benchmark_result_itype = resolve_and_intern_itype(a, k_no_location, make_benchmark_result_t(a._types));
-	const auto benchmark_result_itype2 = new_tagged_type(a._types, make_type_tag(a, "benchmark_result_t"), benchmark_result_itype);
+	const auto benchmark_result_itype2 = name_named_type(a._types, make_type_tag(a, "benchmark_result_t"), benchmark_result_itype);
 	symbol_map.push_back( { "benchmark_result_t", symbol_t::make_named_type(benchmark_result_itype2) } );
 
 	const auto benchmark_def_itype = resolve_and_intern_itype(a, k_no_location, make_benchmark_def_t(a._types));
-	const auto benchmark_def_itype2 = new_tagged_type(a._types, make_type_tag(a, "benchmark_def_t"), benchmark_def_itype);
+	const auto benchmark_def_itype2 = name_named_type(a._types, make_type_tag(a, "benchmark_def_t"), benchmark_def_itype);
 	symbol_map.push_back( { "benchmark_def_t", symbol_t::make_named_type(benchmark_def_itype2)} );
 
 	//	Reserve a symbol table entry for benchmark_registry instance.

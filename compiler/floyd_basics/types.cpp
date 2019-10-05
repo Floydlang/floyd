@@ -1652,35 +1652,28 @@ static type_t intern_node(types_t& types, const type_node_t& node){
 }
 
 
-type_t new_tagged_type(types_t& types, const type_name_t& tag){
-	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(tag.check_invariant());
 
-	const auto type = make_undefined();
-	const auto result = new_tagged_type(types, tag, type);
-	return result;
-}
 
-type_t new_tagged_type(types_t& types, const type_name_t& tag, const type_t& type){
+type_t name_named_type(types_t& types, const type_name_t& n, const type_t& destination_type){
 	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(tag.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(n.check_invariant());
+	QUARK_ASSERT(destination_type.check_invariant());
 
 	if(false) trace_types(types);
 
 	const auto it = std::find_if(
 		types.nodes.begin(),
 		types.nodes.end(),
-		[&](const auto& e){ return e.optional_name == tag; }
+		[&](const auto& e){ return e.optional_name == n; }
 	);
 	if(it != types.nodes.end()){
 		throw std::exception();
 	}
 
 	const auto node = type_node_t{
-		tag,
+		n,
 		base_type::k_named_type,
-		{ type },
+		{ destination_type },
 		{},
 		epure::pure,
 		return_dyn_type::none,
@@ -1694,36 +1687,43 @@ type_t new_tagged_type(types_t& types, const type_name_t& tag, const type_t& typ
 	return lookup_type_from_index_it(types, types.nodes.size() - 1);
 }
 
-type_t update_tagged_type(types_t& types, const type_t& named, const type_t& type){
+type_t update_named_type(types_t& types, const type_t& named, const type_t& destination_type){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(named.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(destination_type.check_invariant());
 
 	auto& node = lookup_typeinfo_from_type(types, named);
 	QUARK_ASSERT(node.bt == base_type::k_named_type);
 	QUARK_ASSERT(node.child_types.size() == 1);
 
-	node.child_types = { type };
+	node.child_types = { destination_type };
 
 	//	Returns a new type for the named tag, so it contains the updated byte_type info.
 	return lookup_type_from_index(types, named.get_lookup_index());
 }
 
-type_t get_tagged_type2(const types_t& types, const type_name_t& tag){
+type_t lookup_type_from_name(const types_t& types, const type_name_t& tag){
 	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(tag.check_invariant());
 
-	const auto it = std::find_if(
-		types.nodes.begin(),
-		types.nodes.end(),
-		[&](const auto& e){ return e.optional_name == tag; }
-	);
-	if(it == types.nodes.end()){
+	if(tag.lexical_path.empty()){
 		throw std::exception();
 	}
-	QUARK_ASSERT(it->child_types.size() == 1);
-	return lookup_type_from_index_it(types, it - types.nodes.begin());
+	else{
+		const auto it = std::find_if(
+			types.nodes.begin(),
+			types.nodes.end(),
+			[&](const auto& e){ return e.optional_name == tag; }
+		);
+		if(it == types.nodes.end()){
+			throw std::exception();
+		}
+
+		return lookup_type_from_index_it(types, it - types.nodes.begin());
+	}
 }
+
+
+
 
 
 type_t peek(const types_t& types, const type_t& type){
@@ -1788,25 +1788,6 @@ type_t lookup_type_from_index(const types_t& types, type_lookup_index_t type_ind
 	}
 }
 
-type_t lookup_type_from_name(const types_t& types, const type_name_t& tag){
-	QUARK_ASSERT(types.check_invariant());
-
-	if(tag.lexical_path.empty()){
-		throw std::exception();
-	}
-	else{
-		const auto it = std::find_if(
-			types.nodes.begin(),
-			types.nodes.end(),
-			[&](const auto& e){ return e.optional_name == tag; }
-		);
-		if(it == types.nodes.end()){
-			throw std::exception();
-		}
-
-		return lookup_type_from_index_it(types, it - types.nodes.begin());
-	}
-}
 
 
 
@@ -1961,6 +1942,7 @@ json_t type_to_json(const types_t& types, const type_t& type){
 		json_t operator()(const named_type_t& e) const {
 			const auto& tag = type.get_named_type(types);
 			return pack_type_name(tag);
+			//??? also store child_types[0]
 //			return type_to_json_shallow(e.destination_type);
 		}
 	};
@@ -1983,7 +1965,8 @@ type_t type_from_json(types_t& types, const json_t& t){
 
 		//	Tagged type.
 		else if(is_type_name(s)){
-			return make_named_type(types, unpack_type_name(s));
+			//??? also store child_types[0]
+			return name_named_type(types, unpack_type_name(s), make_undefined());
 		}
 
 		//	Other types.
@@ -2344,19 +2327,6 @@ type_t make_symbol_ref(types_t& types, const std::string& s){
 		epure::pure,
 		return_dyn_type::none,
 		s
-	};
-	return intern_node(types, node);
-}
-
-type_t make_named_type(types_t& types, const type_name_t& type){
-	const auto node = type_node_t{
-		type,
-		base_type::k_symbol_ref,
-		std::vector<type_t>{},
-		{},
-		epure::pure,
-		return_dyn_type::none,
-		""
 	};
 	return intern_node(types, node);
 }

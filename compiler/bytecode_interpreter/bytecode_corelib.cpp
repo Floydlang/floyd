@@ -30,7 +30,7 @@ bc_value_t bc_corelib__make_benchmark_report(interpreter_t& vm, const bc_value_t
 
 
 
-	const auto benchmark_result2_t__type = get_tagged_type2(temp_types, type_name_t { { "global_xyz_saft", "benchmark_result2_t" } });
+	const auto benchmark_result2_t__type = lookup_type_from_name(temp_types, type_name_t { { "global_xyz_saft", "benchmark_result2_t" } });
 //	const auto dict_json__type = make_dict(types2, type_t::make_json());
 
 	QUARK_ASSERT(args[0]._type == benchmark_result2_t__type);
