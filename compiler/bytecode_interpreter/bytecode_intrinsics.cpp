@@ -538,8 +538,9 @@ bc_value_t bc_intrinsic__map(interpreter_t& vm, const bc_value_t args[], int arg
 
 	const auto e_type = args[0]._type.get_vector_element_type(types);
 	const auto f = args[1];
-	const auto f_arg_types = f._type.get_function_args(types);
-	const auto r_type = f._type.get_function_return(types);
+	const auto f_type_peek = peek2(types, f._type);
+	const auto f_arg_types = f_type_peek.get_function_args(types);
+	const auto r_type = f_type_peek.get_function_return(types);
 
 	const auto& context = args[2];
 
@@ -573,8 +574,9 @@ bc_value_t bc_intrinsic__map_string(interpreter_t& vm, const bc_value_t args[], 
 
 	const auto& types = vm._imm->_program._types;
 	const auto f = args[1];
-	const auto f_arg_types = f._type.get_function_args(types);
-	const auto r_type = f._type.get_function_return(types);
+	const auto f_type_peek = peek2(types, f._type);
+	const auto f_arg_types = f_type_peek.get_function_args(types);
+	const auto r_type = f_type_peek.get_function_return(types);
 	const auto& context = args[2];
 
 	const auto input_vec = args[0].get_string_value();
@@ -614,7 +616,8 @@ bc_value_t bc_intrinsic__map_dag(interpreter_t& vm, const bc_value_t args[], int
 //	const auto& e_type = elements._type.get_vector_element_type();
 	const auto& parents = args[1];
 	const auto& f = args[2];
-	const auto& r_type = args[2]._type.get_function_return(types);
+	const auto f_type_peek = peek2(types, f._type);
+	const auto& r_type = f_type_peek.get_function_return(types);
 	const auto& context = args[3];
 
 	const auto elements2 = get_vector(types, elements);
@@ -721,13 +724,14 @@ bc_value_t bc_intrinsic__map_dag2(interpreter_t& vm, const bc_value_t args[], in
 	const auto& e_type = elements._type.get_vector_element_type(types);
 	const auto& dependencies = args[1];
 	const auto& f = args[2];
-	const auto& r_type = args[2]._type.get_function_return(types);
+	const auto f_type_peek = peek2(types, f._type);
+	const auto& r_type = f_type_peek.get_function_return(types);
 
 	const auto& context = args[3];
 
 	if(
-		e_type == f._type.get_function_args(types)[0]
-		&& r_type == f._type.get_function_args(types)[1].get_vector_element_type(types)
+		e_type == f_type_peek.get_function_args(types)[0]
+		&& r_type == f_type_peek.get_function_args(types)[1].get_vector_element_type(types)
 	){
 	}
 	else {

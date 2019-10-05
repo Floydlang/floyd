@@ -2045,9 +2045,9 @@ bc_function_definition_t::bc_function_definition_t(
 	_frame_ptr(frame),
 	_function_id(function_id),
 	_dyn_arg_count(-1),
-	_return_is_ext(encode_as_external(_function_type.get_function_return(types)))
+	_return_is_ext(encode_as_external(peek2(types, _function_type).get_function_return(types)))
 {
-	const auto args2 = function_type.get_function_args(types); 
+	const auto args2 = peek2(types, function_type).get_function_args(types);
     _dyn_arg_count = (int)std::count_if(args2.begin(), args2.end(), [](const auto& e){ return e.is_any(); });
 }
 
@@ -2215,7 +2215,8 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 	}
 	else{
 #if DEBUG
-		const auto& arg_types = f._type.get_function_args(vm._imm->_program._types);
+		const auto& types = vm._imm->_program._types;
+		const auto& arg_types = peek2(types, f._type).get_function_args(types);
 
 		//	arity
 		QUARK_ASSERT(arg_count == arg_types.size());
@@ -2624,7 +2625,10 @@ static void call_native(interpreter_t& vm, const bc_instruction_t& i, const type
 	}
 	const auto& host_function_ptr = native_it->second;
 
-	const auto temp_args = function_type.get_function_args(vm._imm->_program._types);
+	const auto& types = vm._imm->_program._types;
+	const auto function_type_peek = peek2(types, function_type);
+
+	const auto temp_args = function_type_peek.get_function_args(types);
 	const auto function_def_dynamic_arg_count = std::count_if(temp_args.begin(), temp_args.end(), [&](const auto& e){ return e.is_any(); } );
 
 	const int arg0_stack_pos = stack.size() - (function_def_dynamic_arg_count + callee_arg_count);
@@ -2652,7 +2656,7 @@ static void call_native(interpreter_t& vm, const bc_instruction_t& i, const type
 	const auto& result = (host_function_ptr)(vm, &arg_values[0], static_cast<int>(arg_values.size()));
 	const auto bc_result = result;
 
-	const auto& function_return_type = function_type.get_function_return(vm._imm->_program._types);
+	const auto& function_return_type = function_type_peek.get_function_return(types);
 	if(function_return_type.is_void() == true){
 	}
 	else if(function_return_type.is_any()){
@@ -2701,8 +2705,10 @@ static void do_call(interpreter_t& vm, const bc_instruction_t& i){
 		else{
 			QUARK_ASSERT(function_def._args.size() == callee_arg_count);
 
+			const auto& types = vm._imm->_program._types;
+
 			const int function_def_dynamic_arg_count = function_def._dyn_arg_count;
-			const auto& function_return_type = function_def._function_type.get_function_return(vm._imm->_program._types);
+			const auto& function_return_type = peek2(types, function_def._function_type).get_function_return(types);
 
 			QUARK_ASSERT(function_def_dynamic_arg_count == 0);
 

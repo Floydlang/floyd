@@ -25,6 +25,14 @@
 namespace floyd {
 
 
+
+type_t::type_t(const type_desc_t& desc) :
+	type_t(desc.non_name_type)
+{
+}
+
+
+
 std::string pack_type_name(const type_name_t& tag){
 	if(tag.lexical_path.empty()){
 		return "/";
@@ -1921,10 +1929,11 @@ json_t type_to_json(const types_t& types, const type_t& type){
 			return json_t::make_array( { json_t(basetype_str), type_to_json(types, d) });
 		}
 		json_t operator()(const function_t& e) const{
-			const auto ret = type.get_function_return(types);
-			const auto args = type.get_function_args(types);
-			const auto pure = type.get_function_pure(types);
-			const auto dyn = type.get_function_dyn_return_type(types);
+			const auto desc = peek2(types, type);
+			const auto ret = desc.get_function_return(types);
+			const auto args = desc.get_function_args(types);
+			const auto pure = desc.get_function_pure(types);
+			const auto dyn = desc.get_function_dyn_return_type(types);
 
 			//	Only include dyn-type it it's different than return_dyn_type::none.
 			const auto dyn_type = dyn != return_dyn_type::none ? json_t(static_cast<int>(dyn)) : json_t();
@@ -2160,9 +2169,10 @@ std::string type_to_compact_string(const types_t& types, const type_t& type, res
 			return "[string:" + type_to_compact_string(types, e._parts[0], resolve) + "]";
 		}
 		std::string operator()(const function_t& e) const{
-			const auto ret = type.get_function_return(types);
-			const auto args = type.get_function_args(types);
-			const auto pure = type.get_function_pure(types);
+			const auto desc = peek2(types, type);
+			const auto ret = desc.get_function_return(types);
+			const auto args = desc.get_function_args(types);
+			const auto pure = desc.get_function_pure(types);
 
 			std::vector<std::string> args_str;
 			for(const auto& a: args){

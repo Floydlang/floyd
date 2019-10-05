@@ -405,6 +405,7 @@ typedef runtime_value_t (*MAP_F)(floyd_runtime_t* frp, runtime_value_t e_value, 
 static runtime_value_t map__carray(floyd_runtime_t* frp, runtime_value_t elements_vec, runtime_type_t elements_vec_type, runtime_value_t f_value, runtime_type_t f_type, runtime_value_t context_value, runtime_type_t context_type, runtime_type_t result_vec_type){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.backend;
+	const auto& types = r.backend.types;
 
 	QUARK_ASSERT(backend.check_invariant());
 
@@ -415,8 +416,8 @@ static runtime_value_t map__carray(floyd_runtime_t* frp, runtime_value_t element
 	const auto& type2 = lookup_type_ref(backend, context_type);
 //	QUARK_ASSERT(check_map_func_type(type0, type1, type2));
 
-	const auto e_type = type0.get_vector_element_type(r.backend.types);
-	const auto f_arg_types = type1.get_function_args(r.backend.types);
+	const auto e_type = type0.get_vector_element_type(types);
+	const auto f_arg_types = peek2(types, type1).get_function_args(types);
 #endif
 
 	const auto f = reinterpret_cast<MAP_F>(f_value.function_ptr);
@@ -435,6 +436,7 @@ static runtime_value_t map__hamt(floyd_runtime_t* frp, runtime_value_t elements_
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.backend;
 	QUARK_ASSERT(backend.check_invariant());
+	const auto& types = r.backend.types;
 
 #if DEBUG
 	const auto& type1 = lookup_type_ref(backend, f_type);
@@ -443,8 +445,8 @@ static runtime_value_t map__hamt(floyd_runtime_t* frp, runtime_value_t elements_
 	const auto& type2 = lookup_type_ref(backend, context_type);
 //	QUARK_ASSERT(check_map_func_type(type0, type1, type2));
 
-	const auto e_type = type0.get_vector_element_type(r.backend.types);
-	const auto f_arg_types = type1.get_function_args(r.backend.types);
+	const auto e_type = type0.get_vector_element_type(types);
+	const auto f_arg_types = peek2(types, type1).get_function_args(types);
 #endif
 
 	const auto f = reinterpret_cast<MAP_F>(f_value.function_ptr);
@@ -504,7 +506,7 @@ llvm::Value* generate_instrinsic_map(
 	auto& builder = gen_acc.get_builder();
 	const auto res = lookup_link_map(gen_acc.gen.settings.config, types, gen_acc.gen.link_map, make_map_specializations(builder.getContext(), gen_acc.gen.type_lookup), elements_vec_type);
 
-	const auto result_vec_type = resolved_call_type.get_function_return(types);
+	const auto result_vec_type = peek2(types, resolved_call_type).get_function_return(types);
 	return builder.CreateCall(
 		res.llvm_codegen_f,
 		{
@@ -592,7 +594,7 @@ static runtime_value_t map_dag__carray(
 ){
 	QUARK_ASSERT(frp != nullptr);
 	QUARK_ASSERT(backend.check_invariant());
-
+	const auto& types = backend.types;
 	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
 	const auto& type1 = lookup_type_ref(backend, depends_on_vec_type);
 	const auto& type2 = lookup_type_ref(backend, f_value_type);
@@ -600,18 +602,18 @@ static runtime_value_t map_dag__carray(
 
 	const auto& elements = elements_vec;
 #if DEBUG
-	const auto& e_type = type0.get_vector_element_type(backend.types);
+	const auto& e_type = type0.get_vector_element_type(types);
 #endif
 	const auto& parents = depends_on_vec;
 	const auto& f = f_value;
-	const auto& r_type = type2.get_function_return(backend.types);
+	const auto& r_type = peek2(types, type2).get_function_return(types);
 
-	QUARK_ASSERT(e_type == type2.get_function_args(backend.types)[0] && r_type == type2.get_function_args(backend.types)[1].get_vector_element_type(backend.types));
+	QUARK_ASSERT(e_type == peek2(types, type2).get_function_args(types)[0] && r_type == peek2(types, type2).get_function_args(types)[1].get_vector_element_type(types));
 
 //	QUARK_ASSERT(is_vector_carray(make_vector(e_type)));
 //	QUARK_ASSERT(is_vector_carray(make_vector(r_type)));
 
-	const auto return_type = make_vector(backend.types, r_type);
+	const auto return_type = make_vector(types, r_type);
 
 	const auto f2 = reinterpret_cast<map_dag_F>(f.function_ptr);
 
@@ -721,6 +723,7 @@ static runtime_value_t map_dag__hamt(
 	QUARK_ASSERT(frp != nullptr);
 	QUARK_ASSERT(backend.check_invariant());
 
+	const auto& types = backend.types;
 	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
 	const auto& type1 = lookup_type_ref(backend, depends_on_vec_type);
 	const auto& type2 = lookup_type_ref(backend, f_value_type);
@@ -728,18 +731,18 @@ static runtime_value_t map_dag__hamt(
 
 	const auto& elements = elements_vec;
 #if DEBUG
-	const auto& e_type = type0.get_vector_element_type(backend.types);
+	const auto& e_type = type0.get_vector_element_type(types);
 #endif
 	const auto& parents = depends_on_vec;
 	const auto& f = f_value;
-	const auto& r_type = type2.get_function_return(backend.types);
+	const auto& r_type = peek2(types, type2).get_function_return(types);
 
-	QUARK_ASSERT(e_type == type2.get_function_args(backend.types)[0] && r_type == type2.get_function_args(backend.types)[1].get_vector_element_type(backend.types));
+	QUARK_ASSERT(e_type == peek2(types, type2).get_function_args(types)[0] && r_type == peek2(types, type2).get_function_args(types)[1].get_vector_element_type(types));
 
 //	QUARK_ASSERT(is_vector_hamt(make_vector(e_type)));
 //	QUARK_ASSERT(is_vector_hamt(make_vector(r_type)));
 
-	const auto return_type = make_vector(backend.types, r_type);
+	const auto return_type = make_vector(types, r_type);
 
 	const auto f2 = reinterpret_cast<map_dag_F>(f.function_ptr);
 

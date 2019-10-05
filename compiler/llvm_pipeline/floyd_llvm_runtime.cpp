@@ -724,10 +724,11 @@ static void send_message(llvm_process_runtime_t& runtime, int process_id, const 
 static void run_process(llvm_process_runtime_t& runtime, int process_id){
 	auto& process = *runtime._processes[process_id];
 	bool stop = false;
+	auto& types = runtime.ee->backend.types;
 
 	const auto thread_name = get_current_thread_name();
 
-	const type_t process_state_type = process._init_function != nullptr ? process._init_function->type.get_function_return(runtime.ee->backend.types) : make_undefined();
+	const type_t process_state_type = process._init_function != nullptr ? peek2(types, process._init_function->type).get_function_return(types) : make_undefined();
 
 	if(process._processor){
 		process._processor->on_init();
@@ -735,13 +736,13 @@ static void run_process(llvm_process_runtime_t& runtime, int process_id){
 
 	if(process._init_function != nullptr){
 		//	!!! This validation should be done earlier in the startup process / compilation process.
-		if(process._init_function->type != make_process_init_type(runtime.ee->backend.types, process_state_type)){
+		if(process._init_function->type != make_process_init_type(types, process_state_type)){
 			quark::throw_runtime_error("Invalid function prototype for process-init");
 		}
 
 		auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_INIT>(process._init_function->address);
 		const auto result = (*f)(make_runtime_ptr(runtime.ee));
-		process._process_state = from_runtime_value(*runtime.ee, result, process._init_function->type.get_function_return(runtime.ee->backend.types));
+		process._process_state = from_runtime_value(*runtime.ee, result, peek2(types, process._init_function->type).get_function_return(types));
 	}
 
 	while(stop == false){
@@ -780,7 +781,7 @@ static void run_process(llvm_process_runtime_t& runtime, int process_id){
 
 			if(process._process_function != nullptr){
 				//	!!! This validation should be done earlier in the startup process / compilation process.
-				if(process._process_function->type != make_process_message_handler_type(runtime.ee->backend.types, process_state_type)){
+				if(process._process_function->type != make_process_message_handler_type(types, process_state_type)){
 					quark::throw_runtime_error("Invalid function prototype for process message handler");
 				}
 
@@ -788,7 +789,7 @@ static void run_process(llvm_process_runtime_t& runtime, int process_id){
 				const auto state2 = to_runtime_value(*runtime.ee, process._process_state);
 				const auto message2 = to_runtime_value(*runtime.ee, value_t::make_json(message));
 				const auto result = (*f)(make_runtime_ptr(runtime.ee), state2, message2);
-				process._process_state = from_runtime_value(*runtime.ee, result, process._process_function->type.get_function_return(runtime.ee->backend.types));
+				process._process_state = from_runtime_value(*runtime.ee, result, peek2(types, process._process_function->type).get_function_return(types));
 			}
 		}
 	}

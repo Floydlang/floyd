@@ -195,7 +195,8 @@ static llvm::Type* get_llvm_type_prefer_generic(const type_entry_t& entry){
 static llvm_function_def_t map_function_arguments_internal(const builder_t& builder, const floyd::type_t& function_type){
 	QUARK_ASSERT(function_type.is_function());
 
-	const auto ret = function_type.get_function_return(builder.acc.types);
+	const auto function_peek = peek2(builder.acc.types, function_type);
+	const auto ret = function_peek.get_function_return(builder.acc.types);
 
 	// Notice: we always resolve the return type in semantic analysis -- no need to use WIDE_RETURN and provide a dynamic type. We use int64 here and cast it when calling.
 	llvm::Type* return_type = nullptr;
@@ -207,7 +208,7 @@ static llvm_function_def_t map_function_arguments_internal(const builder_t& buil
 		return_type = get_llvm_type_prefer_generic(a);
 	}
 
-	const auto args = function_type.get_function_args(builder.acc.types);
+	const auto args = function_peek.get_function_args(builder.acc.types);
 	std::vector<llvm_arg_mapping_t> arg_results;
 
 	auto frp_type = builder.acc.runtime_ptr_type;

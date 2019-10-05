@@ -115,6 +115,7 @@ struct member_t;
 struct struct_type_desc_t;
 struct types_t;
 struct type_t;
+struct type_desc_t;
 
 //////////////////////////////////////		base_type
 
@@ -279,6 +280,8 @@ std::vector<type_t> get_member_types(const std::vector<member_t>& m);
 */
 
 struct type_t {
+	//??? Make this explicit
+	type_t(const type_desc_t& desc);
 	type_t() :
 		type_t(assemble((type_lookup_index_t)base_type::k_undefined, base_type::k_undefined, base_type::k_undefined))
 	{
@@ -469,24 +472,24 @@ struct type_t {
 	//////////////////////////////////////////////////		FUNCTION
 
 
-	bool is_function() const {
+	public: bool is_function() const {
 		QUARK_ASSERT(check_invariant());
 
 		return get_base_type() == base_type::k_function;
 	}
 
-	public: type_t get_function_return(const types_t& types) const;
-	public: std::vector<type_t> get_function_args(const types_t& types) const;
+	private: type_t get_function_return(const types_t& types) const;
+	private: std::vector<type_t> get_function_args(const types_t& types) const;
 
-	public: return_dyn_type get_function_dyn_return_type(const types_t& types) const;
+	private: return_dyn_type get_function_dyn_return_type(const types_t& types) const;
 
-	public: epure get_function_pure(const types_t& types) const;
+	private: epure get_function_pure(const types_t& types) const;
 
 
 	//////////////////////////////////////////////////		SYMBOL
 
 
-	bool is_symbol_ref() const {
+	public: bool is_symbol_ref() const {
 		QUARK_ASSERT(check_invariant());
 
 		return get_base_type() == base_type::k_symbol_ref;

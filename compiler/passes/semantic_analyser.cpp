@@ -254,10 +254,11 @@ static type_t resolve_symbols(analyser_t& acc, const location_t& loc, const type
 			return make_dict(acc._types, resolve_symbols(acc, loc, type.get_dict_value_type(acc._types)));
 		}
 		type_t operator()(const function_t& e) const{
-			const auto ret = type.get_function_return(acc._types);
-			const auto args = type.get_function_args(acc._types);
-			const auto pure = type.get_function_pure(acc._types);
-			const auto dyn_return_type = type.get_function_dyn_return_type(acc._types);
+			const auto desc = peek2(acc._types, type);
+			const auto ret = desc.get_function_return(acc._types);
+			const auto args = desc.get_function_args(acc._types);
+			const auto pure = desc.get_function_pure(acc._types);
+			const auto dyn_return_type = desc.get_function_dyn_return_type(acc._types);
 
 			const auto ret2 = resolve_symbols(acc, loc, ret);
 			std::vector<type_t> args2;
@@ -336,9 +337,9 @@ static type_t analyze_expr_output_type(analyser_t& a, const expression_t& e){
 
 //	When callee has "any" as return type, we need to figure out its return type using its algorithm and the actual types
 static const type_t figure_out_callee_return_type(analyser_t& a, const statement_t& parent, const type_t& callee_type, const std::vector<expression_t>& call_args){
-	const auto callee_return_type = callee_type.get_function_return(a._types);
+	const auto callee_return_type = peek2(a._types, callee_type).get_function_return(a._types);
 
-	const auto ret_type_algo = callee_type.get_function_dyn_return_type(a._types);
+	const auto ret_type_algo = peek2(a._types, callee_type).get_function_dyn_return_type(a._types);
 	switch(ret_type_algo){
 		case return_dyn_type::none:
 			{
@@ -390,7 +391,7 @@ static const type_t figure_out_callee_return_type(analyser_t& a, const statement
 		//	x = make_vector(arg1.get_function_return());
 				QUARK_ASSERT(call_args.size() >= 2);
 
-				const auto f = analyze_expr_output_type(a, call_args[1]).get_function_return(a._types);
+				const auto f = peek2(a._types, analyze_expr_output_type(a, call_args[1])).get_function_return(a._types);
 				const auto ret = make_vector(a._types, f);
 				return ret;
 			}
@@ -399,7 +400,7 @@ static const type_t figure_out_callee_return_type(analyser_t& a, const statement
 			{
 			//	x = make_vector(arg2.get_function_return());
 				QUARK_ASSERT(call_args.size() >= 3);
-				const auto f = analyze_expr_output_type(a, call_args[2]).get_function_return(a._types);
+				const auto f = peek2(a._types, analyze_expr_output_type(a, call_args[2])).get_function_return(a._types);
 				const auto ret = make_vector(a._types, f);
 				return ret;
 			}
@@ -427,10 +428,10 @@ struct fully_resolved_call_t {
 	Throws errors on type mismatches.
 */
 static std::pair<analyser_t, fully_resolved_call_t> analyze_resolve_call_type(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& call_args, const type_t& callee_itype){
-	const auto callee_type_peek = peek(a._types, callee_itype);
-	const auto callee_arg_types = callee_type_peek.get_function_args(a._types);
-
 	auto a_acc = a;
+
+	const auto callee_type_peek = peek2(a_acc._types, callee_itype);
+	const auto callee_arg_types = callee_type_peek.get_function_args(a_acc._types);
 
 	//	arity
 	if(call_args.size() != callee_arg_types.size()){
@@ -791,7 +792,7 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 
 	//	Make a function def expression for the new benchmark function.
 
-	const auto body_pair = analyse_body(a_acc, statement._body, epure::pure, f_itype.get_function_return(a_acc._types));
+	const auto body_pair = analyse_body(a_acc, statement._body, epure::pure, peek2(a_acc._types, f_itype).get_function_return(a_acc._types));
 	a_acc = body_pair.first;
 
 
@@ -817,7 +818,7 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 		a_acc.benchmark_defs.push_back(new_record_expr3_pair.second);
 	}
 
-	const auto body2 = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, f_itype.get_function_return(a_acc._types));
+	const auto body2 = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, peek2(a_acc._types, f_itype).get_function_return(a_acc._types));
 	a_acc = body2.first;
 	return a_acc;
 }
@@ -964,7 +965,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 
 		const auto callee_itype = sign._function_type;
 
-		const auto callee_type_peek = peek(a_acc._types, callee_itype);
+		const auto callee_type_peek = peek2(a_acc._types, callee_itype);
 		const auto callee_arg_types = callee_type_peek.get_function_args(a_acc._types);
 
 
@@ -1005,13 +1006,18 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 
 			const auto callee_return_type = collection_type0;
 
-			const auto resolved_arg_types = { collection_type0, type_t::make_int(), new_value_type  };
+			const auto resolved_arg_types = { collection_type0, type_t::make_int(), new_value_type };
+
+
+			//	Force generating the function-type into types.
 			const auto resolved_function_type = make_function(
 				a_acc._types,
 				callee_return_type,
 				resolved_arg_types,
 				callee_type_peek.get_function_pure(a_acc._types)
 			);
+			(void)resolved_function_type;
+
 
 			if(true) trace_types(a_acc._types);
 
@@ -1112,8 +1118,9 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_push_back_expression(const
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto parent_type = resolved_call.second.function_type.get_function_args(a_acc._types)[0];
-	const auto value_type = resolved_call.second.function_type.get_function_args(a_acc._types)[1];
+	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
+	const auto value_type = function_type.get_function_args(a_acc._types)[1];
 
 	if(parent_type.is_string()){
 		if(value_type.is_int() == false){
@@ -1150,7 +1157,8 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_size_expression(const anal
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto parent_type = resolved_call.second.function_type.get_function_args(a_acc._types)[0];
+	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
 	if(parent_type.is_string() || parent_type.is_json() || parent_type.is_vector() || parent_type.is_dict()){
 	}
 	else{
@@ -1161,7 +1169,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_size_expression(const anal
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return(a_acc._types))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, function_type.get_function_return(a_acc._types))
 	};
 }
 
@@ -1174,8 +1182,9 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_find_expression(const anal
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto parent_type = resolved_call.second.function_type.get_function_args(a_acc._types)[0];
-	const auto wanted_type = resolved_call.second.function_type.get_function_args(a_acc._types)[1];
+	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
+	const auto wanted_type = function_type.get_function_args(a_acc._types)[1];
 
 	if(parent_type.is_string()){
 		if(wanted_type.is_string() == false){
@@ -1195,7 +1204,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_find_expression(const anal
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return(a_acc._types))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, function_type.get_function_return(a_acc._types))
 	};
 }
 
@@ -1208,8 +1217,9 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_exists_expression(const an
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto parent_type = resolved_call.second.function_type.get_function_args(a_acc._types)[0];
-	const auto wanted_type = resolved_call.second.function_type.get_function_args(a_acc._types)[1];
+	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
+	const auto wanted_type = function_type.get_function_args(a_acc._types)[1];
 
 	if(parent_type.is_dict() == false){
 		throw_compiler_error(parent.location, "exists() requires a dictionary.");
@@ -1220,7 +1230,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_exists_expression(const an
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return(a_acc._types))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, function_type.get_function_return(a_acc._types))
 	};
 }
 
@@ -1233,8 +1243,9 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_erase_expression(const ana
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto parent_type = resolved_call.second.function_type.get_function_args(a_acc._types)[0];
-	const auto key_type = resolved_call.second.function_type.get_function_args(a_acc._types)[1];
+	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
+	const auto key_type = function_type.get_function_args(a_acc._types)[1];
 
 	if(parent_type.is_dict() == false){
 		throw_compiler_error(parent.location, "erase() requires a dictionary.");
@@ -1245,7 +1256,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_erase_expression(const ana
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return(a_acc._types))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, function_type.get_function_return(a_acc._types))
 	};
 }
 
@@ -1260,7 +1271,8 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_get_keys_expression(const 
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto parent_type = resolved_call.second.function_type.get_function_args(a_acc._types)[0];
+	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
 
 	if(parent_type.is_dict() == false){
 		throw_compiler_error(parent.location, "get_keys() requires a dictionary.");
@@ -1268,7 +1280,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_get_keys_expression(const 
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return(a_acc._types))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, function_type.get_function_return(a_acc._types))
 	};
 }
 
@@ -1281,8 +1293,9 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_subset_expression(const an
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto parent_type = resolved_call.second.function_type.get_function_args(a_acc._types)[0];
-//	const auto key_type = resolved_call.second.function_type.get_function_args(a_acc._types)[1];
+	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
+//	const auto key_type = function_type.get_function_args(a_acc._types)[1];
 
 	if(parent_type.is_string() == false && parent_type.is_vector() == false){
 		throw_compiler_error(parent.location, "subset([]) requires a string or a vector.");
@@ -1290,7 +1303,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_subset_expression(const an
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return(a_acc._types))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, function_type.get_function_return(a_acc._types))
 	};
 }
 
@@ -1303,8 +1316,9 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_replace_expression(const a
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto parent_type = resolved_call.second.function_type.get_function_args(a_acc._types)[0];
-	const auto replace_with_type = resolved_call.second.function_type.get_function_args(a_acc._types)[3];
+	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
+	const auto replace_with_type = function_type.get_function_args(a_acc._types)[3];
 
 	if(parent_type != replace_with_type){
 		throw_compiler_error(parent.location, "replace() requires argument 4 to be same type of collection.");
@@ -1316,11 +1330,12 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_replace_expression(const a
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return(a_acc._types))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, function_type.get_function_return(a_acc._types))
 	};
 }
-//??? pass around location_t instead of statement_t& parent!
 
+
+//??? pass around location_t instead of statement_t& parent!
 
 
 //	[R] map([E] elements, func R (E e, C context) f, C context)
@@ -1333,7 +1348,9 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_expression(const analy
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
+	//??? Fix this signature check!
 	const auto expected = resolved_call.second.function_type;
+	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to map() uses signature \"" + type_to_compact_string(a_acc._types, resolved_call.second.function_type, resolve_named_types::dont_resolve) + "\", needs to be \"" + type_to_compact_string(a_acc._types, expected, resolve_named_types::dont_resolve) + "\".");
@@ -1341,7 +1358,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_expression(const analy
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return(a_acc._types))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, function_type.get_function_return(a_acc._types))
 	};
 }
 
@@ -1355,7 +1372,9 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_string_expression(cons
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
+	//??? Fix this signature check!
 	const auto expected = resolved_call.second.function_type;
+	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to map_string() uses signature \"" + type_to_compact_string(a_acc._types, resolved_call.second.function_type, resolve_named_types::dont_resolve) + "\", needs to be \"" + type_to_compact_string(a_acc._types, expected, resolve_named_types::dont_resolve) + "\".");
@@ -1363,7 +1382,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_string_expression(cons
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return(a_acc._types))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, function_type.get_function_return(a_acc._types))
 	};
 }
 
@@ -1377,7 +1396,9 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_dag_expression(const a
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
+	//??? Fix this signature check!
 	const auto expected = resolved_call.second.function_type;
+	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to map_dag() uses signature \"" + type_to_compact_string(a_acc._types, resolved_call.second.function_type, resolve_named_types::dont_resolve) + "\", needs to be \"" + type_to_compact_string(a_acc._types, expected, resolve_named_types::dont_resolve) + "\".");
@@ -1385,7 +1406,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_dag_expression(const a
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return(a_acc._types))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, function_type.get_function_return(a_acc._types))
 	};
 }
 
@@ -1398,7 +1419,9 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_filter_expression(const an
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
+	//??? Fix this signature check!
 	const auto expected = resolved_call.second.function_type;
+	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to filter() uses signature \"" + type_to_compact_string(a_acc._types, resolved_call.second.function_type, resolve_named_types::dont_resolve) + "\", expected to be \"" + type_to_compact_string(a_acc._types, expected, resolve_named_types::dont_resolve) + "\".");
@@ -1406,7 +1429,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_filter_expression(const an
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return(a_acc._types))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, function_type.get_function_return(a_acc._types))
 	};
 }
 
@@ -1420,7 +1443,9 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_reduce_expression(const an
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
+	//??? Fix this signature check!
 	const auto expected = resolved_call.second.function_type;
+	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to reduce() uses signature \"" + type_to_compact_string(a_acc._types, resolved_call.second.function_type, resolve_named_types::dont_resolve) + "\", expected to be \"" + type_to_compact_string(a_acc._types, expected, resolve_named_types::dont_resolve) + "\".");
@@ -1428,7 +1453,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_reduce_expression(const an
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return(a_acc._types))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, function_type.get_function_return(a_acc._types))
 	};
 }
 
@@ -1442,7 +1467,9 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_stable_sort_expression(con
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
+	//??? Fix this signature check!
 	const auto expected = resolved_call.second.function_type;
+	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to stable_sort() uses signature \"" + type_to_compact_string(a_acc._types, resolved_call.second.function_type, resolve_named_types::dont_resolve) + "\", needs to be \"" + type_to_compact_string(a_acc._types, expected, resolve_named_types::dont_resolve) + "\".");
@@ -1450,7 +1477,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_stable_sort_expression(con
 
 	return {
 		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return(a_acc._types))
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, function_type.get_function_return(a_acc._types))
 	};
 }
 
@@ -2050,12 +2077,15 @@ static std::pair<analyser_t, expression_t> analyse_intrinsic_fallthrough_express
 
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, sign._function_type);
 	a_acc = resolved_call.first;
+
+	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+
 	return {
 		a_acc,
 		expression_t::make_intrinsic(
 			get_intrinsic_opcode(sign),
 			resolved_call.second.args,
-			resolved_call.second.function_type.get_function_return(a_acc._types)
+			function_type.get_function_return(a_acc._types)
 		)
 	};
 }
@@ -2086,11 +2116,11 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 	auto callee_expr_load2 = std::get_if<expression_t::load2_t>(&callee_expr._expression_variant);
 
 	//	This is a call to a function-value. Callee is a function-type.
-	const auto callee_itype = analyze_expr_output_type(a_acc, callee_expr);
-	const auto callee_type = callee_itype;
+	const auto callee_type0 = analyze_expr_output_type(a_acc, callee_expr);
+	const auto callee_type_peek = peek2(a_acc._types, callee_type0);
 
-	if(callee_itype.is_function()){
-		const auto callee_pure = callee_type.get_function_pure(a_acc._types);
+	if(callee_type_peek.is_function()){
+		const auto callee_pure = callee_type_peek.get_function_pure(a_acc._types);
 
 		if(callsite_pure == epure::pure && callee_pure == epure::impure){
 			throw_compiler_error(parent.location, "Cannot call impure function from a pure function.");
@@ -2223,9 +2253,11 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 			}
 		}
 
-		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, callee_type);
+		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, callee_type_peek);
 		a_acc = resolved_call.first;
-		return { a_acc, expression_t::make_call(callee_expr, resolved_call.second.args, resolved_call.second.function_type.get_function_return(a_acc._types)) };
+
+		const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+		return { a_acc, expression_t::make_call(callee_expr, resolved_call.second.args, function_type.get_function_return(a_acc._types)) };
 	}
 
 	//	Attempting to call a TYPE? Then this may be a constructor call.
@@ -2260,7 +2292,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 
 	{
 		std::stringstream what;
-		what << "Cannot call non-function, its type is " << type_to_compact_string(a_acc._types, callee_type, resolve_named_types::dont_resolve) << ".";
+		what << "Cannot call non-function, its type is " << type_to_compact_string(a_acc._types, callee_type0, resolve_named_types::dont_resolve) << ".";
 		throw_compiler_error(parent.location, what.str());
 	}
 }
@@ -2322,8 +2354,9 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	auto a_acc = analyser;
 
 	const auto function_def = details.def;
-	const auto function_type2 = resolve_and_intern_itype(a_acc, parent.location, function_def._function_type);
-	const auto function_pure = function_type2.get_function_pure(a_acc._types);
+	const auto function_type0 = resolve_and_intern_itype(a_acc, parent.location, function_def._function_type);
+	const auto function_type_peek = peek2(a_acc._types, function_type0);
+	const auto function_pure = function_type_peek.get_function_pure(a_acc._types);
 
 	std::vector<member_t> args2;
 	for(const auto& arg: function_def._named_args){
@@ -2343,7 +2376,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 		}
 		const auto function_body2 = body_t(function_def._optional_body->_statements, symbol_vec);
 
-		const auto body_pair = analyse_body(a_acc, function_body2, pure, function_type2.get_function_return(a_acc._types));
+		const auto body_pair = analyse_body(a_acc, function_body2, pure, function_type_peek.get_function_return(a_acc._types));
 		a_acc = body_pair.first;
 		const auto function_body3 = body_pair.second;
 		body_result = std::make_shared<body_t>(function_body3);
@@ -2354,12 +2387,12 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	const auto definition_name = function_def._definition_name;
 	const auto function_id = function_id_t { definition_name };
 
-	const auto function_def2 = function_definition_t::make_func(k_no_location, definition_name, function_type2, args2, body_result);
+	const auto function_def2 = function_definition_t::make_func(k_no_location, definition_name, function_type0, args2, body_result);
 	QUARK_ASSERT(check_types_resolved(a_acc._types, function_def2));
 
 	a_acc._function_defs.insert({ function_id, function_def2 });
 
-	const auto r = expression_t::make_literal(value_t::make_function_value(function_type2, function_id), function_type2);
+	const auto r = expression_t::make_literal(value_t::make_function_value(function_type0, function_id), function_type0);
 
 	return { a_acc, r };
 }

@@ -464,12 +464,7 @@ static type_t get_expr_output_type(const llvm_code_generator_t& gen_acc, const e
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-#if 1
 	return e.get_output_type();
-#else
-	const auto& types = gen_acc.type_lookup.state.types;
-	return peek(types, e.get_output_type());
-#endif
 }
 
 
@@ -1017,6 +1012,7 @@ static llvm::Value* generate_conditional_operator_expression(llvm_function_gener
 	return phiNode;
 }
 
+//??? Why is this needed in backend, shouldn't semast have fixed this already? Hmm. I don't think semast stores the inferred type of the function in the AST.
 //	Call functon type and callee function types are identical, except the callee function type can use ANY-types.
 static type_t calc_resolved_function_type(const llvm_code_generator_t& gen, const expression_t& e, const type_t& callee_function_type, const std::vector<expression_t>& args){
 	QUARK_ASSERT(gen.check_invariant());
@@ -1026,7 +1022,6 @@ static type_t calc_resolved_function_type(const llvm_code_generator_t& gen, cons
 
 	//	Callee type can include ANY-arguments. Check the resolved call expression's types to know the types.
 	const auto resolved_call_return_type = get_expr_output_type(gen, e);
-
 	const auto resolved_call_arguments = mapf<type_t>(args, [&gen](auto& e){ return get_expr_output_type(gen, e); });
 
 
@@ -1036,11 +1031,11 @@ static type_t calc_resolved_function_type(const llvm_code_generator_t& gen, cons
 		types,
 		resolved_call_return_type,
 		resolved_call_arguments,
-		callee_function_type.get_function_pure(types)
+		peek2(gen.type_lookup.state.types, callee_function_type).get_function_pure(types)
 	);
 
 	//	Verify that the actual argument expressions, their count and output types -- all match callee_function_type.
-	QUARK_ASSERT(args.size() == callee_function_type.get_function_args(types).size());
+	QUARK_ASSERT(args.size() == peek2(gen.type_lookup.state.types, callee_function_type).get_function_args(types).size());
 
 	if(true) trace_types(types);
 
@@ -1094,7 +1089,7 @@ llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& gen_acc, 
 	const auto callee_function_type = it->_function_type;
 
 	//	Verify that the actual argument expressions, their count and output types -- all match callee_function_type.
-	QUARK_ASSERT(details.args.size() == callee_function_type.get_function_args(types).size());
+	QUARK_ASSERT(details.args.size() == peek2(types, callee_function_type).get_function_args(types).size());
 
 	const auto resolved_call_function_type = calc_resolved_function_type(gen_acc.gen, e, callee_function_type, details.args);
 
@@ -2319,11 +2314,11 @@ static void generate_floyd_function_body(llvm_code_generator_t& gen_acc0, const 
 		const auto return_mode = generate_body(gen_acc, symbol_table_values, body._statements);
 
 		//	Not all paths returns a value!
-		if(return_mode == function_return_mode::some_path_not_returned && function_def._function_type.get_function_return(types).is_void() == false){
+		if(return_mode == function_return_mode::some_path_not_returned && peek2(types, function_def._function_type).get_function_return(types).is_void() == false){
 			throw std::runtime_error("Not all function paths returns a value!");
 		}
 
-		if(function_def._function_type.get_function_return(types).is_void()){
+		if(peek2(types, function_def._function_type).get_function_return(types).is_void()){
 			gen_acc.get_builder().CreateRetVoid();
 		}
 	}

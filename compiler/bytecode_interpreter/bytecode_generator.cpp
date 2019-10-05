@@ -932,7 +932,7 @@ static expression_gen_t bcgen_intrinsic_size_expression(bcgenerator_t& gen_acc, 
 		const auto target_reg2 = target_reg.is_empty() ? add_local_temp(types, body_acc, call_output_type, "temp: result for k_get_size_vector_x") : target_reg;
 		body_acc._instrs.push_back(bcgen_instruction_t(opcode, target_reg2, arg1_expr._out, make_imm_int(0)));
 		QUARK_ASSERT(body_acc.check_invariant());
-		return { body_acc, target_reg2, make_size_signature(types)._function_type.get_function_return(types) };
+		return { body_acc, target_reg2, peek2(types, make_size_signature(types)._function_type).get_function_return(types) };
 	}
 	else{
 		throw std::exception();
@@ -1173,7 +1173,7 @@ static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const symb
 	const auto callee_arg_count = static_cast<int>(details.args.size());
 
 	const auto function_type = get_expr_output(gen_acc, *details.callee);
-	const auto function_def_arg_types = function_type.get_function_args(types);
+	const auto function_def_arg_types = peek2(types, function_type).get_function_args(types);
 	QUARK_ASSERT(callee_arg_count == function_def_arg_types.size());
 	const auto return_type = call_output_type;
 
@@ -1942,21 +1942,18 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 
 	bcgenerator_t a(ast);
 
+	const auto& types = ast._tree._interned_types;
+
 /*
-	types_t types2 = ast._tree._interned_types;
-
-
 	//???	benchmark_result2_t and benchmark_id_t etc are part of standard library and defines in k_corelib_builtin_types_and_constants. Find those symbols instead of making new types here.
 	//	??? move this code to semantic analyser to share it for all backends AND allow new types to be added.
 
 	const auto benchmark_result2_t__type = make_benchmark_result2_t(types2);
 	const auto dict_json__type = type_t::make_dict(types2, type_t::make_json());
 
-
-
-	trace_types(ast._tree._interned_types);
+	trace_types(types);
 	trace_types(types2);
-//	QUARK_ASSERT(types2.nodes.size() == ast._tree._interned_types.nodes.size());
+//	QUARK_ASSERT(types2.nodes.size() == types.nodes.size());
 */
 
 	bcgen_globals(a, a._ast_imm->_tree._globals);
@@ -1968,11 +1965,11 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 		if(function_def._optional_body){
 			const auto body2 = bcgen_function(a, function_def);
 
-			const auto args2 = function_def._function_type.get_function_args(ast._tree._interned_types);
+			const auto args2 = peek2(types, function_def._function_type).get_function_args(types);
 
-			const auto frame = make_frame(ast._tree._interned_types, body2, args2);
+			const auto frame = make_frame(types, body2, args2);
 			const auto f = bc_function_definition_t{
-				ast._tree._interned_types,
+				types,
 				function_def._function_type,
 				function_def._named_args,
 				std::make_shared<bc_static_frame_t>(frame),
@@ -1982,7 +1979,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 		}
 		else{
 			const auto f = bc_function_definition_t{
-				ast._tree._interned_types,
+				types,
 				function_def._function_type,
 				function_def._named_args,
 //						std::shared_ptr<bc_static_frame_t>(),
@@ -1993,11 +1990,11 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 		}
 	}
 
-	const auto globals2 = make_frame(ast._tree._interned_types, a._globals, std::vector<type_t>{});
+	const auto globals2 = make_frame(types, a._globals, std::vector<type_t>{});
 	const auto result = bc_program_t{
 		globals2,
 		function_defs2,
-		ast._tree._interned_types,
+		types,
 		ast._tree._software_system,
 		ast._tree._container_def,
 		ast.intrinsic_signatures

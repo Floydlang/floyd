@@ -195,9 +195,10 @@ intrinsic_signature_t make_get_json_type_signature(types_t& types){
 intrinsic_signature_t make_map_signature(types_t& types){
 	return make_intrinsic("map", make_function_dyn_return(types, { ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, return_dyn_type::vector_of_arg1func_return) );
 }
-type_t harden_map_func_type(types_t& types, const type_t& resolved_call_type){
-	QUARK_ASSERT(resolved_call_type.check_invariant());
+type_t harden_map_func_type(types_t& types, const type_t& resolved_call_type0){
+	QUARK_ASSERT(resolved_call_type0.check_invariant());
 
+	const auto resolved_call_type = peek2(types, resolved_call_type0);
 	const auto sign = make_map_signature(types);
 
 	const auto arg1_type = resolved_call_type.get_function_args(types)[0];
@@ -211,7 +212,7 @@ type_t harden_map_func_type(types_t& types, const type_t& resolved_call_type){
 		quark::throw_runtime_error("map() arg 2 must be a function.");
 	}
 
-	const auto r_type = arg2_type.get_function_return(types);
+	const auto r_type = peek2(types, arg2_type).get_function_return(types);
 
 	const auto context_type = resolved_call_type.get_function_args(types)[2];
 
@@ -231,9 +232,10 @@ bool check_map_func_type(types_t& types, const type_t& elements, const type_t& f
 	QUARK_ASSERT(elements.is_vector());
 	QUARK_ASSERT(f.is_function());
 
-	QUARK_ASSERT(f.get_function_args(types).size() == 2);
-	QUARK_ASSERT(f.get_function_args(types)[0] == elements.get_vector_element_type(types));
-	QUARK_ASSERT(f.get_function_args(types)[1] == context);
+	const auto f_peek = peek2(types, f);
+	QUARK_ASSERT(f_peek.get_function_args(types).size() == 2);
+	QUARK_ASSERT(f_peek.get_function_args(types)[0] == elements.get_vector_element_type(types));
+	QUARK_ASSERT(f_peek.get_function_args(types)[1] == context);
 	return true;
 }
 
@@ -256,9 +258,10 @@ intrinsic_signature_t make_map_string_signature(types_t& types){
 	);
 }
 
-type_t harden_map_string_func_type(types_t& types, const type_t& resolved_call_type){
-	QUARK_ASSERT(resolved_call_type.check_invariant());
+type_t harden_map_string_func_type(types_t& types, const type_t& resolved_call_type0){
+	QUARK_ASSERT(resolved_call_type0.check_invariant());
 
+	const auto resolved_call_type = peek2(types, resolved_call_type0);
 	const auto sign = make_map_string_signature(types);
 	const auto context_type = resolved_call_type.get_function_args(types)[2];
 
@@ -277,10 +280,12 @@ type_t harden_map_string_func_type(types_t& types, const type_t& resolved_call_t
 
 bool check_map_string_func_type(types_t& types, const type_t& elements, const type_t& f, const type_t& context){
 	QUARK_ASSERT(elements.is_string());
-	QUARK_ASSERT(f.is_function());
-	QUARK_ASSERT(f.get_function_args(types).size() == 2);
-	QUARK_ASSERT(f.get_function_args(types)[0] == type_t::make_int());
-	QUARK_ASSERT(f.get_function_args(types)[1] == context);
+
+	const auto f_peek = peek2(types, f);
+	QUARK_ASSERT(f_peek.is_function());
+	QUARK_ASSERT(f_peek.get_function_args(types).size() == 2);
+	QUARK_ASSERT(f_peek.get_function_args(types)[0] == type_t::make_int());
+	QUARK_ASSERT(f_peek.get_function_args(types)[1] == context);
 	return true;
 }
 
@@ -292,9 +297,10 @@ intrinsic_signature_t make_map_dag_signature(types_t& types){
 	return make_intrinsic("map_dag", make_function_dyn_return(types, { ANY_TYPE, ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, return_dyn_type::vector_of_arg2func_return) );
 }
 
-type_t harden_map_dag_func_type(types_t& types, const type_t& resolved_call_type){
-	QUARK_ASSERT(resolved_call_type.check_invariant());
+type_t harden_map_dag_func_type(types_t& types, const type_t& resolved_call_type0){
+	QUARK_ASSERT(resolved_call_type0.check_invariant());
 
+	const auto resolved_call_type = peek2(types, resolved_call_type0);
 	const auto sign = make_map_dag_signature(types);
 
 	const auto arg1_type = resolved_call_type.get_function_args(types)[0];
@@ -308,7 +314,7 @@ type_t harden_map_dag_func_type(types_t& types, const type_t& resolved_call_type
 		quark::throw_runtime_error("map_dag() arg 3 must be a function.");
 	}
 
-	const auto r_type = arg3_type.get_function_return(types);
+	const auto r_type = peek2(types, arg3_type).get_function_return(types);
 
 	const auto context_type = resolved_call_type.get_function_args(types)[3];
 
@@ -330,10 +336,12 @@ bool check_map_dag_func_type(types_t& types, const type_t& elements, const type_
 	//	Check topology.
 	QUARK_ASSERT(elements.is_vector());
 	QUARK_ASSERT(depends_on == make_vector(types, type_t::make_int()));
-	QUARK_ASSERT(f.is_function() && f.get_function_args(types).size () == 3);
-	QUARK_ASSERT(f.get_function_args(types)[0] == elements.get_vector_element_type(types));
-	QUARK_ASSERT(f.get_function_args(types)[1] == make_vector(types, f.get_function_return(types)));
-	QUARK_ASSERT(f.get_function_args(types)[2] == context);
+
+	const auto f_peek = peek2(types, f);
+	QUARK_ASSERT(f_peek.is_function() && f_peek.get_function_args(types).size () == 3);
+	QUARK_ASSERT(f_peek.get_function_args(types)[0] == elements.get_vector_element_type(types));
+	QUARK_ASSERT(f_peek.get_function_args(types)[1] == make_vector(types, f_peek.get_function_return(types)));
+	QUARK_ASSERT(f_peek.get_function_args(types)[2] == context);
 	return true;
 }
 
@@ -345,9 +353,10 @@ bool check_map_dag_func_type(types_t& types, const type_t& elements, const type_
 intrinsic_signature_t make_filter_signature(types_t& types){
 	return make_intrinsic("filter", make_function_dyn_return(types, { ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, return_dyn_type::arg0) );
 }
-type_t harden_filter_func_type(types_t& types, const type_t& resolved_call_type){
-	QUARK_ASSERT(resolved_call_type.check_invariant());
+type_t harden_filter_func_type(types_t& types, const type_t& resolved_call_type0){
+	QUARK_ASSERT(resolved_call_type0.check_invariant());
 
+	const auto resolved_call_type = peek2(types, resolved_call_type0);
 	const auto sign = make_filter_signature(types);
 
 	const auto arg1_type = resolved_call_type.get_function_args(types)[0];
@@ -373,10 +382,12 @@ type_t harden_filter_func_type(types_t& types, const type_t& resolved_call_type)
 
 bool check_filter_func_type(types_t& types, const type_t& elements, const type_t& f, const type_t& context){
 	QUARK_ASSERT(elements.is_vector());
-	QUARK_ASSERT(f.is_function());
-	QUARK_ASSERT(f.get_function_args(types).size() == 2);
-	QUARK_ASSERT(f.get_function_args(types)[0] == elements.get_vector_element_type(types));
-	QUARK_ASSERT(f.get_function_args(types)[1] == context);
+
+	const auto f_peek = peek2(types, f);
+	QUARK_ASSERT(f_peek.is_function());
+	QUARK_ASSERT(f_peek.get_function_args(types).size() == 2);
+	QUARK_ASSERT(f_peek.get_function_args(types)[0] == elements.get_vector_element_type(types));
+	QUARK_ASSERT(f_peek.get_function_args(types)[1] == context);
 	return true;
 }
 
@@ -387,9 +398,10 @@ intrinsic_signature_t make_reduce_signature(types_t& types){
 	return make_intrinsic("reduce", make_function_dyn_return(types, { ANY_TYPE, ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, return_dyn_type::arg1) );
 }
 
-type_t harden_reduce_func_type(types_t& types, const type_t& resolved_call_type){
-	QUARK_ASSERT(resolved_call_type.check_invariant());
+type_t harden_reduce_func_type(types_t& types, const type_t& resolved_call_type0){
+	QUARK_ASSERT(resolved_call_type0.check_invariant());
 
+	const auto resolved_call_type = peek2(types, resolved_call_type0);
 	const auto call_function_arg_type = resolved_call_type.get_function_args(types);
 
 	const auto elements_arg_type = call_function_arg_type[0];
@@ -422,12 +434,14 @@ bool check_reduce_func_type(types_t& types, const type_t& elements, const type_t
 	QUARK_ASSERT(f.check_invariant());
 	QUARK_ASSERT(context.check_invariant());
 
-	QUARK_ASSERT(elements.is_vector());
-	QUARK_ASSERT(f.is_function());
-	QUARK_ASSERT(f.get_function_args(types).size () == 3);
+	const auto f_peek = peek2(types, f);
 
-	QUARK_ASSERT(f.get_function_args(types)[1] == elements.get_vector_element_type(types));
-	QUARK_ASSERT(f.get_function_args(types)[0] == accumulator_init);
+	QUARK_ASSERT(elements.is_vector());
+	QUARK_ASSERT(f_peek.is_function());
+	QUARK_ASSERT(f_peek.get_function_args(types).size () == 3);
+
+	QUARK_ASSERT(f_peek.get_function_args(types)[1] == elements.get_vector_element_type(types));
+	QUARK_ASSERT(f_peek.get_function_args(types)[0] == accumulator_init);
 
 	return true;
 }
@@ -440,9 +454,10 @@ intrinsic_signature_t make_stable_sort_signature(types_t& types){
 	return make_intrinsic("stable_sort", make_function_dyn_return(types, { ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, return_dyn_type::arg0) );
 }
 
-type_t harden_stable_sort_func_type(types_t& types, const type_t& resolved_call_type){
-	QUARK_ASSERT(resolved_call_type.check_invariant());
+type_t harden_stable_sort_func_type(types_t& types, const type_t& resolved_call_type0){
+	QUARK_ASSERT(resolved_call_type0.check_invariant());
 
+	const auto resolved_call_type = peek2(types, resolved_call_type0);
 	const auto sign = make_stable_sort_signature(types);
 
 	const auto arg1_type = resolved_call_type.get_function_args(types)[0];
@@ -471,16 +486,19 @@ type_t harden_stable_sort_func_type(types_t& types, const type_t& resolved_call_
 	return expected;
 }
 
-bool check_stable_sort_func_type(types_t& types, const type_t& elements, const type_t& less, const type_t& context){
+bool check_stable_sort_func_type(types_t& types, const type_t& elements, const type_t& f, const type_t& context){
 	QUARK_ASSERT(elements.is_vector());
-	QUARK_ASSERT(less.is_function());
-	QUARK_ASSERT(less.get_function_args(types).size() == 3);
+	QUARK_ASSERT(f.is_function());
+
+	const auto f_peek = peek2(types, f);
+
+	QUARK_ASSERT(f_peek.get_function_args(types).size() == 3);
 
 	const auto& e_type = elements.get_vector_element_type(types);
-	QUARK_ASSERT(less.get_function_return(types) == type_t::make_bool());
-	QUARK_ASSERT(less.get_function_args(types)[0] == e_type);
-	QUARK_ASSERT(less.get_function_args(types)[1] == e_type);
-	QUARK_ASSERT(less.get_function_args(types)[2] == context);
+	QUARK_ASSERT(f_peek.get_function_return(types) == type_t::make_bool());
+	QUARK_ASSERT(f_peek.get_function_args(types)[0] == e_type);
+	QUARK_ASSERT(f_peek.get_function_args(types)[1] == e_type);
+	QUARK_ASSERT(f_peek.get_function_args(types)[2] == context);
 
 	return true;
 }
