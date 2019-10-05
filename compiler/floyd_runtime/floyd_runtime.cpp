@@ -87,9 +87,9 @@ value_t unflatten_json_to_specific_type(types_t& types, const json_t& v, const t
 
 		value_t operator()(const struct_t& e) const{
 			if(v.is_object()){
-				const auto& struct_def = e.def;
+				const auto& desc = e.desc;
 				std::vector<value_t> members2;
-				for(const auto& member: struct_def._members){
+				for(const auto& member: desc._members){
 					const auto member_value0 = v.get_object_element(member._name);
 					const auto member_value1 = unflatten_json_to_specific_type(types, member_value0, member._type);
 					members2.push_back(member_value1);

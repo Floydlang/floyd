@@ -588,8 +588,8 @@ inline type_t make_json_type(){
 	return type_t::make_json();
 }
 
-type_t make_struct(types_t& types, const struct_type_desc_t& def);
-type_t make_struct(const types_t& types, const struct_type_desc_t& def);
+type_t make_struct(types_t& types, const struct_type_desc_t& desc);
+type_t make_struct(const types_t& types, const struct_type_desc_t& desc);
 type_t make_vector(types_t& types, const type_t& element_type);
 type_t make_vector(const types_t& types, const type_t& element_type);
 type_t make_dict(types_t& types, const type_t& value_type);
@@ -706,7 +706,7 @@ inline bool operator==(const struct_type_desc_t& lhs, const struct_type_desc_t& 
 	return lhs._members == rhs._members;
 }
 
-int find_struct_member_index(const struct_type_desc_t& def, const std::string& name);
+int find_struct_member_index(const struct_type_desc_t& desc, const std::string& name);
 
 json_t members_to_json(const types_t& types, const std::vector<member_t>& members);
 std::vector<member_t> members_from_json(types_t& types, const json_t& members);
@@ -731,7 +731,7 @@ struct type_node_t {
 	std::vector<type_t> child_types;
 
 
-	struct_type_desc_t struct_def;
+	struct_type_desc_t struct_desc;
 
 	//	Only used when bt == k_function.
 	epure func_pure;
@@ -749,7 +749,7 @@ inline bool operator==(const type_node_t& lhs, const type_node_t& rhs){
 		&& lhs.bt == rhs.bt
 		&& lhs.child_types == rhs.child_types
 
-		&& lhs.struct_def == rhs.struct_def
+		&& lhs.struct_desc == rhs.struct_desc
 		&& lhs.func_pure == rhs.func_pure
 		&& lhs.func_return_dyn_type == rhs.func_return_dyn_type
 		&& lhs.identifier_str == rhs.identifier_str
@@ -824,7 +824,7 @@ struct json_type_t {};
 struct typeid_type_t {};
 
 struct struct_t {
-	struct_type_desc_t def;
+	struct_type_desc_t desc;
 };
 struct vector_t {
 	std::vector<type_t> _parts;

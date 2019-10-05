@@ -242,7 +242,7 @@ static type_t resolve_symbols(analyser_t& acc, const location_t& loc, const type
 
 		type_t operator()(const struct_t& e) const{
 			std::vector<member_t> members2;
-			for(const auto& m: e.def._members){
+			for(const auto& m: e.desc._members){
 				members2.push_back(member_t { resolve_symbols(acc, loc, m._type), m._name } );
 			}
 			return make_struct(acc._types, struct_type_desc_t(members2));

@@ -343,7 +343,7 @@ bool check_types_resolved(const types_t& types, const type_t& t){
 		}
 
 		bool operator()(const struct_t& e) const{
-			return check_types_resolved(types, e.def);
+			return check_types_resolved(types, e.desc);
 		}
 		bool operator()(const vector_t& e) const{
 			return check_types_resolved__type_vector(types, e._parts);

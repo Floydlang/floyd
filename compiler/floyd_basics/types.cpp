@@ -1394,7 +1394,7 @@ type_variant_t get_type_variant(const types_t& types, const type_t& type){
 
 	else if(type.is_struct()){
 		const auto& info = lookup_typeinfo_from_type(types, type);
-		return struct_t { info.struct_def };
+		return struct_t { info.struct_desc };
 	}
 	else if(type.is_vector()){
 		const auto& info = lookup_typeinfo_from_type(types, type);
@@ -1457,7 +1457,7 @@ struct_type_desc_t type_t::get_struct(const types_t& types) const{
 	QUARK_ASSERT(is_struct());
 
 	const auto& info = lookup_typeinfo_from_type(types, *this);
-	return info.struct_def;
+	return info.struct_desc;
 }
 
 
@@ -1519,12 +1519,12 @@ type_name_t type_t::get_named_type(const types_t& types) const {
 
 
 
-int find_struct_member_index(const struct_type_desc_t& def, const std::string& name){
+int find_struct_member_index(const struct_type_desc_t& desc, const std::string& name){
 	int index = 0;
-	while(index < def._members.size() && def._members[index]._name != name){
+	while(index < desc._members.size() && desc._members[index]._name != name){
 		index++;
 	}
-	if(index == def._members.size()){
+	if(index == desc._members.size()){
 		return -1;
 	}
 	else{
@@ -1830,11 +1830,11 @@ json_t type_to_json_shallow(const type_t& type){
 	return json_t(s);
 }
 
-static json_t struct_definition_to_json(const types_t& types, const struct_type_desc_t& v){
-	QUARK_ASSERT(v.check_invariant());
+static json_t struct_definition_to_json(const types_t& types, const struct_type_desc_t& desc){
+	QUARK_ASSERT(desc.check_invariant());
 
 	return json_t::make_array({
-		members_to_json(types, v._members)
+		members_to_json(types, desc._members)
 	});
 }
 
@@ -1900,7 +1900,7 @@ json_t type_to_json(const types_t& types, const type_t& type){
 			return json_t::make_array(
 				{
 					json_t(basetype_str),
-					struct_definition_to_json(types, e.def)
+					struct_definition_to_json(types, e.desc)
 				}
 			);
 		}
@@ -2136,7 +2136,7 @@ std::string type_to_compact_string(const types_t& types, const type_t& type, res
 
 		std::string operator()(const struct_t& e) const{
 			std::string members_acc;
-			for(const auto& m: e.def._members){
+			for(const auto& m: e.desc._members){
 				members_acc = type_to_compact_string(types, m._type, resolve) + " " + members_acc + m._name + ";";
 			}
 			return "struct {" + members_acc + "}";
@@ -2190,12 +2190,12 @@ std::string type_to_compact_string(const types_t& types, const type_t& type, res
 }
 
 
-type_t make_struct(types_t& types, const struct_type_desc_t& struct_def){
+type_t make_struct(types_t& types, const struct_type_desc_t& desc){
 	const auto node = type_node_t{
 		make_empty_type_name(),
 		base_type::k_struct,
 		std::vector<type_t>{},
-		struct_def,
+		desc,
 		epure::pure,
 		return_dyn_type::none,
 		""
@@ -2203,12 +2203,12 @@ type_t make_struct(types_t& types, const struct_type_desc_t& struct_def){
 	return intern_node(types, node);
 }
 
-type_t make_struct(const types_t& types, const struct_type_desc_t& struct_def){
+type_t make_struct(const types_t& types, const struct_type_desc_t& desc){
 	const auto node = type_node_t{
 		make_empty_type_name(),
 		base_type::k_struct,
 		std::vector<type_t>{},
-		struct_def,
+		desc,
 		epure::pure,
 		return_dyn_type::none,
 		""
