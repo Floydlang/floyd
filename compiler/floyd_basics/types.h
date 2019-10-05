@@ -11,25 +11,54 @@
 
 
 /*
-type_t
+These features are very central in the Floyd compiler.
+base_type, type_t and types_t works together to describe, compare and pick apart data types.
 
-This is a very central type in the Floyd compiler.
+They can describe types as you get them from source code with undefined types. vector<undefined> is OK for example.
+They can also referer to types using their symbol name in the source code / lexical scope.
 
-It specifies an exact Floyd type. Both for base types like "int" and "string" and composite types
-like "struct { [float] p; string s }.
-It can hold *any Floyd type*. It can also hold unresolved type identifiers and a few types internal
-to compiler.
+Later passes can improve the types gradually to resolve symbols, infer left out (undefined) types and so on.
+
+
+# base_type
+Enum with all basic types of types in Floyd. You need to use type_t to fully describe a composite data structure, these are only the roots.
+
+
+
+# type_t
+Immutable value object.
+Specifies an exact Floyd type. Both for base types like "int" and "string" and composite types
+like "struct { [float] p; string s }. It can hold *any Floyd type*.
+It can hold unresolved symbols (ties to a lexical scope in source code).
+It can hold the name of a named type, like "pixel_t"
 
 type_t can be convert to/from JSON and is written in source code according to Floyd source syntax,
 see table below.
 
-type_t is an immutable value object.
 The type_t is normalized and can be compared with other type_t:s.
 
-Composite types can form trees of types,
-	like:
-		"[string: struct {int x; int y}]"
-	This is a dictionary with structs, each holding two integers.
+
+# types_t
+Used to hold all data types used in the program.
+Composite data types are split to their individual parts.
+Each data type gets its own unique lookup index that is great to use at runtime.
+Types are automatically de-duplicated.
+Previous nodes / lookup indexes are never modified and safe to store.
+
+
+
+# Symbols
+These needs to be resolved in semantic analysis since there depend on the lexical scope where it is used. "x" will mean different types depending on where you access "x".
+
+# Named types
+Named types can be re-route after they have been stored into types_t. The name must be unique in the entire program. You can encode the name of the lexical scopes where the type is defined in its name, which makes it unique.
+Named types allows to support recursive types, like
+
+	struct object_t {
+		string name
+		[object_t] inside
+	}
+
 
 Source code						base_type								AST JSON
 ================================================================================================================
@@ -155,6 +184,7 @@ int get_json_type(const json_t& value);
 
 
 
+//	Functions are statically defined as pure or unpure.
 enum class epure {
 	pure,
 	impure
