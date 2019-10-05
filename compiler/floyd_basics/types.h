@@ -613,7 +613,7 @@ inline bool operator!=(type_t lhs, type_t rhs){ return (lhs == rhs) == false; };
 
 
 
-/////////////////////////////////////////////////		type_t
+/////////////////////////////////////////////////		type_desc_t
 
 
 struct type_desc_t {
@@ -623,16 +623,26 @@ struct type_desc_t {
 	}
 
 
+
+	static type_desc_t wrap_non_named(const type_t& type){
+		QUARK_ASSERT(type.is_named_type() == false);
+		return type_desc_t(type);
+	}
+	private: type_desc_t(const type_t& non_name_type) :
+		non_name_type(non_name_type)
+	{
+	}
+
 	////////////////////////////////	STATE
 
-	public: type_t type;
+	public: type_t non_name_type;
 };
 
 inline bool operator<(type_desc_t lhs, type_desc_t rhs){
-	return lhs.type < rhs.type;
+	return lhs.non_name_type < rhs.non_name_type;
 }
 inline bool operator==(type_desc_t lhs, type_desc_t rhs){
-	return lhs.type == rhs.type;
+	return lhs.non_name_type == rhs.non_name_type;
 }
 inline bool operator!=(type_desc_t lhs, type_desc_t rhs){ return (lhs == rhs) == false; };
 

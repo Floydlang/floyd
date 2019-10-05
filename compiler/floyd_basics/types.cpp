@@ -1745,6 +1745,14 @@ type_t peek(const types_t& types, const type_t& type){
 	}
 }
 
+
+type_desc_t peek2(const types_t& types, const type_t& type){
+	const auto type2 = peek(types, type);
+	return type_desc_t::wrap_non_named(type2);
+}
+
+
+
 type_t refresh_type(const types_t& types, const type_t& type){
 	const auto lookup_index = type.get_lookup_index();
 	QUARK_ASSERT(lookup_index >= 0);
