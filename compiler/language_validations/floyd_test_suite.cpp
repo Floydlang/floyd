@@ -4391,7 +4391,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "compare structs different types"
 			print(color(1, 2, 3) == file(404))
 
 		)",
-		"[Semantics] Expression type mismatch - cannot convert 'struct {int id;}' to 'struct {int red;int green;int blue;}. Line: 5 \"print(color(1, 2, 3) == file(404))\""
+		"[Semantics] Expression type mismatch - cannot convert 'file' to 'color. Line: 5 \"print(color(1, 2, 3) == file(404))\""
 	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "compare structs with <, different types", ""){

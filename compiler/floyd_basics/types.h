@@ -418,17 +418,6 @@ struct type_t {
 	}
 
 
-	//////////////////////////////////////////////////		STRUCT
-
-
-	bool is_struct() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_struct;
-	}
-
-	struct_type_desc_t get_struct(const types_t& types) const;
-
 
 
 	//////////////////////////////////////////////////		VECTOR
@@ -627,6 +616,16 @@ struct type_desc_t {
 	}
 
 
+	//////////////////////////////////////////////////		STRUCT
+
+
+	bool is_struct() const {
+		QUARK_ASSERT(check_invariant());
+
+		return non_name_type.get_base_type() == base_type::k_struct;
+	}
+
+	struct_type_desc_t get_struct(const types_t& types) const;
 
 
 	//////////////////////////////////////////////////		FUNCTION
@@ -914,7 +913,7 @@ type_t name_named_type(types_t& types, const type_name_t& n, const type_t& desti
 type_t update_named_type(types_t& types, const type_t& named, const type_t& destination_type);
 
 
-type_t peek(const types_t& types, const type_t& type);
+type_t peek0(const types_t& types, const type_t& type);
 type_desc_t peek2(const types_t& types, const type_t& type);
 
 

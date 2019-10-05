@@ -1080,7 +1080,7 @@ value_t ast_json_to_value(types_t& types, const type_t& type, const json_t& v){
 		const auto t = type_from_json(types, v);
 		return value_t::make_typeid_value(t);
 	}
-	else if(type.is_struct()){
+	else if(peek2(types, type).is_struct()){
 		QUARK_ASSERT(false);
 		return make_def(type);
 
@@ -1281,17 +1281,17 @@ value_t value_t::make_typeid_value(const type_t& type_id){
 value_t value_t::make_struct_value(const types_t& types, const type_t& struct_type, const std::vector<value_t>& values){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(struct_type.check_invariant());
-	QUARK_ASSERT(struct_type.get_struct(types)._members.size() == values.size());
+	QUARK_ASSERT(peek2(types, struct_type).get_struct(types)._members.size() == values.size());
 
-	auto instance = std::make_shared<struct_value_t>(struct_value_t{struct_type.get_struct(types), values});
+	auto instance = std::make_shared<struct_value_t>(struct_value_t{ peek2(types, struct_type).get_struct(types), values });
 	return value_t(struct_type, instance);
 }
 value_t value_t::make_struct_value(types_t& types, const type_t& struct_type, const std::vector<value_t>& values){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(struct_type.check_invariant());
-	QUARK_ASSERT(struct_type.get_struct(types)._members.size() == values.size());
+	QUARK_ASSERT(peek2(types, struct_type).get_struct(types)._members.size() == values.size());
 
-	auto instance = std::make_shared<struct_value_t>(struct_value_t{struct_type.get_struct(types), values});
+	auto instance = std::make_shared<struct_value_t>(struct_value_t{ peek2(types, struct_type).get_struct(types), values });
 	return value_t(struct_type, instance);
 }
 

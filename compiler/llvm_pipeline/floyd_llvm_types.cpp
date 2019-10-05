@@ -20,7 +20,7 @@ struct builder_t;
 
 bool pass_as_ptr(const type_desc_t& type){
 	const auto type0 = type.non_name_type;
-	if(type0.is_string() || type0.is_json() || type0.is_struct() || type0.is_vector() || type0.is_dict() || type.is_function()){
+	if(type0.is_string() || type0.is_json() || type.is_struct() || type0.is_vector() || type0.is_dict() || type.is_function()){
 		return true;
 	}
 	else {
@@ -256,12 +256,12 @@ static llvm::Type* make_function_type(const builder_t& builder, const type_t& fu
 
 
 static llvm::StructType* make_exact_struct_type(const builder_t& builder, const type_t& type){
-	QUARK_ASSERT(type.is_struct());
+	QUARK_ASSERT(peek2(builder.acc.types, type).is_struct());
 
 	std::vector<llvm::Type*> members;
-	for(const auto& m: type.get_struct(builder.acc.types)._members){
+	for(const auto& m: peek2(builder.acc.types, type).get_struct(builder.acc.types)._members){
 		const auto member_type = m._type;
-		const auto member_type1 = peek(builder.acc.types, member_type);
+		const auto member_type1 = peek2(builder.acc.types, member_type);
 		const auto& a = find_type(builder, member_type1);
 		const auto m2 = get_llvm_type_prefer_generic(a);
 		members.push_back(m2);
@@ -325,7 +325,7 @@ static llvm::Type* make_llvm_type(const builder_t& builder, const type_t& type){
 //			QUARK_ASSERT(false); throw std::exception();
 		}
 		llvm::Type* operator()(const named_type_t& e) const {
-			const auto dest_type = peek(builder.acc.types, e.destination_type);
+			const auto dest_type = peek2(builder.acc.types, e.destination_type);
 			return make_llvm_type(builder, dest_type);
 //			return llvm::Type::getInt16Ty(builder.context);
 //			QUARK_ASSERT(false); throw std::exception();
@@ -344,7 +344,7 @@ static llvm::Type* make_generic_type(const builder_t& builder, const type_t& typ
 	else if(type.is_dict()){
 		return builder.acc.generic_dict_type;
 	}
-	else if(type.is_struct()){
+	else if(peek2(builder.acc.types, type).is_struct()){
 		return builder.acc.generic_struct_type;
 	}
 	else{
@@ -405,14 +405,14 @@ llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const types_t& ty
 	for(type_lookup_index_t i = 0 ; i < acc.types.nodes.size() ; i++){
 		const auto& type = lookup_type_from_index(acc.types,i);
 		QUARK_ASSERT(type.check_invariant());
-		builder.acc.type_entries[i] = make_type(builder, peek(acc.types, type));
+		builder.acc.type_entries[i] = make_type(builder, peek2(acc.types, type));
 	}
 
 	state = builder.acc;
 
 	QUARK_ASSERT(check_invariant());
 
-	trace_llvm_type_lookup(*this);
+	if(false) trace_llvm_type_lookup(*this);
 }
 
 
@@ -511,7 +511,7 @@ type_t lookup_itype(const llvm_type_lookup& type_lookup, const type_t& type){
 
 llvm::StructType* get_exact_struct_type_byvalue(const llvm_type_lookup& i, const type_t& type){
 	QUARK_ASSERT(i.check_invariant());
-	QUARK_ASSERT(type.is_struct());
+	QUARK_ASSERT(peek2(i.state.types, type).is_struct());
 
 	const auto& entry = i.find_from_itype(type);
 	auto result = entry.llvm_type_specific;

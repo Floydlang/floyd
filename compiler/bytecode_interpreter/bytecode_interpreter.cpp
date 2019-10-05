@@ -247,7 +247,7 @@ bc_value_t bc_value_t::make_struct_value(const type_t& struct_type, const std::v
 }
 const std::vector<bc_value_t>& bc_value_t::get_struct_value() const {
 	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(_type.is_struct());
+//	QUARK_ASSERT(_type.is_struct());
 
 	return _pod._external->_struct_members;
 }
@@ -1064,12 +1064,13 @@ QUARK_TEST("", "", "", ""){
 //??? The update mechanism uses strings == slow.
 bc_value_t update_struct_member_shallow(interpreter_t& vm, const bc_value_t& obj, const std::string& member_name, const bc_value_t& new_value){
 	QUARK_ASSERT(obj.check_invariant());
-	QUARK_ASSERT(obj._type.is_struct());
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, obj._type).is_struct());
 	QUARK_ASSERT(member_name.empty() == false);
 	QUARK_ASSERT(new_value.check_invariant());
 
 	const auto& values = obj.get_struct_value();
-	const auto& struct_def = obj._type.get_struct(vm._imm->_program._types);
+	const auto& struct_def = peek2(types, obj._type).get_struct(types);
 
 	int member_index = find_struct_member_index(struct_def, member_name);
 	if(member_index == -1){
@@ -1099,11 +1100,13 @@ bc_value_t update_struct_member_deep(interpreter_t& vm, const bc_value_t& obj, c
 		return update_struct_member_shallow(vm, obj, path[0], new_value);
 	}
 	else{
+		const auto& types = vm._imm->_program._types;
+
 		std::vector<std::string> subpath = path;
 		subpath.erase(subpath.begin());
 
 		const auto& values = obj.get_struct_value();
-		const auto& struct_def = obj._type.get_struct(vm._imm->_program._types);
+		const auto& struct_def = peek2(types, obj._type).get_struct(types);
 		int member_index = find_struct_member_index(struct_def, path[0]);
 		if(member_index == -1){
 			quark::throw_runtime_error("Unknown member.");
@@ -1111,7 +1114,7 @@ bc_value_t update_struct_member_deep(interpreter_t& vm, const bc_value_t& obj, c
 
 		const auto& child_value = values[member_index];
 		const auto& child_type = struct_def._members[member_index]._type;
-		if(child_type.is_struct() == false){
+		if(peek2(types, child_type).is_struct() == false){
 			quark::throw_runtime_error("Value type not matching struct member type.");
 		}
 
@@ -1210,7 +1213,10 @@ bc_value_t update_dict_entry(interpreter_t& vm, const bc_value_t dict, const std
 bc_value_t update_struct_member(interpreter_t& vm, const bc_value_t str, const std::vector<std::string>& path, const bc_value_t& value){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(str.check_invariant());
-	QUARK_ASSERT(str._type.is_struct());
+
+	const auto& types = vm._imm->_program._types;
+
+	QUARK_ASSERT(peek2(types, str._type).is_struct());
 	QUARK_ASSERT(path.empty() == false);
 	QUARK_ASSERT(value.check_invariant());
 //	QUARK_ASSERT(str._type.get_struct_ref()->_members[member_index]._type == value._type);
@@ -1224,6 +1230,7 @@ bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_va
 	QUARK_ASSERT(vm.check_invariant());
 
 //	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+	const auto& types = vm._imm->_program._types;
 
 	if(obj1._type.is_string()){
 		if(lookup_key._type.is_int() == false){
@@ -1255,7 +1262,7 @@ bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_va
 		}
 	}
 	else if(obj1._type.is_vector()){
-		const auto element_type = obj1._type.get_vector_element_type(vm._imm->_program._types);
+		const auto element_type = obj1._type.get_vector_element_type(types);
 		if(lookup_key._type.is_int() == false){
 			quark::throw_runtime_error("Vector lookup using integer index only.");
 		}
@@ -1273,7 +1280,7 @@ bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_va
 		}
 		else{
 			const auto obj = obj1;
-			const auto value_type = obj._type.get_dict_value_type(vm._imm->_program._types);
+			const auto value_type = obj._type.get_dict_value_type(types);
 			if(value_type != new_value._type){
 				quark::throw_runtime_error("Update element must match dict value type.");
 			}
@@ -1283,7 +1290,7 @@ bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_va
 			}
 		}
 	}
-	else if(obj1._type.is_struct()){
+	else if(peek2(types, obj1._type).is_struct()){
 		if(lookup_key._type.is_string() == false){
 			quark::throw_runtime_error("You must specify structure member using string.");
 		}
@@ -1338,7 +1345,7 @@ static int bc_compare_struct_true_deep(const types_t& types, const std::vector<b
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto& struct_def = type.get_struct(types);
+	const auto& struct_def = peek2(types, type).get_struct(types);
 
 	for(int i = 0 ; i < struct_def._members.size() ; i++){
 		const auto& member_type = struct_def._members[i]._type;
@@ -1741,7 +1748,7 @@ int bc_compare_value_true_deep(const types_t& types, const bc_value_t& left, con
 			return -1;//??? Hack -- should return +1 depending on values.
 		}
 	}
-	else if(type.is_struct()){
+	else if(peek2(types, type).is_struct()){
 		//	Make sure the EXACT struct types are the same -- not only that they are both structs
 		return bc_compare_struct_true_deep(types, left.get_struct_value(), right.get_struct_value(), type0);
 	}
@@ -2291,10 +2298,10 @@ json_t bcvalue_to_json(const types_t& types, const bc_value_t& v){
 	else if(v._type.is_typeid()){
 		return type_to_json(types, v.get_typeid_value());
 	}
-	else if(v._type.is_struct()){
+	else if(peek2(types, v._type).is_struct()){
 		const auto& struct_value = v.get_struct_value();
 		std::map<std::string, json_t> obj2;
-		const auto& struct_def = v._type.get_struct(types);
+		const auto& struct_def = peek2(types, v._type).get_struct(types);
 		for(int i = 0 ; i < struct_def._members.size() ; i++){
 			const auto& member = struct_def._members[i];
 			const auto& key = member._name;
@@ -2463,11 +2470,12 @@ QUARK_TEST("", "", "", ""){
 static void execute_new_1(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t source_itype){
 	QUARK_ASSERT(vm.check_invariant());
 
+	const auto& types = vm._imm->_program._types;
 	const auto& target_type = lookup_full_type(vm, target_itype);
-	QUARK_ASSERT(target_type.is_vector() == false && target_type.is_dict() == false && target_type.is_struct() == false);
+	QUARK_ASSERT(target_type.is_vector() == false && target_type.is_dict() == false && peek2(types, target_type).is_struct() == false);
 
 	const int arg0_stack_pos = vm._stack.size() - 1;
-	const auto source_itype2 = lookup_type_from_index(vm._imm->_program._types, source_itype);
+	const auto source_itype2 = lookup_type_from_index(types, source_itype);
 	const auto input_value = vm._stack.load_value(arg0_stack_pos + 0, source_itype2);
 
 	const bc_value_t result = [&]{
@@ -2485,7 +2493,7 @@ static void execute_new_1(interpreter_t& vm, int16_t dest_reg, int16_t target_it
 			}
 		}
 		else if(target_type.is_json()){
-			const auto arg = bcvalue_to_json(vm._imm->_program._types, input_value);
+			const auto arg = bcvalue_to_json(types, input_value);
 			return bc_value_t::make_json(arg);
 		}
 		else{
@@ -2501,11 +2509,12 @@ static void execute_new_1(interpreter_t& vm, int16_t dest_reg, int16_t target_it
 void execute_new_vector_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
+	const auto& types = vm._imm->_program._types;
 	const auto& target_type = lookup_full_type(vm, target_itype);
 	QUARK_ASSERT(target_type.is_vector());
-	QUARK_ASSERT(encode_as_vector_w_inplace_elements(vm._imm->_program._types, target_type) == false);
+	QUARK_ASSERT(encode_as_vector_w_inplace_elements(types, target_type) == false);
 
-	const auto& element_type = target_type.get_vector_element_type(vm._imm->_program._types);
+	const auto& element_type = target_type.get_vector_element_type(types);
 	QUARK_ASSERT(element_type.is_undefined() == false);
 	QUARK_ASSERT(target_type.is_undefined() == false);
 
@@ -2520,19 +2529,20 @@ void execute_new_vector_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_
 		elements2 = elements2.push_back(e);
 	}
 
-	const auto result = make_vector(vm._imm->_program._types, element_type, elements2);
+	const auto result = make_vector(types, element_type, elements2);
 	vm._stack.write_register__external_value(dest_reg, result);
 }
 
 void execute_new_dict_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
+	const auto& types = vm._imm->_program._types;
 	const auto& target_type = lookup_full_type(vm, target_itype);
 	QUARK_ASSERT(target_type.is_dict());
 
 	const int arg0_stack_pos = vm._stack.size() - arg_count;
 
-	const auto& element_type = target_type.get_dict_value_type(vm._imm->_program._types);
+	const auto& element_type = target_type.get_dict_value_type(types);
 	QUARK_ASSERT(target_type.is_undefined() == false);
 	QUARK_ASSERT(element_type.is_undefined() == false);
 
@@ -2547,18 +2557,19 @@ void execute_new_dict_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_it
 		elements2 = elements2.insert({ key2, bc_external_handle_t(value) });
 	}
 
-	const auto result = make_dict(vm._imm->_program._types, element_type, elements2);
+	const auto result = make_dict(types, element_type, elements2);
 	vm._stack.write_register__external_value(dest_reg, result);
 }
 void execute_new_dict_pod64(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
+	const auto& types = vm._imm->_program._types;
 	const auto& target_type = lookup_full_type(vm, target_itype);
 	QUARK_ASSERT(target_type.is_dict());
 
 	const int arg0_stack_pos = vm._stack.size() - arg_count;
 
-	const auto& element_type = target_type.get_dict_value_type(vm._imm->_program._types);
+	const auto& element_type = target_type.get_dict_value_type(types);
 	QUARK_ASSERT(target_type.is_undefined() == false);
 	QUARK_ASSERT(element_type.is_undefined() == false);
 
@@ -2573,23 +2584,24 @@ void execute_new_dict_pod64(interpreter_t& vm, int16_t dest_reg, int16_t target_
 		elements2 = elements2.insert({ key2, value._pod._inplace });
 	}
 
-	const auto result = make_dict(vm._imm->_program._types, element_type, elements2);
+	const auto result = make_dict(types, element_type, elements2);
 	vm._stack.write_register__external_value(dest_reg, result);
 }
 
 void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
+	const auto& types = vm._imm->_program._types;
 	const auto& target_type = lookup_full_type(vm, target_itype);
-	QUARK_ASSERT(target_type.is_struct());
+	QUARK_ASSERT(peek2(types, target_type).is_struct());
 
 	const int arg0_stack_pos = vm._stack.size() - arg_count;
 
-	const auto& struct_def = target_type.get_struct(vm._imm->_program._types);
+	const auto& struct_def = peek2(types, target_type).get_struct(types);
 	std::vector<bc_value_t> elements2;
 	for(int i = 0 ; i < arg_count ; i++){
 		const auto member_type0 = struct_def._members[i]._type;
-		const auto member_type = peek(vm._imm->_program._types, member_type0);
+		const auto member_type = peek2(types, member_type0);
 		const auto value = vm._stack.load_value(arg0_stack_pos + i, member_type);
 		elements2.push_back(value);
 	}
@@ -2611,6 +2623,7 @@ static void call_native(interpreter_t& vm, const bc_instruction_t& i, const type
 	QUARK_ASSERT(i.check_invariant());
 	QUARK_ASSERT(function_type.check_invariant());
 
+	const auto& types = vm._imm->_program._types;
 	interpreter_stack_t& stack = vm._stack;
 	bc_pod_value_t* regs = stack._current_frame_entry_ptr;
 
@@ -2625,7 +2638,6 @@ static void call_native(interpreter_t& vm, const bc_instruction_t& i, const type
 	}
 	const auto& host_function_ptr = native_it->second;
 
-	const auto& types = vm._imm->_program._types;
 	const auto function_type_peek = peek2(types, function_type);
 
 	const auto temp_args = function_type_peek.get_function_args(types);
@@ -2740,13 +2752,14 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(instructions.empty() == true || (instructions.back()._opcode == bc_opcode::k_return || instructions.back()._opcode == bc_opcode::k_stop));
 
+	const auto& types = vm._imm->_program._types;
 	interpreter_stack_t& stack = vm._stack;
 	const bc_static_frame_t* frame_ptr = stack._current_frame_ptr;
 	bc_pod_value_t* regs = stack._current_frame_entry_ptr;
 	bc_pod_value_t* globals = &stack._entries[k_frame_overhead];
 
-//	const type_t* type_lookup = &vm._imm->_program._types[0];
-//	const auto type_count = vm._imm->_program._types.size();
+//	const type_t* type_lookup = &types[0];
+//	const auto type_count = types.size();
 
 //	QUARK_TRACE_SS("STACK:  " << json_to_pretty_string(stack.stack_to_json()));
 
@@ -3099,7 +3112,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		case bc_opcode::k_lookup_element_vector_w_external_elements: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg__external_value(i._a));
-			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(vm._imm->_program._types, i._b));
+			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(types, i._b));
 			QUARK_ASSERT(stack.check_reg_int(i._c));
 
 			const auto& vec = regs[i._b]._external->_vector_w_external_elements;
@@ -3119,7 +3132,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		case bc_opcode::k_lookup_element_vector_w_inplace_elements: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(vm._imm->_program._types, i._b));
+			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(types, i._b));
 			QUARK_ASSERT(stack.check_reg_int(i._c));
 
 			const auto& vec = regs[i._b]._external->_vector_w_inplace_elements;
@@ -3136,7 +3149,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_lookup_element_dict_w_external_values: {
 			QUARK_ASSERT(stack.check_reg__external_value(i._a));
-			QUARK_ASSERT(stack.check_reg_dict_w_external_values(vm._imm->_program._types, i._b));
+			QUARK_ASSERT(stack.check_reg_dict_w_external_values(types, i._b));
 			QUARK_ASSERT(stack.check_reg_string(i._c));
 
 			const auto& entries = regs[i._b]._external->_dict_w_external_values;
@@ -3155,7 +3168,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 		case bc_opcode::k_lookup_element_dict_w_inplace_values: {
 			QUARK_ASSERT(stack.check_reg_any(i._a));
-			QUARK_ASSERT(stack.check_reg_dict_w_inplace_values(vm._imm->_program._types, i._b));
+			QUARK_ASSERT(stack.check_reg_dict_w_inplace_values(types, i._b));
 			QUARK_ASSERT(stack.check_reg_string(i._c));
 
 			const auto& entries = regs[i._b]._external->_dict_w_inplace_values;
@@ -3174,7 +3187,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		case bc_opcode::k_get_size_vector_w_external_elements: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(vm._imm->_program._types, i._b));
+			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(types, i._b));
 			QUARK_ASSERT(i._c == 0);
 
 			regs[i._a]._inplace.int64_value = regs[i._b]._external->_vector_w_external_elements.size();
@@ -3184,7 +3197,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		case bc_opcode::k_get_size_vector_w_inplace_elements: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(vm._imm->_program._types, i._b));
+			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(types, i._b));
 			QUARK_ASSERT(i._c == 0);
 
 			regs[i._a]._inplace.int64_value = regs[i._b]._external->_vector_w_inplace_elements.size();
@@ -3196,7 +3209,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		case bc_opcode::k_get_size_dict_w_external_values: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_dict_w_external_values(vm._imm->_program._types, i._b));
+			QUARK_ASSERT(stack.check_reg_dict_w_external_values(types, i._b));
 			QUARK_ASSERT(i._c == 0);
 
 			regs[i._a]._inplace.int64_value = regs[i._b]._external->_dict_w_external_values.size();
@@ -3206,7 +3219,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		case bc_opcode::k_get_size_dict_w_inplace_values: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_dict_w_inplace_values(vm._imm->_program._types, i._b));
+			QUARK_ASSERT(stack.check_reg_dict_w_inplace_values(types, i._b));
 			QUARK_ASSERT(i._c == 0);
 
 			regs[i._a]._inplace.int64_value = regs[i._b]._external->_dict_w_inplace_values.size();
@@ -3251,33 +3264,33 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_pushback_vector_w_external_elements: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(vm._imm->_program._types, i._a));
-			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(vm._imm->_program._types, i._b));
+			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(types, i._a));
+			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(types, i._b));
 			QUARK_ASSERT(stack.check_reg__external_value(i._c));
 
 			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
-			const auto& element_type = type.get_vector_element_type(vm._imm->_program._types);
+			const auto& element_type = type.get_vector_element_type(types);
 
 			auto elements2 = regs[i._b]._external->_vector_w_external_elements.push_back(bc_external_handle_t(regs[i._c]._external));
 			//??? always allocates a new bc_external_value_t!
-			const auto vec2 = make_vector(vm._imm->_program._types, element_type, elements2);
+			const auto vec2 = make_vector(types, element_type, elements2);
 			vm._stack.write_register__external_value(i._a, vec2);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
 		case bc_opcode::k_pushback_vector_w_inplace_elements: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(vm._imm->_program._types, i._a));
-			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(vm._imm->_program._types, i._b));
+			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(types, i._a));
+			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(types, i._b));
 			QUARK_ASSERT(stack.check_reg(i._c));
 
 			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
-			const auto& element_type = type.get_vector_element_type(vm._imm->_program._types);
+			const auto& element_type = type.get_vector_element_type(types);
 
 			//??? optimize - bypass bc_value_t
 			//??? always allocates a new bc_external_value_t!
 			auto elements2 = regs[i._b]._external->_vector_w_inplace_elements.push_back(regs[i._c]._inplace);
-			const auto vec = make_vector(vm._imm->_program._types, element_type, elements2);
+			const auto vec = make_vector(types, element_type, elements2);
 			vm._stack.write_register__external_value(i._a, vec);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
@@ -3324,13 +3337,13 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto target_itype = i._b;
 			const auto source_itype = i._c;
 			const auto& target_type = lookup_full_type(vm, target_itype);
-			QUARK_ASSERT(target_type.is_vector() == false && target_type.is_dict() == false && target_type.is_struct() == false);
+			QUARK_ASSERT(target_type.is_vector() == false && target_type.is_dict() == false && peek2(types, target_type).is_struct() == false);
 			execute_new_1(vm, dest_reg, target_itype, source_itype);
 			break;
 		}
 
 		case bc_opcode::k_new_vector_w_external_elements: {
-			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(vm._imm->_program._types, i._a));
+			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(types, i._a));
 			QUARK_ASSERT(i._b >= 0);
 			QUARK_ASSERT(i._c >= 0);
 
@@ -3339,7 +3352,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto arg_count = i._c;
 			const auto& vector_type = lookup_full_type(vm, target_itype);
 			QUARK_ASSERT(vector_type.is_vector());
-			QUARK_ASSERT(encode_as_vector_w_inplace_elements(vm._imm->_program._types, vector_type) == false);
+			QUARK_ASSERT(encode_as_vector_w_inplace_elements(types, vector_type) == false);
 
 			execute_new_vector_obj(vm, dest_reg, target_itype, arg_count);
 			break;
@@ -3347,7 +3360,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_new_vector_w_inplace_elements: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(vm._imm->_program._types, i._a));
+			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(types, i._a));
 			QUARK_ASSERT(i._b == 0);
 			QUARK_ASSERT(i._c >= 0);
 
@@ -3362,9 +3375,9 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			}
 
 			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
-			const auto& element_type = type.get_vector_element_type(vm._imm->_program._types);
+			const auto& element_type = type.get_vector_element_type(types);
 
-			const auto result = make_vector(vm._imm->_program._types, element_type, elements2);
+			const auto result = make_vector(types, element_type, elements2);
 			vm._stack.write_register__external_value(dest_reg, result);
 
 			QUARK_ASSERT(vm.check_invariant());
@@ -3394,7 +3407,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto target_itype = i._b;
 			const auto arg_count = i._c;
 			const auto& target_type = lookup_full_type(vm, target_itype);
-			QUARK_ASSERT(target_type.is_struct());
+			QUARK_ASSERT(peek2(types, target_type).is_struct());
 			execute_new_struct(vm, dest_reg, target_itype, arg_count);
 			break;
 		}
@@ -3413,7 +3426,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 			const auto left = stack.read_register(i._b);
 			const auto right = stack.read_register(i._c);
-			long diff = bc_compare_value_true_deep(vm._imm->_program._types, left, right, type);
+			long diff = bc_compare_value_true_deep(types, left, right, type);
 
 			regs[i._a]._inplace.bool_value = diff <= 0;
 			break;
@@ -3436,7 +3449,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(type.is_int() == false);
 			const auto left = stack.read_register(i._b);
 			const auto right = stack.read_register(i._c);
-			long diff = bc_compare_value_true_deep(vm._imm->_program._types, left, right, type);
+			long diff = bc_compare_value_true_deep(types, left, right, type);
 
 			regs[i._a]._inplace.bool_value = diff < 0;
 			break;
@@ -3458,7 +3471,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(type.is_int() == false);
 			const auto left = stack.read_register(i._b);
 			const auto right = stack.read_register(i._c);
-			long diff = bc_compare_value_true_deep(vm._imm->_program._types, left, right, type);
+			long diff = bc_compare_value_true_deep(types, left, right, type);
 
 			regs[i._a]._inplace.bool_value = diff == 0;
 			break;
@@ -3481,7 +3494,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(type.is_int() == false);
 			const auto left = stack.read_register(i._b);
 			const auto right = stack.read_register(i._c);
-			long diff = bc_compare_value_true_deep(vm._imm->_program._types, left, right, type);
+			long diff = bc_compare_value_true_deep(types, left, right, type);
 
 			regs[i._a]._inplace.bool_value = diff != 0;
 			break;
@@ -3540,13 +3553,13 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 		case bc_opcode::k_concat_vectors_w_external_elements: {
-			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(vm._imm->_program._types, i._a));
-			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(vm._imm->_program._types, i._b));
-			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(vm._imm->_program._types, i._c));
+			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(types, i._a));
+			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(types, i._b));
+			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(types, i._c));
 
 			const auto& vector_type = frame_ptr->_symbols[i._a].second._value_type;
-			const auto& element_type = vector_type.get_vector_element_type(vm._imm->_program._types);
-			QUARK_ASSERT(encode_as_vector_w_inplace_elements(vm._imm->_program._types, vector_type) == false);
+			const auto& element_type = vector_type.get_vector_element_type(types);
+			QUARK_ASSERT(encode_as_vector_w_inplace_elements(types, vector_type) == false);
 
 			//	Copy left into new vector.
 			immer::vector<bc_external_handle_t> elements2 = regs[i._b]._external->_vector_w_external_elements;
@@ -3555,18 +3568,18 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			for(const auto& e: right_elements){
 				elements2 = elements2.push_back(e);
 			}
-			const auto& value2 = make_vector(vm._imm->_program._types, element_type, elements2);
+			const auto& value2 = make_vector(types, element_type, elements2);
 			stack.write_register__external_value(i._a, value2);
 			break;
 		}
 		case bc_opcode::k_concat_vectors_w_inplace_elements: {
-			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(vm._imm->_program._types, i._a));
-			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(vm._imm->_program._types, i._b));
-			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(vm._imm->_program._types, i._c));
+			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(types, i._a));
+			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(types, i._b));
+			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(types, i._c));
 
 			const auto& vector_type = frame_ptr->_symbols[i._a].second._value_type;
-			const auto& element_type = vector_type.get_vector_element_type(vm._imm->_program._types);
-			QUARK_ASSERT(encode_as_vector_w_inplace_elements(vm._imm->_program._types, vector_type) == true);
+			const auto& element_type = vector_type.get_vector_element_type(types);
+			QUARK_ASSERT(encode_as_vector_w_inplace_elements(types, vector_type) == true);
 
 			//	Copy left into new vector.
 			auto elements2 = regs[i._b]._external->_vector_w_inplace_elements;
@@ -3575,7 +3588,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			for(const auto& e: right_elements){
 				elements2 = elements2.push_back(e);
 			}
-			const auto& value2 = make_vector(vm._imm->_program._types, element_type, elements2);
+			const auto& value2 = make_vector(types, element_type, elements2);
 			stack.write_register__external_value(i._a, value2);
 			break;
 		}

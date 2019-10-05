@@ -7,9 +7,9 @@
 //
 
 
-const bool k_trace_pass_io = true;
+const bool k_trace_pass_io = false;
 
-const bool k_trace_input_output = true;
+const bool k_trace_input_output = false;
 static const bool k_trace_function_link_map = false;
 
 
@@ -413,12 +413,13 @@ static void generate_destruct_scope_locals(llvm_function_generator_t& gen_acc, c
 	QUARK_ASSERT(gen_acc.check_invariant());
 
 	auto& builder = gen_acc.get_builder();
+	const auto& types = gen_acc.gen.type_lookup.state.types;
 
 	for(const auto& e: symbols){
 		if(e.symtype == resolved_symbol_t::esymtype::k_global || e.symtype == resolved_symbol_t::esymtype::k_local){
 
 			const auto type = e.symbol.get_value_type();
-			if(is_rc_value(type)){
+			if(is_rc_value(peek2(types, type))){
 				auto reg = builder.CreateLoad(e.value_ptr);
 				generate_release(gen_acc, *reg, type);
 			}
@@ -492,14 +493,14 @@ static llvm::Value* generate_resolve_member_expression(llvm_function_generator_t
 	auto struct_ptr_reg = generate_expression(gen_acc, *details.parent_address);
 
 
-	const auto parent_type = peek(types, get_expr_output_type(gen_acc.gen, *details.parent_address));
+	const auto parent_type = peek2(types, get_expr_output_type(gen_acc.gen, *details.parent_address));
 	QUARK_ASSERT(parent_type.is_struct());
 
 	const auto& struct_def = parent_type.get_struct(types);
 	int member_index = find_struct_member_index(struct_def, details.member_name);
 	QUARK_ASSERT(member_index != -1);
 
-	const auto& member_type = peek(types, struct_def._members[member_index]._type);
+	const auto& member_type = peek2(types, struct_def._members[member_index]._type);
 
 /*
 	auto base_ptr_reg = generate_get_struct_base_ptr(gen_acc, *struct_ptr_reg, parent_type);
@@ -782,6 +783,8 @@ static llvm::Value* generate_comparison_expression(llvm_function_generator_t& ge
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
+	const auto& types = gen_acc.gen.type_lookup.state.types;
+
 	auto lhs_temp = generate_expression(gen_acc, *details.lhs);
 	auto rhs_temp = generate_expression(gen_acc, *details.rhs);
 
@@ -854,7 +857,7 @@ static llvm::Value* generate_comparison_expression(llvm_function_generator_t& ge
 		generate_release(gen_acc, *rhs_temp, get_expr_output_type(gen_acc.gen, *details.rhs));
 		return result_reg;
 	}
-	else if(type.is_struct()){
+	else if(peek2(types, type).is_struct()){
 		auto result_reg = generate_compare_values(gen_acc, details.op, type, *lhs_temp, *rhs_temp);
 		generate_release(gen_acc, *lhs_temp, get_expr_output_type(gen_acc.gen, *details.lhs));
 		generate_release(gen_acc, *rhs_temp, get_expr_output_type(gen_acc.gen, *details.rhs));
@@ -1025,7 +1028,7 @@ static type_t calc_resolved_function_type(const llvm_code_generator_t& gen, cons
 	const auto resolved_call_arguments = mapf<type_t>(args, [&gen](auto& e){ return get_expr_output_type(gen, e); });
 
 
-	if(true) trace_types(types);
+	if(false) trace_types(types);
 
 	const auto resolved_call_function_type = make_function(
 		types,
@@ -1037,7 +1040,7 @@ static type_t calc_resolved_function_type(const llvm_code_generator_t& gen, cons
 	//	Verify that the actual argument expressions, their count and output types -- all match callee_function_type.
 	QUARK_ASSERT(args.size() == peek2(gen.type_lookup.state.types, callee_function_type).get_function_args(types).size());
 
-	if(true) trace_types(types);
+	if(false) trace_types(types);
 
 	return resolved_call_function_type;
 }
@@ -1079,7 +1082,7 @@ llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& gen_acc, 
 
 	const auto& types = gen_acc.gen.type_lookup.state.types;
 
-	if(true) trace_types(types);
+	if(false) trace_types(types);
 
 	const auto& intrinsic_signatures = gen_acc.gen.intrinsic_signatures;
 
@@ -1397,7 +1400,7 @@ static llvm::Value* generate_construct_struct(llvm_function_generator_t& gen_acc
 
 	auto& types = gen_acc.gen.type_lookup.state.types;
 
-	const auto construct_type = peek(types, details.value_type);
+	const auto construct_type = peek2(types, details.value_type);
 	QUARK_ASSERT(construct_type.is_struct());
 
 	auto& builder = gen_acc.get_builder();
@@ -1503,12 +1506,12 @@ static llvm::Value* generate_construct_value_expression(llvm_function_generator_
 	QUARK_ASSERT(e.check_invariant());
 
 	auto& types = gen_acc.gen.type_lookup.state.types;
-	const auto construct_type = peek(types, details.value_type);
+	const auto construct_type = peek2(types, details.value_type);
 
-	if(construct_type.is_vector()){
+	if(construct_type.non_name_type.is_vector()){
 		return generate_construct_vector(gen_acc, details);
 	}
-	else if(construct_type.is_dict()){
+	else if(construct_type.non_name_type.is_dict()){
 		return generate_construct_dict(gen_acc, details);
 	}
 	else if(construct_type.is_struct()){
@@ -1780,12 +1783,13 @@ static llvm::Value* generate_expression(llvm_function_generator_t& gen_acc, cons
 static void generate_assign2_statement(llvm_function_generator_t& gen_acc, const statement_t::assign2_t& s){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
+	const auto& types = gen_acc.gen.type_lookup.state.types;
 	llvm::Value* value = generate_expression(gen_acc, s._expression);
 
 	auto dest = find_symbol(gen_acc.gen, s._dest_variable);
 	const auto type = dest.symbol.get_value_type();
 
-	if(is_rc_value(type)){
+	if(is_rc_value(peek2(types, type))){
 		auto prev_value = gen_acc.get_builder().CreateLoad(dest.value_ptr);
 		generate_release(gen_acc, *prev_value, type);
 
@@ -2435,6 +2439,7 @@ static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const 
 
 	auto& builder = gen_acc.get_builder();
 	auto& context = builder.getContext();
+	const auto& types = gen_acc.type_lookup.state.types;
 
 	llvm::Function* f = gen_acc.runtime_functions.floydrt_deinit.llvm_codegen_f;
 	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(context, "entry", f);
@@ -2468,7 +2473,7 @@ static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const 
 					bool needs_destruct = e.symbol._symbol_type != symbol_t::symbol_type::named_type;
 					if(needs_destruct){
 						const auto type = e.symbol.get_value_type();
-						if(is_rc_value(type)){
+						if(is_rc_value(peek2(types, type))){
 							auto reg = builder.CreateLoad(e.value_ptr);
 							generate_release(function_gen_acc, *reg, type);
 						}

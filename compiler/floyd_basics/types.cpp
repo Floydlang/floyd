@@ -1407,8 +1407,8 @@ type_variant_t get_type_variant(const types_t& types, const type_t& type){
 			return typeid_type_t {};
 		}
 
-		else if(type.is_struct()){
-			const auto& info = lookup_typeinfo_from_type(types, type);
+		else if(desc.is_struct()){
+			const auto& info = lookup_typeinfo_from_type(types, desc.non_name_type);
 			return struct_t { info.struct_desc };
 		}
 		else if(type.is_vector()){
@@ -1420,7 +1420,7 @@ type_variant_t get_type_variant(const types_t& types, const type_t& type){
 			return dict_t { info.child_types };
 		}
 		else if(desc.is_function()){
-			const auto& info = lookup_typeinfo_from_type(types, type);
+			const auto& info = lookup_typeinfo_from_type(types, desc.non_name_type);
 			return function_t { info.child_types };
 		}
 		else if(type.is_symbol_ref()){
@@ -1467,7 +1467,7 @@ type_t type_t::get_dict_value_type(const types_t& types) const{
 
 
 
-struct_type_desc_t type_t::get_struct(const types_t& types) const{
+struct_type_desc_t type_desc_t::get_struct(const types_t& types) const{
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(is_struct());
@@ -1742,7 +1742,7 @@ type_t lookup_type_from_name(const types_t& types, const type_name_t& tag){
 
 
 
-type_t peek(const types_t& types, const type_t& type){
+type_t peek0(const types_t& types, const type_t& type){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -1754,7 +1754,7 @@ type_t peek(const types_t& types, const type_t& type){
 		const auto dest = info.child_types[0];
 
 		//	Support many linked tags.
-		return peek(types, dest);
+		return peek0(types, dest);
 	}
 	else{
 		return type;
@@ -1763,7 +1763,7 @@ type_t peek(const types_t& types, const type_t& type){
 
 
 type_desc_t peek2(const types_t& types, const type_t& type){
-	const auto type2 = peek(types, type);
+	const auto type2 = peek0(types, type);
 	return type_desc_t::wrap_non_named(type2);
 }
 
@@ -2162,7 +2162,7 @@ std::string type_to_compact_string(const types_t& types, const type_t& type, res
 		std::string operator()(const struct_t& e) const{
 			std::string members_acc;
 			for(const auto& m: e.desc._members){
-				members_acc = type_to_compact_string(types, m._type, resolve) + " " + members_acc + m._name + ";";
+				members_acc = members_acc + type_to_compact_string(types, m._type, resolve) + " " + m._name + ";";
 			}
 			return "struct {" + members_acc + "}";
 		}
@@ -2195,7 +2195,7 @@ std::string type_to_compact_string(const types_t& types, const type_t& type, res
 		}
 		std::string operator()(const named_type_t& e) const {
 			if(resolve == resolve_named_types::resolve){
-				const auto p = peek(types, type);
+				const auto p = peek0(types, type);
 				return type_to_compact_string(types, p, resolve);
 			}
 

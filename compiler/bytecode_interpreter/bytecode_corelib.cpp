@@ -149,7 +149,7 @@ bc_value_t bc_corelib__calc_binary_sha1(interpreter_t& vm, const bc_value_t args
 
 	auto temp_types = vm._imm->_program._types;
 	const auto& sha1_struct = args[0].get_struct_value();
-	QUARK_ASSERT(sha1_struct.size() == make__binary_t__type(temp_types).get_struct(temp_types)._members.size());
+	QUARK_ASSERT(sha1_struct.size() == peek2(temp_types, make__binary_t__type(temp_types)).get_struct(temp_types)._members.size());
 	QUARK_ASSERT(sha1_struct[0]._type.is_string());
 
 	const auto& sha1_string = sha1_struct[0].get_string_value();

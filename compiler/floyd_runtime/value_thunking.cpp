@@ -142,7 +142,7 @@ static value_t from_runtime_struct(const value_backend_t& backend, const runtime
 
 	const auto& struct_layout = find_struct_layout(backend, type);
 
-	const auto& struct_def = type.get_struct(backend.types);
+	const auto& struct_def = peek2(backend.types, type).get_struct(backend.types);
 	const auto struct_base_ptr = encoded_value.struct_ptr->get_data_ptr();
 
 	std::vector<value_t> members;
@@ -477,7 +477,7 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 			QUARK_ASSERT(false); throw std::exception();
 		}
 		value_t operator()(const named_type_t& e) const {
-			return from_runtime_value2(backend, encoded_value, peek(backend.types, e.destination_type));
+			return from_runtime_value2(backend, encoded_value, peek2(backend.types, e.destination_type));
 		}
 	};
 	return std::visit(visitor_t{ backend, encoded_value, type }, get_type_variant(backend.types, type));

@@ -22,7 +22,7 @@
 
 namespace floyd {
 
-static const bool k_trace_io = true;
+static const bool k_trace_io = false;
 
 
 
@@ -461,7 +461,7 @@ static std::pair<analyser_t, fully_resolved_call_t> analyze_resolve_call_type(co
 		callee_type_peek.get_function_pure(a_acc._types)
 	);
 
-	if(true) trace_types(a_acc._types);
+	if(false) trace_types(a_acc._types);
 
 	return { a_acc, { call_args2, resolved_function_type } };
 }
@@ -930,7 +930,7 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 	a_acc = parent_expr.first;
 
 	const auto parent_type0 = analyze_expr_output_type(a_acc, parent_expr.second);
-	const auto parent_type_peek = peek(a_acc._types, parent_type0);
+	const auto parent_type_peek = peek2(a_acc._types, parent_type0);
 	if(parent_type_peek.is_struct()){
 		const auto struct_def = parent_type_peek.get_struct(a_acc._types);
 
@@ -964,7 +964,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 
 	const auto collection_expr = collection_expr_kv.second;
 	const auto collection_type0 = analyze_expr_output_type(a_acc, collection_expr);
-	const auto collection_type_peek = peek(a_acc._types, collection_type0);
+	const auto collection_type_peek = peek2(a_acc._types, collection_type0);
 
 	if(collection_type_peek.is_struct()){
 		const auto& struct_def = collection_type_peek.get_struct(a_acc._types);
@@ -984,7 +984,6 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 		//	The key needs to be the name of an symbol. It's a compile-time constant.
 		//	It's encoded as a load which is confusing.
 		//	??? Idea: convert the symbol to an integer and call analyse_intrinsic_update_expression() again. Also support accessing struct members by index.
-
 
 
 
@@ -1025,7 +1024,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 			(void)resolved_function_type;
 
 
-			if(true) trace_types(a_acc._types);
+			if(false) trace_types(a_acc._types);
 
 			return {
 				a_acc,
@@ -1049,7 +1048,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 
 		const auto new_value_type = analyze_expr_output_type(a_acc, new_value_expr);
 
-		if(collection_type_peek.is_string()){
+		if(collection_type0.is_string()){
 			const auto key_type = key_expr.get_output_type();
 
 			if(key_type.is_int() == false){
@@ -1069,7 +1068,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 				expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr, key_expr, new_value_expr }, collection_type0)
 			};
 		}
-		else if(collection_type_peek.is_vector()){
+		else if(collection_type0.is_vector()){
 			const auto key_type = analyze_expr_output_type(a_acc, key_expr);
 
 			if(key_type.is_int() == false){
@@ -1078,7 +1077,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 				throw_compiler_error(parent.location, what.str());
 			}
 
-			const auto element_type = collection_type_peek.get_vector_element_type(a_acc._types);
+			const auto element_type = collection_type0.get_vector_element_type(a_acc._types);
 			if(element_type != new_value_type){
 				throw_compiler_error(parent.location, "New value's type must match vector's element type.");
 			}
@@ -1088,7 +1087,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 				expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr, key_expr, new_value_expr }, collection_type0)
 			};
 		}
-		else if(collection_type_peek.is_dict()){
+		else if(collection_type0.is_dict()){
 			const auto key_type = analyze_expr_output_type(a_acc, key_expr);
 
 			if(key_type.is_string() == false){
@@ -1097,7 +1096,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 				throw_compiler_error(parent.location, what.str());
 			}
 
-			const auto element_type = collection_type_peek.get_dict_value_type(a_acc._types);
+			const auto element_type = collection_type0.get_dict_value_type(a_acc._types);
 			if(element_type != new_value_type){
 				throw_compiler_error(parent.location, "New value's type must match dict's value type.");
 			}
@@ -1635,17 +1634,17 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 
 	auto a_acc = a;
 
-	const auto target_type_peek = peek(a_acc._types, target_type0);
+	const auto target_type_peek = peek2(a_acc._types, target_type0);
 
 	const auto type0 = analyze_expr_output_type(a_acc, e);
 	QUARK_ASSERT(type0 == details.value_type);
 
-	const auto type_peek = peek(a_acc._types, type0);
+	const auto type_peek = peek2(a_acc._types, type0);
 
-	if(type_peek.is_vector()){
+	if(type0.is_vector()){
 		//	JSON constants supports mixed element types: convert each element into a json.
 		//	Encode as [json]
-		if(target_type_peek.is_json()){
+		if(target_type0.is_json()){
 			const auto element_type = type_t::make_json();
 
 			std::vector<expression_t> elements2;
@@ -1669,7 +1668,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			};
 		}
 		else {
-			const auto element_type = type_peek.get_vector_element_type(a_acc._types);
+			const auto element_type = type0.get_vector_element_type(a_acc._types);
 			std::vector<expression_t> elements2;
 			for(const auto& m: details.elements){
 				const auto element_expr = analyse_expression_no_target(a_acc, parent, m);
@@ -1702,10 +1701,10 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 	}
 
 	//	Dicts uses pairs of (string,value). This is stored in _args as interleaved expression: string0, value0, string1, value1.
-	else if(type_peek.is_dict()){
+	else if(type0.is_dict()){
 		//	JSON constants supports mixed element types: convert each element into a json.
 		//	Encode as [string:json]
-		if(target_type_peek.is_json()){
+		if(target_type0.is_json()){
 			const auto element_type = type_t::make_json();
 
 			std::vector<expression_t> elements2;
@@ -1719,7 +1718,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			}
 
 			const auto rhs_guess_type = resolve_and_intern_itype(a_acc, parent.location, make_dict(a_acc._types, type_t::make_json()));
-			 auto final_type = select_inferred_type(a_acc._types, target_type_peek, rhs_guess_type);
+			 auto final_type = select_inferred_type(a_acc._types, target_type0, rhs_guess_type);
 
 			if(check_types_resolved(a_acc._types, final_type) == false){
 				std::stringstream what;
@@ -1738,7 +1737,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 		else {
 			QUARK_ASSERT(details.elements.size() % 2 == 0);
 
-			const auto element_type = type_peek.get_dict_value_type(a_acc._types);
+			const auto element_type = type0.get_dict_value_type(a_acc._types);
 
 			std::vector<expression_t> elements2;
 			for(int i = 0 ; i < details.elements.size() / 2 ; i++){
@@ -2001,7 +2000,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 		}
 
 		//	struct
-		else if(shared_type.is_struct()){
+		else if(peek2(a_acc._types, shared_type).is_struct()){
 			//	Structs must be exactly the same type to match.
 
 			if(op == expression_type::k_arithmetic_add){
@@ -2279,7 +2278,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 
 
 			//	Convert calls to struct-type into construct-value expression.
-			if(construct_value_type.is_struct()){
+			if(peek2(a_acc._types, construct_value_type).is_struct()){
 				const auto construct_value_expr = expression_t::make_construct_value_expr(construct_value_type, details.args);
 				const auto result_pair = analyse_expression_to_target(a_acc, parent, construct_value_expr, construct_value_type);
 				return { result_pair.first, result_pair.second };
@@ -2575,9 +2574,9 @@ static std::pair<analyser_t, expression_t> analyse_expression_to_target(const an
 
 	auto a_acc = a;
 
-	if(true) trace_types(a_acc._types);
+	if(false) trace_types(a_acc._types);
 
-	const auto target_type_peek = peek(a_acc._types, target_type0);
+	const auto target_type_peek = peek2(a_acc._types, target_type0);
 
 	QUARK_ASSERT(target_type0.is_void() == false && target_type0.is_undefined() == false);
 	QUARK_ASSERT(check_types_resolved(a._types, target_type0));

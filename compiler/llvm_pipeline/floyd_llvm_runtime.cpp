@@ -355,7 +355,7 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 		const auto main_result_int = (*f2)(make_runtime_ptr(&ee), main_args4);
 
 		const auto return_itype = make_vector(types, type_t::make_string());
-		if(is_rc_value(return_itype)){
+		if(is_rc_value(peek2(types, return_itype))){
 			release_value(ee.backend, main_args4, return_itype);
 		}
 		return main_result_int;
@@ -460,16 +460,17 @@ static std::vector<std::pair<link_name_t, void*>> collection_native_func_ptrs(ll
 static std::vector<std::pair<type_t, struct_layout_t>> make_struct_layouts(const llvm_type_lookup& type_lookup, const llvm::DataLayout& data_layout){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
+	const auto& types = type_lookup.state.types;
 	std::vector<std::pair<type_t, struct_layout_t>> result;
 
 	for(int i = 0 ; i < type_lookup.state.type_entries.size() ; i++){
-		const auto& type = lookup_type_from_index(type_lookup.state.types, i);
-		if(type.is_struct()){
+		const auto& type = lookup_type_from_index(types, i);
+		if(peek2(types, type).is_struct()){
 			auto t2 = get_exact_struct_type_byvalue(type_lookup, type);
 			const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
 
 
-			const auto& source_struct_def = type.get_struct(type_lookup.state.types);
+			const auto& source_struct_def = peek2(types, type).get_struct(types);
 
 			const auto struct_bytes = layout->getSizeInBytes();
 			std::vector<member_info_t> member_infos;

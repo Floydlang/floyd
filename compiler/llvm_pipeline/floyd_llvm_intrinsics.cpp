@@ -92,7 +92,7 @@ static bool matches_specialization(const config_t& config, const types_t& types,
 		return wanted == eresolved_type::k_string;
 	}
 	else if(is_vector_carray(config, arg_type)){
-		const auto is_rc = is_rc_value(arg_type.get_vector_element_type(types));
+		const auto is_rc = is_rc_value(peek2(types, arg_type.get_vector_element_type(types)));
 		if(is_rc){
 			return wanted == eresolved_type::k_vector_carray_nonpod;
 		}
@@ -101,7 +101,7 @@ static bool matches_specialization(const config_t& config, const types_t& types,
 		}
 	}
 	else if(is_vector_hamt(config, arg_type)){
-		const auto is_rc = is_rc_value(arg_type.get_vector_element_type(types));
+		const auto is_rc = is_rc_value(peek2(types, arg_type.get_vector_element_type(types)));
 		if(is_rc){
 			return wanted == eresolved_type::k_vector_hamt_nonpod;
 		}
@@ -111,7 +111,7 @@ static bool matches_specialization(const config_t& config, const types_t& types,
 	}
 
 	else if(is_dict_cppmap(config, arg_type)){
-		const auto is_rc = is_rc_value(arg_type.get_dict_value_type(types));
+		const auto is_rc = is_rc_value(peek2(types, arg_type.get_dict_value_type(types)));
 		if(is_rc){
 			return wanted == eresolved_type::k_dict_cppmap_nonpod;
 		}
@@ -120,7 +120,7 @@ static bool matches_specialization(const config_t& config, const types_t& types,
 		}
 	}
 	else if(is_dict_hamt(config, arg_type)){
-		const auto is_rc = is_rc_value(arg_type.get_dict_value_type(types));
+		const auto is_rc = is_rc_value(peek2(types, arg_type.get_dict_value_type(types)));
 		if(is_rc){
 			return wanted == eresolved_type::k_dict_hamt_nonpod;
 		}
@@ -182,6 +182,7 @@ static void floyd_llvm_intrinsic__assert(floyd_runtime_t* frp, runtime_value_t a
 static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type){
 	auto& r = get_floyd_runtime(frp);
 
+	const auto& types = r.backend.types;
 	const auto& type0 = lookup_type_ref(r.backend, coll_type);
 	const auto& type1 = lookup_type_ref(r.backend, key_type);
 
@@ -191,7 +192,7 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 	if(is_dict_cppmap(r.backend.config, type_t(coll_type))){
 		const auto& dict = unpack_dict_cppmap_arg(r.backend, coll_value, coll_type);
 
-		const auto value_type = type0.get_dict_value_type(r.backend.types);
+		const auto value_type = type0.get_dict_value_type(types);
 
 		//	Deep copy dict.
 		auto dict2 = alloc_dict_cppmap(r.backend.heap, type_t(coll_type));
@@ -201,7 +202,7 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 		const auto key_string = from_runtime_string(r, key_value);
 		m.erase(key_string);
 
-		if(is_rc_value(value_type)){
+		if(is_rc_value(peek2(types, value_type))){
 			for(auto& e: m){
 				retain_value(r.backend, e.second, value_type);
 			}
@@ -211,7 +212,7 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 	else if(is_dict_hamt(r.backend.config, type_t(coll_type))){
 		const auto& dict = *coll_value.dict_hamt_ptr;
 
-		const auto value_type = type0.get_dict_value_type(r.backend.types);
+		const auto value_type = type0.get_dict_value_type(types);
 
 		//	Deep copy dict.
 		auto dict2 = alloc_dict_hamt(r.backend.heap, type_t(coll_type));
@@ -221,7 +222,7 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 		const auto key_string = from_runtime_string(r, key_value);
 		m = m.erase(key_string);
 
-		if(is_rc_value(value_type)){
+		if(is_rc_value(peek2(types, value_type))){
 			for(auto& e: m){
 				retain_value(r.backend, e.second, value_type);
 			}
@@ -901,7 +902,7 @@ static runtime_value_t filter__carray(floyd_runtime_t* frp, value_backend_t& bac
 		if(keep.bool_value != 0){
 			acc.push_back(element_value);
 
-			if(is_rc_value(e_element_itype)){
+			if(is_rc_value(peek2(r.backend.types, e_element_itype))){
 				retain_value(r.backend, element_value, e_element_itype);
 			}
 		}
@@ -947,7 +948,7 @@ static runtime_value_t filter__hamt(floyd_runtime_t* frp, value_backend_t& backe
 		if(keep.bool_value != 0){
 			acc.push_back(element_value);
 
-			if(is_rc_value(e_element_itype)){
+			if(is_rc_value(peek2(r.backend.types, e_element_itype))){
 				retain_value(r.backend, element_value, e_element_itype);
 			}
 		}
@@ -1009,7 +1010,7 @@ static runtime_value_t reduce__carray(floyd_runtime_t* frp, value_backend_t& bac
 		const auto element_value = vec.get_element_ptr()[i];
 		const auto acc2 = (*f)(frp, acc, element_value, context);
 
-		if(is_rc_value(type_t(init_value_type))){
+		if(is_rc_value(peek2(backend.types, type_t(init_value_type)))){
 			release_value(backend, acc, type_t(init_value_type));
 		}
 		acc = acc2;
@@ -1040,7 +1041,7 @@ static runtime_value_t reduce__hamt(floyd_runtime_t* frp, value_backend_t& backe
 		const auto element_value = vec.load_element(i);
 		const auto acc2 = (*f)(frp, acc, element_value, context);
 
-		if(is_rc_value(type_t(init_value_type))){
+		if(is_rc_value(peek2(backend.types, type_t(init_value_type)))){
 			release_value(backend, acc, type_t(init_value_type));
 		}
 		acc = acc2;

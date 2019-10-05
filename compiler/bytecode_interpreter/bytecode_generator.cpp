@@ -167,7 +167,7 @@ static type_t get_expr_output_type(const bcgenerator_t& gen, const expression_t&
 
 	const auto& types = gen._ast_imm->_tree._interned_types;
 	const auto result = e.get_output_type();
-	return peek(types, result);
+	return peek0(types, result);
 }
 
 static type_t get_expr_output(const bcgenerator_t& gen, const expression_t& e){
@@ -738,7 +738,10 @@ static bcgen_body_t bcgen_function(bcgenerator_t& gen_acc, const floyd::function
 
 expression_gen_t bcgen_resolve_member_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::resolve_member_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(get_expr_output(gen_acc, *details.parent_address).is_struct());
+
+	const auto& types = gen_acc._ast_imm->_tree._interned_types;
+
+	QUARK_ASSERT(peek2(types, get_expr_output(gen_acc, *details.parent_address)).is_struct());
 	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
@@ -749,11 +752,11 @@ expression_gen_t bcgen_resolve_member_expression(bcgenerator_t& gen_acc, const s
 	const auto struct_type = get_expr_output(gen_acc, *details.parent_address);
 	const auto expr_output_type = get_expr_output(gen_acc, e);
 
-	const auto& struct_def = struct_type.get_struct(gen_acc._ast_imm->_tree._interned_types);
+	const auto& struct_def = peek2(types, struct_type).get_struct(types);
 	int index = find_struct_member_index(struct_def, details.member_name);
 	QUARK_ASSERT(index != -1);
 
-	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(gen_acc._ast_imm->_tree._interned_types, body_acc, expr_output_type, "temp: resolve-member output") : target_reg;
+	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(types, body_acc, expr_output_type, "temp: resolve-member output") : target_reg;
 	body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_get_struct_member,
 		target_reg2,
 		parent_expr._out,
@@ -944,10 +947,13 @@ static expression_gen_t bcgen_intrinsic_size_expression(bcgenerator_t& gen_acc, 
 //	Converts expression to a call to intrinsic() function.
 expression_gen_t bcgen_update_member_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::update_member_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(get_expr_output(gen_acc, *details.parent_address).is_struct());
+
+	auto& types = gen_acc._ast_imm->_tree._interned_types;
+
+	QUARK_ASSERT(peek2(types, get_expr_output(gen_acc, *details.parent_address)).is_struct());
 	QUARK_ASSERT(body.check_invariant());
 
-	const auto struct_def = get_expr_output(gen_acc, e).get_struct(gen_acc._ast_imm->_tree._interned_types);
+	const auto struct_def = peek2(types, get_expr_output(gen_acc, e)).get_struct(types);
 	const auto member_name = struct_def._members[details.member_index]._name;
 	const auto member_name_expr = expression_t::make_literal_string(member_name);
 	return make_update_call(gen_acc, target_reg, get_expr_output(gen_acc, e), *details.parent_address, member_name_expr, *details.new_value, body);
@@ -959,6 +965,7 @@ expression_gen_t bcgen_lookup_element_expression(bcgenerator_t& gen_acc, const s
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
+	auto& types = gen_acc._ast_imm->_tree._interned_types;
 	auto body_acc = body;
 
 	const auto& parent_expr = bcgen_expression(gen_acc, {}, *details.parent_address, body_acc);
@@ -976,7 +983,7 @@ expression_gen_t bcgen_lookup_element_expression(bcgenerator_t& gen_acc, const s
 			return bc_opcode::k_lookup_element_json;
 		}
 		else if(parent_type.is_vector()){
-			if(encode_as_vector_w_inplace_elements(gen_acc._ast_imm->_tree._interned_types, parent_type)){
+			if(encode_as_vector_w_inplace_elements(types, parent_type)){
 				return bc_opcode::k_lookup_element_vector_w_inplace_elements;
 			}
 			else{
@@ -984,7 +991,7 @@ expression_gen_t bcgen_lookup_element_expression(bcgenerator_t& gen_acc, const s
 			}
 		}
 		else if(parent_type.is_dict()){
-			if(encode_as_dict_w_inplace_values(gen_acc._ast_imm->_tree._interned_types, parent_type)){
+			if(encode_as_dict_w_inplace_values(types, parent_type)){
 				return bc_opcode::k_lookup_element_dict_w_inplace_values;
 			}
 			else{
@@ -997,7 +1004,7 @@ expression_gen_t bcgen_lookup_element_expression(bcgenerator_t& gen_acc, const s
 		}
 	}();
 
-	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(gen_acc._ast_imm->_tree._interned_types, body_acc, get_expr_output(gen_acc, e), "temp: resolve-member output") : target_reg;
+	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(types, body_acc, get_expr_output(gen_acc, e), "temp: resolve-member output") : target_reg;
 
 	body_acc._instrs.push_back(bcgen_instruction_t(
 		opcode,
@@ -1356,27 +1363,28 @@ expression_gen_t bcgen_construct_value_expression(bcgenerator_t& gen_acc, const 
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
+	const auto& types = gen_acc._ast_imm->_tree._interned_types;
 	auto body_acc = body;
 
-	const auto target_type = dummy_func(gen_acc._ast_imm->_tree._interned_types, get_expr_output(gen_acc, e));
+	const auto target_type = dummy_func(types, get_expr_output(gen_acc, e));
 	const auto target_itype = intern_type(gen_acc, target_type);
 
 	const auto callee_arg_count = static_cast<int>(details.elements.size());
 	std::vector<type_t> arg_types;
 	for(const auto& m: details.elements){
-		arg_types.push_back(dummy_func(gen_acc._ast_imm->_tree._interned_types, get_expr_output(gen_acc, m)));
+		arg_types.push_back(dummy_func(types, get_expr_output(gen_acc, m)));
 	}
 	const auto arg_count = callee_arg_count;
 
 	const auto call_setup = gen_call_setup(gen_acc, arg_types, &details.elements[0], arg_count, body_acc);
 	body_acc = call_setup._body;
 
-	const auto source_itype = arg_count == 0 ? -1 : intern_type(gen_acc, dummy_func(gen_acc._ast_imm->_tree._interned_types, get_expr_output(gen_acc, details.elements[0])));
+	const auto source_itype = arg_count == 0 ? -1 : intern_type(gen_acc, dummy_func(types, get_expr_output(gen_acc, details.elements[0])));
 
-	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(gen_acc._ast_imm->_tree._interned_types, body_acc, get_expr_output(gen_acc, e), "temp: construct value result") : target_reg;
+	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(types, body_acc, get_expr_output(gen_acc, e), "temp: construct value result") : target_reg;
 
 	if(target_type.is_vector()){
-		if(encode_as_vector_w_inplace_elements(gen_acc._ast_imm->_tree._interned_types, target_type)){
+		if(encode_as_vector_w_inplace_elements(types, target_type)){
 			body_acc._instrs.push_back(bcgen_instruction_t(
 				bc_opcode::k_new_vector_w_inplace_elements,
 				target_reg2,
@@ -1394,7 +1402,7 @@ expression_gen_t bcgen_construct_value_expression(bcgenerator_t& gen_acc, const 
 		}
 	}
 	else if(target_type.is_dict()){
-		if(encode_as_dict_w_inplace_values(gen_acc._ast_imm->_tree._interned_types, target_type)){
+		if(encode_as_dict_w_inplace_values(types, target_type)){
 			body_acc._instrs.push_back(bcgen_instruction_t(
 				bc_opcode::k_new_dict_w_inplace_values,
 				target_reg2,
@@ -1411,7 +1419,7 @@ expression_gen_t bcgen_construct_value_expression(bcgenerator_t& gen_acc, const 
 			));
 		}
 	}
-	else if(target_type.is_struct()){
+	else if(peek2(types, target_type).is_struct()){
 		body_acc._instrs.push_back(bcgen_instruction_t(
 			bc_opcode::k_new_struct,
 			target_reg2,
@@ -1893,7 +1901,7 @@ static bc_static_frame_t make_frame(const types_t& types, const bcgen_body_t& bo
 	std::vector<std::pair<std::string, bc_symbol_t>> symbols2;
 	for(const auto& e: body._symbol_table._symbols){
 		const auto t0 = e.second.get_value_type();
-		const auto t = peek(types, t0);
+		const auto t = peek2(types, t0);
 		if(e.second._symbol_type == symbol_t::symbol_type::named_type){
 /*
 			const auto e2 = std::pair<std::string, bc_symbol_t>{
