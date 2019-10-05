@@ -1370,63 +1370,71 @@ type_variant_t get_type_variant(const types_t& types, const type_t& type){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	if(type.is_undefined()){
-		return undefined_t {};
-	}
-	else if(type.is_any()){
-		return any_t {};
-	}
-	else if(type.is_void()){
-		return void_t {};
-	}
-
-
-	else if(type.is_bool()){
-		return bool_t {};
-	}
-	else if(type.is_int()){
-		return int_t {};
-	}
-	else if(type.is_double()){
-		return double_t {};
-	}
-	else if(type.is_string()){
-		return string_t {};
-	}
-	else if(type.is_json()){
-		return json_type_t {};
-	}
-	else if(type.is_typeid()){
-		return typeid_type_t {};
-	}
-
-	else if(type.is_struct()){
-		const auto& info = lookup_typeinfo_from_type(types, type);
-		return struct_t { info.struct_desc };
-	}
-	else if(type.is_vector()){
-		const auto& info = lookup_typeinfo_from_type(types, type);
-		return vector_t { info.child_types };
-	}
-	else if(type.is_dict()){
-		const auto& info = lookup_typeinfo_from_type(types, type);
-		return dict_t { info.child_types };
-	}
-	else if(type.is_function()){
-		const auto& info = lookup_typeinfo_from_type(types, type);
-		return function_t { info.child_types };
-	}
-	else if(type.is_symbol_ref()){
-		const auto& info = lookup_typeinfo_from_type(types, type);
-		return symbol_ref_t { info.identifier_str };
-	}
-	else if(type.is_named_type()){
+	if(type.is_named_type()){
 		const auto& info = lookup_typeinfo_from_type(types, type);
 		return named_type_t { info.child_types[0] };
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		const auto& desc = peek2(types, type);
+
+		if(type.is_undefined()){
+			return undefined_t {};
+		}
+		else if(type.is_any()){
+			return any_t {};
+		}
+		else if(type.is_void()){
+			return void_t {};
+		}
+
+
+		else if(type.is_bool()){
+			return bool_t {};
+		}
+		else if(type.is_int()){
+			return int_t {};
+		}
+		else if(type.is_double()){
+			return double_t {};
+		}
+		else if(type.is_string()){
+			return string_t {};
+		}
+		else if(type.is_json()){
+			return json_type_t {};
+		}
+		else if(type.is_typeid()){
+			return typeid_type_t {};
+		}
+
+		else if(type.is_struct()){
+			const auto& info = lookup_typeinfo_from_type(types, type);
+			return struct_t { info.struct_desc };
+		}
+		else if(type.is_vector()){
+			const auto& info = lookup_typeinfo_from_type(types, type);
+			return vector_t { info.child_types };
+		}
+		else if(type.is_dict()){
+			const auto& info = lookup_typeinfo_from_type(types, type);
+			return dict_t { info.child_types };
+		}
+		else if(desc.is_function()){
+			const auto& info = lookup_typeinfo_from_type(types, type);
+			return function_t { info.child_types };
+		}
+		else if(type.is_symbol_ref()){
+			const auto& info = lookup_typeinfo_from_type(types, type);
+			return symbol_ref_t { info.identifier_str };
+		}
+		else if(type.is_named_type()){
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
 	}
 }
 

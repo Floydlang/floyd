@@ -21,7 +21,7 @@ namespace floyd {
 llvm::Type* deref_ptr(llvm::Type* type);
 
 //	Returns true if we pass values of this type around via pointers (not by-value).
-bool pass_as_ptr(const type_t& type);
+bool pass_as_ptr(const type_desc_t& type);
 
 
 /*

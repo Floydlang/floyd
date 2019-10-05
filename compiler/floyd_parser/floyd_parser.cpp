@@ -384,7 +384,7 @@ static implicit_statement detect_implicit_statement_lookahead(const seq_t& s){
 			types_t temp;
 			const auto maybe_type = read_type(temp, s);
 			if(maybe_type.first != nullptr){
-				if(maybe_type.first->is_function()){
+				if(peek2(temp, *maybe_type.first).is_function()){
 					throw_compiler_error_nopos("Function types not supported.");
 				}
 				if(is_identifier_and_equal(maybe_type.second)){

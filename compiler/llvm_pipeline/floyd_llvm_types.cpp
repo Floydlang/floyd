@@ -18,8 +18,9 @@ namespace floyd {
 struct builder_t;
 
 
-bool pass_as_ptr(const type_t& type){
-	if(type.is_string() || type.is_json() || type.is_struct() || type.is_vector() || type.is_dict() || type.is_function()){
+bool pass_as_ptr(const type_desc_t& type){
+	const auto type0 = type.non_name_type;
+	if(type0.is_string() || type0.is_json() || type0.is_struct() || type0.is_vector() || type0.is_dict() || type.is_function()){
 		return true;
 	}
 	else {
@@ -193,7 +194,7 @@ static llvm::Type* get_llvm_type_prefer_generic(const type_entry_t& entry){
 }
 
 static llvm_function_def_t map_function_arguments_internal(const builder_t& builder, const floyd::type_t& function_type){
-	QUARK_ASSERT(function_type.is_function());
+	QUARK_ASSERT(peek2(builder.acc.types, function_type).is_function());
 
 	const auto function_peek = peek2(builder.acc.types, function_type);
 	const auto ret = function_peek.get_function_return(builder.acc.types);
@@ -245,7 +246,7 @@ static llvm_function_def_t map_function_arguments_internal(const builder_t& buil
 //	Function-types are always returned as pointer-to-function types.
 static llvm::Type* make_function_type(const builder_t& builder, const type_t& function_type){
 	QUARK_ASSERT(function_type.check_invariant());
-	QUARK_ASSERT(function_type.is_function());
+	QUARK_ASSERT(peek2(builder.acc.types, function_type).is_function());
 
 	const auto mapping = map_function_arguments_internal(builder, function_type);
 	llvm::FunctionType* function_type2 = llvm::FunctionType::get(mapping.return_type, mapping.llvm_args, false);
@@ -356,13 +357,13 @@ static type_entry_t make_type(const builder_t& builder, const type_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto llvm_type0 = make_llvm_type(builder, type);
-	const auto llvm_type = pass_as_ptr(type) ? llvm_type0->getPointerTo() : llvm_type0;
+	const auto llvm_type = pass_as_ptr(peek2(builder.acc.types, type)) ? llvm_type0->getPointerTo() : llvm_type0;
 
 	llvm::Type* llvm_generic_type0 = make_generic_type(builder, type);
 	llvm::Type* llvm_generic_type = llvm_generic_type0 ? llvm_generic_type0->getPointerTo() : nullptr;
 
 	std::shared_ptr<const llvm_function_def_t> optional_function_def;
-	if(type.is_function()){
+	if(peek2(builder.acc.types, type).is_function()){
 		const auto function_def = map_function_arguments_internal(builder, type);
 		optional_function_def = std::make_shared<llvm_function_def_t>(function_def);
 	}

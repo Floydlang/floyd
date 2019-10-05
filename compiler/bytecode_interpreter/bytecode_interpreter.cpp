@@ -1783,7 +1783,7 @@ int bc_compare_value_true_deep(const types_t& types, const bc_value_t& left, con
 			return bc_compare_dicts_obj(types, left2, right2, type0);
 		}
 	}
-	else if(type.is_function()){
+	else if(peek2(types, type).is_function()){
 		QUARK_ASSERT(false);
 		return 0;
 	}
@@ -2194,11 +2194,12 @@ const bc_function_definition_t& get_function_def(const interpreter_t& vm, functi
 
 //??? Use bc_value_t:s instead of bc_value_t -- types are known via function-signature.
 bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_value_t args[], int arg_count){
+	const auto& types = vm._imm->_program._types;
 #if DEBUG
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
 	for(int i = 0 ; i < arg_count ; i++){ QUARK_ASSERT(args[i].check_invariant()); };
-	QUARK_ASSERT(f._type.is_function());
+	QUARK_ASSERT(peek2(types, f._type).is_function());
 #endif
 
 	const auto& function_def = get_function_def(vm, f.get_function_value());
@@ -2215,7 +2216,6 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 	}
 	else{
 #if DEBUG
-		const auto& types = vm._imm->_program._types;
 		const auto& arg_types = peek2(types, f._type).get_function_args(types);
 
 		//	arity
@@ -2357,7 +2357,7 @@ json_t bcvalue_to_json(const types_t& types, const bc_value_t& v){
 			return result;
 		}
 	}
-	else if(v._type.is_function()){
+	else if(peek2(types, v._type).is_function()){
 		return json_t::make_object(
 			{
 				{ "funtyp", type_to_json(types, v._type) }

@@ -620,7 +620,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 
 			//	If symbol can be initialized directly, use make_immutable_precalc(). Else reserve it and create an init2-statement to set it up at runtime.
 			//	??? Better to always initialise it, even if it's a complex value. Codegen then decides if to translate to a reserve + init. BUT PROBLEM: we lose info *when* to init the value.
-			if(is_preinitliteral(lhs_itype2) && mutable_flag == false && get_expression_type(rhs_expr_pair.second) == expression_type::k_literal){
+			if(is_preinitliteral(peek2(a_acc._types, lhs_itype2)) && mutable_flag == false && get_expression_type(rhs_expr_pair.second) == expression_type::k_literal){
 				const auto symbol2 = symbol_t::make_immutable_precalc(lhs_itype2, rhs_expr_pair.second.get_literal());
 				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
 				analyze_expr_output_type(a_acc, rhs_expr_pair.second);
@@ -796,7 +796,13 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 	a_acc = body_pair.first;
 
 
-	const auto function_def2 = function_definition_t::make_func(k_no_location, function_link_name, f_itype, {}, std::make_shared<body_t>(body_pair.second));
+	const auto function_def2 = function_definition_t::make_func(
+		k_no_location,
+		function_link_name,
+		peek2(a_acc._types, f_itype),
+		{},
+		std::make_shared<body_t>(body_pair.second)
+	);
 	QUARK_ASSERT(check_types_resolved(a_acc._types, function_def2));
 
 	a_acc._function_defs.insert({ function_id, function_definition_t(function_def2) });
@@ -2035,7 +2041,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 		}
 
 		//	function
-		else if(shared_type.is_function()){
+		else if(peek2(a_acc._types, shared_type).is_function()){
 			throw_compiler_error(parent.location, "Cannot perform operations on two function values.");
 		}
 		else{
@@ -2387,7 +2393,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	const auto definition_name = function_def._definition_name;
 	const auto function_id = function_id_t { definition_name };
 
-	const auto function_def2 = function_definition_t::make_func(k_no_location, definition_name, function_type0, args2, body_result);
+	const auto function_def2 = function_definition_t::make_func(k_no_location, definition_name, function_type_peek, args2, body_result);
 	QUARK_ASSERT(check_types_resolved(a_acc._types, function_def2));
 
 	a_acc._function_defs.insert({ function_id, function_def2 });

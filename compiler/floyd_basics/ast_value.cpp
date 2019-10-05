@@ -1119,7 +1119,7 @@ value_t ast_json_to_value(types_t& types, const type_t& type, const json_t& v){
 */
 
 	}
-	else if(type.is_function()){
+	else if(peek2(types, type).is_function()){
 		const auto function_id0 = v.get_object_element("function_id").get_string();
 		const auto function_id = function_id_t { function_id0 };
 		return value_t::make_function_value(type, function_id);

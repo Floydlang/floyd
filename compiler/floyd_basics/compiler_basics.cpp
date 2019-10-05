@@ -56,11 +56,22 @@ std::vector<benchmark_result2_t> unpack_vec_benchmark_result2_t(types_t& types, 
 
 
 
-bool is_floyd_literal(const type_t& type){
+bool is_floyd_literal(const type_desc_t& type){
 	QUARK_ASSERT(type.check_invariant());
+	const auto& type0 = type.non_name_type;
 
 	//??? json is allowed but only for json::null. We should have a null-type instead.
-	if(type.is_void() || type.is_int() || type.is_double() || type.is_string() || type.is_bool() || type.is_typeid() || type.is_any() || type.is_json() || type.is_function()){
+	if(
+		type0.is_void()
+		|| type0.is_int()
+		|| type0.is_double()
+		|| type0.is_string()
+		|| type0.is_bool()
+		|| type0.is_typeid()
+		|| type0.is_any()
+		|| type0.is_json()
+		|| type.is_function()
+	){
 		return true;
 	}
 	else{
@@ -68,11 +79,12 @@ bool is_floyd_literal(const type_t& type){
 	}
 }
 
-bool is_preinitliteral(const type_t& type){
+bool is_preinitliteral(const type_desc_t& type){
 	QUARK_ASSERT(type.check_invariant());
+	const auto& type0 = type.non_name_type;
 
 	//??? json is allowed but only for json::null. We should have a null-type instead.
-	if(type.is_int() || type.is_double() || type.is_bool() || type.is_typeid() || type.is_any() || type.is_function()){
+	if(type0.is_int() || type0.is_double() || type0.is_bool() || type0.is_typeid() || type0.is_any() || type.is_function()){
 		return true;
 	}
 	else{
@@ -208,7 +220,7 @@ type_t harden_map_func_type(types_t& types, const type_t& resolved_call_type0){
 	const auto e_type = arg1_type.get_vector_element_type(types);
 
 	const auto arg2_type = resolved_call_type.get_function_args(types)[1];
-	if(arg2_type.is_function() == false){
+	if(peek2(types, arg2_type).is_function() == false){
 		quark::throw_runtime_error("map() arg 2 must be a function.");
 	}
 
@@ -230,7 +242,7 @@ type_t harden_map_func_type(types_t& types, const type_t& resolved_call_type0){
 
 bool check_map_func_type(types_t& types, const type_t& elements, const type_t& f, const type_t& context){
 	QUARK_ASSERT(elements.is_vector());
-	QUARK_ASSERT(f.is_function());
+	QUARK_ASSERT(peek2(types, f).is_function());
 
 	const auto f_peek = peek2(types, f);
 	QUARK_ASSERT(f_peek.get_function_args(types).size() == 2);
@@ -310,7 +322,7 @@ type_t harden_map_dag_func_type(types_t& types, const type_t& resolved_call_type
 	const auto e_type = arg1_type.get_vector_element_type(types);
 
 	const auto arg3_type = resolved_call_type.get_function_args(types)[2];
-	if(arg3_type.is_function() == false){
+	if(peek2(types, arg3_type).is_function() == false){
 		quark::throw_runtime_error("map_dag() arg 3 must be a function.");
 	}
 
@@ -467,7 +479,7 @@ type_t harden_stable_sort_func_type(types_t& types, const type_t& resolved_call_
 	const auto e_type = arg1_type.get_vector_element_type(types);
 
 	const auto arg2_type = resolved_call_type.get_function_args(types)[1];
-	if(arg2_type.is_function() == false){
+	if(peek2(types, arg2_type).is_function() == false){
 		quark::throw_runtime_error("stable_sort() arg 2 must be a function.");
 	}
 
@@ -488,7 +500,7 @@ type_t harden_stable_sort_func_type(types_t& types, const type_t& resolved_call_
 
 bool check_stable_sort_func_type(types_t& types, const type_t& elements, const type_t& f, const type_t& context){
 	QUARK_ASSERT(elements.is_vector());
-	QUARK_ASSERT(f.is_function());
+	QUARK_ASSERT(peek2(types, f).is_function());
 
 	const auto f_peek = peek2(types, f);
 

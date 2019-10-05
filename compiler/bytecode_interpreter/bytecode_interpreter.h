@@ -1156,7 +1156,7 @@ struct interpreter_stack_t {
 	public: bool check_reg_function(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_function());
+//		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_function());
 		return true;
 	}
 

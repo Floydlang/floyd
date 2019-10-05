@@ -670,7 +670,7 @@ json_t make_parser_node(const location_t& location, const std::string& opcode, c
 }
 
 json_t parser__make_literal(const value_t& value){
-	QUARK_ASSERT(is_floyd_literal(value.get_type()));
+//	QUARK_ASSERT(is_floyd_literal(value.get_type()));
 
 	const types_t temp;
 	return make_parser_node(

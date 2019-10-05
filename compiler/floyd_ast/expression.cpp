@@ -196,7 +196,7 @@ bool operator==(const function_definition_t& lhs, const function_definition_t& r
 
 
 
-const type_t& get_function_type(const function_definition_t& f){
+const type_desc_t& get_function_type(const function_definition_t& f){
 	return f._function_type;
 }
 
@@ -225,14 +225,14 @@ function_definition_t json_to_function_def(types_t& types, const json_t& p){
 
 	const location_t location1 = k_no_location;
 	const std::string definition_name1 = definition_name0.get_string();
-	const type_t function_type1 = type_from_json(types, function_type0);
+	const auto function_type1 = type_from_json(types, function_type0);
 	const std::vector<member_t> args1 = members_from_json(types, args0);
 	const std::shared_ptr<body_t> body1 = body0.is_null() ? std::shared_ptr<body_t>() : std::make_shared<body_t>(json_to_body(types, body0));
 
 	return function_definition_t::make_func(
 		location1,
 		definition_name1,
-		function_type1,
+		peek2(types, function_type1),
 		args1,
 		body1
 	);
@@ -261,7 +261,13 @@ void trace_function_definition_t(const types_t& types, const function_definition
 
 QUARK_TEST("", "", "", ""){
 	types_t types;
-	const auto a = function_definition_t::make_func(k_no_location, "definition_name", make_function(types, type_t::make_string(), {}, epure::pure), {}, std::make_shared<body_t>());
+	const auto a = function_definition_t::make_func(
+		k_no_location,
+		"definition_name",
+		peek2(types, make_function(types, type_t::make_string(), {}, epure::pure)),
+		{},
+		std::make_shared<body_t>()
+	);
 	QUARK_UT_VERIFY(a._named_args.empty());
 
 	QUARK_UT_VERIFY(a == a);
@@ -679,7 +685,7 @@ expression_t ast_json_to_expression(types_t& types, const json_t& e){
 		auto def = function_definition_t::make_func(
 			k_no_location,
 			function_name,
-			function_type,
+			peek2(types, function_type),
 			named_args,
 			body1
 		);

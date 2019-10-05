@@ -378,7 +378,7 @@ static void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p
 	int index = 0;
 	for(const auto& e: p.debug_globals._symbols){
 		const auto t = e.second.get_value_type();
-		if(t.is_function()){
+		if(peek2(ee2.type_lookup.state.types, t).is_function()){
 			const auto global_var = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(ee2, e.first);
 			QUARK_ASSERT(global_var != nullptr);
 

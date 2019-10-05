@@ -140,7 +140,7 @@ struct symbol_t {
 	}
 
 	public: static symbol_t make_immutable_precalc(const type_t& value_type, const value_t& init_value){
-		QUARK_ASSERT(is_floyd_literal(init_value.get_type()));
+//		QUARK_ASSERT(is_floyd_literal(init_value.get_type()));
 
 		return symbol_t{ symbol_type::immutable_precalc, value_type, init_value };
 	}

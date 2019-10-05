@@ -472,7 +472,7 @@ struct type_t {
 	//////////////////////////////////////////////////		FUNCTION
 
 
-	public: bool is_function() const {
+	private: bool is_function() const {
 		QUARK_ASSERT(check_invariant());
 
 		return get_base_type() == base_type::k_function;

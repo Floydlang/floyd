@@ -24,7 +24,6 @@ namespace floyd {
 
 struct struct_type_desc_t;
 
-bool is_floyd_literal(const type_t& type);
 
 
 ////////////////////////////////////////		expression_opcode_t
@@ -181,7 +180,7 @@ struct function_definition_t {
 	static function_definition_t make_func(
 		const location_t& location,
 		const std::string& definition_name,
-		const type_t& function_type,
+		const type_desc_t& function_type,
 		const std::vector<member_t>& named_args,
 		const std::shared_ptr<body_t>& body
 	){
@@ -196,7 +195,7 @@ struct function_definition_t {
 	static function_definition_t make_intrinsic(
 		const location_t& location,
 		const std::string& definition_name,
-		const type_t& function_type,
+		const type_desc_t& function_type,
 		const std::vector<member_t>& named_args
 	){
 		return {
@@ -218,7 +217,7 @@ struct function_definition_t {
 
 	//	This is optional and may be different than the function name in the code.
 	std::string _definition_name;
-	type_t _function_type;
+	type_desc_t _function_type;
 
 	//	Same types as in _function_type, but augumented with argument names.
 	//??? Remove. Instead have vector of just the argument names. Or update type_t to contain the argument names of functions!?
@@ -231,7 +230,7 @@ struct function_definition_t {
 
 bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);
 
-const type_t& get_function_type(const function_definition_t& f);
+const type_desc_t& get_function_type(const function_definition_t& f);
 
 json_t function_def_to_ast_json(const types_t& types, const function_definition_t& v);
 function_definition_t json_to_function_def(types_t& types, const json_t& p);
@@ -291,12 +290,12 @@ struct expression_t {
 		value_t value;
 	};
 	public: static expression_t make_literal(const value_t& value){
-		QUARK_ASSERT(is_floyd_literal(value.get_type()));
+//		QUARK_ASSERT(is_floyd_literal(value.get_type()));
 
 		return expression_t({ literal_exp_t{ value } }, value.get_type() );
 	}
 	public: static expression_t make_literal(const value_t& value, const type_t& optional_type){
-		QUARK_ASSERT(is_floyd_literal(value.get_type()));
+//		QUARK_ASSERT(is_floyd_literal(value.get_type()));
 
 		return expression_t({ literal_exp_t{ value } }, optional_type );
 	}
