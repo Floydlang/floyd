@@ -5698,7 +5698,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Access benchmark registry
 
 		)",
 		{
-			R"___([{name="ABC", f=func [struct {int dur;json more;}]() pure}])___"
+			R"___([{name="ABC", f=func [benchmark_result_t]() pure}])___"
 		}
 	);
 }
