@@ -79,10 +79,9 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 		return benchmark_id_t( "", def.name)
 	}
 
-/*	func [benchmark_id_t] get_benchmarks(){
+	func [benchmark_id_t] get_benchmarks(){
 		return map(benchmark_registry, get_benchmarks_f, 0)
 	}
-
 
 
 
@@ -111,8 +110,12 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 		return out
 	}
 
-
+	//	Implemented in C++
 	func string make_benchmark_report([benchmark_result2_t] results)
+
+
+/*
+
 
 	func [string: json] detect_hardware_caps()
 

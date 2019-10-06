@@ -5883,7 +5883,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "run_benchmarks()", "", ""){
 	);
 }
 
-FLOYD_LANG_PROOF("Floyd test suite", "run_benchmarks()", "", ""){
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "run_benchmarks()", "", ""){
 	ut_verify_printout_lib(
 		QUARK_POS,
 		R"(

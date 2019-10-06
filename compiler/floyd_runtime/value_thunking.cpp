@@ -140,9 +140,10 @@ static value_t from_runtime_struct(const value_backend_t& backend, const runtime
 	QUARK_ASSERT(encoded_value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto& struct_layout = find_struct_layout(backend, type);
+	const auto& type_peek = peek2(backend.types, type);
 
-	const auto& struct_def = peek2(backend.types, type).get_struct(backend.types);
+	const auto& struct_layout = find_struct_layout(backend, type_peek);
+	const auto& struct_def = type_peek.get_struct(backend.types);
 	const auto struct_base_ptr = encoded_value.struct_ptr->get_data_ptr();
 
 	std::vector<value_t> members;
@@ -154,7 +155,7 @@ static value_t from_runtime_struct(const value_backend_t& backend, const runtime
 		members.push_back(member_value);
 		member_index++;
 	}
-	return value_t::make_struct_value(backend.types, type, members);
+	return value_t::make_struct_value(backend.types, type_peek, members);
 }
 
 

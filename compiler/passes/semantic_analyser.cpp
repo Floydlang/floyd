@@ -1585,6 +1585,7 @@ std::pair<analyser_t, expression_t> analyse_load(const analyser_t& a, const stat
 			return { a_acc, e2 };
 		}
 		else{
+			//??? Undefined IDENTIFIER / SYMBOL
 			std::stringstream what;
 			what << "Undefined variable \"" << details.variable_name << "\".";
 			throw_compiler_error(parent.location, what.str());

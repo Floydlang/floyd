@@ -38,8 +38,10 @@ static runtime_value_t llvm_corelib__make_benchmark_report(floyd_runtime_t* frp,
 	auto& r = get_floyd_runtime(frp);
 	auto& types = r.backend.types;
 
-	const auto benchmark_result2_t__itype = make_benchmark_result2_t(types);
-	const auto b2 = from_runtime_value(r, b, make_vector(types, benchmark_result2_t__itype));
+	const auto benchmark_result_vec_type_symbol = find_symbol_required(r.global_symbols, "benchmark_result_vec_t");
+	const auto benchmark_result_vec_type = benchmark_result_vec_type_symbol._value_type;
+
+	const auto b2 = from_runtime_value(r, b, benchmark_result_vec_type);
 	const auto test_results = unpack_vec_benchmark_result2_t(types, b2);
 	const auto report = make_benchmark_report(test_results);
 	auto result = to_runtime_string(r, report);
