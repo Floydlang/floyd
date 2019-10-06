@@ -31,10 +31,21 @@ static const bool k_trace_function_link_map = false;
 static std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value_t arg_value, runtime_type_t arg_type){
 	QUARK_ASSERT(runtime.check_invariant());
 
+	const auto& types = runtime.backend.types;
 	const auto& type = lookup_type_ref(runtime.backend, arg_type);
-	const auto value = from_runtime_value(runtime, arg_value, type);
-	const auto a = to_compact_string2(runtime.backend.types, value);
-	return a;
+
+	if(type.is_typeid()){
+		const auto value = from_runtime_value(runtime, arg_value, type);
+		const auto type2 = value.get_typeid_value();
+		const auto type3 = peek2(types, type2);
+		const auto a = type_to_compact_string(types, type3);
+		return a;
+	}
+	else{
+		const auto value = from_runtime_value(runtime, arg_value, type);
+		const auto a = to_compact_string2(runtime.backend.types, value);
+		return a;
+	}
 }
 
 static llvm::FunctionType* make_intrinsic_llvm_function_type(const llvm_type_lookup& type_lookup, const intrinsic_signature_t& signature){
