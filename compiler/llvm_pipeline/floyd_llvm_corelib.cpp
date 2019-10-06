@@ -33,16 +33,21 @@ struct native_sha1_t {
 };
 
 
-//??? Should find the symbol for "benchmark_result2_t".
+
+//		func string make_benchmark_report([benchmark_result2_t] results)
 static runtime_value_t llvm_corelib__make_benchmark_report(floyd_runtime_t* frp, const runtime_value_t b){
 	auto& r = get_floyd_runtime(frp);
-	auto& types = r.backend.types;
+	const auto& types = r.backend.types;
 
-	const auto benchmark_result_vec_type_symbol = find_symbol_required(r.global_symbols, "benchmark_result_vec_t");
-	const auto benchmark_result_vec_type = benchmark_result_vec_type_symbol._value_type;
+	const auto s = find_symbol_required(r.global_symbols, "benchmark_result2_t");
+	const auto benchmark_result2_vec_type = make_vector(types, s._value_type);
 
-	const auto b2 = from_runtime_value(r, b, benchmark_result_vec_type);
-	const auto test_results = unpack_vec_benchmark_result2_t(types, b2);
+	const auto b2 = from_runtime_value(r, b, benchmark_result2_vec_type);
+
+	auto temp_types = types;
+	const auto test_results = unpack_vec_benchmark_result2_t(temp_types, b2);
+	QUARK_ASSERT(types.nodes.size() == temp_types.nodes.size());
+
 	const auto report = make_benchmark_report(test_results);
 	auto result = to_runtime_string(r, report);
 	return result;

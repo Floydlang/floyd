@@ -33,7 +33,7 @@ compiler_settings_t make_default_compiler_settings(){
 
 std::vector<benchmark_result2_t> unpack_vec_benchmark_result2_t(types_t& types, const value_t& value){
 	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(value.get_type() == make_vector(types, make_benchmark_result2_t(types)));
+//	QUARK_ASSERT(value.get_type() == make_vector(types, make_benchmark_result2_t(types)));
 
 	std::vector<benchmark_result2_t> test_results;
 	for(const auto& e: value.get_vector_value()){
