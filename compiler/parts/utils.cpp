@@ -177,4 +177,21 @@ QUARK_TEST("", "ptr_to_hexstring()", "", "") {
 	QUARK_UT_VERIFY(s == "0x00000000deadbeef");
 }
 
+
+
+std::string concat_string(const std::vector<std::string>& vec, const std::string& divider){
+	std::string acc;
+
+	if(vec.empty()){
+		return "";
+	}
+	const auto count = vec.size() - 1;
+	for(std::vector<std::string>::size_type i = 0 ; i < count ; i++){
+		acc = acc + vec[i] + divider;
+	}
+	acc = acc + vec.back();
+	return acc;
+}
+
+
 #include <sstream>
