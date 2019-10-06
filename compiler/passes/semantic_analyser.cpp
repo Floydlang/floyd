@@ -2732,7 +2732,7 @@ const body_t make_global_body(analyser_t& a){
 	auto global_body = body_t(a._imm->_ast._tree._globals._statements, symbol_table_t{ });
 
 	auto new_environment = symbol_table_t{ global_body._symbol_table };
-	const auto lexical_scope = lexical_scope_t{ new_environment, epure::pure };
+	const auto lexical_scope = lexical_scope_t{ new_environment, epure::impure };
 	a._lexical_scope_stack.push_back(lexical_scope);
 
 	const auto builtin_symbols = generate_builtins(a, *a._imm);
