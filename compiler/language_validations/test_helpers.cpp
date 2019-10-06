@@ -85,8 +85,8 @@ void ut_verify_report(const quark::call_context_t& context, const test_report_t&
 	if(result.result_variable != expected.result_variable){
 		ut_verify(
 			context,
-			value_and_type_to_ast_json(types, result.result_variable),
-			value_and_type_to_ast_json(types, expected.result_variable)
+			result.result_variable,
+			expected.result_variable
 		);
 	}
 
@@ -112,7 +112,7 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 
 		print_vm_printlog(interpreter);
 
-		return test_report_t{ result_global, run_output, interpreter._print_output, "" };
+		return test_report_t{ value_and_type_to_ast_json(exe._types, result_global), run_output, interpreter._print_output, "" };
 	}
 	catch(const std::runtime_error& e){
 		return test_report_t{ {}, {}, {}, e.what() };
@@ -137,7 +137,7 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 		const auto result_global0 = bind_global(*ee, "result");
 		const auto result_global = result_global0.first != nullptr ? load_global(*ee, result_global0) : value_t();
 
-		return test_report_t{ result_global, run_output, ee->_print_output, "" };
+		return test_report_t{ result_global.is_undefined() ? json_t() : value_and_type_to_ast_json(exe->type_lookup.state.types, result_global), run_output, ee->_print_output, "" };
 	}
 	catch(const std::runtime_error& e){
 		return test_report_t{ {}, {}, {}, e.what() };
@@ -197,33 +197,36 @@ QUARK_TEST("test_helpers", "run_program()", "", ""){
 }
 
 QUARK_TEST("test_helpers", "run_program()", "", ""){
+	const types_t types;
 	test_floyd(
 		QUARK_POS,
 		make_compilation_unit("let result = 112", "", compilation_unit_mode::k_no_core_lib),
 		make_default_compiler_settings(),
 		{},
-		test_report_t{ value_t::make_int(112), run_output_t( k_default_main_result, {}), {}, "" },
+		test_report_t{ value_and_type_to_ast_json(types, value_t::make_int(112)), run_output_t( k_default_main_result, {}), {}, "" },
 		false
 	);
 }
 QUARK_TEST("test_helpers", "run_program()", "", ""){
+	const types_t types;
 	test_floyd(
 		QUARK_POS,
 		make_compilation_unit("func int main([string] args){ return 1003 }", "", compilation_unit_mode::k_no_core_lib),
 		make_default_compiler_settings(),
 		{ "a", "b" },
-		test_report_t{ value_t::make_undefined(), run_output_t(1003, {}), { }, "" },
+		test_report_t{ value_and_type_to_ast_json(types, value_t::make_undefined()), run_output_t(1003, {}), { }, "" },
 		false
 	);
 
 }
 QUARK_TEST("test_helpers", "run_program()", "", ""){
+	const types_t types;
 	test_floyd(
 		QUARK_POS,
 		make_compilation_unit("print(1) print(234)", "", compilation_unit_mode::k_no_core_lib),
 		make_default_compiler_settings(),
 		{},
-		test_report_t{ value_t::make_undefined(), run_output_t(k_default_main_result, {}), {"1", "234" }, "" },
+		test_report_t{ value_and_type_to_ast_json(types, value_t::make_undefined()), run_output_t(k_default_main_result, {}), {"1", "234" }, "" },
 		false
 	);
 }
@@ -234,11 +237,11 @@ QUARK_TEST("test_helpers", "run_program()", "", ""){
 
 
 
-void ut_verify_global_result_lib(const quark::call_context_t& context, const std::string& program, const value_t& expected_result){
+void ut_verify_global_result_lib(const quark::call_context_t& context, const std::string& program, const json_t& expected_result){
 	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_include_core_lib), make_default_compiler_settings(), {}, check_result(expected_result), false);
 }
 
-void ut_verify_global_result_nolib(const quark::call_context_t& context, const std::string& program, const value_t& expected_result){
+void ut_verify_global_result_nolib(const quark::call_context_t& context, const std::string& program, const json_t& expected_result){
 	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), make_default_compiler_settings(), {}, check_result(expected_result), false);
 }
 

@@ -10,6 +10,7 @@
 #include "floyd_test_suite.h"
 
 #include "test_helpers.h"
+#include "text_parser.h"
 #include "floyd_corelib.h"
 #include "unistd.h"
 
@@ -75,33 +76,73 @@ unsupported syntax
 
 
 
+static json_t make_expected_int(int64_t v){
+	types_t types;
+	const auto a = value_t::make_int(v);
+	return value_and_type_to_ast_json(types, a);
+}
+static json_t make_expected_string(const std::string& s){
+	types_t types;
+	const auto a = value_t::make_string(s);
+	return value_and_type_to_ast_json(types, a);
+}
+static json_t make_expected_double(double v){
+	types_t types;
+	const auto a = value_t::make_double(v);
+	return value_and_type_to_ast_json(types, a);
+}
+static json_t make_expected_bool(bool v){
+	types_t types;
+	const auto a = value_t::make_bool(v);
+	return value_and_type_to_ast_json(types, a);
+}
 
-static value_t make_bool_vec(types_t& types, const std::vector<bool>& elements){
+static json_t make_expected_json(const json_t& j){
+	types_t types;
+	const auto a = value_t::make_json(j);
+	return value_and_type_to_ast_json(types, a);
+}
+
+static json_t make_expected_typeid(const types_t& types, const type_t& s){
+	const auto a = value_t::make_typeid_value(s);
+	return value_and_type_to_ast_json(types, a);
+}
+
+
+static json_t make_bool_vec(const std::vector<bool>& elements){
+	types_t types;
 	std::vector<value_t> elements2;
 	for(const auto e: elements){
 		elements2.push_back(value_t::make_bool(e));
 	}
 
-	return value_t::make_vector_value(types, type_t::make_bool(), elements2);
+	const auto v = value_t::make_vector_value(types, type_t::make_bool(), elements2);
+	return value_and_type_to_ast_json(types, v);
 }
 
-static value_t make_int_vec(types_t& types, const std::vector<int64_t>& elements){
+static json_t make_int_vec(const std::vector<int64_t>& elements){
+	types_t types;
 	std::vector<value_t> elements2;
 	for(const auto& e: elements){
 		elements2.push_back(value_t::make_int(e));
 	}
 
-	return value_t::make_vector_value(types, type_t::make_int(), elements2);
+	const auto v = value_t::make_vector_value(types, type_t::make_int(), elements2);
+	return value_and_type_to_ast_json(types, v);
 }
 
-static value_t make_double_vec(types_t& types, const std::vector<double>& elements){
+static json_t make_double_vec(const std::vector<double>& elements){
+	types_t types;
 	std::vector<value_t> elements2;
 	for(const auto& e: elements){
 		elements2.push_back(value_t::make_double(e));
 	}
 
-	return value_t::make_vector_value(types, type_t::make_double(), elements2);
+	const auto v = value_t::make_vector_value(types, type_t::make_double(), elements2);
+	return value_and_type_to_ast_json(types, v);
 }
+
+
 
 #if 0
 FLOYD_LANG_PROOF("NOP", "See if we leak memory", "", ""){
@@ -118,26 +159,26 @@ FLOYD_LANG_PROOF("NOP", "See if we leak memory", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "Define variable", "int", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 123", value_t::make_int(123));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 123", make_expected_int(123));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "Define variable", "bool", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true", make_expected_bool(true));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Define variable", "bool", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false", make_expected_bool(false));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "Define variable", "int", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 123", value_t::make_int(123));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 123", make_expected_int(123));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "Define variable", "double", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let double result = 3.5", value_t::make_double(double(3.5)));
+	ut_verify_global_result_nolib(QUARK_POS, "let double result = 3.5", make_expected_double(double(3.5)));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "Define variable", "string", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"xxx(let string result = "xyz")xxx", value_t::make_string("xyz"));
+	ut_verify_global_result_nolib(QUARK_POS, R"xxx(let string result = "xyz")xxx", make_expected_string("xyz"));
 }
 
 //	??? Add special error message when local is not initialized.
@@ -190,17 +231,17 @@ FLOYD_LANG_PROOF("Floyd test suite", "Define variable", "Error: assign to unknow
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "+", "", "") {
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 1 + 2", value_t::make_int(3));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 1 + 2", make_expected_int(3));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "+", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 1 + 2 + 3", value_t::make_int(6));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 1 + 2 + 3", make_expected_int(6));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "*", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 3 * 4", value_t::make_int(12));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 3 * 4", make_expected_int(12));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "parant", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = (3 * 4) * 5", value_t::make_int(60));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = (3 * 4) * 5", make_expected_int(60));
 }
 
 
@@ -209,40 +250,40 @@ FLOYD_LANG_PROOF("Floyd test suite", "parant", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "conditional expression", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = true ? 98 : 99", value_t::make_int(98));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = true ? 98 : 99", make_expected_int(98));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "conditional expression", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = false ? 70 : 80", value_t::make_int(80));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = false ? 70 : 80", make_expected_int(80));
 }
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "conditional expression", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let string result = true ? \"yes\" : \"no\"", value_t::make_string("yes"));
+	ut_verify_global_result_nolib(QUARK_POS, "let string result = true ? \"yes\" : \"no\"", make_expected_string("yes"));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "conditional expression", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let string result = false ? \"yes\" : \"no\"", value_t::make_string("no"));
+	ut_verify_global_result_nolib(QUARK_POS, "let string result = false ? \"yes\" : \"no\"", make_expected_string("no"));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "conditional expression", "?:", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = true ? 4 : 6", value_t::make_int(4));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = true ? 4 : 6", make_expected_int(4));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "conditional expression", "?:", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = false ? 4 : 6", value_t::make_int(6));
-}
-
-FLOYD_LANG_PROOF("Floyd test suite", "conditional expression", "?:", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 1==3 ? 4 : 6", value_t::make_int(6));
-}
-FLOYD_LANG_PROOF("Floyd test suite", "conditional expression", "?:", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 3==3 ? 4 : 6", value_t::make_int(4));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = false ? 4 : 6", make_expected_int(6));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "conditional expression", "?:", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 3==3 ? 2 + 2 : 2 * 3", value_t::make_int(4));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 1==3 ? 4 : 6", make_expected_int(6));
+}
+FLOYD_LANG_PROOF("Floyd test suite", "conditional expression", "?:", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 3==3 ? 4 : 6", make_expected_int(4));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "conditional expression", "?:", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 3==1+2 ? 2 + 2 : 2 * 3", value_t::make_int(4));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 3==3 ? 2 + 2 : 2 * 3", make_expected_int(4));
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "conditional expression", "?:", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 3==1+2 ? 2 + 2 : 2 * 3", make_expected_int(4));
 }
 
 
@@ -250,20 +291,20 @@ FLOYD_LANG_PROOF("Floyd test suite", "conditional expression", "?:", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Parentheses", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 5*(4+4+1)", value_t::make_int(45));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 5*(4+4+1)", make_expected_int(45));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Parentheses", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 5*(2*(1+3)+1)", value_t::make_int(45));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 5*(2*(1+3)+1)", make_expected_int(45));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Parentheses", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 5*((1+3)*2+1)", value_t::make_int(45));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 5*((1+3)*2+1)", make_expected_int(45));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Sign before parentheses", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = -(2+1)*4", value_t::make_int(-12));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = -(2+1)*4", make_expected_int(-12));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Sign before parentheses", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = -4*(2+1)", value_t::make_int(-12));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = -4*(2+1)", make_expected_int(-12));
 }
 
 
@@ -271,13 +312,13 @@ FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Sign before parent
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Spaces", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 5 * ((1 + 3) * 2 + 1)", value_t::make_int(45));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 5 * ((1 + 3) * 2 + 1)", make_expected_int(45));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Spaces", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 5 - 2 * ( 3 )", value_t::make_int(-1));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 5 - 2 * ( 3 )", make_expected_int(-1));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Spaces", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result =  5 - 2 * ( ( 4 )  - 1 )", value_t::make_int(-1));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result =  5 - 2 * ( ( 4 )  - 1 )", make_expected_int(-1));
 }
 
 
@@ -285,38 +326,38 @@ FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Spaces", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Fractional numbers", "") {
-	ut_verify_global_result_nolib(QUARK_POS, "let double result = 2.8/2.0", value_t::make_double(1.4));
+	ut_verify_global_result_nolib(QUARK_POS, "let double result = 2.8/2.0", make_expected_double(1.4));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Fractional numbers", ""){
 //	ut_verify_global_result_nolib(QUARK_POS, "int result = 1/5e10") == 2e-11);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Fractional numbers", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let double result = (4.0-3.0)/(4.0*4.0)", value_t::make_double(0.0625));
+	ut_verify_global_result_nolib(QUARK_POS, "let double result = (4.0-3.0)/(4.0*4.0)", make_expected_double(0.0625));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Fractional numbers", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let double result = 1.0/2.0/2.0", value_t::make_double(0.25));
+	ut_verify_global_result_nolib(QUARK_POS, "let double result = 1.0/2.0/2.0", make_expected_double(0.25));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Fractional numbers", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let double result = 0.25 * .5 * 0.5", value_t::make_double(0.0625));
+	ut_verify_global_result_nolib(QUARK_POS, "let double result = 0.25 * .5 * 0.5", make_expected_double(0.0625));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Fractional numbers", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let double result = .25 / 2.0 * .5", value_t::make_double(0.0625));
+	ut_verify_global_result_nolib(QUARK_POS, "let double result = .25 / 2.0 * .5", make_expected_double(0.0625));
 }
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - EDGE CASES
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Repeated operators", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 1+-2", value_t::make_int(-1));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 1+-2", make_expected_int(-1));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Repeated operators", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = --2", value_t::make_int(2));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = --2", make_expected_int(2));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Repeated operators", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 2---2", value_t::make_int(0));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 2---2", make_expected_int(0));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Repeated operators", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 2-+-2", value_t::make_int(4));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 2-+-2", make_expected_int(4));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "int", "Wrong number of arguments to int-constructor", "exception"){
@@ -360,10 +401,10 @@ FLOYD_LANG_PROOF("Floyd test suite", "Expression", "Error: mix types", "exceptio
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "bool constructor", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true", make_expected_bool(true));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "bool constructor", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false", make_expected_bool(false));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "bool +", "", ""){
@@ -374,14 +415,14 @@ FLOYD_LANG_PROOF("Floyd test suite", "bool +", "", ""){
 			let result = false + true
 
 		)",
-		value_t::make_bool(true)
+		make_expected_bool(true)
 	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "bool +", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = false + false		)", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = false + false		)", make_expected_bool(false));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "bool +", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = true + true		)", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = true + true		)", make_expected_bool(true));
 }
 
 
@@ -392,19 +433,19 @@ FLOYD_LANG_PROOF("Floyd test suite", "bool +", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "==", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = 1 == 1", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = 1 == 1", make_expected_bool(true));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "==", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = 1 == 2", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = 1 == 2", make_expected_bool(false));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "==", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = 1.3 == 1.3", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = 1.3 == 1.3", make_expected_bool(true));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "==", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = \"hello\" == \"hello\"", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = \"hello\" == \"hello\"", make_expected_bool(true));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "==", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = \"hello\" == \"bye\"", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = \"hello\" == \"bye\"", make_expected_bool(false));
 }
 
 
@@ -412,101 +453,101 @@ FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "==", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "<", "") {
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = 1 < 2", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = 1 < 2", make_expected_bool(true));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "<", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = 5 < 2", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = 5 < 2", make_expected_bool(false));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "<", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = 0.3 < 0.4", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = 0.3 < 0.4", make_expected_bool(true));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "<", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = 1.5 < 0.4", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = 1.5 < 0.4", make_expected_bool(false));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "<", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = \"adwark\" < \"boat\"", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = \"adwark\" < \"boat\"", make_expected_bool(true));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "<", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = \"boat\" < \"adwark\"", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = \"boat\" < \"adwark\"", make_expected_bool(false));
 }
 
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - OPERATOR &&
 
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "&&", "") {
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false && false", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false && false", make_expected_bool(false));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "&&", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false && true", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false && true", make_expected_bool(false));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "&&", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true && false", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true && false", make_expected_bool(false));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "&&", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true && true", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true && true", make_expected_bool(true));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "&&", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false && false && false", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false && false && false", make_expected_bool(false));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "&&", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false && false && true", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false && false && true", make_expected_bool(false));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "&&", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false && true && false", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false && true && false", make_expected_bool(false));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "&&", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false && true && true", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false && true && true", make_expected_bool(false));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "&&", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true && false && false", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true && false && false", make_expected_bool(false));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "&&", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true && true && false", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true && true && false", make_expected_bool(false));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "&&", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true && true && true", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true && true && true", make_expected_bool(true));
 }
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - OPERATOR ||
 
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "||", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false || false", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false || false", make_expected_bool(false));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "||", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false || true", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false || true", make_expected_bool(true));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "||", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true || false", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true || false", make_expected_bool(true));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "||", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true || true", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true || true", make_expected_bool(true));
 }
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "||", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false || false || false", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false || false || false", make_expected_bool(false));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "||", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false || false || true", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false || false || true", make_expected_bool(true));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "||", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false || true || false", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false || true || false", make_expected_bool(true));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "||", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false || true || true", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false || true || true", make_expected_bool(true));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "||", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true || false || false", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true || false || false", make_expected_bool(true));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "||", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true || false || true", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true || false || true", make_expected_bool(true));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "||", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true || true || false", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true || true || false", make_expected_bool(true));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "||", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true || true || true", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true || true || true", make_expected_bool(true));
 }
 
 
@@ -529,15 +570,15 @@ const uint64_t k_floyd_uint64_max =	0xffffffff'ffffffff;
 */
 
 FLOYD_LANG_PROOF("Floyd test suite", "int range", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 9223372036854775807", value_t::make_int(0b01111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 9223372036854775807", make_expected_int(0b01111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "int range", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = -9223372036854775808", value_t::make_int(0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = -9223372036854775808", make_expected_int(0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000));
 }
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "int range", "Init with unsigned literal", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 18446744073709551615", value_t::make_int(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111));
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 18446744073709551615", make_expected_int(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "int range", "Init with unsigned literal", ""){
@@ -553,54 +594,54 @@ FLOYD_LANG_PROOF("Floyd test suite", "int range", "Init with unsigned literal", 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_not()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000)", value_t::make_int(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000)", make_expected_int(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_not()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111)", make_expected_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_not()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001)", value_t::make_int(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111110));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001)", make_expected_int(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111110));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_not()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111)", value_t::make_int(0));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111)", make_expected_int(0));
 }
 
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_and()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_and(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_and(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001)", make_expected_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001));
 }
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_or()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_or(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000010, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_or(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000010, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001)", make_expected_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011));
 }
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_xor()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_xor(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000010));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_xor(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001)", make_expected_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000010));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_shift_left()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_left(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_left(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001)", make_expected_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_shift_right()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_right(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_right(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001)", make_expected_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001));
 }
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_shift_right_arithmetic()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_right_arithmetic(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000111, 1)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_right_arithmetic(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000111, 1)", make_expected_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_shift_right_arithmetic()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_right_arithmetic(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111110, 1)", value_t::make_int(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_right_arithmetic(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111110, 1)", make_expected_int(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111));
 }
 
 
@@ -655,19 +696,19 @@ FLOYD_LANG_PROOF("Floyd test suite", "Access variable", "Access undefined variab
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "Construct value", "bool()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bool(false)", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bool(false)", make_expected_bool(false));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Construct value", "bool()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bool(true)", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bool(true)", make_expected_bool(true));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Construct value", "int()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = int(123)", value_t::make_int(123));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = int(123)", make_expected_int(123));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Construct value", "double()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = double(0.0)", value_t::make_double(0.0));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = double(0.0)", make_expected_double(0.0));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Construct value", "double()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = double(123.456)", value_t::make_double(123.456));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = double(123.456)", make_expected_double(123.456));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "Construct value", "string()", ""){
@@ -675,7 +716,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "Construct value", "string()", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "Construct value", "string()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = string(\"ABCD\")", value_t::make_string("ABCD"));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = string(\"ABCD\")", make_expected_string("ABCD"));
 }
 
 
@@ -687,32 +728,32 @@ FLOYD_LANG_PROOF("Floyd test suite", "Construct value", "string()", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "Character literal", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = 'A'", value_t::make_int(65));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = 'A'", make_expected_int(65));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "Character literal", "Escape \0", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\0')___", value_t::make_int('\0'));
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\0')___", make_expected_int('\0'));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Character literal", "Escape \t", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\t')___", value_t::make_int('\t'));
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\t')___", make_expected_int('\t'));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Character literal", "Escape \\", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\\')___", value_t::make_int('\\'));
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\\')___", make_expected_int('\\'));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Character literal", "Escape \n", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\n')___", value_t::make_int('\n'));
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\n')___", make_expected_int('\n'));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Character literal", "Escape \r", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\r')___", value_t::make_int('\r'));
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\r')___", make_expected_int('\r'));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Character literal", "Escape \"", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\"')___", value_t::make_int('\"'));
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\"')___", make_expected_int('\"'));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Character literal", "Escape \'", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\'')___", value_t::make_int('\''));
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\'')___", make_expected_int('\''));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Character literal", "Escape \'", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\/')___", value_t::make_int('/'));
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\/')___", make_expected_int('/'));
 }
 
 
@@ -721,16 +762,16 @@ FLOYD_LANG_PROOF("Floyd test suite", "Character literal", "Escape \'", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "Binary literal", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = 0b0", value_t::make_int(0b0));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = 0b0", make_expected_int(0b0));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Binary literal", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = 0b10000000", value_t::make_int(0b10000000));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = 0b10000000", make_expected_int(0b10000000));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Binary literal", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = 0b1000000000000000000000000000000000000000000000000000000000000001", value_t::make_int(0b1000000000000000000000000000000000000000000000000000000000000001));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = 0b1000000000000000000000000000000000000000000000000000000000000001", make_expected_int(0b1000000000000000000000000000000000000000000000000000000000000001));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Binary literal", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = 0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001", value_t::make_int(0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = 0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001", make_expected_int(0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001));
 }
 
 
@@ -738,19 +779,19 @@ FLOYD_LANG_PROOF("Floyd test suite", "Binary literal", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "Hexadecimal literal", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = 0x0", value_t::make_int(0x0));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = 0x0", make_expected_int(0x0));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Hexadecimal literal", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = 0xff", value_t::make_int(0xff));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = 0xff", make_expected_int(0xff));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Hexadecimal literal", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = 0xabcd", value_t::make_int(0xabcd));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = 0xabcd", make_expected_int(0xabcd));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Hexadecimal literal", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = 0xabcdef01'23456789", value_t::make_int(0xabcdef01'23456789));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = 0xabcdef01'23456789", make_expected_int(0xabcdef01'23456789));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Hexadecimal literal", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = 0xffffffff'ffffffff", value_t::make_int(0xffffffff'ffffffff));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = 0xffffffff'ffffffff", make_expected_int(0xffffffff'ffffffff));
 }
 
 
@@ -907,14 +948,14 @@ FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let string result = to_string(145)		)", value_t::make_string("145"));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let string result = to_string(145)		)", make_expected_string("145"));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let string result = to_string(3.1)		)", value_t::make_string("3.1"));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let string result = to_string(3.1)		)", make_expected_string("3.1"));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let string result = to_string(3.0)		)", value_t::make_string("3.0"));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let string result = to_string(3.0)		)", make_expected_string("3.0"));
 }
 
 
@@ -975,7 +1016,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "func", "Simplest func", ""){
 			let result = f()
 
 		)",
-		value_t::make_int(1000)
+		make_expected_int(1000)
 	);
 }
 
@@ -990,7 +1031,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "func", "Function with int argument", ""){
 			let result = f(1000)
 
 		)",
-		value_t::make_int(1001)
+		make_expected_int(1001)
 	);
 }
 
@@ -1021,7 +1062,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "func", "use function inputs", ""){
 
 			let result = test("xyz");
 		)",
-		value_t::make_string("-xyz-")
+		make_expected_string("-xyz-")
 	);
 }
 
@@ -2427,36 +2468,36 @@ FLOYD_LANG_PROOF("Floyd test suite", "typeid", "", "exception"){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "string constructor", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = string(\"ABCD\")", value_t::make_string("ABCD"));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = string(\"ABCD\")", make_expected_string("ABCD"));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "string constructor", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = \"ABCD\"", value_t::make_string("ABCD"));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = \"ABCD\"", make_expected_string("ABCD"));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "string literal", "Escape \0", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\0")___", value_t::make_string(std::string(1, '\0')));
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\0")___", make_expected_string(std::string(1, '\0')));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string literal", "Escape \t", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\t")___", value_t::make_string("\t"));
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\t")___", make_expected_string("\t"));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string literal", "Escape \\", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\\")___", value_t::make_string("\\"));
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\\")___", make_expected_string("\\"));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string literal", "Escape \n", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\n")___", value_t::make_string("\n"));
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\n")___", make_expected_string("\n"));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string literal", "Escape \r", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\r")___", value_t::make_string("\r"));
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\r")___", make_expected_string("\r"));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string literal", "Escape \"", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\"")___", value_t::make_string("\""));
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\"")___", make_expected_string("\""));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string literal", "Escape \'", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\'")___", value_t::make_string("\'"));
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\'")___", make_expected_string("\'"));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string literal", "Escape \'", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\/")___", value_t::make_string("/"));
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\/")___", make_expected_string("/"));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "string =", "", ""){
@@ -3130,15 +3171,14 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] push_back()", "", ""){
 //#define FLOYD_LANG_PROOF FLOYD_LANG_PROOF_VIP
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] constructor expression", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = 404		)",		value_t::make_int(404));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = 404		)",		make_expected_int(404));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] constructor expression", "", ""){
-	types_t temp;
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(		let [int] result = [10, 20, 30]		)",
-		value_t::make_vector_value(temp, type_t::make_int(), { value_t::make_int(10), value_t::make_int(20), value_t::make_int(30) })
+		make_int_vec({ 10, 20, 30 })
 	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] constructor", "", "3"){
@@ -3150,7 +3190,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] constructor", "", "3"){
 			let result = size(a)
 
 		)",
-		value_t::make_int(3)
+		make_expected_int(3)
 	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] [] lookup", "", ""){
@@ -3169,25 +3209,23 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] [] lookup", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] =", "copy", ""){
-	types_t temp;
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let a = [10, 20, 30] let result = a;		)",		make_int_vec(temp, { 10, 20, 30 }) );
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let a = [10, 20, 30] let result = a;		)",		make_int_vec({ 10, 20, 30 }) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] ==", "same values", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1, 2] == [1, 2]		)",		value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1, 2] == [1, 2]		)",		make_expected_bool(true));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] ==", "different values", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1, 3] == [1, 2]		)",		value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1, 3] == [1, 2]		)",		make_expected_bool(false));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] <", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1, 2] < [1, 2]		)",		value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1, 2] < [1, 2]		)",		make_expected_bool(false));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] <", "different values", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1, 2] < [1, 3]		)",		value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1, 2] < [1, 3]		)",		make_expected_bool(true));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] +", "non-empty vectors", ""){
-	types_t temp;
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let [int] result = [1, 2] + [3, 4]		)",		make_int_vec(temp, { 1, 2, 3, 4 }) );
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let [int] result = [1, 2] + [3, 4]		)",		make_int_vec({ 1, 2, 3, 4 }) );
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] [] lookup", "", ""){
@@ -3208,10 +3246,10 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] [] lookup", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] size()", "empty", "0"){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let [int] a = [] let result = size(a)		)",	value_t::make_int(0) );
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let [int] a = [] let result = size(a)		)",	make_expected_int(0) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] size()", "2", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let [int] a = [1, 2, 3] let result = size(a)		)",		value_t::make_int(3) );
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let [int] a = [1, 2, 3] let result = size(a)		)",		make_expected_int(3) );
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] update()", "", "valid vector, without side effect on original vector"){
@@ -3246,8 +3284,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] find()", "", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] push_back()", "", ""){
-	types_t temp;
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let [int] result = push_back([1, 2], 3)		)",		make_int_vec(temp, { 1, 2, 3 }) );
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let [int] result = push_back([1, 2], 3)		)",		make_int_vec({ 1, 2, 3 }) );
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] push_back()", "", ""){
@@ -3299,8 +3336,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] replace()", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] constructor-expression", "", ""){
-	types_t temp;
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let [double] result = [10.5, 20.5, 30.5]		)",	make_double_vec(temp, { 10.5, 20.5, 30.5 }) );
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let [double] result = [10.5, 20.5, 30.5]		)",	make_double_vec({ 10.5, 20.5, 30.5 }) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector", "Vector can not hold elements of different types.", "exception"){
 	ut_verify_exception_nolib(QUARK_POS, R"(		let a = [3, bool]		)", "[Semantics] Vector of type [int] cannot hold an element of type typeid. Line: 1 \"let a = [3, bool]\"");
@@ -3324,42 +3360,39 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector", "Error: Lookup the unlookupable",
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] =", "copy", ""){
-	types_t temp;
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let a = [10.5, 20.5, 30.5] let result = a		)", make_double_vec(temp, { 10.5, 20.5, 30.5 }) );
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let a = [10.5, 20.5, 30.5] let result = a		)", make_double_vec({ 10.5, 20.5, 30.5 }) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] ==", "same values", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1.5, 2.5] == [1.5, 2.5]		)",	value_t::make_bool(true) );
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1.5, 2.5] == [1.5, 2.5]		)",	make_expected_bool(true) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] ==", "different values", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1.5, 3.5] == [1.5, 2.5]		)",	value_t::make_bool(false) );
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1.5, 3.5] == [1.5, 2.5]		)",	make_expected_bool(false) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] <", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1.5, 2.5] < [1.5, 2.5]		)",	value_t::make_bool(false) );
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1.5, 2.5] < [1.5, 2.5]		)",	make_expected_bool(false) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] <", "different values", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1.5, 2.5] < [1.5, 3.5]		)",	value_t::make_bool(true) );
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1.5, 2.5] < [1.5, 3.5]		)",	make_expected_bool(true) );
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] +", "non-empty vectors", ""){
-	types_t temp;
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let [double] result = [1.5, 2.5] + [3.5, 4.5]		)", make_double_vec(temp, { 1.5, 2.5, 3.5, 4.5 }) );
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let [double] result = [1.5, 2.5] + [3.5, 4.5]		)", make_double_vec({ 1.5, 2.5, 3.5, 4.5 }) );
 }
 
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] size()", "empty", "0"){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let [double] a = [] let result = size(a)		)",	value_t::make_int(0) );
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let [double] a = [] let result = size(a)		)",	make_expected_int(0) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] size()", "2", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let [double] a = [1.5, 2.5, 3.5] let result = size(a)		)",	value_t::make_int(3) );
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let [double] a = [1.5, 2.5, 3.5] let result = size(a)		)",	make_expected_int(3) );
 }
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] push_back()", "", ""){
-	types_t temp;
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let [double] result = push_back([1.5, 2.5], 3.5)		)", make_double_vec(temp, { 1.5, 2.5, 3.5 }) );
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let [double] result = push_back([1.5, 2.5], 3.5)		)", make_double_vec({ 1.5, 2.5, 3.5 }) );
 }
 
 
@@ -4554,7 +4587,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "", ""){
 			let result = a.x
 
 		)",
-		value_t::make_double(100.0)
+		make_expected_double(100.0)
 	);
 }
 
@@ -4569,7 +4602,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Read member of struct sitting in
 			let result = c[1].y
 
 		)",
-		value_t::make_double(201.0)
+		make_expected_double(201.0)
 	);
 }
 
@@ -4657,7 +4690,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "json::null", "", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "json<string> Infer json::string", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = "hello"		)", value_t::make_json("hello"));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = "hello"		)", make_expected_json("hello"));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "json<string> string-size()", "", ""){
@@ -4669,12 +4702,12 @@ FLOYD_LANG_PROOF("Floyd test suite", "json<string> string-size()", "", ""){
 			let result = size(a);
 
 		)",
-		value_t::make_int(5)
+		make_expected_int(5)
 	);
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "json()", "json(123)", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = json(123)", value_t::make_json(json_t(123.0)));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = json(123)", make_expected_json(json_t(123.0)));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "json()", "", ""){
@@ -4685,27 +4718,27 @@ FLOYD_LANG_PROOF("Floyd test suite", "json()", "", ""){
 			let result = json("hello")
 
 		)",
-		value_t::make_json(json_t("hello"))
+		make_expected_json(json_t("hello"))
 	);
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "json()", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = json([1,2,3])", value_t::make_json(json_t::make_array({1,2,3})));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = json([1,2,3])", make_expected_json(json_t::make_array({1,2,3})));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "json<number> construct number", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = 13		)", value_t::make_json(13));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = 13		)", make_expected_json(13));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "json<true> construct true", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = true		)", value_t::make_json(true));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = true		)", make_expected_json(true));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "json<false> construct false", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = false		)", value_t::make_json(false));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = false		)", make_expected_json(false));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "json<array> construct array", "construct array", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = ["hello", "bye"]		)", value_t::make_json(json_t::make_array(std::vector<json_t>{ "hello", "bye" }))	);
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = ["hello", "bye"]		)", make_expected_json(json_t::make_array(std::vector<json_t>{ "hello", "bye" }))	);
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "json<string> read array member", "", ""){
@@ -4717,7 +4750,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "json<string> read array member", "", ""){
 			let result = a[0]
 
 		)",
-		value_t::make_json("hello")
+		make_expected_json("hello")
 	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "json<string> read array member", "", ""){
@@ -4729,7 +4762,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "json<string> read array member", "", ""){
 			let result = string(a[0]) + string(a[1])
 
 		)",
-		value_t::make_string("hellobye")
+		make_expected_string("hellobye")
 	);
 }
 
@@ -4742,7 +4775,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "json<string> read array member", "", ""){
 			let result = a[1]
 
 		)",
-		value_t::make_json("bye")
+		make_expected_json("bye")
 	);
 }
 
@@ -4755,7 +4788,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "json<string> size()", "", ""){
 			let result = size(a)
 
 		)",
-		value_t::make_int(4)
+		make_expected_int(4)
 	);
 }
 
@@ -4841,7 +4874,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "json<string> size()", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "json<null> construct", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = null		)", value_t::make_json(json_t()));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = null		)", make_expected_json(json_t()));
 }
 
 
@@ -4858,7 +4891,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "json", "", "error"){
 			let result = c["image"][1].y
 
 		)",
-		"[Semantics] Dictionary of type [string:string] cannot hold an element of type [struct {double x;double y;}]. Line: 6 \"let c = { \"version\": \"1.0\", \"image\": [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)] }\""
+		"[Semantics] Dictionary of type [string:string] cannot hold an element of type [pixel_t]. Line: 6 \"let c = { \"version\": \"1.0\", \"image\": [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)] }\""
 	);
 }
 
@@ -4870,12 +4903,12 @@ FLOYD_LANG_PROOF("Floyd test suite", "json", "", "error"){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "json<string> {}", "Infer {}", "JSON object"){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = {}		)", value_t::make_json(json_t::make_object()));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = {}		)", make_expected_json(json_t::make_object()));
 }
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "get_json_type()", "", "1"){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json({}))		)", value_t::make_int(1));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json({}))		)", make_expected_int(1));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "get_json_type()", "", "1"){
@@ -4898,27 +4931,27 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_json_type()", "", "1"){
 			let result = get_json_type(json({ "color": "black"}))
 
 		)",
-		value_t::make_int(1)
+		make_expected_int(1)
 	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "get_json_type()", "array", "2"){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json([]))		)", value_t::make_int(2));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json([]))		)", make_expected_int(2));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "get_json_type()", "string", "3"){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json("hello"))		)", value_t::make_int(3));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json("hello"))		)", make_expected_int(3));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "get_json_type()", "number", "4"){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json(13))		)", value_t::make_int(4));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json(13))		)", make_expected_int(4));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "get_json_type()", "true", "5"){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json(true))		)", value_t::make_int(5));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json(true))		)", make_expected_int(5));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "get_json_type()", "false", "6"){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json(false))		)", value_t::make_int(6));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json(false))		)", make_expected_int(6));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "get_json_type()", "null", "7"){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json(null))		)", value_t::make_int(7));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json(null))		)", make_expected_int(7));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "get_json_type()", "DOCUMENTATION SNIPPET", ""){
@@ -4984,28 +5017,32 @@ FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
 			let result = typeof(145)
 
 		)",
-		value_t::make_typeid_value(type_t::make_int())
+		make_expected_typeid(types_t(), type_t::make_int())
 	);
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_string(typeof(145))		)", value_t::make_string("int"));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_string(typeof(145))		)", make_expected_string("int"));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = typeof("hello")		)", value_t::make_typeid_value(type_t::make_string()));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = typeof("hello")		)", make_expected_typeid(types_t(), type_t::make_string()));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_string(typeof("hello"))		)",	value_t::make_string("string"));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_string(typeof("hello"))		)",	make_expected_string("string"));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
 	types_t temp;
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = typeof([1,2,3])		)", value_t::make_typeid_value(make_vector(temp, type_t::make_int()))	);
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(		let result = typeof([1,2,3])		)",
+		make_expected_typeid(temp, make_vector(temp, type_t::make_int()))
+	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_string(typeof([1,2,3]))		)",value_t::make_string("[int]") );
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_string(typeof([1,2,3]))		)",make_expected_string("[int]") );
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
@@ -5016,7 +5053,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
 			let result = to_string(typeof(int));
 
 		)",
-		value_t::make_string("typeid")
+		make_expected_string("typeid")
 	);
 }
 
@@ -5027,7 +5064,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "parse_json_script()", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = parse_json_script("\"genelec\"")		)", value_t::make_json(json_t("genelec")));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = parse_json_script("\"genelec\"")		)", make_expected_json(json_t("genelec")));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "parse_json_script()", "", ""){
@@ -5081,34 +5118,34 @@ FLOYD_LANG_PROOF("Floyd test suite", "generate_json_script()", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "to_json()", "bool", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(true)		)", value_t::make_json(json_t(true)));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(true)		)", make_expected_json(json_t(true)));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "to_json()", "bool", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(false)		)", value_t::make_json(json_t(false)));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(false)		)", make_expected_json(json_t(false)));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "to_json()", "int", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(789)		)", value_t::make_json(json_t(789.0)));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(789)		)", make_expected_json(json_t(789.0)));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "to_json()", "int", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(-987)		)", value_t::make_json(json_t(-987.0)));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(-987)		)", make_expected_json(json_t(-987.0)));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "to_json()", "double", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(-0.125)		)", value_t::make_json(json_t(-0.125)));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(-0.125)		)", make_expected_json(json_t(-0.125)));
 }
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "to_json()", "string", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json("fanta")		)", value_t::make_json(json_t("fanta")));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json("fanta")		)", make_expected_json(json_t("fanta")));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "to_json()", "typeid", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(typeof([2,2,3]))		)", value_t::make_json(json_t::make_array({ "vector", "int"})));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(typeof([2,2,3]))		)", make_expected_json(json_t::make_array({ "vector", "int"})));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "to_json()", "[]", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json([1,2,3])		)", value_t::make_json(json_t::make_array({ 1, 2, 3 })));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json([1,2,3])		)", make_expected_json(json_t::make_array({ 1, 2, 3 })));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "to_json()", "{}", ""){
@@ -5119,7 +5156,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "to_json()", "{}", ""){
 			let result = to_json({"ten": 10, "eleven": 11})
 
 		)",
-		value_t::make_json(
+		make_expected_json(
 			json_t::make_object({{ "ten", 10 }, { "eleven", 11 }})
 		)
 	);
@@ -5136,7 +5173,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "generate_json_script()", "pixel_t", ""){
 			let result = generate_json_script(a)
 
 		)",
-		value_t::make_string("{ \"x\": 100, \"y\": 200 }")
+		make_expected_string("{ \"x\": 100, \"y\": 200 }")
 	);
 }
 
@@ -5151,7 +5188,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "generate_json_script()", "[pixel_t]", ""){
 			let result = generate_json_script(a)
 
 		)",
-		value_t::make_string("[{ \"x\": 100, \"y\": 200 }, { \"x\": 101, \"y\": 201 }]")
+		make_expected_string("[{ \"x\": 100, \"y\": 200 }, { \"x\": 101, \"y\": 201 }]")
 	);
 }
 
@@ -5163,34 +5200,36 @@ FLOYD_LANG_PROOF("Floyd test suite", "generate_json_script()", "[pixel_t]", ""){
 	??? test all types!
 */
 FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "bool", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let json z = to_json(true); let result = from_json(z, bool)		)", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let json z = to_json(true); let result = from_json(z, bool)		)", make_expected_bool(true));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "bool", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = from_json(to_json(true), bool)		)", value_t::make_bool(true));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = from_json(to_json(true), bool)		)", make_expected_bool(true));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "bool", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = from_json(to_json(false), bool)		)", value_t::make_bool(false));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = from_json(to_json(false), bool)		)", make_expected_bool(false));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "int", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = from_json(to_json(91), int)		)", value_t::make_int(91));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = from_json(to_json(91), int)		)", make_expected_int(91));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "double", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = from_json(to_json(-0.125), double)		)", value_t::make_double(-0.125));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = from_json(to_json(-0.125), double)		)", make_expected_double(-0.125));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "string", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = from_json(to_json(""), string)		)", value_t::make_string(""));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = from_json(to_json(""), string)		)", make_expected_string(""));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "string", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = from_json(to_json("cola"), string)		)", value_t::make_string("cola"));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = from_json(to_json("cola"), string)		)", make_expected_string("cola"));
 }
 
-FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "point_t", ""){
+#if 0
+//??? requires unnamed structs
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "from_json()", "point_t", ""){
 	types_t temp;
 	const auto point_t_def = std::vector<member_t>{
 		member_t(type_t::make_double(), "x"),
@@ -5210,9 +5249,10 @@ FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "point_t", ""){
 			let result = from_json(to_json(point_t(1.0, 3.0)), point_t)
 
 		)",
-		expected
+		value_and_type_to_ast_json(temp, expected)
 	);
 }
+#endif
 
 
 
@@ -6046,7 +6086,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "cmath_pi", "", ""){
 			let result = x >= 3.14 && x < 3.15
 
 		)",
-		value_t::make_bool(true)
+		make_expected_bool(true)
 	);
 }
 
@@ -6064,10 +6104,13 @@ FLOYD_LANG_PROOF("Floyd test suite", "", "pixel_t()", ""){
 
 		"struct pixel_t { int red int green int blue } let result = pixel_t(1,2,3)",
 
-		value_t::make_struct_value(
+		value_and_type_to_ast_json(
 			temp,
-			make_struct(temp, struct_type_desc_t(pixel_t__def)),
-			std::vector<value_t>{ value_t::make_int(1), value_t::make_int(2), value_t::make_int(3) }
+			value_t::make_struct_value(
+				temp,
+				make_struct(temp, struct_type_desc_t(pixel_t__def)),
+				std::vector<value_t>{ value_t::make_int(1), value_t::make_int(2), value_t::make_int(3) }
+			)
 		)
 	);
 }
@@ -6256,9 +6299,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_fs_environment()", "", ""){
 			let result = typeof(x)
 
 		)",
-		value_t::make_typeid_value(
-			make__fs_environment_t__type(temp)
-		)
+		make_expected_typeid(temp, make__fs_environment_t__type(temp))
 	);
 }
 
@@ -6281,7 +6322,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "does_fsentry_exist()", "", ""){
 			let result = typeof(x)
 
 		)",
-		value_t::make_typeid_value(type_t::make_bool())
+		make_expected_typeid(types_t(), type_t::make_bool())
 	);
 }
 
@@ -6297,7 +6338,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "does_fsentry_exist()", "", ""){
 			assert(result == false)
 
 		)",
-		value_t::make_bool(false)
+		make_expected_bool(false)
 	);
 }
 

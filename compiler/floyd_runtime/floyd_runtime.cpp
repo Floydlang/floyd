@@ -23,7 +23,6 @@ value_t unflatten_json_to_specific_type(types_t& types, const json_t& v, const t
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(v.check_invariant());
 
-
 	struct visitor_t {
 		types_t& types;
 		const type_t& target_type;
@@ -142,7 +141,7 @@ value_t unflatten_json_to_specific_type(types_t& types, const json_t& v, const t
 			QUARK_ASSERT(false); throw std::exception();
 		}
 		value_t operator()(const named_type_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			return unflatten_json_to_specific_type(types, v, e.destination_type);
 		}
 	};
 	return std::visit(visitor_t{ types, target_type, v}, get_type_variant(types, target_type));
