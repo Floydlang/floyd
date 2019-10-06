@@ -214,7 +214,7 @@ QUARK_TEST("test_helpers", "run_program()", "", ""){
 		make_compilation_unit("func int main([string] args){ return 1003 }", "", compilation_unit_mode::k_no_core_lib),
 		make_default_compiler_settings(),
 		{ "a", "b" },
-		test_report_t{ value_and_type_to_ast_json(types, value_t::make_undefined()), run_output_t(1003, {}), { }, "" },
+		test_report_t{ json_t(), run_output_t(1003, {}), { }, "" },
 		false
 	);
 
@@ -226,7 +226,7 @@ QUARK_TEST("test_helpers", "run_program()", "", ""){
 		make_compilation_unit("print(1) print(234)", "", compilation_unit_mode::k_no_core_lib),
 		make_default_compiler_settings(),
 		{},
-		test_report_t{ value_and_type_to_ast_json(types, value_t::make_undefined()), run_output_t(k_default_main_result, {}), {"1", "234" }, "" },
+		test_report_t{ json_t(), run_output_t(k_default_main_result, {}), {"1", "234" }, "" },
 		false
 	);
 }
