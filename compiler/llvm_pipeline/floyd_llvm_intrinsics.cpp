@@ -893,7 +893,7 @@ static runtime_value_t filter__carray(floyd_runtime_t* frp, value_backend_t& bac
 
 	auto count = vec.get_element_count();
 
-	const auto e_element_itype = lookup_vector_element_itype(backend, type_t(elements_vec_type));
+	const auto e_element_itype = lookup_vector_element_type(backend, type_t(elements_vec_type));
 
 	std::vector<runtime_value_t> acc;
 	for(int i = 0 ; i < count ; i++){
@@ -939,7 +939,7 @@ static runtime_value_t filter__hamt(floyd_runtime_t* frp, value_backend_t& backe
 
 	auto count = vec.get_element_count();
 
-	const auto e_element_itype = lookup_vector_element_itype(backend, type_t(elements_vec_type));
+	const auto e_element_itype = lookup_vector_element_type(backend, type_t(elements_vec_type));
 
 	std::vector<runtime_value_t> acc;
 	for(int i = 0 ; i < count ; i++){
@@ -1275,7 +1275,7 @@ static runtime_value_t floydrt_push_back_carray_pod(floyd_runtime_t* frp, runtim
 static runtime_value_t floydrt_push_back_carray_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
 	auto& r = get_floyd_runtime(frp);
 
-	type_t element_itype = lookup_vector_element_itype(r.backend, type_t(vec_type));
+	type_t element_itype = lookup_vector_element_type(r.backend, type_t(vec_type));
 	const auto element_count = vec.vector_carray_ptr->get_element_count();
 	auto source_ptr = vec.vector_carray_ptr->get_element_ptr();
 
@@ -1304,7 +1304,7 @@ static runtime_value_t floydrt_push_back_hamt_nonpod(floyd_runtime_t* frp, runti
 	auto& r = get_floyd_runtime(frp);
 
 	runtime_value_t vec2 = push_back_immutable(vec, element);
-	type_t element_itype = lookup_vector_element_itype(r.backend, type_t(vec_type));
+	type_t element_itype = lookup_vector_element_type(r.backend, type_t(vec_type));
 
 	for(int i = 0 ; i < vec2.vector_hamt_ptr->get_element_count() ; i++){
 		const auto& value = vec2.vector_hamt_ptr->load_element(i);

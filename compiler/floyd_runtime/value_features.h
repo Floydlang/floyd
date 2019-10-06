@@ -121,7 +121,7 @@ inline const runtime_value_t update__vector_hamt_nonpod(value_backend_t& backend
 	}
 
 	//??? compile time. Provide as a constaint integer arg
-	const auto element_itype = lookup_vector_element_itype(backend, type_t(coll_type));
+	const auto element_itype = lookup_vector_element_type(backend, type_t(coll_type));
 
 	const auto result = store_immutable(coll_value, i, value);
 

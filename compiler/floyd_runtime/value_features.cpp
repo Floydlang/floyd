@@ -90,7 +90,7 @@ const runtime_value_t update__vector_carray(value_backend_t& backend, runtime_va
 
 	const auto vec = unpack_vector_carray_arg(backend, coll_value, coll_type);
 	const auto index2 = index.int_value;
-	const auto element_itype = lookup_vector_element_itype(backend, type_t(coll_type));
+	const auto element_itype = lookup_vector_element_type(backend, type_t(coll_type));
 
 	if(index2 < 0 || index2 >= vec->get_element_count()){
 		quark::throw_runtime_error("Position argument to update() is outside collection span.");
@@ -215,7 +215,7 @@ const runtime_value_t subset__carray(value_backend_t& backend, runtime_value_t c
 		throw std::exception();
 	}
 
-	const auto element_itype = lookup_vector_element_itype(backend, type_t(coll_type));
+	const auto element_itype = lookup_vector_element_type(backend, type_t(coll_type));
 
 	auto vec2 = alloc_vector_carray(backend.heap, len2, len2, type0);
 	if(is_rc_value(peek2(backend.types, element_itype))){
@@ -249,7 +249,7 @@ const runtime_value_t subset__hamt(value_backend_t& backend, runtime_value_t col
 		throw std::exception();
 	}
 
-	const auto element_itype = lookup_vector_element_itype(backend, type_t(coll_type));
+	const auto element_itype = lookup_vector_element_type(backend, type_t(coll_type));
 
 	auto vec2 = alloc_vector_hamt(backend.heap, len2, len2, type_t(coll_type));
 	if(is_rc_value(peek2(backend.types, element_itype))){
@@ -325,7 +325,7 @@ const runtime_value_t replace__carray(value_backend_t& backend, runtime_value_t 
 	const auto& type0 = lookup_type_ref(backend, coll_type);
 	QUARK_ASSERT(lookup_type_ref(backend, replacement_type) == type0);
 
-	const auto element_itype = lookup_vector_element_itype(backend, type_t(coll_type));
+	const auto element_itype = lookup_vector_element_type(backend, type_t(coll_type));
 
 	const auto vec = unpack_vector_carray_arg(backend, coll_value, coll_type);
 	const auto replace_vec = unpack_vector_carray_arg(backend, replacement_value, replacement_type);
@@ -359,7 +359,7 @@ const runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t co
 	const auto& type0 = lookup_type_ref(backend, coll_type);
 	QUARK_ASSERT(lookup_type_ref(backend, replacement_type) == type0);
 
-	const auto element_itype = lookup_vector_element_itype(backend, type_t(coll_type));
+	const auto element_itype = lookup_vector_element_type(backend, type_t(coll_type));
 
 	const auto& vec = *coll_value.vector_hamt_ptr;
 	const auto& replace_vec = *replacement_value.vector_hamt_ptr;
@@ -619,7 +619,7 @@ runtime_value_t concat_vector_carray(value_backend_t& backend, const type_t& typ
 
 	//??? warning: assumes element = allocation.
 
-	const auto element_itype = lookup_vector_element_itype(backend, type);
+	const auto element_itype = lookup_vector_element_type(backend, type);
 
 	auto dest_ptr = result.vector_carray_ptr->get_element_ptr();
 	auto dest_ptr2 = dest_ptr + lhs.vector_carray_ptr->get_element_count();
@@ -662,7 +662,7 @@ runtime_value_t concat_vector_hamt(value_backend_t& backend, const type_t& type,
 
 	//??? warning: assumes element = allocation.
 
-	const auto element_itype = lookup_vector_element_itype(backend, type);
+	const auto element_itype = lookup_vector_element_type(backend, type);
 
 	//??? Causes a full path copy for EACH ELEMENT = slow. better to make new hamt in one go.
 	if(is_rc_value(peek2(backend.types, element_itype))){

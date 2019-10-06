@@ -88,7 +88,7 @@ struct STRUCT_T;
 
 typedef int32_t runtime_type_t;
 
-runtime_type_t make_runtime_type(type_t itype);
+runtime_type_t make_runtime_type(type_t type);
 
 
 
@@ -692,8 +692,8 @@ struct value_backend_t {
 
 	heap_t heap;
 
-	//	??? Also go from itype -> struct_layout
-	// 	??? also go from itype -> collection element-type without using type_t.
+	//	??? Also go from type -> struct_layout
+	// 	??? also go from type -> collection element-type without using type_t.
 
 	types_t types;
 	std::vector<type_t> child_type;
@@ -704,20 +704,15 @@ struct value_backend_t {
 
 	//	Temporary *global* constant that switches between array-based vector backened and HAMT-based vector.
 	//	The string always uses array-based vector.
-	//	There is still only one type_t/itype for vector.
 	//	Future: make this flag a per-vector setting.
 	config_t config;
 };
 
 
-//type_t lookup_itype(const value_backend_t& backend, const type_t& type);
-
-//	WARNING: We are using type_t here in the runtime code. This type is slow and allocates memory. Always use const&!
-type_t lookup_type_ref(const value_backend_t& backend, type_t itype);
 type_t lookup_type_ref(const value_backend_t& backend, runtime_type_t type);
 
-inline type_t lookup_vector_element_itype(const value_backend_t& backend, type_t itype);
-inline type_t lookup_dict_value_itype(const value_backend_t& backend, type_t itype);
+inline type_t lookup_vector_element_type(const value_backend_t& backend, type_t type);
+inline type_t lookup_dict_value_type(const value_backend_t& backend, type_t type);
 
 //??? Don't return pair, only struct_layout_t.
 const std::pair<type_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, type_t type);
@@ -731,36 +726,36 @@ bool is_rc_value(const type_desc_t& type);
 
 
 
-void retain_value(value_backend_t& backend, runtime_value_t value, type_t itype);
+void retain_value(value_backend_t& backend, runtime_value_t value, type_t type);
 
-void retain_vector_carray(value_backend_t& backend, runtime_value_t vec, type_t itype);
-inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, type_t itype);
+void retain_vector_carray(value_backend_t& backend, runtime_value_t vec, type_t type);
+inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, type_t type);
 
-void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, type_t itype);
-void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, type_t itype);
+void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, type_t type);
+void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, type_t type);
 
-void retain_struct(value_backend_t& backend, runtime_value_t s, type_t itype);
-
-
-
-void release_value(value_backend_t& backend, runtime_value_t value, type_t itype);
-
-void release_vector_carray_pod(value_backend_t& backend, runtime_value_t vec, type_t itype);
-void release_vector_carray_nonpod(value_backend_t& backend, runtime_value_t vec, type_t itype);
-
-inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, type_t itype);
-inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, type_t itype);
-
-void release_vec(value_backend_t& backend, runtime_value_t vec, type_t itype);
+void retain_struct(value_backend_t& backend, runtime_value_t s, type_t type);
 
 
-void release_dict_cppmap(value_backend_t& backend, runtime_value_t dict0, type_t itype);
-void release_dict_hamt(value_backend_t& backend, runtime_value_t dict0, type_t itype);
-void release_dict(value_backend_t& backend, runtime_value_t dict0, type_t itype);
+
+void release_value(value_backend_t& backend, runtime_value_t value, type_t type);
+
+void release_vector_carray_pod(value_backend_t& backend, runtime_value_t vec, type_t type);
+void release_vector_carray_nonpod(value_backend_t& backend, runtime_value_t vec, type_t type);
+
+inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, type_t type);
+inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, type_t type);
+
+void release_vec(value_backend_t& backend, runtime_value_t vec, type_t type);
 
 
-void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_value_t vec, type_t itype);
-void release_struct(value_backend_t& backend, runtime_value_t s, type_t itype);
+void release_dict_cppmap(value_backend_t& backend, runtime_value_t dict0, type_t type);
+void release_dict_hamt(value_backend_t& backend, runtime_value_t dict0, type_t type);
+void release_dict(value_backend_t& backend, runtime_value_t dict0, type_t type);
+
+
+void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_value_t vec, type_t type);
+void release_struct(value_backend_t& backend, runtime_value_t s, type_t type);
 
 
 
@@ -844,37 +839,37 @@ inline int32_t inc_rc(const heap_alloc_64_t& alloc){
 
 
 
-inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, type_t itype){
+inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
-	QUARK_ASSERT(itype.check_invariant());
-	QUARK_ASSERT(is_rc_value(peek2(backend.types, itype)));
-	QUARK_ASSERT(is_vector_hamt(backend.config, itype));
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(is_rc_value(peek2(backend.types, type)));
+	QUARK_ASSERT(is_vector_hamt(backend.config, type));
 
 	inc_rc(vec.vector_hamt_ptr->alloc);
 }
 
-inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, type_t itype){
+inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
-	QUARK_ASSERT(itype.check_invariant());
-	QUARK_ASSERT(is_vector_hamt(backend.config, itype));
-	QUARK_ASSERT(is_rc_value(peek2(backend.types, lookup_vector_element_itype(backend, itype))) == false);
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(is_vector_hamt(backend.config, type));
+	QUARK_ASSERT(is_rc_value(peek2(backend.types, lookup_vector_element_type(backend, type))) == false);
 
 	if(dec_rc(vec.vector_hamt_ptr->alloc) == 0){
 		dispose_vector_hamt(vec);
 	}
 }
 
-inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, type_t itype){
+inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
-	QUARK_ASSERT(itype.check_invariant());
-	QUARK_ASSERT(is_vector_hamt(backend.config, itype));
-	QUARK_ASSERT(is_rc_value(peek2(backend.types, lookup_vector_element_itype(backend, itype))) == true);
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(is_vector_hamt(backend.config, type));
+	QUARK_ASSERT(is_rc_value(peek2(backend.types, lookup_vector_element_type(backend, type))) == true);
 
 	if(dec_rc(vec.vector_hamt_ptr->alloc) == 0){
-		release_vector_hamt_elements_internal(backend, vec, itype);
+		release_vector_hamt_elements_internal(backend, vec, type);
 		dispose_vector_hamt(vec);
 	}
 }
@@ -893,20 +888,20 @@ inline uint64_t size_to_allocation_blocks(std::size_t size){
 
 
 
-inline type_t lookup_vector_element_itype(const value_backend_t& backend, type_t itype){
+inline type_t lookup_vector_element_type(const value_backend_t& backend, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(itype.check_invariant());
-	QUARK_ASSERT(itype.is_vector());
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(type.is_vector());
 
-	return backend.child_type[itype.get_lookup_index()];
+	return backend.child_type[type.get_lookup_index()];
 }
 
-inline type_t lookup_dict_value_itype(const value_backend_t& backend, type_t itype){
+inline type_t lookup_dict_value_type(const value_backend_t& backend, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(itype.check_invariant());
-	QUARK_ASSERT(itype.is_dict());
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(type.is_dict());
 
-	return backend.child_type[itype.get_lookup_index()];
+	return backend.child_type[type.get_lookup_index()];
 }
 
 }	// floyd
