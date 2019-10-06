@@ -114,7 +114,6 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 	func string make_benchmark_report([benchmark_result2_t] results)
 
 
-/*
 
 
 	func [string: json] detect_hardware_caps()
@@ -122,8 +121,6 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 	func string make_hardware_caps_report([string: json] caps)
 	func string make_hardware_caps_report_brief([string: json] caps)
 	func string get_current_date_and_time_string() impure
-
-
 
 
 	let double cmath_pi = 3.14159265358979323846
@@ -256,7 +253,6 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 	func void create_directory_branch(string abs_path) impure
 	func void delete_fsentry_deep(string abs_path) impure
 	func void rename_fsentry(string abs_path, string n) impure
-*/
 )";
 
 
