@@ -22,7 +22,7 @@
 
 namespace floyd {
 
-static const bool k_trace_io = false;
+static const bool k_trace_io = true;
 
 
 
@@ -783,8 +783,7 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 	const auto test_name = statement.name;
 	const auto function_link_name = "benchmark__" + test_name;
 
-	const auto benchmark_def_itype = resolve_and_intern_itype(a_acc, k_no_location, make_symbol_ref(a_acc._types, "benchmark_def"));
-//	const auto benchmark_result_itype = resolve_and_intern_itype(a_acc, k_no_location, type_t::make_identifier("benchmark_result"));
+	const auto benchmark_def_itype = resolve_and_intern_itype(a_acc, k_no_location, make_symbol_ref(a_acc._types, "benchmark_def_t"));
 	const auto f_itype = resolve_and_intern_itype(a_acc, k_no_location, make_benchmark_function_t(a_acc._types));
 
 
@@ -2697,6 +2696,7 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 	symbol_map.push_back( { "json_false", symbol_t::make_immutable_precalc(type_t::make_int(), value_t::make_int(6)) });
 	symbol_map.push_back( { "json_null", symbol_t::make_immutable_precalc(type_t::make_int(), value_t::make_int(7)) });
 
+
 	const auto benchmark_result_itype = resolve_and_intern_itype(a, k_no_location, make_benchmark_result_t(a._types));
 	const auto benchmark_result_itype2 = name_named_type(a._types, make_type_tag(a, "benchmark_result_t"), benchmark_result_itype);
 	symbol_map.push_back( { "benchmark_result_t", symbol_t::make_named_type(benchmark_result_itype2) } );
@@ -2704,6 +2704,9 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 	const auto benchmark_def_itype = resolve_and_intern_itype(a, k_no_location, make_benchmark_def_t(a._types));
 	const auto benchmark_def_itype2 = name_named_type(a._types, make_type_tag(a, "benchmark_def_t"), benchmark_def_itype);
 	symbol_map.push_back( { "benchmark_def_t", symbol_t::make_named_type(benchmark_def_itype2)} );
+
+	const auto benchmark_result_vec_type = resolve_and_intern_itype(a, k_no_location, make_vector(a._types, make_symbol_ref(a._types, "benchmark_result_t")));
+	symbol_map.push_back( { "benchmark_result_vec_t", symbol_t::make_named_type(benchmark_result_vec_type)} );
 
 	//	Reserve a symbol table entry for benchmark_registry instance.
 	{
@@ -2737,7 +2740,7 @@ const body_t make_global_body(analyser_t& a){
 		resolve_and_intern_itype(a, k_no_location, e._function_type);
 	}
 
-	if(false) trace_analyser(a);
+	if(true) trace_analyser(a);
 
 	const auto result = analyse_statements(a, global_body._statements, type_t::make_void());
 	a = result.first;

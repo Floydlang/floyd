@@ -793,7 +793,7 @@ inline void run_tests(const unit_test_registry& registry, const std::vector<std:
 
 	if(vip_count > 0){
 		std::vector<test_result> test_results;
-		std::cout << "Running SUBSET of tests: " << vip_count << " / " << total_test_count << std::endl;
+		std::cout << "Running VIP tests: " << vip_count << " / " << total_test_count << std::endl;
 
 		int fail_count = 0;
 		for(const auto& test: sorted_tests){
@@ -812,13 +812,12 @@ inline void run_tests(const unit_test_registry& registry, const std::vector<std:
 			}
 		}
 
+		std::cout << "================================================================================" << std::endl;
 		if(fail_count == 0){
-			std::cout << "================================================================================" << std::endl;
-			std::cout << "Success SUBSET " << vip_count << " / " << total_test_count << std::endl;
+			std::cout << "VIP mode: Success all " << vip_count << " passed" << std::endl;
 		}
 		else{
-			std::cout << "================================================================================" << std::endl;
-			std::cout << "Failure SUBSET " << fail_count << std::endl;
+			std::cout << "VIP mode: Failure " << fail_count << " / " << vip_count << std::endl;
 			trace_failures(sorted_tests, test_results);
 			exit(-1);
 		}
@@ -839,13 +838,12 @@ inline void run_tests(const unit_test_registry& registry, const std::vector<std:
 			}
 		}
 
+		std::cout << "================================================================================" << std::endl;
 		if(fail_count == 0){
-			std::cout << "================================================================================" << std::endl;
-			std::cout << "Success ALL  " << sorted_tests.size() << std::endl;
+			std::cout << "Success all " << sorted_tests.size() << " tests" <<std::endl;
 		}
 		else{
-			std::cout << "================================================================================" << std::endl;
-			std::cout << "Failure ALL " << fail_count << std::endl;
+			std::cout << "Failure " << fail_count << " of all (" << total_test_count << ")" << std::endl;
 			trace_failures(sorted_tests, test_results);
 			exit(-1);
 		}

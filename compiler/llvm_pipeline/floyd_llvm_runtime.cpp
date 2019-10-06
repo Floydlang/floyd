@@ -895,7 +895,9 @@ run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::str
 std::vector<bench_t> collect_benchmarks(llvm_execution_engine_t& ee){
 	std::pair<void*, type_t> benchmark_registry_bind = bind_global(ee, k_global_benchmark_registry);
 	QUARK_ASSERT(benchmark_registry_bind.first != nullptr);
-	QUARK_ASSERT(benchmark_registry_bind.second == make_vector(ee.backend.types, make_benchmark_def_t(ee.backend.types)));
+
+//	??? This requires resolving symbols, which is too late at runtime. Resolve these earlier?
+//	QUARK_ASSERT(benchmark_registry_bind.second == make_vector(ee.backend.types, make_benchmark_def_t(ee.backend.types)));
 
 	const value_t reg = load_global(ee, benchmark_registry_bind);
 	const auto v = reg.get_vector_value();
@@ -913,6 +915,15 @@ std::vector<bench_t> collect_benchmarks(llvm_execution_engine_t& ee){
 
 ///??? should lookup structs via their name in symbol table!
 std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, const std::vector<bench_t>& tests){
+	QUARK_ASSERT(ee.check_invariant());
+
+//	const auto result2 = from_runtime_value(ee, bench_result, make_vector(types2, make_benchmark_result_t(types2)));
+//	QUARK_ASSERT(types2.nodes.size() == types.nodes.size());
+
+	const auto benchmark_result_vec_type_symbol = find_symbol_required(ee.global_symbols, "benchmark_result_vec_t");
+	const auto benchmark_result_vec_type = benchmark_result_vec_type_symbol._value_type;
+
+//	const types_t& types = ee.backend.types;
 	std::vector<benchmark_result2_t> result;
 	for(const auto& b: tests){
 		const auto name = b.benchmark_id.test;
@@ -922,7 +933,7 @@ std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, con
 		QUARK_ASSERT(f_bind.address != nullptr);
 		auto f2 = reinterpret_cast<FLOYD_BENCHMARK_F>(f_bind.address);
 		const auto bench_result = (*f2)(make_runtime_ptr(&ee));
-		const auto result2 = from_runtime_value(ee, bench_result, make_vector(ee.backend.types, make_benchmark_result_t(ee.backend.types)));
+		const auto result2 = from_runtime_value(ee, bench_result, benchmark_result_vec_type);
 
 //			QUARK_TRACE(value_and_type_to_string(result2));
 

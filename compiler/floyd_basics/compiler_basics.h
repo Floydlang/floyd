@@ -109,7 +109,7 @@ inline type_t make_benchmark_result_t(types_t& types){
 
 inline type_t make_benchmark_function_t(types_t& types){
 //	return make_function(make_vector(make_benchmark_result_t()), {}, epure::pure);
-	return make_function(types, make_symbol_ref(types, "benchmark_result_t"), {}, epure::pure);
+	return make_function(types, make_vector(types, make_symbol_ref(types, "benchmark_result_t")), {}, epure::pure);
 }
 
 inline type_t make_benchmark_def_t(types_t& types){
