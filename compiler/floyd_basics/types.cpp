@@ -1830,7 +1830,7 @@ void trace_types(const types_t& types){
 				const auto& e = types.nodes[i];
 				const auto contents = e.bt == base_type::k_named_type
 					? std::to_string(e.child_types[0].get_lookup_index())
-					: type_to_compact_string(types, type, resolve_named_types::dont_resolve);
+					: type_to_compact_string(types, type, enamed_type_mode::full_names);
 
 				const auto line = std::vector<std::string>{
 					std::to_string(i),
@@ -1955,10 +1955,10 @@ json_t type_to_json(const types_t& types, const type_t& type){
 
 			std::vector<std::string> args_str;
 			for(const auto& a: args){
-				args_str.push_back(type_to_compact_string(types, a, resolve_named_types::dont_resolve));
+				args_str.push_back(type_to_compact_string(types, a));
 			}
 
-			return std::string() + "func " + type_to_compact_string(types, ret, resolve_named_types::dont_resolve) + "(" + concat_strings_with_divider(args_str, ",") + ") " + (pure == epure::pure ? "pure" : "impure");
+			return std::string() + "func " + type_to_compact_string(types, ret) + "(" + concat_strings_with_divider(args_str, ",") + ") " + (pure == epure::pure ? "pure" : "impure");
 		}
 		json_t operator()(const symbol_ref_t& e) const {
 			const auto identifier = e.s;
@@ -2119,14 +2119,14 @@ std::string type_to_debug_string(const type_t& type){
 	return s.str();
 }
 
-std::string type_to_compact_string(const types_t& types, const type_t& type, resolve_named_types resolve){
+std::string type_to_compact_string(const types_t& types, const type_t& type, enamed_type_mode named_type_mode){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
 	struct visitor_t {
 		const types_t& types;
 		const type_t& type;
-		const resolve_named_types resolve;
+		const enamed_type_mode named_type_mode;
 
 
 		std::string operator()(const undefined_t& e) const{
@@ -2162,19 +2162,19 @@ std::string type_to_compact_string(const types_t& types, const type_t& type, res
 		std::string operator()(const struct_t& e) const{
 			std::string members_acc;
 			for(const auto& m: e.desc._members){
-				members_acc = members_acc + type_to_compact_string(types, m._type, resolve) + " " + m._name + ";";
+				members_acc = members_acc + type_to_compact_string(types, m._type, named_type_mode) + " " + m._name + ";";
 			}
 			return "struct {" + members_acc + "}";
 		}
 		std::string operator()(const vector_t& e) const{
 			QUARK_ASSERT(e._parts.size() == 1);
 
-			return "[" + type_to_compact_string(types, e._parts[0], resolve) + "]";
+			return "[" + type_to_compact_string(types, e._parts[0], named_type_mode) + "]";
 		}
 		std::string operator()(const dict_t& e) const{
 			QUARK_ASSERT(e._parts.size() == 1);
 
-			return "[string:" + type_to_compact_string(types, e._parts[0], resolve) + "]";
+			return "[string:" + type_to_compact_string(types, e._parts[0], named_type_mode) + "]";
 		}
 		std::string operator()(const function_t& e) const{
 			const auto desc = peek2(types, type);
@@ -2184,26 +2184,31 @@ std::string type_to_compact_string(const types_t& types, const type_t& type, res
 
 			std::vector<std::string> args_str;
 			for(const auto& a: args){
-				args_str.push_back(type_to_compact_string(types, a, resolve));
+				args_str.push_back(type_to_compact_string(types, a, named_type_mode));
 			}
 
-			return std::string() + "func " + type_to_compact_string(types, ret, resolve) + "(" + concat_strings_with_divider(args_str, ",") + ") " + (pure == epure::pure ? "pure" : "impure");
+			return std::string() + "func " + type_to_compact_string(types, ret, named_type_mode) + "(" + concat_strings_with_divider(args_str, ",") + ") " + (pure == epure::pure ? "pure" : "impure");
 		}
 		std::string operator()(const symbol_ref_t& e) const {
 //			QUARK_ASSERT(e.s != "");
 			return std::string("%") + e.s;
 		}
 		std::string operator()(const named_type_t& e) const {
-			if(resolve == resolve_named_types::resolve){
+/*
+			if(named_type_mode == resolve_named_types::resolve){
+				QUARK_ASSERT(false);
 				const auto p = peek0(types, type);
 				return type_to_compact_string(types, p, resolve);
 			}
+*/
 
-			//	Return the name of the type.
-			else if(resolve == resolve_named_types::dont_resolve){
+			if(named_type_mode == enamed_type_mode::full_names){
 				const auto& info = lookup_typeinfo_from_type(types, type);
-//				return concat_string(info.optional_name.lexical_path);
 				return pack_type_name(info.optional_name);
+			}
+			else if(named_type_mode == enamed_type_mode::short_names){
+				const auto& info = lookup_typeinfo_from_type(types, type);
+				return info.optional_name.lexical_path.back();
 			}
 			else{
 				QUARK_ASSERT(false);
@@ -2212,7 +2217,7 @@ std::string type_to_compact_string(const types_t& types, const type_t& type, res
 		}
 	};
 
-	const auto result = std::visit(visitor_t{ types, type, resolve }, get_type_variant(types, type));
+	const auto result = std::visit(visitor_t{ types, type, named_type_mode }, get_type_variant(types, type));
 	return result;
 }
 

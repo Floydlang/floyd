@@ -757,12 +757,12 @@ type_t type_from_json(types_t& types, const json_t& j);
 
 std::string type_to_debug_string(const type_t& type);
 
-enum class resolve_named_types { resolve, dont_resolve };
+enum class enamed_type_mode { full_names, short_names };
 
 std::string type_to_compact_string(
 	const types_t& types,
 	const type_t& type,
-	resolve_named_types resolve = resolve_named_types::dont_resolve
+	enamed_type_mode named_type_mode = enamed_type_mode::short_names
 );
 
 
