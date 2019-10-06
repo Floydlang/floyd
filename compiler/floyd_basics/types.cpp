@@ -2202,7 +2202,8 @@ std::string type_to_compact_string(const types_t& types, const type_t& type, res
 			//	Return the name of the type.
 			else if(resolve == resolve_named_types::dont_resolve){
 				const auto& info = lookup_typeinfo_from_type(types, type);
-				return info.optional_name.lexical_path.back();
+//				return concat_string(info.optional_name.lexical_path);
+				return pack_type_name(info.optional_name);
 			}
 			else{
 				QUARK_ASSERT(false);
