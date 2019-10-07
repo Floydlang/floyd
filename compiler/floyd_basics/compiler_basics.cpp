@@ -56,21 +56,21 @@ std::vector<benchmark_result2_t> unpack_vec_benchmark_result2_t(types_t& types, 
 
 
 
-bool is_floyd_literal(const type_desc_t& type){
-	QUARK_ASSERT(type.check_invariant());
-	const auto& type0 = type.non_name_type;
+bool is_floyd_literal(const type_desc_t& desc){
+	QUARK_ASSERT(desc.check_invariant());
+	const auto& type = desc.non_name_type;
 
 	//??? json is allowed but only for json::null. We should have a null-type instead.
 	if(
-		type0.is_void()
-		|| type0.is_int()
-		|| type0.is_double()
-		|| type0.is_string()
-		|| type0.is_bool()
-		|| type0.is_typeid()
-		|| type0.is_any()
-		|| type0.is_json()
-		|| type.is_function()
+		type.is_void()
+		|| type.is_int()
+		|| type.is_double()
+		|| type.is_string()
+		|| type.is_bool()
+		|| desc.is_typeid()
+		|| type.is_any()
+		|| type.is_json()
+		|| desc.is_function()
 	){
 		return true;
 	}
@@ -79,12 +79,11 @@ bool is_floyd_literal(const type_desc_t& type){
 	}
 }
 
-bool is_preinitliteral(const type_desc_t& type){
-	QUARK_ASSERT(type.check_invariant());
-	const auto& type0 = type.non_name_type;
+bool is_preinitliteral(const type_desc_t& desc){
+	QUARK_ASSERT(desc.check_invariant());
 
 	//??? json is allowed but only for json::null. We should have a null-type instead.
-	if(type0.is_int() || type0.is_double() || type0.is_bool() || type0.is_typeid() || type0.is_any() || type.is_function()){
+	if(desc.is_int() || desc.is_double() || desc.is_bool() || desc.is_typeid() || desc.is_any() || desc.is_function()){
 		return true;
 	}
 	else{
@@ -134,7 +133,7 @@ intrinsic_signature_t make_to_pretty_string_signature(types_t& types){
 	return make_intrinsic("to_pretty_string", make_function(types, type_t::make_string(), { ANY_TYPE }, epure::pure) );
 }
 intrinsic_signature_t make_typeof_signature(types_t& types){
-	return make_intrinsic("typeof", make_function(types, type_t::make_typeid(), { ANY_TYPE }, epure::pure) );
+	return make_intrinsic("typeof", make_function(types, type_desc_t::make_typeid(), { ANY_TYPE }, epure::pure) );
 }
 
 
@@ -189,7 +188,7 @@ intrinsic_signature_t make_to_json_signature(types_t& types){
 
 intrinsic_signature_t make_from_json_signature(types_t& types){
 	//	??? Tricky. How to we compute the return type from the input arguments?
-	return make_intrinsic("from_json", make_function_dyn_return(types, { type_t::make_json(), type_t::make_typeid() }, epure::pure, return_dyn_type::arg1_typeid_constant_type) );
+	return make_intrinsic("from_json", make_function_dyn_return(types, { type_t::make_json(), type_desc_t::make_typeid() }, epure::pure, return_dyn_type::arg1_typeid_constant_type) );
 }
 
 

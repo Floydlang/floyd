@@ -34,7 +34,7 @@ static std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value
 	const auto& types = runtime.backend.types;
 	const auto& type = lookup_type_ref(runtime.backend, arg_type);
 
-	if(type.is_typeid()){
+	if(peek2(types, type).is_typeid()){
 		const auto value = from_runtime_value(runtime, arg_value, type);
 		const auto type2 = value.get_typeid_value();
 		const auto type3 = peek2(types, type2);

@@ -1478,7 +1478,8 @@ static llvm::Value* generate_construct_primitive(llvm_function_generator_t& gen_
 	auto element0_reg = generate_expression(gen_acc, details.elements[0]);
 	const auto input_value_type = get_expr_output_type(gen_acc.gen, details.elements[0]);
 
-	if(construct_type.is_bool() || construct_type.is_int() || construct_type.is_double() || construct_type.is_typeid()){
+	const auto construct_type_peek = peek2(types, construct_type);
+	if(construct_type.is_bool() || construct_type.is_int() || construct_type.is_double() || construct_type_peek.is_typeid()){
 		return element0_reg;
 	}
 
@@ -2270,7 +2271,7 @@ static llvm::Value* generate_global(llvm_function_generator_t& gen_acc, const st
 		}
 	}
 	else if(symbol._symbol_type == symbol_t::symbol_type::named_type){
-		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type_t::make_typeid());
+		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type_desc_t::make_typeid());
 		auto itype_reg = generate_itype_constant(gen_acc.gen, symbol_value_type);
 		return generate_global0(module, symbol_name, *itype, itype_reg);
 	}

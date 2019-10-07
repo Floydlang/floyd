@@ -178,7 +178,7 @@ std::string dict_instance_to_compact_string(const types_t& types, const std::map
 
 value_ext_t::value_ext_t(const type_t& s) :
 	_rc(1),
-	_type(type_t::make_typeid()),
+	_type(type_desc_t::make_typeid()),
 	_typeid_value(s)
 {
 	QUARK_ASSERT(check_invariant());
@@ -1055,7 +1055,7 @@ value_t ast_json_to_value(types_t& types, const type_t& type, const json_t& v){
 			throw std::exception();
 		}
 	}
-	else if(type.is_int()){
+	else if(type_peek.is_int()){
 		if(v.is_object()){
 			const auto tag = v.get_object_element("big-int");
 			const auto value = v.get_object_element("value").get_string();
@@ -1078,7 +1078,7 @@ value_t ast_json_to_value(types_t& types, const type_t& type, const json_t& v){
 	else if(type.is_json()){
 		return value_t::make_json(v);
 	}
-	else if(type.is_typeid()){
+	else if(type_peek.is_typeid()){
 		const auto t = type_from_json(types, v);
 		return value_t::make_typeid_value(t);
 	}

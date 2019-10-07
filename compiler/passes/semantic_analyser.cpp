@@ -1568,7 +1568,7 @@ std::pair<analyser_t, expression_t> analyse_load(const analyser_t& a, const stat
 		if(found.first->_symbol_type == symbol_t::symbol_type::named_type){
 			return {
 				a_acc,
-				expression_t::make_load2(found.second, type_t::make_typeid())
+				expression_t::make_load2(found.second, type_desc_t::make_typeid())
 			};
 		}
 		else{
@@ -2350,7 +2350,7 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 	const auto named_type2 = update_named_type(a_acc._types, named_type, struct_type1);
 
 	const auto typeid_value = value_t::make_typeid_value(named_type2);
-	const auto r = expression_t::make_literal(typeid_value, type_t::make_typeid());
+	const auto r = expression_t::make_literal(typeid_value, type_desc_t::make_typeid());
 
 #if DEBUG
 	if(false) trace_analyser(a_acc);
@@ -2691,7 +2691,7 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 	symbol_map.push_back( make_builtin_type(a._types, type_t::make_int()) );
 	symbol_map.push_back( make_builtin_type(a._types, type_t::make_double()) );
 	symbol_map.push_back( make_builtin_type(a._types, type_t::make_string()) );
-	symbol_map.push_back( make_builtin_type(a._types, type_t::make_typeid()) );
+	symbol_map.push_back( make_builtin_type(a._types, type_desc_t::make_typeid()) );
 	symbol_map.push_back( make_builtin_type(a._types, type_t::make_json()) );
 
 	//	"null" is equivalent to json::null

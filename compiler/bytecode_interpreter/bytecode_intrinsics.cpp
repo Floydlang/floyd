@@ -518,12 +518,14 @@ bc_value_t bc_intrinsic__from_json(interpreter_t& vm, const bc_value_t args[], i
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 	QUARK_ASSERT(args[0]._type.is_json());
-	QUARK_ASSERT(args[1]._type.is_typeid());
+
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, args[1]._type).is_typeid());
 
 	const auto json = args[0].get_json();
 	const auto target_type = args[1].get_typeid_value();
 
-	types_t temp = vm._imm->_program._types;
+	types_t temp = types;
 	const auto result = unflatten_json_to_specific_type(temp, json, target_type);
 	return value_to_bc(vm._imm->_program._types, result);
 }

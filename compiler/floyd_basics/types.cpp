@@ -1403,7 +1403,7 @@ type_variant_t get_type_variant(const types_t& types, const type_t& type){
 		else if(type.is_json()){
 			return json_type_t {};
 		}
-		else if(type.is_typeid()){
+		else if(desc.is_typeid()){
 			return typeid_type_t {};
 		}
 
@@ -2026,7 +2026,7 @@ type_t type_from_json(types_t& types, const json_t& t){
 				return type_t::make_string();
 			}
 			else if(b == base_type::k_typeid){
-				return type_t::make_typeid();
+				return type_desc_t::make_typeid();
 			}
 			else if(b == base_type::k_json){
 				return type_t::make_json();

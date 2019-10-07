@@ -1884,7 +1884,7 @@ static bc_static_frame_t make_frame(const types_t& types, const bcgen_body_t& bo
 				e.first,
 				bc_symbol_t{
 					bc_symbol_t::type::named_type,
-					type_t::make_typeid(),
+					type_desc_t::make_typeid(),
 					bc_value_t::make_typeid_value(t)
 				}
 			};
@@ -1893,7 +1893,7 @@ static bc_static_frame_t make_frame(const types_t& types, const bcgen_body_t& bo
 				e.first,
 				bc_symbol_t{
 					bc_symbol_t::type::immutable,
-					type_t::make_typeid(),
+					type_desc_t::make_typeid(),
 					bc_value_t::make_typeid_value(t)
 //					value_to_bc(types, value_t::make_typeid_value(t))
 				}

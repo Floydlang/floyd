@@ -405,20 +405,6 @@ struct type_t {
 	}
 
 
-	//////////////////////////////////////////////////		TYPEID
-
-
-	static type_t make_typeid(){
-		return type_t(assemble((type_lookup_index_t)base_type::k_typeid, base_type::k_typeid, base_type::k_undefined));
-	}
-
-	bool is_typeid() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_typeid;
-	}
-
-
 
 	//////////////////////////////////////////////////		SYMBOL
 
@@ -685,7 +671,7 @@ struct type_desc_t {
 
 
 	static type_desc_t make_typeid(){
-		return type_desc_t(type_t::make_typeid());
+		return type_desc_t(type_t::assemble2((type_lookup_index_t)base_type::k_typeid, base_type::k_typeid, base_type::k_undefined));
 	}
 
 	bool is_typeid() const {

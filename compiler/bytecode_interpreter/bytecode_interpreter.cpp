@@ -237,7 +237,7 @@ type_t bc_value_t::get_typeid_value() const {
 	return _pod._external->_typeid_value;
 }
 bc_value_t::bc_value_t(const type_t& type_id) :
-	_type(type_t::make_typeid()),
+	_type(type_desc_t::make_typeid()),
 	_encode_as_external(encode_as_external(value_encoding::k_external__typeid))
 {
 	QUARK_ASSERT(type_id.check_invariant());
@@ -722,7 +722,7 @@ bc_external_value_t::bc_external_value_t(const type_t& type, const function_id_t
 bc_external_value_t::bc_external_value_t(const type_t& s) :
 	_rc(1),
 #if DEBUG
-	_debug_type(type_t::make_typeid()),
+	_debug_type(type_desc_t::make_typeid()),
 #endif
 	_typeid_value(s)
 {
@@ -1783,7 +1783,7 @@ int bc_compare_value_true_deep(const types_t& types, const bc_value_t& left, con
 	else if(type.is_json()){
 		return bc_compare_jsons(left.get_json(), right.get_json());
 	}
-	else if(type.is_typeid()){
+	else if(peek.is_typeid()){
 		if(left.get_typeid_value() == right.get_typeid_value()){
 			return 0;
 		}
@@ -2340,7 +2340,7 @@ json_t bcvalue_to_json(const types_t& types, const bc_value_t& v){
 	else if(v._type.is_json()){
 		return v.get_json();
 	}
-	else if(v._type.is_typeid()){
+	else if(peek.is_typeid()){
 		return type_to_json(types, v.get_typeid_value());
 	}
 	else if(peek.is_struct()){
@@ -2525,7 +2525,7 @@ static void execute_new_1(interpreter_t& vm, int16_t dest_reg, int16_t target_it
 	const auto input_value = vm._stack.load_value(arg0_stack_pos + 0, source_itype2);
 
 	const bc_value_t result = [&]{
-		if(target_type.is_bool() || target_type.is_int() || target_type.is_double() || target_type.is_typeid()){
+		if(target_type.is_bool() || target_type.is_int() || target_type.is_double() || target_peek.is_typeid()){
 			return input_value;
 		}
 
