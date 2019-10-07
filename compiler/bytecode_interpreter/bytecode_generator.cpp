@@ -154,9 +154,9 @@ struct expression_gen_t {
 	then the expression allocates (or redirect to existing register).
 	expression_gen_t._out: always holds the output register, no matter who decided it.
 */
-expression_gen_t bcgen_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const bcgen_body_t& body);
+static expression_gen_t bcgen_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const bcgen_body_t& body);
 
-bcgen_body_t bcgen_body_block(bcgenerator_t& gen_acc, const body_t& body);
+static bcgen_body_t bcgen_body_block(bcgenerator_t& gen_acc, const body_t& body);
 
 static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const type_t& call_output_type, const expression_t::call_t& details, const bcgen_body_t& body);
 
@@ -214,32 +214,12 @@ static symbol_pos_t add_local_const(const types_t& types, bcgen_body_t& body_acc
 }
 
 //	Use to stuff an integer into an instruction, in one of the register slots.
-symbol_pos_t make_imm_int(int value){
+static symbol_pos_t make_imm_int(int value){
 	return symbol_pos_t::make_stack_pos(666, value);
 }
 
 
-
-/*	
-bc_typeid_t intern_type(bcgenerator_t& gen_acc, const type_t& type){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-    const auto it = std::find_if(gen_acc._types.begin(), gen_acc._types.end(), [&type](const type_t& e) { return e == type; });
-	if(it != gen_acc._types.end()){
-		const auto pos = static_cast<bc_typeid_t>(it - gen_acc._types.begin());
-		return pos;
-	}
-	else{
-		gen_acc._types.push_back(type);
-		return static_cast<bc_typeid_t>(gen_acc._types.size() - 1);
-	}
-
-	QUARK_ASSERT(gen_acc.check_invariant());
-}
-*/
-
-static bc_typeid_t bc_typeid_from_type(const type_t& type){
+static bc_typeid_t itype_from_type(const type_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto r = type.get_lookup_index();
@@ -250,17 +230,8 @@ static bc_typeid_t bc_typeid_from_type(const type_t& type){
 }
 
 
-static bc_typeid_t intern_type(bcgenerator_t& gen_acc, const type_t& type){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
 
-	return bc_typeid_from_type(type);
-}
-
-
-
-
-reg_t flatten_reg(const reg_t& r, int offset){
+static reg_t flatten_reg(const reg_t& r, int offset){
 	QUARK_ASSERT(r.check_invariant());
 
 	if(r._parent_steps == 666){
@@ -280,7 +251,7 @@ reg_t flatten_reg(const reg_t& r, int offset){
 	}
 }
 
-bool check_register(const reg_t& reg, bool is_reg){
+static bool check_register(const reg_t& reg, bool is_reg){
 	if(is_reg){
 		QUARK_ASSERT(reg._parent_steps != 666);
 	}
@@ -290,7 +261,7 @@ bool check_register(const reg_t& reg, bool is_reg){
 	return true;
 }
 
-bool check_register_nonlocal(const reg_t& reg, bool is_reg){
+static bool check_register_nonlocal(const reg_t& reg, bool is_reg){
 	if(is_reg){
 		//	Must not be a global -- those should have been turned to global-access opcodes.
 		QUARK_ASSERT(reg._parent_steps != symbol_pos_t::k_global_scope);
@@ -301,7 +272,7 @@ bool check_register_nonlocal(const reg_t& reg, bool is_reg){
 	return true;
 }
 
-bool check_register__local(const reg_t& reg, bool is_reg){
+static bool check_register__local(const reg_t& reg, bool is_reg){
 	if(is_reg){
 		//	Must not be a global -- those should have been turned to global-access opcodes.
 		QUARK_ASSERT(reg._parent_steps != symbol_pos_t::k_global_scope);
@@ -356,7 +327,7 @@ bool bcgen_instruction_t::check_invariant() const {
 //////////////////////////////////////		Free functions
 
 
-bcgen_body_t flatten_body(const bcgenerator_t& gen, const bcgen_body_t& dest, const bcgen_body_t& source){
+static bcgen_body_t flatten_body(const bcgenerator_t& gen, const bcgen_body_t& dest, const bcgen_body_t& source){
 	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(dest.check_invariant());
 	QUARK_ASSERT(source.check_invariant());
@@ -389,7 +360,7 @@ bcgen_body_t flatten_body(const bcgenerator_t& gen, const bcgen_body_t& dest, co
 //??? rename _interned_types to "_types".
 
 //	Supports globals & locals both as dest and sources.
-bcgen_body_t copy_value(const bcgenerator_t& gen, const type_t& type, const reg_t& dest_reg, const reg_t& source_reg, const bcgen_body_t& body){
+static bcgen_body_t copy_value(const bcgenerator_t& gen, const type_t& type, const reg_t& dest_reg, const reg_t& source_reg, const bcgen_body_t& body){
 	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(dest_reg.check_invariant());
@@ -434,7 +405,7 @@ bcgen_body_t copy_value(const bcgenerator_t& gen, const type_t& type, const reg_
 
 //??? need logic that knows that globals can be treated as locals for instructions in global scope.
 
-bcgen_body_t bcgen_assign2_statement(bcgenerator_t& gen_acc, const statement_t::assign2_t& statement, const bcgen_body_t& body){
+static bcgen_body_t bcgen_assign2_statement(bcgenerator_t& gen_acc, const statement_t::assign2_t& statement, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -454,7 +425,7 @@ bcgen_body_t bcgen_assign2_statement(bcgenerator_t& gen_acc, const statement_t::
 	}
 	return body_acc;
 }
-bcgen_body_t bcgen_init2_statement(bcgenerator_t& gen_acc, const statement_t::init2_t& statement, const bcgen_body_t& body){
+static bcgen_body_t bcgen_init2_statement(bcgenerator_t& gen_acc, const statement_t::init2_t& statement, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -463,7 +434,7 @@ bcgen_body_t bcgen_init2_statement(bcgenerator_t& gen_acc, const statement_t::in
 	return bcgen_assign2_statement(gen_acc, temp, body);
 }
 
-bcgen_body_t bcgen_block_statement(bcgenerator_t& gen_acc, const statement_t::block_statement_t& statement, const bcgen_body_t& body){
+static bcgen_body_t bcgen_block_statement(bcgenerator_t& gen_acc, const statement_t::block_statement_t& statement, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -471,7 +442,7 @@ bcgen_body_t bcgen_block_statement(bcgenerator_t& gen_acc, const statement_t::bl
 	return flatten_body(gen_acc, body, body_acc);
 }
 
-bcgen_body_t bcgen_return_statement(bcgenerator_t& gen_acc, const statement_t::return_statement_t& statement, const bcgen_body_t& body){
+static bcgen_body_t bcgen_return_statement(bcgenerator_t& gen_acc, const statement_t::return_statement_t& statement, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -482,7 +453,7 @@ bcgen_body_t bcgen_return_statement(bcgenerator_t& gen_acc, const statement_t::r
 	return body_acc;
 }
 
-bcgen_body_t bcgen_ifelse_statement(bcgenerator_t& gen_acc, const statement_t::ifelse_statement_t& statement, const bcgen_body_t& body){
+static bcgen_body_t bcgen_ifelse_statement(bcgenerator_t& gen_acc, const statement_t::ifelse_statement_t& statement, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -535,11 +506,11 @@ bcgen_body_t bcgen_ifelse_statement(bcgenerator_t& gen_acc, const statement_t::i
 	k_branch_smaller_or_equal_int / k_branch_smaller_int, B TRUE
 	A:
 */
-int get_count(const std::vector<bcgen_instruction_t>& instructions){
+static int get_count(const std::vector<bcgen_instruction_t>& instructions){
 	return static_cast<int>(instructions.size());
 }
 
-bcgen_body_t bcgen_for_statement(bcgenerator_t& gen_acc, const statement_t::for_statement_t& statement, const bcgen_body_t& body){
+static bcgen_body_t bcgen_for_statement(bcgenerator_t& gen_acc, const statement_t::for_statement_t& statement, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -587,7 +558,7 @@ bcgen_body_t bcgen_for_statement(bcgenerator_t& gen_acc, const statement_t::for_
 	return body_acc;
 }
 
-bcgen_body_t bcgen_while_statement(bcgenerator_t& gen_acc, const statement_t::while_statement_t& statement, const bcgen_body_t& body){
+static bcgen_body_t bcgen_while_statement(bcgenerator_t& gen_acc, const statement_t::while_statement_t& statement, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -606,7 +577,7 @@ bcgen_body_t bcgen_while_statement(bcgenerator_t& gen_acc, const statement_t::wh
 	return body_acc;
 }
 
-bcgen_body_t bcgen_expression_statement(bcgenerator_t& gen_acc, const statement_t::expression_statement_t& statement, const bcgen_body_t& body){
+static bcgen_body_t bcgen_expression_statement(bcgenerator_t& gen_acc, const statement_t::expression_statement_t& statement, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -617,7 +588,7 @@ bcgen_body_t bcgen_expression_statement(bcgenerator_t& gen_acc, const statement_
 }
 
 
-bcgen_body_t bcgen_body_block_statements(bcgenerator_t& gen_acc, const bcgen_body_t& body, const std::vector<statement_t>& statements){
+static bcgen_body_t bcgen_body_block_statements(bcgenerator_t& gen_acc, const bcgen_body_t& body, const std::vector<statement_t>& statements){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -688,7 +659,7 @@ bcgen_body_t bcgen_body_block_statements(bcgenerator_t& gen_acc, const bcgen_bod
 	return body_acc;
 }
 
-bcgen_body_t bcgen_body_block(bcgenerator_t& gen_acc, const body_t& body){
+static bcgen_body_t bcgen_body_block(bcgenerator_t& gen_acc, const body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -700,7 +671,7 @@ bcgen_body_t bcgen_body_block(bcgenerator_t& gen_acc, const body_t& body){
 	return body_acc;
 }
 
-bcgen_body_t bcgen_body_top(bcgenerator_t& gen_acc, bcgen_body_t& body_acc, const body_t& body){
+static bcgen_body_t bcgen_body_top(bcgenerator_t& gen_acc, bcgen_body_t& body_acc, const body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -716,7 +687,7 @@ bcgen_body_t bcgen_body_top(bcgenerator_t& gen_acc, bcgen_body_t& body_acc, cons
 	return body_acc;
 }
 
-void bcgen_globals(bcgenerator_t& gen_acc, const body_t& globals){
+static void bcgen_globals(bcgenerator_t& gen_acc, const body_t& globals){
 	gen_acc._globals = bcgen_body_t({}, globals._symbol_table);
 	bcgen_body_top(gen_acc, gen_acc._globals, globals);
 }
@@ -737,7 +708,7 @@ static bcgen_body_t bcgen_function(bcgenerator_t& gen_acc, const floyd::function
 //////////////////////////////////////		PROCESS EXPRESSIONS
 
 
-expression_gen_t bcgen_resolve_member_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::resolve_member_t& details, const bcgen_body_t& body){
+static expression_gen_t bcgen_resolve_member_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::resolve_member_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
 	const auto& types = gen_acc._ast_imm->_tree._interned_types;
@@ -771,7 +742,7 @@ expression_gen_t bcgen_resolve_member_expression(bcgenerator_t& gen_acc, const s
 
 
 //	Generates a call to the global function that implements the intrinsic.
-expression_gen_t bcgen_make_fallthrough_intrinsic(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const type_t& call_output_type, const expression_t::intrinsic_t& details, const bcgen_body_t& body){
+static expression_gen_t bcgen_make_fallthrough_intrinsic(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const type_t& call_output_type, const expression_t::intrinsic_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(target_reg.check_invariant());
 	QUARK_ASSERT(call_output_type.check_invariant());
@@ -806,7 +777,7 @@ expression_gen_t bcgen_make_fallthrough_intrinsic(bcgenerator_t& gen_acc, const 
 
 
 
-expression_gen_t make_update_call(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const type_t& output_type, const expression_t& parent, const expression_t& key, const expression_t& new_value, const bcgen_body_t& body){
+static expression_gen_t make_update_call(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const type_t& output_type, const expression_t& parent, const expression_t& key, const expression_t& new_value, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(output_type.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
@@ -947,7 +918,7 @@ static expression_gen_t bcgen_intrinsic_size_expression(bcgenerator_t& gen_acc, 
 
 
 //	Converts expression to a call to intrinsic() function.
-expression_gen_t bcgen_update_member_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::update_member_t& details, const bcgen_body_t& body){
+static expression_gen_t bcgen_update_member_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::update_member_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
 	const auto& types = gen_acc._ast_imm->_tree._interned_types;
@@ -962,7 +933,7 @@ expression_gen_t bcgen_update_member_expression(bcgenerator_t& gen_acc, const sy
 }
 
 
-expression_gen_t bcgen_lookup_element_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::lookup_t& details, const bcgen_body_t& body){
+static expression_gen_t bcgen_lookup_element_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::lookup_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -1019,7 +990,7 @@ expression_gen_t bcgen_lookup_element_expression(bcgenerator_t& gen_acc, const s
 }
 
 //??? Value already sits in a register / global -- no need to generate code to copy it in most cases!
-expression_gen_t bcgen_load2_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::load2_t& details, const bcgen_body_t& body){
+static expression_gen_t bcgen_load2_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::load2_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -1051,7 +1022,7 @@ struct call_spec_t {
 	uint32_t _stack_element_count;
 };
 
-uint32_t pack_bools(const std::vector<bool>& bools){
+static uint32_t pack_bools(const std::vector<bool>& bools){
 	QUARK_ASSERT(bools.size() <= 32);
 
 	uint32_t acc = 0x0;
@@ -1116,7 +1087,7 @@ static call_setup_t gen_call_setup(bcgenerator_t& gen_acc, const std::vector<typ
 
 		//	Prepend internal-dynamic arguments with the type of the actual callee-argument.
 		if(func_arg_type.is_any()){
-			const auto arg_type_reg = add_local_const(types, body_acc, value_t::make_int(bc_typeid_from_type(callee_arg_type)), "DYN type arg #" + std::to_string(i));
+			const auto arg_type_reg = add_local_const(types, body_acc, value_t::make_int(itype_from_type(callee_arg_type)), "DYN type arg #" + std::to_string(i));
 			body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_inplace_value, arg_type_reg, {}, {} ));
 
 			//	Int don't need extbit.
@@ -1217,11 +1188,6 @@ static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const symb
 	QUARK_ASSERT(body_acc.check_invariant());
 	return { body_acc, target_reg2, return_type };
 }
-
-
-
-
-
 
 
 
@@ -1360,7 +1326,7 @@ static expression_gen_t bcgen_intrinsic_expression(bcgenerator_t& gen_acc, const
 //??? Wrap type in struct to make it typesafe.
 //??? Only use types in interpreter
 
-expression_gen_t bcgen_construct_value_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::value_constructor_t& details, const bcgen_body_t& body){
+static expression_gen_t bcgen_construct_value_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::value_constructor_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -1369,7 +1335,7 @@ expression_gen_t bcgen_construct_value_expression(bcgenerator_t& gen_acc, const 
 	auto body_acc = body;
 
 	const auto target_type = dummy_func(types, get_expr_output(gen_acc, e));
-	const auto target_itype = intern_type(gen_acc, target_type);
+	const auto target_itype = itype_from_type(target_type);
 
 	const auto callee_arg_count = static_cast<int>(details.elements.size());
 	std::vector<type_t> arg_types;
@@ -1381,7 +1347,7 @@ expression_gen_t bcgen_construct_value_expression(bcgenerator_t& gen_acc, const 
 	const auto call_setup = gen_call_setup(gen_acc, arg_types, &details.elements[0], arg_count, body_acc);
 	body_acc = call_setup._body;
 
-	const auto source_itype = arg_count == 0 ? -1 : intern_type(gen_acc, dummy_func(types, get_expr_output(gen_acc, details.elements[0])));
+	const auto source_itype = arg_count == 0 ? -1 : itype_from_type(dummy_func(types, get_expr_output(gen_acc, details.elements[0])));
 
 	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(types, body_acc, get_expr_output(gen_acc, e), "temp: construct value result") : target_reg;
 
@@ -1447,7 +1413,7 @@ expression_gen_t bcgen_construct_value_expression(bcgenerator_t& gen_acc, const 
 	return { body_acc, target_reg2, target_type };
 }
 
-expression_gen_t bcgen_benchmark_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::benchmark_expr_t& details, const bcgen_body_t& body){
+static expression_gen_t bcgen_benchmark_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::benchmark_expr_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -1457,7 +1423,7 @@ expression_gen_t bcgen_benchmark_expression(bcgenerator_t& gen_acc, const symbol
 
 
 
-expression_gen_t bcgen_arithmetic_unary_minus_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::unary_minus_t& details, const bcgen_body_t& body){
+static expression_gen_t bcgen_arithmetic_unary_minus_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::unary_minus_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -1491,7 +1457,7 @@ expression_gen_t bcgen_arithmetic_unary_minus_expression(bcgenerator_t& gen_acc,
 		temp = c
 	}
 */
-expression_gen_t bcgen_conditional_operator_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::conditional_t& details, const bcgen_body_t& body){
+static expression_gen_t bcgen_conditional_operator_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::conditional_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -1548,7 +1514,7 @@ expression_gen_t bcgen_conditional_operator_expression(bcgenerator_t& gen_acc, c
 	return { body_acc, target_reg2, result_type };
 }
 
-expression_gen_t bcgen_comparison_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, expression_type op, const expression_t& e, const expression_t::comparison_t& details, const bcgen_body_t& body){
+static expression_gen_t bcgen_comparison_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, expression_type op, const expression_t& e, const expression_t::comparison_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -1616,7 +1582,7 @@ expression_gen_t bcgen_comparison_expression(bcgenerator_t& gen_acc, const symbo
 	return { body_acc, target_reg2, type_t::make_bool() };
 }
 
-expression_gen_t bcgen_arithmetic_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, expression_type op, const expression_t& e, const expression_t::arithmetic_t& details, const bcgen_body_t& body){
+static expression_gen_t bcgen_arithmetic_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, expression_type op, const expression_t& e, const expression_t::arithmetic_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -1728,7 +1694,7 @@ expression_gen_t bcgen_arithmetic_expression(bcgenerator_t& gen_acc, const symbo
 	return { body_acc, target_reg2, type };
 }
 
-expression_gen_t bcgen_literal_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::literal_exp_t& details, const bcgen_body_t& body){
+static expression_gen_t bcgen_literal_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::literal_exp_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -1751,7 +1717,7 @@ expression_gen_t bcgen_literal_expression(bcgenerator_t& gen_acc, const symbol_p
 	}
 }
 
-expression_gen_t bcgen_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const bcgen_body_t& body){
+static expression_gen_t bcgen_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(target_reg.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -1868,7 +1834,7 @@ bool bcgenerator_t::check_invariant() const {
 //////////////////////////////////////		FREE
 
 
-bc_instruction_t squeeze_instruction(const bcgen_instruction_t& instruction){
+static bc_instruction_t squeeze_instruction(const bcgen_instruction_t& instruction){
 	QUARK_ASSERT(instruction.check_invariant());
 
 	QUARK_ASSERT(instruction._reg_a._parent_steps == 0 || instruction._reg_a._parent_steps == symbol_pos_t::k_global_scope || instruction._reg_a._parent_steps == 666);
@@ -1958,18 +1924,6 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 	bcgenerator_t a(ast);
 
 	const auto& types = ast._tree._interned_types;
-
-/*
-	//???	benchmark_result2_t and benchmark_id_t etc are part of standard library and defines in k_corelib_builtin_types_and_constants. Find those symbols instead of making new types here.
-	//	??? move this code to semantic analyser to share it for all backends AND allow new types to be added.
-
-	const auto benchmark_result2_t__type = make_benchmark_result2_t(types2);
-	const auto dict_json__type = type_t::make_dict(types2, type_t::make_json());
-
-	trace_types(types);
-	trace_types(types2);
-//	QUARK_ASSERT(types2.nodes.size() == types.nodes.size());
-*/
 
 	bcgen_globals(a, a._ast_imm->_tree._globals);
 
