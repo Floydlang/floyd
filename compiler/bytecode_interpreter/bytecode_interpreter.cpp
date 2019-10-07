@@ -83,6 +83,7 @@ void bc_value_t::swap(bc_value_t& other){
 
 	std::swap(_type, other._type);
 	std::swap(_pod, other._pod);
+	std::swap(_encode_as_external, other._encode_as_external);
 
 	QUARK_ASSERT(other.check_invariant());
 	QUARK_ASSERT(check_invariant());
@@ -349,6 +350,8 @@ bool bc_value_t::check_invariant() const {
 	if(_encode_as_external){
 //		QUARK_ASSERT(check_external_deep(_type, _pod._external))
 	}
+
+	QUARK_ASSERT((_type.is_undefined() && _encode_as_external) == false);
 
 	return true;
 }
@@ -2245,7 +2248,7 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 		QUARK_ASSERT(arg_count == arg_types.size());
 
 		for(int i = 0 ; i < arg_count; i++){
-			if(args[i]._type != arg_types[i]){
+			if(peek0(types, args[i]._type) != peek0(types, arg_types[i])){
 				QUARK_ASSERT(false);
 			}
 		}

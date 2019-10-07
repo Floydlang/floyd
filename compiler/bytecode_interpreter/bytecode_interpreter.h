@@ -1025,7 +1025,12 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(reg >= 0 && reg < _current_frame_ptr->_symbols.size());
 
 		//	Makes sure debug types are in sync for this register.
-		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type == _debug_types[get_current_frame_start() + reg]);
+
+#if DEBUG
+		const auto& a = _current_frame_ptr->_symbols[reg].second._value_type;
+		const auto& b = _debug_types[get_current_frame_start() + reg];
+		QUARK_ASSERT(peek2(_types, a) == peek2(_types, b));
+#endif
 		return true;
 	}
 
@@ -1255,7 +1260,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 		QUARK_ASSERT(type.check_invariant());
-		QUARK_ASSERT(type == _debug_types[pos]);
+		QUARK_ASSERT(peek0(_types, type) == _debug_types[pos]);
 
 		const auto& e = _entries[pos];
 		const auto result = bc_value_t(type, e, encode_as_external(_types, type));
@@ -1356,8 +1361,8 @@ struct interpreter_stack_t {
 	public: size_t _allocated_count;
 	public: size_t _stack_size;
 
-	//	These are DEEP copies = do not share RC with non-debug values.
 #if DEBUG
+	//	These are DEEP copies = do not share RC with non-debug values.
 	//	These are parallell with _entries, one elementfor each entry on the stack.
 	//??? Better to embedd these in struct stack_element_t { type_t debug_type,bc_pod_value_t };
 	public: std::vector<type_t> _debug_types;

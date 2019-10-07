@@ -28,12 +28,13 @@ bc_value_t bc_corelib__make_benchmark_report(interpreter_t& vm, const bc_value_t
 
 	auto temp_types = vm._imm->_program._types;
 
+	const auto& symbols = vm._imm->_program._globals._symbols;
+	const auto it = std::find_if(symbols.begin(), symbols.end(), [&](const auto& s){ return s.first == "benchmark_result2_t"; } );
+	QUARK_ASSERT(it != symbols.end());
 
+	const auto benchmark_result2_vec_type = make_vector(temp_types, it->second._value_type);
 
-	const auto benchmark_result2_t__type = lookup_type_from_name(temp_types, type_name_t { { "global_xyz_saft", "benchmark_result2_t" } });
-//	const auto dict_json__type = make_dict(types2, type_t::make_json());
-
-	QUARK_ASSERT(args[0]._type == benchmark_result2_t__type);
+//	QUARK_ASSERT(args[0]._type == benchmark_result2_t__type);
 
 	const auto b2 = bc_to_value(temp_types, args[0]);
 	const auto test_results = unpack_vec_benchmark_result2_t(temp_types, b2);
@@ -48,16 +49,16 @@ bc_value_t bc_corelib__detect_hardware_caps(interpreter_t& vm, const bc_value_t 
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
 
-	auto& types = vm._imm->_program._types;
+	const auto& types = vm._imm->_program._types;
 	const std::vector<std::pair<std::string, json_t>> caps = corelib_detect_hardware_caps();
 
 	std::map<std::string, value_t> caps_map;
 	for(const auto& e: caps){
   		caps_map.insert({ e.first, value_t::make_json(e.second) });
 	}
-	
-	const auto result = value_t::make_dict_value(types, type_t::make_json(), caps_map);
-	return value_to_bc(types, result);
+
+	const auto a = value_t::make_dict_value(types, type_t::make_json(), caps_map);
+	return value_to_bc(types, a);
 }
 
 

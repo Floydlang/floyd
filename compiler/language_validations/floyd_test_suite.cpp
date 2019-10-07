@@ -3500,7 +3500,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [func] constructor", "", ""){
 }
 
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "vector [struct] constructor", "", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "vector [struct] constructor", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -5362,6 +5362,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "map_string()", "", ""){
 */
 
 
+
 //////////////////////////////////////////		HIGHER-ORDER INTRINSICS - map_dag()
 
 
@@ -5421,6 +5422,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "map_dag()", "complex", ""){
 
 	)");
 }
+
 
 
 //////////////////////////////////////////		HIGHER-ORDER INTRINSICS - reduce()

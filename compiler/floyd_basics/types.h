@@ -101,6 +101,7 @@ Use read_type(), read_required_type()
 #define DEBUG_DEEP_TYPEID_T 1
 
 
+#include "utils.h"
 #include "quark.h"
 
 #include <string>
@@ -606,6 +607,7 @@ inline bool operator!=(type_t lhs, type_t rhs){ return (lhs == rhs) == false; };
 
 
 
+
 /////////////////////////////////////////////////		type_desc_t
 
 
@@ -614,6 +616,135 @@ struct type_desc_t {
 //		QUARK_ASSERT(get_base_type() != base_type::k_identifier);
 		return true;
 	}
+
+	type_desc_t(){
+		QUARK_ASSERT(check_invariant());
+	}
+
+
+
+	//////////////////////////////////////////////////		UNDEFINED
+
+
+	bool is_undefined() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_undefined;
+	}
+
+
+	//////////////////////////////////////////////////		ANY
+
+
+
+	static type_desc_t make_any(){
+		return type_desc_t(type_t::make_any());
+	}
+
+	bool is_any() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_any;
+	}
+
+
+	//////////////////////////////////////////////////		VOID
+
+
+	static type_desc_t make_void(){
+		return type_desc_t(type_t::make_void());
+	}
+
+	bool is_void() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_void;
+	}
+
+
+	//////////////////////////////////////////////////		BOOL
+
+
+	static type_desc_t make_bool(){
+		return type_desc_t(type_t::make_bool());
+	}
+
+	bool is_bool() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_bool;
+	}
+
+
+	//////////////////////////////////////////////////		INT
+
+
+	static type_desc_t make_int(){
+		return type_desc_t(type_t::make_int());
+	}
+
+	bool is_int() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_int;
+	}
+
+
+	//////////////////////////////////////////////////		DOUBLE
+
+
+	static type_desc_t make_double(){
+		return type_desc_t(type_t::make_double());
+	}
+
+	bool is_double() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_double;
+	}
+
+
+	//////////////////////////////////////////////////		STRING
+
+
+	static type_desc_t make_string(){
+		return type_desc_t(type_t::make_string());
+	}
+
+	bool is_string() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_string;
+	}
+
+
+	//////////////////////////////////////////////////		JSON
+
+
+	static type_desc_t make_json(){
+		return type_desc_t(type_t::make_json());
+	}
+
+	bool is_json() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_json;
+	}
+
+
+	//////////////////////////////////////////////////		TYPEID
+
+
+	static type_desc_t make_typeid(){
+		return type_desc_t(type_t::make_typeid());
+	}
+
+	bool is_typeid() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_typeid;
+	}
+
 
 
 	//////////////////////////////////////////////////		STRUCT
@@ -628,6 +759,44 @@ struct type_desc_t {
 	struct_type_desc_t get_struct(const types_t& types) const;
 
 
+	//////////////////////////////////////////////////		VECTOR
+
+
+	bool is_vector() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_vector;
+	}
+
+	type_desc_t get_vector_element_type(const types_t& types) const;
+
+	base_type get_vector_element_basetype() const {
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(is_vector());
+
+		return non_name_type.get_vector_element_basetype();
+	}
+
+
+	//////////////////////////////////////////////////		DICT
+
+
+	bool is_dict() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_dict;
+	}
+
+	type_desc_t get_dict_value_type(const types_t& types) const;
+
+	base_type get_dict_value_basetype() const {
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(is_vector());
+
+		return non_name_type.get_dict_value_basetype();
+	}
+
+
 	//////////////////////////////////////////////////		FUNCTION
 
 
@@ -640,8 +809,15 @@ struct type_desc_t {
 	public: type_t get_function_return(const types_t& types) const {
 		return non_name_type.get_function_return(types);
 	}
+	public: type_desc_t get_function_return2(const types_t& types) const {
+		return non_name_type.get_function_return(types);
+	}
 	public: std::vector<type_t> get_function_args(const types_t& types) const{
 		return non_name_type.get_function_args(types);
+	}
+	public: std::vector<type_desc_t> get_function_args2(const types_t& types) const{
+		const auto args = non_name_type.get_function_args(types);
+		return mapf<type_desc_t>(args, [&](const auto& e){ return type_desc_t(e); } );
 	}
 
 	public: return_dyn_type get_function_dyn_return_type(const types_t& types) const{
@@ -653,10 +829,38 @@ struct type_desc_t {
 	}
 
 
+	//////////////////////////////////////////////////		SYMBOL
 
-		base_type get_base_type() const {
-			return non_name_type.get_base_type();
-		}
+
+	public: bool is_symbol_ref() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_symbol_ref;
+	}
+
+	std::string get_symbol_ref(const types_t& types) const;
+
+
+	//////////////////////////////////////////////////		NAMED TYPE
+
+
+	bool is_named_type() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_named_type;
+	}
+
+	type_name_t get_named_type(const types_t& types) const;
+
+
+
+
+
+
+
+	base_type get_base_type() const {
+		return non_name_type.get_base_type();
+	}
 
 
 	//////////////////////////////////////////////////		INTERNALS

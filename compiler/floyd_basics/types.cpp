@@ -1467,6 +1467,10 @@ type_t type_t::get_dict_value_type(const types_t& types) const{
 
 
 
+
+
+
+
 struct_type_desc_t type_desc_t::get_struct(const types_t& types) const{
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(types.check_invariant());
@@ -1474,6 +1478,23 @@ struct_type_desc_t type_desc_t::get_struct(const types_t& types) const{
 
 	const auto& info = lookup_typeinfo_from_type(types, *this);
 	return info.struct_desc;
+}
+
+type_desc_t type_desc_t::get_vector_element_type(const types_t& types) const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(is_vector());
+
+	const auto& info = lookup_typeinfo_from_type(types, *this);
+	return info.child_types[0];
+}
+type_desc_t type_desc_t::get_dict_value_type(const types_t& types) const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(is_dict());
+
+	const auto& info = lookup_typeinfo_from_type(types, *this);
+	return info.child_types[0];
 }
 
 

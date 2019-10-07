@@ -34,8 +34,8 @@ value_t bc_to_value(const types_t& types, const bc_value_t& value){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 
-	const auto& type = value._type;
-	const auto basetype = value._type.get_base_type();
+	const auto& type = peek2(types, value._type);
+	const auto basetype = type.get_base_type();
 
 	if(basetype == base_type::k_undefined){
 		return value_t::make_undefined();
@@ -182,7 +182,7 @@ bc_value_t value_to_bc(const types_t& types, const value_t& value){
 		}
 	}
 	else if(basetype == base_type::k_dict){
-		const auto value_type = type.get_vector_element_type(types);
+		const auto value_type = type.get_dict_value_type(types);
 
 		const auto elements = value.get_dict_value();
 		immer::map<std::string, bc_external_handle_t> entries2;
@@ -195,7 +195,7 @@ bc_value_t value_to_bc(const types_t& types, const value_t& value){
 				entries2 = entries2.insert({e.first, bc_external_handle_t(value_to_bc(types, e.second))});
 			}
 		}
-		return make_dict(types, type, entries2);
+		return make_dict(types, value_type, entries2);
 	}
 	else if(basetype == base_type::k_function){
 		return bc_value_t::make_function_value(type, value.get_function_value());
