@@ -3168,7 +3168,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] push_back()", "", ""){
 
 //////////////////////////////////////////		vector-int
 
-//#define FLOYD_LANG_PROOF FLOYD_LANG_PROOF_VIP
+
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] constructor expression", "", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = 404		)",		make_expected_int(404));
@@ -4354,7 +4354,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "update without quoting member na
 }
 
 
-#if 0
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "return struct from function", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -4372,10 +4371,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "return struct from function", ""
 		{ "{red=100, green=101, blue=102}" }
 	);
 }
-#endif
 
-#if 0
-//???temp
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "return struct from function", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -4392,7 +4388,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "return struct from function", ""
 		{ "{red=100, green=101, blue=102}" }
 	);
 }
-#endif
 
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "compare structs", ""){
 	ut_verify_printout_nolib(
@@ -4508,6 +4503,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "mutate struct member using updat
 }
 
 #if 0
+//	Not supported yet, should support nested indexes and lookups etc.
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "mutate nested member", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -4641,8 +4637,8 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Error: Wrong TYPE of arguments t
 
 
 #if 0
-//??named-type
-FLOYD_LANG_PROOF("Floyd test suite", "struct", "nested", ""){
+//	??? Add support for this!!!
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "recursive named types", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(
 
 		struct object_t {
@@ -4656,7 +4652,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "nested", ""){
 #endif
 
 #if 0
-//??named-type
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "nested", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(
 
@@ -5235,7 +5230,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "string", ""){
 
 #if 0
 //??? requires unnamed structs
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "from_json()", "point_t", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "point_t", ""){
 	types_t temp;
 	const auto point_t_def = std::vector<member_t>{
 		member_t(type_t::make_double(), "x"),
@@ -5711,9 +5706,8 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Access benchmark registry
 	);
 }
 
-#if 0
 FLOYD_LANG_PROOF("Floyd test suite", "for", "Make sure loop variable is hidden outside of for-body", ""){
-	ut_run_closed_nolib(
+	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
 
@@ -5721,10 +5715,11 @@ FLOYD_LANG_PROOF("Floyd test suite", "for", "Make sure loop variable is hidden o
 				let result = 3
 			}
 			assert(result)
-		)"
+		)",
+		R"___([Semantics] Undefined variable "result". Line: 6 "assert(result)")___"
 	);
 }
-#endif
+
 
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running more than one simple benchmark_def", ""){
 	ut_verify_printout_nolib(
@@ -7213,7 +7208,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict hamt performance()", "", ""){
 
 
 /*
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "OPTIMZATION SETTINGS" "Fibonacci 10", "", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "OPTIMZATION SETTINGS" "Fibonacci 10", "", ""){
 	ut_run_closed_nolib(
 		QUARK_POS,
 		R"(
