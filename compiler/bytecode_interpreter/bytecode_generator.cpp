@@ -749,7 +749,6 @@ static expression_gen_t bcgen_make_fallthrough_intrinsic(bcgenerator_t& gen_acc,
 	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
-	const auto& types = gen_acc._ast_imm->_tree._interned_types;
 
 	const auto& intrinsic_signatures = gen_acc._ast_imm->intrinsic_signatures;
 
@@ -1324,7 +1323,6 @@ static expression_gen_t bcgen_intrinsic_expression(bcgenerator_t& gen_acc, const
 
 //??? Submit dest-register to all gen-functions = minimize temps.
 //??? Wrap type in struct to make it typesafe.
-//??? Only use types in interpreter
 
 static expression_gen_t bcgen_construct_value_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const expression_t::value_constructor_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
