@@ -6654,7 +6654,6 @@ FLOYD_LANG_PROOF("software-system-def", "run one process", "", ""){
 	ut_run_closed_nolib(QUARK_POS, program);
 }
 
-#if 0
 FLOYD_LANG_PROOF("software-system-def", "run two unconnected processs", "", ""){
 	const auto program = R"(
 
@@ -6739,10 +6738,8 @@ FLOYD_LANG_PROOF("software-system-def", "run two unconnected processs", "", ""){
 
 	ut_run_closed_nolib(QUARK_POS, program);
 }
-#endif
 
-#if 0
-FLOYD_LANG_PROOF("software-system-def", "run two CONNECTED processes", "", ""){
+FLOYD_LANG_PROOF_VIP("software-system-def", "run two CONNECTED processes", "", ""){
 	const auto program = R"(
 
 		software-system-def {
@@ -6829,7 +6826,6 @@ FLOYD_LANG_PROOF("software-system-def", "run two CONNECTED processes", "", ""){
 
 	ut_run_closed_nolib(QUARK_POS, program);
 }
-#endif
 
 #endif	//	RUN_CONTAINER_TESTS
 
