@@ -15,11 +15,7 @@
 	inplace: data is stored directly inside the value.
 	external: data is allocated externally and value points to it.
 
-
-
-??? remove usage of type_t. Use itype & types[]?
-??? All functions should be the same type of function-values: host-functions and Floyd functions: _function_id should be in the VALUE not function definition!
-??? Less code + faster to generate increc, decref instructions instead of make *_external_value, *_internal_value opcodes.
+	??? Less code + faster to generate increc, decref instructions instead of make *_external_value, *_internal_value opcodes.
 */
 
 #include "types.h"
@@ -119,7 +115,13 @@ value_encoding type_to_encoding(const types_t& types, const type_t& type);
 
 //	Will this type of value require an ext ? bc_external_value_t to be used?
 bool encode_as_external(value_encoding encoding);
-bool encode_as_external(const type_t& type);
+bool encode_as_external(const type_desc_t& type);
+
+//??? build paralell table with ext-flag for each node.
+bool encode_as_external(const types_t& types, const type_t& type);
+
+
+bool encode_as_external(const bc_value_t& value);
 
 
 //////////////////////////////////////		bc_value_t
@@ -207,7 +209,7 @@ struct bc_value_t {
 
 
 	//	Bumps RC if needed.
-	public: explicit bc_value_t(const type_t& type, const bc_pod_value_t& internals);
+	public: explicit bc_value_t(const type_t& type, const bc_pod_value_t& internals, bool encode_as_external);
 
 	//	Won't bump RC.
 	public: bc_value_t(const type_t& type, const bc_inplace_value_t& pod64);
@@ -220,6 +222,9 @@ struct bc_value_t {
 	//??? make private, also check other classes.
 	public: type_t _type;
 	public: bc_pod_value_t _pod;
+
+	//	??? We could encode this bit into the type and use a wrapper type around type_t.
+	public: bool _encode_as_external;
 };
 
 
@@ -326,6 +331,7 @@ int bc_compare_value_exts(const types_t& types, const bc_external_handle_t& left
 
 /*
 	Tracks information about a symbol inside a stack frame.
+	??? Rename "stack_frame_entry_t"
 */
 
 struct bc_symbol_t {
@@ -350,8 +356,9 @@ struct bc_symbol_t {
 //////////////////////////////////////		bc_opcode
 
 /*
-	These are the instructions used byte the byte code.
-	Each instruction has 3 16-bit fields, called A, B, C. Each opcode has description that tells how A-B-B are used.
+	These are the byte code instructions used by the interpreter.
+	Each instruction has an 8bit opcode and 3 x 16-bit fields, called A, B, C.
+	Each opcode has description that tells how A-B-C are used.
 */
 enum class bc_opcode: uint8_t {
 	k_nop = 0,
@@ -877,7 +884,8 @@ enum {
 */
 
 struct interpreter_stack_t {
-	public: interpreter_stack_t(const bc_static_frame_t* global_frame) :
+	public: interpreter_stack_t(const types_t& types, const bc_static_frame_t* global_frame) :
+		_types(types),
 		_current_frame_ptr(nullptr),
 		_current_frame_entry_ptr(nullptr),
 		_global_frame(global_frame),
@@ -900,6 +908,7 @@ struct interpreter_stack_t {
 	}
 
 	public: bool check_invariant() const {
+		QUARK_ASSERT(_types.check_invariant());
 		QUARK_ASSERT(_entries != nullptr);
 		QUARK_ASSERT(_stack_size >= 0 && _stack_size <= _allocated_count);
 
@@ -921,6 +930,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
+		std::swap(other._types, _types);
 		std::swap(other._entries, _entries);
 		std::swap(other._allocated_count, _allocated_count);
 		std::swap(other._stack_size, _stack_size);
@@ -1024,9 +1034,13 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
 
-//			bool is_ext = _current_frame_ptr->_exts[reg];
+			bool is_ext = _current_frame_ptr->_exts[reg];
 #if DEBUG
-		const auto result = bc_value_t(_current_frame_ptr->_symbols[reg].second._value_type, _current_frame_entry_ptr[reg]);
+		const auto result = bc_value_t(
+			_current_frame_ptr->_symbols[reg].second._value_type,
+			_current_frame_entry_ptr[reg],
+			is_ext
+		);
 #else
 //			const auto result = bc_value_t(_current_frame_entry_ptr[reg], is_ext);
 		const auto result = bc_value_t(_current_frame_ptr->_symbols[reg].second._value_type, _current_frame_entry_ptr[reg]);
@@ -1056,10 +1070,10 @@ struct interpreter_stack_t {
 
 	public: void write_register__external_value(const int reg, const bc_value_t& value){
 		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(encode_as_external(value._type));
+		QUARK_ASSERT(encode_as_external(_types, value._type));
 		QUARK_ASSERT(check_reg__external_value(reg));
 		QUARK_ASSERT(value.check_invariant());
-		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type == value._type);
+		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type == peek0(_types, value._type));
 
 		auto prev_copy = _current_frame_entry_ptr[reg];
 		value._pod._external->_rc++;
@@ -1207,7 +1221,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
 #if DEBUG
-		QUARK_ASSERT(encode_as_external(value._type) == true);
+		QUARK_ASSERT(encode_as_external(_types, value._type) == true);
 #endif
 
 		value._pod._external->_rc++;
@@ -1224,7 +1238,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
 #if DEBUG
-		QUARK_ASSERT(encode_as_external(value._type) == false);
+		QUARK_ASSERT(encode_as_external(_types, value._type) == false);
 #endif
 
 		_entries[_stack_size] = value._pod;
@@ -1244,7 +1258,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(type == _debug_types[pos]);
 
 		const auto& e = _entries[pos];
-		const auto result = bc_value_t(type, e);
+		const auto result = bc_value_t(type, e, encode_as_external(_types, type));
 		return result;
 	}
 
@@ -1303,7 +1317,7 @@ struct interpreter_stack_t {
 	private: inline void pop(bool ext){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(_stack_size > 0);
-		QUARK_ASSERT(encode_as_external(_debug_types.back()) == ext);
+		QUARK_ASSERT(encode_as_external(_types, _debug_types.back()) == ext);
 
 		auto copy = _entries[_stack_size - 1];
 		_stack_size--;
@@ -1321,7 +1335,7 @@ struct interpreter_stack_t {
 	private: bool debug_is_ext(int pos) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
-		return encode_as_external(_debug_types[pos]);
+		return encode_as_external(_types, _debug_types[pos]);
 	}
 #endif
 
@@ -1337,12 +1351,15 @@ struct interpreter_stack_t {
 
 	////////////////////////		STATE
 
+	public: types_t _types;
 	public: bc_pod_value_t* _entries;
 	public: size_t _allocated_count;
 	public: size_t _stack_size;
 
 	//	These are DEEP copies = do not share RC with non-debug values.
 #if DEBUG
+	//	These are parallell with _entries, one elementfor each entry on the stack.
+	//??? Better to embedd these in struct stack_element_t { type_t debug_type,bc_pod_value_t };
 	public: std::vector<type_t> _debug_types;
 #endif
 

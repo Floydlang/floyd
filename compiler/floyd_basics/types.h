@@ -654,6 +654,11 @@ struct type_desc_t {
 
 
 
+		base_type get_base_type() const {
+			return non_name_type.get_base_type();
+		}
+
+
 	//////////////////////////////////////////////////		INTERNALS
 
 
@@ -911,7 +916,6 @@ type_t name_named_type(types_t& types, const type_name_t& n, const type_t& desti
 //	Update the named type's destination type. The tagged type must already exist. Any usage of this
 //	tag will also get the new type.
 type_t update_named_type(types_t& types, const type_t& named, const type_t& destination_type);
-
 
 type_t peek0(const types_t& types, const type_t& type);
 type_desc_t peek2(const types_t& types, const type_t& type);

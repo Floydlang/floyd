@@ -35,7 +35,7 @@
 #include <iostream>
 
 
-static const bool k_run_bc = false;
+static const bool k_run_bc = true;
 static const bool k_run_llvm = true;
 
 namespace floyd {
@@ -112,7 +112,7 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 
 		print_vm_printlog(interpreter);
 
-		return test_report_t{ value_and_type_to_ast_json(exe._types, result_global), run_output, interpreter._print_output, "" };
+		return test_report_t{ result_global.is_undefined() ? json_t() : value_and_type_to_ast_json(exe._types, result_global), run_output, interpreter._print_output, "" };
 	}
 	catch(const std::runtime_error& e){
 		return test_report_t{ {}, {}, {}, e.what() };

@@ -3419,6 +3419,11 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [string] constructor", "", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(		assert(to_string(["one", "two", "three"]) == "[\"one\", \"two\", \"three\"]")		)");
 }
 
+FLOYD_LANG_PROOF("Floyd test suite", "vector [typeid] constructor", "", ""){
+	ut_verify_printout_nolib(QUARK_POS, R"(		let a = int		)", {} );
+//	ut_verify_printout_nolib(QUARK_POS, R"(		let a = [int, bool, string]		)", {} );
+//	ut_verify_printout_nolib(QUARK_POS, R"(		print([int, bool, string])		)", {} );
+}
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [typeid] constructor", "", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(		assert(to_string([int, bool, string]) == "[int, bool, string]")		)");
@@ -3495,7 +3500,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [func] constructor", "", ""){
 }
 
 
-FLOYD_LANG_PROOF("Floyd test suite", "vector [struct] constructor", "", ""){
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "vector [struct] constructor", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -4349,7 +4354,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "update without quoting member na
 }
 
 
-
+#if 0
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "return struct from function", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -4367,6 +4372,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "return struct from function", ""
 		{ "{red=100, green=101, blue=102}" }
 	);
 }
+#endif
 
 #if 0
 //???temp
@@ -6651,6 +6657,7 @@ FLOYD_LANG_PROOF("software-system-def", "run one process", "", ""){
 	ut_run_closed_nolib(QUARK_POS, program);
 }
 
+#if 0
 FLOYD_LANG_PROOF("software-system-def", "run two unconnected processs", "", ""){
 	const auto program = R"(
 
@@ -6735,7 +6742,9 @@ FLOYD_LANG_PROOF("software-system-def", "run two unconnected processs", "", ""){
 
 	ut_run_closed_nolib(QUARK_POS, program);
 }
+#endif
 
+#if 0
 FLOYD_LANG_PROOF("software-system-def", "run two CONNECTED processes", "", ""){
 	const auto program = R"(
 
@@ -6823,7 +6832,7 @@ FLOYD_LANG_PROOF("software-system-def", "run two CONNECTED processes", "", ""){
 
 	ut_run_closed_nolib(QUARK_POS, program);
 }
-
+#endif
 
 #endif	//	RUN_CONTAINER_TESTS
 
