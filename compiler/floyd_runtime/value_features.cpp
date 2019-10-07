@@ -22,7 +22,7 @@ VECTOR_CARRAY_T* unpack_vector_carray_arg(const value_backend_t& backend, runtim
 #if DEBUG
 	const auto& type = lookup_type_ref(backend, arg_type);
 #endif
-	QUARK_ASSERT(type.is_vector());
+	QUARK_ASSERT(peek2(backend.types, type).is_vector());
 	QUARK_ASSERT(arg.vector_carray_ptr != nullptr);
 	QUARK_ASSERT(arg.vector_carray_ptr->check_invariant());
 
@@ -422,7 +422,7 @@ int64_t find__carray(value_backend_t& backend, runtime_value_t coll_value, runti
 	const auto& type0 = lookup_type_ref(backend, coll_type);
 	const auto& type1 = lookup_type_ref(backend, value_type);
 
-	QUARK_ASSERT(type1 == type0.get_vector_element_type(backend.types));
+	QUARK_ASSERT(type1 == peek2(backend.types, type0).get_vector_element_type(backend.types));
 
 	const auto vec = unpack_vector_carray_arg(backend, coll_value, coll_type);
 
@@ -448,7 +448,7 @@ int64_t find__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime
 	const auto& type0 = lookup_type_ref(backend, coll_type);
 	const auto& type1 = lookup_type_ref(backend, value_type);
 
-	QUARK_ASSERT(type1 == type0.get_vector_element_type(backend.types));
+	QUARK_ASSERT(type1 == peek2(backend.types, type0).get_vector_element_type(backend.types));
 
 	const auto& vec = *coll_value.vector_hamt_ptr;
 	QUARK_ASSERT(vec.check_invariant());

@@ -264,7 +264,7 @@ general_purpose_ast_t desugar(desugar_t& acc, const general_purpose_ast_t& ast){
 	}
 	result._function_defs = function_defs;
 
-	result._interned_types = ast._interned_types;
+	result._types = ast._types;
 	result._software_system = ast._software_system;
 	result._container_def = ast._container_def;
 

@@ -214,10 +214,11 @@ type_t harden_map_func_type(types_t& types, const type_t& resolved_call_type0){
 	const auto sign = make_map_signature(types);
 
 	const auto arg1_type = resolved_call_type.get_function_args(types)[0];
-	if(arg1_type.is_vector() == false){
+	const auto arg1_peek = peek2(types, arg1_type);
+	if(arg1_peek.is_vector() == false){
 		quark::throw_runtime_error("map() arg 1 must be a vector.");
 	}
-	const auto e_type = arg1_type.get_vector_element_type(types);
+	const auto e_type = arg1_peek.get_vector_element_type(types);
 
 	const auto arg2_type = resolved_call_type.get_function_args(types)[1];
 	if(peek2(types, arg2_type).is_function() == false){
@@ -241,12 +242,12 @@ type_t harden_map_func_type(types_t& types, const type_t& resolved_call_type0){
 }
 
 bool check_map_func_type(types_t& types, const type_t& elements, const type_t& f, const type_t& context){
-	QUARK_ASSERT(elements.is_vector());
+	QUARK_ASSERT(peek2(types, elements).is_vector());
 	QUARK_ASSERT(peek2(types, f).is_function());
 
 	const auto f_peek = peek2(types, f);
 	QUARK_ASSERT(f_peek.get_function_args(types).size() == 2);
-	QUARK_ASSERT(f_peek.get_function_args(types)[0] == elements.get_vector_element_type(types));
+	QUARK_ASSERT(f_peek.get_function_args(types)[0] == peek2(types, elements).get_vector_element_type(types));
 	QUARK_ASSERT(f_peek.get_function_args(types)[1] == context);
 	return true;
 }
@@ -316,10 +317,10 @@ type_t harden_map_dag_func_type(types_t& types, const type_t& resolved_call_type
 	const auto sign = make_map_dag_signature(types);
 
 	const auto arg1_type = resolved_call_type.get_function_args(types)[0];
-	if(arg1_type.is_vector() == false){
+	if(peek2(types, arg1_type).is_vector() == false){
 		quark::throw_runtime_error("map_dag() arg 1 must be a vector.");
 	}
-	const auto e_type = arg1_type.get_vector_element_type(types);
+	const auto e_type = peek2(types, arg1_type).get_vector_element_type(types);
 
 	const auto arg3_type = resolved_call_type.get_function_args(types)[2];
 	if(peek2(types, arg3_type).is_function() == false){
@@ -346,12 +347,12 @@ type_t harden_map_dag_func_type(types_t& types, const type_t& resolved_call_type
 
 bool check_map_dag_func_type(types_t& types, const type_t& elements, const type_t& depends_on, const type_t& f, const type_t& context){
 	//	Check topology.
-	QUARK_ASSERT(elements.is_vector());
+	QUARK_ASSERT(peek2(types, elements).is_vector());
 	QUARK_ASSERT(depends_on == make_vector(types, type_t::make_int()));
 
 	const auto f_peek = peek2(types, f);
 	QUARK_ASSERT(f_peek.is_function() && f_peek.get_function_args(types).size () == 3);
-	QUARK_ASSERT(f_peek.get_function_args(types)[0] == elements.get_vector_element_type(types));
+	QUARK_ASSERT(f_peek.get_function_args(types)[0] == peek2(types, elements).get_vector_element_type(types));
 	QUARK_ASSERT(f_peek.get_function_args(types)[1] == make_vector(types, f_peek.get_function_return(types)));
 	QUARK_ASSERT(f_peek.get_function_args(types)[2] == context);
 	return true;
@@ -372,10 +373,10 @@ type_t harden_filter_func_type(types_t& types, const type_t& resolved_call_type0
 	const auto sign = make_filter_signature(types);
 
 	const auto arg1_type = resolved_call_type.get_function_args(types)[0];
-	if(arg1_type.is_vector() == false){
+	if(peek2(types, arg1_type).is_vector() == false){
 		quark::throw_runtime_error("map() arg 1 must be a vector.");
 	}
-	const auto e_type = arg1_type.get_vector_element_type(types);
+	const auto e_type = peek2(types, arg1_type).get_vector_element_type(types);
 
 	const auto context_type = resolved_call_type.get_function_args(types)[2];
 
@@ -393,12 +394,12 @@ type_t harden_filter_func_type(types_t& types, const type_t& resolved_call_type0
 }
 
 bool check_filter_func_type(types_t& types, const type_t& elements, const type_t& f, const type_t& context){
-	QUARK_ASSERT(elements.is_vector());
+	QUARK_ASSERT(peek2(types, elements).is_vector());
 
 	const auto f_peek = peek2(types, f);
 	QUARK_ASSERT(f_peek.is_function());
 	QUARK_ASSERT(f_peek.get_function_args(types).size() == 2);
-	QUARK_ASSERT(f_peek.get_function_args(types)[0] == elements.get_vector_element_type(types));
+	QUARK_ASSERT(f_peek.get_function_args(types)[0] == peek2(types, elements).get_vector_element_type(types));
 	QUARK_ASSERT(f_peek.get_function_args(types)[1] == context);
 	return true;
 }
@@ -417,10 +418,10 @@ type_t harden_reduce_func_type(types_t& types, const type_t& resolved_call_type0
 	const auto call_function_arg_type = resolved_call_type.get_function_args(types);
 
 	const auto elements_arg_type = call_function_arg_type[0];
-	if(elements_arg_type.is_vector() == false){
+	if(peek2(types, elements_arg_type).is_vector() == false){
 		quark::throw_runtime_error("map() arg 1 must be a vector.");
 	}
-	const auto e_type = elements_arg_type.get_vector_element_type(types);
+	const auto e_type = peek2(types, elements_arg_type).get_vector_element_type(types);
 
 	const auto r_type = call_function_arg_type[1];
 
@@ -448,11 +449,11 @@ bool check_reduce_func_type(types_t& types, const type_t& elements, const type_t
 
 	const auto f_peek = peek2(types, f);
 
-	QUARK_ASSERT(elements.is_vector());
+	QUARK_ASSERT(peek2(types, elements).is_vector());
 	QUARK_ASSERT(f_peek.is_function());
 	QUARK_ASSERT(f_peek.get_function_args(types).size () == 3);
 
-	QUARK_ASSERT(f_peek.get_function_args(types)[1] == elements.get_vector_element_type(types));
+	QUARK_ASSERT(f_peek.get_function_args(types)[1] == peek2(types, elements).get_vector_element_type(types));
 	QUARK_ASSERT(f_peek.get_function_args(types)[0] == accumulator_init);
 
 	return true;
@@ -473,10 +474,10 @@ type_t harden_stable_sort_func_type(types_t& types, const type_t& resolved_call_
 	const auto sign = make_stable_sort_signature(types);
 
 	const auto arg1_type = resolved_call_type.get_function_args(types)[0];
-	if(arg1_type.is_vector() == false){
+	if(peek2(types, arg1_type).is_vector() == false){
 		quark::throw_runtime_error("stable_sort() arg 1 must be a vector.");
 	}
-	const auto e_type = arg1_type.get_vector_element_type(types);
+	const auto e_type = peek2(types, arg1_type).get_vector_element_type(types);
 
 	const auto arg2_type = resolved_call_type.get_function_args(types)[1];
 	if(peek2(types, arg2_type).is_function() == false){
@@ -499,14 +500,14 @@ type_t harden_stable_sort_func_type(types_t& types, const type_t& resolved_call_
 }
 
 bool check_stable_sort_func_type(types_t& types, const type_t& elements, const type_t& f, const type_t& context){
-	QUARK_ASSERT(elements.is_vector());
+	QUARK_ASSERT(peek2(types, elements).is_vector());
 	QUARK_ASSERT(peek2(types, f).is_function());
 
 	const auto f_peek = peek2(types, f);
 
 	QUARK_ASSERT(f_peek.get_function_args(types).size() == 3);
 
-	const auto& e_type = elements.get_vector_element_type(types);
+	const auto& e_type = peek2(types, elements).get_vector_element_type(types);
 	QUARK_ASSERT(f_peek.get_function_return(types) == type_t::make_bool());
 	QUARK_ASSERT(f_peek.get_function_args(types)[0] == e_type);
 	QUARK_ASSERT(f_peek.get_function_args(types)[1] == e_type);

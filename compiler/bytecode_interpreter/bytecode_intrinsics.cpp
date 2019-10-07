@@ -145,8 +145,11 @@ bc_value_t bc_intrinsic__find(interpreter_t& vm, const bc_value_t args[], int ar
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
+	const auto& types = vm._imm->_program._types;
 	const auto obj = args[0];
 	const auto wanted = args[1];
+
+	const auto& obj_type_peek = peek2(types, obj._type);
 
 	if(obj._type.is_string()){
 		const auto str = obj.get_string_value();
@@ -156,11 +159,11 @@ bc_value_t bc_intrinsic__find(interpreter_t& vm, const bc_value_t args[], int ar
 		int result = r == std::string::npos ? -1 : static_cast<int>(r);
 		return bc_value_t::make_int(result);
 	}
-	else if(obj._type.is_vector()){
-		const auto element_type = obj._type.get_vector_element_type(vm._imm->_program._types);
+	else if(obj_type_peek.is_vector()){
+		const auto element_type = obj_type_peek.get_vector_element_type(types);
 		QUARK_ASSERT(wanted._type == element_type);
 
-		if(obj._type.get_vector_element_type(vm._imm->_program._types).is_bool()){
+		if(obj_type_peek.get_vector_element_type(types).is_bool()){
 			const auto& vec = obj._pod._external->_vector_w_inplace_elements;
 			int index = 0;
 			const auto size = vec.size();
@@ -170,7 +173,7 @@ bc_value_t bc_intrinsic__find(interpreter_t& vm, const bc_value_t args[], int ar
 			int result = index == size ? -1 : static_cast<int>(index);
 			return bc_value_t::make_int(result);
 		}
-		else if(obj._type.get_vector_element_type(vm._imm->_program._types).is_int()){
+		else if(obj_type_peek.get_vector_element_type(types).is_int()){
 			const auto& vec = obj._pod._external->_vector_w_inplace_elements;
 			int index = 0;
 			const auto size = vec.size();
@@ -180,7 +183,7 @@ bc_value_t bc_intrinsic__find(interpreter_t& vm, const bc_value_t args[], int ar
 			int result = index == size ? -1 : static_cast<int>(index);
 			return bc_value_t::make_int(result);
 		}
-		else if(obj._type.get_vector_element_type(vm._imm->_program._types).is_double()){
+		else if(obj_type_peek.get_vector_element_type(types).is_double()){
 			const auto& vec = obj._pod._external->_vector_w_inplace_elements;
 			int index = 0;
 			const auto size = vec.size();
@@ -191,10 +194,10 @@ bc_value_t bc_intrinsic__find(interpreter_t& vm, const bc_value_t args[], int ar
 			return bc_value_t::make_int(result);
 		}
 		else{
-			const auto& vec = *get_vector_external_elements(vm._imm->_program._types, obj);
+			const auto& vec = *get_vector_external_elements(types, obj);
 			const auto size = vec.size();
 			int index = 0;
-			while(index < size && bc_compare_value_exts(vm._imm->_program._types, vec[index], bc_external_handle_t(wanted), element_type) != 0){
+			while(index < size && bc_compare_value_exts(types, vec[index], bc_external_handle_t(wanted), element_type) != 0){
 				index++;
 			}
 			int result = index == size ? -1 : static_cast<int>(index);
@@ -213,6 +216,7 @@ bc_value_t bc_intrinsic__exists(interpreter_t& vm, const bc_value_t args[], int 
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
+	const auto& types = vm._imm->_program._types;
 	const auto obj = args[0];
 	const auto key = args[1];
 
@@ -221,12 +225,12 @@ bc_value_t bc_intrinsic__exists(interpreter_t& vm, const bc_value_t args[], int 
 
 	const auto key_string = key.get_string_value();
 
-	if(encode_as_dict_w_inplace_values(vm._imm->_program._types, obj._type)){
+	if(encode_as_dict_w_inplace_values(types, obj._type)){
 		const auto found_ptr = obj._pod._external->_dict_w_inplace_values.find(key_string);
 		return bc_value_t::make_bool(found_ptr != nullptr);
 	}
 	else{
-		const auto entries = get_dict_external_values(vm._imm->_program._types, obj);
+		const auto entries = get_dict_external_values(types, obj);
 		const auto found_ptr = entries.find(key_string);
 		return bc_value_t::make_bool(found_ptr != nullptr);
 	}
@@ -236,6 +240,7 @@ bc_value_t bc_intrinsic__erase(interpreter_t& vm, const bc_value_t args[], int a
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
+	const auto& types = vm._imm->_program._types;
 	const auto obj = args[0];
 	const auto key = args[1];
 
@@ -244,16 +249,16 @@ bc_value_t bc_intrinsic__erase(interpreter_t& vm, const bc_value_t args[], int a
 
 	const auto key_string = key.get_string_value();
 
-	const auto value_type = obj._type.get_dict_value_type(vm._imm->_program._types);
-	if(encode_as_dict_w_inplace_values(vm._imm->_program._types, obj._type)){
+	const auto value_type = obj._type.get_dict_value_type(types);
+	if(encode_as_dict_w_inplace_values(types, obj._type)){
 		auto entries2 = obj._pod._external->_dict_w_inplace_values.erase(key_string);
-		const auto value2 = make_dict(vm._imm->_program._types, value_type, entries2);
+		const auto value2 = make_dict(types, value_type, entries2);
 		return value2;
 	}
 	else{
-		auto entries2 = get_dict_external_values(vm._imm->_program._types, obj);
+		auto entries2 = get_dict_external_values(types, obj);
 		entries2 = entries2.erase(key_string);
-		const auto value2 = make_dict(vm._imm->_program._types, value_type, entries2);
+		const auto value2 = make_dict(types, value_type, entries2);
 		return value2;
 	}
 }
@@ -335,6 +340,7 @@ bc_value_t bc_intrinsic__subset(interpreter_t& vm, const bc_value_t args[], int 
 	QUARK_ASSERT(args[1]._type.is_int());
 	QUARK_ASSERT(args[2]._type.is_int());
 
+	const auto& types = vm._imm->_program._types;
 	const auto obj = args[0];
 
 	const auto start = args[1].get_int_value();
@@ -342,6 +348,8 @@ bc_value_t bc_intrinsic__subset(interpreter_t& vm, const bc_value_t args[], int 
 	if(start < 0 || end < 0){
 		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
 	}
+
+	const auto& obj_type_peek = peek2(types, obj._type);
 
 	//??? Move functionallity into seprate function.
 	if(obj._type.is_string()){
@@ -356,9 +364,9 @@ bc_value_t bc_intrinsic__subset(interpreter_t& vm, const bc_value_t args[], int 
 		const auto v = bc_value_t::make_string(str2);
 		return v;
 	}
-	else if(obj._type.is_vector()){
-		if(encode_as_vector_w_inplace_elements(vm._imm->_program._types, obj._type)){
-			const auto& element_type = obj._type.get_vector_element_type(vm._imm->_program._types);
+	else if(obj_type_peek.is_vector()){
+		if(encode_as_vector_w_inplace_elements(types, obj._type)){
+			const auto& element_type = obj_type_peek.get_vector_element_type(types);
 			const auto& vec = obj._pod._external->_vector_w_inplace_elements;
 			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
 			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
@@ -366,19 +374,19 @@ bc_value_t bc_intrinsic__subset(interpreter_t& vm, const bc_value_t args[], int 
 			for(auto i = start2 ; i < end2 ; i++){
 				elements2 = elements2.push_back(vec[i]);
 			}
-			const auto v = make_vector(vm._imm->_program._types, element_type, elements2);
+			const auto v = make_vector(types, element_type, elements2);
 			return v;
 		}
 		else{
 			const auto& vec = obj._pod._external->_vector_w_external_elements;
-			const auto element_type = obj._type.get_vector_element_type(vm._imm->_program._types);
+			const auto element_type = obj_type_peek.get_vector_element_type(types);
 			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
 			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
 			immer::vector<bc_external_handle_t> elements2;
 			for(auto i = start2 ; i < end2 ; i++){
 				elements2 = elements2.push_back(vec[i]);
 			}
-			const auto v = make_vector(vm._imm->_program._types, element_type, elements2);
+			const auto v = make_vector(types, element_type, elements2);
 			return v;
 		}
 	}
@@ -395,6 +403,7 @@ bc_value_t bc_intrinsic__replace(interpreter_t& vm, const bc_value_t args[], int
 	QUARK_ASSERT(args[1]._type.is_int());
 	QUARK_ASSERT(args[2]._type.is_int());
 
+	const auto& types = vm._imm->_program._types;
 	const auto obj = args[0];
 
 	const auto start = args[1].get_int_value();
@@ -407,6 +416,8 @@ bc_value_t bc_intrinsic__replace(interpreter_t& vm, const bc_value_t args[], int
 	}
 	QUARK_ASSERT(args[3]._type == args[0]._type);
 
+	const auto& obj_type_peek = peek2(types, obj._type);
+
 	if(obj._type.is_string()){
 		const auto str = obj.get_string_value();
 		const auto start2 = std::min(start, static_cast<int64_t>(str.size()));
@@ -417,10 +428,10 @@ bc_value_t bc_intrinsic__replace(interpreter_t& vm, const bc_value_t args[], int
 		const auto v = bc_value_t::make_string(str2);
 		return v;
 	}
-	else if(obj._type.is_vector()){
-		if(encode_as_vector_w_inplace_elements(vm._imm->_program._types, obj._type)){
+	else if(obj_type_peek.is_vector()){
+		if(encode_as_vector_w_inplace_elements(types, obj._type)){
 			const auto& vec = obj._pod._external->_vector_w_inplace_elements;
-			const auto element_type = obj._type.get_vector_element_type(vm._imm->_program._types);
+			const auto element_type = obj_type_peek.get_vector_element_type(types);
 			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
 			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
 			const auto& new_bits = args[3]._pod._external->_vector_w_inplace_elements;
@@ -432,12 +443,12 @@ bc_value_t bc_intrinsic__replace(interpreter_t& vm, const bc_value_t args[], int
 			for(int i = 0 ; i < (vec.size( ) - end2) ; i++){
 				result = result.push_back(vec[end2 + i]);
 			}
-			const auto v = make_vector(vm._imm->_program._types, element_type, result);
+			const auto v = make_vector(types, element_type, result);
 			return v;
 		}
 		else{
 			const auto& vec = obj._pod._external->_vector_w_external_elements;
-			const auto element_type = obj._type.get_vector_element_type(vm._imm->_program._types);
+			const auto element_type = obj_type_peek.get_vector_element_type(types);
 			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
 			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
 			const auto& new_bits = args[3]._pod._external->_vector_w_external_elements;
@@ -449,7 +460,7 @@ bc_value_t bc_intrinsic__replace(interpreter_t& vm, const bc_value_t args[], int
 			for(int i = 0 ; i < (vec.size( ) - end2) ; i++){
 				result = result.push_back(vec[end2 + i]);
 			}
-			const auto v = make_vector(vm._imm->_program._types, element_type, result);
+			const auto v = make_vector(types, element_type, result);
 			return v;
 		}
 	}
@@ -536,7 +547,7 @@ bc_value_t bc_intrinsic__map(interpreter_t& vm, const bc_value_t args[], int arg
 
 	const auto& types = vm._imm->_program._types;
 
-	const auto e_type = args[0]._type.get_vector_element_type(types);
+	const auto e_type = peek2(types, args[0]._type).get_vector_element_type(types);
 	const auto f = args[1];
 	const auto f_type_peek = peek2(types, f._type);
 	const auto f_arg_types = f_type_peek.get_function_args(types);
@@ -721,7 +732,7 @@ bc_value_t bc_intrinsic__map_dag2(interpreter_t& vm, const bc_value_t args[], in
 
 	const auto& types = vm._imm->_program._types;
 	const auto& elements = args[0];
-	const auto& e_type = elements._type.get_vector_element_type(types);
+	const auto& e_type = peek2(types, elements._type).get_vector_element_type(types);
 	const auto& dependencies = args[1];
 	const auto& f = args[2];
 	const auto f_type_peek = peek2(types, f._type);
@@ -731,7 +742,7 @@ bc_value_t bc_intrinsic__map_dag2(interpreter_t& vm, const bc_value_t args[], in
 
 	if(
 		e_type == f_type_peek.get_function_args(types)[0]
-		&& r_type == f_type_peek.get_function_args(types)[1].get_vector_element_type(types)
+		&& r_type == peek2(types, f_type_peek.get_function_args(types)[1]).get_vector_element_type(types)
 	){
 	}
 	else {
@@ -840,7 +851,7 @@ bc_value_t bc_intrinsic__filter(interpreter_t& vm, const bc_value_t args[], int 
 	const auto& types = vm._imm->_program._types;
 	const auto& elements = args[0];
 	const auto& f = args[1];
-	const auto& e_type = elements._type.get_vector_element_type(types);
+	const auto& e_type = peek2(types, elements._type).get_vector_element_type(types);
 	const auto& context = args[2];
 
 	const auto input_vec = get_vector(types, elements);
@@ -917,7 +928,7 @@ bc_value_t bc_intrinsic__stable_sort(interpreter_t& vm, const bc_value_t args[],
 	const auto& types = vm._imm->_program._types;
 	const auto& elements = args[0];
 	const auto& f = args[1];
-	const auto& e_type = elements._type.get_vector_element_type(types);
+	const auto& e_type = peek2(types, elements._type).get_vector_element_type(types);
 	const auto& context = args[2];
 
 	const auto input_vec = get_vector(types, elements);

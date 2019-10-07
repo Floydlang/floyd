@@ -377,15 +377,15 @@ bool check_types_resolved(const types_t& types){
 bool check_types_resolved(const general_purpose_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
-	if(check_types_resolved(ast._interned_types) == false){
+	if(check_types_resolved(ast._types) == false){
 		return false;
 	}
 
-	if(check_types_resolved(ast._interned_types, ast._globals) == false){
+	if(check_types_resolved(ast._types, ast._globals) == false){
 		return false;
 	}
 	for(const auto& e: ast._function_defs){
-		const auto result = check_types_resolved(ast._interned_types, e);
+		const auto result = check_types_resolved(ast._types, e);
 		if(result == false){
 			return false;
 		}

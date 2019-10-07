@@ -763,17 +763,19 @@ void release_struct(value_backend_t& backend, runtime_value_t s, type_t type);
 
 
 
-inline bool is_vector_carray(const config_t& config, type_t t){
+inline bool is_vector_carray(const types_t& types, const config_t& config, type_t t){
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(config.check_invariant());
 	QUARK_ASSERT(t.check_invariant());
 
-	return t.is_vector() && config.vector_backend_mode == vector_backend::carray;
+	return peek2(types, t).is_vector() && config.vector_backend_mode == vector_backend::carray;
 }
-inline bool is_vector_hamt(const config_t& config, type_t t){
+inline bool is_vector_hamt(const types_t& types, const config_t& config, type_t t){
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(config.check_invariant());
 	QUARK_ASSERT(t.check_invariant());
 
-	return t.is_vector() && config.vector_backend_mode == vector_backend::hamt;
+	return peek2(types, t).is_vector() && config.vector_backend_mode == vector_backend::hamt;
 }
 
 inline bool is_dict_cppmap(const config_t& config, type_t t){
@@ -844,7 +846,7 @@ inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, ty
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(is_rc_value(peek2(backend.types, type)));
-	QUARK_ASSERT(is_vector_hamt(backend.config, type));
+	QUARK_ASSERT(is_vector_hamt(backend.types, backend.config, type));
 
 	inc_rc(vec.vector_hamt_ptr->alloc);
 }
@@ -853,7 +855,7 @@ inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t ve
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(is_vector_hamt(backend.config, type));
+	QUARK_ASSERT(is_vector_hamt(backend.types, backend.config, type));
 	QUARK_ASSERT(is_rc_value(peek2(backend.types, lookup_vector_element_type(backend, type))) == false);
 
 	if(dec_rc(vec.vector_hamt_ptr->alloc) == 0){
@@ -865,7 +867,7 @@ inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(is_vector_hamt(backend.config, type));
+	QUARK_ASSERT(is_vector_hamt(backend.types, backend.config, type));
 	QUARK_ASSERT(is_rc_value(peek2(backend.types, lookup_vector_element_type(backend, type))) == true);
 
 	if(dec_rc(vec.vector_hamt_ptr->alloc) == 0){
@@ -891,9 +893,11 @@ inline uint64_t size_to_allocation_blocks(std::size_t size){
 inline type_t lookup_vector_element_type(const value_backend_t& backend, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(type.is_vector());
 
-	return backend.child_type[type.get_lookup_index()];
+	const auto& peek = peek2(backend.types, type);
+	QUARK_ASSERT(peek.is_vector());
+
+	return backend.child_type[peek.get_lookup_index()];
 }
 
 inline type_t lookup_dict_value_type(const value_backend_t& backend, type_t type){

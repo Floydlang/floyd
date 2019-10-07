@@ -6739,7 +6739,7 @@ FLOYD_LANG_PROOF("software-system-def", "run two unconnected processs", "", ""){
 	ut_run_closed_nolib(QUARK_POS, program);
 }
 
-FLOYD_LANG_PROOF_VIP("software-system-def", "run two CONNECTED processes", "", ""){
+FLOYD_LANG_PROOF("software-system-def", "run two CONNECTED processes", "", ""){
 	const auto program = R"(
 
 		software-system-def {

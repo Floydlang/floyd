@@ -248,7 +248,7 @@ static type_t resolve_symbols(analyser_t& acc, const location_t& loc, const type
 			return make_struct(acc._types, struct_type_desc_t(members2));
 		}
 		type_t operator()(const vector_t& e) const{
-			return make_vector(acc._types, resolve_symbols(acc, loc, type.get_vector_element_type(acc._types)));
+			return make_vector(acc._types, resolve_symbols(acc, loc, peek2(acc._types, type).get_vector_element_type(acc._types)));
 		}
 		type_t operator()(const dict_t& e) const{
 			return make_dict(acc._types, resolve_symbols(acc, loc, type.get_dict_value_type(acc._types)));
@@ -1067,7 +1067,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 				expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr, key_expr, new_value_expr }, collection_type0)
 			};
 		}
-		else if(collection_type0.is_vector()){
+		else if(collection_type_peek.is_vector()){
 			const auto key_type = analyze_expr_output_type(a_acc, key_expr);
 
 			if(key_type.is_int() == false){
@@ -1076,7 +1076,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 				throw_compiler_error(parent.location, what.str());
 			}
 
-			const auto element_type = collection_type0.get_vector_element_type(a_acc._types);
+			const auto element_type = collection_type_peek.get_vector_element_type(a_acc._types);
 			if(element_type != new_value_type){
 				throw_compiler_error(parent.location, "New value's type must match vector's element type.");
 			}
@@ -1133,8 +1133,8 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_push_back_expression(const
 			throw_compiler_error(parent.location, what.str());
 		}
 	}
-	else if(parent_type.is_vector()){
-		if(value_type != parent_type.get_vector_element_type(a_acc._types)){
+	else if(peek2(a_acc._types, parent_type).is_vector()){
+		if(value_type != peek2(a_acc._types, parent_type).get_vector_element_type(a_acc._types)){
 			std::stringstream what;
 			what << "Vector push_back() has mismatching element type vs supplies a \"" + type_to_compact_string(a_acc._types, value_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
@@ -1163,7 +1163,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_size_expression(const anal
 
 	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
-	if(parent_type.is_string() || parent_type.is_json() || parent_type.is_vector() || parent_type.is_dict()){
+	if(parent_type.is_string() || parent_type.is_json() || peek2(a_acc._types, parent_type).is_vector() || parent_type.is_dict()){
 	}
 	else{
 		std::stringstream what;
@@ -1195,8 +1195,8 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_find_expression(const anal
 			throw_compiler_error(parent.location, "find() requires argument 2 to be a string.");
 		}
 	}
-	else if(parent_type.is_vector()){
-		if(wanted_type != parent_type.get_vector_element_type(a_acc._types)){
+	else if(peek2(a_acc._types, parent_type).is_vector()){
+		if(wanted_type != peek2(a_acc._types, parent_type).get_vector_element_type(a_acc._types)){
 			throw_compiler_error(parent.location, "find([]) requires argument 2 to be of vector's element type.");
 		}
 	}
@@ -1301,7 +1301,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_subset_expression(const an
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
 //	const auto key_type = function_type.get_function_args(a_acc._types)[1];
 
-	if(parent_type.is_string() == false && parent_type.is_vector() == false){
+	if(parent_type.is_string() == false && peek2(a_acc._types, parent_type).is_vector() == false){
 		throw_compiler_error(parent.location, "subset([]) requires a string or a vector.");
 	}
 
@@ -1328,7 +1328,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_replace_expression(const a
 		throw_compiler_error(parent.location, "replace() requires argument 4 to be same type of collection.");
 	}
 
-	if(parent_type.is_string() == false && parent_type.is_vector() == false){
+	if(parent_type.is_string() == false && peek2(a_acc._types, parent_type).is_vector() == false){
 		throw_compiler_error(parent.location, "replace([]) requires a string or a vector.");
 	}
 
@@ -1517,14 +1517,21 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 	else if(parent_type.is_json()){
 		return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, type_t::make_json()) };
 	}
-	else if(parent_type.is_vector()){
+	else if(peek2(a_acc._types, parent_type).is_vector()){
 		if(key_type.is_int() == false){
 			std::stringstream what;
 			what << "Vector can only be indexed by integers, not a \"" + type_to_compact_string(a_acc._types, key_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
 		}
 		else{
-			return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, parent_type.get_vector_element_type(a_acc._types)) };
+			return {
+				a_acc,
+				expression_t::make_lookup(
+					parent_expr.second,
+					key_expr.second,
+					peek2(a_acc._types, parent_type).get_vector_element_type(a_acc._types)
+				)
+			};
 		}
 	}
 	else if(parent_type.is_dict()){
@@ -1641,7 +1648,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 
 	const auto type_peek = peek2(a_acc._types, type0);
 
-	if(type0.is_vector()){
+	if(type_peek.is_vector()){
 		//	JSON constants supports mixed element types: convert each element into a json.
 		//	Encode as [json]
 		if(target_type0.is_json()){
@@ -1668,7 +1675,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			};
 		}
 		else {
-			const auto element_type = type0.get_vector_element_type(a_acc._types);
+			const auto element_type = type_peek.get_vector_element_type(a_acc._types);
 			std::vector<expression_t> elements2;
 			for(const auto& m: details.elements){
 				const auto element_expr = analyse_expression_no_target(a_acc, parent, m);
@@ -2030,7 +2037,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 		}
 
 		//	vector
-		else if(shared_type.is_vector()){
+		else if(peek2(a_acc._types, shared_type).is_vector()){
 			if(op == expression_type::k_arithmetic_add){
 				return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, shared_type) };
 			}
@@ -2544,7 +2551,7 @@ expression_t auto_cast_expression_type(analyser_t& a, const expression_t& e, con
 		if(current_type.is_int() || current_type.is_double() || current_type.is_string() || current_type.is_bool()){
 			return expression_t::make_construct_value_expr(wanted_type, { e });
 		}
-		else if(current_type.is_vector()){
+		else if(peek2(a._types, current_type).is_vector()){
 			return expression_t::make_construct_value_expr(wanted_type, { e });
 		}
 		else if(current_type.is_dict()){
@@ -2787,7 +2794,7 @@ const body_t make_global_body(analyser_t& a){
 analyser_t::analyser_t(const unchecked_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
-	_types = ast._tree._interned_types;
+	_types = ast._tree._types;
 	const auto intrinsic_signatures = make_intrinsic_signatures(_types);
 	_imm = std::make_shared<analyzer_imm_t>(analyzer_imm_t{ ast, intrinsic_signatures });
 	scope_id_generator = 1000;
@@ -2822,7 +2829,7 @@ static semantic_ast_t run_semantic_analysis0(const unchecked_ast_t& ast){
 	auto ast2 = general_purpose_ast_t{
 		._globals = global_body3,
 		._function_defs = function_defs_vec,
-		._interned_types = a._types,
+		._types = a._types,
 		._software_system = a._software_system,
 		._container_def = a._container_def
 	};
@@ -2867,7 +2874,7 @@ semantic_ast_t run_semantic_analysis(const unchecked_ast_t& ast){
 				}
 				{
 					QUARK_SCOPED_TRACE("OUTPUT TYPES");
-					trace_types(result._tree._interned_types);
+					trace_types(result._tree._types);
 				}
 			}
 

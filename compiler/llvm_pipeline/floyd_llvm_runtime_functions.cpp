@@ -144,10 +144,10 @@ llvm::Value* generate_allocate_vector(llvm_function_generator_t& gen_acc, const 
 static runtime_value_t floydrt_allocate_vector_fill(floyd_runtime_t* frp, runtime_type_t type, runtime_value_t* elements, uint64_t element_count){
 	auto& r = get_floyd_runtime(frp);
 
-	if(is_vector_carray(r.backend.config, type_t(type))){
+	if(is_vector_carray(r.backend.types, r.backend.config, type_t(type))){
 		return alloc_vector_carray(r.backend.heap, element_count, element_count, type_t(type));
 	}
-	else if(is_vector_hamt(r.backend.config, type_t(type))){
+	else if(is_vector_hamt(r.backend.types, r.backend.config, type_t(type))){
 		return alloc_vector_hamt(r.backend.heap, element_count, element_count, type_t(type));
 	}
 	else{
@@ -183,7 +183,7 @@ static void floydrt_store_vector_element_hamt_mutable(floyd_runtime_t* frp, runt
 	auto& r = get_floyd_runtime(frp);
 	(void)r;
 
-	QUARK_ASSERT(is_vector_hamt(r.backend.config, type_t(type)));
+	QUARK_ASSERT(is_vector_hamt(r.backend.types, r.backend.config, type_t(type)));
 	vec.vector_hamt_ptr->store_mutate(index, element);
 }
 
@@ -218,10 +218,10 @@ static runtime_value_t floydrt_concatunate_vectors(floyd_runtime_t* frp, runtime
 	if(type0.is_string()){
 		return concat_strings(r.backend, lhs, rhs);
 	}
-	else if(is_vector_carray(r.backend.config, type_t(type))){
+	else if(is_vector_carray(r.backend.types, r.backend.config, type_t(type))){
 		return concat_vector_carray(r.backend, type0, lhs, rhs);
 	}
-	else if(is_vector_hamt(r.backend.config, type_t(type))){
+	else if(is_vector_hamt(r.backend.types, r.backend.config, type_t(type))){
 		return concat_vector_hamt(r.backend, type0, lhs, rhs);
 	}
 	else{
@@ -253,7 +253,7 @@ static runtime_value_t floydrt_load_vector_element_hamt(floyd_runtime_t* frp, ru
 	auto& r = get_floyd_runtime(frp);
 	(void)r;
 
-	QUARK_ASSERT(is_vector_hamt(r.backend.config, type_t(type)));
+	QUARK_ASSERT(is_vector_hamt(r.backend.types, r.backend.config, type_t(type)));
 
 	return vec.vector_hamt_ptr->load_element(index);
 }
@@ -982,7 +982,7 @@ static void floydrt_retain_vector_carray(floyd_runtime_t* frp, runtime_value_t v
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(type.is_string() || type.is_vector());
+	QUARK_ASSERT(type.is_string() || peek2(r.backend.types, type).is_vector());
 	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, type_t(type0))));
 #endif
 
@@ -993,7 +993,7 @@ static void floydrt_retain_vector_hamt(floyd_runtime_t* frp, runtime_value_t vec
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(type.is_string() || type.is_vector());
+	QUARK_ASSERT(type.is_string() || peek2(r.backend.types, type).is_vector());
 	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, type_t(type0))));
 #endif
 
@@ -1063,7 +1063,8 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 	QUARK_ASSERT(gen_acc.gen.type_lookup.check_invariant());
 	QUARK_ASSERT(type0.check_invariant());
 
-	const auto type_peek = peek2(gen_acc.gen.type_lookup.state.types, type0);
+	const auto& types = gen_acc.gen.type_lookup.state.types;
+	const auto type_peek = peek2(types, type0);
 
 	auto& frp_reg = *gen_acc.get_callers_fcp();
 	auto& itype_reg = *generate_itype_constant(gen_acc.gen, type_peek);
@@ -1074,12 +1075,12 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 			const auto res = resolve_func(gen_acc.gen.link_map, "retain_vector_carray");
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 		}
-		else if(type0.is_vector()){
-			if(is_vector_carray(gen_acc.gen.settings.config, type_peek)){
+		else if(type_peek.is_vector()){
+			if(is_vector_carray(types, gen_acc.gen.settings.config, type_peek)){
 				const auto res = resolve_func(gen_acc.gen.link_map, "retain_vector_carray");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
-			else if(is_vector_hamt(gen_acc.gen.settings.config, type_peek)){
+			else if(is_vector_hamt(types, gen_acc.gen.settings.config, type_peek)){
 				const auto res = resolve_func(gen_acc.gen.link_map, "retain_vector_hamt");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
@@ -1151,68 +1152,68 @@ std::vector<function_bind_t> retain_funcs(llvm::LLVMContext& context, const llvm
 
 static void floydrt_release_vector_carray_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
-#if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(type.is_string() || is_vector_carray(r.backend.config, type_t(type0)));
-	if(type_t(type0).is_vector()){
-		QUARK_ASSERT(is_rc_value(peek2(r.backend.types, type.get_vector_element_type(r.backend.types))) == false);
+#if DEBUG
+	QUARK_ASSERT(type.is_string() || is_vector_carray(r.backend.types, r.backend.config, type));
+	if(peek2(r.backend.types, type).is_vector()){
+		QUARK_ASSERT(is_rc_value(peek2(r.backend.types, peek2(r.backend.types, type).get_vector_element_type(r.backend.types))) == false);
 	}
 #endif
 
-	release_vector_carray_pod(r.backend, vec, type_t(type0));
+	release_vector_carray_pod(r.backend, vec, type);
 }
 
 static void floydrt_release_vector_carray_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
-#if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(is_vector_carray(r.backend.config, type_t(type0)));
-	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, type.get_vector_element_type(r.backend.types))) == true);
+#if DEBUG
+	QUARK_ASSERT(is_vector_carray(r.backend.types, r.backend.config, type));
+	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, peek2(r.backend.types, type).get_vector_element_type(r.backend.types))) == true);
 #endif
 
-	release_vector_carray_nonpod(r.backend, vec, type_t(type0));
+	release_vector_carray_nonpod(r.backend, vec, type);
 }
 
 static void floydrt_release_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
-#if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(is_vector_hamt(r.backend.config, type_t(type0)));
-	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, type.get_vector_element_type(r.backend.types))) == false);
+#if DEBUG
+	QUARK_ASSERT(is_vector_hamt(r.backend.types, r.backend.config, type));
+	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, peek2(r.backend.types, type).get_vector_element_type(r.backend.types))) == false);
 #endif
 
-	release_vector_hamt_pod(r.backend, vec, type_t(type0));
+	release_vector_hamt_pod(r.backend, vec, type);
 }
 
 static void floydrt_release_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
-#if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(is_vector_hamt(r.backend.config, type_t(type0)));
-	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, type.get_vector_element_type(r.backend.types))) == true);
+#if DEBUG
+	QUARK_ASSERT(is_vector_hamt(r.backend.types, r.backend.config, type));
+	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, peek2(r.backend.types, type).get_vector_element_type(r.backend.types))) == true);
 #endif
 
-	release_vector_hamt_nonpod(r.backend, vec, type_t(type0));
+	release_vector_hamt_nonpod(r.backend, vec, type);
 }
 
 
 static void floydrt_release_dict_cppmap(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
-#if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
+#if DEBUG
 	QUARK_ASSERT(is_dict_cppmap(r.backend.config, type));
 #endif
 
-	release_dict_cppmap(r.backend, dict, type_t(type0));
+	release_dict_cppmap(r.backend, dict, type);
 }
 static void floydrt_release_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
+const auto& type = lookup_type_ref(r.backend, type0);
 #if DEBUG
-	const auto& type = lookup_type_ref(r.backend, type0);
 	QUARK_ASSERT(is_dict_hamt(r.backend.config, type));
 #endif
 
-	release_dict_hamt(r.backend, dict, type_t(type0));
+	release_dict_hamt(r.backend, dict, type);
 }
 
 
@@ -1278,28 +1279,29 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 	auto& itype_reg = *generate_itype_constant(gen_acc.gen, type);
 	auto& builder = gen_acc.get_builder();
 	const auto& types = gen_acc.gen.type_lookup.state.types;
+	const auto peek = peek2(types, type);
 
 	if(is_rc_value(peek2(types, type))){
 		if(type.is_string()){
 			const auto res = resolve_func(gen_acc.gen.link_map, "release_vector_carray_pod");
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 		}
-		else if(type.is_vector()){
-			const bool is_element_pod = is_rc_value(peek2(types, type.get_vector_element_type(types))) ? false : true;
+		else if(peek.is_vector()){
+			const bool is_element_pod = is_rc_value(peek2(types, peek.get_vector_element_type(types))) ? false : true;
 
-			if(is_vector_carray(gen_acc.gen.settings.config, type) && is_element_pod == true){
+			if(is_vector_carray(types, gen_acc.gen.settings.config, type) && is_element_pod == true){
 				const auto res = resolve_func(gen_acc.gen.link_map, "release_vector_carray_pod");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}
-			else if(is_vector_carray(gen_acc.gen.settings.config, type) && is_element_pod == false){
+			else if(is_vector_carray(types, gen_acc.gen.settings.config, type) && is_element_pod == false){
 				const auto res = resolve_func(gen_acc.gen.link_map, "release_vector_carray_nonpod");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}
-			else if(is_vector_hamt(gen_acc.gen.settings.config, type) && is_element_pod == true){
+			else if(is_vector_hamt(types, gen_acc.gen.settings.config, type) && is_element_pod == true){
 				const auto res = resolve_func(gen_acc.gen.link_map, "release_vector_hamt_pod");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}
-			else if(is_vector_hamt(gen_acc.gen.settings.config, type) && is_element_pod == false){
+			else if(is_vector_hamt(types, gen_acc.gen.settings.config, type) && is_element_pod == false){
 				const auto res = resolve_func(gen_acc.gen.link_map, "release_vector_hamt_nonpod");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}

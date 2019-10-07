@@ -102,7 +102,7 @@ value_t unflatten_json_to_specific_type(types_t& types, const json_t& v, const t
 		}
 		value_t operator()(const vector_t& e) const{
 			if(v.is_array()){
-				const auto target_element_type = target_type.get_vector_element_type(types);
+				const auto target_element_type = peek2(types, target_type).get_vector_element_type(types);
 				std::vector<value_t> elements2;
 				for(int i = 0 ; i < v.get_array_size() ; i++){
 					const auto member_value0 = v.get_array_n(i);

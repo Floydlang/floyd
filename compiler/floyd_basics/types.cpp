@@ -1411,7 +1411,7 @@ type_variant_t get_type_variant(const types_t& types, const type_t& type){
 			const auto& info = lookup_typeinfo_from_type(types, desc.non_name_type);
 			return struct_t { info.struct_desc };
 		}
-		else if(type.is_vector()){
+		else if(desc.is_vector()){
 			const auto& info = lookup_typeinfo_from_type(types, type);
 			return vector_t { info.child_types };
 		}
@@ -1447,14 +1447,6 @@ type_variant_t get_type_variant(const types_t& types, const type_t& type){
 
 
 
-type_t type_t::get_vector_element_type(const types_t& types) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(is_vector());
-
-	const auto& info = lookup_typeinfo_from_type(types, *this);
-	return info.child_types[0];
-}
 type_t type_t::get_dict_value_type(const types_t& types) const{
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(types.check_invariant());
@@ -1480,14 +1472,15 @@ struct_type_desc_t type_desc_t::get_struct(const types_t& types) const{
 	return info.struct_desc;
 }
 
-type_desc_t type_desc_t::get_vector_element_type(const types_t& types) const{
+type_t type_desc_t::get_vector_element_type(const types_t& types) const{
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(is_vector());
 
-	const auto& info = lookup_typeinfo_from_type(types, *this);
+	const auto& info = lookup_typeinfo_from_type(types, non_name_type);
 	return info.child_types[0];
 }
+
 type_desc_t type_desc_t::get_dict_value_type(const types_t& types) const{
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(types.check_invariant());
@@ -1950,7 +1943,8 @@ json_t type_to_json(const types_t& types, const type_t& type){
 			);
 		}
 		json_t operator()(const vector_t& e) const{
-			const auto d = type.get_vector_element_type(types);
+			const auto desc = peek2(types, type);
+			const auto d = desc.get_vector_element_type(types);
 			return json_t::make_array( { json_t(basetype_str), type_to_json(types, d) });
 		}
 		json_t operator()(const dict_t& e) const{

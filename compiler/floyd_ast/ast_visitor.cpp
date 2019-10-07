@@ -250,7 +250,7 @@ general_purpose_ast_t visit_ast(visit_ast_t& acc, const general_purpose_ast_t& a
 	}
 	result._function_defs = function_defs;
 
-	result._interned_types = ast._interned_types;
+	result._types = ast._types;
 	result._software_system = ast._software_system;
 	result._container_def = ast._container_def;
 

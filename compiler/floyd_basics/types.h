@@ -419,27 +419,6 @@ struct type_t {
 	}
 
 
-
-
-	//////////////////////////////////////////////////		VECTOR
-
-
-	bool is_vector() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_vector;
-	}
-
-	type_t get_vector_element_type(const types_t& types) const;
-
-	base_type get_vector_element_basetype() const {
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(is_vector());
-
-		return get_bt1(data);
-	}
-
-
 	//////////////////////////////////////////////////		DICT
 
 
@@ -453,7 +432,7 @@ struct type_t {
 
 	base_type get_dict_value_basetype() const {
 		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(is_vector());
+		QUARK_ASSERT(is_dict());
 
 		return get_bt1(data);
 	}
@@ -621,6 +600,11 @@ struct type_desc_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
+	inline type_lookup_index_t get_lookup_index() const {
+		QUARK_ASSERT(check_invariant());
+
+		return non_name_type.get_lookup_index();
+	}
 
 
 	//////////////////////////////////////////////////		UNDEFINED
@@ -759,6 +743,7 @@ struct type_desc_t {
 	struct_type_desc_t get_struct(const types_t& types) const;
 
 
+	
 	//////////////////////////////////////////////////		VECTOR
 
 
@@ -768,13 +753,13 @@ struct type_desc_t {
 		return get_base_type() == base_type::k_vector;
 	}
 
-	type_desc_t get_vector_element_type(const types_t& types) const;
+	type_t get_vector_element_type(const types_t& types) const;
 
 	base_type get_vector_element_basetype() const {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(is_vector());
 
-		return non_name_type.get_vector_element_basetype();
+		return type_t::get_bt1(non_name_type.get_data());
 	}
 
 

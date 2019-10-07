@@ -872,7 +872,7 @@ void dispose_struct(STRUCT_T& s){
 
 bool is_rc_value(const type_desc_t& type0){
 	const auto& type = type0.non_name_type;
-	return type.is_string() || type.is_vector() || type.is_dict() || type0.is_struct() || type.is_json();
+	return type.is_string() || type0.is_vector() || type.is_dict() || type0.is_struct() || type.is_json();
 }
 
 
@@ -1040,8 +1040,9 @@ value_backend_t::value_backend_t(
 
 	for(type_lookup_index_t i = 0 ; i < types.nodes.size() ; i++){
 		const auto type0 = lookup_type_from_index(types, i);
-		if(type0.is_vector()){
-			const auto& type = type0.get_vector_element_type(types);
+		const auto peek = peek2(types, type0);
+		if(peek.is_vector()){
+			const auto& type = peek.get_vector_element_type(types);
 			child_type.push_back(type);
 		}
 		else if(type0.is_dict()){
@@ -1109,7 +1110,7 @@ void retain_vector_carray(value_backend_t& backend, runtime_value_t vec, type_t 
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(is_rc_value(peek2(backend.types, type)));
-	QUARK_ASSERT(is_vector_carray(backend.config, type) || type.is_string());
+	QUARK_ASSERT(is_vector_carray(backend.types, backend.config, type) || type.is_string());
 
 	inc_rc(vec.vector_carray_ptr->alloc);
 }
@@ -1154,10 +1155,10 @@ void retain_value(value_backend_t& backend, runtime_value_t value, type_t type){
 		if(type.is_string()){
 			retain_vector_carray(backend, value, type);
 		}
-		else if(is_vector_carray(backend.config, type)){
+		else if(is_vector_carray(backend.types, backend.config, type)){
 			retain_vector_carray(backend, value, type);
 		}
-		else if(is_vector_hamt(backend.config, type)){
+		else if(is_vector_hamt(backend.types, backend.config, type)){
 			retain_vector_hamt(backend, value, type);
 		}
 		else if(is_dict_cppmap(backend.config, type)){
@@ -1248,8 +1249,10 @@ void release_vector_carray_pod(value_backend_t& backend, runtime_value_t vec, ty
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(type.is_string() || is_vector_carray(backend.config, type));
-	if(type.is_vector()){
+	QUARK_ASSERT(type.is_string() || is_vector_carray(backend.types, backend.config, type));
+
+	const auto& peek = peek2(backend.types, type);
+	if(peek.is_vector()){
 		QUARK_ASSERT(is_rc_value(peek2(backend.types, lookup_vector_element_type(backend, type))) == false);
 	}
 
@@ -1262,7 +1265,7 @@ void release_vector_carray_nonpod(value_backend_t& backend, runtime_value_t vec,
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(type.is_string() || is_vector_carray(backend.config, type));
+	QUARK_ASSERT(type.is_string() || is_vector_carray(backend.types, backend.config, type));
 	QUARK_ASSERT(is_rc_value(peek2(backend.types, lookup_vector_element_type(backend, type))) == true);
 
 	if(dec_rc(vec.vector_carray_ptr->alloc) == 0){
@@ -1284,7 +1287,7 @@ void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_val
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(is_vector_hamt(backend.config, type));
+	QUARK_ASSERT(is_vector_hamt(backend.types, backend.config, type));
 
 	const auto element_type = lookup_vector_element_type(backend, type);
 	for(int i = 0 ; i < vec.vector_hamt_ptr->get_element_count() ; i++){
@@ -1297,7 +1300,9 @@ void release_vec(value_backend_t& backend, runtime_value_t vec, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(type.is_string() || type.is_vector());
+
+	const auto& peek = peek2(backend.types, type);
+	QUARK_ASSERT(type.is_string() || peek.is_vector());
 
 	if(type.is_string()){
 		if(dec_rc(vec.vector_carray_ptr->alloc) == 0){
@@ -1306,7 +1311,7 @@ void release_vec(value_backend_t& backend, runtime_value_t vec, type_t type){
 			dispose_vector_carray(vec);
 		}
 	}
-	else if(is_vector_carray(backend.config, type)){
+	else if(is_vector_carray(backend.types, backend.config, type)){
 		const auto element_type = lookup_vector_element_type(backend, type);
 		if(is_rc_value(peek2(backend.types, element_type))){
 			release_vector_carray_nonpod(backend, vec, type);
@@ -1315,7 +1320,7 @@ void release_vec(value_backend_t& backend, runtime_value_t vec, type_t type){
 			release_vector_carray_pod(backend, vec, type);
 		}
 	}
-	else if(is_vector_hamt(backend.config, type)){
+	else if(is_vector_hamt(backend.types, backend.config, type)){
 		const auto element_type = lookup_vector_element_type(backend, type);
 		if(is_rc_value(peek2(backend.types, element_type))){
 			release_vector_hamt_nonpod(backend, vec, type);
@@ -1366,10 +1371,12 @@ void release_value(value_backend_t& backend, runtime_value_t value, type_t type)
 #endif
 	QUARK_ASSERT(is_rc_value(peek2(backend.types, type)));
 
+	const auto& peek = peek2(backend.types, type);
+
 	if(type.is_string()){
 		release_vec(backend, value, type);
 	}
-	else if(type.is_vector()){
+	else if(peek.is_vector()){
 		release_vec(backend, value, type);
 	}
 	else if(type.is_dict()){

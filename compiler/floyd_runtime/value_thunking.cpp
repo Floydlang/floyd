@@ -162,16 +162,18 @@ static value_t from_runtime_struct(const value_backend_t& backend, const runtime
 static runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t& value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
-	QUARK_ASSERT(value.get_type().is_vector());
+
+	const auto& type = value.get_type();
+	const auto& type_peek = peek2(backend.types, type);
+	QUARK_ASSERT(type_peek.is_vector());
 
 	const auto& v0 = value.get_vector_value();
 	const auto count = v0.size();
 
-	const auto itype = value.get_type();
-	if(is_vector_carray(backend.config, itype)){
-		auto result = alloc_vector_carray(backend.heap, count, count, itype);
+	if(is_vector_carray(backend.types, backend.config, type)){
+		auto result = alloc_vector_carray(backend.heap, count, count, type);
 
-		const auto element_type = value.get_type().get_vector_element_type(backend.types);
+		const auto element_type = type_peek.get_vector_element_type(backend.types);
 		auto p = result.vector_carray_ptr->get_element_ptr();
 		for(int i = 0 ; i < count ; i++){
 			const auto& e = v0[i];
@@ -181,14 +183,14 @@ static runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t
 		}
 		return result;
 	}
-	else if(is_vector_hamt(backend.config, itype)){
+	else if(is_vector_hamt(backend.types, backend.config, type)){
 		std::vector<runtime_value_t> temp;
 		for(int i = 0 ; i < count ; i++){
 			const auto& e = v0[i];
 			const auto a = to_runtime_value2(backend, e);
 			temp.push_back(a);
 		}
-		auto result = alloc_vector_hamt(backend.heap, &temp[0], temp.size(), itype);
+		auto result = alloc_vector_hamt(backend.heap, &temp[0], temp.size(), type);
 		return result;
 	}
 	else{
@@ -201,11 +203,12 @@ static value_t from_runtime_vector(const value_backend_t& backend, const runtime
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(encoded_value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(type.is_vector());
 
-	const auto itype = type;
-	if(is_vector_carray(backend.config, itype)){
-		const auto element_type = type.get_vector_element_type(backend.types);
+	const auto& type_peek = peek2(backend.types, type);
+	QUARK_ASSERT(type_peek.is_vector());
+
+	if(is_vector_carray(backend.types, backend.config, type)){
+		const auto element_type = type_peek.get_vector_element_type(backend.types);
 		const auto vec = encoded_value.vector_carray_ptr;
 
 		std::vector<value_t> elements;
@@ -219,8 +222,8 @@ static value_t from_runtime_vector(const value_backend_t& backend, const runtime
 		const auto val = value_t::make_vector_value(backend.types, element_type, elements);
 		return val;
 	}
-	else if(is_vector_hamt(backend.config, itype)){
-		const auto element_type = type.get_vector_element_type(backend.types);
+	else if(is_vector_hamt(backend.types, backend.config, type)){
+		const auto element_type = type_peek.get_vector_element_type(backend.types);
 		const auto vec = encoded_value.vector_hamt_ptr;
 
 		std::vector<value_t> elements;
@@ -244,13 +247,13 @@ static runtime_value_t to_runtime_dict(value_backend_t& backend, const dict_t& e
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(value.get_type().is_dict());
 
-	const auto itype = value.get_type();
-	if(is_dict_cppmap(backend.config, itype)){
+	const auto type = value.get_type();
+	if(is_dict_cppmap(backend.config, type)){
 		const auto& v0 = value.get_dict_value();
 
-		auto result = alloc_dict_cppmap(backend.heap, itype);
+		auto result = alloc_dict_cppmap(backend.heap, type);
 
-		const auto element_type = value.get_type().get_dict_value_type(backend.types);
+		const auto element_type = type.get_dict_value_type(backend.types);
 		auto& m = result.dict_cppmap_ptr->get_map_mut();
 		for(const auto& e: v0){
 			const auto a = to_runtime_value2(backend, e.second);
@@ -258,12 +261,12 @@ static runtime_value_t to_runtime_dict(value_backend_t& backend, const dict_t& e
 		}
 		return result;
 	}
-	else if(is_dict_hamt(backend.config, itype)){
+	else if(is_dict_hamt(backend.config, type)){
 		const auto& v0 = value.get_dict_value();
 
-		auto result = alloc_dict_hamt(backend.heap, value.get_type());
+		auto result = alloc_dict_hamt(backend.heap, type);
 
-		const auto element_type = value.get_type().get_dict_value_type(backend.types);
+		const auto element_type = type.get_dict_value_type(backend.types);
 		auto& m = result.dict_hamt_ptr->get_map_mut();
 		for(const auto& e: v0){
 			const auto a = to_runtime_value2(backend, e.second);
@@ -282,8 +285,7 @@ static value_t from_runtime_dict(const value_backend_t& backend, const runtime_v
 	QUARK_ASSERT(encoded_value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto itype = type;
-	if(is_dict_cppmap(backend.config, itype)){
+	if(is_dict_cppmap(backend.config, type)){
 		const auto value_type = type.get_dict_value_type(backend.types);
 		const auto dict = encoded_value.dict_cppmap_ptr;
 
@@ -296,7 +298,7 @@ static value_t from_runtime_dict(const value_backend_t& backend, const runtime_v
 		const auto val = value_t::make_dict_value(backend.types, value_type, values);
 		return val;
 	}
-	else if(is_dict_hamt(backend.config, itype)){
+	else if(is_dict_hamt(backend.config, type)){
 		const auto value_type = type.get_dict_value_type(backend.types);
 		const auto dict = encoded_value.dict_hamt_ptr;
 

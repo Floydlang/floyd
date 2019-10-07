@@ -20,7 +20,7 @@ struct builder_t;
 
 bool pass_as_ptr(const type_desc_t& type){
 	const auto type0 = type.non_name_type;
-	if(type0.is_string() || type0.is_json() || type.is_struct() || type0.is_vector() || type0.is_dict() || type.is_function()){
+	if(type0.is_string() || type0.is_json() || type.is_struct() || type.is_vector() || type0.is_dict() || type.is_function()){
 		return true;
 	}
 	else {
@@ -335,7 +335,8 @@ static llvm::Type* make_llvm_type(const builder_t& builder, const type_t& type){
 }
 
 static llvm::Type* make_generic_type(const builder_t& builder, const type_t& type){
-	if(type.is_vector()){
+	const auto peek = peek2(builder.acc.types, type);
+	if(peek.is_vector()){
 		return builder.acc.generic_vec_type;
 	}
 	else if(type.is_string()){
@@ -344,7 +345,7 @@ static llvm::Type* make_generic_type(const builder_t& builder, const type_t& typ
 	else if(type.is_dict()){
 		return builder.acc.generic_dict_type;
 	}
-	else if(peek2(builder.acc.types, type).is_struct()){
+	else if(peek.is_struct()){
 		return builder.acc.generic_struct_type;
 	}
 	else{

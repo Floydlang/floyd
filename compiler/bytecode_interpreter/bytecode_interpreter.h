@@ -84,12 +84,15 @@ union bc_pod_value_t {
 void release_pod_external(bc_pod_value_t& value);
 
 
+
 //////////////////////////////////////		value_encoding
+
+
 
 //	Tells how a specific type of value needs to be store in the interpreter.
 
 enum class value_encoding {
-	k_none,
+	k_inplace_none,
 	k_inplace__bool,
 	k_inplace__int_as_uint64,
 	k_inplace__double,
@@ -122,6 +125,9 @@ bool encode_as_external(const types_t& types, const type_t& type);
 
 
 bool encode_as_external(const bc_value_t& value);
+
+
+
 
 
 //////////////////////////////////////		bc_value_t
@@ -1130,38 +1136,34 @@ struct interpreter_stack_t {
 		return true;
 	}
 
-	public: bool check_reg_vector_w_external_elements(const types_t& types, const int reg) const{
+	public: bool check_reg_vector_w_external_elements(const int reg) const{
 		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(types.check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_vector());
-		QUARK_ASSERT(encode_as_vector_w_inplace_elements(types, _current_frame_ptr->_symbols[reg].second._value_type) == false);
+		QUARK_ASSERT(peek2(_types, _current_frame_ptr->_symbols[reg].second._value_type).is_vector());
+		QUARK_ASSERT(encode_as_vector_w_inplace_elements(_types, _current_frame_ptr->_symbols[reg].second._value_type) == false);
 		return true;
 	}
 
-	public: bool check_reg_vector_w_inplace_elements(const types_t& types, const int reg) const{
+	public: bool check_reg_vector_w_inplace_elements(const int reg) const{
 		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(types.check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_vector());
-		QUARK_ASSERT(encode_as_vector_w_inplace_elements(types, _current_frame_ptr->_symbols[reg].second._value_type) == true);
+		QUARK_ASSERT(peek2(_types, _current_frame_ptr->_symbols[reg].second._value_type).is_vector());
+		QUARK_ASSERT(encode_as_vector_w_inplace_elements(_types, _current_frame_ptr->_symbols[reg].second._value_type) == true);
 		return true;
 	}
 
-	public: bool check_reg_dict_w_external_values(const types_t& types, const int reg) const{
+	public: bool check_reg_dict_w_external_values(const int reg) const{
 		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(types.check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_dict());
-		QUARK_ASSERT(encode_as_dict_w_inplace_values(types, _current_frame_ptr->_symbols[reg].second._value_type) == false);
+		QUARK_ASSERT(peek2(_types, _current_frame_ptr->_symbols[reg].second._value_type).is_dict());
+		QUARK_ASSERT(encode_as_dict_w_inplace_values(_types, _current_frame_ptr->_symbols[reg].second._value_type) == false);
 		return true;
 	}
-	public: bool check_reg_dict_w_inplace_values(const types_t& types, const int reg) const{
+	public: bool check_reg_dict_w_inplace_values(const int reg) const{
 		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(types.check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_dict());
-		QUARK_ASSERT(encode_as_dict_w_inplace_values(types, _current_frame_ptr->_symbols[reg].second._value_type) == true);
+		QUARK_ASSERT(peek2(_types, _current_frame_ptr->_symbols[reg].second._value_type).is_dict());
+		QUARK_ASSERT(encode_as_dict_w_inplace_values(_types, _current_frame_ptr->_symbols[reg].second._value_type) == true);
 		return true;
 	}
 

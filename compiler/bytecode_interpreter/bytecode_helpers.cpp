@@ -121,6 +121,7 @@ bc_value_t value_to_bc(const types_t& types, const value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 
 	const auto type = value.get_type();
+	const auto peek = peek2(types, type);
 
 	const auto basetype = value.get_basetype();
 	if(basetype == base_type::k_undefined){
@@ -159,7 +160,7 @@ bc_value_t value_to_bc(const types_t& types, const value_t& value){
 	}
 
 	else if(basetype == base_type::k_vector){
-		const auto element_type = type.get_vector_element_type(types);
+		const auto element_type = peek.get_vector_element_type(types);
 
 		if(encode_as_vector_w_inplace_elements(types, element_type)){
 			const auto& vec = value.get_vector_value();
