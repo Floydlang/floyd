@@ -1036,6 +1036,8 @@ std::string make_value_debug_str(const value_t& value){
 
 
 value_t ast_json_to_value(types_t& types, const type_t& type, const json_t& v){
+	const auto type_peek = peek2(types, type);
+
 	if(type.is_undefined()){
 		return value_t();
 	}
@@ -1080,7 +1082,7 @@ value_t ast_json_to_value(types_t& types, const type_t& type, const json_t& v){
 		const auto t = type_from_json(types, v);
 		return value_t::make_typeid_value(t);
 	}
-	else if(peek2(types, type).is_struct()){
+	else if(type_peek.is_struct()){
 		QUARK_ASSERT(false);
 		return make_def(type);
 
@@ -1100,13 +1102,13 @@ value_t ast_json_to_value(types_t& types, const type_t& type, const json_t& v){
 */
 
 	}
-	else if(peek2(types, type).is_vector()){
+	else if(type_peek.is_vector()){
 		QUARK_ASSERT(false);
 		return make_def(type);
 //		const auto& vec = v.get_vector_value();
 //		return values_to_json_array(vec);
 	}
-	else if(type.is_dict()){
+	else if(type_peek.is_dict()){
 		QUARK_ASSERT(false);
 		return make_def(type);
 /*
@@ -1119,7 +1121,7 @@ value_t ast_json_to_value(types_t& types, const type_t& type, const json_t& v){
 */
 
 	}
-	else if(peek2(types, type).is_function()){
+	else if(type_peek.is_function()){
 		const auto function_id0 = v.get_object_element("function_id").get_string();
 		const auto function_id = function_id_t { function_id0 };
 		return value_t::make_function_value(type, function_id);

@@ -118,7 +118,7 @@ value_t unflatten_json_to_specific_type(types_t& types, const json_t& v, const t
 		}
 		value_t operator()(const dict_t& e) const{
 			if(v.is_object()){
-				const auto value_type = target_type.get_dict_value_type(types);
+				const auto value_type = peek2(types, target_type).get_dict_value_type(types);
 				const auto source_obj = v.get_object();
 				std::map<std::string, value_t> obj2;
 				for(const auto& member: source_obj){

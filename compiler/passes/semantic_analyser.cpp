@@ -251,7 +251,7 @@ static type_t resolve_symbols(analyser_t& acc, const location_t& loc, const type
 			return make_vector(acc._types, resolve_symbols(acc, loc, peek2(acc._types, type).get_vector_element_type(acc._types)));
 		}
 		type_t operator()(const dict_t& e) const{
-			return make_dict(acc._types, resolve_symbols(acc, loc, type.get_dict_value_type(acc._types)));
+			return make_dict(acc._types, resolve_symbols(acc, loc, peek2(acc._types, type).get_dict_value_type(acc._types)));
 		}
 		type_t operator()(const function_t& e) const{
 			const auto desc = peek2(acc._types, type);
@@ -1086,7 +1086,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 				expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr, key_expr, new_value_expr }, collection_type0)
 			};
 		}
-		else if(collection_type0.is_dict()){
+		else if(collection_type_peek.is_dict()){
 			const auto key_type = analyze_expr_output_type(a_acc, key_expr);
 
 			if(key_type.is_string() == false){
@@ -1095,7 +1095,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 				throw_compiler_error(parent.location, what.str());
 			}
 
-			const auto element_type = collection_type0.get_dict_value_type(a_acc._types);
+			const auto element_type = collection_type_peek.get_dict_value_type(a_acc._types);
 			if(element_type != new_value_type){
 				throw_compiler_error(parent.location, "New value's type must match dict's value type.");
 			}
@@ -1163,7 +1163,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_size_expression(const anal
 
 	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
-	if(parent_type.is_string() || parent_type.is_json() || peek2(a_acc._types, parent_type).is_vector() || parent_type.is_dict()){
+	if(parent_type.is_string() || parent_type.is_json() || peek2(a_acc._types, parent_type).is_vector() || peek2(a_acc._types, parent_type).is_dict()){
 	}
 	else{
 		std::stringstream what;
@@ -1225,7 +1225,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_exists_expression(const an
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
 	const auto wanted_type = function_type.get_function_args(a_acc._types)[1];
 
-	if(parent_type.is_dict() == false){
+	if(peek2(a_acc._types, parent_type).is_dict() == false){
 		throw_compiler_error(parent.location, "exists() requires a dictionary.");
 	}
 	if(wanted_type.is_string() == false){
@@ -1251,7 +1251,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_erase_expression(const ana
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
 	const auto key_type = function_type.get_function_args(a_acc._types)[1];
 
-	if(parent_type.is_dict() == false){
+	if(peek2(a_acc._types, parent_type).is_dict() == false){
 		throw_compiler_error(parent.location, "erase() requires a dictionary.");
 	}
 	if(key_type.is_string() == false){
@@ -1278,7 +1278,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_get_keys_expression(const 
 	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
 
-	if(parent_type.is_dict() == false){
+	if(peek2(a_acc._types, parent_type).is_dict() == false){
 		throw_compiler_error(parent.location, "get_keys() requires a dictionary.");
 	}
 
@@ -1502,6 +1502,7 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 	a_acc = key_expr.first;
 
 	const auto parent_type = analyze_expr_output_type(a_acc, parent_expr.second);
+	const auto parent_peek = peek2(a_acc._types, parent_type);
 	const auto key_type = analyze_expr_output_type(a_acc, key_expr.second);
 
 	if(parent_type.is_string()){
@@ -1517,7 +1518,7 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 	else if(parent_type.is_json()){
 		return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, type_t::make_json()) };
 	}
-	else if(peek2(a_acc._types, parent_type).is_vector()){
+	else if(parent_peek.is_vector()){
 		if(key_type.is_int() == false){
 			std::stringstream what;
 			what << "Vector can only be indexed by integers, not a \"" + type_to_compact_string(a_acc._types, key_type) + "\".";
@@ -1529,19 +1530,19 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 				expression_t::make_lookup(
 					parent_expr.second,
 					key_expr.second,
-					peek2(a_acc._types, parent_type).get_vector_element_type(a_acc._types)
+					parent_peek.get_vector_element_type(a_acc._types)
 				)
 			};
 		}
 	}
-	else if(parent_type.is_dict()){
+	else if(parent_peek.is_dict()){
 		if(key_type.is_string() == false){
 			std::stringstream what;
 			what << "Dictionary can only be looked up using string keys, not a \"" + type_to_compact_string(a_acc._types, key_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
 		}
 		else{
-			return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, parent_type.get_dict_value_type(a_acc._types)) };
+			return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, parent_peek.get_dict_value_type(a_acc._types)) };
 		}
 	}
 	else {
@@ -1708,7 +1709,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 	}
 
 	//	Dicts uses pairs of (string,value). This is stored in _args as interleaved expression: string0, value0, string1, value1.
-	else if(type0.is_dict()){
+	else if(type_peek.is_dict()){
 		//	JSON constants supports mixed element types: convert each element into a json.
 		//	Encode as [string:json]
 		if(target_type0.is_json()){
@@ -1744,7 +1745,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 		else {
 			QUARK_ASSERT(details.elements.size() % 2 == 0);
 
-			const auto element_type = type0.get_dict_value_type(a_acc._types);
+			const auto element_type = type_peek.get_dict_value_type(a_acc._types);
 
 			std::vector<expression_t> elements2;
 			for(int i = 0 ; i < details.elements.size() / 2 ; i++){
@@ -2535,7 +2536,7 @@ expression_t auto_cast_expression_type(analyser_t& a, const expression_t& e, con
 	QUARK_ASSERT(wanted_type.is_undefined() == false);
 
 	const auto current_type = analyze_expr_output_type(a, e);
-
+	const auto current_peek = peek2(a._types, current_type);
 	if(wanted_type.is_any()){
 		return e;
 	}
@@ -2551,10 +2552,10 @@ expression_t auto_cast_expression_type(analyser_t& a, const expression_t& e, con
 		if(current_type.is_int() || current_type.is_double() || current_type.is_string() || current_type.is_bool()){
 			return expression_t::make_construct_value_expr(wanted_type, { e });
 		}
-		else if(peek2(a._types, current_type).is_vector()){
+		else if(current_peek.is_vector()){
 			return expression_t::make_construct_value_expr(wanted_type, { e });
 		}
-		else if(current_type.is_dict()){
+		else if(current_peek.is_dict()){
 			return expression_t::make_construct_value_expr(wanted_type, { e });
 		}
 		else{

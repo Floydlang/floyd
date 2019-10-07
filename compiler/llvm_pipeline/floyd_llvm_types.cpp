@@ -18,9 +18,9 @@ namespace floyd {
 struct builder_t;
 
 
-bool pass_as_ptr(const type_desc_t& type){
-	const auto type0 = type.non_name_type;
-	if(type0.is_string() || type0.is_json() || type.is_struct() || type.is_vector() || type0.is_dict() || type.is_function()){
+bool pass_as_ptr(const type_desc_t& desc){
+	const auto type = desc.non_name_type;
+	if(type.is_string() || type.is_json() || desc.is_struct() || desc.is_vector() || desc.is_dict() || desc.is_function()){
 		return true;
 	}
 	else {
@@ -342,7 +342,7 @@ static llvm::Type* make_generic_type(const builder_t& builder, const type_t& typ
 	else if(type.is_string()){
 		return builder.acc.generic_vec_type;
 	}
-	else if(type.is_dict()){
+	else if(peek.is_dict()){
 		return builder.acc.generic_dict_type;
 	}
 	else if(peek.is_struct()){

@@ -419,25 +419,6 @@ struct type_t {
 	}
 
 
-	//////////////////////////////////////////////////		DICT
-
-
-	bool is_dict() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_dict;
-	}
-
-	type_t get_dict_value_type(const types_t& types) const;
-
-	base_type get_dict_value_basetype() const {
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(is_dict());
-
-		return get_bt1(data);
-	}
-
-
 
 	//////////////////////////////////////////////////		SYMBOL
 
@@ -756,13 +737,13 @@ struct type_desc_t {
 		return get_base_type() == base_type::k_dict;
 	}
 
-	type_desc_t get_dict_value_type(const types_t& types) const;
+	type_t get_dict_value_type(const types_t& types) const;
 
 	base_type get_dict_value_basetype() const {
 		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(is_vector());
+		QUARK_ASSERT(is_dict());
 
-		return non_name_type.get_dict_value_basetype();
+		return type_t::get_bt1(non_name_type.get_data());
 	}
 
 

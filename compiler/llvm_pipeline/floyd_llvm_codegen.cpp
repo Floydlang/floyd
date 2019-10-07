@@ -627,11 +627,11 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 
 		return result_reg;
 	}
-	else if(is_dict_cppmap(gen_acc.gen.settings.config, parent_type) || is_dict_hamt(gen_acc.gen.settings.config, parent_type)){
+	else if(is_dict_cppmap(types, gen_acc.gen.settings.config, parent_type) || is_dict_hamt(types, gen_acc.gen.settings.config, parent_type)){
 		QUARK_ASSERT(key_type.is_string());
 
-		const auto element_type0 = parent_type.get_dict_value_type(types);
-		const auto dict_mode = is_dict_hamt(gen_acc.gen.settings.config, parent_type) ? dict_backend::hamt : dict_backend::cppmap;
+		const auto element_type0 = peek2(types, parent_type).get_dict_value_type(types);
+		const auto dict_mode = is_dict_hamt(types, gen_acc.gen.settings.config, parent_type) ? dict_backend::hamt : dict_backend::cppmap;
 		auto element_value_uint64_reg = generate_lookup_dict(gen_acc, *parent_reg, parent_type, *key_reg, dict_mode);
 		auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
 
@@ -792,6 +792,8 @@ static llvm::Value* generate_comparison_expression(llvm_function_generator_t& ge
 	//	Type is the data the opcode works on -- comparing two ints, comparing two strings etc.
 	const auto type = get_expr_output_type(gen_acc.gen, *details.lhs);
 
+	const auto type_peek = peek2(types, type);
+
 	//	Output reg is always a bool.
 	QUARK_ASSERT(get_expr_output_type(gen_acc.gen, e).is_bool());
 
@@ -852,13 +854,13 @@ static llvm::Value* generate_comparison_expression(llvm_function_generator_t& ge
 		generate_release(gen_acc, *rhs_temp, get_expr_output_type(gen_acc.gen, *details.rhs));
 		return result_reg;
 	}
-	else if(type.is_dict()){
+	else if(type_peek.is_dict()){
 		auto result_reg = generate_compare_values(gen_acc, details.op, type, *lhs_temp, *rhs_temp);
 		generate_release(gen_acc, *lhs_temp, get_expr_output_type(gen_acc.gen, *details.lhs));
 		generate_release(gen_acc, *rhs_temp, get_expr_output_type(gen_acc.gen, *details.rhs));
 		return result_reg;
 	}
-	else if(peek2(types, type).is_struct()){
+	else if(type_peek.is_struct()){
 		auto result_reg = generate_compare_values(gen_acc, details.op, type, *lhs_temp, *rhs_temp);
 		generate_release(gen_acc, *lhs_temp, get_expr_output_type(gen_acc.gen, *details.lhs));
 		generate_release(gen_acc, *rhs_temp, get_expr_output_type(gen_acc.gen, *details.rhs));
@@ -1136,7 +1138,7 @@ static llvm::Value* generate_size_expression(llvm_function_generator_t& gen_acc,
 	const auto it = std::find_if(gen_acc.gen.intrinsic_signatures.vec.begin(), gen_acc.gen.intrinsic_signatures.vec.end(), [&](const intrinsic_signature_t& s){ return s.name == "size"; } );
 
 	const auto collection_type = get_expr_output_type(gen_acc.gen, details.args[0]);
-	QUARK_ASSERT(peek2(types, collection_type).is_vector() || collection_type.is_string() || collection_type.is_dict() || collection_type.is_json());
+	QUARK_ASSERT(peek2(types, collection_type).is_vector() || collection_type.is_string() || peek2(types, collection_type).is_dict() || collection_type.is_json());
 
 	const auto resolved_call_type = calc_resolved_function_type(gen_acc.gen, e, it->_function_type, details.args);
 	auto collection_reg = generate_expression(gen_acc, details.args[0]);
@@ -1148,7 +1150,7 @@ static llvm::Value* generate_update_expression(llvm_function_generator_t& gen_ac
 	QUARK_ASSERT(e.check_invariant());
 
 	const auto& types = gen_acc.gen.type_lookup.state.types;
-	QUARK_ASSERT(peek2(types, get_expr_output_type(gen_acc.gen, e)).is_vector() || get_expr_output_type(gen_acc.gen, e).is_string() || get_expr_output_type(gen_acc.gen, e).is_dict());
+	QUARK_ASSERT(peek2(types, get_expr_output_type(gen_acc.gen, e)).is_vector() || get_expr_output_type(gen_acc.gen, e).is_string() || peek2(types, get_expr_output_type(gen_acc.gen, e)).is_dict());
 
 	const auto it = std::find_if(gen_acc.gen.intrinsic_signatures.vec.begin(), gen_acc.gen.intrinsic_signatures.vec.end(), [&](const intrinsic_signature_t& s){ return s.name == "update"; } );
 
@@ -1383,11 +1385,11 @@ static llvm::Value* generate_construct_dict(llvm_function_generator_t& gen_acc, 
 
 	auto& types = gen_acc.gen.type_lookup.state.types;
 	const auto construct_type = details.value_type;
-	QUARK_ASSERT(construct_type.is_dict());
+	QUARK_ASSERT(peek2(types, construct_type).is_dict());
 
 	auto& builder = gen_acc.get_builder();
 
-	const auto element_type0 = construct_type.get_dict_value_type(types);
+	const auto element_type0 = peek2(types, construct_type).get_dict_value_type(types);
 	auto dict_type_reg = generate_itype_constant(gen_acc.gen, construct_type);
 	auto dict_acc_ptr_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_allocate_dict.llvm_codegen_f, { gen_acc.get_callers_fcp(), dict_type_reg }, "");
 
@@ -1515,15 +1517,15 @@ static llvm::Value* generate_construct_value_expression(llvm_function_generator_
 	QUARK_ASSERT(e.check_invariant());
 
 	auto& types = gen_acc.gen.type_lookup.state.types;
-	const auto construct_type = peek2(types, details.value_type);
+	const auto construct_type_peek = peek2(types, details.value_type);
 
-	if(peek2(types, construct_type).is_vector()){
+	if(construct_type_peek.is_vector()){
 		return generate_construct_vector(gen_acc, details);
 	}
-	else if(construct_type.non_name_type.is_dict()){
+	else if(construct_type_peek.is_dict()){
 		return generate_construct_dict(gen_acc, details);
 	}
-	else if(construct_type.is_struct()){
+	else if(construct_type_peek.is_struct()){
 		return generate_construct_struct(gen_acc, details);
 	}
 

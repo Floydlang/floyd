@@ -183,7 +183,7 @@ bc_value_t value_to_bc(const types_t& types, const value_t& value){
 		}
 	}
 	else if(basetype == base_type::k_dict){
-		const auto value_type = type.get_dict_value_type(types);
+		const auto value_type = peek.get_dict_value_type(types);
 
 		const auto elements = value.get_dict_value();
 		immer::map<std::string, bc_external_handle_t> entries2;

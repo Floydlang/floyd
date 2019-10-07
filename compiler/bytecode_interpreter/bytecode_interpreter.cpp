@@ -465,7 +465,8 @@ bool encode_as_dict_w_inplace_values(const types_t& types, const type_t& type){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	return type.is_dict() && encode_as_inplace(type.get_dict_value_type(types));
+	const auto& peek = peek2(types, type);
+	return peek.is_dict() && encode_as_inplace(peek.get_dict_value_type(types));
 }
 
 value_encoding type_to_encoding(const types_t& types, const type_t& type){
@@ -1181,12 +1182,12 @@ bc_value_t update_vector_element(interpreter_t& vm, const bc_value_t vec, int64_
 	QUARK_ASSERT(peek.is_vector());
 	QUARK_ASSERT(lookup_index >= 0);
 	QUARK_ASSERT(value.check_invariant());
-	QUARK_ASSERT(peek.get_vector_element_type(vm._imm->_program._types) == value._type);
+	QUARK_ASSERT(peek.get_vector_element_type(types) == value._type);
 
 //	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 
-	const auto element_type = peek.get_vector_element_type(vm._imm->_program._types);
-	if(encode_as_vector_w_inplace_elements(vm._imm->_program._types, peek)){
+	const auto element_type = peek.get_vector_element_type(types);
+	if(encode_as_vector_w_inplace_elements(types, peek)){
 		auto v2 = vec._pod._external->_vector_w_inplace_elements;
 
 		if(lookup_index < 0 || lookup_index >= v2.size()){
@@ -1194,13 +1195,13 @@ bc_value_t update_vector_element(interpreter_t& vm, const bc_value_t vec, int64_
 		}
 		else{
 			v2 = v2.set(lookup_index, value._pod._inplace);
-			const auto s2 = make_vector(vm._imm->_program._types, element_type, v2);
+			const auto s2 = make_vector(types, element_type, v2);
 			return s2;
 		}
 	}
 	else{
 		const auto obj = vec;
-		auto v2 = *get_vector_external_elements(vm._imm->_program._types, obj);
+		auto v2 = *get_vector_external_elements(types, obj);
 		if(lookup_index < 0 || lookup_index >= v2.size()){
 			quark::throw_runtime_error("Vector lookup out of bounds.");
 		}
@@ -1210,7 +1211,7 @@ bc_value_t update_vector_element(interpreter_t& vm, const bc_value_t vec, int64_
 			QUARK_ASSERT(encode_as_external(types, value._type));
 			const auto e = bc_external_handle_t(value);
 			v2 = v2.set(lookup_index, e);
-			const auto s2 = make_vector(vm._imm->_program._types, element_type, v2);
+			const auto s2 = make_vector(types, element_type, v2);
 
 //			QUARK_TRACE_SS("bc2:  " << json_to_pretty_string(bcvalue_to_json(s2)));
 			return s2;
@@ -1221,24 +1222,28 @@ bc_value_t update_vector_element(interpreter_t& vm, const bc_value_t vec, int64_
 bc_value_t update_dict_entry(interpreter_t& vm, const bc_value_t dict, const std::string& key, const bc_value_t& value){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(dict.check_invariant());
-	QUARK_ASSERT(dict._type.is_dict());
+
+	const auto& types = vm._imm->_program._types;
+	const auto& peek = peek2(types, dict._type);
+
+	QUARK_ASSERT(peek.is_dict());
 	QUARK_ASSERT(key.empty() == false);
 	QUARK_ASSERT(value.check_invariant());
-	QUARK_ASSERT(dict._type.get_dict_value_type(vm._imm->_program._types) == value._type);
+	QUARK_ASSERT(peek.get_dict_value_type(types) == value._type);
 
 //	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 
-	const auto value_type = dict._type.get_dict_value_type(vm._imm->_program._types);
+	const auto value_type = peek.get_dict_value_type(types);
 
-	if(encode_as_dict_w_inplace_values(vm._imm->_program._types, dict._type)){
+	if(encode_as_dict_w_inplace_values(types, dict._type)){
 		auto entries2 = dict._pod._external->_dict_w_inplace_values.set(key, value._pod._inplace);
-		const auto value2 = make_dict(vm._imm->_program._types, value_type, entries2);
+		const auto value2 = make_dict(types, value_type, entries2);
 		return value2;
 	}
 	else{
-		const auto entries = get_dict_external_values(vm._imm->_program._types, dict);
+		const auto entries = get_dict_external_values(types, dict);
 		auto entries2 = entries.set(key, bc_external_handle_t(value));
-		const auto value2 = make_dict(vm._imm->_program._types, value_type, entries2);
+		const auto value2 = make_dict(types, value_type, entries2);
 		return value2;
 	}
 }
@@ -1313,8 +1318,7 @@ bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_va
 			quark::throw_runtime_error("Dict lookup using string key only.");
 		}
 		else{
-			const auto obj = obj1;
-			const auto value_type = obj._type.get_dict_value_type(types);
+			const auto value_type = obj1_peek.get_dict_value_type(types);
 			if(value_type != new_value._type){
 				quark::throw_runtime_error("Update element must match dict value type.");
 			}
@@ -1525,7 +1529,8 @@ static int bc_compare_dicts_obj(const types_t& types, const immer::map<std::stri
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto& element_type = type.get_dict_value_type(types);
+	const auto peek = peek2(types, type);
+	const auto& element_type = peek.get_dict_value_type(types);
 
 	auto left_it = left.begin();
 	auto left_end_it = left.end();
@@ -1808,16 +1813,16 @@ int bc_compare_value_true_deep(const types_t& types, const bc_value_t& left, con
 			return bc_compare_vectors_obj(types, *left_vec, *right_vec, type0);
 		}
 	}
-	else if(type.is_dict()){
+	else if(peek.is_dict()){
 		if(false){
 		}
-		else if(type.get_dict_value_type(types).is_bool()){
+		else if(peek.get_dict_value_type(types).is_bool()){
 			return bc_compare_dicts_bool(left._pod._external->_dict_w_inplace_values, right._pod._external->_dict_w_inplace_values);
 		}
-		else if(type.get_dict_value_type(types).is_int()){
+		else if(peek.get_dict_value_type(types).is_int()){
 			return bc_compare_dicts_int(left._pod._external->_dict_w_inplace_values, right._pod._external->_dict_w_inplace_values);
 		}
-		else if(type.get_dict_value_type(types).is_double()){
+		else if(peek.get_dict_value_type(types).is_double()){
 			return bc_compare_dicts_double(left._pod._external->_dict_w_inplace_values, right._pod._external->_dict_w_inplace_values);
 		}
 		else  {
@@ -2383,8 +2388,8 @@ json_t bcvalue_to_json(const types_t& types, const bc_value_t& v){
 		}
 		return result;
 	}
-	else if(v._type.is_dict()){
-		const auto value_type = v._type.get_dict_value_type(types);
+	else if(peek.is_dict()){
+		const auto value_type = peek.get_dict_value_type(types);
 		if(encode_as_dict_w_inplace_values(types, v._type)){
 			const auto entries = get_dict_inplace_values(types, v);
 			std::map<std::string, json_t> result;
@@ -2513,7 +2518,7 @@ static void execute_new_1(interpreter_t& vm, int16_t dest_reg, int16_t target_it
 	const auto& types = vm._imm->_program._types;
 	const auto& target_type = lookup_full_type(vm, target_itype);
 	const auto target_peek = peek2(types, target_type);
-	QUARK_ASSERT(target_peek.is_vector() == false && target_type.is_dict() == false && target_peek.is_struct() == false);
+	QUARK_ASSERT(target_peek.is_vector() == false && target_peek.is_dict() == false && target_peek.is_struct() == false);
 
 	const int arg0_stack_pos = vm._stack.size() - 1;
 	const auto source_itype2 = lookup_type_from_index(types, source_itype);
@@ -2580,11 +2585,12 @@ void execute_new_dict_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_it
 
 	const auto& types = vm._imm->_program._types;
 	const auto& target_type = lookup_full_type(vm, target_itype);
-	QUARK_ASSERT(target_type.is_dict());
+	const auto target_peek = peek2(types, target_type);
+	QUARK_ASSERT(target_peek.is_dict());
 
 	const int arg0_stack_pos = vm._stack.size() - arg_count;
 
-	const auto& element_type = target_type.get_dict_value_type(types);
+	const auto& element_type = target_peek.get_dict_value_type(types);
 	QUARK_ASSERT(target_type.is_undefined() == false);
 	QUARK_ASSERT(element_type.is_undefined() == false);
 
@@ -2607,11 +2613,12 @@ void execute_new_dict_pod64(interpreter_t& vm, int16_t dest_reg, int16_t target_
 
 	const auto& types = vm._imm->_program._types;
 	const auto& target_type = lookup_full_type(vm, target_itype);
-	QUARK_ASSERT(target_type.is_dict());
+	const auto target_peek = peek2(types, target_type);
+	QUARK_ASSERT(target_peek.is_dict());
 
 	const int arg0_stack_pos = vm._stack.size() - arg_count;
 
-	const auto& element_type = target_type.get_dict_value_type(types);
+	const auto& element_type = target_peek.get_dict_value_type(types);
 	QUARK_ASSERT(target_type.is_undefined() == false);
 	QUARK_ASSERT(element_type.is_undefined() == false);
 
@@ -3381,7 +3388,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto source_itype = i._c;
 			const auto& target_type = lookup_full_type(vm, target_itype);
 			const auto target_peek = peek2(types, target_type);
-			QUARK_ASSERT(target_peek.is_vector() == false && target_type.is_dict() == false && target_peek.is_struct() == false);
+			QUARK_ASSERT(target_peek.is_vector() == false && target_peek.is_dict() == false && target_peek.is_struct() == false);
 			execute_new_1(vm, dest_reg, target_itype, source_itype);
 			break;
 		}
@@ -3445,7 +3452,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto target_itype = i._b;
 			const auto arg_count = i._c;
 			const auto& target_type = lookup_full_type(vm, target_itype);
-			QUARK_ASSERT(target_type.is_dict());
+			const auto peek = peek2(types, target_type);
+			QUARK_ASSERT(peek.is_dict());
 			execute_new_dict_pod64(vm, dest_reg, target_itype, arg_count);
 			break;
 		}

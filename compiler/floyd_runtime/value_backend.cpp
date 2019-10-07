@@ -870,9 +870,9 @@ void dispose_struct(STRUCT_T& s){
 
 
 
-bool is_rc_value(const type_desc_t& type0){
-	const auto& type = type0.non_name_type;
-	return type.is_string() || type0.is_vector() || type.is_dict() || type0.is_struct() || type.is_json();
+bool is_rc_value(const type_desc_t& desc){
+	const auto& type = desc.non_name_type;
+	return type.is_string() || desc.is_vector() || desc.is_dict() || desc.is_struct() || type.is_json();
 }
 
 
@@ -1045,8 +1045,8 @@ value_backend_t::value_backend_t(
 			const auto& type = peek.get_vector_element_type(types);
 			child_type.push_back(type);
 		}
-		else if(type0.is_dict()){
-			const auto& type = type0.get_dict_value_type(types);
+		else if(peek.is_dict()){
+			const auto& type = peek.get_dict_value_type(types);
 			child_type.push_back(type);
 		}
 		else{
@@ -1122,7 +1122,7 @@ void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, type_t t
 	QUARK_ASSERT(dict.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(is_rc_value(peek2(backend.types, type)));
-	QUARK_ASSERT(is_dict_cppmap(backend.config, type));
+	QUARK_ASSERT(is_dict_cppmap(backend.types, backend.config, type));
 
 	inc_rc(dict.dict_cppmap_ptr->alloc);
 }
@@ -1131,7 +1131,7 @@ void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, type_t typ
 	QUARK_ASSERT(dict.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(is_rc_value(peek2(backend.types, type)));
-	QUARK_ASSERT(is_dict_hamt(backend.config, type));
+	QUARK_ASSERT(is_dict_hamt(backend.types, backend.config, type));
 
 	inc_rc(dict.dict_hamt_ptr->alloc);
 }
@@ -1161,10 +1161,10 @@ void retain_value(value_backend_t& backend, runtime_value_t value, type_t type){
 		else if(is_vector_hamt(backend.types, backend.config, type)){
 			retain_vector_hamt(backend, value, type);
 		}
-		else if(is_dict_cppmap(backend.config, type)){
+		else if(is_dict_cppmap(backend.types, backend.config, type)){
 			retain_dict_cppmap(backend, value, type);
 		}
-		else if(is_dict_hamt(backend.config, type)){
+		else if(is_dict_hamt(backend.types, backend.config, type)){
 			retain_dict_hamt(backend, value, type);
 		}
 		else if(type.is_json()){
@@ -1186,8 +1186,8 @@ void retain_value(value_backend_t& backend, runtime_value_t value, type_t type){
 void release_dict_cppmap(value_backend_t& backend, runtime_value_t dict0, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dict0.check_invariant());
-	QUARK_ASSERT(type.is_dict());
-	QUARK_ASSERT(is_dict_cppmap(backend.config, type));
+	QUARK_ASSERT(peek2(backend.types, type).is_dict());
+	QUARK_ASSERT(is_dict_cppmap(backend.types, backend.config, type));
 
 	auto& dict = *dict0.dict_cppmap_ptr;
 	if(dec_rc(dict.alloc) == 0){
@@ -1207,8 +1207,8 @@ void release_dict_cppmap(value_backend_t& backend, runtime_value_t dict0, type_t
 void release_dict_hamt(value_backend_t& backend, runtime_value_t dict0, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dict0.check_invariant());
-	QUARK_ASSERT(type.is_dict());
-	QUARK_ASSERT(is_dict_hamt(backend.config, type));
+	QUARK_ASSERT(peek2(backend.types, type).is_dict());
+	QUARK_ASSERT(is_dict_hamt(backend.types, backend.config, type));
 
 	auto& dict = *dict0.dict_hamt_ptr;
 	if(dec_rc(dict.alloc) == 0){
@@ -1228,12 +1228,12 @@ void release_dict_hamt(value_backend_t& backend, runtime_value_t dict0, type_t t
 void release_dict(value_backend_t& backend, runtime_value_t dict, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dict.check_invariant());
-	QUARK_ASSERT(type.is_dict());
+	QUARK_ASSERT(peek2(backend.types, type).is_dict());
 
-	if(is_dict_cppmap(backend.config, type)){
+	if(is_dict_cppmap(backend.types, backend.config, type)){
 		release_dict_cppmap(backend, dict, type);
 	}
-	else if(is_dict_hamt(backend.config, type)){
+	else if(is_dict_hamt(backend.types, backend.config, type)){
 		release_dict_hamt(backend, dict, type);
 	}
 	else{
@@ -1379,7 +1379,7 @@ void release_value(value_backend_t& backend, runtime_value_t value, type_t type)
 	else if(peek.is_vector()){
 		release_vec(backend, value, type);
 	}
-	else if(type.is_dict()){
+	else if(peek.is_dict()){
 		release_dict(backend, value, type);
 	}
 	else if(type.is_json()){

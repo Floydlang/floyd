@@ -99,11 +99,12 @@ static bool matches_specialization(const config_t& config, const types_t& types,
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(arg_type.check_invariant());
 
+	const auto arg_type_peek = peek2(types, arg_type);
 	if(arg_type.is_string()){
 		return wanted == eresolved_type::k_string;
 	}
 	else if(is_vector_carray(types, config, arg_type)){
-		const auto is_rc = is_rc_value(peek2(types, peek2(types, arg_type).get_vector_element_type(types)));
+		const auto is_rc = is_rc_value(peek2(types, arg_type_peek.get_vector_element_type(types)));
 		if(is_rc){
 			return wanted == eresolved_type::k_vector_carray_nonpod;
 		}
@@ -112,7 +113,7 @@ static bool matches_specialization(const config_t& config, const types_t& types,
 		}
 	}
 	else if(is_vector_hamt(types, config, arg_type)){
-		const auto is_rc = is_rc_value(peek2(types, peek2(types, arg_type).get_vector_element_type(types)));
+		const auto is_rc = is_rc_value(peek2(types, arg_type_peek.get_vector_element_type(types)));
 		if(is_rc){
 			return wanted == eresolved_type::k_vector_hamt_nonpod;
 		}
@@ -121,8 +122,8 @@ static bool matches_specialization(const config_t& config, const types_t& types,
 		}
 	}
 
-	else if(is_dict_cppmap(config, arg_type)){
-		const auto is_rc = is_rc_value(peek2(types, arg_type.get_dict_value_type(types)));
+	else if(is_dict_cppmap(types, config, arg_type)){
+		const auto is_rc = is_rc_value(peek2(types, arg_type_peek.get_dict_value_type(types)));
 		if(is_rc){
 			return wanted == eresolved_type::k_dict_cppmap_nonpod;
 		}
@@ -130,8 +131,8 @@ static bool matches_specialization(const config_t& config, const types_t& types,
 			return wanted == eresolved_type::k_dict_cppmap_pod;
 		}
 	}
-	else if(is_dict_hamt(config, arg_type)){
-		const auto is_rc = is_rc_value(peek2(types, arg_type.get_dict_value_type(types)));
+	else if(is_dict_hamt(types, config, arg_type)){
+		const auto is_rc = is_rc_value(peek2(types, arg_type_peek.get_dict_value_type(types)));
 		if(is_rc){
 			return wanted == eresolved_type::k_dict_hamt_nonpod;
 		}
@@ -197,16 +198,16 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 	const auto& type0 = lookup_type_ref(r.backend, coll_type);
 	const auto& type1 = lookup_type_ref(r.backend, key_type);
 
-	QUARK_ASSERT(type0.is_dict());
+	QUARK_ASSERT(peek2(types, type0).is_dict());
 	QUARK_ASSERT(type1.is_string());
 
-	if(is_dict_cppmap(r.backend.config, type_t(coll_type))){
+	if(is_dict_cppmap(types, r.backend.config, type0)){
 		const auto& dict = unpack_dict_cppmap_arg(r.backend, coll_value, coll_type);
 
-		const auto value_type = type0.get_dict_value_type(types);
+		const auto value_type = peek2(types, type0).get_dict_value_type(types);
 
 		//	Deep copy dict.
-		auto dict2 = alloc_dict_cppmap(r.backend.heap, type_t(coll_type));
+		auto dict2 = alloc_dict_cppmap(r.backend.heap, type0);
 		auto& m = dict2.dict_cppmap_ptr->get_map_mut();
 		m = dict->get_map();
 
@@ -220,13 +221,13 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 		}
 		return dict2;
 	}
-	else if(is_dict_hamt(r.backend.config, type_t(coll_type))){
+	else if(is_dict_hamt(types, r.backend.config, type0)){
 		const auto& dict = *coll_value.dict_hamt_ptr;
 
-		const auto value_type = type0.get_dict_value_type(types);
+		const auto value_type = peek2(types, type0).get_dict_value_type(types);
 
 		//	Deep copy dict.
-		auto dict2 = alloc_dict_hamt(r.backend.heap, type_t(coll_type));
+		auto dict2 = alloc_dict_hamt(r.backend.heap, type0);
 		auto& m = dict2.dict_hamt_ptr->get_map_mut();
 		m = dict.get_map();
 
@@ -257,10 +258,11 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 static runtime_value_t floyd_llvm_intrinsic__get_keys(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type){
 	auto& r = get_floyd_runtime(frp);
 
+	const auto& types = r.backend.types;
 	const auto& type0 = lookup_type_ref(r.backend, coll_type);
-	QUARK_ASSERT(type0.is_dict());
+	QUARK_ASSERT(peek2(types, type0).is_dict());
 
-	if(is_dict_cppmap(r.backend.config, type_t(coll_type))){
+	if(is_dict_cppmap(types, r.backend.config, type0)){
 		if(r.backend.config.vector_backend_mode == vector_backend::carray){
 			return get_keys__cppmap_carray(r.backend, coll_value, coll_type);
 		}
@@ -272,7 +274,7 @@ static runtime_value_t floyd_llvm_intrinsic__get_keys(floyd_runtime_t* frp, runt
 			throw std::exception();
 		}
 	}
-	else if(is_dict_hamt(r.backend.config, type_t(coll_type))){
+	else if(is_dict_hamt(types, r.backend.config, type0)){
 		if(r.backend.config.vector_backend_mode == vector_backend::carray){
 			return get_keys__hamtmap_carray(r.backend, coll_value, coll_type);
 		}
@@ -301,11 +303,12 @@ static runtime_value_t floyd_llvm_intrinsic__get_keys(floyd_runtime_t* frp, runt
 static uint32_t floyd_llvm_intrinsic__exists(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
 
+	const auto& types = r.backend.types;
 	const auto& type0 = lookup_type_ref(r.backend, coll_type);
 	const auto& type1 = lookup_type_ref(r.backend, value_type);
-	QUARK_ASSERT(type0.is_dict());
+	QUARK_ASSERT(peek2(types, type0).is_dict());
 
-	if(is_dict_cppmap(r.backend.config, type_t(coll_type))){
+	if(is_dict_cppmap(types, r.backend.config, type0)){
 		const auto& dict = unpack_dict_cppmap_arg(r.backend, coll_value, coll_type);
 		const auto key_string = from_runtime_string(r, value);
 
@@ -313,7 +316,7 @@ static uint32_t floyd_llvm_intrinsic__exists(floyd_runtime_t* frp, runtime_value
 		const auto it = m.find(key_string);
 		return it != m.end() ? 1 : 0;
 	}
-	else if(is_dict_hamt(r.backend.config, type_t(coll_type))){
+	else if(is_dict_hamt(types, r.backend.config, type0)){
 		const auto& dict = *coll_value.dict_hamt_ptr;
 		const auto key_string = from_runtime_string(r, value);
 
@@ -341,10 +344,10 @@ static int64_t floyd_llvm_intrinsic__find(floyd_runtime_t* frp, runtime_value_t 
 	if(type0.is_string()){
 		return find__string(r.backend, coll_value, coll_type, value, value_type);
 	}
-	else if(is_vector_carray(r.backend.types, r.backend.config, type_t(coll_type))){
+	else if(is_vector_carray(r.backend.types, r.backend.config, type0)){
 		return find__carray(r.backend, coll_value, coll_type, value, value_type);
 	}
-	else if(is_vector_hamt(r.backend.types, r.backend.config, type_t(coll_type))){
+	else if(is_vector_hamt(r.backend.types, r.backend.config, type0)){
 		return find__hamt(r.backend, coll_value, coll_type, value, value_type);
 	}
 	else{
@@ -1354,6 +1357,7 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 	const auto& types = gen_acc.gen.type_lookup.state.types;
 
 	const auto res = lookup_link_map(gen_acc.gen.settings.config, types, gen_acc.gen.link_map, make_push_back_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
+	const auto collection_type_peek = peek2(types, collection_type);
 
 	if(collection_type.is_string()){
 		const auto vector_itype_reg = generate_itype_constant(gen_acc.gen, collection_type);
@@ -1364,8 +1368,8 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 			""
 		);
 	}
-	else if(peek2(types, collection_type).is_vector()){
-		const auto element_type = peek2(types, collection_type).get_vector_element_type(types);
+	else if(collection_type_peek.is_vector()){
+		const auto element_type = collection_type_peek.get_vector_element_type(types);
 		const auto vector_itype_reg = generate_itype_constant(gen_acc.gen, collection_type);
 		const auto packed_value_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
 		return builder.CreateCall(
@@ -1854,8 +1858,15 @@ llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, cons
 	auto& builder = gen_acc.get_builder();
 	const auto& types = gen_acc.gen.type_lookup.state.types;
 
-	const auto res = lookup_link_map(gen_acc.gen.settings.config, types, gen_acc.gen.link_map, make_update_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
+	const auto res = lookup_link_map(
+		gen_acc.gen.settings.config,
+		types,
+		gen_acc.gen.link_map,
+		make_update_specializations(builder.getContext(), gen_acc.gen.type_lookup),
+		collection_type
+	);
 	const auto collection_itype = generate_itype_constant(gen_acc.gen, collection_type);
+	const auto collection_type_peek = peek2(types, collection_type);
 
 	if(collection_type.is_string()){
 		const auto key_itype = generate_itype_constant(gen_acc.gen, type_t::make_int());
@@ -1866,9 +1877,9 @@ llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, cons
 			""
 		);
 	}
-	else if(peek2(types, collection_type).is_vector()){
+	else if(collection_type_peek.is_vector()){
 		const auto key_itype = generate_itype_constant(gen_acc.gen, type_t::make_int());
-		const auto element_type = peek2(types, collection_type).get_vector_element_type(types);
+		const auto element_type = collection_type_peek.get_vector_element_type(types);
 
 		const auto packed_value_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
 		const auto value_itype = generate_itype_constant(gen_acc.gen, element_type);
@@ -1878,9 +1889,9 @@ llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, cons
 			""
 		);
 	}
-	else if(collection_type.is_dict()){
+	else if(collection_type_peek.is_dict()){
 		const auto key_itype = generate_itype_constant(gen_acc.gen, type_t::make_string());
-		const auto element_type = collection_type.get_dict_value_type(types);
+		const auto element_type = collection_type_peek.get_dict_value_type(types);
 		const auto value_itype = generate_itype_constant(gen_acc.gen, element_type);
 		const auto packed_value_reg = generate_cast_to_runtime_value(gen_acc.gen, value_reg, element_type);
 		return builder.CreateCall(

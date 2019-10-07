@@ -868,7 +868,7 @@ static bc_opcode convert_call_to_size_opcode(const types_t& types, const type_t&
 			return bc_opcode::k_get_size_vector_w_external_elements;
 		}
 	}
-	else if(arg1_type.is_dict()){
+	else if(arg1_peek.is_dict()){
 		if(encode_as_dict_w_inplace_values(types, arg1_type)){
 			return bc_opcode::k_get_size_dict_w_inplace_values;
 		}
@@ -964,7 +964,7 @@ static expression_gen_t bcgen_lookup_element_expression(bcgenerator_t& gen_acc, 
 				return bc_opcode::k_lookup_element_vector_w_external_elements;
 			}
 		}
-		else if(parent_type.is_dict()){
+		else if(parent_peek.is_dict()){
 			if(encode_as_dict_w_inplace_values(types, parent_type)){
 				return bc_opcode::k_lookup_element_dict_w_inplace_values;
 			}
@@ -1372,7 +1372,7 @@ static expression_gen_t bcgen_construct_value_expression(bcgenerator_t& gen_acc,
 			));
 		}
 	}
-	else if(target_type.is_dict()){
+	else if(target_peek.is_dict()){
 		if(encode_as_dict_w_inplace_values(types, target_type)){
 			body_acc._instrs.push_back(bcgen_instruction_t(
 				bc_opcode::k_new_dict_w_inplace_values,

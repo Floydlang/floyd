@@ -1415,7 +1415,7 @@ type_variant_t get_type_variant(const types_t& types, const type_t& type){
 			const auto& info = lookup_typeinfo_from_type(types, type);
 			return vector_t { info.child_types };
 		}
-		else if(type.is_dict()){
+		else if(desc.is_dict()){
 			const auto& info = lookup_typeinfo_from_type(types, type);
 			return dict_t { info.child_types };
 		}
@@ -1441,22 +1441,7 @@ type_variant_t get_type_variant(const types_t& types, const type_t& type){
 
 
 
-//////////////////////////////////////////////////		type_t
-
-
-
-
-
-type_t type_t::get_dict_value_type(const types_t& types) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(is_dict());
-
-	const auto& info = lookup_typeinfo_from_type(types, *this);
-	return info.child_types[0];
-}
-
-
+//////////////////////////////////////////////////		type_desc_t
 
 
 
@@ -1481,7 +1466,7 @@ type_t type_desc_t::get_vector_element_type(const types_t& types) const{
 	return info.child_types[0];
 }
 
-type_desc_t type_desc_t::get_dict_value_type(const types_t& types) const{
+type_t type_desc_t::get_dict_value_type(const types_t& types) const{
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(is_dict());
@@ -1489,6 +1474,8 @@ type_desc_t type_desc_t::get_dict_value_type(const types_t& types) const{
 	const auto& info = lookup_typeinfo_from_type(types, *this);
 	return info.child_types[0];
 }
+
+
 
 
 
@@ -1948,7 +1935,8 @@ json_t type_to_json(const types_t& types, const type_t& type){
 			return json_t::make_array( { json_t(basetype_str), type_to_json(types, d) });
 		}
 		json_t operator()(const dict_t& e) const{
-			const auto d = type.get_dict_value_type(types);
+			const auto desc = peek2(types, type);
+			const auto d = desc.get_dict_value_type(types);
 			return json_t::make_array( { json_t(basetype_str), type_to_json(types, d) });
 		}
 		json_t operator()(const function_t& e) const{

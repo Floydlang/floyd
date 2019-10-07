@@ -778,17 +778,19 @@ inline bool is_vector_hamt(const types_t& types, const config_t& config, type_t 
 	return peek2(types, t).is_vector() && config.vector_backend_mode == vector_backend::hamt;
 }
 
-inline bool is_dict_cppmap(const config_t& config, type_t t){
+inline bool is_dict_cppmap(const types_t& types, const config_t& config, type_t t){
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(config.check_invariant());
 	QUARK_ASSERT(t.check_invariant());
 
-	return t.is_dict() && config.dict_backend_mode == dict_backend::cppmap;
+	return peek2(types, t).is_dict() && config.dict_backend_mode == dict_backend::cppmap;
 }
-inline bool is_dict_hamt(const config_t& config, type_t t){
+inline bool is_dict_hamt(const types_t& types, const config_t& config, type_t t){
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(config.check_invariant());
 	QUARK_ASSERT(t.check_invariant());
 
-	return t.is_dict() && config.dict_backend_mode == dict_backend::hamt;
+	return peek2(types, t).is_dict() && config.dict_backend_mode == dict_backend::hamt;
 }
 
 
@@ -903,7 +905,8 @@ inline type_t lookup_vector_element_type(const value_backend_t& backend, type_t 
 inline type_t lookup_dict_value_type(const value_backend_t& backend, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(type.is_dict());
+	const auto& peek = peek2(backend.types, type);
+	QUARK_ASSERT(peek.is_dict());
 
 	return backend.child_type[type.get_lookup_index()];
 }

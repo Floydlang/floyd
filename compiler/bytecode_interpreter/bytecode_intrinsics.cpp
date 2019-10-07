@@ -220,7 +220,9 @@ bc_value_t bc_intrinsic__exists(interpreter_t& vm, const bc_value_t args[], int 
 	const auto obj = args[0];
 	const auto key = args[1];
 
-	QUARK_ASSERT(obj._type.is_dict());
+	const auto& obj_type_peek = peek2(types, obj._type);
+
+	QUARK_ASSERT(obj_type_peek.is_dict());
 	QUARK_ASSERT(key._type.is_string());
 
 	const auto key_string = key.get_string_value();
@@ -244,12 +246,14 @@ bc_value_t bc_intrinsic__erase(interpreter_t& vm, const bc_value_t args[], int a
 	const auto obj = args[0];
 	const auto key = args[1];
 
-	QUARK_ASSERT(obj._type.is_dict());
+	const auto& obj_type_peek = peek2(types, obj._type);
+
+	QUARK_ASSERT(obj_type_peek.is_dict());
 	QUARK_ASSERT(key._type.is_string());
 
 	const auto key_string = key.get_string_value();
 
-	const auto value_type = obj._type.get_dict_value_type(types);
+	const auto value_type = obj_type_peek.get_dict_value_type(types);
 	if(encode_as_dict_w_inplace_values(types, obj._type)){
 		auto entries2 = obj._pod._external->_dict_w_inplace_values.erase(key_string);
 		const auto value2 = make_dict(types, value_type, entries2);
@@ -267,8 +271,10 @@ bc_value_t bc_intrinsic__get_keys(interpreter_t& vm, const bc_value_t args[], in
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
+	const auto& types = vm._imm->_program._types;
 	const auto obj = args[0];
-	QUARK_ASSERT(obj._type.is_dict());
+	const auto& obj_type_peek = peek2(types, obj._type);
+	QUARK_ASSERT(obj_type_peek.is_dict());
 
 	std::vector<value_t> keys;
 	if(encode_as_dict_w_inplace_values(vm._imm->_program._types, obj._type)){

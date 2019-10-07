@@ -34,7 +34,7 @@ DICT_CPPMAP_T* unpack_dict_cppmap_arg(const value_backend_t& backend, runtime_va
 #if DEBUG
 	const auto& type = lookup_type_ref(backend, arg_type);
 #endif
-	QUARK_ASSERT(type.is_dict());
+	QUARK_ASSERT(peek2(backend.types, type).is_dict());
 	QUARK_ASSERT(arg.dict_cppmap_ptr != nullptr);
 
 	QUARK_ASSERT(arg.dict_cppmap_ptr->check_invariant());
@@ -132,7 +132,7 @@ const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_valu
 	const auto dict = unpack_dict_cppmap_arg(backend, coll_value, coll_type);
 
 	//??? compile time
-	const auto value_itype = type0.get_dict_value_type(backend.types);
+	const auto value_itype = peek2(backend.types, type0).get_dict_value_type(backend.types);
 
 	//	Deep copy dict.
 	auto dict2 = alloc_dict_cppmap(backend.heap, type_t(coll_type));
@@ -159,7 +159,7 @@ const runtime_value_t update__dict_hamt(value_backend_t& backend, runtime_value_
 	const auto dict = coll_value.dict_hamt_ptr;
 
 	//??? compile time
-	const auto value_itype = type0.get_dict_value_type(backend.types);
+	const auto value_itype = peek2(backend.types, type0).get_dict_value_type(backend.types);
 
 	//	Deep copy dict.
 	auto dict2 = alloc_dict_hamt(backend.heap, type_t(coll_type));
@@ -476,7 +476,7 @@ runtime_value_t get_keys__cppmap_carray(value_backend_t& backend, runtime_value_
 
 	const auto& type0 = lookup_type_ref(backend, dict_type);
 
-	QUARK_ASSERT(type0.is_dict());
+	QUARK_ASSERT(peek2(backend.types, type0).is_dict());
 
 	const auto& dict = unpack_dict_cppmap_arg(backend, dict_value, dict_type);
 	const auto& m = dict->get_map();
@@ -499,7 +499,7 @@ runtime_value_t get_keys__cppmap_hamt(value_backend_t& backend, runtime_value_t 
 
 	const auto& type0 = lookup_type_ref(backend, dict_type);
 
-	QUARK_ASSERT(type0.is_dict());
+	QUARK_ASSERT(peek2(backend.types, type0).is_dict());
 
 	const auto& dict = unpack_dict_cppmap_arg(backend, dict_value, dict_type);
 	const auto& m = dict->get_map();
@@ -524,7 +524,7 @@ runtime_value_t get_keys__hamtmap_carray(value_backend_t& backend, runtime_value
 
 	const auto& type0 = lookup_type_ref(backend, dict_type);
 
-	QUARK_ASSERT(type0.is_dict());
+	QUARK_ASSERT(peek2(backend.types, type0).is_dict());
 
 	const auto& dict = dict_value.dict_hamt_ptr;
 	const auto& m = dict->get_map();
@@ -547,7 +547,7 @@ runtime_value_t get_keys__hamtmap_hamt(value_backend_t& backend, runtime_value_t
 
 	const auto& type0 = lookup_type_ref(backend, dict_type);
 
-	QUARK_ASSERT(type0.is_dict());
+	QUARK_ASSERT(peek2(backend.types, type0).is_dict());
 
 	const auto& dict = dict_value.dict_hamt_ptr;
 	const auto& m = dict->get_map();

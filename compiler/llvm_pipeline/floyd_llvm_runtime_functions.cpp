@@ -293,10 +293,10 @@ static std::vector<function_bind_t> floydrt_load_vector_element__make(llvm::LLVM
 static const runtime_value_t floydrt_allocate_dict(floyd_runtime_t* frp, runtime_type_t type){
 	auto& r = get_floyd_runtime(frp);
 
-	if(is_dict_cppmap(r.backend.config, type_t(type))){
+	if(is_dict_cppmap(r.backend.types, r.backend.config, type_t(type))){
 		return alloc_dict_cppmap(r.backend.heap, type_t(type));
 	}
-	else if(is_dict_hamt(r.backend.config, type_t(type))){
+	else if(is_dict_hamt(r.backend.types, r.backend.config, type_t(type))){
 		return alloc_dict_hamt(r.backend.heap, type_t(type));
 	}
 	else{
@@ -327,7 +327,7 @@ static std::vector<function_bind_t> floydrt_allocate_dict__make(llvm::LLVMContex
 static runtime_value_t floydrt_lookup_dict_cppmap(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t s){
 	auto& r = get_floyd_runtime(frp);
 
-	QUARK_ASSERT(is_dict_cppmap(r.backend.config, type_t(type)));
+	QUARK_ASSERT(is_dict_cppmap(r.backend.types, r.backend.config, type_t(type)));
 
 	const auto& m = dict.dict_cppmap_ptr->get_map();
 	const auto key_string = from_runtime_string(r, s);
@@ -345,7 +345,7 @@ static runtime_value_t floydrt_lookup_dict_hamt(floyd_runtime_t* frp, runtime_va
 	auto& r = get_floyd_runtime(frp);
 
 //	const auto& type0 = lookup_type_ref(r.backend, type);
-	QUARK_ASSERT(is_dict_hamt(r.backend.config, type_t(type)));
+	QUARK_ASSERT(is_dict_hamt(r.backend.types, r.backend.config, type_t(type)));
 
 	const auto& m = dict.dict_hamt_ptr->get_map();
 	const auto key_string = from_runtime_string(r, s);
@@ -389,13 +389,14 @@ static std::vector<function_bind_t> floydrt_lookup_dict_hamt__make(llvm::LLVMCon
 llvm::Value* generate_lookup_dict(llvm_function_generator_t& gen_acc, llvm::Value& dict_reg, const type_t& dict_type, llvm::Value& key_reg, dict_backend dict_mode){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(dict_type.check_invariant());
-	QUARK_ASSERT(is_dict_cppmap(gen_acc.gen.settings.config, dict_type) || is_dict_hamt(gen_acc.gen.settings.config, dict_type));
 
-	auto& types = gen_acc.gen.type_lookup.state.types;
+	const auto& types = gen_acc.gen.type_lookup.state.types;
+	QUARK_ASSERT(is_dict_cppmap(types, gen_acc.gen.settings.config, dict_type) || is_dict_hamt(types, gen_acc.gen.settings.config, dict_type));
 
 	const auto res = resolve_func(gen_acc.gen.link_map, dict_mode == dict_backend::hamt ? "lookup_dict_hamt" : "lookup_dict_cppmap");
 
-	const auto element_type0 = dict_type.get_dict_value_type(types);
+	const auto dict_peek = peek2(types, dict_type);
+	const auto element_type0 = dict_peek.get_dict_value_type(types);
 	const auto dict_itype_reg = generate_itype_constant(gen_acc.gen, dict_type);
 	auto& builder = gen_acc.get_builder();
 
@@ -420,14 +421,17 @@ llvm::Value* generate_lookup_dict(llvm_function_generator_t& gen_acc, llvm::Valu
 static void floydrt_store_dict_mutable_cppmap(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t key, runtime_value_t element_value){
 	auto& r = get_floyd_runtime(frp);
 
-	QUARK_ASSERT(is_dict_cppmap(r.backend.config, type_t(type)));
+	const auto& types = r.backend.types;
+	QUARK_ASSERT(is_dict_cppmap(types, r.backend.config, type_t(type)));
 	const auto key_string = from_runtime_string(r, key);
 	dict.dict_cppmap_ptr->get_map_mut().insert_or_assign(key_string, element_value);
 }
 static void floydrt_store_dict_mutable_hamt(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t key, runtime_value_t element_value){
 	auto& r = get_floyd_runtime(frp);
 
-	QUARK_ASSERT(is_dict_hamt(r.backend.config, type_t(type)));
+	const auto& types = r.backend.types;
+	const auto peek = peek2(types, type_t(type));
+	QUARK_ASSERT(is_dict_hamt(types, r.backend.config, peek));
 	const auto key_string = from_runtime_string(r, key);
 	dict.dict_hamt_ptr->get_map_mut() = dict.dict_hamt_ptr->get_map_mut().set(key_string, element_value);
 }
@@ -453,12 +457,14 @@ static std::vector<function_bind_t> floydrt_store_dict_mutable__make(llvm::LLVMC
 void generate_store_dict_mutable(llvm_function_generator_t& gen_acc, llvm::Value& dict_reg, const type_t& dict_type, llvm::Value& key_reg, llvm::Value& value_reg, dict_backend dict_mode){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(dict_type.check_invariant());
-	QUARK_ASSERT(is_dict_cppmap(gen_acc.gen.settings.config, dict_type) || is_dict_hamt(gen_acc.gen.settings.config, dict_type));
 
-	auto& types = gen_acc.gen.type_lookup.state.types;
+	const auto& types = gen_acc.gen.type_lookup.state.types;
+	QUARK_ASSERT(is_dict_cppmap(types, gen_acc.gen.settings.config, dict_type) || is_dict_hamt(types, gen_acc.gen.settings.config, dict_type));
+
 	const auto res = resolve_func(gen_acc.gen.link_map, dict_mode == dict_backend::hamt ? "store_dict_mutable_hamt" : "store_dict_mutable_cppmap");
+	const auto dict_peek = peek2(types, dict_type);
 
-	const auto& element_type0 = dict_type.get_dict_value_type(types);
+	const auto& element_type0 = dict_peek.get_dict_value_type(types);
 	auto& dict_itype_reg = *generate_itype_constant(gen_acc.gen, dict_type);
 	auto& builder = gen_acc.get_builder();
 
@@ -649,7 +655,7 @@ llvm::Value* generate_load_struct_member(llvm_function_generator_t& gen_acc, llv
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(struct_type.check_invariant());
 
-	auto& types = gen_acc.gen.type_lookup.state.types;
+	const auto& types = gen_acc.gen.type_lookup.state.types;
 
 	QUARK_ASSERT(peek2(types, struct_type).is_struct());
 
@@ -1006,20 +1012,20 @@ static void floydrt_retain_dict_cppmap(floyd_runtime_t* frp, runtime_value_t dic
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, type_t(type0))));
-	QUARK_ASSERT(type.is_dict());
-	QUARK_ASSERT(is_dict_cppmap(r.backend.config, type));
+	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, type)));
+	QUARK_ASSERT(peek2(r.backend.types, type).is_dict());
+	QUARK_ASSERT(is_dict_cppmap(r.backend.types, r.backend.config, type));
 #endif
 
-	retain_dict_cppmap(r.backend, dict, type_t(type0));
+	retain_dict_cppmap(r.backend, dict, type);
 }
 static void floydrt_retain_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, type_t(type0))));
-	QUARK_ASSERT(type.is_dict());
-	QUARK_ASSERT(is_dict_hamt(r.backend.config, type));
+	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, type)));
+	QUARK_ASSERT(peek2(r.backend.types, type).is_dict());
+	QUARK_ASSERT(is_dict_hamt(r.backend.types, r.backend.config, type));
 #endif
 
 	retain_dict_hamt(r.backend, dict, type_t(type0));
@@ -1076,11 +1082,11 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 		}
 		else if(type_peek.is_vector()){
-			if(is_vector_carray(types, gen_acc.gen.settings.config, type_peek)){
+			if(is_vector_carray(types, gen_acc.gen.settings.config, type0)){
 				const auto res = resolve_func(gen_acc.gen.link_map, "retain_vector_carray");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
-			else if(is_vector_hamt(types, gen_acc.gen.settings.config, type_peek)){
+			else if(is_vector_hamt(types, gen_acc.gen.settings.config, type0)){
 				const auto res = resolve_func(gen_acc.gen.link_map, "retain_vector_hamt");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
@@ -1088,12 +1094,12 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 				QUARK_ASSERT(false);
 			}
 		}
-		else if(type0.is_dict()){
-			if(is_dict_cppmap(gen_acc.gen.settings.config, type_peek)){
+		else if(type_peek.is_dict()){
+			if(is_dict_cppmap(types, gen_acc.gen.settings.config, type0)){
 				const auto res = resolve_func(gen_acc.gen.link_map, "retain_dict_cppmap");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
-			else if(is_dict_hamt(gen_acc.gen.settings.config, type_peek)){
+			else if(is_dict_hamt(types, gen_acc.gen.settings.config, type0)){
 				const auto res = resolve_func(gen_acc.gen.link_map, "retain_dict_hamt");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
@@ -1201,7 +1207,7 @@ static void floydrt_release_dict_cppmap(floyd_runtime_t* frp, runtime_value_t di
 	auto& r = get_floyd_runtime(frp);
 	const auto& type = lookup_type_ref(r.backend, type0);
 #if DEBUG
-	QUARK_ASSERT(is_dict_cppmap(r.backend.config, type));
+	QUARK_ASSERT(is_dict_cppmap(r.backend.types, r.backend.config, type));
 #endif
 
 	release_dict_cppmap(r.backend, dict, type);
@@ -1210,7 +1216,7 @@ static void floydrt_release_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict
 	auto& r = get_floyd_runtime(frp);
 const auto& type = lookup_type_ref(r.backend, type0);
 #if DEBUG
-	QUARK_ASSERT(is_dict_hamt(r.backend.config, type));
+	QUARK_ASSERT(is_dict_hamt(r.backend.types, r.backend.config, type));
 #endif
 
 	release_dict_hamt(r.backend, dict, type);
@@ -1309,12 +1315,12 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 				QUARK_ASSERT(false);
 			}
 		}
-		else if(type.is_dict()){
-			if(is_dict_cppmap(gen_acc.gen.settings.config, type)){
+		else if(peek.is_dict()){
+			if(is_dict_cppmap(types, gen_acc.gen.settings.config, type)){
 				const auto res = resolve_func(gen_acc.gen.link_map, "release_dict_cppmap");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}
-			else if(is_dict_hamt(gen_acc.gen.settings.config, type)){
+			else if(is_dict_hamt(types, gen_acc.gen.settings.config, type)){
 				const auto res = resolve_func(gen_acc.gen.link_map, "release_dict_hamt");
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}
