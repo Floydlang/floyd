@@ -1492,7 +1492,7 @@ type_desc_t type_desc_t::get_dict_value_type(const types_t& types) const{
 
 
 
-type_t type_t::get_function_return(const types_t& types) const{
+type_t type_desc_t::get_function_return(const types_t& types) const{
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(is_function());
 	QUARK_ASSERT(types.check_invariant());
@@ -1501,7 +1501,7 @@ type_t type_t::get_function_return(const types_t& types) const{
 	return info.child_types[0];
 }
 
-std::vector<type_t> type_t::get_function_args(const types_t& types) const{
+std::vector<type_t> type_desc_t::get_function_args(const types_t& types) const{
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(is_function());
 	QUARK_ASSERT(types.check_invariant());
@@ -1510,7 +1510,7 @@ std::vector<type_t> type_t::get_function_args(const types_t& types) const{
 	return std::vector<type_t>(info.child_types.begin() + 1, info.child_types.end());
 }
 
-return_dyn_type type_t::get_function_dyn_return_type(const types_t& types) const{
+return_dyn_type type_desc_t::get_function_dyn_return_type(const types_t& types) const{
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(is_function());
 	QUARK_ASSERT(types.check_invariant());
@@ -1519,7 +1519,7 @@ return_dyn_type type_t::get_function_dyn_return_type(const types_t& types) const
 	return info.func_return_dyn_type;
 }
 
-epure type_t::get_function_pure(const types_t& types) const{
+epure type_desc_t::get_function_pure(const types_t& types) const{
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(is_function());
 	QUARK_ASSERT(types.check_invariant());

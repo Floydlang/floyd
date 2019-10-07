@@ -22,7 +22,7 @@
 
 namespace floyd {
 
-static const bool k_trace_io = true;
+static const bool k_trace_io = false;
 
 
 
@@ -2748,7 +2748,7 @@ const body_t make_global_body(analyser_t& a){
 		resolve_and_intern_itype(a, k_no_location, e._function_type);
 	}
 
-	if(true) trace_analyser(a);
+	if(false) trace_analyser(a);
 
 	const auto result = analyse_statements(a, global_body._statements, type_t::make_void());
 	a = result.first;

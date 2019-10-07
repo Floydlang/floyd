@@ -438,22 +438,6 @@ struct type_t {
 	}
 
 
-	//////////////////////////////////////////////////		FUNCTION
-
-
-	private: bool is_function() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_function;
-	}
-
-	private: type_t get_function_return(const types_t& types) const;
-	private: std::vector<type_t> get_function_args(const types_t& types) const;
-
-	private: return_dyn_type get_function_dyn_return_type(const types_t& types) const;
-
-	private: epure get_function_pure(const types_t& types) const;
-
 
 	//////////////////////////////////////////////////		SYMBOL
 
@@ -791,27 +775,18 @@ struct type_desc_t {
 		return non_name_type.get_base_type() == base_type::k_function;
 	}
 
-	public: type_t get_function_return(const types_t& types) const {
-		return non_name_type.get_function_return(types);
-	}
+	public: type_t get_function_return(const types_t& types) const;
 	public: type_desc_t get_function_return2(const types_t& types) const {
-		return non_name_type.get_function_return(types);
+		return get_function_return(types);
 	}
-	public: std::vector<type_t> get_function_args(const types_t& types) const{
-		return non_name_type.get_function_args(types);
-	}
+	public: std::vector<type_t> get_function_args(const types_t& types) const;
 	public: std::vector<type_desc_t> get_function_args2(const types_t& types) const{
-		const auto args = non_name_type.get_function_args(types);
+		const auto args = get_function_args(types);
 		return mapf<type_desc_t>(args, [&](const auto& e){ return type_desc_t(e); } );
 	}
 
-	public: return_dyn_type get_function_dyn_return_type(const types_t& types) const{
-		return non_name_type.get_function_dyn_return_type(types);
-	}
-
-	public: epure get_function_pure(const types_t& types) const{
-		return non_name_type.get_function_pure(types);
-	}
+	public: return_dyn_type get_function_dyn_return_type(const types_t& types) const;
+	public: epure get_function_pure(const types_t& types) const;
 
 
 	//////////////////////////////////////////////////		SYMBOL
