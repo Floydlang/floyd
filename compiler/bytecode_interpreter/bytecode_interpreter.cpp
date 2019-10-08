@@ -447,7 +447,7 @@ bool bc_external_handle_t::check_invariant() const {
 
 
 
-bool encode_as_inplace(const type_t& type){
+bool encode_as_inplace(const type_desc_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
 	return type.is_bool() || type.is_int() || type.is_double();
@@ -458,7 +458,7 @@ bool encode_as_vector_w_inplace_elements(const types_t& types, const type_t& typ
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto& peek = peek2(types, type);
-	return peek.is_vector() && encode_as_inplace(peek.get_vector_element_type(types));
+	return peek.is_vector() && encode_as_inplace(peek2(types, peek.get_vector_element_type(types)));
 }
 
 bool encode_as_dict_w_inplace_values(const types_t& types, const type_t& type){
@@ -466,7 +466,7 @@ bool encode_as_dict_w_inplace_values(const types_t& types, const type_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto& peek = peek2(types, type);
-	return peek.is_dict() && encode_as_inplace(peek.get_dict_value_type(types));
+	return peek.is_dict() && encode_as_inplace(peek2(types, peek.get_dict_value_type(types)));
 }
 
 value_encoding type_to_encoding(const types_t& types, const type_t& type){
@@ -509,7 +509,7 @@ value_encoding type_to_encoding(const types_t& types, const type_t& type){
 	else if(basetype == base_type::k_vector){
 		const auto& peek = peek2(types, type);
 		const auto& element_type = peek.get_vector_element_type(types);
-		if(encode_as_inplace(element_type)){
+		if(encode_as_inplace(peek2(types, element_type))){
 			return value_encoding::k_external__vector_pod64;
 		}
 		else{
@@ -1156,7 +1156,7 @@ bc_value_t update_struct_member_deep(interpreter_t& vm, const bc_value_t& obj, c
 
 bc_value_t update_string_char(interpreter_t& vm, const bc_value_t s, int64_t lookup_index, int64_t ch){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(s._type.is_string());
+	QUARK_ASSERT(peek2(vm._imm->_program._types, s._type).is_string());
 
 //	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 
@@ -1270,14 +1270,16 @@ bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_va
 //	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 	const auto& types = vm._imm->_program._types;
 	const auto& obj1_peek = peek2(types, obj1._type);
+	const auto& key_peek = peek2(types, lookup_key._type);
+	const auto& new_value_peek = peek2(types, new_value._type);
 
-	if(obj1._type.is_string()){
-		if(lookup_key._type.is_int() == false){
+	if(obj1_peek.is_string()){
+		if(key_peek.is_int() == false){
 			quark::throw_runtime_error("String lookup using integer index only.");
 		}
 		else{
 			const auto v = obj1.get_string_value();
-			if(new_value._type.is_int() == false){
+			if(new_value_peek.is_int() == false){
 				quark::throw_runtime_error("Update element must be a character in an int.");
 			}
 			else{
@@ -1286,7 +1288,7 @@ bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_va
 			}
 		}
 	}
-	else if(obj1._type.is_json()){
+	else if(obj1_peek.is_json()){
 		const auto json0 = obj1.get_json();
 		if(json0.is_array()){
 			QUARK_ASSERT(false);
@@ -1302,7 +1304,7 @@ bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_va
 	}
 	else if(obj1_peek.is_vector()){
 		const auto element_type = obj1_peek.get_vector_element_type(types);
-		if(lookup_key._type.is_int() == false){
+		if(key_peek.is_int() == false){
 			quark::throw_runtime_error("Vector lookup using integer index only.");
 		}
 		else if(element_type != new_value._type){
@@ -1314,7 +1316,7 @@ bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_va
 		}
 	}
 	else if(obj1_peek.is_dict()){
-		if(lookup_key._type.is_string() == false){
+		if(key_peek.is_string() == false){
 			quark::throw_runtime_error("Dict lookup using string key only.");
 		}
 		else{
@@ -1329,7 +1331,7 @@ bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_va
 		}
 	}
 	else if(obj1_peek.is_struct()){
-		if(lookup_key._type.is_string() == false){
+		if(key_peek.is_string() == false){
 			quark::throw_runtime_error("You must specify structure member using string.");
 		}
 		else{
@@ -1758,13 +1760,13 @@ int bc_compare_value_true_deep(const types_t& types, const bc_value_t& left, con
 	if(type.is_undefined()){
 		return 0;
 	}
-	else if(type.is_bool()){
+	else if(peek.is_bool()){
 		return (left.get_bool_value() ? 1 : 0) - (right.get_bool_value() ? 1 : 0);
 	}
-	else if(type.is_int()){
+	else if(peek.is_int()){
 		return compare(left.get_int_value() - right.get_int_value());
 	}
-	else if(type.is_double()){
+	else if(peek.is_double()){
 		const auto a = left.get_double_value();
 		const auto b = right.get_double_value();
 		if(a > b){
@@ -1777,10 +1779,10 @@ int bc_compare_value_true_deep(const types_t& types, const bc_value_t& left, con
 			return 0;
 		}
 	}
-	else if(type.is_string()){
+	else if(peek.is_string()){
 		return bc_compare_string(left.get_string_value(), right.get_string_value());
 	}
-	else if(type.is_json()){
+	else if(peek.is_json()){
 		return bc_compare_jsons(left.get_json(), right.get_json());
 	}
 	else if(peek.is_typeid()){
@@ -1796,15 +1798,16 @@ int bc_compare_value_true_deep(const types_t& types, const bc_value_t& left, con
 		return bc_compare_struct_true_deep(types, left.get_struct_value(), right.get_struct_value(), type0);
 	}
 	else if(peek.is_vector()){
+		const auto element_type_peek = peek2(types, peek.get_vector_element_type(types));
 		if(false){
 		}
-		else if(peek.get_vector_element_type(types).is_bool()){
+		else if(element_type_peek.is_bool()){
 			return bc_compare_vectors_bool(left._pod._external->_vector_w_inplace_elements, right._pod._external->_vector_w_inplace_elements);
 		}
-		else if(peek.get_vector_element_type(types).is_int()){
+		else if(element_type_peek.is_int()){
 			return bc_compare_vectors_int(left._pod._external->_vector_w_inplace_elements, right._pod._external->_vector_w_inplace_elements);
 		}
-		else if(peek.get_vector_element_type(types).is_double()){
+		else if(element_type_peek.is_double()){
 			return bc_compare_vectors_double(left._pod._external->_vector_w_inplace_elements, right._pod._external->_vector_w_inplace_elements);
 		}
 		else{
@@ -1814,15 +1817,16 @@ int bc_compare_value_true_deep(const types_t& types, const bc_value_t& left, con
 		}
 	}
 	else if(peek.is_dict()){
+		const auto dict_value_peek = peek2(types, peek.get_dict_value_type(types));
 		if(false){
 		}
-		else if(peek.get_dict_value_type(types).is_bool()){
+		else if(dict_value_peek.is_bool()){
 			return bc_compare_dicts_bool(left._pod._external->_dict_w_inplace_values, right._pod._external->_dict_w_inplace_values);
 		}
-		else if(peek.get_dict_value_type(types).is_int()){
+		else if(dict_value_peek.is_int()){
 			return bc_compare_dicts_int(left._pod._external->_dict_w_inplace_values, right._pod._external->_dict_w_inplace_values);
 		}
-		else if(peek.get_dict_value_type(types).is_double()){
+		else if(dict_value_peek.is_double()){
 			return bc_compare_dicts_double(left._pod._external->_dict_w_inplace_values, right._pod._external->_dict_w_inplace_values);
 		}
 		else  {
@@ -2098,7 +2102,7 @@ bc_function_definition_t::bc_function_definition_t(
 	_return_is_ext(encode_as_external(types, peek2(types, _function_type).get_function_return(types)))
 {
 	const auto args2 = peek2(types, function_type).get_function_args(types);
-    _dyn_arg_count = (int)std::count_if(args2.begin(), args2.end(), [](const auto& e){ return e.is_any(); });
+    _dyn_arg_count = (int)std::count_if(args2.begin(), args2.end(), [&](const auto& e){ return peek2(types, e).is_any(); });
 }
 
 #if DEBUG
@@ -2301,7 +2305,7 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 		vm._stack.pop_batch(exts);
 		vm._stack.restore_frame();
 
-		if(lookup_type_from_index(vm._imm->_program._types, result.first).is_void() == false){
+		if(peek2(types, lookup_type_from_index(types, result.first)).is_void() == false){
 			return result.second;
 		}
 		else{
@@ -2319,25 +2323,25 @@ json_t bcvalue_to_json(const types_t& types, const bc_value_t& v){
 	if(v._type.is_undefined()){
 		return json_t();
 	}
-	else if(v._type.is_any()){
+	else if(peek.is_any()){
 		return json_t();
 	}
-	else if(v._type.is_void()){
+	else if(peek.is_void()){
 		return json_t();
 	}
-	else if(v._type.is_bool()){
+	else if(peek.is_bool()){
 		return json_t(v.get_bool_value());
 	}
-	else if(v._type.is_int()){
+	else if(peek.is_int()){
 		return json_t(static_cast<double>(v.get_int_value()));
 	}
-	else if(v._type.is_double()){
+	else if(peek.is_double()){
 		return json_t(static_cast<double>(v.get_double_value()));
 	}
-	else if(v._type.is_string()){
+	else if(peek.is_string()){
 		return json_t(v.get_string_value());
 	}
-	else if(v._type.is_json()){
+	else if(peek.is_json()){
 		return v.get_json();
 	}
 	else if(peek.is_typeid()){
@@ -2346,7 +2350,7 @@ json_t bcvalue_to_json(const types_t& types, const bc_value_t& v){
 	else if(peek.is_struct()){
 		const auto& struct_value = v.get_struct_value();
 		std::map<std::string, json_t> obj2;
-		const auto& struct_def = peek2(types, v._type).get_struct(types);
+		const auto& struct_def = peek.get_struct(types);
 		for(int i = 0 ; i < struct_def._members.size() ; i++){
 			const auto& member = struct_def._members[i];
 			const auto& key = member._name;
@@ -2359,21 +2363,22 @@ json_t bcvalue_to_json(const types_t& types, const bc_value_t& v){
 	}
 	else if(peek.is_vector()){
 		const auto element_type = peek.get_vector_element_type(types);
+		const auto element_type_peek = peek2(types, element_type);
 
 		std::vector<json_t> result;
-		if(element_type.is_bool()){
+		if(element_type_peek.is_bool()){
 			for(int i = 0 ; i < v._pod._external->_vector_w_inplace_elements.size() ; i++){
 				const auto element_value2 = v._pod._external->_vector_w_inplace_elements[i].bool_value;
 				result.push_back(json_t(element_value2));
 			}
 		}
-		else if(element_type.is_int()){
+		else if(element_type_peek.is_int()){
 			for(int i = 0 ; i < v._pod._external->_vector_w_inplace_elements.size() ; i++){
 				const auto element_value2 = v._pod._external->_vector_w_inplace_elements[i].int64_value;
 				result.push_back(json_t(element_value2));
 			}
 		}
-		else if(element_type.is_double()){
+		else if(element_type_peek.is_double()){
 			for(int i = 0 ; i < v._pod._external->_vector_w_inplace_elements.size() ; i++){
 				const auto element_value2 = v._pod._external->_vector_w_inplace_elements[i].double_value;
 				result.push_back(json_t(element_value2));
@@ -2525,12 +2530,12 @@ static void execute_new_1(interpreter_t& vm, int16_t dest_reg, int16_t target_it
 	const auto input_value = vm._stack.load_value(arg0_stack_pos + 0, source_itype2);
 
 	const bc_value_t result = [&]{
-		if(target_type.is_bool() || target_type.is_int() || target_type.is_double() || target_peek.is_typeid()){
+		if(target_peek.is_bool() || target_peek.is_int() || target_peek.is_double() || target_peek.is_typeid()){
 			return input_value;
 		}
 
 		//	Automatically transform a json::string => string at runtime?
-		else if(target_type.is_string() && source_itype2.is_json()){
+		else if(target_peek.is_string() && peek2(types, source_itype2).is_json()){
 			if(input_value.get_json().is_string()){
 				return bc_value_t::make_string(input_value.get_json().get_string());
 			}
@@ -2538,7 +2543,7 @@ static void execute_new_1(interpreter_t& vm, int16_t dest_reg, int16_t target_it
 				quark::throw_runtime_error("Attempting to assign a non-string JSON to a string.");
 			}
 		}
-		else if(target_type.is_json()){
+		else if(target_peek.is_json()){
 			const auto arg = bcvalue_to_json(types, input_value);
 			return bc_value_t::make_json(arg);
 		}
@@ -2691,7 +2696,7 @@ static void call_native(interpreter_t& vm, const bc_instruction_t& i, const type
 	const auto function_type_peek = peek2(types, function_type);
 
 	const auto temp_args = function_type_peek.get_function_args(types);
-	const auto function_def_dynamic_arg_count = std::count_if(temp_args.begin(), temp_args.end(), [&](const auto& e){ return e.is_any(); } );
+	const auto function_def_dynamic_arg_count = std::count_if(temp_args.begin(), temp_args.end(), [&](const auto& e){ return peek2(types, e).is_any(); } );
 
 	const int arg0_stack_pos = stack.size() - (function_def_dynamic_arg_count + callee_arg_count);
 	int stack_pos = arg0_stack_pos;
@@ -2701,7 +2706,7 @@ static void call_native(interpreter_t& vm, const bc_instruction_t& i, const type
 	std::vector<bc_value_t> arg_values;
 	for(int a = 0 ; a < function_def_arg_count ; a++){
 		const auto func_arg_type = temp_args[a];
-		if(func_arg_type.is_any()){
+		if(peek2(types, func_arg_type).is_any()){
 			const auto arg_itype = stack.load_intq(stack_pos);
 			const auto& arg_type = lookup_full_type(vm, static_cast<int16_t>(arg_itype));
 			const auto arg_value = stack.load_value(stack_pos + 1, arg_type);
@@ -2719,9 +2724,10 @@ static void call_native(interpreter_t& vm, const bc_instruction_t& i, const type
 	const auto bc_result = result;
 
 	const auto& function_return_type = function_type_peek.get_function_return(types);
-	if(function_return_type.is_void() == true){
+	const auto function_return_type_peek = peek2(types, function_return_type);
+	if(function_return_type_peek.is_void() == true){
 	}
-	else if(function_return_type.is_any()){
+	else if(function_return_type_peek.is_any()){
 		stack.write_register(i._a, bc_result);
 	}
 	else{
@@ -2783,7 +2789,9 @@ static void do_call(interpreter_t& vm, const bc_instruction_t& i){
 
 			//	Update our cached pointers.
 
-			if(function_return_type.is_void() == false){
+			const auto function_return_type_peek = peek2(types, function_return_type);
+
+			if(function_return_type_peek.is_void() == false){
 
 				//	Cannot store via register, we have not yet executed k_pop_frame_ptr that restores our frame.
 				if(function_def._return_is_ext){
@@ -3387,8 +3395,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto target_itype = i._b;
 			const auto source_itype = i._c;
 			const auto& target_type = lookup_full_type(vm, target_itype);
-			const auto target_peek = peek2(types, target_type);
-			QUARK_ASSERT(target_peek.is_vector() == false && target_peek.is_dict() == false && target_peek.is_struct() == false);
+			QUARK_ASSERT(peek2(types, target_type).is_vector() == false && peek2(types, target_type).is_dict() == false && peek2(types, target_type).is_struct() == false);
 			execute_new_1(vm, dest_reg, target_itype, source_itype);
 			break;
 		}
@@ -3402,8 +3409,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto target_itype = i._b;
 			const auto arg_count = i._c;
 			const auto& vector_type = lookup_full_type(vm, target_itype);
-			const auto peek = peek2(types, vector_type);
-			QUARK_ASSERT(peek.is_vector());
+			QUARK_ASSERT(peek2(types, vector_type).is_vector());
 			QUARK_ASSERT(encode_as_vector_w_inplace_elements(types, vector_type) == false);
 
 			execute_new_vector_obj(vm, dest_reg, target_itype, arg_count);
@@ -3452,8 +3458,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto target_itype = i._b;
 			const auto arg_count = i._c;
 			const auto& target_type = lookup_full_type(vm, target_itype);
-			const auto peek = peek2(types, target_type);
-			QUARK_ASSERT(peek.is_dict());
+			QUARK_ASSERT(peek2(types, target_type).is_dict());
 			execute_new_dict_pod64(vm, dest_reg, target_itype, arg_count);
 			break;
 		}
@@ -3477,7 +3482,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_any(i._c));
 
 			const auto& type = frame_ptr->_symbols[i._b].second._value_type;
-			QUARK_ASSERT(type.is_int() == false);
+			QUARK_ASSERT(peek2(types, type).is_int() == false);
 
 			const auto left = stack.read_register(i._b);
 			const auto right = stack.read_register(i._c);
@@ -3501,7 +3506,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_any(i._c));
 
 			const auto& type = frame_ptr->_symbols[i._b].second._value_type;
-			QUARK_ASSERT(type.is_int() == false);
+			QUARK_ASSERT(peek2(types, type).is_int() == false);
 			const auto left = stack.read_register(i._b);
 			const auto right = stack.read_register(i._c);
 			long diff = bc_compare_value_true_deep(types, left, right, type);
@@ -3523,7 +3528,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_any(i._c));
 
 			const auto& type = frame_ptr->_symbols[i._b].second._value_type;
-			QUARK_ASSERT(type.is_int() == false);
+			QUARK_ASSERT(peek2(types, type).is_int() == false);
 			const auto left = stack.read_register(i._b);
 			const auto right = stack.read_register(i._c);
 			long diff = bc_compare_value_true_deep(types, left, right, type);
@@ -3546,7 +3551,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_any(i._c));
 
 			const auto& type = frame_ptr->_symbols[i._b].second._value_type;
-			QUARK_ASSERT(type.is_int() == false);
+			QUARK_ASSERT(peek2(types, type).is_int() == false);
 			const auto left = stack.read_register(i._b);
 			const auto right = stack.read_register(i._c);
 			long diff = bc_compare_value_true_deep(types, left, right, type);

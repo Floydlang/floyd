@@ -58,18 +58,17 @@ std::vector<benchmark_result2_t> unpack_vec_benchmark_result2_t(types_t& types, 
 
 bool is_floyd_literal(const type_desc_t& desc){
 	QUARK_ASSERT(desc.check_invariant());
-	const auto& type = desc.non_name_type;
 
 	//??? json is allowed but only for json::null. We should have a null-type instead.
 	if(
-		type.is_void()
-		|| type.is_int()
-		|| type.is_double()
-		|| type.is_string()
-		|| type.is_bool()
+		desc.is_void()
+		|| desc.is_int()
+		|| desc.is_double()
+		|| desc.is_string()
+		|| desc.is_bool()
 		|| desc.is_typeid()
-		|| type.is_any()
-		|| type.is_json()
+		|| desc.is_any()
+		|| desc.is_json()
 		|| desc.is_function()
 	){
 		return true;
@@ -291,7 +290,7 @@ type_t harden_map_string_func_type(types_t& types, const type_t& resolved_call_t
 }
 
 bool check_map_string_func_type(types_t& types, const type_t& elements, const type_t& f, const type_t& context){
-	QUARK_ASSERT(elements.is_string());
+	QUARK_ASSERT(peek2(types, elements).is_string());
 
 	const auto f_peek = peek2(types, f);
 	QUARK_ASSERT(f_peek.is_function());

@@ -408,7 +408,7 @@ int64_t find__string(value_backend_t& backend, runtime_value_t coll_value, runti
 
 	const auto& type1 = lookup_type_ref(backend, value_type);
 
-	QUARK_ASSERT(type1.is_string());
+	QUARK_ASSERT(peek2(backend.types, type1).is_string());
 
 	const auto str = from_runtime_string2(backend, coll_value);
 	const auto wanted2 = from_runtime_string2(backend, value);

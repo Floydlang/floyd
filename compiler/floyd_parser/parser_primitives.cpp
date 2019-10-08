@@ -438,9 +438,9 @@ QUARK_TEST("", "read_function_type_args()", "", ""){
 	types_t types;
 	const auto result = read_function_type_args(types, seq_t("(int, double)"));
 	QUARK_TEST_VERIFY(result.first.size() == 2);
-	QUARK_TEST_VERIFY(result.first[0]._type.is_int());
+	QUARK_TEST_VERIFY(peek2(types, result.first[0]._type).is_int());
 	QUARK_TEST_VERIFY(result.first[0]._name == "");
-	QUARK_TEST_VERIFY(result.first[1]._type.is_double());
+	QUARK_TEST_VERIFY(peek2(types, result.first[1]._type).is_double());
 	QUARK_TEST_VERIFY(result.first[1]._name == "");
 	QUARK_TEST_VERIFY(result.second.empty());
 }
@@ -448,9 +448,9 @@ QUARK_TEST("", "read_function_type_args()", "", ""){
 	types_t types;
 	const auto result = read_function_type_args(types, seq_t("(int x, double y)"));
 	QUARK_TEST_VERIFY(result.first.size() == 2);
-	QUARK_TEST_VERIFY(result.first[0]._type.is_int());
+	QUARK_TEST_VERIFY(peek2(types, result.first[0]._type).is_int());
 	QUARK_TEST_VERIFY(result.first[0]._name == "x");
-	QUARK_TEST_VERIFY(result.first[1]._type.is_double());
+	QUARK_TEST_VERIFY(peek2(types, result.first[1]._type).is_double());
 	QUARK_TEST_VERIFY(result.first[1]._name == "y");
 	QUARK_TEST_VERIFY(result.second.empty());
 }
@@ -464,7 +464,7 @@ static std::pair<std::shared_ptr<type_t>, seq_t> read_basic_or_vector(types_t& t
 		if(pos3.first1() == ":"){
 			const auto pos4 = pos3.rest1();
 
-			if(element_type_pos.first.is_string() == false){
+			if(peek2(types, element_type_pos.first).is_string() == false){
 				throw_compiler_error_nopos("Dict only support string as key!");
 			}
 			else{

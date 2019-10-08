@@ -19,8 +19,7 @@ struct builder_t;
 
 
 bool pass_as_ptr(const type_desc_t& desc){
-	const auto type = desc.non_name_type;
-	if(type.is_string() || type.is_json() || desc.is_struct() || desc.is_vector() || desc.is_dict() || desc.is_function()){
+	if(desc.is_string() || desc.is_json() || desc.is_struct() || desc.is_vector() || desc.is_dict() || desc.is_function()){
 		return true;
 	}
 	else {
@@ -194,14 +193,15 @@ static llvm::Type* get_llvm_type_prefer_generic(const type_entry_t& entry){
 }
 
 static llvm_function_def_t map_function_arguments_internal(const builder_t& builder, const floyd::type_t& function_type){
-	QUARK_ASSERT(peek2(builder.acc.types, function_type).is_function());
+	const auto& types = builder.acc.types;
+	QUARK_ASSERT(peek2(types, function_type).is_function());
 
-	const auto function_peek = peek2(builder.acc.types, function_type);
-	const auto ret = function_peek.get_function_return(builder.acc.types);
+	const auto function_peek = peek2(types, function_type);
+	const auto ret = function_peek.get_function_return(types);
 
 	// Notice: we always resolve the return type in semantic analysis -- no need to use WIDE_RETURN and provide a dynamic type. We use int64 here and cast it when calling.
 	llvm::Type* return_type = nullptr;
-	if(ret.is_any()){
+	if(peek2(types, ret).is_any()){
 	 	return_type = llvm::Type::getInt64Ty(builder.context);
 	}
 	else {
@@ -209,7 +209,7 @@ static llvm_function_def_t map_function_arguments_internal(const builder_t& buil
 		return_type = get_llvm_type_prefer_generic(a);
 	}
 
-	const auto args = function_peek.get_function_args(builder.acc.types);
+	const auto args = function_peek.get_function_args(types);
 	std::vector<llvm_arg_mapping_t> arg_results;
 
 	auto frp_type = builder.acc.runtime_ptr_type;
@@ -220,10 +220,10 @@ static llvm_function_def_t map_function_arguments_internal(const builder_t& buil
 	for(int index = 0 ; index < args.size() ; index++){
 		const auto& arg = args[index];
 		QUARK_ASSERT(arg.is_undefined() == false);
-		QUARK_ASSERT(arg.is_void() == false);
+		QUARK_ASSERT(peek2(types, arg).is_void() == false);
 
 		//	For dynamic values, store its dynamic type as an extra argument.
-		if(arg.is_any()){
+		if(peek2(types, arg).is_any()){
 			arg_results.push_back({ builder.acc.runtime_value_type, std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_dyn_value });
 			arg_results.push_back({ builder.acc.runtime_type_type, std::to_string(index), make_undefined(), index, llvm_arg_mapping_t::map_type::k_dyn_type });
 		}
@@ -258,10 +258,11 @@ static llvm::Type* make_function_type(const builder_t& builder, const type_t& fu
 static llvm::StructType* make_exact_struct_type(const builder_t& builder, const type_t& type){
 	QUARK_ASSERT(peek2(builder.acc.types, type).is_struct());
 
+	const auto& types = builder.acc.types;
 	std::vector<llvm::Type*> members;
-	for(const auto& m: peek2(builder.acc.types, type).get_struct(builder.acc.types)._members){
+	for(const auto& m: peek2(types, type).get_struct(types)._members){
 		const auto member_type = m._type;
-		const auto member_type1 = peek2(builder.acc.types, member_type);
+		const auto member_type1 = peek2(types, member_type);
 		const auto& a = find_type(builder, member_type1);
 		const auto m2 = get_llvm_type_prefer_generic(a);
 		members.push_back(m2);
@@ -339,7 +340,7 @@ static llvm::Type* make_generic_type(const builder_t& builder, const type_t& typ
 	if(peek.is_vector()){
 		return builder.acc.generic_vec_type;
 	}
-	else if(type.is_string()){
+	else if(peek.is_string()){
 		return builder.acc.generic_vec_type;
 	}
 	else if(peek.is_dict()){

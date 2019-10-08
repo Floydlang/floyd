@@ -460,7 +460,9 @@ static bcgen_body_t bcgen_ifelse_statement(bcgenerator_t& gen_acc, const stateme
 
 	const auto condition_expr = bcgen_expression(gen_acc, {}, statement._condition, body_acc);
 	body_acc = condition_expr._body;
-	QUARK_ASSERT(get_expr_output(gen_acc, statement._condition).is_bool());
+
+	const auto& types = gen_acc._ast_imm->_tree._types;
+	QUARK_ASSERT(peek2(types, get_expr_output(gen_acc, statement._condition)).is_bool());
 
 	//???	Needs short-circuit evaluation here!
 
@@ -806,7 +808,7 @@ static bc_opcode convert_call_to_pushback_opcode(const types_t& types, const typ
 			return bc_opcode::k_pushback_vector_w_external_elements;
 		}
 	}
-	else if(arg1_type.is_string()){
+	else if(arg1_peek.is_string()){
 		return bc_opcode::k_pushback_string;
 	}
 	else{
@@ -831,7 +833,7 @@ static expression_gen_t bcgen_intrinsic_push_back_expression(bcgenerator_t& gen_
 	bc_opcode opcode = convert_call_to_pushback_opcode(types, arg1_type);
 	if(opcode != bc_opcode::k_nop){
 		//	push_back() used DYN-arguments which are resolved at runtime. When we make opcodes we need to check at compile time = now.
-		if(arg1_type.is_string() && get_expr_output(gen_acc, details.args[1]).is_int() == false){
+		if(peek2(types, arg1_type).is_string() && peek2(types, get_expr_output(gen_acc, details.args[1])).is_int() == false){
 			quark::throw_runtime_error("Bad element to push_back(). Require push_back(string, int)");
 		}
 
@@ -876,10 +878,10 @@ static bc_opcode convert_call_to_size_opcode(const types_t& types, const type_t&
 			return bc_opcode::k_get_size_dict_w_external_values;
 		}
 	}
-	else if(arg1_type.is_string()){
+	else if(arg1_peek.is_string()){
 		return bc_opcode::k_get_size_string;
 	}
-	else if(arg1_type.is_json()){
+	else if(arg1_peek.is_json()){
 		return bc_opcode::k_get_size_jsonvalue;
 	}
 	else{
@@ -950,10 +952,10 @@ static expression_gen_t bcgen_lookup_element_expression(bcgenerator_t& gen_acc, 
 	const auto parent_type = parent_expr._type;
 	const auto parent_peek = peek2(types, parent_type);
 	const auto opcode = [&]{
-		if(parent_type.is_string()){
+		if(parent_peek.is_string()){
 			return bc_opcode::k_lookup_element_string;
 		}
-		else if(parent_type.is_json()){
+		else if(parent_peek.is_json()){
 			return bc_opcode::k_lookup_element_json;
 		}
 		else if(parent_peek.is_vector()){
@@ -1060,7 +1062,7 @@ static call_setup_t gen_call_setup(bcgenerator_t& gen_acc, const std::vector<typ
 	auto body_acc = body;
 	const auto& types = gen_acc._ast_imm->_tree._types;
 
-    const auto dynamic_arg_count = std::count_if(function_def_arg_type.begin(), function_def_arg_type.end(), [](const auto& e){ return e.is_any(); });
+    const auto dynamic_arg_count = std::count_if(function_def_arg_type.begin(), function_def_arg_type.end(), [&](const auto& e){ return peek2(types, e).is_any(); });
 	const auto arg_count = callee_arg_count;
 
 	//	Generate code / symbols for all arguments to the function call. Record where each arg is kept.
@@ -1087,7 +1089,7 @@ static call_setup_t gen_call_setup(bcgenerator_t& gen_acc, const std::vector<typ
 		const auto& func_arg_type = function_def_arg_type[i];
 
 		//	Prepend internal-dynamic arguments with the type of the actual callee-argument.
-		if(func_arg_type.is_any()){
+		if(peek2(types, func_arg_type).is_any()){
 			const auto arg_type_reg = add_local_const(types, body_acc, value_t::make_int(itype_from_type(callee_arg_type)), "DYN type arg #" + std::to_string(i));
 			body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_inplace_value, arg_type_reg, {}, {} ));
 
@@ -1174,7 +1176,7 @@ static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const symb
 	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(types, body_acc, call_output_type, "temp: call return") : target_reg;
 
 	//??? No need to allocate return register if functions returns void.
-	QUARK_ASSERT(return_type.is_any() == false && return_type.is_undefined() == false)
+	QUARK_ASSERT(peek2(types, return_type).is_any() == false && peek2(types, return_type).is_undefined() == false)
 	body_acc._instrs.push_back(bcgen_instruction_t(
 		bc_opcode::k_call,
 		target_reg2,
@@ -1431,13 +1433,15 @@ static expression_gen_t bcgen_arithmetic_unary_minus_expression(bcgenerator_t& g
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
+	const auto& types = gen_acc._ast_imm->_tree._types;
 	const auto type = get_expr_output(gen_acc, *details.expr);
+	const auto peek_type = peek2(types, type);
 
-	if(type.is_int()){
+	if(peek_type.is_int()){
 		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract, expression_t::make_literal_int(0), *details.expr, e._output_type);
 		return bcgen_expression(gen_acc, target_reg, e2, body);
 	}
-	else if(type.is_double()){
+	else if(peek_type.is_double()){
 		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract, expression_t::make_literal_double(0), *details.expr, e._output_type);
 		return bcgen_expression(gen_acc, target_reg, e2, body);
 	}
@@ -1535,10 +1539,11 @@ static expression_gen_t bcgen_comparison_expression(bcgenerator_t& gen_acc, cons
 	const auto type = get_expr_output(gen_acc, *details.lhs);
 
 	//	Output reg always a bool.
-	QUARK_ASSERT(get_expr_output(gen_acc, e).is_bool());
-	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(types, body_acc, get_expr_output(gen_acc, e), "temp: comparison flag") : target_reg;
+	const auto output_type = get_expr_output(gen_acc, e);
+	QUARK_ASSERT(peek2(types, output_type).is_bool());
+	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(types, body_acc, output_type, "temp: comparison flag") : target_reg;
 
-	if(type.is_int()){
+	if(peek2(types, type).is_int()){
 
 		//	Bool tells if to flip left / right.
 		static const std::map<expression_type, std::pair<bool, bc_opcode>> conv_opcode_int = {
@@ -1605,7 +1610,7 @@ static expression_gen_t bcgen_arithmetic_expression(bcgenerator_t& gen_acc, cons
 
 	const auto peek = peek2(types, type);
 	const auto opcode = [&]{
-		if(type.is_bool()){
+		if(peek.is_bool()){
 			static const std::map<expression_type, bc_opcode> conv_opcode = {
 				{ expression_type::k_arithmetic_add, bc_opcode::k_add_bool },
 				{ expression_type::k_arithmetic_subtract, bc_opcode::k_nop },
@@ -1618,7 +1623,7 @@ static expression_gen_t bcgen_arithmetic_expression(bcgenerator_t& gen_acc, cons
 			};
 			return conv_opcode.at(details.op);
 		}
-		else if(type.is_int()){
+		else if(peek.is_int()){
 			static const std::map<expression_type, bc_opcode> conv_opcode = {
 				{ expression_type::k_arithmetic_add, bc_opcode::k_add_int },
 				{ expression_type::k_arithmetic_subtract, bc_opcode::k_subtract_int },
@@ -1631,7 +1636,7 @@ static expression_gen_t bcgen_arithmetic_expression(bcgenerator_t& gen_acc, cons
 			};
 			return conv_opcode.at(details.op);
 		}
-		else if(type.is_double()){
+		else if(peek.is_double()){
 			static const std::map<expression_type, bc_opcode> conv_opcode = {
 				{ expression_type::k_arithmetic_add, bc_opcode::k_add_double },
 				{ expression_type::k_arithmetic_subtract, bc_opcode::k_subtract_double },
@@ -1644,7 +1649,7 @@ static expression_gen_t bcgen_arithmetic_expression(bcgenerator_t& gen_acc, cons
 			};
 			return conv_opcode.at(details.op);
 		}
-		else if(type.is_string()){
+		else if(peek.is_string()){
 			static const std::map<expression_type, bc_opcode> conv_opcode = {
 				{ expression_type::k_arithmetic_add, bc_opcode::k_concat_strings },
 				{ expression_type::k_arithmetic_subtract, bc_opcode::k_nop },

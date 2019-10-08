@@ -1380,27 +1380,27 @@ type_variant_t get_type_variant(const types_t& types, const type_t& type){
 		if(type.is_undefined()){
 			return undefined_t {};
 		}
-		else if(type.is_any()){
+		else if(desc.is_any()){
 			return any_t {};
 		}
-		else if(type.is_void()){
+		else if(desc.is_void()){
 			return void_t {};
 		}
 
 
-		else if(type.is_bool()){
+		else if(desc.is_bool()){
 			return bool_t {};
 		}
-		else if(type.is_int()){
+		else if(desc.is_int()){
 			return int_t {};
 		}
-		else if(type.is_double()){
+		else if(desc.is_double()){
 			return double_t {};
 		}
-		else if(type.is_string()){
+		else if(desc.is_string()){
 			return string_t {};
 		}
-		else if(type.is_json()){
+		else if(desc.is_json()){
 			return json_type_t {};
 		}
 		else if(desc.is_typeid()){
@@ -2341,13 +2341,13 @@ type_t make_function_dyn_return(types_t& types, const std::vector<type_t>& args,
 }
 
 type_t make_function(types_t& types, const type_t& ret, const std::vector<type_t>& args, epure pure){
-	QUARK_ASSERT(ret.is_any() == false);
+	QUARK_ASSERT(peek2(types, ret).is_any() == false);
 
 	return make_function3(types, ret, args, pure, return_dyn_type::none);
 }
 
 type_t make_function(const types_t& types, const type_t& ret, const std::vector<type_t>& args, epure pure){
-	QUARK_ASSERT(ret.is_any() == false);
+	QUARK_ASSERT(peek2(types, ret).is_any() == false);
 
 	return make_function3(types, ret, args, pure, return_dyn_type::none);
 }

@@ -33,7 +33,7 @@ namespace floyd {
 bc_value_t bc_intrinsic__assert(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_bool());
+	QUARK_ASSERT(peek2(vm._imm->_program._types, args[0]._type).is_bool());
 
 	const auto& value = args[0];
 	bool ok = value.get_bool_value();
@@ -151,7 +151,7 @@ bc_value_t bc_intrinsic__find(interpreter_t& vm, const bc_value_t args[], int ar
 
 	const auto& obj_type_peek = peek2(types, obj._type);
 
-	if(obj._type.is_string()){
+	if(obj_type_peek.is_string()){
 		const auto str = obj.get_string_value();
 		const auto wanted2 = wanted.get_string_value();
 
@@ -161,9 +161,10 @@ bc_value_t bc_intrinsic__find(interpreter_t& vm, const bc_value_t args[], int ar
 	}
 	else if(obj_type_peek.is_vector()){
 		const auto element_type = obj_type_peek.get_vector_element_type(types);
+		const auto element_type_peek = peek2(types, element_type);
 		QUARK_ASSERT(wanted._type == element_type);
 
-		if(obj_type_peek.get_vector_element_type(types).is_bool()){
+		if(element_type_peek.is_bool()){
 			const auto& vec = obj._pod._external->_vector_w_inplace_elements;
 			int index = 0;
 			const auto size = vec.size();
@@ -173,7 +174,7 @@ bc_value_t bc_intrinsic__find(interpreter_t& vm, const bc_value_t args[], int ar
 			int result = index == size ? -1 : static_cast<int>(index);
 			return bc_value_t::make_int(result);
 		}
-		else if(obj_type_peek.get_vector_element_type(types).is_int()){
+		else if(element_type_peek.is_int()){
 			const auto& vec = obj._pod._external->_vector_w_inplace_elements;
 			int index = 0;
 			const auto size = vec.size();
@@ -183,7 +184,7 @@ bc_value_t bc_intrinsic__find(interpreter_t& vm, const bc_value_t args[], int ar
 			int result = index == size ? -1 : static_cast<int>(index);
 			return bc_value_t::make_int(result);
 		}
-		else if(obj_type_peek.get_vector_element_type(types).is_double()){
+		else if(element_type_peek.is_double()){
 			const auto& vec = obj._pod._external->_vector_w_inplace_elements;
 			int index = 0;
 			const auto size = vec.size();
@@ -223,7 +224,7 @@ bc_value_t bc_intrinsic__exists(interpreter_t& vm, const bc_value_t args[], int 
 	const auto& obj_type_peek = peek2(types, obj._type);
 
 	QUARK_ASSERT(obj_type_peek.is_dict());
-	QUARK_ASSERT(key._type.is_string());
+	QUARK_ASSERT(peek2(types, key._type).is_string());
 
 	const auto key_string = key.get_string_value();
 
@@ -249,7 +250,7 @@ bc_value_t bc_intrinsic__erase(interpreter_t& vm, const bc_value_t args[], int a
 	const auto& obj_type_peek = peek2(types, obj._type);
 
 	QUARK_ASSERT(obj_type_peek.is_dict());
-	QUARK_ASSERT(key._type.is_string());
+	QUARK_ASSERT(peek2(types, key._type).is_string());
 
 	const auto key_string = key.get_string_value();
 
@@ -343,10 +344,11 @@ bc_value_t bc_intrinsic__push_back(interpreter_t& vm, const bc_value_t args[], i
 bc_value_t bc_intrinsic__subset(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
-	QUARK_ASSERT(args[1]._type.is_int());
-	QUARK_ASSERT(args[2]._type.is_int());
 
 	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, args[1]._type).is_int());
+	QUARK_ASSERT(peek2(types, args[2]._type).is_int());
+
 	const auto obj = args[0];
 
 	const auto start = args[1].get_int_value();
@@ -358,7 +360,7 @@ bc_value_t bc_intrinsic__subset(interpreter_t& vm, const bc_value_t args[], int 
 	const auto& obj_type_peek = peek2(types, obj._type);
 
 	//??? Move functionallity into seprate function.
-	if(obj._type.is_string()){
+	if(obj_type_peek.is_string()){
 		const auto str = obj.get_string_value();
 		const auto start2 = std::min(start, static_cast<int64_t>(str.size()));
 		const auto end2 = std::min(end, static_cast<int64_t>(str.size()));
@@ -406,10 +408,11 @@ bc_value_t bc_intrinsic__subset(interpreter_t& vm, const bc_value_t args[], int 
 bc_value_t bc_intrinsic__replace(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 4);
-	QUARK_ASSERT(args[1]._type.is_int());
-	QUARK_ASSERT(args[2]._type.is_int());
 
 	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, args[1]._type).is_int());
+	QUARK_ASSERT(peek2(types, args[2]._type).is_int());
+
 	const auto obj = args[0];
 
 	const auto start = args[1].get_int_value();
@@ -424,7 +427,7 @@ bc_value_t bc_intrinsic__replace(interpreter_t& vm, const bc_value_t args[], int
 
 	const auto& obj_type_peek = peek2(types, obj._type);
 
-	if(obj._type.is_string()){
+	if(obj_type_peek.is_string()){
 		const auto str = obj.get_string_value();
 		const auto start2 = std::min(start, static_cast<int64_t>(str.size()));
 		const auto end2 = std::min(end, static_cast<int64_t>(str.size()));
@@ -480,7 +483,9 @@ bc_value_t bc_intrinsic__replace(interpreter_t& vm, const bc_value_t args[], int
 bc_value_t bc_intrinsic__parse_json_script(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_string());
+
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
 
 	const auto s = args[0].get_string_value();
 	std::pair<json_t, seq_t> result = parse_json(seq_t(s));
@@ -491,7 +496,9 @@ bc_value_t bc_intrinsic__parse_json_script(interpreter_t& vm, const bc_value_t a
 bc_value_t bc_intrinsic__generate_json_script(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_json());
+
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, args[0]._type).is_json());
 
 	const auto value0 = args[0].get_json();
 	const auto s = json_to_compact_string(value0);
@@ -517,9 +524,9 @@ bc_value_t bc_intrinsic__to_json(interpreter_t& vm, const bc_value_t args[], int
 bc_value_t bc_intrinsic__from_json(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
-	QUARK_ASSERT(args[0]._type.is_json());
 
 	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, args[0]._type).is_json());
 	QUARK_ASSERT(peek2(types, args[1]._type).is_typeid());
 
 	const auto json = args[0].get_json();
@@ -534,8 +541,9 @@ bc_value_t bc_intrinsic__from_json(interpreter_t& vm, const bc_value_t args[], i
 bc_value_t bc_intrinsic__get_json_type(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_json());
 
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, args[0]._type).is_json());
 
 	const auto json = args[0].get_json();
 	return bc_value_t::make_int(get_json_type(json));
@@ -603,7 +611,7 @@ bc_value_t bc_intrinsic__map_string(interpreter_t& vm, const bc_value_t args[], 
 	for(const auto& e: input_vec){
 		const bc_value_t f_args[] = { bc_value_t::make_int(e), context };
 		const auto result1 = call_function_bc(vm, f, f_args, 2);
-		QUARK_ASSERT(result1._type.is_int());
+		QUARK_ASSERT(peek2(types, result1._type).is_int());
 		const int64_t ch = result1.get_int_value();
 		vec2.push_back(static_cast<char>(ch));
 	}
@@ -868,7 +876,7 @@ bc_value_t bc_intrinsic__filter(interpreter_t& vm, const bc_value_t args[], int 
 	for(const auto& e: input_vec){
 		const bc_value_t f_args[] = { e, context };
 		const auto result1 = call_function_bc(vm, f, f_args, 2);
-		QUARK_ASSERT(result1._type.is_bool());
+		QUARK_ASSERT(peek2(types, result1._type).is_bool());
 
 		if(result1.get_bool_value()){
 			vec2 = vec2.push_back(e);
@@ -946,16 +954,17 @@ bc_value_t bc_intrinsic__stable_sort(interpreter_t& vm, const bc_value_t args[],
 		bool operator() (const bc_value_t &a, const bc_value_t &b) {
 			const bc_value_t f_args[] = { a, b, context };
 			const auto result1 = call_function_bc(vm, f, f_args, 3);
-			QUARK_ASSERT(result1._type.is_bool());
+			QUARK_ASSERT(peek2(types, result1._type).is_bool());
 			return result1.get_bool_value();
 		}
 
 		interpreter_t& vm;
 		bc_value_t context;
 		bc_value_t f;
+		const types_t& types;
 	};
 
-	const sort_functor_r sort_functor { vm, context, f };
+	const sort_functor_r sort_functor { vm, context, f, types };
 	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
 
 	const auto mutate_inplace_elements2 = immer::vector<bc_value_t>(mutate_inplace_elements.begin(), mutate_inplace_elements.end());
@@ -997,8 +1006,10 @@ bc_value_t bc_intrinsic__print(interpreter_t& vm, const bc_value_t args[], int a
 bc_value_t bc_intrinsic__send(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
-	QUARK_ASSERT(args[0]._type.is_string());
-	QUARK_ASSERT(args[1]._type.is_json());
+
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
+	QUARK_ASSERT(peek2(types, args[1]._type).is_json());
 
 	const auto& process_id = args[0].get_string_value();
 	const auto& message_json = args[1].get_json();
@@ -1019,7 +1030,9 @@ bc_value_t bc_intrinsic__send(interpreter_t& vm, const bc_value_t args[], int ar
 bc_value_t bc_intrinsic__bw_not(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_int());
+
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, args[0]._type).is_int());
 
 	const auto a = args[0].get_int_value();
 	const auto result = ~a;
@@ -1028,8 +1041,10 @@ bc_value_t bc_intrinsic__bw_not(interpreter_t& vm, const bc_value_t args[], int 
 bc_value_t bc_intrinsic__bw_and(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
-	QUARK_ASSERT(args[0]._type.is_int());
-	QUARK_ASSERT(args[1]._type.is_int());
+
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, args[0]._type).is_int());
+	QUARK_ASSERT(peek2(types, args[1]._type).is_int());
 
 	const auto a = args[0].get_int_value();
 	const auto b = args[1].get_int_value();
@@ -1039,8 +1054,10 @@ bc_value_t bc_intrinsic__bw_and(interpreter_t& vm, const bc_value_t args[], int 
 bc_value_t bc_intrinsic__bw_or(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
-	QUARK_ASSERT(args[0]._type.is_int());
-	QUARK_ASSERT(args[1]._type.is_int());
+
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, args[0]._type).is_int());
+	QUARK_ASSERT(peek2(types, args[1]._type).is_int());
 
 	const auto a = args[0].get_int_value();
 	const auto b = args[1].get_int_value();
@@ -1050,8 +1067,10 @@ bc_value_t bc_intrinsic__bw_or(interpreter_t& vm, const bc_value_t args[], int a
 bc_value_t bc_intrinsic__bw_xor(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
-	QUARK_ASSERT(args[0]._type.is_int());
-	QUARK_ASSERT(args[1]._type.is_int());
+
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, args[0]._type).is_int());
+	QUARK_ASSERT(peek2(types, args[1]._type).is_int());
 
 	const auto a = args[0].get_int_value();
 	const auto b = args[1].get_int_value();
@@ -1061,8 +1080,10 @@ bc_value_t bc_intrinsic__bw_xor(interpreter_t& vm, const bc_value_t args[], int 
 bc_value_t bc_intrinsic__bw_shift_left(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
-	QUARK_ASSERT(args[0]._type.is_int());
-	QUARK_ASSERT(args[1]._type.is_int());
+
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, args[0]._type).is_int());
+	QUARK_ASSERT(peek2(types, args[1]._type).is_int());
 
 	const auto a = args[0].get_int_value();
 	const auto count = args[1].get_int_value();
@@ -1072,8 +1093,10 @@ bc_value_t bc_intrinsic__bw_shift_left(interpreter_t& vm, const bc_value_t args[
 bc_value_t bc_intrinsic__bw_shift_right(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
-	QUARK_ASSERT(args[0]._type.is_int());
-	QUARK_ASSERT(args[1]._type.is_int());
+
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, args[0]._type).is_int());
+	QUARK_ASSERT(peek2(types, args[1]._type).is_int());
 
 	const uint64_t a = args[0].get_int_value();
 	const uint64_t count = args[1].get_int_value();
@@ -1083,8 +1106,10 @@ bc_value_t bc_intrinsic__bw_shift_right(interpreter_t& vm, const bc_value_t args
 bc_value_t bc_intrinsic__bw_shift_right_arithmetic(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
-	QUARK_ASSERT(args[0]._type.is_int());
-	QUARK_ASSERT(args[1]._type.is_int());
+
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, args[0]._type).is_int());
+	QUARK_ASSERT(peek2(types, args[1]._type).is_int());
 
 	const auto a = args[0].get_int_value();
 	const auto count = args[1].get_int_value();

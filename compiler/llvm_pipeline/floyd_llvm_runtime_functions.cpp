@@ -215,7 +215,7 @@ static runtime_value_t floydrt_concatunate_vectors(floyd_runtime_t* frp, runtime
 	QUARK_ASSERT(rhs.check_invariant());
 
 	const auto type0 = type_t(type);
-	if(type0.is_string()){
+	if(peek2(r.backend.types, type0).is_string()){
 		return concat_strings(r.backend, lhs, rhs);
 	}
 	else if(is_vector_carray(r.backend.types, r.backend.config, type_t(type))){
@@ -538,10 +538,11 @@ static JSON_T* floydrt_lookup_json(floyd_runtime_t* frp, JSON_T* json_ptr, runti
 
 	const auto& json = json_ptr->get_json();
 	const auto& type0 = lookup_type_ref(r.backend, arg0_type);
+	const auto type0_peek = peek2(r.backend.types, type0);
 	const auto value = from_runtime_value(r, arg0_value, type0);
 
 	if(json.is_object()){
-		if(type0.is_string() == false){
+		if(type0_peek.is_string() == false){
 			quark::throw_runtime_error("Attempting to lookup a json-object with a key that is not a string.");
 		}
 
@@ -549,7 +550,7 @@ static JSON_T* floydrt_lookup_json(floyd_runtime_t* frp, JSON_T* json_ptr, runti
 		return alloc_json(r.backend.heap, result);
 	}
 	else if(json.is_array()){
-		if(type0.is_int() == false){
+		if(type0_peek.is_int() == false){
 			quark::throw_runtime_error("Attempting to lookup a json-object with a key that is not a number.");
 		}
 
@@ -798,8 +799,7 @@ static void generate_store_struct_member_mutate(llvm_function_generator_t& gen_a
 	auto& builder = gen_acc.get_builder();
 
 	const auto& struct_def = peek2(types, struct_type).get_struct(types);
-	const auto member_type = struct_def._members[member_index]._type;
-
+//	const auto member_type = struct_def._members[member_index]._type;
 
 	auto& struct_type_llvm = *get_exact_struct_type_byvalue(gen_acc.gen.type_lookup, struct_type);
 	auto base_ptr_reg = generate_get_struct_base_ptr(gen_acc, struct_ptr_reg, struct_type);
@@ -988,7 +988,7 @@ static void floydrt_retain_vector_carray(floyd_runtime_t* frp, runtime_value_t v
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(type.is_string() || peek2(r.backend.types, type).is_vector());
+	QUARK_ASSERT(peek2(r.backend.types, type).is_string() || peek2(r.backend.types, type).is_vector());
 	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, type_t(type0))));
 #endif
 
@@ -999,7 +999,7 @@ static void floydrt_retain_vector_hamt(floyd_runtime_t* frp, runtime_value_t vec
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(type.is_string() || peek2(r.backend.types, type).is_vector());
+	QUARK_ASSERT(peek2(r.backend.types, type).is_string() || peek2(r.backend.types, type).is_vector());
 	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, type_t(type0))));
 #endif
 
@@ -1037,13 +1037,13 @@ static void floydrt_retain_json(floyd_runtime_t* frp, JSON_T* json, runtime_type
 	auto& r = get_floyd_runtime(frp);
 
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, type_t(type0))));
+	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, type)));
 
 	//	NOTICE: Floyd runtime() init will destruct globals, including json::null.
 	if(json == nullptr){
 	}
 	else{
-		QUARK_ASSERT(type.is_json());
+		QUARK_ASSERT(peek2(r.backend.types, type).is_json());
 
 		inc_rc(json->alloc);
 	}
@@ -1056,11 +1056,11 @@ static void floydrt_retain_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_typ
 
 #if DEBUG
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, type_t(type0))));
+	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, type)));
 	QUARK_ASSERT(peek2(r.backend.types, type).is_struct());
 #endif
 
-	retain_struct(r.backend, make_runtime_struct(v), type_t(type0));
+	retain_struct(r.backend, make_runtime_struct(v), type);
 }
 
 
@@ -1077,7 +1077,7 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 	auto& builder = gen_acc.get_builder();
 
 	if(is_rc_value(type_peek)){
-		if(type0.is_string()){
+		if(type_peek.is_string()){
 			const auto res = resolve_func(gen_acc.gen.link_map, "retain_vector_carray");
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 		}
@@ -1107,7 +1107,7 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 				QUARK_ASSERT(false);
 			}
 		}
-		else if(type0.is_json()){
+		else if(type_peek.is_json()){
 			const auto res = resolve_func(gen_acc.gen.link_map, "retain_json");
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 		}
@@ -1160,7 +1160,7 @@ static void floydrt_release_vector_carray_pod(floyd_runtime_t* frp, runtime_valu
 	auto& r = get_floyd_runtime(frp);
 	const auto& type = lookup_type_ref(r.backend, type0);
 #if DEBUG
-	QUARK_ASSERT(type.is_string() || is_vector_carray(r.backend.types, r.backend.config, type));
+	QUARK_ASSERT(peek2(r.backend.types, type).is_string() || is_vector_carray(r.backend.types, r.backend.config, type));
 	if(peek2(r.backend.types, type).is_vector()){
 		QUARK_ASSERT(is_rc_value(peek2(r.backend.types, peek2(r.backend.types, type).get_vector_element_type(r.backend.types))) == false);
 	}
@@ -1227,7 +1227,7 @@ const auto& type = lookup_type_ref(r.backend, type0);
 static void floydrt_release_json(floyd_runtime_t* frp, JSON_T* json, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 	const auto& type = lookup_type_ref(r.backend, type0);
-	QUARK_ASSERT(type.is_json());
+	QUARK_ASSERT(peek2(r.backend.types, type).is_json());
 
 	//	NOTICE: Floyd runtime() init will destruct globals, including json::null.
 	if(json == nullptr){
@@ -1242,13 +1242,13 @@ static void floydrt_release_json(floyd_runtime_t* frp, JSON_T* json, runtime_typ
 
 static void floydrt_release_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
+const auto& type = lookup_type_ref(r.backend, type0);
 #if DEBUG
-	const auto& type = lookup_type_ref(r.backend, type0);
 	QUARK_ASSERT(peek2(r.backend.types, type).is_struct());
 	QUARK_ASSERT(v != nullptr);
 #endif
 
-	release_struct(r.backend, make_runtime_struct(v), type_t(type0));
+	release_struct(r.backend, make_runtime_struct(v), type);
 }
 
 
@@ -1287,8 +1287,8 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 	const auto& types = gen_acc.gen.type_lookup.state.types;
 	const auto peek = peek2(types, type);
 
-	if(is_rc_value(peek2(types, type))){
-		if(type.is_string()){
+	if(is_rc_value(peek)){
+		if(peek.is_string()){
 			const auto res = resolve_func(gen_acc.gen.link_map, "release_vector_carray_pod");
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 		}
@@ -1328,11 +1328,11 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 				QUARK_ASSERT(false);
 			}
 		}
-		else if(type.is_json()){
+		else if(peek.is_json()){
 			const auto res = resolve_func(gen_acc.gen.link_map, "release_json");
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 		}
-		else if(peek2(types, type).is_struct()){
+		else if(peek.is_struct()){
 			const auto res = resolve_func(gen_acc.gen.link_map, "release_struct");
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 		}

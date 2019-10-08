@@ -237,7 +237,6 @@ inline bool is_empty_type_name(const type_name_t& n){
 
 
 
-
 typedef int32_t type_lookup_index_t;
 
 
@@ -314,11 +313,6 @@ struct type_t {
 		return type_t(assemble((type_lookup_index_t)base_type::k_any, base_type::k_any, base_type::k_undefined));
 	}
 
-	bool is_any() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_any;
-	}
 
 
 	//////////////////////////////////////////////////		VOID
@@ -328,11 +322,6 @@ struct type_t {
 		return type_t(assemble((type_lookup_index_t)base_type::k_void, base_type::k_void, base_type::k_undefined));
 	}
 
-	bool is_void() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_void;
-	}
 
 
 	//////////////////////////////////////////////////		BOOL
@@ -342,11 +331,6 @@ struct type_t {
 		return type_t(assemble((type_lookup_index_t)base_type::k_bool, base_type::k_bool, base_type::k_undefined));
 	}
 
-	bool is_bool() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_bool;
-	}
 
 
 	//////////////////////////////////////////////////		INT
@@ -354,12 +338,6 @@ struct type_t {
 
 	static type_t make_int(){
 		return type_t(assemble((type_lookup_index_t)base_type::k_int, base_type::k_int, base_type::k_undefined));
-	}
-
-	bool is_int() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_int;
 	}
 
 
@@ -370,11 +348,6 @@ struct type_t {
 		return type_t(assemble((type_lookup_index_t)base_type::k_double, base_type::k_double, base_type::k_undefined));
 	}
 
-	bool is_double() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_double;
-	}
 
 
 	//////////////////////////////////////////////////		STRING
@@ -384,11 +357,6 @@ struct type_t {
 		return type_t(assemble((type_lookup_index_t)base_type::k_string, base_type::k_string, base_type::k_undefined));
 	}
 
-	bool is_string() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_string;
-	}
 
 
 	//////////////////////////////////////////////////		JSON
@@ -398,11 +366,6 @@ struct type_t {
 		return type_t(assemble((type_lookup_index_t)base_type::k_json, base_type::k_json, base_type::k_undefined));
 	}
 
-	bool is_json() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_json;
-	}
 
 
 
@@ -534,7 +497,6 @@ inline bool operator==(type_t lhs, type_t rhs){
 	return lhs.get_data() == rhs.get_data();
 }
 inline bool operator!=(type_t lhs, type_t rhs){ return (lhs == rhs) == false; };
-
 
 
 

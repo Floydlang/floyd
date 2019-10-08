@@ -343,7 +343,7 @@ static const type_t figure_out_callee_return_type(analyser_t& a, const statement
 	switch(ret_type_algo){
 		case return_dyn_type::none:
 			{
-				QUARK_ASSERT(callee_return_type.is_any() == false);
+				QUARK_ASSERT(peek2(a._types, callee_return_type).is_any() == false);
 				return callee_return_type;
 			}
 			break;
@@ -570,8 +570,8 @@ Ex:
 std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement(const analyser_t& a, const statement_t& s){
 	QUARK_ASSERT(a.check_invariant());
 
-	const auto statement = std::get<statement_t::bind_local_t>(s._contents);
 	auto a_acc = a;
+	const auto statement = std::get<statement_t::bind_local_t>(s._contents);
 
 	const auto new_local_name = statement._new_local_name;
 
@@ -664,14 +664,14 @@ std::pair<analyser_t, statement_t> analyse_block_statement(const analyser_t& a, 
 std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& a, const statement_t& s, const type_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
-	if(return_type.is_void()){
+	auto a_acc = a;
+	if(peek2(a_acc._types, return_type).is_void()){
 		std::stringstream what;
 		what << "Cannot return value from function with void-return.";
 		throw_compiler_error(s.location, what.str());
 	}
 
 	const auto statement = std::get<statement_t::return_statement_t>(s._contents);
-	auto a_acc = a;
 	const auto expr = statement._expression;
 	const auto result = analyse_expression_to_target(a_acc, s, expr, return_type);
 
@@ -687,14 +687,14 @@ std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& a,
 std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a, const statement_t& s, const type_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
-	const auto statement = std::get<statement_t::ifelse_statement_t>(s._contents);
 	auto a_acc = a;
+	const auto statement = std::get<statement_t::ifelse_statement_t>(s._contents);
 
 	const auto condition2 = analyse_expression_no_target(a_acc, s, statement._condition);
 	a_acc = condition2.first;
 
 	const auto condition_type = analyze_expr_output_type(a_acc, condition2.second);
-	if(condition_type.is_bool() == false){
+	if(peek2(a_acc._types, condition_type).is_bool() == false){
 		std::stringstream what;
 		what << "Boolean condition required.";
 		throw_compiler_error(s.location, what.str());
@@ -712,24 +712,27 @@ std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a,
 std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, const statement_t& s, const type_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
-	const auto statement = std::get<statement_t::for_statement_t>(s._contents);
 	auto a_acc = a;
+	const auto statement = std::get<statement_t::for_statement_t>(s._contents);
 
 	const auto start_expr2 = analyse_expression_no_target(a_acc, s, statement._start_expression);
 	a_acc = start_expr2.first;
 
-	if(analyze_expr_output_type(a_acc, start_expr2.second).is_int() == false){
-		std::stringstream what;
-		what << "For-loop requires integer iterator, start type is " <<  type_to_compact_string(a_acc._types, analyze_expr_output_type(a_acc, start_expr2.second)) << ".";
-		throw_compiler_error(s.location, what.str());
-	}
-
 	const auto end_expr2 = analyse_expression_no_target(a_acc, s, statement._end_expression);
 	a_acc = end_expr2.first;
 
-	if(analyze_expr_output_type(a_acc, end_expr2.second).is_int() == false){
+	const auto start_type = analyze_expr_output_type(a_acc, start_expr2.second);
+	const auto end_type = analyze_expr_output_type(a_acc, end_expr2.second);
+
+	if(peek2(a_acc._types, start_type).is_int() == false){
 		std::stringstream what;
-		what << "For-loop requires integer iterator, end type is " <<  type_to_compact_string(a_acc._types, analyze_expr_output_type(a_acc, end_expr2.second)) << ".";
+		what << "For-loop requires integer iterator, start type is " <<  type_to_compact_string(a_acc._types, start_type) << ".";
+		throw_compiler_error(s.location, what.str());
+	}
+
+	if(peek2(a_acc._types, end_type).is_int() == false){
+		std::stringstream what;
+		what << "For-loop requires integer iterator, end type is " <<  type_to_compact_string(a_acc._types, end_type) << ".";
 		throw_compiler_error(s.location, what.str());
 	}
 
@@ -748,8 +751,8 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, co
 std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& a, const statement_t& s, const type_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
-	const auto statement = std::get<statement_t::while_statement_t>(s._contents);
 	auto a_acc = a;
+	const auto statement = std::get<statement_t::while_statement_t>(s._contents);
 
 	const auto condition2_expr = analyse_expression_to_target(a_acc, s, statement._condition, type_t::make_bool());
 	a_acc = condition2_expr.first;
@@ -763,8 +766,8 @@ std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& a, 
 std::pair<analyser_t, statement_t> analyse_expression_statement(const analyser_t& a, const statement_t& s){
 	QUARK_ASSERT(a.check_invariant());
 
-	const auto statement = std::get<statement_t::expression_statement_t>(s._contents);
 	auto a_acc = a;
+	const auto statement = std::get<statement_t::expression_statement_t>(s._contents);
 	const auto expr2 = analyse_expression_no_target(a_acc, s, statement._expression);
 	a_acc = expr2.first;
 
@@ -777,8 +780,8 @@ std::pair<analyser_t, statement_t> analyse_expression_statement(const analyser_t
 static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const statement_t& s, const type_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
-	const auto statement = std::get<statement_t::benchmark_def_statement_t>(s._contents);
 	auto a_acc = a;
+	const auto statement = std::get<statement_t::benchmark_def_statement_t>(s._contents);
 
 	const auto test_name = statement.name;
 	const auto function_link_name = "benchmark__" + test_name;
@@ -985,14 +988,12 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 		//	??? Idea: convert the symbol to an integer and call analyse_intrinsic_update_expression() again. Also support accessing struct members by index.
 
 
-
 		//	arity
 		if(call_args.size() != callee_arg_types.size()){
 			std::stringstream what;
 			what << "Wrong number of arguments in function call, got " << std::to_string(call_args.size()) << ", expected " << std::to_string(callee_arg_types.size()) << ".";
 			throw_compiler_error(parent.location, what.str());
 		}
-
 
 		if(get_expression_type(call_args[1]) == expression_type::k_load){
 			const auto member_name = std::get<expression_t::load_t>(call_args[1]._expression_variant).variable_name;
@@ -1035,28 +1036,27 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 			what << "Struct member needs to be a string literal.";
 			throw_compiler_error(parent.location, what.str());
 		}
-
-
 	}
 	else {
 		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, sign._function_type);
 		a_acc = resolved_call.first;
 
 		const auto key_expr = resolved_call.second.args[1];
+		const auto key_type = key_expr.get_output_type();
+		const auto key_peek = peek2(a_acc._types, key_type);
+
 		const auto new_value_expr = resolved_call.second.args[2];
 
 		const auto new_value_type = analyze_expr_output_type(a_acc, new_value_expr);
 
-		if(collection_type0.is_string()){
-			const auto key_type = key_expr.get_output_type();
-
-			if(key_type.is_int() == false){
+		if(collection_type_peek.is_string()){
+			if(key_peek.is_int() == false){
 				std::stringstream what;
 				what << "Updating string needs an integer index, not a \"" + type_to_compact_string(a_acc._types, key_type) + "\".";
 				throw_compiler_error(parent.location, what.str());
 			}
 
-			if(new_value_type.is_int() == false){
+			if(peek2(a_acc._types, new_value_type).is_int() == false){
 				std::stringstream what;
 				what << "Updating string needs an integer value, not a \"" + type_to_compact_string(a_acc._types, key_type) + "\".";
 				throw_compiler_error(parent.location, what.str());
@@ -1068,9 +1068,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 			};
 		}
 		else if(collection_type_peek.is_vector()){
-			const auto key_type = analyze_expr_output_type(a_acc, key_expr);
-
-			if(key_type.is_int() == false){
+			if(key_peek.is_int() == false){
 				std::stringstream what;
 				what << "Updating vector needs and integer index, not a \"" + type_to_compact_string(a_acc._types, key_type) + "\".";
 				throw_compiler_error(parent.location, what.str());
@@ -1087,9 +1085,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 			};
 		}
 		else if(collection_type_peek.is_dict()){
-			const auto key_type = analyze_expr_output_type(a_acc, key_expr);
-
-			if(key_type.is_string() == false){
+			if(key_peek.is_string() == false){
 				std::stringstream what;
 				what << "Updating dictionary requires string key, not a \"" + type_to_compact_string(a_acc._types, key_type) + "\".";
 				throw_compiler_error(parent.location, what.str());
@@ -1126,15 +1122,17 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_push_back_expression(const
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
 	const auto value_type = function_type.get_function_args(a_acc._types)[1];
 
-	if(parent_type.is_string()){
-		if(value_type.is_int() == false){
+	const auto parent_type_peek = peek2(a_acc._types, parent_type);
+
+	if(parent_type_peek.is_string()){
+		if(peek2(a_acc._types, value_type).is_int() == false){
 			std::stringstream what;
 			what << "string push_back() needs an integer element, not a \"" + type_to_compact_string(a_acc._types, value_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
 		}
 	}
-	else if(peek2(a_acc._types, parent_type).is_vector()){
-		if(value_type != peek2(a_acc._types, parent_type).get_vector_element_type(a_acc._types)){
+	else if(parent_type_peek.is_vector()){
+		if(value_type != parent_type_peek.get_vector_element_type(a_acc._types)){
 			std::stringstream what;
 			what << "Vector push_back() has mismatching element type vs supplies a \"" + type_to_compact_string(a_acc._types, value_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
@@ -1163,7 +1161,8 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_size_expression(const anal
 
 	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
-	if(parent_type.is_string() || parent_type.is_json() || peek2(a_acc._types, parent_type).is_vector() || peek2(a_acc._types, parent_type).is_dict()){
+	const auto parent_type_peek = peek2(a_acc._types, parent_type);
+	if(parent_type_peek.is_string() || parent_type_peek.is_json() || parent_type_peek.is_vector() || parent_type_peek.is_dict()){
 	}
 	else{
 		std::stringstream what;
@@ -1189,14 +1188,15 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_find_expression(const anal
 	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
 	const auto wanted_type = function_type.get_function_args(a_acc._types)[1];
+	const auto parent_type_peek = peek2(a_acc._types, parent_type);
 
-	if(parent_type.is_string()){
-		if(wanted_type.is_string() == false){
+	if(parent_type_peek.is_string()){
+		if(peek2(a_acc._types, wanted_type).is_string() == false){
 			throw_compiler_error(parent.location, "find() requires argument 2 to be a string.");
 		}
 	}
-	else if(peek2(a_acc._types, parent_type).is_vector()){
-		if(wanted_type != peek2(a_acc._types, parent_type).get_vector_element_type(a_acc._types)){
+	else if(parent_type_peek.is_vector()){
+		if(wanted_type != parent_type_peek.get_vector_element_type(a_acc._types)){
 			throw_compiler_error(parent.location, "find([]) requires argument 2 to be of vector's element type.");
 		}
 	}
@@ -1224,11 +1224,12 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_exists_expression(const an
 	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
 	const auto wanted_type = function_type.get_function_args(a_acc._types)[1];
+	const auto parent_type_peek = peek2(a_acc._types, parent_type);
 
-	if(peek2(a_acc._types, parent_type).is_dict() == false){
+	if(parent_type_peek.is_dict() == false){
 		throw_compiler_error(parent.location, "exists() requires a dictionary.");
 	}
-	if(wanted_type.is_string() == false){
+	if(peek2(a_acc._types, wanted_type).is_string() == false){
 		throw_compiler_error(parent.location, "exists() requires a string key.");
 	}
 
@@ -1250,11 +1251,12 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_erase_expression(const ana
 	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
 	const auto key_type = function_type.get_function_args(a_acc._types)[1];
+	const auto parent_type_peek = peek2(a_acc._types, parent_type);
 
-	if(peek2(a_acc._types, parent_type).is_dict() == false){
+	if(parent_type_peek.is_dict() == false){
 		throw_compiler_error(parent.location, "erase() requires a dictionary.");
 	}
-	if(key_type.is_string() == false){
+	if(peek2(a_acc._types, key_type).is_string() == false){
 		throw_compiler_error(parent.location, "erase() requires a string key.");
 	}
 
@@ -1300,8 +1302,9 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_subset_expression(const an
 	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
 //	const auto key_type = function_type.get_function_args(a_acc._types)[1];
+	const auto parent_type_peek = peek2(a_acc._types, parent_type);
 
-	if(parent_type.is_string() == false && peek2(a_acc._types, parent_type).is_vector() == false){
+	if(parent_type_peek.is_string() == false && parent_type_peek.is_vector() == false){
 		throw_compiler_error(parent.location, "subset([]) requires a string or a vector.");
 	}
 
@@ -1323,12 +1326,13 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_replace_expression(const a
 	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
 	const auto replace_with_type = function_type.get_function_args(a_acc._types)[3];
+	const auto parent_type_peek = peek2(a_acc._types, parent_type);
 
 	if(parent_type != replace_with_type){
 		throw_compiler_error(parent.location, "replace() requires argument 4 to be same type of collection.");
 	}
 
-	if(parent_type.is_string() == false && peek2(a_acc._types, parent_type).is_vector() == false){
+	if(parent_type_peek.is_string() == false && parent_type_peek.is_vector() == false){
 		throw_compiler_error(parent.location, "replace([]) requires a string or a vector.");
 	}
 
@@ -1504,9 +1508,10 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 	const auto parent_type = analyze_expr_output_type(a_acc, parent_expr.second);
 	const auto parent_peek = peek2(a_acc._types, parent_type);
 	const auto key_type = analyze_expr_output_type(a_acc, key_expr.second);
+	const auto key_peek = peek2(a_acc._types, key_type);
 
-	if(parent_type.is_string()){
-		if(key_type.is_int() == false){
+	if(parent_peek.is_string()){
+		if(key_peek.is_int() == false){
 			std::stringstream what;
 			what << "Strings can only be indexed by integers, not a \"" + type_to_compact_string(a_acc._types, key_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
@@ -1515,11 +1520,11 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 			return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, type_t::make_int()) };
 		}
 	}
-	else if(parent_type.is_json()){
+	else if(parent_peek.is_json()){
 		return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, type_t::make_json()) };
 	}
 	else if(parent_peek.is_vector()){
-		if(key_type.is_int() == false){
+		if(key_peek.is_int() == false){
 			std::stringstream what;
 			what << "Vector can only be indexed by integers, not a \"" + type_to_compact_string(a_acc._types, key_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
@@ -1536,7 +1541,7 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 		}
 	}
 	else if(parent_peek.is_dict()){
-		if(key_type.is_string() == false){
+		if(key_peek.is_string() == false){
 			std::stringstream what;
 			what << "Dictionary can only be looked up using string keys, not a \"" + type_to_compact_string(a_acc._types, key_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
@@ -1614,7 +1619,7 @@ static type_t select_inferred_type(const types_t& types, const type_t& target_ty
 	QUARK_ASSERT(rhs_guess_type.check_invariant());
 
 	const bool rhs_guess_type_valid = check_types_resolved(types, rhs_guess_type);
-	const bool have_target_type = target_type_or_any.is_any() == false;
+	const bool have_target_type = peek2(types, target_type_or_any).is_any() == false;
 
 	if(have_target_type && rhs_guess_type_valid == false){
 	 	return target_type_or_any;
@@ -1652,7 +1657,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 	if(type_peek.is_vector()){
 		//	JSON constants supports mixed element types: convert each element into a json.
 		//	Encode as [json]
-		if(target_type0.is_json()){
+		if(target_type_peek.is_json()){
 			const auto element_type = type_t::make_json();
 
 			std::vector<expression_t> elements2;
@@ -1712,7 +1717,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 	else if(type_peek.is_dict()){
 		//	JSON constants supports mixed element types: convert each element into a json.
 		//	Encode as [string:json]
-		if(target_type0.is_json()){
+		if(target_type_peek.is_json()){
 			const auto element_type = type_t::make_json();
 
 			std::vector<expression_t> elements2;
@@ -1822,7 +1827,8 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(co
 
 	//??? We could simplify here and return [ "-", 0, expr]
 	const auto type = analyze_expr_output_type(a_acc, expr2.second);
-	if(type.is_int() || type.is_double()){
+	const auto peek_type = peek2(a_acc._types, type);
+	if(peek_type.is_int() || peek_type.is_double()){
 		return {a_acc, expression_t::make_unary_minus(expr2.second, type)  };
 	}
 	else{
@@ -1848,7 +1854,8 @@ std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(cons
 	a_acc = b.first;
 
 	const auto type = analyze_expr_output_type(a_acc, cond_result.second);
-	if(type.is_bool() == false){
+	const auto peek_type = peek2(a_acc._types, type);
+	if(peek_type.is_bool() == false){
 		std::stringstream what;
 		what << "Conditional expression needs to be a bool, not a " << type_to_compact_string(a_acc._types, type) << ".";
 		throw_compiler_error(parent.location, what.str());
@@ -1969,9 +1976,11 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 	}
 	else{
 		const auto shared_type = lhs_type;
+		const auto shared_type_peek = peek2(a_acc._types, shared_type);
+
 
 		//	bool
-		if(shared_type.is_bool()){
+		if(shared_type_peek.is_bool()){
 			if(
 				op == expression_type::k_arithmetic_add
 				|| op == expression_type::k_logical_and
@@ -1985,12 +1994,12 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 		}
 
 		//	int
-		else if(shared_type.is_int()){
+		else if(shared_type_peek.is_int()){
 			return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, shared_type) };
 		}
 
 		//	double
-		else if(shared_type.is_double()){
+		else if(shared_type_peek.is_double()){
 			if(op == expression_type::k_arithmetic_remainder){
 				throw_compiler_error(parent.location, "Modulo operation on double not supported.");
 			}
@@ -1998,7 +2007,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 		}
 
 		//	string
-		else if(shared_type.is_string()){
+		else if(shared_type_peek.is_string()){
 			if(op == expression_type::k_arithmetic_add){
 				return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, shared_type) };
 			}
@@ -2008,7 +2017,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 		}
 
 		//	struct
-		else if(peek2(a_acc._types, shared_type).is_struct()){
+		else if(shared_type_peek.is_struct()){
 			//	Structs must be exactly the same type to match.
 
 			if(op == expression_type::k_arithmetic_add){
@@ -2038,7 +2047,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 		}
 
 		//	vector
-		else if(peek2(a_acc._types, shared_type).is_vector()){
+		else if(shared_type_peek.is_vector()){
 			if(op == expression_type::k_arithmetic_add){
 				return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, shared_type) };
 			}
@@ -2048,7 +2057,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 		}
 
 		//	function
-		else if(peek2(a_acc._types, shared_type).is_function()){
+		else if(shared_type_peek.is_function()){
 			throw_compiler_error(parent.location, "Cannot perform operations on two function values.");
 		}
 		else{
@@ -2537,19 +2546,21 @@ expression_t auto_cast_expression_type(analyser_t& a, const expression_t& e, con
 
 	const auto current_type = analyze_expr_output_type(a, e);
 	const auto current_peek = peek2(a._types, current_type);
-	if(wanted_type.is_any()){
+
+	const auto wanted_type_peek = peek2(a._types, wanted_type);
+	if(wanted_type_peek.is_any()){
 		return e;
 	}
-	else if(wanted_type.is_string()){
-		if(current_type.is_json()){
+	else if(wanted_type_peek.is_string()){
+		if(current_peek.is_json()){
 			return expression_t::make_construct_value_expr(wanted_type, { e });
 		}
 		else{
 			return e;
 		}
 	}
-	else if(wanted_type.is_json()){
-		if(current_type.is_int() || current_type.is_double() || current_type.is_string() || current_type.is_bool()){
+	else if(wanted_type_peek.is_json()){
+		if(current_peek.is_int() || current_peek.is_double() || current_peek.is_string() || current_peek.is_bool()){
 			return expression_t::make_construct_value_expr(wanted_type, { e });
 		}
 		else if(current_peek.is_vector()){
@@ -2586,7 +2597,7 @@ static std::pair<analyser_t, expression_t> analyse_expression_to_target(const an
 
 	const auto target_type_peek = peek2(a_acc._types, target_type0);
 
-	QUARK_ASSERT(target_type0.is_void() == false && target_type0.is_undefined() == false);
+	QUARK_ASSERT(target_type_peek.is_void() == false && target_type_peek.is_undefined() == false);
 	QUARK_ASSERT(check_types_resolved(a._types, target_type0));
 
 	const auto e2_pair = analyse_expression__operation_specific(a_acc, parent, e, target_type0);
@@ -2600,7 +2611,7 @@ static std::pair<analyser_t, expression_t> analyse_expression_to_target(const an
 
 	const auto e4 = auto_cast_expression_type(a_acc, e3, target_type0);
 	const auto e4_output_type = e4.get_output_type();
-	if(target_type0.is_any()){
+	if(target_type_peek.is_any()){
 	}
 	else if(e4_output_type == target_type0){
 	}

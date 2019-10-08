@@ -1038,16 +1038,16 @@ std::string make_value_debug_str(const value_t& value){
 value_t ast_json_to_value(types_t& types, const type_t& type, const json_t& v){
 	const auto type_peek = peek2(types, type);
 
-	if(type.is_undefined()){
+	if(type_peek.is_undefined()){
 		return value_t();
 	}
-	else if(type.is_any()){
+	else if(type_peek.is_any()){
 		return make_def(type);
 	}
-	else if(type.is_void()){
+	else if(type_peek.is_void()){
 		return make_def(type);
 	}
-	else if(type.is_bool()){
+	else if(type_peek.is_bool()){
 		if(v.is_true() || v.is_false()){
 			return value_t::make_bool(v.is_true() ? true : false);
 		}
@@ -1069,13 +1069,13 @@ value_t ast_json_to_value(types_t& types, const type_t& type, const json_t& v){
 			quark::throw_exception();
 		}
 	}
-	else if(type.is_double()){
+	else if(type_peek.is_double()){
 		return value_t::make_double(v.get_number());
 	}
-	else if(type.is_string()){
+	else if(type_peek.is_string()){
 		return value_t::make_string(v.get_string());
 	}
-	else if(type.is_json()){
+	else if(type_peek.is_json()){
 		return value_t::make_json(v);
 	}
 	else if(type_peek.is_typeid()){

@@ -108,7 +108,7 @@ enum class value_encoding {
 	k_external__function
 };
 
-bool encode_as_inplace(const type_t& type);
+bool encode_as_inplace(const type_desc_t& type);
 
 bool encode_as_vector_w_inplace_elements(const types_t& types, const type_t& type);
 
@@ -1104,35 +1104,35 @@ struct interpreter_stack_t {
 	public: bool check_reg_bool(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_bool());
+		QUARK_ASSERT(peek2(_types, _current_frame_ptr->_symbols[reg].second._value_type).is_bool());
 		return true;
 	}
 
 	public: bool check_reg_int(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_int());
+		QUARK_ASSERT(peek2(_types, _current_frame_ptr->_symbols[reg].second._value_type).is_int());
 		return true;
 	}
 
 	public: bool check_reg_double(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_double());
+		QUARK_ASSERT(peek2(_types, _current_frame_ptr->_symbols[reg].second._value_type).is_double());
 		return true;
 	}
 
 	public: bool check_reg_string(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_string());
+		QUARK_ASSERT(peek2(_types, _current_frame_ptr->_symbols[reg].second._value_type).is_string());
 		return true;
 	}
 
 	public: bool check_reg_json(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_json());
+		QUARK_ASSERT(peek2(_types, _current_frame_ptr->_symbols[reg].second._value_type).is_json());
 		return true;
 	}
 
@@ -1272,7 +1272,7 @@ struct interpreter_stack_t {
 	public: inline int64_t load_intq(int pos) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
-		QUARK_ASSERT(_debug_types[pos].is_int());
+		QUARK_ASSERT(peek2(_types, _debug_types[pos]).is_int());
 
 		return _entries[pos]._inplace.int64_value;
 	}

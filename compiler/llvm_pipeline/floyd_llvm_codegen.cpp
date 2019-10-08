@@ -551,10 +551,12 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 	auto parent_reg = generate_expression(gen_acc, *details.parent_address);
 	auto key_reg = generate_expression(gen_acc, *details.lookup_key);
 	const auto key_type = get_expr_output_type(gen_acc.gen, *details.lookup_key);
+	const auto key_type_peek = peek2(types, key_type);
 
 	const auto parent_type =  get_expr_output_type(gen_acc.gen, *details.parent_address);
-	if(parent_type.is_string()){
-		QUARK_ASSERT(key_type.is_int());
+	const auto parent_type_peek = peek2(types, parent_type);
+	if(parent_type_peek.is_string()){
+		QUARK_ASSERT(key_type_peek.is_int());
 
 		auto element_ptr_reg = generate_get_vec_element_ptr_needs_cast(gen_acc, *parent_reg);
 		auto char_ptr_reg = gen_acc.get_builder().CreateCast(llvm::Instruction::CastOps::BitCast, element_ptr_reg, builder.getInt8PtrTy(), "");
@@ -570,8 +572,8 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 
 		return element_reg;
 	}
-	else if(parent_type.is_json()){
-		QUARK_ASSERT(key_type.is_int() || key_type.is_string());
+	else if(parent_type_peek.is_json()){
+		QUARK_ASSERT(key_type_peek.is_int() || key_type_peek.is_string());
 
 		//	Notice that we only know at RUNTIME if the json can be looked up: it needs to be json-object or a
 		//	json-array. The key is either a string or an integer.
@@ -589,7 +591,7 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 		return result;
 	}
 	else if(is_vector_carray(types, gen_acc.gen.settings.config, parent_type)){
-		QUARK_ASSERT(key_type.is_int());
+		QUARK_ASSERT(key_type_peek.is_int());
 
 		const auto element_type0 = peek2(types, parent_type).get_vector_element_type(types);
 
@@ -607,7 +609,7 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 		return result_reg;
 	}
 	else if(is_vector_hamt(types, gen_acc.gen.settings.config, parent_type)){
-		QUARK_ASSERT(key_type.is_int());
+		QUARK_ASSERT(key_type_peek.is_int());
 
 		const auto element_type0 = peek2(types, parent_type).get_vector_element_type(types);
 		std::vector<llvm::Value*> args2 = {
@@ -628,7 +630,7 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 		return result_reg;
 	}
 	else if(is_dict_cppmap(types, gen_acc.gen.settings.config, parent_type) || is_dict_hamt(types, gen_acc.gen.settings.config, parent_type)){
-		QUARK_ASSERT(key_type.is_string());
+		QUARK_ASSERT(key_type_peek.is_string());
 
 		const auto element_type0 = peek2(types, parent_type).get_dict_value_type(types);
 		const auto dict_mode = is_dict_hamt(types, gen_acc.gen.settings.config, parent_type) ? dict_backend::hamt : dict_backend::cppmap;
@@ -655,11 +657,12 @@ static llvm::Value* generate_arithmetic_expression(llvm_function_generator_t& ge
 
 	const auto& types = gen_acc.gen.type_lookup.state.types;
 	const auto type = get_expr_output_type(gen_acc.gen, *details.lhs);
+	const auto type_peek = peek2(types, type);
 
 	auto lhs_temp = generate_expression(gen_acc, *details.lhs);
 	auto rhs_temp = generate_expression(gen_acc, *details.rhs);
 
-	if(type.is_bool()){
+	if(type_peek.is_bool()){
 		if(details.op == expression_type::k_arithmetic_add){
 			return gen_acc.get_builder().CreateOr(lhs_temp, rhs_temp, "logical_or_tmp");
 		}
@@ -682,7 +685,7 @@ static llvm::Value* generate_arithmetic_expression(llvm_function_generator_t& ge
 			UNSUPPORTED();
 		}
 	}
-	else if(type.is_int()){
+	else if(type_peek.is_int()){
 		if(details.op == expression_type::k_arithmetic_add){
 			return gen_acc.get_builder().CreateAdd(lhs_temp, rhs_temp, "add_tmp");
 		}
@@ -709,7 +712,7 @@ static llvm::Value* generate_arithmetic_expression(llvm_function_generator_t& ge
 			UNSUPPORTED();
 		}
 	}
-	else if(type.is_double()){
+	else if(type_peek.is_double()){
 		if(details.op == expression_type::k_arithmetic_add){
 			return gen_acc.get_builder().CreateFAdd(lhs_temp, rhs_temp, "add_tmp");
 		}
@@ -735,7 +738,7 @@ static llvm::Value* generate_arithmetic_expression(llvm_function_generator_t& ge
 			QUARK_ASSERT(false);
 		}
 	}
-	else if(type.is_string() || peek2(types, type).is_vector()){
+	else if(type_peek.is_string() || type_peek.is_vector()){
 		//	Only add supported. Future: don't use arithmetic add to concat collections!
 		QUARK_ASSERT(details.op == expression_type::k_arithmetic_add);
 
@@ -795,9 +798,9 @@ static llvm::Value* generate_comparison_expression(llvm_function_generator_t& ge
 	const auto type_peek = peek2(types, type);
 
 	//	Output reg is always a bool.
-	QUARK_ASSERT(get_expr_output_type(gen_acc.gen, e).is_bool());
+	QUARK_ASSERT(peek2(types, get_expr_output_type(gen_acc.gen, e)).is_bool());
 
-	if(type.is_bool() || type.is_int()){
+	if(type_peek.is_bool() || type_peek.is_int()){
 		/*
 			ICMP_EQ    = 32,  ///< equal
 			ICMP_NE    = 33,  ///< not equal
@@ -822,7 +825,7 @@ static llvm::Value* generate_comparison_expression(llvm_function_generator_t& ge
 		const auto pred = conv_opcode_int.at(details.op);
 		return gen_acc.get_builder().CreateICmp(pred, lhs_temp, rhs_temp);
 	}
-	else if(type.is_double()){
+	else if(type_peek.is_double()){
 		//??? Use ordered or unordered?
 		/*
 			// Opcode              U L G E    Intuitive operation
@@ -848,7 +851,7 @@ static llvm::Value* generate_comparison_expression(llvm_function_generator_t& ge
 		const auto pred = conv_opcode_int.at(details.op);
 		return gen_acc.get_builder().CreateFCmp(pred, lhs_temp, rhs_temp);
 	}
-	else if(type.is_string() || peek2(types, type).is_vector()){
+	else if(type_peek.is_string() || type_peek.is_vector()){
 		auto result_reg = generate_compare_values(gen_acc, details.op, type, *lhs_temp, *rhs_temp);
 		generate_release(gen_acc, *lhs_temp, get_expr_output_type(gen_acc.gen, *details.lhs));
 		generate_release(gen_acc, *rhs_temp, get_expr_output_type(gen_acc.gen, *details.rhs));
@@ -866,7 +869,7 @@ static llvm::Value* generate_comparison_expression(llvm_function_generator_t& ge
 		generate_release(gen_acc, *rhs_temp, get_expr_output_type(gen_acc.gen, *details.rhs));
 		return result_reg;
 	}
-	else if(type.is_json()){
+	else if(type_peek.is_json()){
 		auto result_reg = generate_compare_values(gen_acc, details.op, type, *lhs_temp, *rhs_temp);
 		generate_release(gen_acc, *lhs_temp, get_expr_output_type(gen_acc.gen, *details.lhs));
 		generate_release(gen_acc, *rhs_temp, get_expr_output_type(gen_acc.gen, *details.rhs));
@@ -890,11 +893,13 @@ enum class bitwize_operator {
 static llvm::Value* generate_bitwize_expression(llvm_function_generator_t& gen_acc, bitwize_operator op, const expression_t& e, const std::vector<expression_t>& operands){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
-	QUARK_ASSERT(get_expr_output_type(gen_acc.gen, e).is_int());
+
+	const auto& types = gen_acc.gen.type_lookup.state.types;
+	QUARK_ASSERT(peek2(types, get_expr_output_type(gen_acc.gen, e)).is_int());
 	QUARK_ASSERT(operands.size() == 1 || operands.size() == 2);
 
 	if(operands.size() == 1){
-		QUARK_ASSERT(get_expr_output_type(gen_acc.gen, operands[0]).is_int());
+		QUARK_ASSERT(peek2(types, get_expr_output_type(gen_acc.gen, operands[0])).is_int());
 
 		auto a = generate_expression(gen_acc, operands[0]);
 
@@ -906,8 +911,8 @@ static llvm::Value* generate_bitwize_expression(llvm_function_generator_t& gen_a
 		}
 	}
 	else if(operands.size() == 2){
-		QUARK_ASSERT(get_expr_output_type(gen_acc.gen, operands[0]).is_int());
-		QUARK_ASSERT(get_expr_output_type(gen_acc.gen, operands[1]).is_int());
+		QUARK_ASSERT(peek2(types, get_expr_output_type(gen_acc.gen, operands[0])).is_int());
+		QUARK_ASSERT(peek2(types, get_expr_output_type(gen_acc.gen, operands[1])).is_int());
 
 		auto a = generate_expression(gen_acc, operands[0]);
 		auto b = generate_expression(gen_acc, operands[1]);
@@ -948,12 +953,14 @@ static llvm::Value* generate_arithmetic_unary_minus_expression(llvm_function_gen
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
+	const auto& types = gen_acc.gen.type_lookup.state.types;
 	const auto type = get_expr_output_type(gen_acc.gen, *details.expr);
-	if(type.is_int()){
+	const auto type_peek = peek2(types, type);
+	if(type_peek.is_int()){
 		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract, expression_t::make_literal_int(0), *details.expr, e._output_type);
 		return generate_expression(gen_acc, e2);
 	}
-	else if(type.is_double()){
+	else if(type_peek.is_double()){
 		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract, expression_t::make_literal_double(0), *details.expr, e._output_type);
 		return generate_expression(gen_acc, e2);
 	}
@@ -1118,7 +1125,7 @@ static llvm::Value* generate_push_back_expression(llvm_function_generator_t& gen
 	QUARK_ASSERT(e.check_invariant());
 
 	const auto& types = gen_acc.gen.type_lookup.state.types;
-	QUARK_ASSERT(peek2(types, get_expr_output_type(gen_acc.gen, e)).is_vector() || get_expr_output_type(gen_acc.gen, e).is_string());
+	QUARK_ASSERT(peek2(types, get_expr_output_type(gen_acc.gen, e)).is_vector() || peek2(types, get_expr_output_type(gen_acc.gen, e)).is_string());
 
 	const auto it = std::find_if(gen_acc.gen.intrinsic_signatures.vec.begin(), gen_acc.gen.intrinsic_signatures.vec.end(), [&](const intrinsic_signature_t& s){ return s.name == "push_back"; } );
 
@@ -1138,7 +1145,7 @@ static llvm::Value* generate_size_expression(llvm_function_generator_t& gen_acc,
 	const auto it = std::find_if(gen_acc.gen.intrinsic_signatures.vec.begin(), gen_acc.gen.intrinsic_signatures.vec.end(), [&](const intrinsic_signature_t& s){ return s.name == "size"; } );
 
 	const auto collection_type = get_expr_output_type(gen_acc.gen, details.args[0]);
-	QUARK_ASSERT(peek2(types, collection_type).is_vector() || collection_type.is_string() || peek2(types, collection_type).is_dict() || collection_type.is_json());
+	QUARK_ASSERT(peek2(types, collection_type).is_vector() || peek2(types, collection_type).is_string() || peek2(types, collection_type).is_dict() || peek2(types, collection_type).is_json());
 
 	const auto resolved_call_type = calc_resolved_function_type(gen_acc.gen, e, it->_function_type, details.args);
 	auto collection_reg = generate_expression(gen_acc, details.args[0]);
@@ -1150,7 +1157,7 @@ static llvm::Value* generate_update_expression(llvm_function_generator_t& gen_ac
 	QUARK_ASSERT(e.check_invariant());
 
 	const auto& types = gen_acc.gen.type_lookup.state.types;
-	QUARK_ASSERT(peek2(types, get_expr_output_type(gen_acc.gen, e)).is_vector() || get_expr_output_type(gen_acc.gen, e).is_string() || peek2(types, get_expr_output_type(gen_acc.gen, e)).is_dict());
+	QUARK_ASSERT(peek2(types, get_expr_output_type(gen_acc.gen, e)).is_vector() || peek2(types, get_expr_output_type(gen_acc.gen, e)).is_string() || peek2(types, get_expr_output_type(gen_acc.gen, e)).is_dict());
 
 	const auto it = std::find_if(gen_acc.gen.intrinsic_signatures.vec.begin(), gen_acc.gen.intrinsic_signatures.vec.end(), [&](const intrinsic_signature_t& s){ return s.name == "update"; } );
 
@@ -1329,7 +1336,7 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 
 		auto ptr_reg = generate_get_vec_element_ptr_needs_cast(gen_acc, *vec_ptr_reg);
 
-		if(element_type0.is_bool()){
+		if(peek2(types, element_type0).is_bool()){
 			//	Each bool element is a uint64_t ???
 			auto element_type = llvm::Type::getInt64Ty(context);
 			auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, ptr_reg, element_type->getPointerTo(), "");
@@ -1479,14 +1486,14 @@ static llvm::Value* generate_construct_primitive(llvm_function_generator_t& gen_
 	const auto input_value_type = get_expr_output_type(gen_acc.gen, details.elements[0]);
 
 	const auto construct_type_peek = peek2(types, construct_type);
-	if(construct_type.is_bool() || construct_type.is_int() || construct_type.is_double() || construct_type_peek.is_typeid()){
+	if(construct_type_peek.is_bool() || construct_type_peek.is_int() || construct_type_peek.is_double() || construct_type_peek.is_typeid()){
 		return element0_reg;
 	}
 
 	//	NOTICE: string -> json needs to be handled at runtime.
 
 	//	Automatically transform a json::string => string at runtime?
-	else if(construct_type.is_string() && input_value_type.is_json()){
+	else if(construct_type_peek.is_string() && peek2(types, input_value_type).is_json()){
 		std::vector<llvm::Value*> args = {
 			gen_acc.get_callers_fcp(),
 			element0_reg
@@ -1496,7 +1503,7 @@ static llvm::Value* generate_construct_primitive(llvm_function_generator_t& gen_
 		generate_release(gen_acc, *element0_reg, input_value_type);
 		return result;
 	}
-	else if(construct_type.is_json()){
+	else if(construct_type_peek.is_json()){
 		//	Put a value_t into a json
 		std::vector<llvm::Value*> args2 = {
 			gen_acc.get_callers_fcp(),
@@ -2330,11 +2337,11 @@ static void generate_floyd_function_body(llvm_code_generator_t& gen_acc0, const 
 		const auto return_mode = generate_body(gen_acc, symbol_table_values, body._statements);
 
 		//	Not all paths returns a value!
-		if(return_mode == function_return_mode::some_path_not_returned && peek2(types, function_def._function_type).get_function_return(types).is_void() == false){
+		if(return_mode == function_return_mode::some_path_not_returned && peek2(types, peek2(types, function_def._function_type).get_function_return(types)).is_void() == false){
 			throw std::runtime_error("Not all function paths returns a value!");
 		}
 
-		if(peek2(types, function_def._function_type).get_function_return(types).is_void()){
+		if(peek2(types, peek2(types, function_def._function_type).get_function_return(types)).is_void()){
 			gen_acc.get_builder().CreateRetVoid();
 		}
 	}

@@ -135,7 +135,7 @@ llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, const type_
 	//	If the return type is dynamic, cast the returned runtime_value_t to the correct type.
 	//	It must be retained already.
 	llvm::Value* result_reg = result0_reg;
-	if(peek2(types, callee_function_type).get_function_return(types).is_any()){
+	if(peek2(types, peek2(types, callee_function_type).get_function_return(types)).is_any()){
 		result_reg = generate_cast_from_runtime_value(gen_acc.gen, *result0_reg, peek2(types, resolved_function_type).get_function_return(types));
 	}
 	else{
