@@ -47,7 +47,7 @@ jobs:
           command: 'brew install llvm@8'
       - run:
            name: List options
-           command: 'cd dev && xcodebuild -list -project floyd.xcodeproj && ln -s  /usr/local/Cellar/llvm/8.0.1 /usr/local/Cellar/llvm/8.0.0_1' 
+           command: 'cd dev && xcodebuild -list -project floyd.xcodeproj && ln -s  /usr/local/Cellar/llvm@8/8.0.1 /usr/local/Cellar/llvm/8.0.0_1' 
       - run:
            name: Creating Application
            command: 'cd dev && xcodebuild -scheme distributable build'
