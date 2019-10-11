@@ -28,6 +28,7 @@ static const bool k_trace_function_link_map = false;
 #include "quark.h"
 #include "floyd_runtime.h"
 
+#include <llvm/Config/llvm-config.h>
 
 //#include <llvm/ADT/APInt.h>
 //#include <llvm/IR/Verifier.h>
@@ -77,8 +78,11 @@ static const bool k_trace_function_link_map = false;
 #include "llvm/Target/TargetOptions.h"
 
 
-
+#if (LLVM_VERSION_MAJOR > 8)
+#include "llvm/Bitstream/BitstreamWriter.h"
+#else
 #include "llvm/Bitcode/BitstreamWriter.h"
+#endif
 
 #include <map>
 #include <algorithm>

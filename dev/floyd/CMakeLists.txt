@@ -17,7 +17,7 @@ ENDIF(MSVC)
 #SET (CMAKE_BUILD_TYPE Release)
 SET (CMAKE_BUILD_TYPE Debug)
 
-include_directories(passes parts target_commandline_tool  /usr/include target_benchmark_internals libs/benchmark/include libs/benchmark/googletest/googlemock/ libs/benchmark/googletest/googlemock/include floyd_runtime floyd_basics floyd_ast bytecode_interpreter  parts/immer-master floyd_parser parts/sha1 llvm_pipeline  .)
+include_directories(passes parts target_tool  /usr/include target_benchmark_internals libs/benchmark/include libs/benchmark/googletest/googlemock/ libs/benchmark/googletest/googlemock/include floyd_runtime floyd_basics floyd_ast bytecode_interpreter  parts/immer-master floyd_parser parts/sha1 llvm_pipeline  .)
 
 if (MSVC)  # - Microsoft Visual C++
 set (PROJECTNAME_ARCHITECTURE "x64")
@@ -85,8 +85,8 @@ bytecode_interpreter/bytecode_helpers.cpp
 bytecode_interpreter/bytecode_interpreter.cpp
 bytecode_interpreter/floyd_interpreter.cpp
 parts/command_line_parser.cpp
-target_commandline_tool/floyd_command_line_parser.cpp
-target_commandline_tool/format_table.cpp
+target_tool/floyd_command_line_parser.cpp
+target_tool/format_table.cpp
 #parts/command_line_parser.h
 passes/collect_used_types.cpp
 floyd_basics/compiler_helpers.cpp
@@ -103,13 +103,13 @@ floyd_ast/statement.cpp
 floyd_basics/ast_value.cpp
 floyd_basics/compiler_basics.cpp
 floyd_basics/typeid.cpp
-target_commandline_tool/floyd_main.cpp
+target_tool/floyd_main.cpp
 floyd_parser/floyd_parser.cpp
 floyd_parser/floyd_syntax.cpp
 floyd_parser/parse_expression.cpp
 floyd_parser/parse_statement.cpp
 floyd_parser/parser_primitives.cpp
-target_commandline_tool/floyd_repl.cpp
+target_tool/floyd_repl.cpp
 floyd_runtime/floyd_corelib.cpp
 floyd_runtime/floyd_runtime.cpp
 floyd_runtime/variable_length_quantity.cpp
