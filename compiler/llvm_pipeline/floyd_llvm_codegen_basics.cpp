@@ -18,7 +18,7 @@ llvm::Constant* generate_itype_constant(const llvm_code_generator_t& gen_acc, co
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	auto itype = lookup_itype(gen_acc.type_lookup, type).get_data();
+	auto itype = lookup_type(gen_acc.type_lookup, type).get_data();
 	auto t = make_runtime_type_type(gen_acc.type_lookup);
  	return llvm::ConstantInt::get(t, itype);
 }

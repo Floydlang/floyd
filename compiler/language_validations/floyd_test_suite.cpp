@@ -4637,15 +4637,14 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Error: Wrong TYPE of arguments t
 
 
 #if 0
+
 //	??? Add support for this!!!
-FLOYD_LANG_PROOF("Floyd test suite", "struct", "recursive named types", ""){
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "struct", "recursive named types", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(
 
 		struct object_t {
 			object_t left
 		}
-		let x = object_t( { } )
-		print(x)
 
 	)");
 }

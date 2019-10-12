@@ -26,7 +26,7 @@ bool pass_as_ptr(const type_desc_t& type);
 
 /*
 	floyd			C++			runtime_value_t			native func arg/return
-	--------------------------------------------------------------------------------------------------------------------
+	--------------------------------------------------------------------------------------
 	bool			bool		uint8					uint1
 	int							int64_t					int64
 	string			string		char*					char*
@@ -57,7 +57,8 @@ struct llvm_arg_mapping_t {
 	std::string floyd_name;
 	type_t floyd_type;
 
-	// -1 is none. Several elements can specify the same Floyd arg index, since dynamic value use two.
+	// -1 is none. Several elements can specify the same Floyd arg index,
+	//	since dynamic value use two.
 	int floyd_arg_index;
 
 	enum class map_type { k_floyd_runtime_ptr, k_known_value_type, k_dyn_value, k_dyn_type } map_type;
@@ -104,7 +105,11 @@ struct type_entry_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	type_entry_t(llvm::Type* llvm_type_specific, llvm::Type* llvm_type_generic, std::shared_ptr<const llvm_function_def_t> optional_function_def) :
+	type_entry_t(
+		llvm::Type* llvm_type_specific,
+		llvm::Type* llvm_type_generic,
+		std::shared_ptr<const llvm_function_def_t> optional_function_def
+	) :
 		llvm_type_specific(llvm_type_specific),
 		llvm_type_generic(llvm_type_generic),
 		optional_function_def(optional_function_def)
@@ -145,11 +150,12 @@ struct state_t {
 ////////////////////////////////		llvm_type_lookup
 
 /*
-	LLVM Type types: keeps a list of ALL types used statically in the program, their itype, their LLVM type and their Floyd type.
+	LLVM Type types: keeps a list of ALL types used statically in the program, their itype,
+	their LLVM type and their Floyd type.
 
 	Generic-type: vector (and string), dictionary, json and struct are passed around as 4 different
-	types, not one for each vector type, struct type etc. These generic types are 64 bytes big, the same size as
-	heap_alloc_64_t.
+	types, not one for each vector type, struct type etc. These generic types are 64 bytes big,
+	the same size as heap_alloc_64_t.
 */
 
 struct llvm_type_lookup {
@@ -170,36 +176,37 @@ llvm::Type* make_runtime_type_type(const llvm_type_lookup& type_lookup);
 llvm::Type* make_runtime_value_type(const llvm_type_lookup& type_lookup);
 
 type_t lookup_type(const llvm_type_lookup& type_lookup, const type_t& type);
-type_t lookup_itype(const llvm_type_lookup& type_lookup, const type_t& type);
 
 
-//	Returns the exact LLVM struct layout that maps to the struct members, without any alloc-64 header. Not a pointer.
+//	Returns the exact LLVM struct layout that maps to the struct members, without
+//	any alloc-64 header. Not a pointer.
 llvm::StructType* get_exact_struct_type_byvalue(const llvm_type_lookup& i, const type_t& type);
 
 
 
-//	Returns the LLVM type used to pass this type of value around. It uses generic types for vector, dict and struct.
+//	Returns the LLVM type used to pass this type of value around. It uses generic types for
+//	vector, dict and struct.
 //	Small types are by-value, large types are pointers.
 /*
-|type_t                                                                |llvm_type_specific                                   |llvm_type_generic |
-|------------------------------------------------------------------------|-----------------------------------------------------|------------------|
-|undef                                                                   |i16                                                  |nullptr           |
-|any                                                                     |i64                                                  |nullptr           |
-|void                                                                    |void                                                 |nullptr           |
-|bool                                                                    |i1                                                   |nullptr           |
-|int                                                                     |i64                                                  |nullptr           |
-|double                                                                  |double                                               |nullptr           |
-|string                                                                  |%vec*                                                |%vec*             |
-|json                                                                    |%json*                                               |nullptr           |
-|typeid                                                                  |i64                                                  |nullptr           |
-|unresolved:                                                             |i16                                                  |nullptr           |
-|function int(any) pure                                                  |i64 (%frp*, i64, i64)*                               |nullptr           |
-|[string]                                                                |%vec*                                                |%vec*             |
-|function int(int,int) pure                                              |i64 (%frp*, i64, i64)*                               |nullptr           |
-|struct {int dur;json more;}                                             |{ i64, %json* }*                                     |%struct*          |
-|[struct {int dur;json more;}]                                           |%vec*                                                |%vec*             |
-|function [struct {int dur;json more;}]() pure                           |%vec* (%frp*)*                                       |nullptr           |
-|------------------------------------------------------------------------|-----------------------------------------------------|------------------|
+|type_t                                        |llvm_type_specific     |llvm_type_generic |
+|----------------------------------------------|-----------------------|------------------|
+|undef                                         |i16                    |nullptr           |
+|any                                           |i64                    |nullptr           |
+|void                                          |void                   |nullptr           |
+|bool                                          |i1                     |nullptr           |
+|int                                           |i64                    |nullptr           |
+|double                                        |double                 |nullptr           |
+|string                                        |%vec*                  |%vec*             |
+|json                                          |%json*                 |nullptr           |
+|typeid                                        |i64                    |nullptr           |
+|unresolved:                                   |i16                    |nullptr           |
+|function int(any) pure                        |i64 (%frp*, i64, i64)* |nullptr           |
+|[string]                                      |%vec*                  |%vec*             |
+|function int(int,int) pure                    |i64 (%frp*, i64, i64)* |nullptr           |
+|struct {int dur;json more;}                   |{ i64, %json* }*       |%struct*          |
+|[struct {int dur;json more;}]                 |%vec*                  |%vec*             |
+|function [struct {int dur;json more;}]() pure |%vec* (%frp*)*         |nullptr           |
+|----------------------------------------------|-----------------------|------------------|
 */
 llvm::Type* get_llvm_type_as_arg(const llvm_type_lookup& type_lookup, const type_t& type);
 

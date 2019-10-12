@@ -465,12 +465,13 @@ static std::vector<std::pair<type_t, struct_layout_t>> make_struct_layouts(const
 
 	for(int i = 0 ; i < type_lookup.state.type_entries.size() ; i++){
 		const auto& type = lookup_type_from_index(types, i);
-		if(peek2(types, type).is_struct()){
-			auto t2 = get_exact_struct_type_byvalue(type_lookup, type);
+		const auto peek_type = peek2(types, type);
+		if(peek_type.is_struct()){
+			auto t2 = get_exact_struct_type_byvalue(type_lookup, peek_type);
 			const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
 
 
-			const auto& source_struct_def = peek2(types, type).get_struct(types);
+			const auto& source_struct_def = peek_type.get_struct(types);
 
 			const auto struct_bytes = layout->getSizeInBytes();
 			std::vector<member_info_t> member_infos;
