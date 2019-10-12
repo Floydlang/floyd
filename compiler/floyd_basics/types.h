@@ -252,7 +252,6 @@ enum class return_dyn_type {
 
 //??? store type_variant_t inside type_info_t!
 //??? Name into make_x() vs get_x()
-//??? type_t should be opaque value type. Use peek to get a type_desc_t you can query for details.
 
 
 std::vector<type_t> get_member_types(const std::vector<member_t>& m);
@@ -295,82 +294,39 @@ struct type_t {
 	}
 
 
-	//////////////////////////////////////////////////		UNDEFINED
-
-
 	bool is_undefined() const {
 		QUARK_ASSERT(check_invariant());
 
 		return get_base_type() == base_type::k_undefined;
 	}
 
-
-	//////////////////////////////////////////////////		ANY
-
-
-
 	static type_t make_any(){
 		return type_t(assemble((type_lookup_index_t)base_type::k_any, base_type::k_any, base_type::k_undefined));
 	}
-
-
-
-	//////////////////////////////////////////////////		VOID
-
 
 	static type_t make_void(){
 		return type_t(assemble((type_lookup_index_t)base_type::k_void, base_type::k_void, base_type::k_undefined));
 	}
 
-
-
-	//////////////////////////////////////////////////		BOOL
-
-
 	static type_t make_bool(){
 		return type_t(assemble((type_lookup_index_t)base_type::k_bool, base_type::k_bool, base_type::k_undefined));
 	}
-
-
-
-	//////////////////////////////////////////////////		INT
-
 
 	static type_t make_int(){
 		return type_t(assemble((type_lookup_index_t)base_type::k_int, base_type::k_int, base_type::k_undefined));
 	}
 
-
-	//////////////////////////////////////////////////		DOUBLE
-
-
 	static type_t make_double(){
 		return type_t(assemble((type_lookup_index_t)base_type::k_double, base_type::k_double, base_type::k_undefined));
 	}
-
-
-
-	//////////////////////////////////////////////////		STRING
-
 
 	static type_t make_string(){
 		return type_t(assemble((type_lookup_index_t)base_type::k_string, base_type::k_string, base_type::k_undefined));
 	}
 
-
-
-	//////////////////////////////////////////////////		JSON
-
-
 	static type_t make_json(){
 		return type_t(assemble((type_lookup_index_t)base_type::k_json, base_type::k_json, base_type::k_undefined));
 	}
-
-
-
-
-	//////////////////////////////////////////////////		SYMBOL
-
 
 	public: bool is_symbol_ref() const {
 		QUARK_ASSERT(check_invariant());
