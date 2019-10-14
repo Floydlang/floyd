@@ -167,8 +167,6 @@ static llvm::StructType* make_generic_struct_type_internal(llvm::LLVMContext& co
 
 
 
-
-
 struct builder_t {
 	llvm::LLVMContext& context;
 	state_t acc;
@@ -266,7 +264,7 @@ static llvm_function_def_t map_function_arguments_internal(
 }
 
 
-//	Function-types are always returned as pointer-to-function types.
+//	Function-types are always returned as byvalue.
 static llvm::Type* make_function_type(builder_t& builder, const type_t& function_type){
 	QUARK_ASSERT(function_type.check_invariant());
 	QUARK_ASSERT(peek2(builder.acc.types, function_type).is_function());
@@ -277,15 +275,13 @@ static llvm::Type* make_function_type(builder_t& builder, const type_t& function
 		mapping.llvm_args,
 		false
 	);
-	auto function_pointer_type = function_type2->getPointerTo();
-	return function_pointer_type;
+	return function_type2;
 }
 
+//??? Need to skip type nodes that are partially undefined or have symbols in them.
+//??? Better to erase nodes with symbols from node list before codegen?
 
-
-
-
-static const type_entry_t& make_exact_struct_type(builder_t& builder, const type_t& type){
+static const type_entry_t& make_llvm_struct_type(builder_t& builder, const type_t& type){
 	const auto& types = builder.acc.types;
 	const auto type_peek = peek2(types, type);
 	QUARK_ASSERT(type_peek.is_struct());
@@ -295,9 +291,6 @@ static const type_entry_t& make_exact_struct_type(builder_t& builder, const type
 	for(const auto& m: type_peek.get_struct(types)._members){
 		const auto member_type = m._type;
 		const auto member_type1 = peek2(types, member_type);
-
-//??? Need to skip type nodes that are partially undefined or have symbols in them.
-//??? Better to remove nodes with symbols from node list before codegen?
 
 		//??? Types can be recursive and type nodes can be in order (named_type, struct).
 		//	We need recursive creation of LLVM types.
@@ -313,7 +306,6 @@ static const type_entry_t& make_exact_struct_type(builder_t& builder, const type
 //	QUARK_TRACE(print_type(s));
 
 
-
 	const auto llvm_type = s->getPointerTo();
 
 	llvm::Type* llvm_generic_type0 = builder.acc.generic_struct_type;
@@ -324,11 +316,6 @@ static const type_entry_t& make_exact_struct_type(builder_t& builder, const type
 	builder.acc.type_entries[type_index] = entry;
 	return builder.acc.type_entries[type_index];
 }
-
-
-
-
-
 
 static const type_entry_t& touch_type(builder_t& builder, const type_t& type){
 	QUARK_ASSERT(builder.acc.types.check_invariant());
@@ -366,16 +353,13 @@ static const type_entry_t& touch_type(builder_t& builder, const type_t& type){
 			builder.acc.type_entries[type_index] = entry;
 		}
 		void operator()(const string_t& e) const{
-			const auto llvm_type0 = builder.acc.generic_vec_type;
-			const auto llvm_type = llvm_type0->getPointerTo();
+			const auto llvm_type = builder.acc.generic_vec_type->getPointerTo();
 			const auto entry = type_entry_t{ true, llvm_type, llvm_type, nullptr };
 			builder.acc.type_entries[type_index] = entry;
 		}
 
 		void operator()(const json_type_t& e) const{
-			const auto llvm_type0 = builder.acc.json_type;
-			const auto llvm_type = llvm_type0->getPointerTo();
-
+			const auto llvm_type = builder.acc.json_type->getPointerTo();
 			const auto entry = type_entry_t{ true, llvm_type, nullptr, nullptr };
 			builder.acc.type_entries[type_index] = entry;
 		}
@@ -386,7 +370,7 @@ static const type_entry_t& touch_type(builder_t& builder, const type_t& type){
 		}
 
 		void operator()(const struct_t& e) const{
-			make_exact_struct_type(builder, type);
+			make_llvm_struct_type(builder, type);
 		}
 		void operator()(const vector_t& e) const{
 			const auto llvm_type = builder.acc.generic_vec_type->getPointerTo();
@@ -399,8 +383,7 @@ static const type_entry_t& touch_type(builder_t& builder, const type_t& type){
 			builder.acc.type_entries[type_index] = entry;
 		}
 		void operator()(const function_t& e) const{
-			const auto llvm_type0 = deref_ptr(make_function_type(builder, type));
-			const auto llvm_type = llvm_type0->getPointerTo();
+			const auto llvm_type = make_function_type(builder, type)->getPointerTo();
 
 			std::shared_ptr<const llvm_function_def_t> optional_function_def;
 			if(peek2(builder.acc.types, type).is_function()){
