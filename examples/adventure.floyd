@@ -17,12 +17,10 @@ struct object_t {
 	bool player_can_put_behind
 	bool player_can_put_under
 
-/*
 	[object_t] inside
 	[object_t] ontop
 	[object_t] behind
 	[object_t] under
-*/
 }
 
 let null_object = object_t("", false, false,	false, false, false, false)
@@ -42,7 +40,7 @@ struct room_t {
 	string name
 	string short_description
 	string long_description
-//	[string: string] exits
+	[string: string] exits
 	[object_t] objects_in_room
 }
 
