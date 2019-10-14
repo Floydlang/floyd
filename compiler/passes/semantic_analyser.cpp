@@ -22,7 +22,7 @@
 
 namespace floyd {
 
-static const bool k_trace_io = false;
+static const bool k_trace_io = true;
 
 
 
@@ -141,7 +141,7 @@ static void trace_analyser(const analyser_t& a){
 
 
 
-/////////////////////////////////////////			RESOLVE SYMBOL USING LEXICAL SCOPE PATH
+/////////////////////////////////////////			FIND SYMBOL USING LEXICAL SCOPE PATH
 
 
 static type_t get_symbol_named_type(const types_t& types, const symbol_t& symbol){
@@ -153,10 +153,8 @@ static type_t get_symbol_named_type(const types_t& types, const symbol_t& symbol
 	return b;
 }
 
-
-
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-static std::pair<const symbol_t*, symbol_pos_t> resolve_symbol_deep(const analyser_t& a, int depth, const std::string& s){
+static std::pair<const symbol_t*, symbol_pos_t> find_symbol_deep(const analyser_t& a, int depth, const std::string& s){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(depth >= 0 && depth < a._lexical_scope_stack.size());
 	QUARK_ASSERT(s.size() > 0);
@@ -173,7 +171,7 @@ static std::pair<const symbol_t*, symbol_pos_t> resolve_symbol_deep(const analys
 		return { &it->second, symbol_pos_t::make_stack_pos(parent_index, variable_index) };
 	}
 	else if(depth > 0){
-		return resolve_symbol_deep(a, depth - 1, s);
+		return find_symbol_deep(a, depth - 1, s);
 	}
 	else{
 		return { nullptr, symbol_pos_t::make_stack_pos(0, 0) };
@@ -184,7 +182,7 @@ static std::pair<const symbol_t*, symbol_pos_t> find_symbol_by_name(const analys
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
-	return resolve_symbol_deep(a, static_cast<int>(a._lexical_scope_stack.size() - 1), s);
+	return find_symbol_deep(a, static_cast<int>(a._lexical_scope_stack.size() - 1), s);
 }
 
 static bool does_symbol_exist_shallow(const analyser_t& a, const std::string& s){
@@ -195,8 +193,6 @@ static bool does_symbol_exist_shallow(const analyser_t& a, const std::string& s)
 	);
 	return it != a._lexical_scope_stack.back().symbols._symbols.end();
 }
-
-
 
 
 static type_t resolve_symbols_internal(analyser_t& acc, const location_t& loc, const type_t& type){

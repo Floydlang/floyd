@@ -1821,18 +1821,14 @@ void trace_types(const types_t& types){
 
 	{
 		QUARK_SCOPED_TRACE("TYPES");
+		std::vector<std::vector<std::string>> matrix;
+		for(auto i = 0 ; i < types.nodes.size() ; i++){
+			const auto& type = lookup_type_from_index(types, i);
 
-		{
-			QUARK_SCOPED_TRACE("TYPES");
-			std::vector<std::vector<std::string>> matrix;
-			for(auto i = 0 ; i < types.nodes.size() ; i++){
-				const auto& type = lookup_type_from_index(types, i);
+			const auto& e = types.nodes[i];
 
-				const auto& e = types.nodes[i];
-				const auto contents = e.bt == base_type::k_named_type
-					? std::to_string(e.child_types[0].get_lookup_index())
-					: type_to_compact_string(types, type, enamed_type_mode::full_names);
-
+			if(e.bt == base_type::k_named_type){
+				const auto contents = std::to_string(e.child_types[0].get_lookup_index());
 				const auto line = std::vector<std::string>{
 					std::to_string(i),
 					pack_type_name(e.optional_name),
@@ -1841,14 +1837,22 @@ void trace_types(const types_t& types){
 				};
 				matrix.push_back(line);
 			}
-
-			const auto result = generate_table_type1({ "type_t", "name-tag", "base_type", "contents" }, matrix);
-			QUARK_TRACE(result);
+			else{
+				const auto contents = type_to_compact_string(types, type, enamed_type_mode::full_names);
+				const auto line = std::vector<std::string>{
+					std::to_string(i),
+					"",
+					base_type_to_opcode(e.bt),
+					contents,
+				};
+				matrix.push_back(line);
+			}
 		}
+
+		const auto result = generate_table_type1({ "type_t", "name-tag", "base_type", "contents" }, matrix);
+		QUARK_TRACE(result);
 	}
 }
-
-
 
 json_t type_to_json_shallow(const type_t& type){
 	const auto s = std::string("type:") + std::to_string(type.get_lookup_index());
@@ -2193,18 +2197,9 @@ std::string type_to_compact_string(const types_t& types, const type_t& type, ena
 			return std::string() + "func " + type_to_compact_string(types, ret, named_type_mode) + "(" + concat_strings_with_divider(args_str, ",") + ") " + (pure == epure::pure ? "pure" : "impure");
 		}
 		std::string operator()(const symbol_ref_t& e) const {
-//			QUARK_ASSERT(e.s != "");
 			return std::string("%") + e.s;
 		}
 		std::string operator()(const named_type_t& e) const {
-/*
-			if(named_type_mode == resolve_named_types::resolve){
-				QUARK_ASSERT(false);
-				const auto p = peek0(types, type);
-				return type_to_compact_string(types, p, resolve);
-			}
-*/
-
 			if(named_type_mode == enamed_type_mode::full_names){
 				const auto& info = lookup_typeinfo_from_type(types, type);
 				return pack_type_name(info.optional_name);
