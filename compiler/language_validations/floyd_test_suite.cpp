@@ -4691,7 +4691,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "recursive named types", ""){
 	)");
 }
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "struct", "recursive named types", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "recursive named types", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(
 
 		struct object_t {
