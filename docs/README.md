@@ -1,7 +1,7 @@
 ![](floyd_logo_banner.png)
 
 
-[![CircleCI](https://circleci.com/gh/Floydlang/floyd/tree/dev.svg?style=svg)](https://circleci.com/gh/Floydlang/floyd/tree/dev)
+[![CircleCI](https://circleci.com/gh/Floydlang/floyd/tree/master.svg?style=svg)](https://circleci.com/gh/Floydlang/floyd/tree/master)
 
 
 # TL;DR
