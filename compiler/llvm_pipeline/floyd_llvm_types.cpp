@@ -304,7 +304,18 @@ static llvm::StructType* make_exact_struct_type(const builder_t& builder, const 
 	for(const auto& m: type_peek.get_struct(types)._members){
 		const auto member_type = m._type;
 		const auto member_type1 = peek2(types, member_type);
+
+
+//??? Need to skip type nodes that are partially undefined or have symbols in them.
+//??? Better to remove nodes with symbols from node list before codegen?
+
+		//??? Types can be recursive and type nodes can be in order (named_type, struct).
+		//	We need recursive creation of LLVM types.
 		const auto& a = find_type(builder, member_type1);
+//???		QUARK_ASSERT(a.llvm_type_generic != nullptr);
+//???		QUARK_ASSERT(a.llvm_type_specific != nullptr);
+
+
 		const auto m2 = get_llvm_type_prefer_generic(a);
 		members.push_back(m2);
 	}

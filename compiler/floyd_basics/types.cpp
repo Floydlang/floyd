@@ -1671,7 +1671,7 @@ static type_t intern_node(types_t& types, const type_node_t& node){
 
 
 
-type_t name_named_type(types_t& types, const type_name_t& n, const type_t& destination_type){
+type_t make_named_type(types_t& types, const type_name_t& n, const type_t& destination_type){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(n.check_invariant());
 	QUARK_ASSERT(destination_type.check_invariant());
@@ -1994,7 +1994,7 @@ type_t type_from_json(types_t& types, const json_t& t){
 		//	Tagged type.
 		else if(is_type_name(s)){
 			//??? also store child_types[0]
-			return name_named_type(types, unpack_type_name(s), make_undefined());
+			return make_named_type(types, unpack_type_name(s), make_undefined());
 		}
 
 		//	Other types.
