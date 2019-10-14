@@ -4636,10 +4636,11 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Error: Wrong TYPE of arguments t
 }
 
 
-#if 0
+
+
 
 //	??? Add support for this!!!
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "struct", "recursive named types", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "recursive named types", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(
 
 		struct object_t {
@@ -4648,21 +4649,67 @@ FLOYD_LANG_PROOF_VIP("Floyd test suite", "struct", "recursive named types", ""){
 
 	)");
 }
-#endif
 
-#if 0
-FLOYD_LANG_PROOF("Floyd test suite", "struct", "nested", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "recursive named types", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(
 
 		struct object_t {
 			[object_t] inside
 		}
-		let x = object_t( { } )
+		let x = object_t( [] )
 		print(x)
 
 	)");
 }
-#endif
+
+
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "recursive named types", ""){
+	ut_run_closed_nolib(QUARK_POS, R"(
+
+		struct object_t {
+			string name
+			[object_t] inside
+		}
+		let x = object_t( "chest", [] )
+		print(x)
+
+	)");
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "recursive named types", ""){
+	ut_run_closed_nolib(QUARK_POS, R"(
+
+		struct object_t {
+			string name
+			[object_t] inside
+		}
+		let sword = object_t( "rusty sword", [] )
+		let coin = object_t( "silver coin", [] )
+		let chest = object_t( "chest", [ sword, coin ] )
+		print(chest)
+
+	)");
+}
+
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "struct", "recursive named types", ""){
+	ut_run_closed_nolib(QUARK_POS, R"(
+
+		struct object_t {
+			string name
+			[object_t] inside
+		}
+		let sword = object_t( "rusty sword", [] )
+		let coin = object_t( "silver coin", [] )
+		let chest = object_t( "chest", [ sword, coin ] )
+		print(chest)
+
+		let [object_t] empty = []
+		let inside2 = replace(chest.inside, 1, 2, empty)
+		let chest2 = object_t( chest.name, inside2 )
+		print(chest2)
+
+	)");
+}
 
 
 
