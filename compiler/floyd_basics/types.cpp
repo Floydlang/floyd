@@ -18,6 +18,7 @@
 #include "parser_primitives.h"
 
 #include <limits.h>
+#include <set>
 
 
 
@@ -2450,6 +2451,133 @@ bool is_atomic_type(type_t type){
 	else{
 		return false;
 	}
+}
+
+
+
+
+
+
+
+static bool is_wellformed_internal(const types_t& types, const std::set<type_lookup_index_t>& done_types, const type_t& t);
+
+
+bool is_wellformed_internal(const types_t& types, const std::set<type_lookup_index_t>& done_types, const struct_type_desc_t& s){
+	QUARK_ASSERT(s.check_invariant());
+
+	for(const auto& e: s._members){
+		bool result = is_wellformed_internal(types, done_types, e._type);
+		if(result == false){
+			return false;
+		}
+	}
+	return true;
+}
+
+
+bool is_wellformed__type_vector(const types_t& types, const std::set<type_lookup_index_t>& done_types, const std::vector<type_t>& elements){
+	QUARK_ASSERT(types.check_invariant());
+
+	for(const auto& e: elements){
+		if(is_wellformed_internal(types, done_types, e) == false){
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool is_wellformed_internal(const types_t& types, const std::set<type_lookup_index_t>& done_types, const type_t& t){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(t.check_invariant());
+
+	if(done_types.find(t.get_lookup_index()) != done_types.end()){
+		return true;
+	}
+	else{
+		auto done2 = done_types;
+		done2.insert(t.get_lookup_index());
+
+		struct visitor_t {
+			const types_t types;
+			const std::set<type_lookup_index_t>& done_types;
+
+
+			bool operator()(const undefined_t& e) const{
+				return false;
+			}
+			bool operator()(const any_t& e) const{
+				return true;
+			}
+
+			bool operator()(const void_t& e) const{
+				return true;
+			}
+			bool operator()(const bool_t& e) const{
+				return true;
+			}
+			bool operator()(const int_t& e) const{
+				return true;
+			}
+			bool operator()(const double_t& e) const{
+				return true;
+			}
+			bool operator()(const string_t& e) const{
+				return true;
+			}
+
+			bool operator()(const json_type_t& e) const{
+				return true;
+			}
+			bool operator()(const typeid_type_t& e) const{
+				return true;
+			}
+
+			bool operator()(const struct_t& e) const{
+				return is_wellformed_internal(types, done_types, e.desc);
+			}
+			bool operator()(const vector_t& e) const{
+				return is_wellformed__type_vector(types, done_types, e._parts);
+			}
+			bool operator()(const dict_t& e) const{
+				return is_wellformed__type_vector(types, done_types, e._parts);
+			}
+			bool operator()(const function_t& e) const{
+				return is_wellformed__type_vector(types, done_types, e._parts);
+			}
+			bool operator()(const symbol_ref_t& e) const {
+				return false;
+			}
+			bool operator()(const named_type_t& e) const {
+				return is_wellformed_internal(types, done_types, e.destination_type);
+			}
+		};
+		return std::visit(visitor_t { types, done2 }, get_type_variant(types, t));
+	}
+}
+
+
+bool is_wellformed(const types_t& types, const type_t& t){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(t.check_invariant());
+
+	std::set<type_lookup_index_t> done_types;
+	return is_wellformed_internal(types, done_types, t);
+}
+
+
+
+////////////////////////////////		TESTS
+
+
+QUARK_TEST("Types", "update_named_type()", "", ""){
+	types_t types;
+	const auto name = unpack_type_name("/a/b");
+	const auto a = make_named_type(types, name, make_undefined());
+	const auto s = make_struct(types, struct_type_desc_t( { member_t(a, "f") } ));
+	const auto b = update_named_type(types, a, s);
+
+	if(false) trace_types(types);
+	QUARK_ASSERT(is_wellformed(types, b));
 }
 
 

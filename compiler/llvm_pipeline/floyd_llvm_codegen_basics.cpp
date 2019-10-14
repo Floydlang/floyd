@@ -82,7 +82,7 @@ llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, const type_
 	auto& builder = gen_acc.get_builder();
 
 	//	Callee, as LLVM function signature. It gets the param #0 runtime pointer and each ANY is expanded to valye/type pairs.
-	const auto& callee_mapping = *gen_acc.gen.type_lookup.find_from_itype(callee_function_type).optional_function_def;
+	const auto& callee_mapping = *gen_acc.gen.type_lookup.find_from_type(callee_function_type).optional_function_def;
 
 	//	Generate code that evaluates all argument expressions.
 	std::vector<llvm::Value*> arg_regs;

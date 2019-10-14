@@ -106,18 +106,9 @@ llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<
 
 
 
-////////////////////////////////		llvm_type_lookup
 
 
-
-static llvm::Type* make_runtime_value_type_internal(llvm::LLVMContext& context){
-	return llvm::Type::getInt64Ty(context);
-}
-
-static llvm::Type* make_runtime_type_type_internal(llvm::LLVMContext& context){
-	return llvm::Type::getInt64Ty(context);
-}
-
+/*
 static llvm::StructType* make_wide_return_type_internal(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
 		//	a
@@ -129,6 +120,7 @@ static llvm::StructType* make_wide_return_type_internal(llvm::LLVMContext& conte
 	llvm::StructType* s = llvm::StructType::get(context, members, false);
 	return s;
 }
+*/
 
 static llvm::StructType* make_generic_vec_type_internal(llvm::LLVMContext& context){
 	const auto n = sizeof(heap_alloc_64_t);
@@ -204,9 +196,10 @@ static llvm_function_def_t map_function_arguments_internal(
 	const floyd::type_t& function_type
 ){
 	const auto& types = builder.acc.types;
-	QUARK_ASSERT(peek2(types, function_type).is_function());
 
 	const auto function_peek = peek2(types, function_type);
+	QUARK_ASSERT(function_peek.is_function());
+
 	const auto ret = function_peek.get_function_return(types);
 
 	// Notice: we always resolve the return type in semantic analysis -- no need to
@@ -259,9 +252,9 @@ static llvm_function_def_t map_function_arguments_internal(
 		}
 		else {
 			const auto& a = find_type(builder, arg);
-			auto arg_itype = get_llvm_type_prefer_generic(a);
+			auto arg_type = get_llvm_type_prefer_generic(a);
 			arg_results.push_back({
-				arg_itype,
+				arg_type,
 				std::to_string(index),
 				arg,
 				index,
@@ -299,12 +292,12 @@ static llvm::StructType* make_exact_struct_type(const builder_t& builder, const 
 	const auto& types = builder.acc.types;
 	const auto type_peek = peek2(types, type);
 	QUARK_ASSERT(type_peek.is_struct());
+	QUARK_ASSERT(is_wellformed(types, type));
 
 	std::vector<llvm::Type*> members;
 	for(const auto& m: type_peek.get_struct(types)._members){
 		const auto member_type = m._type;
 		const auto member_type1 = peek2(types, member_type);
-
 
 //??? Need to skip type nodes that are partially undefined or have symbols in them.
 //??? Better to remove nodes with symbols from node list before codegen?
@@ -312,10 +305,9 @@ static llvm::StructType* make_exact_struct_type(const builder_t& builder, const 
 		//??? Types can be recursive and type nodes can be in order (named_type, struct).
 		//	We need recursive creation of LLVM types.
 		const auto& a = find_type(builder, member_type1);
-#if 0
-		QUARK_ASSERT(a.llvm_type_generic != nullptr);
-		QUARK_ASSERT(a.llvm_type_specific != nullptr);
-#endif
+		QUARK_ASSERT(a.use_flag);
+//		QUARK_ASSERT(a.llvm_type_generic != nullptr);
+//		QUARK_ASSERT(a.llvm_type_specific != nullptr);
 
 		const auto m2 = get_llvm_type_prefer_generic(a);
 		members.push_back(m2);
@@ -327,6 +319,7 @@ static llvm::StructType* make_exact_struct_type(const builder_t& builder, const 
 
 static llvm::Type* make_llvm_type(const builder_t& builder, const type_t& type){
 	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(is_wellformed(builder.acc.types, type));
 
 	struct visitor_t {
 		const builder_t& builder;
@@ -411,25 +404,39 @@ static type_entry_t make_type(const builder_t& builder, const type_t& type){
 	QUARK_ASSERT(builder.acc.types.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto llvm_type0 = make_llvm_type(builder, type);
-	const auto llvm_type = pass_as_ptr(peek2(builder.acc.types, type)) ? llvm_type0->getPointerTo() : llvm_type0;
+	const auto wellformed = is_wellformed(builder.acc.types, type);
+	if(wellformed){
+		const auto llvm_type0 = make_llvm_type(builder, type);
+		const auto llvm_type = pass_as_ptr(peek2(builder.acc.types, type)) ? llvm_type0->getPointerTo() : llvm_type0;
 
-	llvm::Type* llvm_generic_type0 = make_generic_type(builder, type);
-	llvm::Type* llvm_generic_type = llvm_generic_type0 ? llvm_generic_type0->getPointerTo() : nullptr;
+		llvm::Type* llvm_generic_type0 = make_generic_type(builder, type);
+		llvm::Type* llvm_generic_type = llvm_generic_type0 ? llvm_generic_type0->getPointerTo() : nullptr;
 
-	std::shared_ptr<const llvm_function_def_t> optional_function_def;
-	if(peek2(builder.acc.types, type).is_function()){
-		const auto function_def = map_function_arguments_internal(builder, type);
-		optional_function_def = std::make_shared<llvm_function_def_t>(function_def);
+		std::shared_ptr<const llvm_function_def_t> optional_function_def;
+		if(peek2(builder.acc.types, type).is_function()){
+			const auto function_def = map_function_arguments_internal(builder, type);
+			optional_function_def = std::make_shared<llvm_function_def_t>(function_def);
+		}
+
+		const auto entry = type_entry_t{
+			true,
+			llvm_type,
+			llvm_generic_type,
+			optional_function_def
+		};
+
+		return entry;
 	}
+	else{
+		const auto entry = type_entry_t{
+			false,
+			nullptr,
+			nullptr,
+			nullptr
+		};
 
-	const auto entry = type_entry_t{
-		llvm_type,
-		llvm_generic_type,
-		optional_function_def
-	};
-
-	return entry;
+		return entry;
+	}
 }
 
 //	Notice: the entries in the types may reference eachother = we need to process recursively.
@@ -447,11 +454,11 @@ llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const types_t& ty
 	acc.generic_dict_type = make_generic_dict_type_internal(context);
 	acc.json_type = make_json_type_internal(context);
 	acc.generic_struct_type = make_generic_struct_type_internal(context);
-	acc.wide_return_type = make_wide_return_type_internal(context);
+//	acc.wide_return_type = make_wide_return_type_internal(context);
 	acc.runtime_ptr_type = make_generic_runtime_type_internal(context)->getPointerTo();
 
-	acc.runtime_type_type = make_runtime_type_type_internal(context);
-	acc.runtime_value_type = make_runtime_value_type_internal(context);
+	acc.runtime_type_type = llvm::Type::getInt64Ty(context);
+	acc.runtime_value_type = llvm::Type::getInt64Ty(context);
 
 
 	builder_t builder { context, acc };
@@ -479,70 +486,43 @@ bool llvm_type_lookup::check_invariant() const {
 	QUARK_ASSERT(state.json_type != nullptr);
 	QUARK_ASSERT(state.generic_struct_type != nullptr);
 
-	QUARK_ASSERT(state.wide_return_type != nullptr);
+//	QUARK_ASSERT(state.wide_return_type != nullptr);
 
 	QUARK_ASSERT(state.types.check_invariant());
 	QUARK_ASSERT(state.types.nodes.size() == state.type_entries.size());
 	return true;
 }
 
-const type_entry_t& llvm_type_lookup::find_from_itype(const type_t& itype) const {
+const type_entry_t& llvm_type_lookup::find_from_type(const type_t& type) const {
 	QUARK_ASSERT(check_invariant());
 
-	const auto index = itype.get_lookup_index();
+	const auto index = type.get_lookup_index();
 	return state.type_entries[index];
 }
 
 void trace_llvm_type_lookup(const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	std::vector<line_t> table = {
-		line_t(
-			{ "#", "ITYPE INDEX", "type_t", "llvm_type_specific", "llvm_type_generic", "optional_function_def" },
-			' ',
-			'|'
-		),
-		line_t( { "", "", "", "", "", "" }, '-', '|'),
-	};
+	std::vector<std::vector<std::string>> matrix;
 
 	for(int i = 0 ; i < type_lookup.state.type_entries.size() ; i++){
 		const auto& e = type_lookup.state.type_entries[i];
 		const auto type = lookup_type_from_index(type_lookup.state.types, i);
-		const auto l = line_t {
+		const auto l = std::vector<std::string> {
 			{
 				std::to_string(i),
-				std::to_string(i),
+				e.use_flag ? "USE" : "",
 				type_to_compact_string(type_lookup.state.types, type),
 				print_type(e.llvm_type_specific),
 				print_type(e.llvm_type_generic),
 				e.optional_function_def != nullptr ? "YES" : ""
-			},
-			' ',
-			'|'
+			}
 		};
-		table.push_back(l);
+		matrix.push_back(l);
 	}
 
-	table.push_back(line_t( { "", "", "", "", "", "" }, '-', '|'));
-
-	const auto default_column = column_t{ 0, -1, 0 };
-	const auto columns0 = std::vector<column_t>{
-		default_column,
-		default_column,
-		default_column,
-		default_column,
-		default_column,
-		default_column
-	};
-	const auto columns = fit_columns(columns0, table);
-	const auto r = generate_table(table, columns);
-
-	std::stringstream ss;
-	ss << std::endl;
-	for(const auto& e: r){
-		ss << e << std::endl;
-	}
-	QUARK_TRACE(ss.str());
+	const auto s = generate_table_type1({ "#", "type_t", "use", "llvm_type_specific", "llvm_type_generic", "optional_function_def" }, matrix);
+	QUARK_TRACE(s);
 }
 
 
@@ -571,7 +551,7 @@ llvm::StructType* get_exact_struct_type_byvalue(const llvm_type_lookup& i, const
 	QUARK_ASSERT(i.check_invariant());
 	QUARK_ASSERT(peek2(i.state.types, type).is_struct());
 
-	const auto& entry = i.find_from_itype(type);
+	const auto& entry = i.find_from_type(type);
 	auto result = entry.llvm_type_specific;
 	auto result2 = deref_ptr(result);
 	return llvm::cast<llvm::StructType>(result2);
@@ -581,7 +561,7 @@ llvm::Type* get_llvm_type_as_arg(const llvm_type_lookup& i, const type_t& type){
 	QUARK_ASSERT(i.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto& entry = i.find_from_itype(type);
+	const auto& entry = i.find_from_type(type);
 	if(entry.llvm_type_generic != nullptr){
 		return entry.llvm_type_generic;
 	}
@@ -636,6 +616,28 @@ llvm::Type* make_frp_type(const llvm_type_lookup& type_lookup){
 ////////////////////////////////		TESTS
 
 
+/*
+ |54     |/lexical_scope1/object_t           |named-type |55                                                                       |
+ |55     |                                   |struct     |struct {/lexical_scope1/object_t left;}                                  |
+*/
+
+#if 0
+QUARK_TEST("Types", "update_named_type()", "", ""){
+	types_t types;
+	const auto name = unpack_type_name("/a/b");
+	const auto a = make_named_type(types, name, make_undefined());
+	const auto s = make_struct(types, struct_type_desc_t( { member_t(a, "f") } ));
+	const auto b = update_named_type(types, a, s);
+
+	if(true) trace_types(types);
+	QUARK_ASSERT(is_wellformed(types, b));
+
+	llvm::LLVMContext context;
+	const auto lookup = llvm_type_lookup(context, types);
+
+	trace_llvm_type_lookup(lookup);
+}
+#endif
 
 
 static llvm_type_lookup make_basic_types(llvm::LLVMContext& context){

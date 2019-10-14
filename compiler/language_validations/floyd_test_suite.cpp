@@ -4636,7 +4636,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Error: Wrong TYPE of arguments t
 }
 
 
-#if 1
+#if 0
 
 //	??? Add support for this!!!
 FLOYD_LANG_PROOF_VIP("Floyd test suite", "struct", "recursive named types", ""){

@@ -970,6 +970,9 @@ type_t peek0(const types_t& types, const type_t& type);
 type_desc_t peek2(const types_t& types, const type_t& type);
 
 
+//	Is this type instantiatable: it uses no symbols and uses no undefined. Deep and follows named types.
+bool is_wellformed(const types_t& types, const type_t& t);
+
 //////////////////////////////////////////////////		get_type_variant()
 
 

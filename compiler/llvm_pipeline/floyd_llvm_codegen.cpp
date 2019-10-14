@@ -2161,7 +2161,7 @@ std::vector<resolved_symbol_t> generate_function_local_symbols(llvm_function_gen
 	const symbol_table_t& symbol_table = function_def._optional_body->_symbol_table;
 	const auto& types = gen_acc.gen.type_lookup.state.types;
 
-	const auto mapping0 = *gen_acc.gen.type_lookup.find_from_itype(function_def._function_type).optional_function_def;
+	const auto mapping0 = *gen_acc.gen.type_lookup.find_from_type(function_def._function_type).optional_function_def;
 	const auto mapping = name_args(mapping0, function_def._named_args);
 
 	//	Make a resolved_symbol_t for each element in the symbol table. Some are local variables, some are arguments.
@@ -2377,7 +2377,7 @@ static std::vector<function_link_entry_t> generate_function_nodes(llvm::Module& 
 
 		//	Set names for all function defintion's arguments - makes IR easier to read.
 		if(e.function_type_or_undef.is_undefined() == false && e.arg_names_or_empty.empty() == false){
-			const auto unnamed_mapping_ptr = type_lookup.find_from_itype(e.function_type_or_undef).optional_function_def;
+			const auto unnamed_mapping_ptr = type_lookup.find_from_type(e.function_type_or_undef).optional_function_def;
 			if(unnamed_mapping_ptr != nullptr){
 				const auto named_mapping = name_args(*unnamed_mapping_ptr, e.arg_names_or_empty);
 

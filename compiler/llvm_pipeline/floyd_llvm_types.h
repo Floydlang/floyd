@@ -25,13 +25,15 @@ bool pass_as_ptr(const type_desc_t& type);
 
 
 /*
-	floyd			C++			runtime_value_t			native func arg/return
-	--------------------------------------------------------------------------------------
-	bool			bool		uint8					uint1
-	int							int64_t					int64
-	string			string		char*					char*
-	vector[T]		vector<T>	VEC_T*					VEC_T*
-	json_t			json_t		json_t*					int16*
+floyd			C++			runtime_value_t			native func arg/return
+--------------------------------------------------------------------------------------
+bool			bool		uint8					uint1
+int							int64_t					int64
+string			string		char*					char*
+vector[T]		vector<T>	VEC_T*					VEC_T*
+json_t			json_t		json_t*					int16*
+
+NOTICE: Types using symbols directly or indirectly are not used in LLVM type and returns nullptr.
 */
 
 
@@ -93,11 +95,11 @@ llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<
 ////////////////////////////////		type_entry_t
 
 
-//	LLVM-specific info for each type_t. Keep a parallell vector with these, alongside the types.
-
+//	LLVM-specific info for each type_t. Keep a parallell vector with these, alongside the types. If the type makes no sense for codegen, for example uses an unresolved symbol -- then it's marked as use_flag = false
 
 struct type_entry_t {
 	type_entry_t() :
+		use_flag(false),
 		llvm_type_specific(nullptr),
 		llvm_type_generic(nullptr),
 		optional_function_def {}
@@ -106,10 +108,12 @@ struct type_entry_t {
 	}
 
 	type_entry_t(
+		bool use_flag,
 		llvm::Type* llvm_type_specific,
 		llvm::Type* llvm_type_generic,
 		std::shared_ptr<const llvm_function_def_t> optional_function_def
 	) :
+		use_flag(use_flag),
 		llvm_type_specific(llvm_type_specific),
 		llvm_type_generic(llvm_type_generic),
 		optional_function_def(optional_function_def)
@@ -123,10 +127,16 @@ struct type_entry_t {
 
 	////////////////////////////////		STATE
 
+	bool use_flag;
 	llvm::Type* llvm_type_specific;
 	llvm::Type* llvm_type_generic;
 	std::shared_ptr<const llvm_function_def_t> optional_function_def;
 };
+
+
+
+////////////////////////////////		state_t
+
 
 //	You must create structs *once* in LLVM. Several identical struct types won't match up.
 struct state_t {
@@ -135,7 +145,7 @@ struct state_t {
 	public: llvm::StructType* generic_struct_type;
 	public: llvm::StructType* json_type;
 
-	public: llvm::StructType* wide_return_type;
+//	public: llvm::StructType* wide_return_type;
 	public: llvm::Type* runtime_ptr_type;
 	public: llvm::Type* runtime_type_type;
 	public: llvm::Type* runtime_value_type;
@@ -150,7 +160,7 @@ struct state_t {
 ////////////////////////////////		llvm_type_lookup
 
 /*
-	LLVM Type types: keeps a list of ALL types used statically in the program, their itype,
+	LLVM Type types: keeps a list of ALL types used statically in the program, their type,
 	their LLVM type and their Floyd type.
 
 	Generic-type: vector (and string), dictionary, json and struct are passed around as 4 different
@@ -162,7 +172,7 @@ struct llvm_type_lookup {
 	llvm_type_lookup(llvm::LLVMContext& context, const types_t& types);
 	bool check_invariant() const;
 
-	const type_entry_t& find_from_itype(const type_t& itype) const;
+	const type_entry_t& find_from_type(const type_t& type) const;
 
 
 	////////////////////////////////		STATE
