@@ -172,7 +172,7 @@ struct builder_t {
 	state_t acc;
 };
 
-static const type_entry_t& touch_type(builder_t& builder, const type_t& type);
+static const type_entry_t& touch_type(builder_t& builder, const type_t& type, const type_name_t& optional_name);
 
 static llvm::Type* get_llvm_type_prefer_generic(const type_entry_t& entry){
 	if(entry.llvm_type_generic != nullptr){
@@ -201,7 +201,7 @@ static llvm_function_def_t map_function_arguments_internal(
 	 	return_type = llvm::Type::getInt64Ty(builder.context);
 	}
 	else {
-		const auto& a = touch_type(builder, ret);
+		const auto& a = touch_type(builder, ret, make_empty_type_name());
 		return_type = get_llvm_type_prefer_generic(a);
 	}
 
@@ -243,7 +243,7 @@ static llvm_function_def_t map_function_arguments_internal(
 			});
 		}
 		else {
-			const auto& a = touch_type(builder, arg);
+			const auto& a = touch_type(builder, arg, make_empty_type_name());
 			auto arg_type = get_llvm_type_prefer_generic(a);
 			arg_results.push_back({
 				arg_type,
@@ -278,26 +278,33 @@ static llvm::Type* make_function_type(builder_t& builder, const type_t& function
 	return function_type2;
 }
 
+
+
+
+
+//	http://llvm.org/doxygen/classllvm_1_1StructType.html#aa683538f3d55dd3717fbc7a12595654e
+//create (LLVMContext &Context, StringRef Name)
 //??? Need to skip type nodes that are partially undefined or have symbols in them.
 //??? Better to erase nodes with symbols from node list before codegen?
 
-static const type_entry_t& make_llvm_struct_type(builder_t& builder, const type_t& type){
+//??? Types can be recursive and type nodes can be in order (named_type, struct).
+//	We need recursive creation of LLVM types.
+
+static const type_entry_t& make_anonymous_struct(builder_t& builder, const type_t& type){
+	QUARK_ASSERT(type.check_invariant());
+
 	const auto& types = builder.acc.types;
 	const auto type_peek = peek2(types, type);
 	QUARK_ASSERT(type_peek.is_struct());
 	QUARK_ASSERT(is_wellformed(types, type));
 
+	const auto type_index = type.get_lookup_index();
+
 	std::vector<llvm::Type*> members;
 	for(const auto& m: type_peek.get_struct(types)._members){
 		const auto member_type = m._type;
-		const auto member_type1 = peek2(types, member_type);
-
-		//??? Types can be recursive and type nodes can be in order (named_type, struct).
-		//	We need recursive creation of LLVM types.
-		const auto& a = touch_type(builder, member_type1);
+		const auto& a = touch_type(builder, member_type, make_empty_type_name());
 		QUARK_ASSERT(a.use_flag);
-//		QUARK_ASSERT(a.llvm_type_generic != nullptr);
-//		QUARK_ASSERT(a.llvm_type_specific != nullptr);
 
 		const auto m2 = get_llvm_type_prefer_generic(a);
 		members.push_back(m2);
@@ -305,19 +312,83 @@ static const type_entry_t& make_llvm_struct_type(builder_t& builder, const type_
 	llvm::StructType* s = llvm::StructType::get(builder.context, members, false);
 //	QUARK_TRACE(print_type(s));
 
-
 	const auto llvm_type = s->getPointerTo();
+	llvm::Type* llvm_generic_type = builder.acc.generic_struct_type->getPointerTo();
 
-	llvm::Type* llvm_generic_type0 = builder.acc.generic_struct_type;
-	llvm::Type* llvm_generic_type = llvm_generic_type0 ? llvm_generic_type0->getPointerTo() : nullptr;
-
-	const auto type_index = type.get_lookup_index();
 	const auto entry = type_entry_t{ true, llvm_type, llvm_generic_type, nullptr };
 	builder.acc.type_entries[type_index] = entry;
 	return builder.acc.type_entries[type_index];
 }
 
-static const type_entry_t& touch_type(builder_t& builder, const type_t& type){
+static const type_entry_t& make_named_struct(builder_t& builder, const type_t& type, const type_name_t& name){
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(name.check_invariant());
+
+	const auto& types = builder.acc.types;
+	const auto type_peek = peek2(types, type);
+	QUARK_ASSERT(type_peek.is_struct());
+	QUARK_ASSERT(is_wellformed(types, type));
+
+	const auto type_index = type.get_lookup_index();
+
+	if(builder.acc.type_entries[type_index].llvm_type_specific == nullptr){
+		const auto name2 = pack_type_name(name);
+
+		//	1) Create an LLVM struct with the correct (program-unique) name and store it in type_entries[] even though it's incomplete. This let's recursive calls find and reference the new struct, even if it's incomplete.
+
+		auto s = llvm::StructType::create(builder.context, name2);
+
+		const auto llvm_type = s->getPointerTo();
+		llvm::Type* llvm_generic_type = builder.acc.generic_struct_type->getPointerTo();
+
+		const auto entry = type_entry_t{ true, llvm_type, llvm_generic_type, nullptr };
+		builder.acc.type_entries[type_index] = entry;
+
+
+
+		//	2) Add memebers.
+
+		std::vector<llvm::Type*> members;
+		for(const auto& m: type_peek.get_struct(types)._members){
+			const auto member_type = m._type;
+			const auto& a = touch_type(builder, member_type, make_empty_type_name());
+			QUARK_ASSERT(a.use_flag);
+
+			const auto memory_type_peek = peek2(types, member_type);
+			QUARK_ASSERT(a.llvm_type_specific != nullptr);
+			if(memory_type_peek.is_struct()){
+				QUARK_ASSERT(a.llvm_type_generic != nullptr);
+			}
+
+			const auto m2 = get_llvm_type_prefer_generic(a);
+			members.push_back(m2);
+		}
+		s->setBody(members);
+//		llvm::StructType* s = llvm::StructType::get(builder.context, members, false);
+	//	QUARK_TRACE(print_type(s));
+
+		return builder.acc.type_entries[type_index];
+	}
+	else{
+		return builder.acc.type_entries[type_index];
+	}
+}
+
+static const type_entry_t& make_llvm_struct_type(builder_t& builder, const type_t& type, const type_name_t& optional_name){
+	const auto& types = builder.acc.types;
+	const auto type_peek = peek2(types, type);
+	QUARK_ASSERT(type_peek.is_struct());
+	QUARK_ASSERT(is_wellformed(types, type));
+
+	if(is_empty_type_name(optional_name)){
+		return make_anonymous_struct(builder, type);
+	}
+	else{
+		return make_named_struct(builder, type, optional_name);
+	}
+}
+
+static const type_entry_t& touch_type(builder_t& builder, const type_t& type, const type_name_t& optional_name){
 	QUARK_ASSERT(builder.acc.types.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -325,6 +396,7 @@ static const type_entry_t& touch_type(builder_t& builder, const type_t& type){
 		builder_t& builder;
 		const type_t& type;
 		const type_lookup_index_t type_index;
+		const type_name_t optional_name;
 
 
 		void operator()(const undefined_t& e) const{
@@ -370,7 +442,7 @@ static const type_entry_t& touch_type(builder_t& builder, const type_t& type){
 		}
 
 		void operator()(const struct_t& e) const{
-			make_llvm_struct_type(builder, type);
+			make_llvm_struct_type(builder, type, optional_name);
 		}
 		void operator()(const vector_t& e) const{
 			const auto llvm_type = builder.acc.generic_vec_type->getPointerTo();
@@ -405,12 +477,13 @@ static const type_entry_t& touch_type(builder_t& builder, const type_t& type){
 			builder.acc.type_entries[type_index] = entry;
 		}
 		void operator()(const named_type_t& e) const {
-			const auto dest_type = peek2(builder.acc.types, e.destination_type);
-			const auto entry = touch_type(builder, dest_type);
+			const auto dest_type = e.destination_type;
+			const auto name = type.get_named_type(builder.acc.types);
+			const auto entry = touch_type(builder, dest_type, name);
 			builder.acc.type_entries[type_index] = entry;
 		}
 	};
-	std::visit(visitor_t{ builder, type, type.get_lookup_index() }, get_type_variant(builder.acc.types, type));
+	std::visit(visitor_t{ builder, type, type.get_lookup_index(), optional_name }, get_type_variant(builder.acc.types, type));
 	return builder.acc.type_entries[type.get_lookup_index()];
 }
 
@@ -445,7 +518,7 @@ llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const types_t& ty
 
 		const auto wellformed = is_wellformed(builder.acc.types, type);
 		if(wellformed){
-			touch_type(builder, peek2(acc.types, type));
+			touch_type(builder, type, make_empty_type_name());
 		}
 	}
 
@@ -482,26 +555,59 @@ const type_entry_t& llvm_type_lookup::find_from_type(const type_t& type) const {
 void trace_llvm_type_lookup(const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	std::vector<std::vector<std::string>> matrix;
+	{
+		std::vector<std::vector<std::string>> matrix;
 
-	for(int i = 0 ; i < type_lookup.state.type_entries.size() ; i++){
-		const auto& e = type_lookup.state.type_entries[i];
-		const auto type = lookup_type_from_index(type_lookup.state.types, i);
-		const auto l = std::vector<std::string> {
-			{
-				std::to_string(i),
-				e.use_flag ? "USE" : "",
-				type_to_compact_string(type_lookup.state.types, type),
-				print_type(e.llvm_type_specific),
-				print_type(e.llvm_type_generic),
-				e.optional_function_def != nullptr ? "YES" : ""
-			}
-		};
-		matrix.push_back(l);
+		for(int i = 0 ; i < type_lookup.state.type_entries.size() ; i++){
+			const auto& e = type_lookup.state.type_entries[i];
+			const auto type = lookup_type_from_index(type_lookup.state.types, i);
+			const auto l = std::vector<std::string> {
+				{
+					std::to_string(i),
+					e.use_flag ? "USE" : "",
+					type_to_compact_string(type_lookup.state.types, type),
+					print_type(e.llvm_type_specific),
+					print_type(e.llvm_type_generic),
+					e.optional_function_def != nullptr ? "YES" : ""
+				}
+			};
+			matrix.push_back(l);
+		}
+
+		const auto s = generate_table_type1({ "#", "type_t", "use", "llvm_type_specific", "llvm_type_generic", "optional_function_def" }, matrix);
+		QUARK_TRACE(s);
 	}
 
-	const auto s = generate_table_type1({ "#", "type_t", "use", "llvm_type_specific", "llvm_type_generic", "optional_function_def" }, matrix);
-	QUARK_TRACE(s);
+#if 0
+	{
+		QUARK_SCOPE_TRACE("LLVM IDENTIFIED STRUCT TYPES");
+
+		const std::vector<StructType *> getIdentifiedStructTypes() const;
+
+
+		std::vector<std::vector<std::string>> matrix;
+
+		for(int i = 0 ; i < type_lookup.state.type_entries.size() ; i++){
+			const auto& e = type_lookup.state.type_entries[i];
+			const auto type = lookup_type_from_index(type_lookup.state.types, i);
+			const auto l = std::vector<std::string> {
+				{
+					std::to_string(i),
+					e.use_flag ? "USE" : "",
+					type_to_compact_string(type_lookup.state.types, type),
+					print_type(e.llvm_type_specific),
+					print_type(e.llvm_type_generic),
+					e.optional_function_def != nullptr ? "YES" : ""
+				}
+			};
+			matrix.push_back(l);
+		}
+
+		const auto s = generate_table_type1({ "#", "type_t", "use", "llvm_type_specific", "llvm_type_generic", "optional_function_def" }, matrix);
+		QUARK_TRACE(s);
+	}
+#endif
+
 }
 
 
@@ -589,7 +695,6 @@ llvm::Type* make_frp_type(const llvm_type_lookup& type_lookup){
 
 	return type_lookup.state.runtime_ptr_type;
 }
-
 
 
 ////////////////////////////////		TESTS

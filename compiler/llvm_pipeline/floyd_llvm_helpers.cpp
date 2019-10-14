@@ -271,6 +271,12 @@ std::string print_type(llvm::Type* type){
 		std::string s;
 		llvm::raw_string_ostream rso(s);
 		type->print(rso);
+
+		if(type->isStructTy()){
+			std::string name = type->getStructName();
+			rso << name;
+		}
+
 //		std::cout<<rso.str();
 		return rso.str();
 	}
