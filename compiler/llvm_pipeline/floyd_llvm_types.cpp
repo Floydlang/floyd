@@ -312,9 +312,10 @@ static llvm::StructType* make_exact_struct_type(const builder_t& builder, const 
 		//??? Types can be recursive and type nodes can be in order (named_type, struct).
 		//	We need recursive creation of LLVM types.
 		const auto& a = find_type(builder, member_type1);
-//???		QUARK_ASSERT(a.llvm_type_generic != nullptr);
-//???		QUARK_ASSERT(a.llvm_type_specific != nullptr);
-
+#if 0
+		QUARK_ASSERT(a.llvm_type_generic != nullptr);
+		QUARK_ASSERT(a.llvm_type_specific != nullptr);
+#endif
 
 		const auto m2 = get_llvm_type_prefer_generic(a);
 		members.push_back(m2);

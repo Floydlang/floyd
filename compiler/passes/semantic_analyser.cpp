@@ -144,7 +144,7 @@ static void trace_analyser(const analyser_t& a){
 /////////////////////////////////////////			RESOLVE SYMBOL USING LEXICAL SCOPE PATH
 
 
-static type_t get_tagged_type_symbol(const types_t& types, const symbol_t& symbol){
+static type_t get_symbol_named_type(const types_t& types, const symbol_t& symbol){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(symbol._symbol_type == symbol_t::symbol_type::named_type);
 
@@ -199,7 +199,7 @@ static bool does_symbol_exist_shallow(const analyser_t& a, const std::string& s)
 
 
 
-static type_t resolve_symbols(analyser_t& acc, const location_t& loc, const type_t& type){
+static type_t resolve_symbols_internal(analyser_t& acc, const location_t& loc, const type_t& type){
 	QUARK_ASSERT(acc.check_invariant());
 	QUARK_ASSERT(loc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -243,15 +243,15 @@ static type_t resolve_symbols(analyser_t& acc, const location_t& loc, const type
 		type_t operator()(const struct_t& e) const{
 			std::vector<member_t> members2;
 			for(const auto& m: e.desc._members){
-				members2.push_back(member_t { resolve_symbols(acc, loc, m._type), m._name } );
+				members2.push_back(member_t { resolve_symbols_internal(acc, loc, m._type), m._name } );
 			}
 			return make_struct(acc._types, struct_type_desc_t(members2));
 		}
 		type_t operator()(const vector_t& e) const{
-			return make_vector(acc._types, resolve_symbols(acc, loc, peek2(acc._types, type).get_vector_element_type(acc._types)));
+			return make_vector(acc._types, resolve_symbols_internal(acc, loc, peek2(acc._types, type).get_vector_element_type(acc._types)));
 		}
 		type_t operator()(const dict_t& e) const{
-			return make_dict(acc._types, resolve_symbols(acc, loc, peek2(acc._types, type).get_dict_value_type(acc._types)));
+			return make_dict(acc._types, resolve_symbols_internal(acc, loc, peek2(acc._types, type).get_dict_value_type(acc._types)));
 		}
 		type_t operator()(const function_t& e) const{
 			const auto desc = peek2(acc._types, type);
@@ -260,10 +260,10 @@ static type_t resolve_symbols(analyser_t& acc, const location_t& loc, const type
 			const auto pure = desc.get_function_pure(acc._types);
 			const auto dyn_return_type = desc.get_function_dyn_return_type(acc._types);
 
-			const auto ret2 = resolve_symbols(acc, loc, ret);
+			const auto ret2 = resolve_symbols_internal(acc, loc, ret);
 			std::vector<type_t> args2;
 			for(const auto& m: args){
-				args2.push_back(resolve_symbols(acc, loc, m));
+				args2.push_back(resolve_symbols_internal(acc, loc, m));
 			}
 			return make_function3(acc._types, ret2, args2, pure, dyn_return_type);
 		}
@@ -277,7 +277,7 @@ static type_t resolve_symbols(analyser_t& acc, const location_t& loc, const type
 			if(existing_value_deep_ptr.first == nullptr || existing_value_deep_ptr.first->_symbol_type != symbol_t::symbol_type::named_type){
 				throw_compiler_error(loc, "Unknown type name '" + e.s + "'.");
 			}
-			const auto result = get_tagged_type_symbol(acc._types, *existing_value_deep_ptr.first);
+			const auto result = get_symbol_named_type(acc._types, *existing_value_deep_ptr.first);
 #if DEBUG
 			if(false) trace_analyser(acc);
 #endif
@@ -291,26 +291,22 @@ static type_t resolve_symbols(analyser_t& acc, const location_t& loc, const type
 	return result;
 }
 
-static type_t resolve_and_intern_itype(analyser_t& acc, const location_t& loc, const type_t& type){
+static type_t resolve_symbols(analyser_t& acc, const location_t& loc, const type_t& type){
 	QUARK_ASSERT(acc.check_invariant());
 	QUARK_ASSERT(loc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
 	try {
-		if(type.is_undefined()){
-			return make_undefined();
-		}
-		else{
 #if DEBUG
-			if(false) trace_analyser(acc);
+		if(false) trace_analyser(acc);
 #endif
-			const auto resolved = resolve_symbols(acc, loc, type);
+
+		const auto resolved = resolve_symbols_internal(acc, loc, type);
 
 #if DEBUG
-			if(false) trace_analyser(acc);
+		if(false) trace_analyser(acc);
 #endif
-			return resolved;
-		}
+		return resolved;
 	}
 	catch(const compiler_error& e){
 		throw;
@@ -320,14 +316,11 @@ static type_t resolve_and_intern_itype(analyser_t& acc, const location_t& loc, c
 	}
 }
 
-
-
-//	Pushes the expression type through recording, resolving and interning.
 static type_t analyze_expr_output_type(analyser_t& a, const expression_t& e){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	return resolve_and_intern_itype(a, k_no_location, e.get_output_type());
+	return resolve_symbols(a, k_no_location, e.get_output_type());
 }
 
 
@@ -383,7 +376,7 @@ static const type_t figure_out_callee_return_type(analyser_t& a, const statement
 				const auto& symbol_kv = a._lexical_scope_stack[scope_index].symbols._symbols[addr._index];
 
 				QUARK_ASSERT(symbol_kv.second._symbol_type == symbol_t::symbol_type::named_type);
-				return get_tagged_type_symbol(a._types, symbol_kv.second);
+				return get_symbol_named_type(a._types, symbol_kv.second);
 			}
 			break;
 		case return_dyn_type::vector_of_arg1func_return:
@@ -582,7 +575,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 	//	If lhs may be
 	//		(1) undefined, if input is "let a = 10" for example. Then we need to infer its type.
 	//		(2) have a type, but it might not be fully resolved yet.
-	const auto lhs_itype = resolve_and_intern_itype(a_acc, s.location, statement._bindtype);
+	const auto lhs_itype = resolve_symbols(a_acc, s.location, statement._bindtype);
 
 	const auto mutable_flag = statement._locals_mutable_mode == statement_t::bind_local_t::k_mutable;
 
@@ -786,8 +779,8 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 	const auto test_name = statement.name;
 	const auto function_link_name = "benchmark__" + test_name;
 
-	const auto benchmark_def_itype = resolve_and_intern_itype(a_acc, k_no_location, make_symbol_ref(a_acc._types, "benchmark_def_t"));
-	const auto f_itype = resolve_and_intern_itype(a_acc, k_no_location, make_benchmark_function_t(a_acc._types));
+	const auto benchmark_def_itype = resolve_symbols(a_acc, k_no_location, make_symbol_ref(a_acc._types, "benchmark_def_t"));
+	const auto f_itype = resolve_symbols(a_acc, k_no_location, make_benchmark_function_t(a_acc._types));
 
 
 	const auto function_id = function_id_t { function_link_name };
@@ -1690,7 +1683,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			}
 
 			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? analyze_expr_output_type(a_acc, elements2[0]) : element_type;
-			const auto rhs_guess_type = resolve_and_intern_itype(a_acc, parent.location, make_vector(a_acc._types, element_type2));
+			const auto rhs_guess_type = resolve_symbols(a_acc, parent.location, make_vector(a_acc._types, element_type2));
 			const auto final_type = select_inferred_type(a_acc._types, target_type_peek, rhs_guess_type);
 
 			if(check_types_resolved(a_acc._types, final_type) == false){
@@ -1699,7 +1692,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				throw_compiler_error(parent.location, what.str());
 			}
 
-//			const auto final_type = resolve_and_intern_itype(a_acc, parent.location, selected_type);
+//			const auto final_type = resolve_symbols(a_acc, parent.location, selected_type);
 
 			for(const auto& m: elements2){
 				if(analyze_expr_output_type(a_acc, m) != element_type2){
@@ -1730,7 +1723,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				elements2.push_back(element_expr.second);
 			}
 
-			const auto rhs_guess_type = resolve_and_intern_itype(a_acc, parent.location, make_dict(a_acc._types, type_t::make_json()));
+			const auto rhs_guess_type = resolve_symbols(a_acc, parent.location, make_dict(a_acc._types, type_t::make_json()));
 			 auto final_type = select_inferred_type(a_acc._types, target_type0, rhs_guess_type);
 
 			if(check_types_resolved(a_acc._types, final_type) == false){
@@ -1764,7 +1757,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 
 			//	Infer type of dictionary based on first value.
 			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? analyze_expr_output_type(a_acc, elements2[0 * 2 + 1]) : element_type;
-			const auto rhs_guess_type = resolve_and_intern_itype(a_acc, parent.location, make_dict(a_acc._types, element_type2));
+			const auto rhs_guess_type = resolve_symbols(a_acc, parent.location, make_dict(a_acc._types, element_type2));
 			const auto final_type = select_inferred_type(a_acc._types, target_type_peek, rhs_guess_type);
 
 			if(check_types_resolved(a_acc._types, final_type) == false){
@@ -2291,7 +2284,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 		const auto& callee_symbol = a_acc._lexical_scope_stack[scope_index].symbols._symbols[addr._index];
 
 		if(callee_symbol.second._symbol_type == symbol_t::symbol_type::named_type){
-			const auto construct_value_type = get_tagged_type_symbol(a_acc._types, callee_symbol.second);
+			const auto construct_value_type = get_symbol_named_type(a_acc._types, callee_symbol.second);
 
 
 			//	Convert calls to struct-type into construct-value expression.
@@ -2319,7 +2312,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 	}
 }
 
-static type_name_t make_type_tag(analyser_t& a, const std::string& identifier){
+static type_name_t generate_type_name(analyser_t& a, const std::string& identifier){
 //	const auto id = a.scope_id_generator++;
 	const auto id = 1;
 
@@ -2342,8 +2335,8 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 		throw_local_identifier_already_exists(parent.location, identifier);
 	}
 
-	const auto name_tag = make_type_tag(a_acc, identifier);
-	const auto named_type = make_named_type(a_acc._types, name_tag, make_undefined());
+	const auto name = generate_type_name(a_acc, identifier);
+	const auto named_type = make_named_type(a_acc._types, name, make_undefined());
 
 	const auto type_name_symbol = symbol_t::make_named_type(named_type);
 	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ identifier, type_name_symbol });
@@ -2351,7 +2344,7 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 
 	std::vector<member_t> members2;
 	for(const auto& m: details.def->_members){
-		members2.push_back(member_t{ resolve_and_intern_itype(a_acc, parent.location, m._type), m._name } );
+		members2.push_back(member_t{ resolve_symbols(a_acc, parent.location, m._type), m._name } );
 	}
 	const auto struct_type1 = make_struct(a_acc._types, struct_type_desc_t{ members2 } );
 
@@ -2376,17 +2369,17 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	auto a_acc = analyser;
 
 	const auto function_def = details.def;
-	const auto function_type0 = resolve_and_intern_itype(a_acc, parent.location, function_def._function_type);
+	const auto function_type0 = resolve_symbols(a_acc, parent.location, function_def._function_type);
 	const auto function_type_peek = peek2(a_acc._types, function_type0);
 	const auto function_pure = function_type_peek.get_function_pure(a_acc._types);
 
 	std::vector<member_t> args2;
 	for(const auto& arg: function_def._named_args){
-		const auto arg_type2 = resolve_and_intern_itype(a_acc, parent.location, arg._type);
+		const auto arg_type2 = resolve_symbols(a_acc, parent.location, arg._type);
 		args2.push_back(member_t { arg_type2, arg._name } );
 	}
 
-	//??? Can there be a pure function inside an impure lexical scope?
+	//??? Can there be a pure function inside an impure lexical scope? I think yes.
 	const auto pure = function_pure;
 
 	std::shared_ptr<body_t> body_result;
@@ -2717,15 +2710,15 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 	symbol_map.push_back( { "json_null", symbol_t::make_immutable_precalc(type_t::make_int(), value_t::make_int(7)) });
 
 
-	const auto benchmark_result_itype = resolve_and_intern_itype(a, k_no_location, make_benchmark_result_t(a._types));
-	const auto benchmark_result_itype2 = make_named_type(a._types, make_type_tag(a, "benchmark_result_t"), benchmark_result_itype);
+	const auto benchmark_result_itype = resolve_symbols(a, k_no_location, make_benchmark_result_t(a._types));
+	const auto benchmark_result_itype2 = make_named_type(a._types, generate_type_name(a, "benchmark_result_t"), benchmark_result_itype);
 	symbol_map.push_back( { "benchmark_result_t", symbol_t::make_named_type(benchmark_result_itype2) } );
 
-	const auto benchmark_def_itype = resolve_and_intern_itype(a, k_no_location, make_benchmark_def_t(a._types));
-	const auto benchmark_def_itype2 = make_named_type(a._types, make_type_tag(a, "benchmark_def_t"), benchmark_def_itype);
+	const auto benchmark_def_itype = resolve_symbols(a, k_no_location, make_benchmark_def_t(a._types));
+	const auto benchmark_def_itype2 = make_named_type(a._types, generate_type_name(a, "benchmark_def_t"), benchmark_def_itype);
 	symbol_map.push_back( { "benchmark_def_t", symbol_t::make_named_type(benchmark_def_itype2)} );
 
-	const auto benchmark_result_vec_type = resolve_and_intern_itype(a, k_no_location, make_vector(a._types, make_symbol_ref(a._types, "benchmark_result_t")));
+	const auto benchmark_result_vec_type = resolve_symbols(a, k_no_location, make_vector(a._types, make_symbol_ref(a._types, "benchmark_result_t")));
 	symbol_map.push_back( { "benchmark_result_vec_t", symbol_t::make_named_type(benchmark_result_vec_type)} );
 
 	//	Reserve a symbol table entry for benchmark_registry instance.
@@ -2734,7 +2727,7 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 		symbol_map.push_back( {
 			k_global_benchmark_registry,
 			symbol_t::make_immutable_reserve(
-				resolve_and_intern_itype(a, k_no_location, benchmark_registry_type)
+				resolve_symbols(a, k_no_location, benchmark_registry_type)
 			)
 		} );
 	}
@@ -2757,7 +2750,7 @@ const body_t make_global_body(analyser_t& a){
 
 	const auto builtin_symbols = generate_builtins(a, *a._imm);
 	for(const auto& e: a._imm->intrinsic_signatures.vec){
-		resolve_and_intern_itype(a, k_no_location, e._function_type);
+		resolve_symbols(a, k_no_location, e._function_type);
 	}
 
 	if(false) trace_analyser(a);
