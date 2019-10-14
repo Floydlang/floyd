@@ -282,7 +282,10 @@ static llvm::Type* make_function_type(builder_t& builder, const type_t& function
 }
 
 
-static llvm::StructType* make_exact_struct_type(builder_t& builder, const type_t& type){
+
+
+
+static const type_entry_t& make_exact_struct_type(builder_t& builder, const type_t& type){
 	const auto& types = builder.acc.types;
 	const auto type_peek = peek2(types, type);
 	QUARK_ASSERT(type_peek.is_struct());
@@ -308,8 +311,24 @@ static llvm::StructType* make_exact_struct_type(builder_t& builder, const type_t
 	}
 	llvm::StructType* s = llvm::StructType::get(builder.context, members, false);
 //	QUARK_TRACE(print_type(s));
-	return s;
+
+
+
+	const auto llvm_type = s->getPointerTo();
+
+	llvm::Type* llvm_generic_type0 = builder.acc.generic_struct_type;
+	llvm::Type* llvm_generic_type = llvm_generic_type0 ? llvm_generic_type0->getPointerTo() : nullptr;
+
+	const auto type_index = type.get_lookup_index();
+	const auto entry = type_entry_t{ true, llvm_type, llvm_generic_type, nullptr };
+	builder.acc.type_entries[type_index] = entry;
+	return builder.acc.type_entries[type_index];
 }
+
+
+
+
+
 
 static const type_entry_t& touch_type(builder_t& builder, const type_t& type){
 	QUARK_ASSERT(builder.acc.types.check_invariant());
@@ -318,67 +337,68 @@ static const type_entry_t& touch_type(builder_t& builder, const type_t& type){
 	struct visitor_t {
 		builder_t& builder;
 		const type_t& type;
+		const type_lookup_index_t type_index;
 
-		type_entry_t operator()(const undefined_t& e) const{
-			return type_entry_t{ true, llvm::Type::getInt16Ty(builder.context), nullptr, nullptr };
+
+		void operator()(const undefined_t& e) const{
+			const auto entry = type_entry_t{ true, llvm::Type::getInt16Ty(builder.context), nullptr, nullptr };
+			builder.acc.type_entries[type_index] = entry;
 		}
-		type_entry_t operator()(const any_t& e) const{
-			return type_entry_t{ true, builder.acc.runtime_value_type, nullptr, nullptr	};
+		void operator()(const any_t& e) const{
+			const auto entry = type_entry_t{ true, builder.acc.runtime_value_type, nullptr, nullptr	};
+			builder.acc.type_entries[type_index] = entry;
 		}
 
-		type_entry_t operator()(const void_t& e) const{
-			return type_entry_t{ true, llvm::Type::getVoidTy(builder.context), nullptr, nullptr	};
+		void operator()(const void_t& e) const{
+			const auto entry = type_entry_t{ true, llvm::Type::getVoidTy(builder.context), nullptr, nullptr	};
+			builder.acc.type_entries[type_index] = entry;
 		}
-		type_entry_t operator()(const bool_t& e) const{
-			return type_entry_t{ true, llvm::Type::getInt1Ty(builder.context), nullptr, nullptr	};
+		void operator()(const bool_t& e) const{
+			const auto entry = type_entry_t{ true, llvm::Type::getInt1Ty(builder.context), nullptr, nullptr	};
+			builder.acc.type_entries[type_index] = entry;
 		}
-		type_entry_t operator()(const int_t& e) const{
-			return type_entry_t{ true, llvm::Type::getInt64Ty(builder.context), nullptr, nullptr };
+		void operator()(const int_t& e) const{
+			const auto entry = type_entry_t{ true, llvm::Type::getInt64Ty(builder.context), nullptr, nullptr };
+			builder.acc.type_entries[type_index] = entry;
 		}
-		type_entry_t operator()(const double_t& e) const{
-			return type_entry_t{ true, llvm::Type::getDoubleTy(builder.context), nullptr, nullptr };
+		void operator()(const double_t& e) const{
+			const auto entry = type_entry_t{ true, llvm::Type::getDoubleTy(builder.context), nullptr, nullptr };
+			builder.acc.type_entries[type_index] = entry;
 		}
-		type_entry_t operator()(const string_t& e) const{
+		void operator()(const string_t& e) const{
 			const auto llvm_type0 = builder.acc.generic_vec_type;
 			const auto llvm_type = llvm_type0->getPointerTo();
 			const auto entry = type_entry_t{ true, llvm_type, llvm_type, nullptr };
-			return entry;
+			builder.acc.type_entries[type_index] = entry;
 		}
 
-		type_entry_t operator()(const json_type_t& e) const{
+		void operator()(const json_type_t& e) const{
 			const auto llvm_type0 = builder.acc.json_type;
 			const auto llvm_type = llvm_type0->getPointerTo();
 
 			const auto entry = type_entry_t{ true, llvm_type, nullptr, nullptr };
-			return entry;
+			builder.acc.type_entries[type_index] = entry;
 		}
-		type_entry_t operator()(const typeid_type_t& e) const{
+		void operator()(const typeid_type_t& e) const{
 			const auto t = builder.acc.runtime_type_type;
 			const auto entry = type_entry_t{ true, t, nullptr, nullptr };
-			return entry;
+			builder.acc.type_entries[type_index] = entry;
 		}
 
-		type_entry_t operator()(const struct_t& e) const{
-			const auto llvm_type0 = make_exact_struct_type(builder, type);
-			const auto llvm_type = llvm_type0->getPointerTo();
-
-			llvm::Type* llvm_generic_type0 = builder.acc.generic_struct_type;
-			llvm::Type* llvm_generic_type = llvm_generic_type0 ? llvm_generic_type0->getPointerTo() : nullptr;
-
-			const auto entry = type_entry_t{ true, llvm_type, llvm_generic_type, nullptr };
-			return entry;
+		void operator()(const struct_t& e) const{
+			make_exact_struct_type(builder, type);
 		}
-		type_entry_t operator()(const vector_t& e) const{
+		void operator()(const vector_t& e) const{
 			const auto llvm_type = builder.acc.generic_vec_type->getPointerTo();
 			const auto entry = type_entry_t{ true, llvm_type, llvm_type, nullptr };
-			return entry;
+			builder.acc.type_entries[type_index] = entry;
 		}
-		type_entry_t operator()(const dict_t& e) const{
+		void operator()(const dict_t& e) const{
 			const auto llvm_type = builder.acc.generic_dict_type->getPointerTo();
 			const auto entry = type_entry_t{ true, llvm_type, llvm_type, nullptr };
-			return entry;
+			builder.acc.type_entries[type_index] = entry;
 		}
-		type_entry_t operator()(const function_t& e) const{
+		void operator()(const function_t& e) const{
 			const auto llvm_type0 = deref_ptr(make_function_type(builder, type));
 			const auto llvm_type = llvm_type0->getPointerTo();
 
@@ -394,23 +414,21 @@ static const type_entry_t& touch_type(builder_t& builder, const type_t& type){
 				nullptr,
 				optional_function_def
 			};
-			return entry;
+			builder.acc.type_entries[type_index] = entry;
 		}
-		type_entry_t operator()(const symbol_ref_t& e) const {
+		void operator()(const symbol_ref_t& e) const {
 			const auto t = llvm::Type::getInt8Ty(builder.context);
 			const auto entry = type_entry_t{ true, t, nullptr, nullptr };
-			return entry;
+			builder.acc.type_entries[type_index] = entry;
 		}
-		type_entry_t operator()(const named_type_t& e) const {
+		void operator()(const named_type_t& e) const {
 			const auto dest_type = peek2(builder.acc.types, e.destination_type);
-			return touch_type(builder, dest_type);
+			const auto entry = touch_type(builder, dest_type);
+			builder.acc.type_entries[type_index] = entry;
 		}
 	};
-	const auto entry = std::visit(visitor_t{ builder, type }, get_type_variant(builder.acc.types, type));
-	const auto index = type.get_lookup_index();
-	builder.acc.type_entries[index] = entry;
-	const auto& result = builder.acc.type_entries[index];
-	return result;
+	std::visit(visitor_t{ builder, type, type.get_lookup_index() }, get_type_variant(builder.acc.types, type));
+	return builder.acc.type_entries[type.get_lookup_index()];
 }
 
 //	Notice: the entries in the types may reference eachother = we need to process recursively.
