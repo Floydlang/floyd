@@ -90,7 +90,10 @@ jobs:
            command: 'ls /Users/distiller/Library/Developer/Xcode/DerivedData &&  cd  /Users/distiller/Library/Developer/Xcode/DerivedData/floyd-*/Build/Products/Release;./floyd runtests'
       - run:
            name: floyd gen-ir
-           command: 'ls /Users/distiller/Library/Developer/Xcode/DerivedData &&  cd  /Users/distiller/Library/Developer/Xcode/DerivedData/floyd-*/Build/Products/Release;./floyd compile -g -i  --out a.ir  examples/hello_world.floyd && cat a.ir'
+           command: 'ls /Users/distiller/Library/Developer/Xcode/DerivedData &&  cd  /Users/distiller/Library/Developer/Xcode/DerivedData/floyd-*/Build/Products/Release;ls examples/hello_world.floyd;./floyd compile -g -i  -o a.ir  examples/hello_world.floyd'
+      - run:
+	   name: floyd cat-ir
+	   command: 'cat a.ir'
       #- run:
       #    name: Compress app  and result for storage
       #    command: zip -r floyd.zip build/Release/floyd.app
