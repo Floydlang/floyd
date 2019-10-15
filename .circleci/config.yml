@@ -18,8 +18,11 @@ jobs:
           name: update alternatives
           command: 'sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 90'
       - run:
+          name: pwd
+          command: 'pwd'
+      - run:
           name: Creating Build Files
-          command: 'cmake /root/project/compiler/'
+          command: 'cmake $HOME/compiler/'
       - run:
            name: Creating Binary Files
            command: 'make'
