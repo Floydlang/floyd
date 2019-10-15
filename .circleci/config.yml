@@ -1,7 +1,35 @@
 # Use the latest 2.1 version of CircleCI pipeline processing engine, see https://circleci.com/docs/2.0/configuration-reference/
 version: 2
 
+
 jobs:
+  build-ubuntu:
+    docker:
+       - image: "ubuntu-disco"
+    steps:
+      - checkout
+      - run:
+          name: Installing dev env
+          command: 'sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test llvm'
+      - run:
+          name: apt-get g++
+          command: 'sudo apt-get install -qq --allow-unauthenticated  g++-9 cmake llvm-8-dev libedit-dev'
+      - run:
+          name: update alternatives
+          command: 'sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 90'
+      - run:
+          name: Creating Build Files
+          command: 'cmake /root/project/compiler/'
+      - run:
+           name: Creating Binary Files
+           command: 'make'
+      - run:
+           name: floyd Hardware caps
+           command: './floyd hwcaps'
+      #- run:
+      #     name: floyd Unit Testing
+      #     command: './floydut runtests'
+
   build-arch:
     docker:
        - image: "archlinux/base"
@@ -67,4 +95,6 @@ workflows:
   version: 2
   workflow:
     jobs:
-    - build-mac    
+    - build-mac
+    - build-ubuntu
+
