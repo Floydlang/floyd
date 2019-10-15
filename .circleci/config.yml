@@ -5,7 +5,7 @@ version: 2
 jobs:
   build-ubuntu:
     docker:
-       - image: "ubuntu"
+       - image: "circleci/buildpack-deps:disco"
     steps:
       - checkout
       - run:
