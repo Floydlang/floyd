@@ -5,7 +5,7 @@ version: 2
 jobs:
   build-ubuntu:
     docker:
-       - image: "ubuntu-disco"
+       - image: "ubuntu"
     steps:
       - checkout
       - run:
