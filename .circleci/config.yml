@@ -99,5 +99,4 @@ workflows:
   workflow:
     jobs:
     - build-mac
-    - build-ubuntu
 
