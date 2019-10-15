@@ -9,6 +9,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Installing add-apt
+          command: 'sudo apt-get install software-properties-common'
+      - run:
           name: Installing dev env
           command: 'add-apt-repository -y ppa:ubuntu-toolchain-r/test llvm'
       - run:
