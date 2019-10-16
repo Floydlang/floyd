@@ -501,7 +501,6 @@ static void generate_destruct_scope_locals(llvm_function_generator_t& gen_acc, c
 
 	for(const auto& e: symbols){
 		if(e.symtype == resolved_symbol_t::esymtype::k_global || e.symtype == resolved_symbol_t::esymtype::k_local){
-
 			const auto type = e.symbol.get_value_type();
 			if(is_rc_value(peek2(types, type))){
 				auto reg = builder.CreateLoad(e.value_ptr);

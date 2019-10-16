@@ -1166,7 +1166,10 @@ static void floydrt_release_vector_carray_pod(floyd_runtime_t* frp, runtime_valu
 	}
 #endif
 
-	release_vector_carray_pod(r.backend, vec, type);
+	//	Check really only required when unwinding locals.
+	if(vec.vector_carray_ptr != nullptr){
+		release_vector_carray_pod(r.backend, vec, type);
+	}
 }
 
 static void floydrt_release_vector_carray_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
@@ -1177,7 +1180,10 @@ static void floydrt_release_vector_carray_nonpod(floyd_runtime_t* frp, runtime_v
 	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, peek2(r.backend.types, type).get_vector_element_type(r.backend.types))) == true);
 #endif
 
-	release_vector_carray_nonpod(r.backend, vec, type);
+	//	Check really only required when unwinding locals.
+	if(vec.vector_carray_ptr != nullptr){
+		release_vector_carray_nonpod(r.backend, vec, type);
+	}
 }
 
 static void floydrt_release_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
@@ -1188,7 +1194,10 @@ static void floydrt_release_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_
 	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, peek2(r.backend.types, type).get_vector_element_type(r.backend.types))) == false);
 #endif
 
-	release_vector_hamt_pod(r.backend, vec, type);
+	//	Check really only required when unwinding locals.
+	if(vec.vector_hamt_ptr != nullptr){
+		release_vector_hamt_pod(r.backend, vec, type);
+	}
 }
 
 static void floydrt_release_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
@@ -1199,7 +1208,10 @@ static void floydrt_release_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_val
 	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, peek2(r.backend.types, type).get_vector_element_type(r.backend.types))) == true);
 #endif
 
-	release_vector_hamt_nonpod(r.backend, vec, type);
+	//	Check really only required when unwinding locals.
+	if(vec.vector_hamt_ptr != nullptr){
+		release_vector_hamt_nonpod(r.backend, vec, type);
+	}
 }
 
 
@@ -1210,7 +1222,10 @@ static void floydrt_release_dict_cppmap(floyd_runtime_t* frp, runtime_value_t di
 	QUARK_ASSERT(is_dict_cppmap(r.backend.types, r.backend.config, type));
 #endif
 
-	release_dict_cppmap(r.backend, dict, type);
+	//	Check really only required when unwinding locals.
+	if(dict.dict_cppmap_ptr != nullptr){
+		release_dict_cppmap(r.backend, dict, type);
+	}
 }
 static void floydrt_release_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
@@ -1219,7 +1234,10 @@ const auto& type = lookup_type_ref(r.backend, type0);
 	QUARK_ASSERT(is_dict_hamt(r.backend.types, r.backend.config, type));
 #endif
 
-	release_dict_hamt(r.backend, dict, type);
+	//	Check really only required when unwinding locals.
+	if(dict.dict_hamt_ptr != nullptr){
+		release_dict_hamt(r.backend, dict, type);
+	}
 }
 
 
@@ -1248,7 +1266,10 @@ const auto& type = lookup_type_ref(r.backend, type0);
 	QUARK_ASSERT(v != nullptr);
 #endif
 
-	release_struct(r.backend, make_runtime_struct(v), type);
+	//	Check really only required when unwinding locals.
+	if(v != nullptr){
+		release_struct(r.backend, make_runtime_struct(v), type);
+	}
 }
 
 

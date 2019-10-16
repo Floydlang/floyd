@@ -1250,6 +1250,7 @@ void release_vector_carray_pod(value_backend_t& backend, runtime_value_t vec, ty
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
+	//??? Instead of peek2(), use cast_to_desc() that asserts type is a non name.
 	const auto& peek = peek2(backend.types, type);
 	QUARK_ASSERT(peek.is_string() || is_vector_carray(backend.types, backend.config, type));
 
