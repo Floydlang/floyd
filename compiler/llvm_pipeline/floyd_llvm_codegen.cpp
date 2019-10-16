@@ -7,7 +7,7 @@
 //
 
 
-static const bool k_trace_pass_io = true;
+static const bool k_trace_pass_io = false;
 
 
 #include "floyd_llvm_codegen.h"
@@ -289,7 +289,6 @@ llvm::Value* generate_constant_string(llvm_function_generator_t& gen_acc, const 
 	return string_vec_ptr_reg;
 };
 
-
 //	Makes constant from a Floyd value. The constant may go in code segment or be computed at app init-time.
 static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const value_t& value){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -381,7 +380,6 @@ static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const 
 	return std::visit(visitor_t{ gen_acc, builder, context, itype, value }, get_type_variant(types, type));
 }
 
-
 //	Related: generate_global_symbol_slots(), generate_function_symbol_slots(), generate_local_block_symbol_slots()
 static std::vector<resolved_symbol_t> generate_local_block_symbol_slots(llvm_function_generator_t& gen_acc, const symbol_table_t& symbol_table){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -456,6 +454,8 @@ static std::vector<resolved_symbol_t> generate_local_block_symbol_slots(llvm_fun
 	return result;
 }
 
+//	Related: generate_floyd_runtime_deinit(), generate_destruct_scope_locals()
+//	Used for function scope, local scopes. Not used for globals.
 static void generate_destruct_scope_locals(llvm_function_generator_t& gen_acc, const std::vector<resolved_symbol_t>& symbols){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
@@ -476,9 +476,7 @@ static void generate_destruct_scope_locals(llvm_function_generator_t& gen_acc, c
 	}
 }
 
-
-
-static function_return_mode generate_body(llvm_function_generator_t& gen_acc, const std::vector<resolved_symbol_t>& resolved_symbols, const std::vector<statement_t>& statements){
+static function_return_mode generate_body_and_destruct_locals_if_some_path_not_returned(llvm_function_generator_t& gen_acc, const std::vector<resolved_symbol_t>& resolved_symbols, const std::vector<statement_t>& statements){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
 	gen_acc.gen.scope_path.push_back(resolved_symbols);
@@ -496,17 +494,15 @@ static function_return_mode generate_body(llvm_function_generator_t& gen_acc, co
 	return return_mode;
 }
 
-
 static function_return_mode generate_block(llvm_function_generator_t& gen_acc, const body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
 	auto values = generate_local_block_symbol_slots(gen_acc, body._symbol_table);
-	const auto return_mode = generate_body(gen_acc, values, body._statements);
+	const auto return_mode = generate_body_and_destruct_locals_if_some_path_not_returned(gen_acc, values, body._statements);
 
 	QUARK_ASSERT(gen_acc.check_invariant());
 	return return_mode;
 }
-
 
 static type_t get_expr_output_type(const llvm_code_generator_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1443,7 +1439,7 @@ static llvm::Value* generate_construct_dict(llvm_function_generator_t& gen_acc, 
 
 	auto& builder = gen_acc.get_builder();
 
-	const auto element_type0 = peek2(types, construct_type).get_dict_value_type(types);
+//	const auto element_type0 = peek2(types, construct_type).get_dict_value_type(types);
 	auto dict_type_reg = generate_itype_constant(gen_acc.gen, construct_type);
 	auto dict_acc_ptr_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_allocate_dict.llvm_codegen_f, { gen_acc.get_callers_fcp(), dict_type_reg }, "");
 
@@ -2016,7 +2012,7 @@ static function_return_mode generate_for_statement(llvm_function_generator_t& ge
 
 	builder.SetInsertPoint(forloop_bb);
 
-	const auto return_mode = generate_body(gen_acc, values, statement._body._statements);
+	const auto return_mode = generate_body_and_destruct_locals_if_some_path_not_returned(gen_acc, values, statement._body._statements);
 
 	if(return_mode == function_return_mode::some_path_not_returned){
 		llvm::Value* counter2 = builder.CreateLoad(counter_reg);
@@ -2112,8 +2108,9 @@ static llvm::Value* generate_return_statement(llvm_function_generator_t& gen_acc
 
 	llvm::Value* value = generate_expression(gen_acc, s._expression);
 
-	//	Destruct all locals before unwinding.
+	//	Destruct all local scopes before unwinding.
 	auto path = gen_acc.gen.scope_path;
+	QUARK_ASSERT(path.size() > 0);
 	while(path.size() > 1){
 		generate_destruct_scope_locals(gen_acc, path.back());
 		path.pop_back();
@@ -2196,9 +2193,6 @@ static function_return_mode generate_statements(llvm_function_generator_t& gen_a
 	return function_return_mode::some_path_not_returned;
 }
 
-
-
-
 //	Related: generate_global_symbol_slots(), generate_function_symbol_slots(), generate_local_block_symbol_slots()
 //	Generates local symbols for arguments and local variables. Only toplevel of function, not nested scopes.
 std::vector<resolved_symbol_t> generate_function_symbol_slots(llvm_function_generator_t& gen_acc, const function_definition_t& function_def){
@@ -2215,25 +2209,17 @@ std::vector<resolved_symbol_t> generate_function_symbol_slots(llvm_function_gene
 	//	Make a resolved_symbol_t for each element in the symbol table. Some are local variables, some are arguments.
 	std::vector<resolved_symbol_t> result;
 	for(const auto& symbol_kv: symbol_table._symbols){
-
 		const auto type = symbol_kv.second.get_value_type();
 		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type);
 
 		//	Figure out if this symbol is an argument or a local variable.
 		//	Check if we can find an argument with this name => it's an argument.
-		//	TODO: SAST could contain argument/local information to make this tighter.
 		//	Reserve stack slot for each local. But not arguments, they already have stack slot.
 		const auto arg_it = std::find_if(mapping.args.begin(), mapping.args.end(), [&](const llvm_arg_mapping_t& arg) -> bool {
-//			QUARK_TRACE_SS(arg.floyd_name);
 			return arg.floyd_name == symbol_kv.first;
 		});
-		bool is_arg = arg_it != mapping.args.end();
 
-
-		bool is_arg2 = symbol_kv.second._symbol_type == symbol_t::symbol_type::immutable_arg;
-		QUARK_ASSERT(is_arg == is_arg2);
-
-		if(is_arg){
+		if(symbol_kv.second._symbol_type == symbol_t::symbol_type::immutable_arg){
 			//	Find Value* for the argument by matching the argument index. Remember that we always add a floyd_runtime_ptr to all LLVM functions.
 			auto f_args = gen_acc.emit_f.args();
 			const auto f_args_size = f_args.end() - f_args.begin();
@@ -2244,13 +2230,10 @@ std::vector<resolved_symbol_t> generate_function_symbol_slots(llvm_function_gene
 			const auto llvm_arg_index = arg_it - mapping.args.begin();
 			QUARK_ASSERT(llvm_arg_index < f_args_size);
 
-			llvm::Argument* f_arg_ptr = f_args.begin() + llvm_arg_index;
-
-			//	The argument is used as the llvm::Value*.
-			llvm::Value* dest = f_arg_ptr;
+			//	The argument is used directly as the llvm::Value*.
+			llvm::Argument* dest = f_args.begin() + llvm_arg_index;
 
 			const auto debug_str = "<ARGUMENT> name:" + symbol_kv.first + " symbol_t: " + symbol_to_string(types, symbol_kv.second);
-
 			result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_function_argument, symbol_kv.first, symbol_kv.second));
 		}
 		else{
@@ -2269,14 +2252,6 @@ std::vector<resolved_symbol_t> generate_function_symbol_slots(llvm_function_gene
 	return result;
 }
 
-
-//	dest->setInitializer(constant_reg);
-/*
-	if (CI->getBitWidth() <= 32) {
-		constIntValue = CI->getSExtValue();
-	}
-*/
-
 static llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::string& symbol_name, llvm::Type& itype, llvm::Constant* init_or_nullptr){
 //	QUARK_ASSERT(check_invariant__module(&module));
 	QUARK_ASSERT(symbol_name.empty() == false);
@@ -2294,7 +2269,6 @@ static llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::s
 
 	return gv;
 }
-
 
 static llvm::Value* generate_global(llvm_function_generator_t& gen_acc, const std::string& symbol_name, const symbol_t& symbol){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -2385,7 +2359,7 @@ static void generate_floyd_function_body(llvm_code_generator_t& gen_acc0, const 
 
 		auto symbol_table_values = generate_function_symbol_slots(gen_acc, function_def);
 
-		const auto return_mode = generate_body(gen_acc, symbol_table_values, body._statements);
+		const auto return_mode = generate_body_and_destruct_locals_if_some_path_not_returned(gen_acc, symbol_table_values, body._statements);
 
 		//	Not all paths returns a value!
 		if(return_mode == function_return_mode::some_path_not_returned && peek2(types, peek2(types, function_def._function_type).get_function_return(types)).is_void() == false){
@@ -2503,6 +2477,8 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const bo
 	QUARK_ASSERT(gen_acc.check_invariant());
 }
 
+
+//	Related: generate_floyd_runtime_deinit(), generate_destruct_scope_locals()
 static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const body_t& globals){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
