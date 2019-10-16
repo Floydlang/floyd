@@ -7306,10 +7306,10 @@ FLOYD_LANG_PROOF("REGRESSION TEST", "a inited after ifelsejoin, don't delete it 
 		{}
 	);
 }
+#endif
 
 
-
-
+#if 0
 FLOYD_LANG_PROOF("REGRESSION TEST", "a inited after ifelsejoin, don't delete it inside *then*", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,

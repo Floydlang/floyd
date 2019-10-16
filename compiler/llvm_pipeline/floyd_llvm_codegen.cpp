@@ -380,8 +380,9 @@ static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const 
 	return std::visit(visitor_t{ gen_acc, builder, context, itype, value }, get_type_variant(types, type));
 }
 
-//	Related: generate_global_symbol_slots(), generate_function_symbol_slots(), generate_local_block_symbol_slots()
-static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_generator_t& gen_acc, const symbol_table_t& symbol_table, const llvm_function_def_t* mapping){
+//	Related: generate_global_symbol_slots()
+//	Reserve stack slot for each local. But not arguments, they already have stack slot.
+static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_generator_t& gen_acc, const symbol_table_t& symbol_table, const llvm_function_def_t* mapping0){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(symbol_table.check_invariant());
 
@@ -395,61 +396,89 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_genera
 		const auto type_peek = peek2(types, type);
 		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type);
 
-		//	Reserve stack slot for each local.
-		llvm::Value* dest = builder.CreateAlloca(itype, nullptr, symbol_kv.first);
+		const auto entry = [&]() -> resolved_symbol_t {
+			//	Function arguments automatically get an alloca by LLVM. We just need to figure out its register (llvm::Value*).
+			if(symbol._symbol_type == symbol_t::symbol_type::immutable_arg){
+				QUARK_ASSERT(mapping0 != nullptr);
+				const auto mapping = *mapping0;
 
-		//	Init the slot if needed.
-		if(symbol._init.is_undefined() == false){
-			llvm::Value* c = generate_constant(gen_acc, symbol._init);
-			gen_acc.get_builder().CreateStore(c, dest);
-		}
+				const auto arg_it = std::find_if(mapping.args.begin(), mapping.args.end(), [&](const llvm_arg_mapping_t& arg) -> bool {
+					return arg.floyd_name == symbol_kv.first;
+				});
 
-		if(symbol._symbol_type == symbol_t::symbol_type::immutable_reserve){
-			QUARK_ASSERT(symbol._init.is_undefined());
+				auto f_args = gen_acc.emit_f.args();
+				const auto f_args_size = f_args.end() - f_args.begin();
 
-			//	Make sure to null all RC values.
-			if(is_rc_value(type_peek)){
-				auto c = llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(itype));
-				builder.CreateStore(c, dest);
+				QUARK_ASSERT(f_args_size >= 1);
+				QUARK_ASSERT(f_args_size == mapping.args.size());
+
+				const auto llvm_arg_index = arg_it - mapping.args.begin();
+				QUARK_ASSERT(llvm_arg_index < f_args_size);
+
+				llvm::Argument* dest = f_args.begin() + llvm_arg_index;
+
+				const auto debug_str = "<ARGUMENT> name:" + symbol_kv.first + " symbol_t: " + symbol_to_string(types, symbol);
+				return make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_function_argument, symbol_kv.first, symbol);
 			}
 			else{
-			}
-		}
-		else if(symbol._symbol_type == symbol_t::symbol_type::immutable_arg){
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-		else if(symbol._symbol_type == symbol_t::symbol_type::immutable_precalc){
-			QUARK_ASSERT(symbol._init.is_undefined() == false);
+				//	Reserve stack slot for each local.
+				llvm::Value* dest = builder.CreateAlloca(itype, nullptr, symbol_kv.first);
 
-			//	Make sure to null all RC values.
-			if(is_rc_value(type_peek)){
-				auto c = llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(itype));
-				builder.CreateStore(c, dest);
-			}
-			else{
-			}
-		}
-		else if(symbol._symbol_type == symbol_t::symbol_type::named_type){
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-		else if(symbol._symbol_type == symbol_t::symbol_type::mutable_reserve){
-			//	Make sure to null all RC values.
-			if(is_rc_value(type_peek)){
-				auto c = llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(itype));
-				builder.CreateStore(c, dest);
-			}
-			else{
-			}
-		}
-		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
+				//	Init the slot if needed.
+				if(symbol._init.is_undefined() == false){
+					llvm::Value* c = generate_constant(gen_acc, symbol._init);
+					gen_acc.get_builder().CreateStore(c, dest);
+				}
 
-		const auto debug_str = "<LOCAL> name:" + symbol_kv.first + " symbol_t: " + symbol_to_string(types, symbol_kv.second);
-		result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_local, symbol_kv.first, symbol_kv.second));
+				if(symbol._symbol_type == symbol_t::symbol_type::immutable_reserve){
+					QUARK_ASSERT(symbol._init.is_undefined());
+
+					//	Make sure to null all RC values.
+					if(is_rc_value(type_peek)){
+						auto c = llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(itype));
+						builder.CreateStore(c, dest);
+					}
+					else{
+					}
+				}
+				else if(symbol._symbol_type == symbol_t::symbol_type::immutable_arg){
+					QUARK_ASSERT(false);
+					throw std::exception();
+				}
+				else if(symbol._symbol_type == symbol_t::symbol_type::immutable_precalc){
+					QUARK_ASSERT(symbol._init.is_undefined() == false);
+
+					//	Make sure to null all RC values.
+					if(is_rc_value(type_peek)){
+						auto c = llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(itype));
+						builder.CreateStore(c, dest);
+					}
+					else{
+					}
+				}
+				else if(symbol._symbol_type == symbol_t::symbol_type::named_type){
+					QUARK_ASSERT(false);
+					throw std::exception();
+				}
+				else if(symbol._symbol_type == symbol_t::symbol_type::mutable_reserve){
+					//	Make sure to null all RC values.
+					if(is_rc_value(type_peek)){
+						auto c = llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(itype));
+						builder.CreateStore(c, dest);
+					}
+					else{
+					}
+				}
+				else{
+					QUARK_ASSERT(false);
+					throw std::exception();
+				}
+				const auto debug_str = "<LOCAL> name:" + symbol_kv.first + " symbol_t: " + symbol_to_string(types, symbol);
+				return make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_local, symbol_kv.first, symbol_kv.second);
+			}
+		}();
+
+		result.push_back(entry);
 	}
 	return result;
 }
@@ -2201,61 +2230,17 @@ static function_return_mode generate_statements(llvm_function_generator_t& gen_a
 	return function_return_mode::some_path_not_returned;
 }
 
-//	Related: generate_global_symbol_slots(), generate_function_symbol_slots(), generate_local_block_symbol_slots()
 //	Generates local symbols for arguments and local variables. Only toplevel of function, not nested scopes.
 std::vector<resolved_symbol_t> generate_function_symbol_slots(llvm_function_generator_t& gen_acc, const function_definition_t& function_def){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(function_def.check_invariant());
 
 	QUARK_ASSERT(function_def._optional_body);
-	const symbol_table_t& symbol_table = function_def._optional_body->_symbol_table;
-	const auto& types = gen_acc.gen.type_lookup.state.types;
 
+	const symbol_table_t& symbol_table = function_def._optional_body->_symbol_table;
 	const auto mapping0 = *gen_acc.gen.type_lookup.find_from_type(function_def._function_type).optional_function_def;
 	const auto mapping = name_args(mapping0, function_def._named_args);
-
-	//	Make a resolved_symbol_t for each element in the symbol table. Some are local variables, some are arguments.
-	std::vector<resolved_symbol_t> result;
-	for(const auto& symbol_kv: symbol_table._symbols){
-		const auto type = symbol_kv.second.get_value_type();
-		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type);
-
-		//	Reserve stack slot for each local. But not arguments, they already have stack slot.
-
-		const auto arg_it = std::find_if(mapping.args.begin(), mapping.args.end(), [&](const llvm_arg_mapping_t& arg) -> bool {
-			return arg.floyd_name == symbol_kv.first;
-		});
-
-		//	Function arguments automatically get an alloca by LLVM. We just need to figure out its register (llvm::Value*).
-		if(symbol_kv.second._symbol_type == symbol_t::symbol_type::immutable_arg){
-			auto f_args = gen_acc.emit_f.args();
-			const auto f_args_size = f_args.end() - f_args.begin();
-
-			QUARK_ASSERT(f_args_size >= 1);
-			QUARK_ASSERT(f_args_size == mapping.args.size());
-
-			const auto llvm_arg_index = arg_it - mapping.args.begin();
-			QUARK_ASSERT(llvm_arg_index < f_args_size);
-
-			llvm::Argument* dest = f_args.begin() + llvm_arg_index;
-
-			const auto debug_str = "<ARGUMENT> name:" + symbol_kv.first + " symbol_t: " + symbol_to_string(types, symbol_kv.second);
-			result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_function_argument, symbol_kv.first, symbol_kv.second));
-		}
-		else{
-			llvm::Value* dest = gen_acc.get_builder().CreateAlloca(itype, nullptr, symbol_kv.first);
-
-			//	Init the slot if needed.
-			if(symbol_kv.second._init.is_undefined() == false){
-				llvm::Value* c = generate_constant(gen_acc, symbol_kv.second._init);
-				gen_acc.get_builder().CreateStore(c, dest);
-			}
-			const auto debug_str = "<LOCAL> name:" + symbol_kv.first + " symbol_t: " + symbol_to_string(types, symbol_kv.second);
-			result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_local, symbol_kv.first, symbol_kv.second));
-		}
-	}
-	QUARK_ASSERT(result.size() == symbol_table._symbols.size());
-	return result;
+	return generate_symbol_slots(gen_acc, symbol_table, &mapping);
 }
 
 static llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::string& symbol_name, llvm::Type& itype, llvm::Constant* init_or_nullptr){
