@@ -176,6 +176,12 @@ static void llvm_corelib__write_text_file(floyd_runtime_t* frp, runtime_value_t 
 	corelib_write_text_file(path, file_contents);
 }
 
+static runtime_value_t llvm_corelib__read_line_stdin(floyd_runtime_t* frp){
+	auto& r = get_floyd_runtime(frp);
+	const auto s = 	corelib_read_line_stdin();
+	return to_runtime_string(r, s);
+}
+
 
 
 
@@ -307,6 +313,7 @@ std::map<std::string, void*> get_corelib_binds(){
 
 		{ "read_text_file", reinterpret_cast<void *>(&llvm_corelib__read_text_file) },
 		{ "write_text_file", reinterpret_cast<void *>(&llvm_corelib__write_text_file) },
+		{ "read_line_stdin", reinterpret_cast<void *>(&llvm_corelib__read_line_stdin) },
 
 		{ "get_fsentries_shallow", reinterpret_cast<void *>(&llvm_corelib__get_fsentries_shallow) },
 		{ "get_fsentries_deep", reinterpret_cast<void *>(&llvm_corelib__get_fsentries_deep) },

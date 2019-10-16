@@ -224,7 +224,14 @@ bc_value_t bc_corelib__write_text_file(interpreter_t& vm, const bc_value_t args[
 	return bc_value_t();
 }
 
+bc_value_t bc_corelib__read_line_stdin(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 0);
 
+	std::string file_contents = corelib_read_line_stdin();
+	const auto v = bc_value_t::make_string(file_contents);
+	return v;
+}
 
 
 
@@ -396,6 +403,7 @@ std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_corelib_calls(){
 
 		{ { "read_text_file" }, bc_corelib__read_text_file },
 		{ { "write_text_file" }, bc_corelib__write_text_file },
+		{ { "read_line_stdin" }, bc_corelib__read_line_stdin },
 
 		{ { "get_fsentries_shallow" }, bc_corelib__get_fsentries_shallow },
 		{ { "get_fsentries_deep" }, bc_corelib__get_fsentries_deep },

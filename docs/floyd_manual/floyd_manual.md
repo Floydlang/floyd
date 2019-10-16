@@ -111,6 +111,7 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 	- [3.5 FILE SYSTEM FEATURES](#35-file-system-features)
 		- [read\_text\_file\(\)](#readtextfile)
 		- [write\_text\_file\(\)](#writetextfile)
+		- [read\_line\_stdin\(\)](#readlinestdin)
 		- [get\_fsentries_shallow\(\) and get\_fsentries\_deep\(\)](#getfsentries_shallow-and-get_fsentriesdeep)
 		- [get\_fsentry\_info\(\)](#getfsentryinfo)
 		- [get\_fs\_environment\(\)](#getfsenvironment)
@@ -3294,6 +3295,16 @@ Throws exception if file cannot be found or read.
 Write a string to the file system as a text file. Will create any missing directories in the absolute path.
 
 	void write_text_file(string abs_path, string data) impure
+
+
+<a id="readlinestdin"></a>
+### read\_line\_stdin()
+
+Read a line of text from the program's operating system standard input (stdin). The stdin is usually the computers keyboard. Input ends at a '\n' character (aka ASCII newline, 0x0A). The '\n' is not included in the returned string. The encoding and format of the returned string depends on the OS and what/if redirects to stdin. 
+
+	string read_line_stdin() impure
+
+
 
 
 

@@ -245,6 +245,8 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 	func string read_text_file(string abs_path) impure
 	func void write_text_file(string abs_path, string data) impure
 
+	func string read_line_stdin() impure
+
 	func [fsentry_t] get_fsentries_shallow(string abs_path) impure
 	func [fsentry_t] get_fsentries_deep(string abs_path) impure
 	func fsentry_info_t get_fsentry_info(string abs_path) impure
@@ -975,6 +977,12 @@ std::string corelib_calc_string_sha1(const std::string& s){
 
 std::string corelib_read_text_file(const std::string& abs_path){
 	return read_text_file(abs_path);
+}
+
+std::string corelib_read_line_stdin(){
+	std::string s;
+	std::getline(std::cin, s);
+	return s;
 }
 
 void corelib_write_text_file(const std::string& abs_path, const std::string& file_contents){

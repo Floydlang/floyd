@@ -110,3 +110,8 @@ func string action_look(world_t world){
 
 let world = init_world
 print("You look around: " + action_look(world))
+
+???
+let a = read_line_stdin()
+print("You " + a)
+
