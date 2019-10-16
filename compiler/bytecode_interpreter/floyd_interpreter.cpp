@@ -329,7 +329,7 @@ static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& v
 		return result_map;
 	#endif
 		return {};
-	//	QUARK_UT_VERIFY(runtime._processes[0]->_process_state.get_struct_value()->_member_values[0].get_int_value() == 998);
+	//	QUARK_VERIFY(runtime._processes[0]->_process_state.get_struct_value()->_member_values[0].get_int_value() == 998);
 	}
 }
 

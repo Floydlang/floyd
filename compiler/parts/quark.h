@@ -533,12 +533,8 @@ struct call_context_t {
 		static void QUARK_UNIQUE_LABEL(quark_test_f_)()
 
 
-	//### Add argument to unit-test functions that can be used / checked in UT_VERIFY().
-	#define QUARK_UT_VERIFY(exp) if(exp){}else{ ::quark::on_unit_test_failed_hook(::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__), QUARK_STRING(exp)); }
-	#define QUARK_TEST_VERIFY QUARK_UT_VERIFY
-
-	//??? Use only this in the future! Deprecate QUARK_UT_VERIFY() and QUARK_TEST_VERIFY()
-	#define QUARK_VERIFY QUARK_UT_VERIFY
+	//### Add argument to unit-test functions that can be used / checked in QUARK_VERIFY().
+	#define QUARK_VERIFY(exp) if(exp){}else{ ::quark::on_unit_test_failed_hook(::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__), QUARK_STRING(exp)); }
 
 
 
@@ -637,8 +633,7 @@ inline void ut_verify(const call_context_t& context, const char* result, const s
 	#define QUARK_TESTQ(function_under_test, scenario) \
 		static void QUARK_UNIQUE_LABEL(quark_test_f_)()
 
-	#define QUARK_UT_VERIFY(exp)
-	#define QUARK_TEST_VERIFY QUARK_UT_VERIFY
+	#define QUARK_VERIFY(exp)
 
 
 inline void fail_test(const call_context_t& context){

@@ -160,17 +160,17 @@ heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, type_t d
 
 QUARK_TEST("heap_t", "alloc_64()", "", ""){
 	heap_t heap(false);
-	QUARK_UT_VERIFY(heap.check_invariant());
+	QUARK_VERIFY(heap.check_invariant());
 }
 
 QUARK_TEST("heap_t", "alloc_64()", "", ""){
 	heap_t heap(false);
 	auto a = alloc_64(heap, 0, make_undefined(), "test");
-	QUARK_UT_VERIFY(a != nullptr);
-	QUARK_UT_VERIFY(a->check_invariant());
-	QUARK_UT_VERIFY(a->rc == 1);
+	QUARK_VERIFY(a != nullptr);
+	QUARK_VERIFY(a->check_invariant());
+	QUARK_VERIFY(a->rc == 1);
 #if DEBUG
-	QUARK_UT_VERIFY(get_debug_info(*a) == "test");
+	QUARK_VERIFY(get_debug_info(*a) == "test");
 #endif
 
 	//	Must release alloc or heap will detect leakage.
@@ -181,7 +181,7 @@ QUARK_TEST("heap_t", "add_ref()", "", ""){
 	heap_t heap(false);
 	auto a = alloc_64(heap, 0, make_undefined(), "test");
 	add_ref(*a);
-	QUARK_UT_VERIFY(a->rc == 2);
+	QUARK_VERIFY(a->rc == 2);
 
 	//	Must release alloc or heap will detect leakage.
 	release_ref(*a);
@@ -191,12 +191,12 @@ QUARK_TEST("heap_t", "release_ref()", "", ""){
 	heap_t heap(false);
 	auto a = alloc_64(heap, 0, make_undefined(), "test");
 
-	QUARK_UT_VERIFY(a->rc == 1);
+	QUARK_VERIFY(a->rc == 1);
 	release_ref(*a);
-	QUARK_UT_VERIFY(a->rc == 0);
+	QUARK_VERIFY(a->rc == 0);
 
 	const auto count = heap.count_used();
-	QUARK_UT_VERIFY(count == 0);
+	QUARK_VERIFY(count == 0);
 }
 
 
@@ -333,7 +333,7 @@ runtime_type_t make_runtime_type(type_t type){
 
 QUARK_TEST("", "", "", ""){
 	const auto s = sizeof(runtime_value_t);
-	QUARK_UT_VERIFY(s == 8);
+	QUARK_VERIFY(s == 8);
 }
 
 
@@ -430,12 +430,12 @@ WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b){
 
 QUARK_TEST("", "", "", ""){
 	const auto vec_struct_size = sizeof(std::vector<int>);
-	QUARK_UT_VERIFY(vec_struct_size == 24);
+	QUARK_VERIFY(vec_struct_size == 24);
 }
 
 QUARK_TEST("", "", "", ""){
 	const auto wr_struct_size = sizeof(WIDE_RETURN_T);
-	QUARK_UT_VERIFY(wr_struct_size == 16);
+	QUARK_VERIFY(wr_struct_size == 16);
 }
 
 
@@ -484,7 +484,7 @@ void dispose_vector_carray(const runtime_value_t& value){
 
 QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
 	const auto vec_struct_size1 = sizeof(std::vector<int>);
-	QUARK_UT_VERIFY(vec_struct_size1 == 24);
+	QUARK_VERIFY(vec_struct_size1 == 24);
 }
 
 QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
@@ -492,13 +492,13 @@ QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
 	detect_leaks(heap);
 
 	auto v = alloc_vector_carray(heap, 3, 3, make_undefined());
-	QUARK_UT_VERIFY(v.vector_carray_ptr != nullptr);
+	QUARK_VERIFY(v.vector_carray_ptr != nullptr);
 
 	if(dec_rc(v.vector_carray_ptr->alloc) == 0){
 		dispose_vector_carray(v);
 	}
 
-	QUARK_UT_VERIFY(heap.check_invariant());
+	QUARK_VERIFY(heap.check_invariant());
 	detect_leaks(heap);
 }
 
@@ -512,7 +512,7 @@ QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
 
 QUARK_TEST("", "", "", ""){
 	const auto vec_size = sizeof(immer::vector<runtime_value_t>);
-	QUARK_UT_VERIFY(vec_size == 32);
+	QUARK_VERIFY(vec_size == 32);
 }
 
 
@@ -626,7 +626,7 @@ runtime_value_t push_back_immutable(const runtime_value_t& vec0, runtime_value_t
 
 QUARK_TEST("VECTOR_HAMT_T", "", "", ""){
 	const auto vec_struct_size2 = sizeof(immer::vector<int>);
-	QUARK_UT_VERIFY(vec_struct_size2 == 32);
+	QUARK_VERIFY(vec_struct_size2 == 32);
 }
 
 QUARK_TEST("VECTOR_HAMT_T", "", "", ""){
@@ -635,18 +635,18 @@ QUARK_TEST("VECTOR_HAMT_T", "", "", ""){
 
 	const runtime_value_t a[] = { make_runtime_int(1000), make_runtime_int(2000), make_runtime_int(3000) };
 	auto v = alloc_vector_hamt(backend.heap, a, 3, type_t::make_double());
-	QUARK_UT_VERIFY(v.vector_hamt_ptr != nullptr);
+	QUARK_VERIFY(v.vector_hamt_ptr != nullptr);
 
-	QUARK_UT_VERIFY(v.vector_hamt_ptr->get_element_count() == 3);
-	QUARK_UT_VERIFY(v.vector_hamt_ptr->load_element(0).int_value == 1000);
-	QUARK_UT_VERIFY(v.vector_hamt_ptr->load_element(1).int_value == 2000);
-	QUARK_UT_VERIFY(v.vector_hamt_ptr->load_element(2).int_value == 3000);
+	QUARK_VERIFY(v.vector_hamt_ptr->get_element_count() == 3);
+	QUARK_VERIFY(v.vector_hamt_ptr->load_element(0).int_value == 1000);
+	QUARK_VERIFY(v.vector_hamt_ptr->load_element(1).int_value == 2000);
+	QUARK_VERIFY(v.vector_hamt_ptr->load_element(2).int_value == 3000);
 
 	if(dec_rc(v.vector_hamt_ptr->alloc) == 0){
 		dispose_vector_hamt(v);
 	}
 
-	QUARK_UT_VERIFY(backend.check_invariant());
+	QUARK_VERIFY(backend.check_invariant());
 	detect_leaks(backend.heap);
 }
 

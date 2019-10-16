@@ -268,9 +268,9 @@ QUARK_TEST("", "", "", ""){
 		{},
 		std::make_shared<body_t>()
 	);
-	QUARK_UT_VERIFY(a._named_args.empty());
+	QUARK_VERIFY(a._named_args.empty());
 
-	QUARK_UT_VERIFY(a == a);
+	QUARK_VERIFY(a == a);
 }
 
 

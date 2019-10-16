@@ -537,7 +537,7 @@ std::string simplify_mem_size(int64_t value){
 
 QUARK_TEST("", "corelib_make_hardware_caps_report()", "", ""){
 	const auto r = simplify_mem_size(3943120896);
-//	QUARK_UT_VERIFY(r == "4 GB");
+//	QUARK_VERIFY(r == "4 GB");
 }
 
 
@@ -656,7 +656,7 @@ QUARK_TEST("", "corelib_make_hardware_caps_report_brief()", "", ""){
 
 //	const auto caps = corelib_detect_hardware_caps();
 	const auto r = corelib_make_hardware_caps_report_brief(caps);
-	QUARK_UT_VERIFY(r == "Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz  16 GB DRAM  8 cores");
+	QUARK_VERIFY(r == "Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz  16 GB DRAM  8 cores");
 }
 
 //	Only does this at top level, not for member strings.
@@ -1031,7 +1031,7 @@ QUARK_TEST("get_time_of_day_ms()", "", "", ""){
 	std::chrono::duration<double> elapsed_seconds = b - a;
 	const int ms = static_cast<int>((static_cast<double>(elapsed_seconds.count()) * 1000.0));
 
-	QUARK_UT_VERIFY(ms >= 7)
+	QUARK_VERIFY(ms >= 7)
 }
 
 

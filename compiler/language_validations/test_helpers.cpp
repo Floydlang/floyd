@@ -43,7 +43,7 @@ namespace floyd {
 
 QUARK_TEST("", "", "", ""){
 	const auto double_size = sizeof(double);
-	QUARK_UT_VERIFY(double_size == 8);
+	QUARK_VERIFY(double_size == 8);
 }
 
 

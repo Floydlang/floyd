@@ -48,13 +48,13 @@ std::string pack_type_name(const type_name_t& tag){
 }
 
 QUARK_TEST("", "pack_type_name()", "", ""){
-	QUARK_TEST_VERIFY(pack_type_name(type_name_t{{ "hello" }} ) == "/hello");
+	QUARK_VERIFY(pack_type_name(type_name_t{{ "hello" }} ) == "/hello");
 }
 QUARK_TEST("", "pack_type_name()", "", ""){
-	QUARK_TEST_VERIFY(pack_type_name(type_name_t{{ "hello", "goodbye" }} ) == "/hello/goodbye");
+	QUARK_VERIFY(pack_type_name(type_name_t{{ "hello", "goodbye" }} ) == "/hello/goodbye");
 }
 QUARK_TEST("", "pack_type_name()", "", ""){
-	QUARK_TEST_VERIFY(pack_type_name(type_name_t{{ "" }} ) == "/");
+	QUARK_VERIFY(pack_type_name(type_name_t{{ "" }} ) == "/");
 }
 
 
@@ -63,13 +63,13 @@ bool is_type_name(const std::string& s){
 }
 
 QUARK_TEST("", "is_type_name()", "", ""){
-	QUARK_TEST_VERIFY(is_type_name("hello") == false);
+	QUARK_VERIFY(is_type_name("hello") == false);
 }
 QUARK_TEST("", "is_type_name()", "", ""){
-	QUARK_TEST_VERIFY(is_type_name("/hello") == true);
+	QUARK_VERIFY(is_type_name("/hello") == true);
 }
 QUARK_TEST("", "is_type_name()", "", ""){
-	QUARK_TEST_VERIFY(is_type_name("/hello/goodbye") == true);
+	QUARK_VERIFY(is_type_name("/hello/goodbye") == true);
 }
 
 
@@ -94,13 +94,13 @@ type_name_t unpack_type_name(const std::string& tag){
 }
 
 QUARK_TEST("", "pack_type_name()", "", ""){
-	QUARK_TEST_VERIFY(unpack_type_name("/hello") == type_name_t{{ "hello" }} );
+	QUARK_VERIFY(unpack_type_name("/hello") == type_name_t{{ "hello" }} );
 }
 QUARK_TEST("", "pack_type_name()", "", ""){
-	QUARK_TEST_VERIFY(unpack_type_name("/hello/goodbye") == ( type_name_t{{ "hello", "goodbye" }} ) );
+	QUARK_VERIFY(unpack_type_name("/hello/goodbye") == ( type_name_t{{ "hello", "goodbye" }} ) );
 }
 QUARK_TEST("", "pack_type_name()", "", ""){
-	QUARK_TEST_VERIFY(unpack_type_name("/") == type_name_t{{ }} );
+	QUARK_VERIFY(unpack_type_name("/") == type_name_t{{ }} );
 }
 
 
@@ -170,52 +170,52 @@ std::string base_type_to_opcode(const base_type t){
 }
 
 QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_undefined) == "undef");
+	QUARK_VERIFY(base_type_to_opcode(base_type::k_undefined) == "undef");
 }
 QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_any) == "any");
+	QUARK_VERIFY(base_type_to_opcode(base_type::k_any) == "any");
 }
 QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_void) == "void");
-}
-
-QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_bool) == "bool");
-}
-QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_int) == "int");
-}
-QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_double) == "double");
-}
-QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_string) == "string");
-}
-QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_json) == "json");
+	QUARK_VERIFY(base_type_to_opcode(base_type::k_void) == "void");
 }
 
 QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_typeid) == "typeid");
+	QUARK_VERIFY(base_type_to_opcode(base_type::k_bool) == "bool");
+}
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_VERIFY(base_type_to_opcode(base_type::k_int) == "int");
+}
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_VERIFY(base_type_to_opcode(base_type::k_double) == "double");
+}
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_VERIFY(base_type_to_opcode(base_type::k_string) == "string");
+}
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_VERIFY(base_type_to_opcode(base_type::k_json) == "json");
 }
 
 QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_struct) == "struct");
+	QUARK_VERIFY(base_type_to_opcode(base_type::k_typeid) == "typeid");
+}
+
+QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_VERIFY(base_type_to_opcode(base_type::k_struct) == "struct");
 }
 QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_vector) == "vector");
+	QUARK_VERIFY(base_type_to_opcode(base_type::k_vector) == "vector");
 }
 QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_dict) == "dict");
+	QUARK_VERIFY(base_type_to_opcode(base_type::k_dict) == "dict");
 }
 QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_function) == "func");
+	QUARK_VERIFY(base_type_to_opcode(base_type::k_function) == "func");
 }
 QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_symbol_ref) == "symbol-ref");
+	QUARK_VERIFY(base_type_to_opcode(base_type::k_symbol_ref) == "symbol-ref");
 }
 QUARK_TEST("", "base_type_to_opcode(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_named_type) == "named-type");
+	QUARK_VERIFY(base_type_to_opcode(base_type::k_named_type) == "named-type");
 }
 
 
@@ -456,54 +456,54 @@ QUARK_TESTQ("type_t", "make_int()"){
 	ut_verify(QUARK_POS, type_t::make_int().get_base_type(), base_type::k_int);
 }
 QUARK_TESTQ("type_t", "is_int()"){
-	QUARK_UT_VERIFY(type_t::make_int().is_int() == true);
+	QUARK_VERIFY(type_t::make_int().is_int() == true);
 }
 QUARK_TESTQ("type_t", "is_int()"){
-	QUARK_UT_VERIFY(type_t::make_bool().is_int() == false);
+	QUARK_VERIFY(type_t::make_bool().is_int() == false);
 }
 
 
 QUARK_TESTQ("type_t", "make_double()"){
-	QUARK_UT_VERIFY(type_t::make_double().is_double());
+	QUARK_VERIFY(type_t::make_double().is_double());
 }
 QUARK_TESTQ("type_t", "is_double()"){
-	QUARK_UT_VERIFY(type_t::make_double().is_double() == true);
+	QUARK_VERIFY(type_t::make_double().is_double() == true);
 }
 QUARK_TESTQ("type_t", "is_double()"){
-	QUARK_UT_VERIFY(type_t::make_bool().is_double() == false);
+	QUARK_VERIFY(type_t::make_bool().is_double() == false);
 }
 
 
 QUARK_TESTQ("type_t", "make_string()"){
-	QUARK_UT_VERIFY(type_t::make_string().get_base_type() == base_type::k_string);
+	QUARK_VERIFY(type_t::make_string().get_base_type() == base_type::k_string);
 }
 QUARK_TESTQ("type_t", "is_string()"){
-	QUARK_UT_VERIFY(type_t::make_string().is_string() == true);
+	QUARK_VERIFY(type_t::make_string().is_string() == true);
 }
 QUARK_TESTQ("type_t", "is_string()"){
-	QUARK_UT_VERIFY(type_t::make_bool().is_string() == false);
+	QUARK_VERIFY(type_t::make_bool().is_string() == false);
 }
 
 
 QUARK_TESTQ("type_t", "make_json()"){
-	QUARK_UT_VERIFY(type_t::make_json().get_base_type() == base_type::k_json);
+	QUARK_VERIFY(type_t::make_json().get_base_type() == base_type::k_json);
 }
 QUARK_TESTQ("type_t", "is_json()"){
-	QUARK_UT_VERIFY(type_t::make_json().is_json() == true);
+	QUARK_VERIFY(type_t::make_json().is_json() == true);
 }
 QUARK_TESTQ("type_t", "is_json()"){
-	QUARK_UT_VERIFY(type_t::make_bool().is_json() == false);
+	QUARK_VERIFY(type_t::make_bool().is_json() == false);
 }
 
 
 QUARK_TESTQ("type_t", "make_typeid()"){
-	QUARK_UT_VERIFY(type_t::make_typeid().get_base_type() == base_type::k_typeid);
+	QUARK_VERIFY(type_t::make_typeid().get_base_type() == base_type::k_typeid);
 }
 QUARK_TESTQ("type_t", "is_typeid()"){
-	QUARK_UT_VERIFY(type_t::make_typeid().is_typeid() == true);
+	QUARK_VERIFY(type_t::make_typeid().is_typeid() == true);
 }
 QUARK_TESTQ("type_t", "is_typeid()"){
-	QUARK_UT_VERIFY(type_t::make_bool().is_typeid() == false);
+	QUARK_VERIFY(type_t::make_bool().is_typeid() == false);
 }
 
 
@@ -524,29 +524,29 @@ type_t make_test_struct_a(){
 }
 
 QUARK_TESTQ("type_t", "make_struct2()"){
-	QUARK_UT_VERIFY(type_t::make_struct2({}).get_base_type() == base_type::k_struct);
+	QUARK_VERIFY(type_t::make_struct2({}).get_base_type() == base_type::k_struct);
 }
 QUARK_TESTQ("type_t", "make_struct2()"){
-	QUARK_UT_VERIFY(make_empty_struct().get_base_type() == base_type::k_struct);
+	QUARK_VERIFY(make_empty_struct().get_base_type() == base_type::k_struct);
 }
 QUARK_TESTQ("type_t", "is_struct()"){
-	QUARK_UT_VERIFY(make_empty_struct().is_struct() == true);
+	QUARK_VERIFY(make_empty_struct().is_struct() == true);
 }
 QUARK_TESTQ("type_t", "is_struct()"){
-	QUARK_UT_VERIFY(type_t::make_bool().is_struct() == false);
+	QUARK_VERIFY(type_t::make_bool().is_struct() == false);
 }
 
 QUARK_TESTQ("type_t", "make_struct2()"){
 	const auto t = make_test_struct_a();
-	QUARK_UT_VERIFY(t.get_struct() == k_struct_test_members_b);
+	QUARK_VERIFY(t.get_struct() == k_struct_test_members_b);
 }
 QUARK_TESTQ("type_t", "get_struct()"){
 	const auto t = make_test_struct_a();
-	QUARK_UT_VERIFY(t.get_struct() == k_struct_test_members_b);
+	QUARK_VERIFY(t.get_struct() == k_struct_test_members_b);
 }
 QUARK_TESTQ("type_t", "get_struct_ref()"){
 	const auto t = make_test_struct_a();
-	QUARK_UT_VERIFY(t.get_struct_ref()->_members == k_struct_test_members_b);
+	QUARK_VERIFY(t.get_struct_ref()->_members == k_struct_test_members_b);
 }
 
 
@@ -554,36 +554,36 @@ QUARK_TESTQ("type_t", "get_struct_ref()"){
 
 
 QUARK_TESTQ("type_t", "make_vector()"){
-	QUARK_UT_VERIFY(type_t::make_vector(type_t::make_int()).get_base_type() == base_type::k_vector);
+	QUARK_VERIFY(type_t::make_vector(type_t::make_int()).get_base_type() == base_type::k_vector);
 }
 QUARK_TESTQ("type_t", "is_vector()"){
-	QUARK_UT_VERIFY(type_t::make_vector(type_t::make_int()).is_vector() == true);
+	QUARK_VERIFY(type_t::make_vector(type_t::make_int()).is_vector() == true);
 }
 QUARK_TESTQ("type_t", "is_vector()"){
-	QUARK_UT_VERIFY(type_t::make_bool().is_vector() == false);
+	QUARK_VERIFY(type_t::make_bool().is_vector() == false);
 }
 QUARK_TESTQ("type_t", "get_vector_element_type()"){
-	QUARK_UT_VERIFY(type_t::make_vector(type_t::make_int()).get_vector_element_type().is_int());
+	QUARK_VERIFY(type_t::make_vector(type_t::make_int()).get_vector_element_type().is_int());
 }
 QUARK_TESTQ("type_t", "get_vector_element_type()"){
-	QUARK_UT_VERIFY(type_t::make_vector(type_t::make_string()).get_vector_element_type().is_string());
+	QUARK_VERIFY(type_t::make_vector(type_t::make_string()).get_vector_element_type().is_string());
 }
 
 
 QUARK_TESTQ("type_t", "make_dict()"){
-	QUARK_UT_VERIFY(type_t::make_dict(type_t::make_int()).get_base_type() == base_type::k_dict);
+	QUARK_VERIFY(type_t::make_dict(type_t::make_int()).get_base_type() == base_type::k_dict);
 }
 QUARK_TESTQ("type_t", "is_dict()"){
-	QUARK_UT_VERIFY(type_t::make_dict(type_t::make_int()).is_dict() == true);
+	QUARK_VERIFY(type_t::make_dict(type_t::make_int()).is_dict() == true);
 }
 QUARK_TESTQ("type_t", "is_dict()"){
-	QUARK_UT_VERIFY(type_t::make_bool().is_dict() == false);
+	QUARK_VERIFY(type_t::make_bool().is_dict() == false);
 }
 QUARK_TESTQ("type_t", "get_dict_value_type()"){
-	QUARK_UT_VERIFY(type_t::make_dict(type_t::make_int()).get_dict_value_type().is_int());
+	QUARK_VERIFY(type_t::make_dict(type_t::make_int()).get_dict_value_type().is_int());
 }
 QUARK_TESTQ("type_t", "get_dict_value_type()"){
-	QUARK_UT_VERIFY(type_t::make_dict(type_t::make_string()).get_dict_value_type().is_string());
+	QUARK_VERIFY(type_t::make_dict(type_t::make_string()).get_dict_value_type().is_string());
 }
 
 
@@ -596,44 +596,44 @@ const auto k_test_function_args_a = std::vector<type_t>({
 
 QUARK_TESTQ("type_t", "make_function()"){
 	const auto t = make_function(type_t::make_void(), {}, epure::pure);
-	QUARK_UT_VERIFY(t.get_base_type() == base_type::k_function);
+	QUARK_VERIFY(t.get_base_type() == base_type::k_function);
 }
 QUARK_TESTQ("type_t", "is_function()"){
 	const auto t = make_function(type_t::make_void(), {}, epure::pure);
-	QUARK_UT_VERIFY(t.is_function() == true);
+	QUARK_VERIFY(t.is_function() == true);
 }
 QUARK_TESTQ("type_t", "is_function()"){
-	QUARK_UT_VERIFY(type_t::make_bool().is_function() == false);
+	QUARK_VERIFY(type_t::make_bool().is_function() == false);
 }
 QUARK_TESTQ("type_t", "get_function_return()"){
 	const auto t = make_function(type_t::make_void(), {}, epure::pure);
-	QUARK_UT_VERIFY(t.get_function_return().is_void());
+	QUARK_VERIFY(t.get_function_return().is_void());
 }
 QUARK_TESTQ("type_t", "get_function_return()"){
 	const auto t = make_function(type_t::make_string(), {}, epure::pure);
-	QUARK_UT_VERIFY(t.get_function_return().is_string());
+	QUARK_VERIFY(t.get_function_return().is_string());
 }
 QUARK_TESTQ("type_t", "get_function_args()"){
 	const auto t = make_function(type_t::make_void(), k_test_function_args_a, epure::pure);
-	QUARK_UT_VERIFY(t.get_function_args() == k_test_function_args_a);
+	QUARK_VERIFY(t.get_function_args() == k_test_function_args_a);
 }
 
 
 QUARK_TESTQ("type_t", "is_identifier()"){
 	const auto t = type_t::make_identifier("xyz");
-	QUARK_UT_VERIFY(t.is_identifier() == true);
+	QUARK_VERIFY(t.is_identifier() == true);
 }
 QUARK_TESTQ("type_t", "is_identifier()"){
-	QUARK_UT_VERIFY(type_t::make_bool().is_identifier() == false);
+	QUARK_VERIFY(type_t::make_bool().is_identifier() == false);
 }
 
 QUARK_TESTQ("type_t", "get_unresolved()"){
 	const auto t = type_t::make_identifier("xyz");
-	QUARK_UT_VERIFY(t.get_identifier() == "xyz");
+	QUARK_VERIFY(t.get_identifier() == "xyz");
 }
 QUARK_TESTQ("type_t", "get_unresolved()"){
 	const auto t = type_t::make_identifier("123");
-	QUARK_UT_VERIFY(t.get_identifier() == "123");
+	QUARK_VERIFY(t.get_identifier() == "123");
 }
 
 
@@ -648,39 +648,39 @@ QUARK_TESTQ("type_t", "get_unresolved()"){
 QUARK_TESTQ("type_t", "operator==()"){
 	const auto a = type_t::make_vector(type_t::make_int());
 	const auto b = type_t::make_vector(type_t::make_int());
-	QUARK_UT_VERIFY(a == b);
+	QUARK_VERIFY(a == b);
 }
 QUARK_TESTQ("type_t", "operator==()"){
 	const auto a = type_t::make_vector(type_t::make_int());
 	const auto b = type_t::make_dict(type_t::make_int());
-	QUARK_UT_VERIFY((a == b) == false);
+	QUARK_VERIFY((a == b) == false);
 }
 QUARK_TESTQ("type_t", "operator==()"){
 	const auto a = type_t::make_vector(type_t::make_int());
 	const auto b = type_t::make_vector(type_t::make_string());
-	QUARK_UT_VERIFY((a == b) == false);
+	QUARK_VERIFY((a == b) == false);
 }
 
 
 QUARK_TESTQ("type_t", "operator=()"){
 	const auto a = type_t::make_bool();
 	const auto b = a;
-	QUARK_UT_VERIFY(a == b);
+	QUARK_VERIFY(a == b);
 }
 QUARK_TESTQ("type_t", "operator=()"){
 	const auto a = type_t::make_vector(type_t::make_int());
 	const auto b = a;
-	QUARK_UT_VERIFY(a == b);
+	QUARK_VERIFY(a == b);
 }
 QUARK_TESTQ("type_t", "operator=()"){
 	const auto a = type_t::make_dict(type_t::make_int());
 	const auto b = a;
-	QUARK_UT_VERIFY(a == b);
+	QUARK_VERIFY(a == b);
 }
 QUARK_TESTQ("type_t", "operator=()"){
 	const auto a = make_function(type_t::make_string(), { type_t::make_int(), type_t::make_double() }, epure::pure);
 	const auto b = a;
-	QUARK_UT_VERIFY(a == b);
+	QUARK_VERIFY(a == b);
 }
 
 
@@ -808,7 +808,7 @@ OFF_QUARK_TEST("typeid_from_ast_json", "", "", ""){
 
 		//	Test typeid_from_ast_json();
 		const auto result2 = typeid_from_ast_json(expected_ast_json);
-		QUARK_UT_VERIFY(result2 == start_typeid);
+		QUARK_VERIFY(result2 == start_typeid);
 	}
 	QUARK_TRACE("OK!");
 }
@@ -957,7 +957,7 @@ bool is_dynamic_function(const type_t& function_type){
 QUARK_TEST("type_t", "operator==()", "", ""){
 	const auto a = make_function(type_t::make_int(), {}, epure::pure);
 	const auto b = make_function(type_t::make_int(), {}, epure::pure);
-	QUARK_UT_VERIFY(a == b);
+	QUARK_VERIFY(a == b);
 }
 
 
@@ -1054,19 +1054,19 @@ json_t typeid_to_ast_json(const type_t& t){
 QUARK_TEST("", "typeid_to_ast_json()", "", ""){
 	const auto t = type_t::make_int();
 	const auto r = json_to_compact_string_minimal_quotes(typeid_to_ast_json(t));
-	QUARK_UT_VERIFY(r == "^int");
+	QUARK_VERIFY(r == "^int");
 }
 
 QUARK_TEST("", "typeid_to_ast_json()", "", ""){
 	const auto t = type_t::make_int();
 	const auto r = json_to_compact_string_minimal_quotes(typeid_to_ast_json(t));
-	QUARK_UT_VERIFY(r == "{ desc: ^int, name: coord_t }");
+	QUARK_VERIFY(r == "{ desc: ^int, name: coord_t }");
 }
 
 QUARK_TEST("", "typeid_to_ast_json()", "", ""){
 	const auto t = type_t::make_undefined();
 	const auto r = json_to_compact_string_minimal_quotes(typeid_to_ast_json(t));
-	QUARK_UT_VERIFY(r == "#coord_t");
+	QUARK_VERIFY(r == "#coord_t");
 }
 
 

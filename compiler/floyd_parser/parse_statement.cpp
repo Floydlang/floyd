@@ -1059,6 +1059,7 @@ QUARK_TEST("", "parse_for_statement()", "for(){}", ""){
 		)).first
 	);
 }
+#if 0
 QUARK_TEST("", "parse_for_statement()", "for(){}", ""){
 	ut_verify(QUARK_POS,
 		parse_for_statement(seq_t("for(v in 0 ..< size(benchmark_result)){ let int y = 11 }")).first,
@@ -1079,6 +1080,7 @@ QUARK_TEST("", "parse_for_statement()", "for(){}", ""){
 		)).first
 	);
 }
+#endif
 
 
 //////////////////////////////////////////////////		parse_while_statement()

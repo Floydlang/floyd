@@ -37,9 +37,9 @@ QUARK_TEST("parser", "C++ enum class()", "", ""){
 		k_four = 4
 	};
 
-	QUARK_UT_VERIFY(my_enum::k_one == my_enum::k_one);
-	QUARK_UT_VERIFY(my_enum::k_one != my_enum::k_four);
-	QUARK_UT_VERIFY(static_cast<int>(my_enum::k_one) == 1);
+	QUARK_VERIFY(my_enum::k_one == my_enum::k_one);
+	QUARK_VERIFY(my_enum::k_one != my_enum::k_four);
+	QUARK_VERIFY(static_cast<int>(my_enum::k_one) == 1);
 }
 
 
@@ -439,48 +439,48 @@ QUARK_TEST("parser", "std::strtoull()", "", ""){
 	unsigned long long int number = std::strtoull(start, &end_ptr, 10);
 	(void)number;
 	const auto error = errno;
-	QUARK_UT_VERIFY(error == ERANGE);
+	QUARK_VERIFY(error == ERANGE);
 }
 
 
 QUARK_TEST("parser", "parse_decimal_literal()", "", ""){
 	const auto a = parse_decimal_literal(seq_t("0 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 0);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 0);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 
 QUARK_TEST("parser", "parse_decimal_literal()", "", ""){
 	const auto a = parse_decimal_literal(seq_t("1234 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 1234);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 1234);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 
 QUARK_TEST("parser", "parse_decimal_literal()", "", ""){
 	const auto a = parse_decimal_literal(seq_t("0.5 xxx"));
-	QUARK_UT_VERIFY(a.first.get_double_value() == 0.5f);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_double_value() == 0.5f);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 
 QUARK_TEST("parser", "parse_decimal_literal()", "", ""){
 	const auto a = parse_decimal_literal(seq_t("17179869184 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 17179869184);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 17179869184);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 
 QUARK_TEST("parser", "parse_decimal_literal()", "", ""){
 	const auto a = parse_decimal_literal(seq_t("9223372036854775807 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == k_floyd_int64_max);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == k_floyd_int64_max);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 QUARK_TEST("parser", "parse_decimal_literal()", "", ""){
 	const auto a = parse_decimal_literal(seq_t("9223372036854775808 xxx"));
-	QUARK_UT_VERIFY((uint64_t)a.first.get_int_value() == 9223372036854775808ull);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY((uint64_t)a.first.get_int_value() == 9223372036854775808ull);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 QUARK_TEST("parser", "parse_decimal_literal()", "", ""){
 	const auto a = parse_decimal_literal(seq_t("18446744073709551615 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == k_floyd_uint64_max);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == k_floyd_uint64_max);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 
 QUARK_TEST("parser", "parse_decimal_literal()", "", ""){
@@ -488,7 +488,7 @@ QUARK_TEST("parser", "parse_decimal_literal()", "", ""){
 		parse_decimal_literal(seq_t("618446744073709551615 xxx"));
 	}
 	catch(const std::runtime_error& e){
-		QUARK_UT_VERIFY(std::string(e.what()) == "Integer literal \"618446744073709551615\" larger than maxium allowed, which is 18446744073709551615 aka 0x7fffffff'ffffffff - maxium for an unsigned 64-bit integer.");
+		QUARK_VERIFY(std::string(e.what()) == "Integer literal \"618446744073709551615\" larger than maxium allowed, which is 18446744073709551615 aka 0x7fffffff'ffffffff - maxium for an unsigned 64-bit integer.");
 	}
 }
 
@@ -544,26 +544,26 @@ std::string strip_optional_dividers(const std::string& s){
 }
 
 QUARK_TEST("parser", "strip_optional_dividers()", "", ""){
-	QUARK_UT_VERIFY(strip_optional_dividers("") == "");
+	QUARK_VERIFY(strip_optional_dividers("") == "");
 }
 QUARK_TEST("parser", "strip_optional_dividers()", "", ""){
-	QUARK_UT_VERIFY(strip_optional_dividers("aaa") == "aaa");
+	QUARK_VERIFY(strip_optional_dividers("aaa") == "aaa");
 }
 QUARK_TEST("parser", "strip_optional_dividers()", "", ""){
-	QUARK_UT_VERIFY(strip_optional_dividers("aa'bbbbbbbb") == "aabbbbbbbb");
+	QUARK_VERIFY(strip_optional_dividers("aa'bbbbbbbb") == "aabbbbbbbb");
 }
 QUARK_TEST("parser", "strip_optional_dividers()", "", ""){
-	QUARK_UT_VERIFY(strip_optional_dividers("aa'bbbbbbbb'cccccccc") == "aabbbbbbbbcccccccc");
+	QUARK_VERIFY(strip_optional_dividers("aa'bbbbbbbb'cccccccc") == "aabbbbbbbbcccccccc");
 }
 QUARK_TEST("parser", "strip_optional_dividers()", "", ""){
-	QUARK_UT_VERIFY(strip_optional_dividers("aaaaaaaa'bbbbbbbb") == "aaaaaaaabbbbbbbb");
+	QUARK_VERIFY(strip_optional_dividers("aaaaaaaa'bbbbbbbb") == "aaaaaaaabbbbbbbb");
 }
 
 
 QUARK_TEST("parser", "strip_optional_dividers()", "", ""){
 	try {
 		strip_optional_dividers("aaaaaaaa'");
-		QUARK_UT_VERIFY(false);
+		QUARK_VERIFY(false);
 	}
 	catch(...){
 	}
@@ -571,7 +571,7 @@ QUARK_TEST("parser", "strip_optional_dividers()", "", ""){
 QUARK_TEST("parser", "strip_optional_dividers()", "", ""){
 	try {
 		strip_optional_dividers("a'");
-		QUARK_UT_VERIFY(false);
+		QUARK_VERIFY(false);
 	}
 	catch(...){
 	}
@@ -579,7 +579,7 @@ QUARK_TEST("parser", "strip_optional_dividers()", "", ""){
 QUARK_TEST("parser", "strip_optional_dividers()", "", ""){
 	try {
 		strip_optional_dividers("a'bbbb");
-		QUARK_UT_VERIFY(false);
+		QUARK_VERIFY(false);
 	}
 	catch(...){
 	}
@@ -587,7 +587,7 @@ QUARK_TEST("parser", "strip_optional_dividers()", "", ""){
 QUARK_TEST("parser", "strip_optional_dividers()", "", ""){
 	try {
 		strip_optional_dividers("a'bbbb'cccccccc");
-		QUARK_UT_VERIFY(false);
+		QUARK_VERIFY(false);
 	}
 	catch(...){
 	}
@@ -595,7 +595,7 @@ QUARK_TEST("parser", "strip_optional_dividers()", "", ""){
 QUARK_TEST("parser", "strip_optional_dividers()", "", ""){
 	try {
 		strip_optional_dividers("a'bbbbbbbbbbbbb");
-		QUARK_UT_VERIFY(false);
+		QUARK_VERIFY(false);
 	}
 	catch(...){
 	}
@@ -603,7 +603,7 @@ QUARK_TEST("parser", "strip_optional_dividers()", "", ""){
 QUARK_TEST("parser", "strip_optional_dividers()", "", ""){
 	try {
 		strip_optional_dividers("'aaaaaaaa");
-		QUARK_UT_VERIFY(false);
+		QUARK_VERIFY(false);
 	}
 	catch(...){
 	}
@@ -611,7 +611,7 @@ QUARK_TEST("parser", "strip_optional_dividers()", "", ""){
 QUARK_TEST("parser", "strip_optional_dividers()", "", ""){
 	try {
 		strip_optional_dividers("'aaaaa");
-		QUARK_UT_VERIFY(false);
+		QUARK_VERIFY(false);
 	}
 	catch(...){
 	}
@@ -668,38 +668,38 @@ QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 }
 QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 	const auto a = parse_binary_literal(seq_t("0b0 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 0);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 0);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 	const auto a = parse_binary_literal(seq_t("0b1 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 1);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 1);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 	const auto a = parse_binary_literal(seq_t("0b00000000 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 0);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 0);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 	const auto a = parse_binary_literal(seq_t("0b00000001 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 1);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 1);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 	const auto a = parse_binary_literal(seq_t("0b10000000 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 128);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 128);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 	const auto a = parse_binary_literal(seq_t("0b11111111 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 255);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 255);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 	const auto a = parse_binary_literal(seq_t("0b1000000000000000000000000000000000000000000000000000000000000001 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 0b1000000000000000000000000000000000000000000000000000000000000001);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 0b1000000000000000000000000000000000000000000000000000000000000001);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 	try {
@@ -722,20 +722,20 @@ QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 QUARK_TEST("parser", "parse_binary_literal()", "range", ""){
 	//											 --------XXXXXXXX--------XXXXXXXX--------XXXXXXXX--------XXXXXXXX
 	const auto a = parse_binary_literal(seq_t("0b0111111111111111111111111111111111111111111111111111111111111111 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 0b0111111111111111111111111111111111111111111111111111111111111111);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 0b0111111111111111111111111111111111111111111111111111111111111111);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 QUARK_TEST("parser", "parse_binary_literal()", "range", ""){
 	//											 --------XXXXXXXX--------XXXXXXXX--------XXXXXXXX--------XXXXXXXX
 	const auto a = parse_binary_literal(seq_t("0b1000000000000000000000000000000000000000000000000000000000000000 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 0b1000000000000000000000000000000000000000000000000000000000000000);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 0b1000000000000000000000000000000000000000000000000000000000000000);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 QUARK_TEST("parser", "parse_binary_literal()", "range", ""){
 	//											 --------XXXXXXXX--------XXXXXXXX--------XXXXXXXX--------XXXXXXXX
 	const auto a = parse_binary_literal(seq_t("0b1111111111111111111111111111111111111111111111111111111111111111 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 0b1111111111111111111111111111111111111111111111111111111111111111);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 0b1111111111111111111111111111111111111111111111111111111111111111);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 
 
@@ -743,20 +743,20 @@ QUARK_TEST("parser", "parse_binary_literal()", "range", ""){
 QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 											//   ----XXXX----XXXX----XXXX----XXXX----XXXX----XXXX----XXXX----XXXX
 	const auto a = parse_binary_literal(seq_t("0b0001001000110100010101100111100010011010101111001101111011110001 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 0x123456789abcdef1);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 0x123456789abcdef1);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 
 QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 	const auto a = parse_binary_literal(seq_t("0b00010010'00110100'01010110'01111000'10011010'10111100'11011110'11110001 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 0x123456789abcdef1);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 0x123456789abcdef1);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 
 QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 	const auto a = parse_binary_literal(seq_t("0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 0x8000000000000001);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 0x8000000000000001);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 
 QUARK_TEST("parser", "parse_binary_literal()", "", ""){
@@ -805,61 +805,61 @@ std::pair<value_t, seq_t> parse_hexadecimal_literal(const seq_t& p) {
 
 QUARK_TEST("parser", "parse_hexadecimal_literal()", "", ""){
 	const auto a = parse_hexadecimal_literal(seq_t("0x00 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 0x00);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 0x00);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 
 QUARK_TEST("parser", "parse_hexadecimal_literal()", "", ""){
 	const auto a = parse_hexadecimal_literal(seq_t("0x1234 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 0x1234);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 0x1234);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 
 QUARK_TEST("parser", "parse_hexadecimal_literal()", "", ""){
 	const auto a = parse_hexadecimal_literal(seq_t("0xabcdef0123456789 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 0xabcdef0123456789);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 0xabcdef0123456789);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 
 
 QUARK_TEST("parser", "parse_hexadecimal_literal()", "range", ""){
 	const auto a = parse_hexadecimal_literal(seq_t("0x7fffffffffffffff xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 0x7fffffffffffffff);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 0x7fffffffffffffff);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 QUARK_TEST("parser", "parse_hexadecimal_literal()", "range", ""){
 	const auto a = parse_hexadecimal_literal(seq_t("0x8000000000000000 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 0x8000000000000000);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 0x8000000000000000);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 QUARK_TEST("parser", "parse_hexadecimal_literal()", "range", ""){
 	const auto a = parse_hexadecimal_literal(seq_t("0xffffffffffffffff xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 0xffffffffffffffff);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 0xffffffffffffffff);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 
 
 QUARK_TEST("parser", "parse_hexadecimal_literal()", "", ""){
 	const auto a = parse_hexadecimal_literal(seq_t("0xabcdef01'23456789 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 0xabcdef0123456789);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 0xabcdef0123456789);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 
 QUARK_TEST("parser", "parse_hexadecimal_literal()", "", ""){
 	const auto a = parse_hexadecimal_literal(seq_t("0xabcdef01'23456789 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 0xabcdef0123456789);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 0xabcdef0123456789);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 QUARK_TEST("parser", "parse_hexadecimal_literal()", "", ""){
 	const auto a = parse_hexadecimal_literal(seq_t("0x01'23456789 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 0x0123456789);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 0x0123456789);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 
 QUARK_TEST("parser", "parse_hexadecimal_literal()", "", ""){
 	const auto a = parse_hexadecimal_literal(seq_t("0xABCD xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 0xabcd);
-	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+	QUARK_VERIFY(a.first.get_int_value() == 0xabcd);
+	QUARK_VERIFY(a.second.get_s() == " xxx");
 }
 
 QUARK_TEST("parser", "parse_binary_literal()", "", ""){
@@ -1330,13 +1330,13 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 
 QUARK_TEST("parser", "parse_lhs_atom()", "", ""){
 	const auto a = parse_lhs_atom(seq_t("3"));
-	QUARK_UT_VERIFY(a.first == parser__make_literal(value_t::make_int(3)));
+	QUARK_VERIFY(a.first == parser__make_literal(value_t::make_int(3)));
 }
 
 QUARK_TEST("parser", "parse_lhs_atom()", "", ""){
 	types_t temp;
 	const auto a = parse_lhs_atom(seq_t("[3]"));
-	QUARK_UT_VERIFY(a.first == make_parser_node(
+	QUARK_VERIFY(a.first == make_parser_node(
 		floyd::k_no_location,
 		parse_tree_expression_opcode_t::k_value_constructor,
 		{

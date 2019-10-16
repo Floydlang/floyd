@@ -2496,23 +2496,23 @@ bool interpreter_t::check_invariant() const {
 
 QUARK_TEST("", "", "", ""){
 	const auto value_size = sizeof(bc_value_t);
-	QUARK_UT_VERIFY(value_size >= 8);
+	QUARK_VERIFY(value_size >= 8);
 /*
-	QUARK_UT_VERIFY(value_size == 16);
-	QUARK_UT_VERIFY(expression_size == 40);
-	QUARK_UT_VERIFY(e_count_offset == 4);
-	QUARK_UT_VERIFY(e_offset == 8);
-	QUARK_UT_VERIFY(value_offset == 16);
+	QUARK_VERIFY(value_size == 16);
+	QUARK_VERIFY(expression_size == 40);
+	QUARK_VERIFY(e_count_offset == 4);
+	QUARK_VERIFY(e_offset == 8);
+	QUARK_VERIFY(value_offset == 16);
 */
 
 
-//	QUARK_UT_VERIFY(sizeof(temp) == 56);
+//	QUARK_VERIFY(sizeof(temp) == 56);
 }
 
 QUARK_TEST("", "", "", ""){
 	const auto s = sizeof(bc_value_t);
-	QUARK_UT_VERIFY(s >= 8);
-//	QUARK_UT_VERIFY(s == 16);
+	QUARK_VERIFY(s >= 8);
+//	QUARK_VERIFY(s == 16);
 }
 
 

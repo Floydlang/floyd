@@ -99,48 +99,48 @@ std::pair<std::string, seq_t> skip_whitespace2(const seq_t& s){
 }
 
 QUARK_TEST("", "skip_whitespace2()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("")).second == seq_t(""));
+	QUARK_VERIFY(skip_whitespace2(seq_t("")).second == seq_t(""));
 }
 QUARK_TEST("", "skip_whitespace2()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace2(seq_t(" ")).second == seq_t(""));
+	QUARK_VERIFY(skip_whitespace2(seq_t(" ")).second == seq_t(""));
 }
 QUARK_TEST("", "skip_whitespace2(seq_t()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("\t")).second == seq_t(""));
+	QUARK_VERIFY(skip_whitespace2(seq_t("\t")).second == seq_t(""));
 }
 QUARK_TEST("", "skip_whitespace2(seq_t()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("int blob()")).second == seq_t("int blob()"));
+	QUARK_VERIFY(skip_whitespace2(seq_t("int blob()")).second == seq_t("int blob()"));
 }
 QUARK_TEST("", "skip_whitespace2(seq_t()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("\t\t\t int blob()")).second == seq_t("int blob()"));
+	QUARK_VERIFY(skip_whitespace2(seq_t("\t\t\t int blob()")).second == seq_t("int blob()"));
 }
 
 
 QUARK_TEST("", "skip_whitespace2()", "//", ""){
-	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("//xyz")).second == seq_t(""));
+	QUARK_VERIFY(skip_whitespace2(seq_t("//xyz")).second == seq_t(""));
 }
 QUARK_TEST("", "skip_whitespace2()", "//", ""){
-	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("//xyz\nabc")).second == seq_t("abc"));
+	QUARK_VERIFY(skip_whitespace2(seq_t("//xyz\nabc")).second == seq_t("abc"));
 }
 QUARK_TEST("", "skip_whitespace2()", "//", ""){
-	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("   \t//xyz \t\n\t abc")).second == seq_t("abc"));
+	QUARK_VERIFY(skip_whitespace2(seq_t("   \t//xyz \t\n\t abc")).second == seq_t("abc"));
 }
 
 QUARK_TEST("", "skip_whitespace2()", "/* */", ""){
-	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("/**/xyz")).second == seq_t("xyz"));
+	QUARK_VERIFY(skip_whitespace2(seq_t("/**/xyz")).second == seq_t("xyz"));
 }
 QUARK_TEST("", "skip_whitespace2()", "/* */", ""){
-	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("/*abc*/xyz")).second == seq_t("xyz"));
+	QUARK_VERIFY(skip_whitespace2(seq_t("/*abc*/xyz")).second == seq_t("xyz"));
 }
 QUARK_TEST("", "skip_whitespace2()", "/* */", ""){
-	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("/*abc*/xyz")).second == seq_t("xyz"));
+	QUARK_VERIFY(skip_whitespace2(seq_t("/*abc*/xyz")).second == seq_t("xyz"));
 }
 QUARK_TEST("", "skip_whitespace2()", "/* */", ""){
-	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("   \t/*a \tbc*/   \txyz")).second == seq_t("xyz"));
+	QUARK_VERIFY(skip_whitespace2(seq_t("   \t/*a \tbc*/   \txyz")).second == seq_t("xyz"));
 }
 
 QUARK_TEST("", "skip_whitespace2()", "/* */", ""){
 	try {
-		QUARK_TEST_VERIFY(skip_whitespace2(seq_t("/*xyz")).second == seq_t(""));
+		QUARK_VERIFY(skip_whitespace2(seq_t("/*xyz")).second == seq_t(""));
 		fail_test(QUARK_POS);
 	}
 	catch(...) {
@@ -148,10 +148,10 @@ QUARK_TEST("", "skip_whitespace2()", "/* */", ""){
 }
 
 QUARK_TEST("", "skip_whitespace2()", "/* */ -- nested", ""){
-	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("/*/**/*/xyz")).second == seq_t("xyz"));
+	QUARK_VERIFY(skip_whitespace2(seq_t("/*/**/*/xyz")).second == seq_t("xyz"));
 }
 QUARK_TEST("", "skip_whitespace2()", "/* */ -- nested", ""){
-	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("/*xyz/*abc*/123*/789")).second == seq_t("789"));
+	QUARK_VERIFY(skip_whitespace2(seq_t("/*xyz/*abc*/123*/789")).second == seq_t("789"));
 }
 
 
@@ -160,16 +160,16 @@ bool is_whitespace(char ch){
 }
 
 QUARK_TEST("", "is_whitespace()", "", ""){
-	QUARK_TEST_VERIFY(is_whitespace('x') == false);
+	QUARK_VERIFY(is_whitespace('x') == false);
 }
 QUARK_TEST("", "is_whitespace()", "", ""){
-	QUARK_TEST_VERIFY(is_whitespace(' ') == true);
+	QUARK_VERIFY(is_whitespace(' ') == true);
 }
 QUARK_TEST("", "is_whitespace()", "", ""){
-	QUARK_TEST_VERIFY(is_whitespace('\t') == true);
+	QUARK_VERIFY(is_whitespace('\t') == true);
 }
 QUARK_TEST("", "is_whitespace()", "", ""){
-	QUARK_TEST_VERIFY(is_whitespace('\n') == true);
+	QUARK_VERIFY(is_whitespace('\n') == true);
 }
 
 
@@ -184,16 +184,16 @@ std::string skip_whitespace_ends(const std::string& s){
 }
 
 QUARK_TEST("", "skip_whitespace_ends()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace_ends("") == "");
+	QUARK_VERIFY(skip_whitespace_ends("") == "");
 }
 QUARK_TEST("", "skip_whitespace_ends()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace_ends("  a") == "a");
+	QUARK_VERIFY(skip_whitespace_ends("  a") == "a");
 }
 QUARK_TEST("", "skip_whitespace_ends()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace_ends("b  ") == "b");
+	QUARK_VERIFY(skip_whitespace_ends("b  ") == "b");
 }
 QUARK_TEST("", "skip_whitespace_ends()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace_ends("  c  ") == "c");
+	QUARK_VERIFY(skip_whitespace_ends("  c  ") == "c");
 }
 
 
@@ -217,34 +217,34 @@ static std::pair<std::string, seq_t> get_balanced(const seq_t& s){
 }
 
 QUARK_TEST("", "get_balanced()", "", ""){
-//	QUARK_TEST_VERIFY(get_balanced("") == seq("", ""));
-	QUARK_TEST_VERIFY(get_balanced(seq_t("()")) == (std::pair<std::string, seq_t>("()", seq_t(""))));
+//	QUARK_VERIFY(get_balanced("") == seq("", ""));
+	QUARK_VERIFY(get_balanced(seq_t("()")) == (std::pair<std::string, seq_t>("()", seq_t(""))));
 }
 QUARK_TEST("", "get_balanced()", "", ""){
-	QUARK_TEST_VERIFY(get_balanced(seq_t("(abc)")) == (std::pair<std::string, seq_t>("(abc)", seq_t(""))));
+	QUARK_VERIFY(get_balanced(seq_t("(abc)")) == (std::pair<std::string, seq_t>("(abc)", seq_t(""))));
 }
 QUARK_TEST("", "get_balanced()", "", ""){
-	QUARK_TEST_VERIFY(get_balanced(seq_t("(abc)xyz")) == (std::pair<std::string, seq_t>("(abc)", seq_t("xyz"))));
+	QUARK_VERIFY(get_balanced(seq_t("(abc)xyz")) == (std::pair<std::string, seq_t>("(abc)", seq_t("xyz"))));
 }
 QUARK_TEST("", "get_balanced()", "", ""){
-	QUARK_TEST_VERIFY(get_balanced(seq_t("((abc))xyz")) == (std::pair<std::string, seq_t>("((abc))", seq_t("xyz"))));
+	QUARK_VERIFY(get_balanced(seq_t("((abc))xyz")) == (std::pair<std::string, seq_t>("((abc))", seq_t("xyz"))));
 }
 QUARK_TEST("", "get_balanced()", "", ""){
-	QUARK_TEST_VERIFY(get_balanced(seq_t("((abc)[])xyz")) == (std::pair<std::string, seq_t>("((abc)[])", seq_t("xyz"))));
+	QUARK_VERIFY(get_balanced(seq_t("((abc)[])xyz")) == (std::pair<std::string, seq_t>("((abc)[])", seq_t("xyz"))));
 }
 QUARK_TEST("", "get_balanced()", "", ""){
-	QUARK_TEST_VERIFY(get_balanced(seq_t("(return 4 < 5;)xxx")) == (std::pair<std::string, seq_t>("(return 4 < 5;)", seq_t("xxx"))));
+	QUARK_VERIFY(get_balanced(seq_t("(return 4 < 5;)xxx")) == (std::pair<std::string, seq_t>("(return 4 < 5;)", seq_t("xxx"))));
 }
 QUARK_TEST("", "get_balanced()", "", ""){
-	QUARK_TEST_VERIFY(get_balanced(seq_t("{}")) == (std::pair<std::string, seq_t>("{}", seq_t(""))));
+	QUARK_VERIFY(get_balanced(seq_t("{}")) == (std::pair<std::string, seq_t>("{}", seq_t(""))));
 }
 QUARK_TEST("", "get_balanced()", "", ""){
-	QUARK_TEST_VERIFY(get_balanced(seq_t("{aaa}bbb")) == (std::pair<std::string, seq_t>("{aaa}", seq_t("bbb"))));
+	QUARK_VERIFY(get_balanced(seq_t("{aaa}bbb")) == (std::pair<std::string, seq_t>("{aaa}", seq_t("bbb"))));
 }
 QUARK_TEST("", "get_balanced()", "", ""){
-	QUARK_TEST_VERIFY(get_balanced(seq_t("{return 4 < 5;}xxx")) == (std::pair<std::string, seq_t>("{return 4 < 5;}", seq_t("xxx"))));
+	QUARK_VERIFY(get_balanced(seq_t("{return 4 < 5;}xxx")) == (std::pair<std::string, seq_t>("{return 4 < 5;}", seq_t("xxx"))));
 }
-//	QUARK_TEST_VERIFY(get_balanced("{\n\t\t\t\treturn 4 < 5;\n\t\t\t}\n\t\t") == seq("((abc)[])", xyz));
+//	QUARK_VERIFY(get_balanced("{\n\t\t\t\treturn 4 < 5;\n\t\t\t}\n\t\t") == seq("((abc)[])", xyz));
 
 
 std::pair<std::string, seq_t> read_enclosed_in_parantheses(const seq_t& pos){
@@ -256,10 +256,10 @@ std::pair<std::string, seq_t> read_enclosed_in_parantheses(const seq_t& pos){
 }
 
 QUARK_TEST("", "read_enclosed_in_parantheses()", "", ""){
-	QUARK_UT_VERIFY((	read_enclosed_in_parantheses(seq_t("()xyz")) == std::pair<std::string, seq_t>{"", seq_t("xyz") } 	));
+	QUARK_VERIFY((	read_enclosed_in_parantheses(seq_t("()xyz")) == std::pair<std::string, seq_t>{"", seq_t("xyz") } 	));
 }
 QUARK_TEST("", "read_enclosed_in_parantheses()", "", ""){
-	QUARK_UT_VERIFY((	read_enclosed_in_parantheses(seq_t(" ( abc )xyz")) == std::pair<std::string, seq_t>{" abc ", seq_t("xyz") } 	));
+	QUARK_VERIFY((	read_enclosed_in_parantheses(seq_t(" ( abc )xyz")) == std::pair<std::string, seq_t>{" abc ", seq_t("xyz") } 	));
 }
 
 
@@ -326,7 +326,7 @@ std::pair<std::string, seq_t> read_required_identifier(const seq_t& s){
 }
 
 QUARK_TEST("read_required_identifier()", "", "", ""){
-	QUARK_TEST_VERIFY(read_required_identifier(seq_t("\thello\txxx")) == (std::pair<std::string, seq_t>("hello", seq_t("\txxx"))));
+	QUARK_VERIFY(read_required_identifier(seq_t("\thello\txxx")) == (std::pair<std::string, seq_t>("hello", seq_t("\txxx"))));
 }
 
 
@@ -394,15 +394,15 @@ static std::vector<member_t> parse_functiondef_arguments2(types_t& types, const 
 
 QUARK_TEST("", "parse_functiondef_arguments2()", "", ""){
 	types_t types;
-	QUARK_TEST_VERIFY((		parse_functiondef_arguments2(types, "()", true) == std::vector<member_t>{}		));
+	QUARK_VERIFY((		parse_functiondef_arguments2(types, "()", true) == std::vector<member_t>{}		));
 }
 QUARK_TEST("", "parse_functiondef_arguments2()", "", ""){
 	types_t types;
-	QUARK_TEST_VERIFY((		parse_functiondef_arguments2(types, "(int a)", true) == std::vector<member_t>{ { type_t::make_int(), "a" }}		));
+	QUARK_VERIFY((		parse_functiondef_arguments2(types, "(int a)", true) == std::vector<member_t>{ { type_t::make_int(), "a" }}		));
 }
 QUARK_TEST("", "parse_functiondef_arguments2()", "", ""){
 	types_t types;
-	QUARK_TEST_VERIFY((		parse_functiondef_arguments2(types, "(int x, string y, double z)", true) == std::vector<member_t>{
+	QUARK_VERIFY((		parse_functiondef_arguments2(types, "(int x, string y, double z)", true) == std::vector<member_t>{
 		{ type_t::make_int(), "x" },
 		{ type_t::make_string(), "y" },
 		{ type_t::make_double(), "z" }
@@ -436,28 +436,28 @@ std::pair<std::vector<member_t>, seq_t> read_function_type_args(types_t& types, 
 QUARK_TEST("", "read_function_type_args()", "", ""){
 	types_t types;
 	const auto result = read_function_type_args(types, seq_t("()"));
-	QUARK_TEST_VERIFY(result.first.empty());
-	QUARK_TEST_VERIFY(result.second.empty());
+	QUARK_VERIFY(result.first.empty());
+	QUARK_VERIFY(result.second.empty());
 }
 QUARK_TEST("", "read_function_type_args()", "", ""){
 	types_t types;
 	const auto result = read_function_type_args(types, seq_t("(int, double)"));
-	QUARK_TEST_VERIFY(result.first.size() == 2);
-	QUARK_TEST_VERIFY(peek2(types, result.first[0]._type).is_int());
-	QUARK_TEST_VERIFY(result.first[0]._name == "");
-	QUARK_TEST_VERIFY(peek2(types, result.first[1]._type).is_double());
-	QUARK_TEST_VERIFY(result.first[1]._name == "");
-	QUARK_TEST_VERIFY(result.second.empty());
+	QUARK_VERIFY(result.first.size() == 2);
+	QUARK_VERIFY(peek2(types, result.first[0]._type).is_int());
+	QUARK_VERIFY(result.first[0]._name == "");
+	QUARK_VERIFY(peek2(types, result.first[1]._type).is_double());
+	QUARK_VERIFY(result.first[1]._name == "");
+	QUARK_VERIFY(result.second.empty());
 }
 QUARK_TEST("", "read_function_type_args()", "", ""){
 	types_t types;
 	const auto result = read_function_type_args(types, seq_t("(int x, double y)"));
-	QUARK_TEST_VERIFY(result.first.size() == 2);
-	QUARK_TEST_VERIFY(peek2(types, result.first[0]._type).is_int());
-	QUARK_TEST_VERIFY(result.first[0]._name == "x");
-	QUARK_TEST_VERIFY(peek2(types, result.first[1]._type).is_double());
-	QUARK_TEST_VERIFY(result.first[1]._name == "y");
-	QUARK_TEST_VERIFY(result.second.empty());
+	QUARK_VERIFY(result.first.size() == 2);
+	QUARK_VERIFY(peek2(types, result.first[0]._type).is_int());
+	QUARK_VERIFY(result.first[0]._name == "x");
+	QUARK_VERIFY(peek2(types, result.first[1]._type).is_double());
+	QUARK_VERIFY(result.first[1]._name == "y");
+	QUARK_VERIFY(result.second.empty());
 }
 
 static std::pair<std::shared_ptr<type_t>, seq_t> read_basic_or_vector(types_t& types, const seq_t& s){
@@ -534,93 +534,93 @@ std::pair<std::shared_ptr<type_t>, seq_t> read_type(types_t& types, const seq_t&
 
 QUARK_TEST("", "read_type()", "", ""){
 	types_t i;
-	QUARK_TEST_VERIFY(read_type(i, seq_t("-3")).first == nullptr);
+	QUARK_VERIFY(read_type(i, seq_t("-3")).first == nullptr);
 }
 QUARK_TEST("", "read_type()", "", ""){
 	types_t i;
-	QUARK_TEST_VERIFY(*read_type(i, seq_t("undef")).first == make_undefined());
+	QUARK_VERIFY(*read_type(i, seq_t("undef")).first == make_undefined());
 }
 QUARK_TEST("", "read_type()", "", ""){
 	types_t i;
-	QUARK_TEST_VERIFY(*read_type(i, seq_t("any")).first == type_t::make_any());
+	QUARK_VERIFY(*read_type(i, seq_t("any")).first == type_t::make_any());
 }
 QUARK_TEST("", "read_type()", "", ""){
 	types_t i;
-	QUARK_TEST_VERIFY(*read_type(i, seq_t("void")).first == type_t::make_void());
+	QUARK_VERIFY(*read_type(i, seq_t("void")).first == type_t::make_void());
 }
 QUARK_TEST("", "read_type()", "", ""){
 	types_t i;
-	QUARK_TEST_VERIFY(*read_type(i, seq_t("bool")).first == type_t::make_bool());
+	QUARK_VERIFY(*read_type(i, seq_t("bool")).first == type_t::make_bool());
 }
 QUARK_TEST("", "read_type()", "", ""){
 	types_t i;
-	QUARK_TEST_VERIFY(*read_type(i, seq_t("int")).first == type_t::make_int());
+	QUARK_VERIFY(*read_type(i, seq_t("int")).first == type_t::make_int());
 }
 QUARK_TEST("", "read_type()", "", ""){
 	types_t i;
-	QUARK_TEST_VERIFY(*read_type(i, seq_t("double")).first == type_t::make_double());
+	QUARK_VERIFY(*read_type(i, seq_t("double")).first == type_t::make_double());
 }
 QUARK_TEST("", "read_type()", "", ""){
 	types_t i;
-	QUARK_TEST_VERIFY(*read_type(i, seq_t("string")).first == type_t::make_string());
+	QUARK_VERIFY(*read_type(i, seq_t("string")).first == type_t::make_string());
 }
 QUARK_TEST("", "read_type()", "identifier", ""){
 	types_t i;
 	const auto r = read_type(i, seq_t("temp"));
-	QUARK_TEST_VERIFY(*r.first ==  make_symbol_ref(i, "temp"));
-	QUARK_TEST_VERIFY(r.second == seq_t(""));
+	QUARK_VERIFY(*r.first ==  make_symbol_ref(i, "temp"));
+	QUARK_VERIFY(r.second == seq_t(""));
 }
 QUARK_TEST("", "read_type()", "vector", ""){
 	types_t i;
 	const auto r = read_type(i, seq_t("[int]"));
-	QUARK_TEST_VERIFY(	*r.first ==  make_vector(i, type_t::make_int())		);
-	QUARK_TEST_VERIFY(r.second == seq_t(""));
+	QUARK_VERIFY(	*r.first ==  make_vector(i, type_t::make_int())		);
+	QUARK_VERIFY(r.second == seq_t(""));
 }
 QUARK_TEST("", "read_type()", "vector", ""){
 	types_t i;
 	const auto r = read_type(i, seq_t("[[int]]"));
-	QUARK_TEST_VERIFY(	*r.first ==  make_vector(i, make_vector(i, type_t::make_int()))		);
-	QUARK_TEST_VERIFY(r.second == seq_t(""));
+	QUARK_VERIFY(	*r.first ==  make_vector(i, make_vector(i, type_t::make_int()))		);
+	QUARK_VERIFY(r.second == seq_t(""));
 }
 
 QUARK_TEST("", "read_type()", "dict", ""){
 	types_t i;
 	const auto r = read_type(i, seq_t("[string: int]"));
-	QUARK_TEST_VERIFY(	*r.first ==  make_dict(i, type_t::make_int())		);
-	QUARK_TEST_VERIFY(r.second == seq_t(""));
+	QUARK_VERIFY(	*r.first ==  make_dict(i, type_t::make_int())		);
+	QUARK_VERIFY(r.second == seq_t(""));
 }
 
 
 QUARK_TEST("", "read_type()", "", ""){
 	types_t i;
 	const auto r = read_type(i, seq_t("int ()"));
-	QUARK_TEST_VERIFY(*r.first ==  make_function(i, type_t::make_int(), {}, epure::pure));
-	QUARK_TEST_VERIFY(r.second == seq_t(""));
+	QUARK_VERIFY(*r.first ==  make_function(i, type_t::make_int(), {}, epure::pure));
+	QUARK_VERIFY(r.second == seq_t(""));
 }
 
 QUARK_TEST("", "read_type()", "", ""){
 	types_t i;
 	const auto r = read_type(i, seq_t("string (double a, double b)"));
-	QUARK_TEST_VERIFY(	*r.first ==  make_function(i, type_t::make_string(), { type_t::make_double(), type_t::make_double() }, epure::pure)	);
-	QUARK_TEST_VERIFY(r.second == seq_t(""));
+	QUARK_VERIFY(	*r.first ==  make_function(i, type_t::make_string(), { type_t::make_double(), type_t::make_double() }, epure::pure)	);
+	QUARK_VERIFY(r.second == seq_t(""));
 }
 QUARK_TEST("", "read_type()", "", ""){
 	types_t i;
 	const auto r = read_type(i, seq_t("int (double a) ()"));
 
-	QUARK_TEST_VERIFY( *r.first == make_function(
+	QUARK_VERIFY( *r.first == make_function(
 		i,
 		make_function(i, type_t::make_int(), { type_t::make_double() }, epure::pure),
 		{},
 		epure::pure
 	));
-	QUARK_TEST_VERIFY(	r.second == seq_t("") );
+	QUARK_VERIFY(	r.second == seq_t("") );
 }
 QUARK_TEST("", "read_type()", "", ""){
 	types_t i;
 	const auto r = read_type(i, seq_t("bool (int (double a) b)"));
 
-	QUARK_TEST_VERIFY(
+	QUARK_VERIFY(
 		*r.first
 		==
 		make_function(
@@ -633,11 +633,11 @@ QUARK_TEST("", "read_type()", "", ""){
 		)
 	);
 
-	QUARK_TEST_VERIFY(	r.second == seq_t("") );
+	QUARK_VERIFY(	r.second == seq_t("") );
 }
 /*
 QUARK_TEST("", "read_type_identifier()", "", ""){
-	QUARK_TEST_VERIFY(read_type_identifier(seq_t("int (double a) g(int(double b))")).first == "int (double a) g(int(double b))");
+	QUARK_VERIFY(read_type_identifier(seq_t("int (double a) g(int(double b))")).first == "int (double a) g(int(double b))");
 }
 
 -	TYPE-IDENTIFIER (TYPE-IDENTIFIER a, TYPE-IDENTIFIER b, ...)

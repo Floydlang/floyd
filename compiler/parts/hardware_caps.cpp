@@ -19,8 +19,8 @@
 
 QUARK_TEST("","", "", ""){
 	const auto a = read_hardware_caps();
-	QUARK_UT_VERIFY(a._hw_cacheline_size >= 16);
-	QUARK_UT_VERIFY(a._hw_scalar_align >= 4);
+	QUARK_VERIFY(a._hw_cacheline_size >= 16);
+	QUARK_VERIFY(a._hw_scalar_align >= 4);
 }
 
 std::string get_hardware_caps_string(const hardware_caps_t& caps){

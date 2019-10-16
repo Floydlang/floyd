@@ -747,15 +747,15 @@ std::vector<int> make_location_lookup(const std::string& source){
 
 QUARK_TEST("", "make_location_lookup()", "", ""){
 	const auto r = make_location_lookup("");
-	QUARK_UT_VERIFY((r == std::vector<int>{ 0 }));
+	QUARK_VERIFY((r == std::vector<int>{ 0 }));
 }
 QUARK_TEST("", "make_location_lookup()", "", ""){
 	const auto r = make_location_lookup("aaa");
-	QUARK_UT_VERIFY((r == std::vector<int>{ 0, 3 }));
+	QUARK_VERIFY((r == std::vector<int>{ 0, 3 }));
 }
 QUARK_TEST("", "make_location_lookup()", "", ""){
 	const auto r = make_location_lookup("aaa\nbbb\n");
-	QUARK_UT_VERIFY((r == std::vector<int>{ 0, 4, 8 }));
+	QUARK_VERIFY((r == std::vector<int>{ 0, 4, 8 }));
 }
 
 const std::string cleanup_line_snippet(const std::string& s){

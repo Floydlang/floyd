@@ -66,37 +66,37 @@ static int64_t decode_big_int(const std::string& s){
 }
 
 QUARK_TEST("", "encode_big_int()", "", ""){
-	QUARK_UT_VERIFY(encode_big_int(0) == (std::pair<std::string, int64_t>("", 0)));
+	QUARK_VERIFY(encode_big_int(0) == (std::pair<std::string, int64_t>("", 0)));
 }
 
 QUARK_TEST("", "encode_big_int()", "", ""){
-	QUARK_UT_VERIFY(encode_big_int(-1) == (std::pair<std::string, int64_t>("", -1)));
+	QUARK_VERIFY(encode_big_int(-1) == (std::pair<std::string, int64_t>("", -1)));
 }
 
 QUARK_TEST("", "encode_big_int()", "", ""){
-	QUARK_UT_VERIFY(encode_big_int(k_floyd_int64_max) == (std::pair<std::string, int64_t>("9223372036854775807", -1)));
+	QUARK_VERIFY(encode_big_int(k_floyd_int64_max) == (std::pair<std::string, int64_t>("9223372036854775807", -1)));
 }
 
 QUARK_TEST("", "encode_big_int()", "", ""){
-	QUARK_UT_VERIFY(encode_big_int(k_floyd_int64_min) == (std::pair<std::string, int64_t>("-9223372036854775808", -1)));
+	QUARK_VERIFY(encode_big_int(k_floyd_int64_min) == (std::pair<std::string, int64_t>("-9223372036854775808", -1)));
 }
 
 QUARK_TEST("", "encode_big_int()", "", ""){
-	QUARK_UT_VERIFY(encode_big_int(k_floyd_int64_max) == (std::pair<std::string, int64_t>("9223372036854775807", -1)));
+	QUARK_VERIFY(encode_big_int(k_floyd_int64_max) == (std::pair<std::string, int64_t>("9223372036854775807", -1)));
 }
 
 QUARK_TEST("", "encode_big_int()", "", ""){
-	QUARK_UT_VERIFY(encode_big_int(MIN_SAFE_INTEGER) == (std::pair<std::string, int64_t>("", MIN_SAFE_INTEGER)));
+	QUARK_VERIFY(encode_big_int(MIN_SAFE_INTEGER) == (std::pair<std::string, int64_t>("", MIN_SAFE_INTEGER)));
 }
 QUARK_TEST("", "encode_big_int()", "", ""){
-	QUARK_UT_VERIFY(encode_big_int(MAX_SAFE_INTEGER) == (std::pair<std::string, int64_t>("", MAX_SAFE_INTEGER)));
+	QUARK_VERIFY(encode_big_int(MAX_SAFE_INTEGER) == (std::pair<std::string, int64_t>("", MAX_SAFE_INTEGER)));
 }
 
 QUARK_TEST("", "encode_big_int()", "", ""){
-	QUARK_UT_VERIFY(encode_big_int(MIN_SAFE_INTEGER - 1) == (std::pair<std::string, int64_t>("-9007199254740992", -1)));
+	QUARK_VERIFY(encode_big_int(MIN_SAFE_INTEGER - 1) == (std::pair<std::string, int64_t>("-9007199254740992", -1)));
 }
 QUARK_TEST("", "encode_big_int()", "", ""){
-	QUARK_UT_VERIFY(encode_big_int(MAX_SAFE_INTEGER + 1) == (std::pair<std::string, int64_t>("9007199254740992", -1)));
+	QUARK_VERIFY(encode_big_int(MAX_SAFE_INTEGER + 1) == (std::pair<std::string, int64_t>("9007199254740992", -1)));
 }
 
 
@@ -837,173 +837,173 @@ value_t::value_t(const type_t& type, function_id_t function_id) :
 QUARK_TESTQ("value_t::make_undefined()", "undef"){
 	types_t types;
 	const auto a = value_t::make_undefined();
-	QUARK_TEST_VERIFY(a.is_undefined());
-	QUARK_TEST_VERIFY(!a.is_any());
-	QUARK_TEST_VERIFY(!a.is_void());
-	QUARK_TEST_VERIFY(!a.is_bool());
-	QUARK_TEST_VERIFY(!a.is_int());
-	QUARK_TEST_VERIFY(!a.is_double());
-	QUARK_TEST_VERIFY(!a.is_string());
-	QUARK_TEST_VERIFY(!a.is_struct());
-	QUARK_TEST_VERIFY(!a.is_vector());
-	QUARK_TEST_VERIFY(!a.is_dict());
-	QUARK_TEST_VERIFY(!a.is_function());
+	QUARK_VERIFY(a.is_undefined());
+	QUARK_VERIFY(!a.is_any());
+	QUARK_VERIFY(!a.is_void());
+	QUARK_VERIFY(!a.is_bool());
+	QUARK_VERIFY(!a.is_int());
+	QUARK_VERIFY(!a.is_double());
+	QUARK_VERIFY(!a.is_string());
+	QUARK_VERIFY(!a.is_struct());
+	QUARK_VERIFY(!a.is_vector());
+	QUARK_VERIFY(!a.is_dict());
+	QUARK_VERIFY(!a.is_function());
 
-	QUARK_TEST_VERIFY(a == value_t::make_undefined());
-	QUARK_TEST_VERIFY(a != value_t::make_string("test"));
-	QUARK_TEST_VERIFY(to_compact_string2(types, a) == "undef");
-	QUARK_TEST_VERIFY(value_and_type_to_string(types, a) == "undef");
+	QUARK_VERIFY(a == value_t::make_undefined());
+	QUARK_VERIFY(a != value_t::make_string("test"));
+	QUARK_VERIFY(to_compact_string2(types, a) == "undef");
+	QUARK_VERIFY(value_and_type_to_string(types, a) == "undef");
 }
 
 
 QUARK_TEST("", "value_t::make_any()", "**dynamic**", ""){
 	types_t types;
 	const auto a = value_t::make_any();
-	QUARK_TEST_VERIFY(!a.is_undefined());
-	QUARK_TEST_VERIFY(a.is_any());
-	QUARK_TEST_VERIFY(!a.is_void());
-	QUARK_TEST_VERIFY(!a.is_bool());
-	QUARK_TEST_VERIFY(!a.is_int());
-	QUARK_TEST_VERIFY(!a.is_double());
-	QUARK_TEST_VERIFY(!a.is_string());
-	QUARK_TEST_VERIFY(!a.is_struct());
-	QUARK_TEST_VERIFY(!a.is_vector());
-	QUARK_TEST_VERIFY(!a.is_dict());
-	QUARK_TEST_VERIFY(!a.is_function());
+	QUARK_VERIFY(!a.is_undefined());
+	QUARK_VERIFY(a.is_any());
+	QUARK_VERIFY(!a.is_void());
+	QUARK_VERIFY(!a.is_bool());
+	QUARK_VERIFY(!a.is_int());
+	QUARK_VERIFY(!a.is_double());
+	QUARK_VERIFY(!a.is_string());
+	QUARK_VERIFY(!a.is_struct());
+	QUARK_VERIFY(!a.is_vector());
+	QUARK_VERIFY(!a.is_dict());
+	QUARK_VERIFY(!a.is_function());
 
-	QUARK_TEST_VERIFY(a == value_t::make_any());
-	QUARK_TEST_VERIFY(a != value_t::make_string("test"));
-	QUARK_TEST_VERIFY(to_compact_string2(types, a) == "any");
-	QUARK_TEST_VERIFY(value_and_type_to_string(types, a) == "any");
+	QUARK_VERIFY(a == value_t::make_any());
+	QUARK_VERIFY(a != value_t::make_string("test"));
+	QUARK_VERIFY(to_compact_string2(types, a) == "any");
+	QUARK_VERIFY(value_and_type_to_string(types, a) == "any");
 }
 
 
 QUARK_TESTQ("value_t::make_void()", "void"){
 	types_t types;
 	const auto a = value_t::make_void();
-	QUARK_TEST_VERIFY(!a.is_undefined());
-	QUARK_TEST_VERIFY(!a.is_any());
-	QUARK_TEST_VERIFY(a.is_void());
-	QUARK_TEST_VERIFY(!a.is_bool());
-	QUARK_TEST_VERIFY(!a.is_int());
-	QUARK_TEST_VERIFY(!a.is_double());
-	QUARK_TEST_VERIFY(!a.is_string());
-	QUARK_TEST_VERIFY(!a.is_struct());
-	QUARK_TEST_VERIFY(!a.is_vector());
-	QUARK_TEST_VERIFY(!a.is_dict());
-	QUARK_TEST_VERIFY(!a.is_function());
+	QUARK_VERIFY(!a.is_undefined());
+	QUARK_VERIFY(!a.is_any());
+	QUARK_VERIFY(a.is_void());
+	QUARK_VERIFY(!a.is_bool());
+	QUARK_VERIFY(!a.is_int());
+	QUARK_VERIFY(!a.is_double());
+	QUARK_VERIFY(!a.is_string());
+	QUARK_VERIFY(!a.is_struct());
+	QUARK_VERIFY(!a.is_vector());
+	QUARK_VERIFY(!a.is_dict());
+	QUARK_VERIFY(!a.is_function());
 
-	QUARK_TEST_VERIFY(a == value_t::make_void());
-	QUARK_TEST_VERIFY(a != value_t::make_string("test"));
-	QUARK_TEST_VERIFY(to_compact_string2(types, a) == "void");
-	QUARK_TEST_VERIFY(value_and_type_to_string(types, a) == "void");
+	QUARK_VERIFY(a == value_t::make_void());
+	QUARK_VERIFY(a != value_t::make_string("test"));
+	QUARK_VERIFY(to_compact_string2(types, a) == "void");
+	QUARK_VERIFY(value_and_type_to_string(types, a) == "void");
 }
 
 
 QUARK_TESTQ("value_t()", "bool - true"){
 	types_t types;
 	const auto a = value_t::make_bool(true);
-	QUARK_TEST_VERIFY(!a.is_undefined());
-	QUARK_TEST_VERIFY(!a.is_any());
-	QUARK_TEST_VERIFY(!a.is_void());
-	QUARK_TEST_VERIFY(a.is_bool());
-	QUARK_TEST_VERIFY(!a.is_int());
-	QUARK_TEST_VERIFY(!a.is_double());
-	QUARK_TEST_VERIFY(!a.is_string());
-	QUARK_TEST_VERIFY(!a.is_struct());
-	QUARK_TEST_VERIFY(!a.is_vector());
-	QUARK_TEST_VERIFY(!a.is_dict());
-	QUARK_TEST_VERIFY(!a.is_function());
+	QUARK_VERIFY(!a.is_undefined());
+	QUARK_VERIFY(!a.is_any());
+	QUARK_VERIFY(!a.is_void());
+	QUARK_VERIFY(a.is_bool());
+	QUARK_VERIFY(!a.is_int());
+	QUARK_VERIFY(!a.is_double());
+	QUARK_VERIFY(!a.is_string());
+	QUARK_VERIFY(!a.is_struct());
+	QUARK_VERIFY(!a.is_vector());
+	QUARK_VERIFY(!a.is_dict());
+	QUARK_VERIFY(!a.is_function());
 
-	QUARK_TEST_VERIFY(a == value_t::make_bool(true));
-	QUARK_TEST_VERIFY(a != value_t::make_bool(false));
-	QUARK_TEST_VERIFY(to_compact_string2(types, a) == "true");
-	QUARK_TEST_VERIFY(value_and_type_to_string(types, a) == "bool: true");
+	QUARK_VERIFY(a == value_t::make_bool(true));
+	QUARK_VERIFY(a != value_t::make_bool(false));
+	QUARK_VERIFY(to_compact_string2(types, a) == "true");
+	QUARK_VERIFY(value_and_type_to_string(types, a) == "bool: true");
 }
 
 QUARK_TESTQ("value_t()", "bool - false"){
 	types_t types;
 	const auto a = value_t::make_bool(false);
-	QUARK_TEST_VERIFY(!a.is_undefined());
-	QUARK_TEST_VERIFY(!a.is_any());
-	QUARK_TEST_VERIFY(!a.is_void());
-	QUARK_TEST_VERIFY(a.is_bool());
-	QUARK_TEST_VERIFY(!a.is_int());
-	QUARK_TEST_VERIFY(!a.is_double());
-	QUARK_TEST_VERIFY(!a.is_string());
-	QUARK_TEST_VERIFY(!a.is_struct());
-	QUARK_TEST_VERIFY(!a.is_vector());
-	QUARK_TEST_VERIFY(!a.is_dict());
-	QUARK_TEST_VERIFY(!a.is_function());
+	QUARK_VERIFY(!a.is_undefined());
+	QUARK_VERIFY(!a.is_any());
+	QUARK_VERIFY(!a.is_void());
+	QUARK_VERIFY(a.is_bool());
+	QUARK_VERIFY(!a.is_int());
+	QUARK_VERIFY(!a.is_double());
+	QUARK_VERIFY(!a.is_string());
+	QUARK_VERIFY(!a.is_struct());
+	QUARK_VERIFY(!a.is_vector());
+	QUARK_VERIFY(!a.is_dict());
+	QUARK_VERIFY(!a.is_function());
 
-	QUARK_TEST_VERIFY(a == value_t::make_bool(false));
-	QUARK_TEST_VERIFY(a != value_t::make_bool(true));
-	QUARK_TEST_VERIFY(to_compact_string2(types, a) == "false");
-	QUARK_TEST_VERIFY(value_and_type_to_string(types, a) == "bool: false");
+	QUARK_VERIFY(a == value_t::make_bool(false));
+	QUARK_VERIFY(a != value_t::make_bool(true));
+	QUARK_VERIFY(to_compact_string2(types, a) == "false");
+	QUARK_VERIFY(value_and_type_to_string(types, a) == "bool: false");
 }
 
 //??? test full range of int64
 QUARK_TESTQ("value_t()", "int"){
 	types_t types;
 	const auto a = value_t::make_int(13);
-	QUARK_TEST_VERIFY(!a.is_undefined());
-	QUARK_TEST_VERIFY(!a.is_any());
-	QUARK_TEST_VERIFY(!a.is_void());
-	QUARK_TEST_VERIFY(!a.is_bool());
-	QUARK_TEST_VERIFY(a.is_int());
-	QUARK_TEST_VERIFY(!a.is_double());
-	QUARK_TEST_VERIFY(!a.is_string());
-	QUARK_TEST_VERIFY(!a.is_struct());
-	QUARK_TEST_VERIFY(!a.is_vector());
-	QUARK_TEST_VERIFY(!a.is_dict());
-	QUARK_TEST_VERIFY(!a.is_function());
+	QUARK_VERIFY(!a.is_undefined());
+	QUARK_VERIFY(!a.is_any());
+	QUARK_VERIFY(!a.is_void());
+	QUARK_VERIFY(!a.is_bool());
+	QUARK_VERIFY(a.is_int());
+	QUARK_VERIFY(!a.is_double());
+	QUARK_VERIFY(!a.is_string());
+	QUARK_VERIFY(!a.is_struct());
+	QUARK_VERIFY(!a.is_vector());
+	QUARK_VERIFY(!a.is_dict());
+	QUARK_VERIFY(!a.is_function());
 
-	QUARK_TEST_VERIFY(a == value_t::make_int(13));
-	QUARK_TEST_VERIFY(a != value_t::make_int(14));
-	QUARK_TEST_VERIFY(to_compact_string2(types, a) == "13");
-	QUARK_TEST_VERIFY(value_and_type_to_string(types, a) == "int: 13");
+	QUARK_VERIFY(a == value_t::make_int(13));
+	QUARK_VERIFY(a != value_t::make_int(14));
+	QUARK_VERIFY(to_compact_string2(types, a) == "13");
+	QUARK_VERIFY(value_and_type_to_string(types, a) == "int: 13");
 }
 
 QUARK_TESTQ("value_t()", "double"){
 	types_t types;
 	const auto a = value_t::make_double(13.5f);
-	QUARK_TEST_VERIFY(!a.is_undefined());
-	QUARK_TEST_VERIFY(!a.is_any());
-	QUARK_TEST_VERIFY(!a.is_void());
-	QUARK_TEST_VERIFY(!a.is_bool());
-	QUARK_TEST_VERIFY(!a.is_int());
-	QUARK_TEST_VERIFY(a.is_double());
-	QUARK_TEST_VERIFY(!a.is_string());
-	QUARK_TEST_VERIFY(!a.is_struct());
-	QUARK_TEST_VERIFY(!a.is_vector());
-	QUARK_TEST_VERIFY(!a.is_dict());
-	QUARK_TEST_VERIFY(!a.is_function());
+	QUARK_VERIFY(!a.is_undefined());
+	QUARK_VERIFY(!a.is_any());
+	QUARK_VERIFY(!a.is_void());
+	QUARK_VERIFY(!a.is_bool());
+	QUARK_VERIFY(!a.is_int());
+	QUARK_VERIFY(a.is_double());
+	QUARK_VERIFY(!a.is_string());
+	QUARK_VERIFY(!a.is_struct());
+	QUARK_VERIFY(!a.is_vector());
+	QUARK_VERIFY(!a.is_dict());
+	QUARK_VERIFY(!a.is_function());
 
-	QUARK_TEST_VERIFY(a == value_t::make_double(13.5f));
-	QUARK_TEST_VERIFY(a != value_t::make_double(14.0f));
-	QUARK_TEST_VERIFY(to_compact_string2(types, a) == "13.5");
-	QUARK_TEST_VERIFY(value_and_type_to_string(types, a) == "double: 13.5");
+	QUARK_VERIFY(a == value_t::make_double(13.5f));
+	QUARK_VERIFY(a != value_t::make_double(14.0f));
+	QUARK_VERIFY(to_compact_string2(types, a) == "13.5");
+	QUARK_VERIFY(value_and_type_to_string(types, a) == "double: 13.5");
 }
 
 QUARK_TESTQ("value_t()", "string"){
 	types_t types;
 	const auto a = value_t::make_string("xyz");
-	QUARK_TEST_VERIFY(!a.is_undefined());
-	QUARK_TEST_VERIFY(!a.is_any());
-	QUARK_TEST_VERIFY(!a.is_void());
-	QUARK_TEST_VERIFY(!a.is_bool());
-	QUARK_TEST_VERIFY(!a.is_int());
-	QUARK_TEST_VERIFY(!a.is_double());
-	QUARK_TEST_VERIFY(a.is_string());
-	QUARK_TEST_VERIFY(!a.is_struct());
-	QUARK_TEST_VERIFY(!a.is_vector());
-	QUARK_TEST_VERIFY(!a.is_dict());
-	QUARK_TEST_VERIFY(!a.is_function());
+	QUARK_VERIFY(!a.is_undefined());
+	QUARK_VERIFY(!a.is_any());
+	QUARK_VERIFY(!a.is_void());
+	QUARK_VERIFY(!a.is_bool());
+	QUARK_VERIFY(!a.is_int());
+	QUARK_VERIFY(!a.is_double());
+	QUARK_VERIFY(a.is_string());
+	QUARK_VERIFY(!a.is_struct());
+	QUARK_VERIFY(!a.is_vector());
+	QUARK_VERIFY(!a.is_dict());
+	QUARK_VERIFY(!a.is_function());
 
-	QUARK_TEST_VERIFY(a == value_t::make_string("xyz"));
-	QUARK_TEST_VERIFY(a != value_t::make_string("xyza"));
-	QUARK_TEST_VERIFY(to_compact_string2(types, a) == "xyz");
-	QUARK_TEST_VERIFY(value_and_type_to_string(types, a) == "string: \"xyz\"");
+	QUARK_VERIFY(a == value_t::make_string("xyz"));
+	QUARK_VERIFY(a != value_t::make_string("xyza"));
+	QUARK_VERIFY(to_compact_string2(types, a) == "xyz");
+	QUARK_VERIFY(value_and_type_to_string(types, a) == "string: \"xyz\"");
 }
 
 

@@ -54,15 +54,15 @@ QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
 	auto backend = make_test_value_backend();
 	const auto a = to_runtime_string2(backend, "hello, world!");
 
-	QUARK_UT_VERIFY(a.vector_carray_ptr->get_element_count() == 13);
+	QUARK_VERIFY(a.vector_carray_ptr->get_element_count() == 13);
 
 	//	int64_t	'hello, w'
-//	QUARK_UT_VERIFY(a.vector_carray_ptr->load_element(0).int_value == 0x68656c6c6f2c2077);
-	QUARK_UT_VERIFY(a.vector_carray_ptr->load_element(0).int_value == 0x77202c6f6c6c6568);
+//	QUARK_VERIFY(a.vector_carray_ptr->load_element(0).int_value == 0x68656c6c6f2c2077);
+	QUARK_VERIFY(a.vector_carray_ptr->load_element(0).int_value == 0x77202c6f6c6c6568);
 
 	//int_value	int64_t	'orld!\0\0\0'
-//	QUARK_UT_VERIFY(a.vector_carray_ptr->load_element(1).int_value == 0x6f726c6421000000);
-	QUARK_UT_VERIFY(a.vector_carray_ptr->load_element(1).int_value == 0x00000021646c726f);
+//	QUARK_VERIFY(a.vector_carray_ptr->load_element(1).int_value == 0x6f726c6421000000);
+	QUARK_VERIFY(a.vector_carray_ptr->load_element(1).int_value == 0x00000021646c726f);
 }
 
 
@@ -100,7 +100,7 @@ QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
 	const auto a = to_runtime_string2(backend, "hello, world!");
 
 	const auto r = from_runtime_string2(backend, a);
-	QUARK_UT_VERIFY(r == "hello, world!");
+	QUARK_VERIFY(r == "hello, world!");
 }
 
 

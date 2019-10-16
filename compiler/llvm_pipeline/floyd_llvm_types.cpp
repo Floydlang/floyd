@@ -743,16 +743,16 @@ QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func void()", ""){
 		make_function(type_t::make_void(), {}, epure::pure)
 	);
 
-	QUARK_UT_VERIFY(r.return_type != nullptr);
-	QUARK_UT_VERIFY(r.return_type->isVoidTy());
+	QUARK_VERIFY(r.return_type != nullptr);
+	QUARK_VERIFY(r.return_type->isVoidTy());
 
-	QUARK_UT_VERIFY(r.args.size() == 1);
+	QUARK_VERIFY(r.args.size() == 1);
 
-	QUARK_UT_VERIFY(r.args[0].llvm_type->isPointerTy());
-	QUARK_UT_VERIFY(r.args[0].floyd_name == "floyd_runtime_ptr");
-	QUARK_UT_VERIFY(r.args[0].floyd_type.is_undefined());
-	QUARK_UT_VERIFY(r.args[0].floyd_arg_index == -1);
-	QUARK_UT_VERIFY(r.args[0].map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr);
+	QUARK_VERIFY(r.args[0].llvm_type->isPointerTy());
+	QUARK_VERIFY(r.args[0].floyd_name == "floyd_runtime_ptr");
+	QUARK_VERIFY(r.args[0].floyd_type.is_undefined());
+	QUARK_VERIFY(r.args[0].floyd_arg_index == -1);
+	QUARK_VERIFY(r.args[0].map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr);
 }
 
 QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func int()", ""){
@@ -762,16 +762,16 @@ QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func int()", ""){
 
 	const auto r = map_function_arguments(types, make_function(type_t::make_int(), {}, epure::pure));
 
-	QUARK_UT_VERIFY(r.return_type != nullptr);
-	QUARK_UT_VERIFY(r.return_type->isIntegerTy(64));
+	QUARK_VERIFY(r.return_type != nullptr);
+	QUARK_VERIFY(r.return_type->isIntegerTy(64));
 
-	QUARK_UT_VERIFY(r.args.size() == 1);
+	QUARK_VERIFY(r.args.size() == 1);
 
-	QUARK_UT_VERIFY(r.args[0].llvm_type->isPointerTy());
-	QUARK_UT_VERIFY(r.args[0].floyd_name == "floyd_runtime_ptr");
-	QUARK_UT_VERIFY(r.args[0].floyd_type.is_undefined());
-	QUARK_UT_VERIFY(r.args[0].floyd_arg_index == -1);
-	QUARK_UT_VERIFY(r.args[0].map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr);
+	QUARK_VERIFY(r.args[0].llvm_type->isPointerTy());
+	QUARK_VERIFY(r.args[0].floyd_name == "floyd_runtime_ptr");
+	QUARK_VERIFY(r.args[0].floyd_type.is_undefined());
+	QUARK_VERIFY(r.args[0].floyd_arg_index == -1);
+	QUARK_VERIFY(r.args[0].map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr);
 }
 
 QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""){
@@ -784,22 +784,22 @@ QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""){
 		make_function(type_t::make_void(), { type_t::make_int() }, epure::pure)
 	);
 
-	QUARK_UT_VERIFY(r.return_type != nullptr);
-	QUARK_UT_VERIFY(r.return_type->isVoidTy());
+	QUARK_VERIFY(r.return_type != nullptr);
+	QUARK_VERIFY(r.return_type->isVoidTy());
 
-	QUARK_UT_VERIFY(r.args.size() == 2);
+	QUARK_VERIFY(r.args.size() == 2);
 
-	QUARK_UT_VERIFY(r.args[0].llvm_type->isPointerTy());
-	QUARK_UT_VERIFY(r.args[0].floyd_name == "floyd_runtime_ptr");
-	QUARK_UT_VERIFY(r.args[0].floyd_type.is_undefined());
-	QUARK_UT_VERIFY(r.args[0].floyd_arg_index == -1);
-	QUARK_UT_VERIFY(r.args[0].map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr);
+	QUARK_VERIFY(r.args[0].llvm_type->isPointerTy());
+	QUARK_VERIFY(r.args[0].floyd_name == "floyd_runtime_ptr");
+	QUARK_VERIFY(r.args[0].floyd_type.is_undefined());
+	QUARK_VERIFY(r.args[0].floyd_arg_index == -1);
+	QUARK_VERIFY(r.args[0].map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr);
 
-	QUARK_UT_VERIFY(r.args[1].llvm_type->isIntegerTy(64));
-	QUARK_UT_VERIFY(r.args[1].floyd_name == "0");
-	QUARK_UT_VERIFY(r.args[1].floyd_type.is_int());
-	QUARK_UT_VERIFY(r.args[1].floyd_arg_index == 0);
-	QUARK_UT_VERIFY(r.args[1].map_type == llvm_arg_mapping_t::map_type::k_known_value_type);
+	QUARK_VERIFY(r.args[1].llvm_type->isIntegerTy(64));
+	QUARK_VERIFY(r.args[1].floyd_name == "0");
+	QUARK_VERIFY(r.args[1].floyd_type.is_int());
+	QUARK_VERIFY(r.args[1].floyd_arg_index == 0);
+	QUARK_VERIFY(r.args[1].map_type == llvm_arg_mapping_t::map_type::k_known_value_type);
 }
 
 QUARK_TEST
@@ -817,40 +817,40 @@ QUARK_TEST
 		)
 	);
 
-	QUARK_UT_VERIFY(r.return_type != nullptr);
-	QUARK_UT_VERIFY(r.return_type->isVoidTy());
+	QUARK_VERIFY(r.return_type != nullptr);
+	QUARK_VERIFY(r.return_type->isVoidTy());
 
-	QUARK_UT_VERIFY(r.args.size() == 5);
+	QUARK_VERIFY(r.args.size() == 5);
 
-	QUARK_UT_VERIFY(r.args[0].llvm_type->isPointerTy());
-	QUARK_UT_VERIFY(r.args[0].floyd_name == "floyd_runtime_ptr");
-	QUARK_UT_VERIFY(r.args[0].floyd_type.is_undefined());
-	QUARK_UT_VERIFY(r.args[0].floyd_arg_index == -1);
-	QUARK_UT_VERIFY(r.args[0].map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr);
+	QUARK_VERIFY(r.args[0].llvm_type->isPointerTy());
+	QUARK_VERIFY(r.args[0].floyd_name == "floyd_runtime_ptr");
+	QUARK_VERIFY(r.args[0].floyd_type.is_undefined());
+	QUARK_VERIFY(r.args[0].floyd_arg_index == -1);
+	QUARK_VERIFY(r.args[0].map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr);
 
-	QUARK_UT_VERIFY(r.args[1].llvm_type->isIntegerTy(64));
-	QUARK_UT_VERIFY(r.args[1].floyd_name == "0");
-	QUARK_UT_VERIFY(r.args[1].floyd_type.is_int());
-	QUARK_UT_VERIFY(r.args[1].floyd_arg_index == 0);
-	QUARK_UT_VERIFY(r.args[1].map_type == llvm_arg_mapping_t::map_type::k_known_value_type);
+	QUARK_VERIFY(r.args[1].llvm_type->isIntegerTy(64));
+	QUARK_VERIFY(r.args[1].floyd_name == "0");
+	QUARK_VERIFY(r.args[1].floyd_type.is_int());
+	QUARK_VERIFY(r.args[1].floyd_arg_index == 0);
+	QUARK_VERIFY(r.args[1].map_type == llvm_arg_mapping_t::map_type::k_known_value_type);
 
-	QUARK_UT_VERIFY(r.args[2].llvm_type->isIntegerTy(64));
-	QUARK_UT_VERIFY(r.args[2].floyd_name == "1");
-	QUARK_UT_VERIFY(r.args[2].floyd_type.is_any());
-	QUARK_UT_VERIFY(r.args[2].floyd_arg_index == 1);
-	QUARK_UT_VERIFY(r.args[2].map_type == llvm_arg_mapping_t::map_type::k_dyn_value);
+	QUARK_VERIFY(r.args[2].llvm_type->isIntegerTy(64));
+	QUARK_VERIFY(r.args[2].floyd_name == "1");
+	QUARK_VERIFY(r.args[2].floyd_type.is_any());
+	QUARK_VERIFY(r.args[2].floyd_arg_index == 1);
+	QUARK_VERIFY(r.args[2].map_type == llvm_arg_mapping_t::map_type::k_dyn_value);
 
-	QUARK_UT_VERIFY(r.args[3].llvm_type->isIntegerTy(64));
-	QUARK_UT_VERIFY(r.args[3].floyd_name == "1");
-	QUARK_UT_VERIFY(r.args[3].floyd_type.is_undefined());
-	QUARK_UT_VERIFY(r.args[3].floyd_arg_index == 1);
-	QUARK_UT_VERIFY(r.args[3].map_type == llvm_arg_mapping_t::map_type::k_dyn_type);
+	QUARK_VERIFY(r.args[3].llvm_type->isIntegerTy(64));
+	QUARK_VERIFY(r.args[3].floyd_name == "1");
+	QUARK_VERIFY(r.args[3].floyd_type.is_undefined());
+	QUARK_VERIFY(r.args[3].floyd_arg_index == 1);
+	QUARK_VERIFY(r.args[3].map_type == llvm_arg_mapping_t::map_type::k_dyn_type);
 
-	QUARK_UT_VERIFY(r.args[4].llvm_type->isIntegerTy(1));
-	QUARK_UT_VERIFY(r.args[4].floyd_name == "2");
-	QUARK_UT_VERIFY(r.args[4].floyd_type.is_bool());
-	QUARK_UT_VERIFY(r.args[4].floyd_arg_index == 2);
-	QUARK_UT_VERIFY(r.args[4].map_type == llvm_arg_mapping_t::map_type::k_known_value_type);
+	QUARK_VERIFY(r.args[4].llvm_type->isIntegerTy(1));
+	QUARK_VERIFY(r.args[4].floyd_name == "2");
+	QUARK_VERIFY(r.args[4].floyd_type.is_bool());
+	QUARK_VERIFY(r.args[4].floyd_arg_index == 2);
+	QUARK_VERIFY(r.args[4].map_type == llvm_arg_mapping_t::map_type::k_known_value_type);
 }
 #endif
 

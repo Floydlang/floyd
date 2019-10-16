@@ -2058,7 +2058,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "if", "Make sure return from ELSE works", "
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "if", "Compiler error: not all paths returns", ""){
-//	QUARK_UT_VERIFY(false);
+//	QUARK_VERIFY(false);
 }
 
 
