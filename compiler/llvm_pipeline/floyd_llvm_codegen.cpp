@@ -380,8 +380,7 @@ static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const 
 	return std::visit(visitor_t{ gen_acc, builder, context, itype, value }, get_type_variant(types, type));
 }
 
-//	Related: generate_global_symbol_slots(), generate_function_symbol_slots(), generate_local_block_symbol_slots()
-static std::vector<resolved_symbol_t> generate_local_block_symbol_slots(llvm_function_generator_t& gen_acc, const symbol_table_t& symbol_table){
+static std::vector<resolved_symbol_t> generate_local_block_symbol_slots2(llvm_function_generator_t& gen_acc, const symbol_table_t& symbol_table){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(symbol_table.check_invariant());
 
@@ -452,6 +451,88 @@ static std::vector<resolved_symbol_t> generate_local_block_symbol_slots(llvm_fun
 		result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_local, symbol_kv.first, symbol_kv.second));
 	}
 	return result;
+}
+
+//	Related: generate_global_symbol_slots(), generate_function_symbol_slots(), generate_local_block_symbol_slots()
+static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_generator_t& gen_acc, const symbol_table_t& symbol_table, const llvm_function_def_t* mapping){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(symbol_table.check_invariant());
+
+	auto& builder = gen_acc.gen.get_builder();
+	const auto& types = gen_acc.gen.type_lookup.state.types;
+
+	std::vector<resolved_symbol_t> result;
+	for(const auto& symbol_kv: symbol_table._symbols){
+		const auto& symbol = symbol_kv.second;
+		const auto type = symbol.get_value_type();
+		const auto type_peek = peek2(types, type);
+		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type);
+
+		//	Reserve stack slot for each local.
+		llvm::Value* dest = builder.CreateAlloca(itype, nullptr, symbol_kv.first);
+
+		//	Init the slot if needed.
+		if(symbol._init.is_undefined() == false){
+			llvm::Value* c = generate_constant(gen_acc, symbol._init);
+			gen_acc.get_builder().CreateStore(c, dest);
+		}
+
+		if(symbol._symbol_type == symbol_t::symbol_type::immutable_reserve){
+			QUARK_ASSERT(symbol._init.is_undefined());
+
+			//	Make sure to null all RC values.
+			if(is_rc_value(type_peek)){
+				auto c = llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(itype));
+				builder.CreateStore(c, dest);
+			}
+			else{
+			}
+		}
+		else if(symbol._symbol_type == symbol_t::symbol_type::immutable_arg){
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+		else if(symbol._symbol_type == symbol_t::symbol_type::immutable_precalc){
+			QUARK_ASSERT(symbol._init.is_undefined() == false);
+
+			//	Make sure to null all RC values.
+			if(is_rc_value(type_peek)){
+				auto c = llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(itype));
+				builder.CreateStore(c, dest);
+			}
+			else{
+			}
+		}
+		else if(symbol._symbol_type == symbol_t::symbol_type::named_type){
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+		else if(symbol._symbol_type == symbol_t::symbol_type::mutable_reserve){
+			//	Make sure to null all RC values.
+			if(is_rc_value(type_peek)){
+				auto c = llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(itype));
+				builder.CreateStore(c, dest);
+			}
+			else{
+			}
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+
+		const auto debug_str = "<LOCAL> name:" + symbol_kv.first + " symbol_t: " + symbol_to_string(types, symbol_kv.second);
+		result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_local, symbol_kv.first, symbol_kv.second));
+	}
+	return result;
+}
+
+//	Related: generate_global_symbol_slots(), generate_function_symbol_slots(), generate_local_block_symbol_slots()
+static std::vector<resolved_symbol_t> generate_local_block_symbol_slots(llvm_function_generator_t& gen_acc, const symbol_table_t& symbol_table){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(symbol_table.check_invariant());
+
+	return generate_symbol_slots(gen_acc, symbol_table, nullptr);
 }
 
 //	Related: generate_floyd_runtime_deinit(), generate_destruct_scope_locals()
