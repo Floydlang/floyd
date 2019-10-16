@@ -99,7 +99,7 @@ llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<
 			arg_results.push_back(arg_copy);
 		}
 
-		return llvm_function_def_t { def.return_type, arg_results, def.llvm_args };
+		return llvm_function_def_t { def.return_type, arg_results };
 	}
 }
 
@@ -260,7 +260,7 @@ static llvm_function_def_t map_function_arguments_internal(
 		llvm_args.push_back(e.llvm_type);
 	}
 
-	return llvm_function_def_t { return_type, arg_results, llvm_args };
+	return llvm_function_def_t { return_type, arg_results };
 }
 
 
@@ -270,9 +270,10 @@ static llvm::Type* make_function_type(builder_t& builder, const type_t& function
 	QUARK_ASSERT(peek2(builder.acc.types, function_type).is_function());
 
 	const auto mapping = map_function_arguments_internal(builder, function_type);
+	const auto llvm_args = mapf<llvm::Type*>(mapping.args, [&](const auto& e){ return e.llvm_type; });
 	llvm::FunctionType* function_type2 = llvm::FunctionType::get(
 		mapping.return_type,
-		mapping.llvm_args,
+		llvm_args,
 		false
 	);
 	return function_type2;

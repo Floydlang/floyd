@@ -76,7 +76,6 @@ struct llvm_arg_mapping_t {
 struct llvm_function_def_t {
 	bool check_invariant() const {
 		QUARK_ASSERT(return_type != nullptr);
-		QUARK_ASSERT(args.size() == llvm_args.size());
 		return true;
 	}
 
@@ -85,7 +84,6 @@ struct llvm_function_def_t {
 
 	llvm::Type* return_type;
 	std::vector<llvm_arg_mapping_t> args;
-	std::vector<llvm::Type*> llvm_args;
 };
 
 llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<member_t>& args);

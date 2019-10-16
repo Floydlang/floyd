@@ -2212,15 +2212,14 @@ std::vector<resolved_symbol_t> generate_function_symbol_slots(llvm_function_gene
 		const auto type = symbol_kv.second.get_value_type();
 		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type);
 
-		//	Figure out if this symbol is an argument or a local variable.
-		//	Check if we can find an argument with this name => it's an argument.
 		//	Reserve stack slot for each local. But not arguments, they already have stack slot.
+
 		const auto arg_it = std::find_if(mapping.args.begin(), mapping.args.end(), [&](const llvm_arg_mapping_t& arg) -> bool {
 			return arg.floyd_name == symbol_kv.first;
 		});
 
+		//	Function arguments automatically get an alloca by LLVM. We just need to figure out its register (llvm::Value*).
 		if(symbol_kv.second._symbol_type == symbol_t::symbol_type::immutable_arg){
-			//	Find Value* for the argument by matching the argument index. Remember that we always add a floyd_runtime_ptr to all LLVM functions.
 			auto f_args = gen_acc.emit_f.args();
 			const auto f_args_size = f_args.end() - f_args.begin();
 
@@ -2230,7 +2229,6 @@ std::vector<resolved_symbol_t> generate_function_symbol_slots(llvm_function_gene
 			const auto llvm_arg_index = arg_it - mapping.args.begin();
 			QUARK_ASSERT(llvm_arg_index < f_args_size);
 
-			//	The argument is used directly as the llvm::Value*.
 			llvm::Argument* dest = f_args.begin() + llvm_arg_index;
 
 			const auto debug_str = "<ARGUMENT> name:" + symbol_kv.first + " symbol_t: " + symbol_to_string(types, symbol_kv.second);
