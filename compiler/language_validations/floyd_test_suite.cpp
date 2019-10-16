@@ -7272,3 +7272,67 @@ FLOYD_LANG_PROOF("Floyd test suite", "OPTIMZATION SETTINGS" "Fibonacci 10", "", 
 */
 
 
+
+
+//######################################################################################################################
+//	REGRESSION TEST
+//######################################################################################################################
+
+#if 0
+FLOYD_LANG_PROOF("REGRESSION TEST", "a inited after ifelsejoin, don't delete it inside *then*", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func int f(){
+				let a = "aaa"
+				if(true){
+					let b = "bbb"
+					return 100
+					let c = "ccc"
+				}
+				else {
+					let d = "ddd"
+					return 200
+					let e = "eee"
+				}
+				let f = "fff"
+				return 300
+			}
+
+			f()
+
+		)",
+		{}
+	);
+}
+
+
+
+
+FLOYD_LANG_PROOF("REGRESSION TEST", "a inited after ifelsejoin, don't delete it inside *then*", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func int f(int command){
+				//	Here we need to destruct locals before returning, but a has not been inited yet = can't be destructed!
+				return 100
+
+				let a = "look"
+				return 20
+			}
+
+			f(1)
+
+		)",
+		{}
+	);
+}
+#endif
+
+
+
+
+
+

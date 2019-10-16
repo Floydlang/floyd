@@ -69,8 +69,12 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-t"
+            argument = "-b"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-t"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "examples/test_main.floyd"

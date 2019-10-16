@@ -391,10 +391,11 @@ static implicit_statement detect_implicit_statement_lookahead(const seq_t& s){
 					return implicit_statement::k_error;
 				}
 			}
+			return implicit_statement::k_expression_statement;
 		}
 		catch(...){
+			return implicit_statement::k_expression_statement;
 		}
-		return implicit_statement::k_expression_statement;
 	}
 }
 
@@ -456,7 +457,7 @@ DETECT_TEST("", "detect_implicit_statement_lookahead()", "dict", "assign"){
 
 /*
 	Detects each of the other implicit statements and parses them.
-	a = EXPRESSIONm like "a = sin(1.3)"
+	a = EXPRESSION, like "a = sin(1.3)"
 	or
 	EXPRESSION, like "print(3)"
 */
