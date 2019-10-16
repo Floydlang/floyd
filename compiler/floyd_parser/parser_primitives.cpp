@@ -199,8 +199,13 @@ QUARK_TEST("", "skip_whitespace_ends()", "", ""){
 
 //////////////////////////////////////////////////		BALANCING PARANTHESES, BRACKETS
 
+/*
+	First char is the start char, like '(' or '{'.
+	Checks *all* balancing-chars
+	Is recursive and not just checking intermediate chars, also pair match them.
+*/
 
-std::pair<std::string, seq_t> get_balanced(const seq_t& s){
+static std::pair<std::string, seq_t> get_balanced(const seq_t& s){
 	QUARK_ASSERT(s.size() > 0);
 
 	const auto r = read_balanced2(s, k_bracket_pairs);

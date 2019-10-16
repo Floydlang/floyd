@@ -1059,6 +1059,26 @@ QUARK_TEST("", "parse_for_statement()", "for(){}", ""){
 		)).first
 	);
 }
+QUARK_TEST("", "parse_for_statement()", "for(){}", ""){
+	ut_verify(QUARK_POS,
+		parse_for_statement(seq_t("for(v in 0 ..< size(benchmark_result)){ let int y = 11 }")).first,
+		parse_json(seq_t(
+			R"(
+				[
+					0,
+					"for",
+					"open-range",
+					"v",
+					["k",1,"int"],
+					["call",5,"int"],
+					[
+						[25, "init-local","int","y",["k",11,"int"]]
+					]
+				]
+			)"
+		)).first
+	);
+}
 
 
 //////////////////////////////////////////////////		parse_while_statement()

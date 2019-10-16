@@ -50,12 +50,6 @@ bool is_whitespace(char ch);
 
 ////////////////////////////////		BALANCING PARANTHESES, BRACKETS
 
-/*
-	First char is the start char, like '(' or '{'.
-	Checks *all* balancing-chars
-	Is recursive and not just checking intermediate chars, also pair match them.
-*/
-std::pair<std::string, seq_t> get_balanced(const seq_t& s);
 
 /*
 	()	=> ""
