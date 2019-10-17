@@ -2498,7 +2498,7 @@ static bool is_wellformed_internal(const types_t& types, const std::set<type_loo
 		done2.insert(t.get_lookup_index());
 
 		struct visitor_t {
-			const types_t types;
+			const types_t& types;
 			const std::set<type_lookup_index_t>& done_types;
 
 

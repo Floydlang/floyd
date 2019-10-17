@@ -309,7 +309,7 @@ bool check_types_resolved(const types_t& types, const type_t& t){
 	QUARK_ASSERT(t.check_invariant());
 
 	struct visitor_t {
-		const types_t types;
+		const types_t& types;
 
 
 		bool operator()(const undefined_t& e) const{

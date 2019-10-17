@@ -2619,7 +2619,7 @@ static std::pair<analyser_t, expression_t> analyse_expression_to_target(const an
 	if(floyd::check_types_resolved(a_acc._types, e4) == false){
 		throw_compiler_error(parent.location, "Cannot resolve type.");
 	}
-	QUARK_ASSERT(floyd::check_types_resolved(a_acc._types, e4));
+//	QUARK_ASSERT(floyd::check_types_resolved(a_acc._types, e4));
 	return { a_acc, e4 };
 }
 

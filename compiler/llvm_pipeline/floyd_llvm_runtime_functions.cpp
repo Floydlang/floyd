@@ -1263,7 +1263,6 @@ static void floydrt_release_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_ty
 const auto& type = lookup_type_ref(r.backend, type0);
 #if DEBUG
 	QUARK_ASSERT(peek2(r.backend.types, type).is_struct());
-	QUARK_ASSERT(v != nullptr);
 #endif
 
 	//	Check really only required when unwinding locals.
