@@ -659,6 +659,11 @@ static int main_internal(int argc, const char * argv[]) {
 		std::cout << what << std::endl;
 		return EXIT_FAILURE;
 	}
+	catch(const std::out_of_range& e){
+		const auto what = std::string(e.what());
+		std::cout << what << std::endl;
+		return EXIT_FAILURE;
+	}
 	catch(const std::exception& e){
 		return EXIT_FAILURE;
 	}

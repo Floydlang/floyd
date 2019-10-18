@@ -255,6 +255,13 @@ static runtime_value_t floydrt_load_vector_element_hamt(floyd_runtime_t* frp, ru
 
 	QUARK_ASSERT(is_vector_hamt(r.backend.types, r.backend.config, type_t(type)));
 
+	const auto size = vec.vector_hamt_ptr->get_element_count();
+	if(index >= size){
+		std::stringstream what;
+		what << "Bounds error. Read HAMT vector index " << index << ", vector size: " << size << ".";
+		throw std::out_of_range(what.str());
+	}
+
 	return vec.vector_hamt_ptr->load_element(index);
 }
 

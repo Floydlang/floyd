@@ -235,53 +235,42 @@ assert(words_from_string("   hello   world   ") == ["hello", "world"])
 
 ////////////////////////////////////////////////////////////////////////////////
 
+let k_shortcuts = {
+	"l": "look",
+
+	"n": "go north",
+	"ne": "go northeast",
+	"e": "go east",
+	"se": "go southeast",
+	"s": "go south",
+	"sw": "go southwest",
+	"w": "go west",
+	"nw": "go northwest",
+
+	"up": "go up",
+	"down": "go down"
+}
 
 func action_result_t execute_command(world_t world, string command){
-
-	//	Expand shortcuts. Could be a simple dictionary instead of code.
-	if(command == "l"){
-		return execute_command(world, "look")
-	}
-	else if(command == "n" || command == "north"){
-		return execute_command(world, "go north")
-	}
-	else if(command == "ne"){
-		return execute_command(world, "go northeast")
-	}
-	else if(command == "e" || command == "east"){
-		return execute_command(world, "go east")
-	}
-	else if(command == "se"){
-		return execute_command(world, "go southeast")
-	}
-	else if(command == "s" || command == "south"){
-		return execute_command(world, "go south")
-	}
-	else if(command == "sw"){
-		return execute_command(world, "go southwest")
-	}
-	else if(command == "w" || command == "west"){
-		return execute_command(world, "go west")
-	}
-	else if(command == "nw"){
-		return execute_command(world, "go west")
-	}
-	else if(command == "up"){
-		return execute_command(world, "go up")
-	}
-	else if(command == "down"){
-		return execute_command(world, "go down")
+	if(exists(k_shortcuts, command)){
+		return execute_command(world, k_shortcuts[command])
 	}
 
 	let words = words_from_string(command)
-
-	if(words == ["look"]){
-		return action_result_t(action_look(world), world)
-	}
-	else if(words[0] == "go"){
-		return action_go(world, words)
-	}
-	else {
+	if(size(words) > 0){
+		if(words[0] == "look"){
+			if(size(words) != 1){
+				return action_result_t("I don't know how to look that way!", world)
+			}
+			else{
+				return action_result_t(action_look(world), world)
+			}
+		}
+		else if(words[0] == "go"){
+			return action_go(world, words)
+		}
+		else {
+		}
 	}
 	return action_result_t("", world)
 }

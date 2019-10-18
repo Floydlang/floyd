@@ -495,8 +495,9 @@ struct VECTOR_HAMT_T {
 
 	inline runtime_value_t load_element(const uint64_t index) const {
 		QUARK_ASSERT(check_invariant());
-
 		const auto& vecref = get_vecref();
+		QUARK_ASSERT(index < vecref.size())
+
 		const auto temp = vecref[index];
 		return temp;
 	}
