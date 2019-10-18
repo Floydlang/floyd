@@ -1239,8 +1239,10 @@ void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t value, ru
 	auto& r = get_floyd_runtime(frp);
 
 	const auto s = gen_to_string(r, value, value_type);
-	printf("%s\n", s.c_str());
-	r._print_output.push_back(s);
+	printf("%s", s.c_str());
+
+	const auto lines = split_on_chars(seq_t(s), "\n");
+	r._print_output = concat(r._print_output, lines);
 }
 
 

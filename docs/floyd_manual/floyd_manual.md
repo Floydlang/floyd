@@ -1409,8 +1409,9 @@ These functions are built into the language itself and are always available to y
 <a id="print----impure"></a>
 #### print() -- IMPURE
 
-This outputs one line of text to the default output of the application. It can print any type of value. If you want to compose output of many parts you need to convert them to strings and add them. Also works with types, like a struct-type.
+This outputs text to the default output of the application. It can print any type of value. If you want to compose output of many parts you need to convert them to strings and add them. Also works with types, like a struct-type.
 
+Does not automatically add newlines, you always needs to add those explicitly. This means print("hel") print("lo") print the same thing as print("hello").
 ```
 print(any)
 ```
@@ -1688,7 +1689,7 @@ Notice: Floyd string literals do not support insert hex sequences or Unicode cod
 Example: escape sequences
 
 ```
-print("hello") //	pPrints: hello
+print("hello") //	Prints: hello
 
 print("What does \\"blob\\" mean?")	//	Prints: What does "blob" mean?
 ```
@@ -2836,7 +2837,7 @@ container-def {
 }
 
 func string my_gui__init() impure {
-	print("HELLO")
+	print("HELLO\n")
 	send("a", "stop")
 	send("b", "stop")
 	send("c", "stop")

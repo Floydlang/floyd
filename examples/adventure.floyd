@@ -1,5 +1,7 @@
 //??? Add bool empty(COLLECTION)
 //??? stdlib needs int find(VECTOR v, f, context)
+//??? Add stdlib split-function
+//	??? optional-feature would be helpful.
 
 
 // PRIMITIVES
@@ -98,8 +100,6 @@ func int find_object_key([object_t] objects, string key){
 	return -1
 }
 
-
-//	??? optional-feature would be helpful.
 func player_loc_t find_player(world_t world){
 	let pos = find_object(world, "player")
 	if(pos.room_id != ""){
@@ -154,9 +154,9 @@ func string action_look(world_t world){
 	if(size(objects) > 0){
 		mutable acc = ""
 		for(i in 0 ..< size(objects)){
-			acc = acc + "\t" + objects[i].name + "\n"
+			acc = acc + "\n   " + objects[i].name
 		}
-		return desc + "\n" + acc
+		return desc + acc
 	}
 	else{
 		return desc
@@ -200,7 +200,6 @@ func bool string_not_empty(string s, int context){
 	return size(s) > 0
 }
 
-//??? Add stdlib split-function
 //	returns 0...many strings. All leading/trailing spaces are removed. All returned entries are non-empty
 func [string] words_from_string(string s){
 	mutable [string] words = []
@@ -242,7 +241,9 @@ let k_shortcuts = {
 	"w": "go west",
 	"nw": "go northwest",
 
+	"u": "go up",
 	"up": "go up",
+	"d": "go down",
 	"down": "go down"
 }
 
@@ -323,10 +324,10 @@ let init_world = world_t(
 ////////////////////////////////////////////////////////////////////////////////
 
 
-print("Welcome to the the dungeon!")
+print("Welcome to the the dungeon!\n")
 
 mutable world_acc = init_world
-print("You look around: " + action_look(world_acc))
+print(action_look(world_acc) + "\n")
 
 mutable quit = false
 while(quit == false){
@@ -342,7 +343,7 @@ while(quit == false){
 //		print("BEFORE: " + to_pretty_string(world_acc))
 //		print("AFTER: " + to_pretty_string(r))
 
-		let output = r.message == "" ? "Nothing happens." : r.message
+		let output = r.message == "" ? "Nothing happens.\n" : r.message + "\n"
 		print(output)
 
 		world_acc = r.new_world

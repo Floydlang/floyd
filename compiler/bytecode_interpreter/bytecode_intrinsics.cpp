@@ -998,8 +998,10 @@ bc_value_t bc_intrinsic__print(interpreter_t& vm, const bc_value_t args[], int a
 
 	const auto& value = args[0];
 	const auto s = to_compact_string2(vm._imm->_program._types, bc_to_value(vm._imm->_program._types, value));
-	printf("%s\n", s.c_str());
-	vm._print_output.push_back(s);
+	printf("%s", s.c_str());
+
+	const auto lines = split_on_chars(seq_t(s), "\n");
+	vm._print_output = concat(vm._print_output, lines);
 
 	return bc_value_t::make_undefined();
 }
