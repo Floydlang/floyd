@@ -1054,7 +1054,7 @@ struct interpreter_stack_t {
 		);
 #else
 //			const auto result = bc_value_t(_current_frame_entry_ptr[reg], is_ext);
-		const auto result = bc_value_t(_current_frame_ptr->_symbols[reg].second._value_type, _current_frame_entry_ptr[reg]);
+		const auto result = bc_value_t(_current_frame_ptr->_symbols[reg].second._value_type, _current_frame_entry_ptr[reg], is_ext);
 #endif
 		QUARK_ASSERT(result.check_invariant());
 		return result;

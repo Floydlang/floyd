@@ -1017,8 +1017,8 @@ static void floydrt_retain_vector_hamt(floyd_runtime_t* frp, runtime_value_t vec
 
 static void floydrt_retain_dict_cppmap(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
+const auto& type = lookup_type_ref(r.backend, type0);
 #if DEBUG
-	const auto& type = lookup_type_ref(r.backend, type0);
 	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, type)));
 	QUARK_ASSERT(peek2(r.backend.types, type).is_dict());
 	QUARK_ASSERT(is_dict_cppmap(r.backend.types, r.backend.config, type));
@@ -1061,8 +1061,8 @@ static void floydrt_retain_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_typ
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(v != nullptr);
 
+const auto& type = lookup_type_ref(r.backend, type0);
 #if DEBUG
-	const auto& type = lookup_type_ref(r.backend, type0);
 	QUARK_ASSERT(is_rc_value(peek2(r.backend.types, type)));
 	QUARK_ASSERT(peek2(r.backend.types, type).is_struct());
 #endif

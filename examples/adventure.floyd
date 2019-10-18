@@ -10,8 +10,6 @@
 struct object_t {
 	string name
 
-	bool is_player
-
 	//	The object cannot be moved or carried
 	bool fixed
 
@@ -27,12 +25,11 @@ struct object_t {
 	[object_t] under
 }
 
-let null_object = object_t("", false, false,	false, false, false, false, [], [], [], [])
+let null_object = object_t("", false,	false, false, false, false, [], [], [], [])
 
 func object_t make_player(){
 	return object_t(
 		"player",
-		true,
 		false,
 
 		false, false, false, false,
@@ -54,13 +51,14 @@ struct world_t {
 
 struct object_pos_t {
 	string room_id
+	int index
 	string object_key
 }
 
 struct player_loc_t {
 	object_t player
 	string room_id
-	int slot_index
+	int index
 }
 
 struct action_result_t {
@@ -72,22 +70,24 @@ struct action_result_t {
 // FEATURES
 ////////////////////////////////////////////////////////////////////////////////
 
-
-
-func player_loc_t find_player(world_t world){
+//	If object isn't found, object_pos_t("", -1, "") is returned
+func object_pos_t find_object(world_t world, string object_key){
 	let room_keys = get_keys(world.rooms)
 	for(r in 0 ..< size(room_keys)) {
 		let room = world.rooms[room_keys[r]]
 		for(i in 0 ..< size(room.objects_in_room)) {
 			let o = room.objects_in_room[i]
-			if (o.is_player) {
-				return player_loc_t(o, room_keys[r], i)
+			if (o.name == object_key) {
+				return object_pos_t(room_keys[r], i, object_key)
 			}
 		}
 	}
-	return player_loc_t(null_object, "", -1)
+	return object_pos_t("", -1, "")
 }
 
+func object_t load_object(world_t world, object_pos_t pos){
+	return world.rooms[pos.room_id].objects_in_room[pos.index]
+}
 
 func int find_object_key([object_t] objects, string key){
 	for(i in 0 ..< size(objects)){
@@ -98,6 +98,18 @@ func int find_object_key([object_t] objects, string key){
 	return -1
 }
 
+
+//	??? optional-feature would be helpful.
+func player_loc_t find_player(world_t world){
+	let pos = find_object(world, "player")
+	if(pos.room_id != ""){
+		let object = load_object(world, pos)
+		return player_loc_t(object, pos.room_id, pos.index)
+	}
+	else{
+		return player_loc_t(null_object, "", -1)
+	}
+}
 
 
 func world_t remove_object(world_t world, object_pos_t pos){
@@ -133,7 +145,7 @@ func bool nonplayer(object_t object, int context){
 func string action_look(world_t world){
 	let player_loc = find_player(world)
 	assert(player_loc.player.name == "player")
-	assert(player_loc.room_id != "" && player_loc.slot_index != -1)
+	assert(player_loc.room_id != "" && player_loc.index != -1)
 
 	let room = world.rooms[player_loc.room_id]
 	let desc = room.long_description
@@ -164,7 +176,7 @@ func action_result_t action_go(world_t world, [string] words){
 	let player_loc = find_player(world)
 
 	assert(player_loc.player.name == "player")
-	assert(player_loc.room_id != "" && player_loc.slot_index != -1)
+	assert(player_loc.room_id != "" && player_loc.index != -1)
 
 
 	let room = world.rooms[player_loc.room_id]
@@ -174,28 +186,11 @@ func action_result_t action_go(world_t world, [string] words){
 	else {
 		let dest_room_id = room.exits[dir]
 		let player_loc = find_player(world)
-		let source_pos = object_pos_t(player_loc.room_id, player_loc.player.name)
+		let source_pos = object_pos_t(player_loc.room_id, player_loc.index, player_loc.player.name)
 		let world2 = move_object_to_room(world, source_pos, dest_room_id, player_loc.player)
 
 		let message = action_look(world2)
 		return action_result_t(message, world2)
-	}
-
-	if(dir == "north"){
-	}
-	else if(dir == "east"){
-	}
-	else if(dir == "south"){
-	}
-	else if(dir == "west"){
-	}
-	else if(dir == "down"){
-	}
-	else if(dir == "up"){
-	}
-	else if(dir == "in"){
-	}
-	else if(dir == "out"){
 	}
 
 	return action_result_t("You can't go there!", world)
@@ -258,7 +253,8 @@ func action_result_t execute_command(world_t world, string command){
 
 	let words = words_from_string(command)
 	if(size(words) > 0){
-		if(words[0] == "look"){
+		let verb = words[0]
+		if(verb == "look"){
 			if(size(words) != 1){
 				return action_result_t("I don't know how to look that way!", world)
 			}
@@ -266,8 +262,14 @@ func action_result_t execute_command(world_t world, string command){
 				return action_result_t(action_look(world), world)
 			}
 		}
-		else if(words[0] == "go"){
+		else if(verb == "go"){
 			return action_go(world, words)
+		}
+		else if(verb == "take"){
+
+		}
+		else if(verb == "graph"){
+			return action_result_t(to_pretty_string(world), world)
 		}
 		else {
 		}
@@ -300,7 +302,7 @@ let init_world = world_t(
 			"This is a muddy path heading north-sound up a small hill. Further westward the forest opens up.",
 			{ "west": "forest-small-clearing", "up": "forest-hill", "north": "forest-hill" },
 			[
-				object_t("chest", false, false,		false, false, false, false, [], [], [], [])
+				object_t("chest", false,		false, false, false, false, [], [], [], [])
 			]
 		),
 
@@ -310,8 +312,8 @@ let init_world = world_t(
 			"You are on the forest hill, looking out over a forest stretching out around you.",
 			{ "south": "forest-path2", "down": "forest-path2" },
 			[
-				object_t("key", false, false,		false, false, false, false, [], [], [], []),
-				object_t("tree", false, true,		false, false, false, false, [], [], [], [])
+				object_t("key", false,		false, false, false, false, [], [], [], []),
+				object_t("tree", true,		false, false, false, false, [], [], [], [])
 			]
 		)
 	}
