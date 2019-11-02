@@ -4,6 +4,7 @@
 
 # For emscripten, fix CMAKE_CXX_FLAGS, then try
 # cmake -DCMAKE_TOOLCHAIN_FILE=/usr/lib/emscripten/cmake/Modules/Platform/Emscripten.cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -G  "Unix Makefiles" ..
+# https://llvm.org/docs/CMake.html
 
 project( floyd_speak)
 
@@ -17,12 +18,13 @@ ENDIF(MSVC)
 #SET (CMAKE_BUILD_TYPE Release)
 SET (CMAKE_BUILD_TYPE Debug)
 
-include_directories(passes parts target_tool  /usr/include target_benchmark_internals libs/benchmark/include libs/benchmark/googletest/googlemock/ libs/benchmark/googletest/googlemock/include libs/benchmark/googletest/googletest/include/ floyd_runtime floyd_basics floyd_ast bytecode_interpreter  parts/immer-master floyd_parser parts/sha1 llvm_pipeline  .)
+include_directories(/usr/local/Cellar/llvm@8/8.0.1/include 
+/usr/lib/llvm-8/include passes parts target_tool  /usr/include target_benchmark_internals libs/benchmark/include libs/benchmark/googletest/googlemock/ libs/benchmark/googletest/googlemock/include libs/benchmark/googletest/googletest/include/ floyd_runtime floyd_basics floyd_ast bytecode_interpreter  parts/immer-master floyd_parser parts/sha1 llvm_pipeline  .)
 
 if (MSVC)  # - Microsoft Visual C++
 set (PROJECTNAME_ARCHITECTURE "x64")
 endif()
-message("WTF")
+#message("WTF")
 
 if (MSVC)  # - Microsoft Visual C++
 if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
@@ -68,7 +70,7 @@ add_definitions(-DDEBUG)
 #add_definitions(-DQUARK_UNIT_TESTS_ON true)
 
 # -fno-exceptions
-set(CMAKE_CXX_FLAGS "-D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
+set(CMAKE_CXX_FLAGS "-D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -std=c++17")
 
 #Options for emscripten
 #set(CMAKE_CXX_FLAGS "--closure 1 -std=c++1z -s USE_PTHREADS=1 -Os -s WASM=0 -s ASSERTIONS=1 -s DISABLE_EXCEPTION_CATCHING=0 --bind")
@@ -143,8 +145,6 @@ llvm_pipeline/floyd_llvm_types.cpp
 parts/command_line_parser.cpp
 parts/file_handling.cpp
 parts/hardware_caps.cpp
-#parts/hardware_caps_macos.cpp
-parts/hardware_caps_linux.cpp
 parts/immutable_ref_value.cpp
 parts/json_support.cpp
 parts/os_process.cpp
@@ -173,6 +173,11 @@ if (MSVC)  # - Microsoft Visual C++
 set(FLOYD_SOURCES
 ${FLOYD_SOURCES}
 parts/hardware_caps_windows.cpp
+)
+elseif(APPLE)
+set(FLOYD_SOURCES
+${FLOYD_SOURCES}
+parts/hardware_caps_macos.cpp
 )
 else()
 set(FLOYD_SOURCES
@@ -325,7 +330,7 @@ target_include_directories( floyd
 )
 
 
-IF(MSVC)   
+if(MSVC)   
 
   link_directories("${CMAKE_SOURCE_DIR}/../../../vcpkg/installed/x64-windows/debug/lib/")
   #find_library(READLINE_LIBRARY readline)
@@ -334,10 +339,16 @@ IF(MSVC)
   ${FLOYD_SPEAK_STATIC_DEPENDENCIES}
   ${FLOYD_SPEAK_DEPENDENCIES} ${CMAKE_THREAD_LIBS_INIT} Threads::Threads  LLVMMC LLVMLTO Shlwapi)
   # ${CMAKE_SOURCE_DIR}/../../../vcpkg/installed/x64-windows/debug/lib/readline.lib
-ELSE()
+elseif(APPLE)
+target_link_options(floyd  PRIVATE "-L/usr/local/opt/llvm@8/lib -Wl,-rpath,/usr/local/opt/llvm@8/lib")
 target_link_libraries( floyd
 ${FLOYD_SPEAK_STATIC_DEPENDENCIES}
-${FLOYD_SPEAK_DEPENDENCIES} pthread LLVM-8 readline)
+${FLOYD_SPEAK_DEPENDENCIES} pthread LLVM ${LLVM_LIB} readline)
+
+else()
+target_link_libraries( floyd
+${FLOYD_SPEAK_STATIC_DEPENDENCIES}
+${FLOYD_SPEAK_DEPENDENCIES} pthread LLVM-8 ${LLVM_LIB} readline)
 ENDIF()
 
 

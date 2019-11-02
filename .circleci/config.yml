@@ -1,7 +1,38 @@
 # Use the latest 2.1 version of CircleCI pipeline processing engine, see https://circleci.com/docs/2.0/configuration-reference/
 version: 2
 
+
 jobs:
+  build-ubuntu:
+    docker:
+       - image: "circleci/buildpack-deps:disco"
+    steps:
+      - checkout
+      - run:
+          name: Installing add-apt
+          command: 'sudo apt-get install software-properties-common'
+      - run:
+          name: apt-get g++
+          command: 'sudo apt-get install -qq --allow-unauthenticated  g++-9 cmake llvm-8-dev libedit-dev'
+      - run:
+          name: update alternatives
+          command: 'sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 90'
+      - run:
+          name: pwd
+          command: 'pwd && ls'
+      - run:
+          name: Creating Build Files
+          command: 'cmake $HOME/project/compiler/'
+      - run:
+           name: Creating Binary Files
+           command: 'make'
+      - run:
+           name: floyd Hardware caps
+           command: './floyd hwcaps'
+      #- run:
+      #     name: floyd Unit Testing
+      #     command: './floydut runtests'
+
   build-arch:
     docker:
        - image: "archlinux/base"
@@ -47,7 +78,7 @@ jobs:
           command: 'brew install llvm@8'
       - run:
            name: List options
-           command: 'xcodebuild -list -project floyd.xcodeproj && ln -s  /usr/local/Cellar/llvm/8.0.1 /usr/local/Cellar/llvm/8.0.0_1' 
+           command: 'mkdir -p /usr/local/Cellar/llvm/ && ln -s /usr/local/opt/llvm@8 /usr/local/Cellar/llvm/8.0.1 && xcodebuild -list -project floyd.xcodeproj' 
       - run:
            name: Creating Application
            command: 'xcodebuild -scheme distributable build'
@@ -58,6 +89,12 @@ jobs:
            name: floyd Unit test
            command: 'ls /Users/distiller/Library/Developer/Xcode/DerivedData &&  cd  /Users/distiller/Library/Developer/Xcode/DerivedData/floyd-*/Build/Products/Release;./floyd runtests'
       #- run:
+      #     name: floyd gen-ir
+      #     command: 'ls /Users/distiller/Library/Developer/Xcode/DerivedData &&  cd  /Users/distiller/Library/Developer/Xcode/DerivedData/floyd-*/Build/Products/Release;ls examples/hello_world.floyd;./floyd compile -g -i  -o a.ir  examples/hello_world.floyd'
+      #- run:
+      #     name: floyd cat-ir
+      #     command: 'cat a.ir'
+      #- run:
       #    name: Compress app  and result for storage
       #    command: zip -r floyd.zip build/Release/floyd.app
       #- store_artifacts:
@@ -67,5 +104,6 @@ workflows:
   version: 2
   workflow:
     jobs:
-    - build-arch
-    - build-mac    
+    - build-mac
+    - build-ubuntu
+
