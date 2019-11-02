@@ -4285,9 +4285,8 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Test lexical scopes for named st
 	);
 }
 
-#if 0
-??? fix scope_id_generator and "lexical_scope"
 
+//??? try using the same type in several blocks inside one function
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "Test lexical scopes for named struct types", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -4307,10 +4306,9 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Test lexical scopes for named st
 			f(pixel_t(13))
 
 		)",
-		{ "{a=13}" }
+		{ "{a=13}", "{b=14}" }
 	);
 }
-#endif
 
 
 

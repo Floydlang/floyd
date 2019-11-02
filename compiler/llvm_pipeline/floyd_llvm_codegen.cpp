@@ -420,6 +420,15 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_genera
 				const auto debug_str = "<ARGUMENT> name:" + symbol_kv.first + " symbol_t: " + symbol_to_string(types, symbol);
 				return make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_function_argument, symbol_kv.first, symbol);
 			}
+			else if(symbol._symbol_type == symbol_t::symbol_type::named_type){
+				const auto itype2 = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type_desc_t::make_typeid());
+				llvm::Value* dest = builder.CreateAlloca(itype2, nullptr, symbol_kv.first);
+				auto c = generate_itype_constant(gen_acc.gen, type_desc_t::make_typeid());
+				gen_acc.get_builder().CreateStore(c, dest);
+
+				const auto debug_str = "<NAMED-TYPE> name:" + symbol_kv.first + " symbol_t: " + symbol_to_string(types, symbol);
+				return make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_local, symbol_kv.first, symbol_kv.second);
+			}
 			else{
 				//	Reserve stack slot for each local.
 				llvm::Value* dest = builder.CreateAlloca(itype, nullptr, symbol_kv.first);
@@ -455,10 +464,6 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_genera
 					}
 					else{
 					}
-				}
-				else if(symbol._symbol_type == symbol_t::symbol_type::named_type){
-					QUARK_ASSERT(false);
-					throw std::exception();
 				}
 				else if(symbol._symbol_type == symbol_t::symbol_type::mutable_reserve){
 					//	Make sure to null all RC values.
@@ -501,12 +506,16 @@ static void generate_destruct_scope_locals(llvm_function_generator_t& gen_acc, c
 
 	for(const auto& e: symbols){
 		if(e.symtype == resolved_symbol_t::esymtype::k_global || e.symtype == resolved_symbol_t::esymtype::k_local){
-			const auto type = e.symbol.get_value_type();
-			if(is_rc_value(peek2(types, type))){
-				auto reg = builder.CreateLoad(e.value_ptr);
-				generate_release(gen_acc, *reg, type);
+			if(e.symbol._symbol_type == symbol_t::symbol_type::named_type){
 			}
 			else{
+				const auto type = e.symbol.get_value_type();
+				if(is_rc_value(peek2(types, type))){
+					auto reg = builder.CreateLoad(e.value_ptr);
+					generate_release(gen_acc, *reg, type);
+				}
+				else{
+				}
 			}
 		}
 	}
@@ -2325,7 +2334,10 @@ static std::vector<resolved_symbol_t> generate_global_symbol_slots(llvm_function
 		const auto resolved_symbol = make_resolved_symbol(value, debug_str, resolved_symbol_t::esymtype::k_global, symbol_kv.first, symbol_kv.second);
 		result.push_back(resolved_symbol);
 	}
-//	QUARK_TRACE_SS(print_module(*gen_acc.gen.module));
+
+	if(false){
+		QUARK_TRACE_SS(print_module(*gen_acc.gen.module));
+	}
 	return result;
 }
 

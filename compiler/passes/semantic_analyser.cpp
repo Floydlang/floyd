@@ -2308,13 +2308,17 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 	}
 }
 
+/*
+	Notice: the symbol table mechanism makes sure all clients access the proper types via their lexical scopes.
+	The name of the type itself needs only be program-unique, not encode the actual lexical scope it's defined in.
+
+	??? WRONG: TOOD: user proper hiearchy of lexical scopes, not a flat list of generated ID:s. This requires a name--string in each lexical_scope_t.
+*/
 static type_name_t generate_type_name(analyser_t& a, const std::string& identifier){
-//	const auto id = a.scope_id_generator++;
-	const auto id = 1;
+	const auto id = a.scope_id_generator++;
 
-	//??? TOOD: user proper hiearchy of lexical scopes, not a flat list of generated ID:s. This requires a name--string in each lexical_scope_t.
-
-	const auto b = std::string() + "lexical_scope" + std::to_string(id);
+//	const auto b = std::string() + "lexical_scope" + std::to_string(id);
+	const auto b = std::to_string(id);
 
 	return type_name_t { { b, identifier } };
 }
@@ -2326,7 +2330,7 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 
 	const std::string identifier = details.name;
 
-	// Add symbol for the new, with undefined. Later store resolved type.
+	// Add symbol for the new struct, with undefined type. Later update with final type.
 	if(does_symbol_exist_shallow(a_acc, identifier)){
 		throw_local_identifier_already_exists(parent.location, identifier);
 	}
