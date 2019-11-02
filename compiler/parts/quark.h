@@ -604,9 +604,9 @@ inline void ut_verify(const quark::call_context_t& context, const std::vector<st
 		}
 		const auto count = std::max(result.size(), expected.size());
 		for(int i = 0 ; i < count ; i++){
-			const auto result_str = (i < result.size()) ? result[i] : "---";
-			const auto expected_str = (i < expected.size()) ? expected[i] : "---";
-			QUARK_TRACE_SS(std::to_string(i) << ": \"" << result_str << "\" != \"" << expected_str << "\"");
+			const auto result_str = (i < result.size()) ? ("\"" + result[i] + "\"") : "<none>";
+			const auto expected_str = (i < expected.size()) ? ("\"" + expected[i] + "\"") : "<none>";
+			QUARK_TRACE_SS(std::to_string(i) << ": " << result_str << " != " << expected_str);
 		}
 
 		quark::fail_test(context);

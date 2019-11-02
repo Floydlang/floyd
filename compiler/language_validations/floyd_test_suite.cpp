@@ -4224,29 +4224,93 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "check struct's type", ""){
 
 
 
-#if 0
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "Test struct name-equivalence", ""){
-	ut_run_closed_nolib(
+	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
 
 			struct pixel1_t { int a }
 			struct pixel2_t { int a }
+			let pixel2_t e = pixel1_t(100)
+
+		)",
+		R"___([Semantics] Expression type mismatch - cannot convert 'pixel1_t' to 'pixel2_t. Line: 5 "let pixel2_t e = pixel1_t(100)")___"
+	);
+}
+
+#if 0
+??? Not yet support for struct expressions
+
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "Test struct name-equivalence", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			struct pixel1_t { int a }
+			struct pixel2_t { int b }
+			let p3 = struct { int c }
 
 			print(pixel1_t)
 			print(pixel2_t)
+			print(typeof(p3))
 
-			let pixel1_t d = pixel1_t(100)
-			let pixel2_t e = pixel1_t(100)
-
-		)"
+		)",
+		{
+			"struct {int a;}",
+			"struct {int b;}",
+			"struct {int c;}"
+		}
 	);
 }
+
 #endif
 
 
 
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "Test lexical scopes for named struct types", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
 
+			struct pixel_t { int a }
+
+			func void f(pixel_t p){
+				print(p)
+			}
+
+			f(pixel_t(13))
+
+		)",
+		{ "{a=13}" }
+	);
+}
+
+#if 0
+??? fix scope_id_generator and "lexical_scope"
+
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "Test lexical scopes for named struct types", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			struct pixel_t { int a }
+
+			func void f(pixel_t p){
+				struct pixel_t {
+					int b;
+				}
+
+				print(p)
+				print(pixel_t(14))
+			}
+
+			f(pixel_t(13))
+
+		)",
+		{ "{a=13}" }
+	);
+}
+#endif
 
 
 
