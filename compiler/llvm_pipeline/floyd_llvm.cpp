@@ -89,7 +89,7 @@ QUARK_TEST("", "run_benchmarks()", "", ""){
 		make_default_compiler_settings(),
 		{ }
 	);
-	QUARK_UT_VERIFY(true);
+	QUARK_VERIFY(true);
 }
 
 

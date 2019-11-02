@@ -291,7 +291,7 @@ directories_t GetDirectories(){
 QUARK_TEST("", "GetDirectories()", "", ""){
 	const auto temp = GetDirectories();
 
-	QUARK_UT_VERIFY(true)
+	QUARK_VERIFY(true)
 }
 
 
@@ -401,9 +401,9 @@ QUARK_TEST("", "get_info()", "", ""){
 
 	TFileInfo info;
 	bool ok = GetFileInfo(temp.process_path, info);
-	QUARK_UT_VERIFY(ok);
+	QUARK_VERIFY(ok);
 
-	QUARK_UT_VERIFY(true);
+	QUARK_VERIFY(true);
 }
 
 
@@ -457,16 +457,16 @@ std::pair<std::string, std::string> UpDir2(const std::string& path){
 }
 
 QUARK_TEST("", "UpDir2()","", ""){
-	QUARK_UT_VERIFY((UpDir2("/Users/marcus/Desktop/") == std::pair<std::string, std::string>{ "/Users/marcus/", "Desktop" }));
+	QUARK_VERIFY((UpDir2("/Users/marcus/Desktop/") == std::pair<std::string, std::string>{ "/Users/marcus/", "Desktop" }));
 }
 QUARK_TEST("", "UpDir2()","", ""){
-	QUARK_UT_VERIFY((UpDir2("/Users/") == std::pair<std::string, std::string>{ "/", "Users" }));
+	QUARK_VERIFY((UpDir2("/Users/") == std::pair<std::string, std::string>{ "/", "Users" }));
 }
 QUARK_TEST("", "UpDir2()","", ""){
-	QUARK_UT_VERIFY((UpDir2("/") == std::pair<std::string, std::string>{ "", "/" }));
+	QUARK_VERIFY((UpDir2("/") == std::pair<std::string, std::string>{ "", "/" }));
 }
 QUARK_TEST("", "UpDir2()","", ""){
-	QUARK_UT_VERIFY((UpDir2("/Users/marcus/original.txt") == std::pair<std::string, std::string>{ "/Users/marcus/", "original.txt" }));
+	QUARK_VERIFY((UpDir2("/Users/marcus/original.txt") == std::pair<std::string, std::string>{ "/Users/marcus/", "original.txt" }));
 }
 
 
@@ -500,16 +500,16 @@ std::pair<std::string, std::string> SplitExtension(const std::string& s){
 }
 
 QUARK_TEST("", "SplitExtension()","", ""){
-	QUARK_UT_VERIFY((SplitExtension("snare.wav") == std::pair<std::string, std::string>{ "snare", ".wav" }));
+	QUARK_VERIFY((SplitExtension("snare.wav") == std::pair<std::string, std::string>{ "snare", ".wav" }));
 }
 QUARK_TEST("", "SplitExtension()","", ""){
-	QUARK_UT_VERIFY((SplitExtension("snare.drum.wav") == std::pair<std::string, std::string>{ "snare.drum", ".wav" }));
+	QUARK_VERIFY((SplitExtension("snare.drum.wav") == std::pair<std::string, std::string>{ "snare.drum", ".wav" }));
 }
 QUARK_TEST("", "SplitExtension()","", ""){
-	QUARK_UT_VERIFY((SplitExtension("snare") == std::pair<std::string, std::string>{ "snare", "" }));
+	QUARK_VERIFY((SplitExtension("snare") == std::pair<std::string, std::string>{ "snare", "" }));
 }
 QUARK_TEST("", "SplitExtension()","", ""){
-	QUARK_UT_VERIFY((SplitExtension(".wav") == std::pair<std::string, std::string>{ "", ".wav" }));
+	QUARK_VERIFY((SplitExtension(".wav") == std::pair<std::string, std::string>{ "", ".wav" }));
 }
 
 

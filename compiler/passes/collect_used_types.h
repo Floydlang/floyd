@@ -17,10 +17,10 @@
 
 namespace floyd {
 
-struct type_interner_t;
+struct types_t;
 struct general_purpose_ast_t;
 
-void collect_used_types(type_interner_t& acc, const general_purpose_ast_t& ast);
+//void collect_used_types(types_t& acc, const general_purpose_ast_t& ast);
 
 }	// floyd
 

@@ -124,7 +124,7 @@ QUARK_TEST("","", "", ""){
 
 //		QUARK_TRACE_SS(cpu);
 
-	QUARK_UT_VERIFY(num_cpus > 0);
+	QUARK_VERIFY(num_cpus > 0);
 }
 
 

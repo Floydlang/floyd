@@ -111,6 +111,7 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 	- [3.5 FILE SYSTEM FEATURES](#35-file-system-features)
 		- [read\_text\_file\(\)](#readtextfile)
 		- [write\_text\_file\(\)](#writetextfile)
+		- [read\_line\_stdin\(\)](#readlinestdin)
 		- [get\_fsentries_shallow\(\) and get\_fsentries\_deep\(\)](#getfsentries_shallow-and-get_fsentriesdeep)
 		- [get\_fsentry\_info\(\)](#getfsentryinfo)
 		- [get\_fs\_environment\(\)](#getfsenvironment)
@@ -1408,8 +1409,9 @@ These functions are built into the language itself and are always available to y
 <a id="print----impure"></a>
 #### print() -- IMPURE
 
-This outputs one line of text to the default output of the application. It can print any type of value. If you want to compose output of many parts you need to convert them to strings and add them. Also works with types, like a struct-type.
+This outputs text to the default output of the application. It can print any type of value. If you want to compose output of many parts you need to convert them to strings and add them. Also works with types, like a struct-type.
 
+Does not automatically add newlines, you always needs to add those explicitly. This means print("hel") print("lo") print the same thing as print("hello").
 ```
 print(any)
 ```
@@ -1687,7 +1689,7 @@ Notice: Floyd string literals do not support insert hex sequences or Unicode cod
 Example: escape sequences
 
 ```
-print("hello") //	pPrints: hello
+print("hello") //	Prints: hello
 
 print("What does \\"blob\\" mean?")	//	Prints: What does "blob" mean?
 ```
@@ -2835,7 +2837,7 @@ container-def {
 }
 
 func string my_gui__init() impure {
-	print("HELLO")
+	print("HELLO\n")
 	send("a", "stop")
 	send("b", "stop")
 	send("c", "stop")
@@ -3294,6 +3296,16 @@ Throws exception if file cannot be found or read.
 Write a string to the file system as a text file. Will create any missing directories in the absolute path.
 
 	void write_text_file(string abs_path, string data) impure
+
+
+<a id="readlinestdin"></a>
+### read\_line\_stdin()
+
+Read a line of text from the program's operating system standard input (stdin). The stdin is usually the computers keyboard. Input ends at a '\n' character (aka ASCII newline, 0x0A). The '\n' is not included in the returned string. The encoding and format of the returned string depends on the OS and what/if redirects to stdin. 
+
+	string read_line_stdin() impure
+
+
 
 
 

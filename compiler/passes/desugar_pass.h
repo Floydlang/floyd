@@ -14,7 +14,7 @@ namespace floyd {
 struct unchecked_ast_t;
 
 
-unchecked_ast_t desugar_pass(const unchecked_ast_t& unchecked_ast);
+//unchecked_ast_t desugar_pass(const unchecked_ast_t& unchecked_ast);
 
 }	// floyd
 

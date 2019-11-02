@@ -15,7 +15,7 @@
 #include "utils.h"
 #include "floyd_syntax.h"
 #include "compiler_basics.h"
-#include "typeid.h"
+#include "types.h"
 
 static const bool k_trace_parse_tree_flag = false;
 
@@ -94,7 +94,7 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& s){
 QUARK_TEST("", "parse_statement()", "", ""){
 	ut_verify(QUARK_POS,
 		parse_statement(seq_t("let int x = 10;")).first,
-		parse_json(seq_t(R"([0, "init-local", "^int", "x", ["k", 10, "^int"]])")).first
+		parse_json(seq_t(R"([0, "init-local", "int", "x", ["k", 10, "int"]])")).first
 	);
 }
 
@@ -105,14 +105,14 @@ QUARK_TEST("", "parse_statement()", "", ""){
 			[
 				0,
 				"init-local",
-				["func", "^int", ["^string"], true],
+				["func", "int", ["string"], true],
 				"f",
 				[
 					"function-def",
-					["func", "^int", ["^string"], true],
+					["func", "int", ["string"], true],
 					"f",
-					[{ "name": "name", "type": "^string" }],
-					{ "statements": [[25, "return", ["k", 13, "^int"]]], "symbols": null }
+					[{ "name": "name", "type": "string" }],
+					{ "statements": [[25, "return", ["k", 13, "int"]]], "symbols": null }
 				]
 			]
 		)")).first
@@ -122,7 +122,7 @@ QUARK_TEST("", "parse_statement()", "", ""){
 QUARK_TEST("", "parse_statement()", "", ""){
 	ut_verify(QUARK_POS,
 		parse_statement(seq_t("let int x = f(3);")).first,
-		parse_json(seq_t(R"([0, "init-local", "^int", "x", ["call", ["@", "f"], [["k", 3, "^int"]]]])")).first
+		parse_json(seq_t(R"([0, "init-local", "int", "x", ["call", ["@", "f"], [["k", 3, "int"]]]])")).first
 	);
 }
 
@@ -201,8 +201,8 @@ QUARK_TEST("", "parse_statements_bracketted()", "", ""){
 		parse_json(seq_t(
 			R"(
 				[
-					[3, "init-local", "^int", "x", ["k", 1, "^int"]],
-					[18, "init-local", "^int", "y", ["k", 2, "^int"]]
+					[3, "init-local", "int", "x", ["k", 1, "int"]],
+					[18, "init-local", "int", "y", ["k", 2, "int"]]
 				]
 			)"
 		)).first
@@ -245,9 +245,9 @@ const std::string k_test_program_0_parserout = R"(
 		[
 			0,
 			"init-local",
-			["func", "^int", [], true],
+			["func", "int", [], true],
 			"main",
-			["function-def", ["func", "^int", [], true], "main", [], { "statements": [[17, "return", ["k", 3, "^int"]]], "symbols": null }]
+			["function-def", ["func", "int", [], true], "main", [], { "statements": [[17, "return", ["k", 3, "int"]]], "symbols": null }]
 		]
 	]
 )";
@@ -268,14 +268,14 @@ const std::string k_test_program_1_parserout = R"(
 		[
 			0,
 			"init-local",
-			["func", "^int", ["^string"], true],
+			["func", "int", ["string"], true],
 			"main",
 			[
 				"function-def",
-				["func", "^int", ["^string"], true],
+				["func", "int", ["string"], true],
 				"main",
-				[{ "name": "args", "type": "^string" }],
-				{ "statements": [[29, "return", ["k", 3, "^int"]]], "symbols": null }
+				[{ "name": "args", "type": "string" }],
+				{ "statements": [[29, "return", ["k", 3, "int"]]], "symbols": null }
 			]
 		]
 	]
@@ -292,24 +292,22 @@ const char k_test_program_100_parserout[] = R"(
 	[
 		[
 			18,
-			"init-local",
-			"^typeid",
-			"pixel",
-			["struct-def", "pixel", [{ "name": "red", "type": "^double" }, { "name": "green", "type": "^double" }, { "name": "blue", "type": "^double" }]]
+			"expression-statement",
+			["struct-def", "pixel", [{ "name": "red", "type": "double" }, { "name": "green", "type": "double" }, { "name": "blue", "type": "double" }]]
 		],
 		[
 			65,
 			"init-local",
-			["func", "^double", ["#pixel"], true],
+			["func", "double", ["%pixel"], true],
 			"get_grey",
 			[
 				"function-def",
-				["func", "^double", ["#pixel"], true],
+				["func", "double", ["%pixel"], true],
 				"get_grey",
-				[{ "name": "p", "type": "#pixel" }],
+				[{ "name": "p", "type": "%pixel" }],
 				{
 					"statements": [
-						[96, "return", ["/", ["+", ["+", ["->", ["@", "p"], "red"], ["->", ["@", "p"], "green"]], ["->", ["@", "p"], "blue"]], ["k", 3, "^double"]]]
+						[96, "return", ["/", ["+", ["+", ["->", ["@", "p"], "red"], ["->", ["@", "p"], "green"]], ["->", ["@", "p"], "blue"]], ["k", 3, "double"]]]
 					],
 					"symbols": null
 				}
@@ -318,16 +316,16 @@ const char k_test_program_100_parserout[] = R"(
 		[
 			144,
 			"init-local",
-			["func", "^double", [], true],
+			["func", "double", [], true],
 			"main",
 			[
 				"function-def",
-				["func", "^double", [], true],
+				["func", "double", [], true],
 				"main",
 				[],
 				{
 					"statements": [
-						[169, "init-local", "#pixel", "p", ["call", ["@", "pixel"], [["k", 1, "^int"], ["k", 0, "^int"], ["k", 0, "^int"]]]],
+						[169, "init-local", "%pixel", "p", ["call", ["@", "pixel"], [["k", 1, "int"], ["k", 0, "int"], ["k", 0, "int"]]]],
 						[204, "return", ["call", ["@", "get_grey"], [["@", "p"]]]]
 					],
 					"symbols": null
@@ -383,19 +381,21 @@ static implicit_statement detect_implicit_statement_lookahead(const seq_t& s){
 		//	Detect "int test = 123" which is common illegal syntax, where you forgot "mutable" or "let".
 
 		try {
-			const auto maybe_type = read_type(s);
+			types_t temp;
+			const auto maybe_type = read_type(temp, s);
 			if(maybe_type.first != nullptr){
-				if(maybe_type.first->is_function()){
+				if(peek2(temp, *maybe_type.first).is_function()){
 					throw_compiler_error_nopos("Function types not supported.");
 				}
 				if(is_identifier_and_equal(maybe_type.second)){
 					return implicit_statement::k_error;
 				}
 			}
+			return implicit_statement::k_expression_statement;
 		}
 		catch(...){
+			return implicit_statement::k_expression_statement;
 		}
-		return implicit_statement::k_expression_statement;
 	}
 }
 
@@ -407,57 +407,57 @@ DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "ERROR"){
 }
 
 DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "EXPRESSION-STATEMENT"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(R"(	print("B:" + to_string(x))	{ print(3) int x = 4 } xyz	)")) == implicit_statement::k_expression_statement);
+	QUARK_VERIFY(detect_implicit_statement_lookahead(seq_t(R"(	print("B:" + to_string(x))	{ print(3) int x = 4 } xyz	)")) == implicit_statement::k_expression_statement);
 }
 DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "EXPRESSION-STATEMENT"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(R"(	print(3) int x = 4	xyz	)")) == implicit_statement::k_expression_statement);
+	QUARK_VERIFY(detect_implicit_statement_lookahead(seq_t(R"(	print(3) int x = 4	xyz	)")) == implicit_statement::k_expression_statement);
 }
 
 
 DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "EXPRESSION-STATEMENT"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" print ( \"Hello, World!\" )		xyz")) == implicit_statement::k_expression_statement);
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(R"( print ( "Hello, World!" )		xyz)")) == implicit_statement::k_expression_statement);
+	QUARK_VERIFY(detect_implicit_statement_lookahead(seq_t(" print ( \"Hello, World!\" )		xyz")) == implicit_statement::k_expression_statement);
+	QUARK_VERIFY(detect_implicit_statement_lookahead(seq_t(R"( print ( "Hello, World!" )		xyz)")) == implicit_statement::k_expression_statement);
 }
 DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "EXPRESSION-STATEMENT"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t("print(\"Hello, World!\")		xyz")) == implicit_statement::k_expression_statement);
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(R"(print("Hello, World!")		xyz)")) == implicit_statement::k_expression_statement);
+	QUARK_VERIFY(detect_implicit_statement_lookahead(seq_t("print(\"Hello, World!\")		xyz")) == implicit_statement::k_expression_statement);
+	QUARK_VERIFY(detect_implicit_statement_lookahead(seq_t(R"(print("Hello, World!")		xyz)")) == implicit_statement::k_expression_statement);
 }
 DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "EXPRESSION-STATEMENT"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(R"(     print("/Desktop/test_out.txt")		xyz)")) == implicit_statement::k_expression_statement);
+	QUARK_VERIFY(detect_implicit_statement_lookahead(seq_t(R"(     print("/Desktop/test_out.txt")		xyz)")) == implicit_statement::k_expression_statement);
 }
 DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "EXPRESSION-STATEMENT"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t("print(3)		xyz")) == implicit_statement::k_expression_statement);
+	QUARK_VERIFY(detect_implicit_statement_lookahead(seq_t("print(3)		xyz")) == implicit_statement::k_expression_statement);
 }
 DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "EXPRESSION-STATEMENT"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t("3		xyz")) == implicit_statement::k_expression_statement);
+	QUARK_VERIFY(detect_implicit_statement_lookahead(seq_t("3		xyz")) == implicit_statement::k_expression_statement);
 }
 DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "EXPRESSION-STATEMENT"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t("3 + 4		xyz")) == implicit_statement::k_expression_statement);
+	QUARK_VERIFY(detect_implicit_statement_lookahead(seq_t("3 + 4		xyz")) == implicit_statement::k_expression_statement);
 }
 DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "EXPRESSION-STATEMENT"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t("3 + f(1) + f(2)		xyz")) == implicit_statement::k_expression_statement);
+	QUARK_VERIFY(detect_implicit_statement_lookahead(seq_t("3 + f(1) + f(2)		xyz")) == implicit_statement::k_expression_statement);
 }
 
 
 DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "assign"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" x = 10		xyz")) == implicit_statement::k_assign);
+	QUARK_VERIFY(detect_implicit_statement_lookahead(seq_t(" x = 10		xyz")) == implicit_statement::k_assign);
 }
 DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "assign"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" x = \"hello\"		xyz")) == implicit_statement::k_assign);
+	QUARK_VERIFY(detect_implicit_statement_lookahead(seq_t(" x = \"hello\"		xyz")) == implicit_statement::k_assign);
 }
 DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "assign"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" x = f ( 3 ) == 2		xyz")) == implicit_statement::k_assign);
+	QUARK_VERIFY(detect_implicit_statement_lookahead(seq_t(" x = f ( 3 ) == 2		xyz")) == implicit_statement::k_assign);
 }
 DETECT_TEST("", "detect_implicit_statement_lookahead()", "vector", "assign"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t("a = [1,2,3]		xyz")) == implicit_statement::k_assign);
+	QUARK_VERIFY(detect_implicit_statement_lookahead(seq_t("a = [1,2,3]		xyz")) == implicit_statement::k_assign);
 }
 DETECT_TEST("", "detect_implicit_statement_lookahead()", "dict", "assign"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(R"(a = {"uno": 1, "duo": 2}		xyz)")) == implicit_statement::k_assign);
+	QUARK_VERIFY(detect_implicit_statement_lookahead(seq_t(R"(a = {"uno": 1, "duo": 2}		xyz)")) == implicit_statement::k_assign);
 }
 
 /*
 	Detects each of the other implicit statements and parses them.
-	a = EXPRESSIONm like "a = sin(1.3)"
+	a = EXPRESSION, like "a = sin(1.3)"
 	or
 	EXPRESSION, like "print(3)"
 */
@@ -479,7 +479,7 @@ std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s){
 QUARK_TEST("", "parse_prefixless_statement()", "", ""){
 	ut_verify(QUARK_POS,
 		parse_prefixless_statement(seq_t("x = f(3);")).first._value,
-		parse_json(seq_t(R"(["init-local", "^int", "x", ["call", ["@", "f"], [["k", 3, "^int"]]]])")).first
+		parse_json(seq_t(R"(["init-local", "int", "x", ["call", ["@", "f"], [["k", 3, "int"]]]])")).first
 	);
 }
 */

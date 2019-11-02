@@ -34,11 +34,20 @@ struct native_sha1_t {
 
 
 
+//		func string make_benchmark_report([benchmark_result2_t] results)
 static runtime_value_t llvm_corelib__make_benchmark_report(floyd_runtime_t* frp, const runtime_value_t b){
 	auto& r = get_floyd_runtime(frp);
+	const auto& types = r.backend.types;
 
-	const auto b2 = from_runtime_value(r, b, typeid_t::make_vector(make_benchmark_result2_t()));
-	const auto test_results = unpack_vec_benchmark_result2_t(b2);
+	const auto s = find_symbol_required(r.global_symbols, "benchmark_result2_t");
+	const auto benchmark_result2_vec_type = make_vector(types, s._value_type);
+
+	const auto b2 = from_runtime_value(r, b, benchmark_result2_vec_type);
+
+	auto temp_types = types;
+	const auto test_results = unpack_vec_benchmark_result2_t(temp_types, b2);
+	QUARK_ASSERT(types.nodes.size() == temp_types.nodes.size());
+
 	const auto report = make_benchmark_report(test_results);
 	auto result = to_runtime_string(r, report);
 	return result;
@@ -50,6 +59,7 @@ static runtime_value_t llvm_corelib__make_benchmark_report(floyd_runtime_t* frp,
 static DICT_CPPMAP_T* llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
 
+	const auto& types = r.backend.types;
 	const std::vector<std::pair<std::string, json_t>> caps = corelib_detect_hardware_caps();
 
 	std::map<std::string, value_t> caps_map;
@@ -57,15 +67,17 @@ static DICT_CPPMAP_T* llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
   		caps_map.insert({ e.first, value_t::make_json(e.second) });
 	}
 
-	const auto a = value_t::make_dict_value(typeid_t::make_json(), caps_map);
+	const auto a = value_t::make_dict_value(types, type_t::make_json(), caps_map);
 	auto result = to_runtime_value(r, a);
 	return result.dict_cppmap_ptr;
 }
 
 runtime_value_t llvm_corelib__make_hardware_caps_report(floyd_runtime_t* frp, runtime_value_t caps0){
 	auto& r = get_floyd_runtime(frp);
+	auto& types = r.backend.types;
 
-	const auto b2 = from_runtime_value(r, caps0, typeid_t::make_dict(typeid_t::make_json()));
+	const auto type = make_dict(types, type_t::make_json());
+	const auto b2 = from_runtime_value(r, caps0, type);
 	const auto m = b2.get_dict_value();
 	std::vector<std::pair<std::string, json_t>> caps;
 	for(const auto& e: m){
@@ -76,8 +88,9 @@ runtime_value_t llvm_corelib__make_hardware_caps_report(floyd_runtime_t* frp, ru
 }
 runtime_value_t llvm_corelib__make_hardware_caps_report_brief(floyd_runtime_t* frp, runtime_value_t caps0){
 	auto& r = get_floyd_runtime(frp);
+	auto& types = r.backend.types;
 
-	const auto b2 = from_runtime_value(r, caps0, typeid_t::make_dict(typeid_t::make_json()));
+	const auto b2 = from_runtime_value(r, caps0, make_dict(types, type_t::make_json()));
 	const auto m = b2.get_dict_value();
 	std::vector<std::pair<std::string, json_t>> caps;
 	for(const auto& e: m){
@@ -102,12 +115,14 @@ runtime_value_t llvm_corelib__get_current_date_and_time_string(floyd_runtime_t* 
 
 static STRUCT_T* llvm_corelib__calc_string_sha1(floyd_runtime_t* frp, runtime_value_t s0){
 	auto& r = get_floyd_runtime(frp);
+	auto& types = r.backend.types;
 
 	const auto& s = from_runtime_string(r, s0);
 	const auto ascii40 = corelib_calc_string_sha1(s);
 
 	const auto a = value_t::make_struct_value(
-		typeid_t::make_struct2({ member_t{ typeid_t::make_string(), "ascii40" } }),
+		types,
+		make_struct(types, struct_type_desc_t({ member_t{ type_t::make_string(), "ascii40" } }) ),
 		{ value_t::make_string(ascii40) }
 	);
 
@@ -118,6 +133,7 @@ static STRUCT_T* llvm_corelib__calc_string_sha1(floyd_runtime_t* frp, runtime_va
 static STRUCT_T* llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* binary_ptr){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(binary_ptr != nullptr);
+	auto& types = r.backend.types;
 
 	const auto& binary = *reinterpret_cast<const native_binary_t*>(binary_ptr->get_data_ptr());
 
@@ -125,7 +141,8 @@ static STRUCT_T* llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* 
 	const auto ascii40 = corelib_calc_string_sha1(s);
 
 	const auto a = value_t::make_struct_value(
-		typeid_t::make_struct2({ member_t{ typeid_t::make_string(), "ascii40" } }),
+		types,
+		make_struct(types, struct_type_desc_t({ member_t{ type_t::make_string(), "ascii40" } })),
 		{ value_t::make_string(ascii40) }
 	);
 
@@ -159,22 +176,29 @@ static void llvm_corelib__write_text_file(floyd_runtime_t* frp, runtime_value_t 
 	corelib_write_text_file(path, file_contents);
 }
 
+static runtime_value_t llvm_corelib__read_line_stdin(floyd_runtime_t* frp){
+	auto& r = get_floyd_runtime(frp);
+	const auto s = 	corelib_read_line_stdin();
+	return to_runtime_string(r, s);
+}
+
 
 
 
 static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
+	auto& types = r.backend.types;
 
 	const auto path = from_runtime_string(r, path0);
 
 	const auto a = corelib_get_fsentries_shallow(path);
 
-	const auto elements = directory_entries_to_values(a);
-	const auto k_fsentry_t__type = make__fsentry_t__type();
-	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
+	const auto elements = directory_entries_to_values(types, a);
+	const auto k_fsentry_t__type = make__fsentry_t__type(types);
+	const auto vec2 = value_t::make_vector_value(types, k_fsentry_t__type, elements);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(vec2);
+	const auto debug = value_and_type_to_ast_json(types, vec2);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
@@ -184,17 +208,18 @@ static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp
 
 static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
+	auto& types = r.backend.types;
 
 	const auto path = from_runtime_string(r, path0);
 
 	const auto a = corelib_get_fsentries_deep(path);
 
-	const auto elements = directory_entries_to_values(a);
-	const auto k_fsentry_t__type = make__fsentry_t__type();
-	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
+	const auto elements = directory_entries_to_values(types, a);
+	const auto k_fsentry_t__type = make__fsentry_t__type(types);
+	const auto vec2 = value_t::make_vector_value(types, k_fsentry_t__type, elements);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(vec2);
+	const auto debug = value_and_type_to_ast_json(types, vec2);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
@@ -204,11 +229,12 @@ static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, r
 
 static STRUCT_T* llvm_corelib__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
+	auto& types = r.backend.types;
 	const auto path = from_runtime_string(r, path0);
 
 	const auto info = corelib_get_fsentry_info(path);
 
-	const auto info2 = pack_fsentry_info(info);
+	const auto info2 = pack_fsentry_info(types, info);
 
 	const auto v = to_runtime_value(r, info2);
 	return v.struct_ptr;
@@ -216,10 +242,11 @@ static STRUCT_T* llvm_corelib__get_fsentry_info(floyd_runtime_t* frp, runtime_va
 
 static runtime_value_t llvm_corelib__get_fs_environment(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
+	auto& types = r.backend.types;
 
 	const auto env = corelib_get_fs_environment();
 
-	const auto result = pack_fs_environment_t(env);
+	const auto result = pack_fs_environment_t(types, env);
 	const auto v = to_runtime_value(r, result);
 	return v;
 }
@@ -229,13 +256,14 @@ static runtime_value_t llvm_corelib__get_fs_environment(floyd_runtime_t* frp){
 
 static uint8_t llvm_corelib__does_fsentry_exist(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
+	auto& types = r.backend.types;
 	const auto path = from_runtime_string(r, path0);
 
 	bool exists = corelib_does_fsentry_exist(path);
 
 	const auto result = value_t::make_bool(exists);
 #if 1
-	const auto debug = value_and_type_to_ast_json(result);
+	const auto debug = value_and_type_to_ast_json(types, result);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 	return exists ? 0x01 : 0x00;
@@ -285,6 +313,7 @@ std::map<std::string, void*> get_corelib_binds(){
 
 		{ "read_text_file", reinterpret_cast<void *>(&llvm_corelib__read_text_file) },
 		{ "write_text_file", reinterpret_cast<void *>(&llvm_corelib__write_text_file) },
+		{ "read_line_stdin", reinterpret_cast<void *>(&llvm_corelib__read_line_stdin) },
 
 		{ "get_fsentries_shallow", reinterpret_cast<void *>(&llvm_corelib__get_fsentries_shallow) },
 		{ "get_fsentries_deep", reinterpret_cast<void *>(&llvm_corelib__get_fsentries_deep) },

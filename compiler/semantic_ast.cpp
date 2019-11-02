@@ -23,17 +23,19 @@ namespace floyd {
 
 //////////////////////////////////////		semantic_ast_t
 
-semantic_ast_t::semantic_ast_t(const general_purpose_ast_t& tree){
+semantic_ast_t::semantic_ast_t(const general_purpose_ast_t& tree, const intrinsic_signatures_t& intrinsic_signatures) :
+	_tree(tree),
+	intrinsic_signatures(intrinsic_signatures)
+{
 	QUARK_ASSERT(tree.check_invariant());
-	QUARK_ASSERT(check_types_resolved(tree));
 
-	_tree = tree;
+	QUARK_ASSERT(check_invariant());
 }
 
 #if DEBUG
 bool semantic_ast_t::check_invariant() const{
 	QUARK_ASSERT(_tree.check_invariant());
-	QUARK_ASSERT(check_types_resolved(_tree));
+//	QUARK_ASSERT(check_types_resolved(_tree));
 	return true;
 }
 #endif
@@ -52,7 +54,7 @@ semantic_ast_t json_to_semantic_ast(const json_t& json){
 	if(resolved == false){
 		throw std::exception();
 	}
-	return semantic_ast_t{ gp_ast };
+	return semantic_ast_t{ gp_ast, {} };
 }
 
 

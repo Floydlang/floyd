@@ -148,7 +148,7 @@ QUARK_TEST("", "", "", ""){
 	const immer::vector<uint64_t> vec;
 
 	const write_cache_t cache(vec);
-	QUARK_UT_VERIFY(cache.size() == 0);
+	QUARK_VERIFY(cache.size() == 0);
 }
 
 QUARK_TEST("", "", "", ""){
@@ -156,10 +156,10 @@ QUARK_TEST("", "", "", ""){
 
 	const write_cache_t cache(vec);
 	const auto b = cache.push_back(1234);
-	QUARK_UT_VERIFY(vec.size() == 0);
-	QUARK_UT_VERIFY(cache.size() == 0);
-	QUARK_UT_VERIFY(b.size() == 1);
-	QUARK_UT_VERIFY(b.load_element(0) == 1234);
+	QUARK_VERIFY(vec.size() == 0);
+	QUARK_VERIFY(cache.size() == 0);
+	QUARK_VERIFY(b.size() == 1);
+	QUARK_VERIFY(b.load_element(0) == 1234);
 }
 
 QUARK_TEST("", "", "", ""){
@@ -170,28 +170,28 @@ QUARK_TEST("", "", "", ""){
 	for(int i = 0 ; i < 16 ; i++){
 		acc = acc.push_back(i);
 	}
-	QUARK_UT_VERIFY(vec.size() == 0);
-	QUARK_UT_VERIFY(cache.size() == 0);
-	QUARK_UT_VERIFY(acc.size() == 16);
-	QUARK_UT_VERIFY(acc.load_element(0) == 0);
-	QUARK_UT_VERIFY(acc.load_element(1) == 1);
-	QUARK_UT_VERIFY(acc.load_element(2) == 2);
-	QUARK_UT_VERIFY(acc.load_element(3) == 3);
+	QUARK_VERIFY(vec.size() == 0);
+	QUARK_VERIFY(cache.size() == 0);
+	QUARK_VERIFY(acc.size() == 16);
+	QUARK_VERIFY(acc.load_element(0) == 0);
+	QUARK_VERIFY(acc.load_element(1) == 1);
+	QUARK_VERIFY(acc.load_element(2) == 2);
+	QUARK_VERIFY(acc.load_element(3) == 3);
 
-	QUARK_UT_VERIFY(acc.load_element(4) == 4);
-	QUARK_UT_VERIFY(acc.load_element(5) == 5);
-	QUARK_UT_VERIFY(acc.load_element(6) == 6);
-	QUARK_UT_VERIFY(acc.load_element(7) == 7);
+	QUARK_VERIFY(acc.load_element(4) == 4);
+	QUARK_VERIFY(acc.load_element(5) == 5);
+	QUARK_VERIFY(acc.load_element(6) == 6);
+	QUARK_VERIFY(acc.load_element(7) == 7);
 
-	QUARK_UT_VERIFY(acc.load_element(8) == 8);
-	QUARK_UT_VERIFY(acc.load_element(9) == 9);
-	QUARK_UT_VERIFY(acc.load_element(10) == 10);
-	QUARK_UT_VERIFY(acc.load_element(11) == 11);
+	QUARK_VERIFY(acc.load_element(8) == 8);
+	QUARK_VERIFY(acc.load_element(9) == 9);
+	QUARK_VERIFY(acc.load_element(10) == 10);
+	QUARK_VERIFY(acc.load_element(11) == 11);
 
-	QUARK_UT_VERIFY(acc.load_element(12) == 12);
-	QUARK_UT_VERIFY(acc.load_element(13) == 13);
-	QUARK_UT_VERIFY(acc.load_element(14) == 14);
-	QUARK_UT_VERIFY(acc.load_element(15) == 15);
+	QUARK_VERIFY(acc.load_element(12) == 12);
+	QUARK_VERIFY(acc.load_element(13) == 13);
+	QUARK_VERIFY(acc.load_element(14) == 14);
+	QUARK_VERIFY(acc.load_element(15) == 15);
 }
 
 QUARK_TEST("", "", "", ""){
@@ -202,28 +202,28 @@ QUARK_TEST("", "", "", ""){
 	for(int i = 0 ; i < 17 ; i++){
 		acc = acc.push_back(i);
 	}
-	QUARK_UT_VERIFY(vec.size() == 0);
-	QUARK_UT_VERIFY(cache.size() == 0);
-	QUARK_UT_VERIFY(acc.size() == 17);
-	QUARK_UT_VERIFY(acc.load_element(0) == 0);
-	QUARK_UT_VERIFY(acc.load_element(1) == 1);
-	QUARK_UT_VERIFY(acc.load_element(2) == 2);
-	QUARK_UT_VERIFY(acc.load_element(3) == 3);
+	QUARK_VERIFY(vec.size() == 0);
+	QUARK_VERIFY(cache.size() == 0);
+	QUARK_VERIFY(acc.size() == 17);
+	QUARK_VERIFY(acc.load_element(0) == 0);
+	QUARK_VERIFY(acc.load_element(1) == 1);
+	QUARK_VERIFY(acc.load_element(2) == 2);
+	QUARK_VERIFY(acc.load_element(3) == 3);
 
-	QUARK_UT_VERIFY(acc.load_element(4) == 4);
-	QUARK_UT_VERIFY(acc.load_element(5) == 5);
-	QUARK_UT_VERIFY(acc.load_element(6) == 6);
-	QUARK_UT_VERIFY(acc.load_element(7) == 7);
+	QUARK_VERIFY(acc.load_element(4) == 4);
+	QUARK_VERIFY(acc.load_element(5) == 5);
+	QUARK_VERIFY(acc.load_element(6) == 6);
+	QUARK_VERIFY(acc.load_element(7) == 7);
 
-	QUARK_UT_VERIFY(acc.load_element(8) == 8);
-	QUARK_UT_VERIFY(acc.load_element(9) == 9);
-	QUARK_UT_VERIFY(acc.load_element(10) == 10);
-	QUARK_UT_VERIFY(acc.load_element(11) == 11);
+	QUARK_VERIFY(acc.load_element(8) == 8);
+	QUARK_VERIFY(acc.load_element(9) == 9);
+	QUARK_VERIFY(acc.load_element(10) == 10);
+	QUARK_VERIFY(acc.load_element(11) == 11);
 
-	QUARK_UT_VERIFY(acc.load_element(12) == 12);
-	QUARK_UT_VERIFY(acc.load_element(13) == 13);
-	QUARK_UT_VERIFY(acc.load_element(14) == 14);
-	QUARK_UT_VERIFY(acc.load_element(15) == 15);
+	QUARK_VERIFY(acc.load_element(12) == 12);
+	QUARK_VERIFY(acc.load_element(13) == 13);
+	QUARK_VERIFY(acc.load_element(14) == 14);
+	QUARK_VERIFY(acc.load_element(15) == 15);
 
-	QUARK_UT_VERIFY(acc.load_element(16) == 16);
+	QUARK_VERIFY(acc.load_element(16) == 16);
 }

@@ -13,6 +13,7 @@
 
 namespace floyd {
 
+#if 0
 struct desugar_t {
 	bool check_invariant() const {
 		return true;
@@ -21,7 +22,7 @@ struct desugar_t {
 	general_purpose_ast_t tree;
 };
 
-void intern_type(desugar_t& acc, const typeid_t& type){
+void intern_type(desugar_t& acc, const type_t& type){
 }
 
 
@@ -263,7 +264,7 @@ general_purpose_ast_t desugar(desugar_t& acc, const general_purpose_ast_t& ast){
 	}
 	result._function_defs = function_defs;
 
-	result._interned_types = ast._interned_types;
+	result._types = ast._types;
 	result._software_system = ast._software_system;
 	result._container_def = ast._container_def;
 
@@ -282,6 +283,6 @@ unchecked_ast_t desugar_pass(const unchecked_ast_t& unchecked_ast){
 //	QUARK_TRACE_SS("OUTPUT:  " << json_to_pretty_string(gp_ast_to_json(result)));
 	return unchecked_ast_t { result };
 }
-
+#endif
 
 }	// floyd

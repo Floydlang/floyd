@@ -27,7 +27,7 @@ QUARK_TEST("", "", "", ""){
 	double b = 23.3f;
 
 	bool r = a && b;
-	QUARK_UT_VERIFY(r == true);
+	QUARK_VERIFY(r == true);
 }
 #endif
 
@@ -44,8 +44,8 @@ QUARK_TEST("test_cpp_value_class_a", "what is needed for basic operations", "", 
 	test_cpp_value_class_a a;
 	test_cpp_value_class_a b = a;
 
-	QUARK_TEST_VERIFY(b._a == 10);
-	QUARK_TEST_VERIFY(a == b);
+	QUARK_VERIFY(b._a == 10);
+	QUARK_VERIFY(a == b);
 }
 
 
@@ -58,13 +58,13 @@ QUARK_TEST("C++ bool", "", "", ""){
 	const auto x = false + false;
 	const auto y = false - false;
 
-	QUARK_UT_VERIFY(x == false);
-	QUARK_UT_VERIFY(y == false);
+	QUARK_VERIFY(x == false);
+	QUARK_VERIFY(y == false);
 }
 
 QUARK_TEST("","", "", ""){
 	const auto size = sizeof(std::make_shared<int>(13));
-	QUARK_UT_VERIFY(size == 16);
+	QUARK_VERIFY(size == 16);
 }
 
 
@@ -86,7 +86,7 @@ QUARK_TEST("C++17 variant", "", "", ""){
 	QUARK_TRACE_SS(std::get<std::string>(foo));
 
 	const auto x = std::get<std::string>(foo);
-	QUARK_UT_VERIFY(x == "Ciao!");
+	QUARK_VERIFY(x == "Ciao!");
 }
 
 /*
@@ -98,7 +98,7 @@ struct no_op_equal {
 QUARK_TEST("C++17 variant", "operator==", "", ""){
     std::variant<int, std::string, no_op_equal> a = no_op_equal{ 3.14f };
     std::variant<int, std::string, no_op_equal> b = no_op_equal{ 3.14f };
-	QUARK_UT_VERIFY(a == b);
+	QUARK_VERIFY(a == b);
 }
 */
 
@@ -135,29 +135,29 @@ QUARK_TEST("C++17 variant", "", "", ""){
 	test_statement_t a{bind_t{"myval", {"1+3"}}, "debug myval = 1+3"};
 
 	const auto s = sizeof(a);
-	QUARK_UT_VERIFY(s > 0);
+	QUARK_VERIFY(s > 0);
 
 	const auto bind = std::get<bind_t>(a._contents);
-	QUARK_UT_VERIFY(bind._variable_name == "myval");
-	QUARK_UT_VERIFY(bind._expression._source_code == "1+3");
+	QUARK_VERIFY(bind._variable_name == "myval");
+	QUARK_VERIFY(bind._expression._source_code == "1+3");
 
 
-	QUARK_UT_VERIFY(a._contents.index() == 2);
+	QUARK_VERIFY(a._contents.index() == 2);
 	const auto bind2 = std::get<2>(a._contents);
-	QUARK_UT_VERIFY(bind2._variable_name == "myval");
-	QUARK_UT_VERIFY(bind2._expression._source_code == "1+3");
+	QUARK_VERIFY(bind2._variable_name == "myval");
+	QUARK_VERIFY(bind2._expression._source_code == "1+3");
 
 
 
-	QUARK_UT_VERIFY(holds_alternative<bind_t>(a._contents) == true);
-	QUARK_UT_VERIFY(holds_alternative<return_t>(a._contents) == false);
+	QUARK_VERIFY(holds_alternative<bind_t>(a._contents) == true);
+	QUARK_VERIFY(holds_alternative<return_t>(a._contents) == false);
 
 
 // 	const auto b = std::get_if<int>(&a._contents);
-//	QUARK_UT_VERIFY(b != nullptr);
+//	QUARK_VERIFY(b != nullptr);
 
  	const auto c = std::get_if<bind_t>(&a._contents);
-	QUARK_UT_VERIFY(c != nullptr);
+	QUARK_VERIFY(c != nullptr);
 }
 
 
@@ -337,14 +337,14 @@ QUARK_TEST("","", "", ""){
 //	Returning a const ref from function and capturing it using const auto x = f() -- will that make x a reference or a copy?
 //	RESULT: You must capture using auto& or you get a copy!
 QUARK_TEST("","", "", ""){
-	QUARK_UT_VERIFY(g_test.a == 46);
+	QUARK_VERIFY(g_test.a == 46);
 
 	const auto& b = f();
-	QUARK_UT_VERIFY(g_test.a == 46);
-	QUARK_UT_VERIFY(b.a == 46);
+	QUARK_VERIFY(g_test.a == 46);
+	QUARK_VERIFY(b.a == 46);
 	g_test.a = 1000;
 
-	QUARK_UT_VERIFY(g_test.a == 1000);
-	QUARK_UT_VERIFY(b.a == 1000);
+	QUARK_VERIFY(g_test.a == 1000);
+	QUARK_VERIFY(b.a == 1000);
 }
 

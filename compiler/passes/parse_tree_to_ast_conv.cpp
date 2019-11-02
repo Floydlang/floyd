@@ -19,12 +19,12 @@ namespace floyd {
 unchecked_ast_t parse_tree_to_ast(const parser::parse_tree_t& parse_tree){
 	//	Parse tree contains an array of statements, with hierachical functions and types.
 	QUARK_ASSERT(parse_tree._value.is_array());
-
-	const auto program_body = ast_json_to_statements(parse_tree._value);
+	types_t types;
+	const auto program_body = ast_json_to_statements(types, parse_tree._value);
 	const auto gp_ast = general_purpose_ast_t{
 		body_t{ program_body },
 		{},
-		{},
+		types,
 		{},
 		{}
 	};

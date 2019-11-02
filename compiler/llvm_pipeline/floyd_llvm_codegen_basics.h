@@ -65,7 +65,7 @@ struct resolved_symbol_t {
 
 
 struct llvm_code_generator_t {
-	public: llvm_code_generator_t(llvm_instance_t& i, llvm::Module* module, const type_interner_t& interner, const llvm_type_lookup& type_lookup, const std::vector<function_link_entry_t>& link_map, const compiler_settings_t& settings) :
+	public: llvm_code_generator_t(llvm_instance_t& i, llvm::Module* module, const types_t& types, const llvm_type_lookup& type_lookup, const std::vector<function_link_entry_t>& link_map, const compiler_settings_t& settings, const intrinsic_signatures_t& intrinsic_signatures) :
 		instance(&i),
 		module(module),
 		builder(i.context),
@@ -73,7 +73,8 @@ struct llvm_code_generator_t {
 		link_map(link_map),
 
 		runtime_functions(link_map),
-		settings(settings)
+		settings(settings),
+		intrinsic_signatures(intrinsic_signatures)
 	{
 		QUARK_ASSERT(i.check_invariant());
 
@@ -101,11 +102,11 @@ struct llvm_code_generator_t {
 	llvm_instance_t* instance;
 	llvm::Module* module;
 	llvm::IRBuilder<> builder;
-	llvm_type_lookup type_lookup;
+	const llvm_type_lookup type_lookup;
 	std::vector<function_link_entry_t> link_map;
 
 	/*
-		variable_address_t::_parent_steps
+		symbol_pos_t::_parent_steps
 			-1: global, uncoditionally.
 			0: current scope. scope_path[scope_path.size() - 1]
 			1: parent scope. scope_path[scope_path.size() - 2]
@@ -116,6 +117,9 @@ struct llvm_code_generator_t {
 
 	const runtime_functions_t runtime_functions;
 	compiler_settings_t settings;
+
+
+	const intrinsic_signatures_t intrinsic_signatures;
 };
 
 
@@ -164,11 +168,11 @@ struct llvm_function_generator_t {
 };
 
 
-llvm::Constant* generate_itype_constant(const llvm_code_generator_t& gen_acc, const typeid_t& type);
+llvm::Constant* generate_itype_constant(const llvm_code_generator_t& gen_acc, const type_t& type);
 
 
-llvm::Value* generate_cast_to_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const typeid_t& floyd_type);
-llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& runtime_value_reg, const typeid_t& type);
+llvm::Value* generate_cast_to_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const type_t& floyd_type);
+llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& runtime_value_reg, const type_t& type);
 
 
 
@@ -178,12 +182,12 @@ llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_acc, ll
 llvm::Value* generate_get_vec_element_ptr_needs_cast(llvm_function_generator_t& gen_acc, llvm::Value& vec_ptr_reg);
 
 //	Returns pointer to the first byte of the first struct member.
-llvm::Value* generate_get_struct_base_ptr(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const typeid_t& final_type);
+llvm::Value* generate_get_struct_base_ptr(llvm_function_generator_t& gen_acc, llvm::Value& struct_ptr_reg, const type_t& final_type);
 
 
 //	Adds argument #0 which is floyd's secret runtime context.
 //	Supports ANY-types by passing TWO arguments: the value then the itype of the value.
-llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, const typeid_t& callee_function_type, const typeid_t& resolved_function_type, llvm::Value& callee_reg, const std::vector<llvm::Value*> floyd_args);
+llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, const type_t& callee_function_type, const type_t& resolved_function_type, llvm::Value& callee_reg, const std::vector<llvm::Value*> floyd_args);
 
 }	//	floyd
 

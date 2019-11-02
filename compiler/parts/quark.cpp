@@ -61,13 +61,13 @@ void set_runtime(runtime_i* iRuntime){
 
 
 QUARK_TESTQ("path_to_name()", ""){
-	QUARK_UT_VERIFY(path_to_name("/Users/marcus/Repositories/Floyd/examples/game_of_life2.cpp") == "game_of_life2.cpp");
+	QUARK_VERIFY(path_to_name("/Users/marcus/Repositories/Floyd/examples/game_of_life2.cpp") == "game_of_life2.cpp");
 }
 QUARK_TESTQ("path_to_name()", ""){
-	QUARK_UT_VERIFY(path_to_name("game_of_life2.cpp") == "game_of_life2.cpp");
+	QUARK_VERIFY(path_to_name("game_of_life2.cpp") == "game_of_life2.cpp");
 }
 QUARK_TESTQ("path_to_name()", ""){
-	QUARK_UT_VERIFY(path_to_name("") == "");
+	QUARK_VERIFY(path_to_name("") == "");
 }
 
 //??? test mixes of string vs char*
@@ -160,8 +160,8 @@ void test_macros(){
 }
 
 QUARK_TEST("", "", "", ""){
-	QUARK_UT_VERIFY(true);
-	QUARK_TEST_VERIFY(true);
+	QUARK_VERIFY(true);
+	QUARK_VERIFY(true);
 }
 
 }

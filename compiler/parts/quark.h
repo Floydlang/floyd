@@ -231,6 +231,7 @@ struct trace_i {
 	public: virtual void trace_i__trace(const char s[]) const = 0;
 	public: virtual void trace_i__open_scope(const char s[]) const = 0;
 	public: virtual void trace_i__close_scope(const char s[]) const = 0;
+	public: virtual int trace_i__get_indent() const = 0;
 };
 
 
@@ -245,10 +246,11 @@ struct default_tracer_t : public trace_i {
 	public: virtual void trace_i__trace(const char s[]) const;
 	public: virtual void trace_i__open_scope(const char s[]) const;
 	public: virtual void trace_i__close_scope(const char s[]) const;
+	public: virtual int trace_i__get_indent() const;
 
 
 	///////////////		State.
-	public: long mutable _indent;
+	public: int mutable _indent;
 };
 
 inline default_tracer_t::default_tracer_t() :
@@ -256,15 +258,52 @@ inline default_tracer_t::default_tracer_t() :
 {
 }
 
-inline void default_tracer_t::trace_i__trace(const char s[]) const{
-	if(strlen(s) > 0){
-		for(long i = 0 ; i < _indent ; i++){
-//			std::cout << "|\t";
-			std::cout << "\t";
-		}
+//??? Take argument std::ostream to stream to.
+//	Indents each line in s correctly.
+inline void trace_indent(const char s[], int indent, const std::string& indent_str) {
+	const auto count = strlen(s);
+	if(count > 0){
+		size_t pos = 0;
+		while(pos != count){
 
-		std::cout << std::string(s);
-		std::cout << std::endl;
+			int line_indent = indent;
+
+			//	Convert leading tabs into indents so we can indent everything using indent_str.
+			while(pos < count && s[pos] == '\t'){
+				line_indent++;
+				pos++;
+			}
+
+			//	Indent start of line.
+			for(auto i = 0 ; i < line_indent ; i++){
+				std::cout << indent_str;
+			}
+
+
+			//	Print line until newline.
+			std::string line_acc;
+			while(pos < count && s[pos] != '\n'){
+				const auto ch = s[pos];
+				line_acc.push_back(ch);
+				pos++;
+			}
+
+			std::cout << line_acc << std::endl;
+
+			//	Skip newline.
+			if(pos < count){
+				pos++;
+			}
+		}
+	}
+}
+
+
+//	Indents each line in s correctly.
+inline void default_tracer_t::trace_i__trace(const char s[]) const{
+	const auto count = strlen(s);
+	if(count > 0){
+		trace_indent(s, _indent, "\t");
 	}
 }
 inline void default_tracer_t::trace_i__open_scope(const char s[]) const{
@@ -274,6 +313,9 @@ inline void default_tracer_t::trace_i__open_scope(const char s[]) const{
 inline void default_tracer_t::trace_i__close_scope(const char s[]) const{
 	_indent--;
 	trace_i__trace(s);
+}
+inline int default_tracer_t::trace_i__get_indent() const{
+	return _indent;
 }
 
 
@@ -381,9 +423,9 @@ inline void set_trace(const trace_i* v){
 
 
 
-	//??? implement
 	inline int get_log_indent(){
-		return 0;
+		const trace_i& tracer = get_trace();
+		return tracer.trace_i__get_indent();
 	}
 
 
@@ -491,9 +533,8 @@ struct call_context_t {
 		static void QUARK_UNIQUE_LABEL(quark_test_f_)()
 
 
-	//### Add argument to unit-test functions that can be used / checked in UT_VERIFY().
-	#define QUARK_UT_VERIFY(exp) if(exp){}else{ ::quark::on_unit_test_failed_hook(::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__), QUARK_STRING(exp)); }
-	#define QUARK_TEST_VERIFY QUARK_UT_VERIFY
+	//### Add argument to unit-test functions that can be used / checked in QUARK_VERIFY().
+	#define QUARK_VERIFY(exp) if(exp){}else{ ::quark::on_unit_test_failed_hook(::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__), QUARK_STRING(exp)); }
 
 
 
@@ -563,9 +604,9 @@ inline void ut_verify(const quark::call_context_t& context, const std::vector<st
 		}
 		const auto count = std::max(result.size(), expected.size());
 		for(int i = 0 ; i < count ; i++){
-			const auto result_str = (i < result.size()) ? result[i] : "---";
-			const auto expected_str = (i < expected.size()) ? expected[i] : "---";
-			QUARK_TRACE_SS(std::to_string(i) << ": \"" << result_str << "\" != \"" << expected_str << "\"");
+			const auto result_str = (i < result.size()) ? ("\"" + result[i] + "\"") : "<none>";
+			const auto expected_str = (i < expected.size()) ? ("\"" + expected[i] + "\"") : "<none>";
+			QUARK_TRACE_SS(std::to_string(i) << ": " << result_str << " != " << expected_str);
 		}
 
 		quark::fail_test(context);
@@ -592,8 +633,7 @@ inline void ut_verify(const call_context_t& context, const char* result, const s
 	#define QUARK_TESTQ(function_under_test, scenario) \
 		static void QUARK_UNIQUE_LABEL(quark_test_f_)()
 
-	#define QUARK_UT_VERIFY(exp)
-	#define QUARK_TEST_VERIFY QUARK_UT_VERIFY
+	#define QUARK_VERIFY(exp)
 
 
 inline void fail_test(const call_context_t& context){
@@ -751,7 +791,7 @@ inline void run_tests(const unit_test_registry& registry, const std::vector<std:
 
 	if(vip_count > 0){
 		std::vector<test_result> test_results;
-		std::cout << "Running SUBSET of tests: " << vip_count << " / " << total_test_count << std::endl;
+		std::cout << "Running VIP tests: " << vip_count << " / " << total_test_count << std::endl;
 
 		int fail_count = 0;
 		for(const auto& test: sorted_tests){
@@ -770,13 +810,12 @@ inline void run_tests(const unit_test_registry& registry, const std::vector<std:
 			}
 		}
 
+		std::cout << "================================================================================" << std::endl;
 		if(fail_count == 0){
-			std::cout << "================================================================================" << std::endl;
-			std::cout << "Success SUBSET " << vip_count << " / " << total_test_count << std::endl;
+			std::cout << "VIP mode: Success all " << vip_count << " passed" << std::endl;
 		}
 		else{
-			std::cout << "================================================================================" << std::endl;
-			std::cout << "Failure SUBSET " << fail_count << std::endl;
+			std::cout << "VIP mode: Failure " << fail_count << " / " << vip_count << std::endl;
 			trace_failures(sorted_tests, test_results);
 			exit(-1);
 		}
@@ -797,13 +836,12 @@ inline void run_tests(const unit_test_registry& registry, const std::vector<std:
 			}
 		}
 
+		std::cout << "================================================================================" << std::endl;
 		if(fail_count == 0){
-			std::cout << "================================================================================" << std::endl;
-			std::cout << "Success ALL  " << sorted_tests.size() << std::endl;
+			std::cout << "Success all " << sorted_tests.size() << " tests" <<std::endl;
 		}
 		else{
-			std::cout << "================================================================================" << std::endl;
-			std::cout << "Failure ALL " << fail_count << std::endl;
+			std::cout << "Failure " << fail_count << " of all (" << total_test_count << ")" << std::endl;
 			trace_failures(sorted_tests, test_results);
 			exit(-1);
 		}

@@ -52,4 +52,9 @@ std::vector<std::string> generate_table(const std::vector<line_t>& table, const 
 
 
 
+//	All lines must be same columns.
+std::string generate_table_type1(const std::vector<std::string>& headings, const std::vector<std::vector<std::string>>& matrix);
+
+
+
 #endif /* format_table_hpp */

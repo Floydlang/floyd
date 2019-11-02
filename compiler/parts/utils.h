@@ -129,5 +129,6 @@ std::vector<DEST_ELEMENT_TYPE> filterf(const COLLECTION& col, const UNARY_OPERAT
 
 std::string ptr_to_hexstring(const void* ptr);
 
+std::string concat_string(const std::vector<std::string>& vec, const std::string& divider);
 
 #endif /* utils_hpp */

@@ -1,48 +1,39 @@
+//??? Add bool empty(COLLECTION)
+//??? stdlib needs int find(VECTOR v, f, context)
+//??? Add stdlib split-function, [string] split(string s, string splitchars) - use instead of words_from_string()
+//??? optional-feature would be helpful.
+//??? update nested using path: let world2 = update(world.rooms[room].objects_in_room, = push_back($1, sword))
 
-print("Welcome to the the dungeon!")
+
+// PRIMITIVES
+////////////////////////////////////////////////////////////////////////////////
 
 //	Player is encoded as an object sitting somewhere in the world, usually in a room.
 
 struct object_t {
 	string name
 
-	bool is_player
-
 	//	The object cannot be moved or carried
 	bool fixed
 
-	//	Notice. Even if player can't put something inside (for example), there can still be objects inside.
-	bool player_can_put_inside
-	bool player_can_put_ontop
-	bool player_can_put_behind
-	bool player_can_put_under
-
-/*
-	[object_t] inside
-	[object_t] ontop
-	[object_t] behind
-	[object_t] under
-*/
+	[object_t] holds
 }
 
-let null_object = object_t("", false, false,	false, false, false, false)
+let null_object = object_t("", false, [])
 
 func object_t make_player(){
 	return object_t(
 		"player",
-		true,
 		false,
-
-		false, false, false, false
+		[]
 	)
 }
-func object_t make_obj()
 
 struct room_t {
 	string name
 	string short_description
 	string long_description
-//	[string: string] exits
+	[string: string] exits
 	[object_t] objects_in_room
 }
 
@@ -50,65 +41,467 @@ struct world_t {
 	[string: room_t] rooms
 }
 
-
-//			,
-//			{ "north": "forest1" },
-//			{ make_obj(), make_obj() }
-
-let init_world = world_t(
-	{
-		"forest0":
-		room_t (
-			"Small clearing",
-			"You are in a small clearing.",
-			"You are in a small clearing in a pine forest. It's sunny and birds are singing.",
-			[]
-		),
-
-		"forest1":
-		room_t (
-			"Forest path",
-			"You are on the muddy path.",
-			"This is a muddy path heading north-sound. Further south the forest opens up.",
-			[ make_player() ]
-		)
-	}
-)
-
-struct world_change_t {
-	string message
-	world_t new_world
+// ??? Add world to object_pos_t to make it standalone.
+struct object_pos_t {
+	string room_id
+	int index
+	string object_key
 }
 
 struct player_loc_t {
 	object_t player
 	string room_id
-	int slot_index
+	int index
 }
 
-func player_loc_t find_player(world_t world){
-	let room_k = get_keys(world.rooms)
-	for(r in 0 ..< size(room_k)) {
-		let room = world.rooms[room_k[r]]
+struct action_result_t {
+	string message
+	world_t new_world
+}
+
+
+// FEATURES
+////////////////////////////////////////////////////////////////////////////////
+
+/*
+	root: []
+	forest: [ "room", "forest" ]
+	chest: [ "room", "forest", "inside", "chest" ]
+	sword: [ "room", "forest", "inside", "chest", "inside", "sword" ]
+*/
+
+struct node_path_t {
+	[string] node
+}
+
+
+
+
+func object_pos_t reach_object_in_room(world_t world, string from_room_id, string object_key){
+	let room = world.rooms[from_room_id]
+	for(i in 0 ..< size(room.objects_in_room)) {
+		let o = room.objects_in_room[i]
+		if (o.name == object_key) {
+			return object_pos_t(from_room_id, i, object_key)
+		}
+	}
+	return object_pos_t("", -1, "")
+}
+
+
+//	If object isn't found, object_pos_t("", -1, "") is returned
+func object_pos_t find_object(world_t world, string object_key){
+	let room_keys = get_keys(world.rooms)
+	for(r in 0 ..< size(room_keys)) {
+		let room = world.rooms[room_keys[r]]
 		for(i in 0 ..< size(room.objects_in_room)) {
 			let o = room.objects_in_room[i]
-			if (o.is_player) {
-				return player_loc_t(o, room_k[r], i)
+			if (o.name == object_key) {
+				return object_pos_t(room_keys[r], i, object_key)
 			}
 		}
 	}
-	return player_loc_t(null_object, "", -1)
+	return object_pos_t("", -1, "")
 }
 
-func string action_look(world_t world){
+func object_t load_object(world_t world, object_pos_t pos){
+	return world.rooms[pos.room_id].objects_in_room[pos.index]
+}
+
+func int find_object_key([object_t] objects, string key){
+	for(i in 0 ..< size(objects)){
+		if(objects[i].name == key){
+			return i
+		}
+	}
+	return -1
+}
+
+func player_loc_t find_player(world_t world){
+	let pos = find_object(world, "player")
+	if(pos.room_id != ""){
+		let object = load_object(world, pos)
+		return player_loc_t(object, pos.room_id, pos.index)
+	}
+	else{
+		return player_loc_t(null_object, "", -1)
+	}
+}
+
+
+func world_t remove_object(world_t world, object_pos_t pos){
+	let objects = world.rooms[pos.room_id].objects_in_room
+	let index = find_object_key(objects, pos.object_key)
+	assert(index != -1)
+
+	let [object_t] empty = []
+	let objects2 = replace(objects, index, index + 1, empty)
+	let room2 = update(world.rooms[pos.room_id], objects_in_room, objects2)
+	let rooms2 = update(world.rooms, pos.room_id, room2)
+	return world_t(rooms2)
+}
+
+func world_t append_object(world_t world, string room_id, object_t object){
+	let objects2 = push_back(world.rooms[room_id].objects_in_room, object)
+	let room2 = update(world.rooms[room_id], objects_in_room, objects2)
+	let rooms2 = update(world.rooms, room_id, room2)
+	return world_t(rooms2)
+}
+
+
+func world_t move_object_to_room(world_t world, object_pos_t source_pos, string dest_room_id, object_t object){
+	let world2 = remove_object(world, source_pos)
+	let world3 = append_object(world2, dest_room_id, object)
+	return world3
+}
+
+func world_t replace_object(world_t world, object_pos_t pos, object_t object2){
+	//print("replace_object: world" + to_pretty_string(world))
+	//print("replace_object: pos" + to_pretty_string(pos))
+
+	let objects = world.rooms[pos.room_id].objects_in_room
+	let x = [object2]
+	let objects2 = replace(objects, pos.index, pos.index + 1, x)
+	let room2 = update(world.rooms[pos.room_id], objects_in_room, objects2)
+	let rooms2 = update(world.rooms, pos.room_id, room2)
+	let result = world_t(rooms2)
+
+	//print("replace_object: result" + to_pretty_string(result))
+
+	return result
+}
+
+let test_world1 = world_t(
+	{
+		"room1": room_t (
+			"Room 1",
+			"You are in Room 1.",
+			"",
+			{},
+			[
+				make_player(),
+				object_t("key", false, [])
+			]
+		),
+
+		"room2": room_t (
+			"Room 2",
+			"You are in Room 2.",
+			"",
+			{},
+			[
+				object_t("chest", false, [])
+			]
+		)
+	}
+)
+
+assert(
+	replace_object(
+		test_world1,
+		object_pos_t("room2", 0, "chest"),
+		object_t("open-chest", false, [])
+	).rooms["room2"].objects_in_room == [ object_t("open-chest", false, []) ]
+)
+
+assert(
+	replace_object(
+		test_world1,
+		object_pos_t("room1", 1, "key"),
+		object_t("balloon", false, [])
+	).rooms["room1"].objects_in_room == [ make_player(), object_t("balloon", false, []) ]
+)
+
+
+func bool nonplayer(object_t object, int context){
+	return object.name != "player"
+}
+
+func bool string_not_empty(string s, int context){
+	return size(s) > 0
+}
+
+//	returns 0...many strings. All leading/trailing spaces are removed. All returned entries are non-empty
+func [string] words_from_string(string s){
+	mutable [string] words = []
+	mutable pos = 0
+	mutable acc = ""
+	while(pos < size(s)){
+		let ch = s[pos]
+		if(ch == ' '){
+			words = push_back(words, acc)
+			acc = ""
+		}
+		else{
+			acc = push_back(acc, ch)
+		}
+		pos = pos + 1
+	}
+	words = push_back(words, acc)
+
+	return filter(words, string_not_empty, 0)
+}
+
+assert(words_from_string("") == [])
+assert(words_from_string("hello") == ["hello"])
+assert(words_from_string("hello world") == ["hello", "world"])
+assert(words_from_string("   hello   world   ") == ["hello", "world"])
+
+
+
+
+// ACTIONS
+////////////////////////////////////////////////////////////////////////////////
+
+func string look(world_t world){
+	let player_loc = find_player(world)
+	assert(player_loc.player.name == "player")
+	assert(player_loc.room_id != "" && player_loc.index != -1)
+
+	let room = world.rooms[player_loc.room_id]
+	let desc = room.long_description
+
+	let objects = filter(room.objects_in_room, nonplayer, 0)
+	if(size(objects) > 0){
+		mutable acc = ""
+		for(i in 0 ..< size(objects)){
+			acc = acc + "\n   " + objects[i].name
+		}
+		return desc + acc
+	}
+	else{
+		return desc
+	}
+}
+
+func action_result_t go(world_t world, [string] words){
+	assert(size(words) >= 1)
+	if(size(words) != 2){
+		return action_result_t("I don't understand that sentence.", world)
+	}
+
+//	print("world0: " + to_pretty_string(world))
+
+	let dir = words[1]
+
 	let player_loc = find_player(world)
 
 	assert(player_loc.player.name == "player")
-	assert(player_loc.room_id != "" && player_loc.slot_index != -1)
+	assert(player_loc.room_id != "" && player_loc.index != -1)
 
-	return world.rooms[player_loc.room_id].long_description
+
+	let room = world.rooms[player_loc.room_id]
+	if(exists(room.exits, dir) == false){
+		return action_result_t("You hit a wall.", world)
+	}
+	else {
+		let dest_room_id = room.exits[dir]
+		let player_loc = find_player(world)
+		let source_pos = object_pos_t(player_loc.room_id, player_loc.index, player_loc.player.name)
+		let world2 = move_object_to_room(world, source_pos, dest_room_id, player_loc.player)
+
+		let message = look(world2)
+		return action_result_t(message, world2)
+	}
+
+	return action_result_t("You can't go there!", world)
+}
+
+let k_shortcuts = {
+	"l": "look",
+
+	"n": "go north",
+	"ne": "go northeast",
+	"e": "go east",
+	"se": "go southeast",
+	"s": "go south",
+	"sw": "go southwest",
+	"w": "go west",
+	"nw": "go northwest",
+
+	"u": "go up",
+	"up": "go up",
+	"d": "go down",
+	"down": "go down",
+
+	"i": "inventory"
+}
+
+func action_result_t take(world_t world, [string] words){
+	if(size(words) != 2){
+		return action_result_t("What do you want to take?", world)
+	}
+
+	let noun = words[1]
+	mutable player_pos = find_player(world)
+	let pos = reach_object_in_room(world, player_pos.room_id, noun)
+	if(pos.room_id == ""){
+		return action_result_t("I don't see that here!", world)
+	}
+
+	let object = load_object(world, pos)
+	let world2 = remove_object(world, pos)
+
+	player_pos = find_player(world2)
+
+	let player2 = update(player_pos.player, holds, push_back(player_pos.player.holds, object))
+	let world3 = replace_object(
+		world2,
+		object_pos_t(player_pos.room_id, player_pos.index, player_pos.player.name),
+		player2
+	)
+	return action_result_t("You pick up the " + noun + ".", world3)
+}
+
+func action_result_t drop(world_t world, [string] words){
+	if(size(words) != 2){
+		return action_result_t("What do you want to drop?", world)
+	}
+
+	let noun = words[1]
+	mutable player_pos = find_player(world)
+	let pos = reach_object_in_room(world, player_pos.room_id, noun)
+	if(pos.room_id == ""){
+		return action_result_t("I don't see that here!", world)
+	}
+
+	let object = load_object(world, pos)
+	let world2 = remove_object(world, pos)
+
+	player_pos = find_player(world2)
+
+	let player2 = update(player_pos.player, holds, push_back(player_pos.player.holds, object))
+	let world3 = replace_object(
+		world2,
+		object_pos_t(player_pos.room_id, player_pos.index, player_pos.player.name),
+		player2
+	)
+	return action_result_t("You pick up the " + noun + ".", world3)
+}
+
+func action_result_t inventory(world_t world, [string] words){
+	if(size(words) != 1){
+		return action_result_t("I don't understand that sentence!?", world)
+	}
+
+	let player_pos = find_player(world)
+	let objects = player_pos.player.holds
+	if(size(objects) > 0){
+//		print(objects)
+		mutable acc = ""
+		for(i in 0 ..< size(objects)){
+			acc = acc + "\n   " + objects[i].name
+		}
+		return action_result_t("You carry:" + acc, world)
+	}
+	else{
+		return action_result_t("You are empty handed.", world)
+	}
 }
 
 
-let world = init_world
-print("You look around: " + action_look(world))
+func action_result_t execute_command(world_t world, string command){
+	if(exists(k_shortcuts, command)){
+		return execute_command(world, k_shortcuts[command])
+	}
+
+	let words = words_from_string(command)
+	if(size(words) > 0){
+		let verb = words[0]
+		if(verb == "look"){
+			if(size(words) != 1){
+				return action_result_t("I don't know how to look that way!", world)
+			}
+			else{
+				return action_result_t(look(world), world)
+			}
+		}
+		else if(verb == "go"){
+			return go(world, words)
+		}
+		else if(verb == "inventory"){
+			return inventory(world, words)
+		}
+		else if(verb == "take"){
+			return take(world, words)
+		}
+		else if(verb == "graph"){
+			return action_result_t(to_pretty_string(world), world)
+		}
+		else {
+		}
+	}
+	return action_result_t("", world)
+}
+
+
+// GAME CONTENTS
+////////////////////////////////////////////////////////////////////////////////
+
+
+
+let init_world = world_t(
+	{
+		"forest-small-clearing": room_t (
+			"Small clearing",
+			"You are in a small clearing.",
+			"You are in a small clearing in a pine forest. It's sunny and birds are singing. There is a path to the east.",
+			{ "east": "forest-path2" },
+			[
+				make_player()
+			]
+		),
+
+		"forest-path2": room_t (
+			"Forest path",
+			"You are on the muddy path.",
+			"This is a muddy path heading north-sound up a small hill. Further westward the forest opens up.",
+			{ "west": "forest-small-clearing", "up": "forest-hill", "north": "forest-hill" },
+			[
+				object_t("chest", false, [])
+			]
+		),
+
+		"forest-hill": room_t (
+			"Forest hill",
+			"You are on the forest hill.",
+			"You are on the forest hill, looking out over a forest stretching out around you.",
+			{ "south": "forest-path2", "down": "forest-path2" },
+			[
+				object_t("key", false, []),
+				object_t("tree", true, [])
+			]
+		)
+	}
+)
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+print("Welcome to the the dungeon!\n")
+
+mutable world_acc = init_world
+print(look(world_acc) + "\n")
+
+mutable quit = false
+while(quit == false){
+	print("\n>")
+	let a = read_line_stdin()
+	if(a == "q" || a == "quit"){
+		print("Bye!")
+		quit = true
+	}
+	else{
+		let r = execute_command(world_acc, a)
+
+//		print("BEFORE: " + to_pretty_string(world_acc))
+//		print("AFTER: " + to_pretty_string(r))
+
+		let output = r.message == "" ? "Nothing happens.\n" : r.message + "\n"
+		print(output)
+
+		world_acc = r.new_world
+	}
+}
+

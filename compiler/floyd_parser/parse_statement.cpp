@@ -15,7 +15,7 @@
 #include "floyd_syntax.h"
 #include "compiler_basics.h"
 
-#include "typeid.h"
+#include "types.h"
 
 
 namespace floyd {
@@ -47,7 +47,7 @@ QUARK_TEST("", "parse_statement_body()", "", ""){
 		parse_json(seq_t(
 			R"(
 				[
-					[2, "init-local","^int","y",["k",11,"^int"]]
+					[2, "init-local","int","y",["k",11,"int"]]
 				]
 			)"
 		)).first
@@ -59,8 +59,8 @@ QUARK_TEST("", "parse_statement_body()", "", ""){
 		parse_json(seq_t(
 			R"(
 				[
-					[2, "init-local","^int","y",["k",11,"^int"]],
-					[18, "expression-statement", ["call",["@", "print"],[["k",3, "^int"]]] ]
+					[2, "init-local","int","y",["k",11,"int"]],
+					[18, "expression-statement", ["call",["@", "print"],[["k",3, "int"]]] ]
 				]
 			)"
 		)).first
@@ -74,8 +74,8 @@ QUARK_TEST("", "parse_statement_body()", "", ""){
 		parse_json(seq_t(
 			R"(
 				[
-					[3, "init-local","^int","x",["k",1,"^int"]],
-					[18, "init-local","^int","y",["k",2,"^int"]]
+					[3, "init-local","int","x",["k",1,"int"]],
+					[18, "init-local","int","y",["k",2,"int"]]
 				]
 			)"
 		)).first
@@ -101,8 +101,8 @@ QUARK_TEST("", "parse_block()", "Block with two binds", ""){
 					1,
 					"block",
 					[
-						[3, "init-local","^int","x",["k",1,"^int"]],
-						[18, "init-local","^int","y",["k",2,"^int"]]
+						[3, "init-local","int","x",["k",1,"int"]],
+						[18, "init-local","int","y",["k",2,"int"]]
 					]
 				]
 			)"
@@ -131,7 +131,7 @@ QUARK_TEST("", "parse_block()", "Block with two binds", ""){
 		parse_return_statement(seq_t("return 0;")).first,
 		parse_json(seq_t(
 			R"(
-				[0, "return", ["k", 0, "^int"]]
+				[0, "return", ["k", 0, "int"]]
 			)"
 		)).first
 	);
@@ -160,18 +160,18 @@ std::size_t split_at_tail_identifier(const std::string& s){
 //	BIND:			int x = 10
 //	BIND:			x = 10
 struct a_result_t {
-	typeid_t type;
+	type_t type;
 	std::string identifier;
 
 	//	Points to "=" or end of sequence if no "=" was found.
 	seq_t rest;
 };
 
-a_result_t parse_a(const seq_t& p, const location_t& loc){
+static a_result_t parse_a(types_t& types, const seq_t& p, const location_t& loc){
 	const auto pos = skip_whitespace(p);
 
 	//	Notice: if there is no type, only and identifier -- then we still get a type back: with an unresolved identifier.
-	const auto optional_type_pos = read_type(pos);
+	const auto optional_type_pos = read_type(types, pos);
 	const auto identifier_pos = read_identifier(optional_type_pos.second);
 
 	if(optional_type_pos.first && identifier_pos.first != ""){
@@ -179,10 +179,10 @@ a_result_t parse_a(const seq_t& p, const location_t& loc){
 	}
 	else if(!optional_type_pos.first && identifier_pos.first != ""){
 		QUARK_ASSERT(false);
-		return a_result_t{ typeid_t::make_undefined(), optional_type_pos.first->get_unresolved_type_identifer(), identifier_pos.second };
+		return a_result_t{ make_undefined(), optional_type_pos.first->get_symbol_ref(types), identifier_pos.second };
 	}
-	else if(optional_type_pos.first && optional_type_pos.first->is_unresolved_type_identifier() && identifier_pos.first == ""){
-		return a_result_t{ typeid_t::make_undefined(), optional_type_pos.first->get_unresolved_type_identifer(), identifier_pos.second };
+	else if(optional_type_pos.first && optional_type_pos.first->is_symbol_ref() && identifier_pos.first == ""){
+		return a_result_t{ make_undefined(), optional_type_pos.first->get_symbol_ref(types), identifier_pos.second };
 	}
 	else{
 		throw_compiler_error(loc, "Require a value for new bind.");
@@ -190,7 +190,9 @@ a_result_t parse_a(const seq_t& p, const location_t& loc){
 }
 
 std::pair<json_t, seq_t> parse_let(const seq_t& pos, const location_t& loc){
-	const auto a_result = parse_a(pos, loc);
+	types_t types;
+
+	const auto a_result = parse_a(types, pos, loc);
 	if(a_result.rest.empty()){
 		throw_compiler_error(loc, "Require a value for new bind.");
 	}
@@ -198,7 +200,7 @@ std::pair<json_t, seq_t> parse_let(const seq_t& pos, const location_t& loc){
 	const auto expression_pos = parse_expression(equal_sign);
 
 	const auto params = std::vector<json_t>{
-		typeid_to_ast_json(a_result.type, json_tags::k_tag_resolve_state),
+		type_to_json(types, a_result.type),
 		a_result.identifier,
 		expression_pos.first,
 	};
@@ -207,7 +209,8 @@ std::pair<json_t, seq_t> parse_let(const seq_t& pos, const location_t& loc){
 }
 
 std::pair<json_t, seq_t> parse_mutable(const seq_t& pos, const location_t& loc){
-	const auto a_result = parse_a(pos, loc);
+	types_t types;
+	const auto a_result = parse_a(types, pos, loc);
 	if(a_result.rest.empty()){
 		throw_compiler_error(loc, "Require a value for new bind.");
 	}
@@ -217,7 +220,7 @@ std::pair<json_t, seq_t> parse_mutable(const seq_t& pos, const location_t& loc){
 	const auto meta = (json_t::make_object({ std::pair<std::string, json_t>{"mutable", true } }));
 
 	const auto params = std::vector<json_t>{
-		typeid_to_ast_json(a_result.type, json_tags::k_tag_resolve_state),
+		type_to_json(types, a_result.type),
 		a_result.identifier,
 		expression_pos.first,
 		meta
@@ -271,7 +274,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 			QUARK_POS,
 			parse_bind_statement(seq_t(input)),
 			R"(
-				[ 0, "init-local", "^int", "test", ["k", 123, "^int"]]
+				[ 0, "init-local", "int", "test", ["k", 123, "int"]]
 			)",
 			" let int a = 4 "
 		);
@@ -289,7 +292,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 		QUARK_POS,
 		parse_bind_statement(seq_t("let int test = 123 let int a = 4 ")),
 		R"(
-			[ 0, "init-local", "^int", "test", ["k", 123, "^int"]]
+			[ 0, "init-local", "int", "test", ["k", 123, "int"]]
 		)",
 		" let int a = 4 "
 	);
@@ -302,7 +305,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 		parse_bind_statement(seq_t("let bool bb = true")).first,
 		parse_json(seq_t(
 			R"(
-				[ 0, "init-local", "^bool", "bb", ["k", true, "^bool"]]
+				[ 0, "init-local", "bool", "bb", ["k", true, "bool"]]
 			)"
 		)).first
 	);
@@ -312,7 +315,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 		parse_bind_statement(seq_t("let int hello = 3")).first,
 		parse_json(seq_t(
 			R"(
-				[ 0, "init-local", "^int", "hello", ["k", 3, "^int"]]
+				[ 0, "init-local", "int", "hello", ["k", 3, "int"]]
 			)"
 		)).first
 	);
@@ -323,7 +326,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 		parse_bind_statement(seq_t("mutable int a = 14")).first,
 		parse_json(seq_t(
 			R"(
-				[ 0, "init-local", "^int", "a", ["k", 14, "^int"], { "mutable": true }]
+				[ 0, "init-local", "int", "a", ["k", 14, "int"], { "mutable": true }]
 			)"
 		)).first
 	);
@@ -334,7 +337,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 		parse_bind_statement(seq_t("mutable hello = 3")).first,
 		parse_json(seq_t(
 			R"(
-				[ 0, "init-local", "^undef", "hello", ["k", 3, "^int"], { "mutable": true }]
+				[ 0, "init-local", "undef", "hello", ["k", 3, "int"], { "mutable": true }]
 			)"
 		)).first
 	);
@@ -345,7 +348,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 		QUARK_POS,
 		parse_bind_statement(seq_t("let int (double, [string]) test = 123 let int a = 4 ")),
 		R"(
-			[0, "init-local", ["func", "^int", ["^double", ["vector", "^string"]], true], "test", ["k", 123, "^int"]]
+			[0, "init-local", ["func", "int", ["double", ["vector", "string"]], true], "test", ["k", 123, "int"]]
 		)",
 		" let int a = 4 "
 	);
@@ -377,7 +380,7 @@ QUARK_TEST("", "parse_assign_statement()", "", ""){
 		parse_assign_statement(seq_t("x = 10;")).first,
 		parse_json(seq_t(
 			R"(
-				[ 0, "assign","x",["k",10,"^int"] ]
+				[ 0, "assign","x",["k",10,"int"] ]
 			)"
 		)).first
 	);
@@ -400,7 +403,7 @@ QUARK_TEST("", "parse_expression_statement()", "", ""){
 		parse_expression_statement(seq_t("print(14);")).first,
 		parse_json(seq_t(
 			R"(
-				[ 0, "expression-statement", [ "call", ["@", "print"], [["k", 14, "^int"]] ] ]
+				[ 0, "expression-statement", [ "call", ["@", "print"], [["k", 14, "int"]] ] ]
 			)"
 		)).first
 	);
@@ -424,17 +427,19 @@ parse_result_t parse_optional_statement_body(const seq_t& s){
 
 
 std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos){
+	types_t temp;
+
 	const auto start = skip_whitespace(pos);
 	const auto func_pos = read_required(start, keyword_t::k_func);
-	const auto return_type_pos = read_required_type(func_pos);
+	const auto return_type_pos = read_required_type(temp, func_pos);
 	const auto function_name_pos = read_required_identifier(return_type_pos.second);
-	const auto named_args_pos = read_functiondef_arg_parantheses(skip_whitespace(function_name_pos.second));
+	const auto named_args_pos = read_functiondef_arg_parantheses(temp, skip_whitespace(function_name_pos.second));
 
 	const auto impure_pos = if_first(skip_whitespace(named_args_pos.second), keyword_t::k_impure);
 
 	const auto body = parse_optional_statement_body(impure_pos.second);
 
-	const auto named_args = members_to_json(named_args_pos.first);
+	const auto named_args = members_to_json(temp, named_args_pos.first);
 	const auto function_name = function_name_pos.first;
 
 	const auto body_json = body.parse_tree.is_null()
@@ -444,17 +449,17 @@ std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos){
 		{ "symbols", {} }
 	});
 
-	std::vector<typeid_t> arg_types;
+	std::vector<type_t> arg_types;
 	for(const auto& e: named_args_pos.first){
 		arg_types.push_back(e._type);
 	}
 
-	const auto function_type = typeid_t::make_function(return_type_pos.first, arg_types, impure_pos.first ? epure::impure : epure::pure);
+	const auto function_type = make_function(temp, return_type_pos.first, arg_types, impure_pos.first ? epure::impure : epure::pure);
 	const auto func_def_expr = make_parser_node(
 		location_t(k_no_location),
 		parse_tree_expression_opcode_t::k_function_def,
 		{
-			typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state),
+			type_to_json(temp, function_type),
 			function_name,
 			named_args,
 			body_json
@@ -465,7 +470,7 @@ std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos){
 		location_t(start.pos()),
 		parse_tree_statement_opcode::k_init_local,
 		{
-			typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state),
+			type_to_json(temp, function_type),
 			function_name,
 			func_def_expr
 		}
@@ -485,9 +490,9 @@ QUARK_TEST("", "parse_function_definition_statement()", "Minimal function IMPURE
 		[
 			0,
 			"init-local",
-			["func", "^int", [], false],
+			["func", "int", [], false],
 			"f",
-			["function-def", ["func", "^int", [], false], "f", [], { "statements": [[21, "return", ["k", 3, "^int"]]], "symbols": null }]
+			["function-def", ["func", "int", [], false], "f", [], { "statements": [[21, "return", ["k", 3, "int"]]], "symbols": null }]
 		]
 	)";
 	ut_verify(QUARK_POS, parse_function_definition_statement(seq_t(input)).first, parse_json(seq_t(expected)).first);
@@ -504,9 +509,9 @@ QUARK_TEST("", "parse_function_definition_statement()", "function", "Correct out
 				[
 					0,
 					"init-local",
-					["func", "^int", [], true],
+					["func", "int", [], true],
 					"f",
-					["function-def", ["func", "^int", [], true], "f", [], { "statements": [[14, "return", ["k", 3, "^int"]]], "symbols": null }]
+					["function-def", ["func", "int", [], true], "f", [], { "statements": [[14, "return", ["k", 3, "int"]]], "symbols": null }]
 				]
 
 			)___"
@@ -525,14 +530,14 @@ QUARK_TEST("", "parse_function_definition_statement()", "3 args of different typ
 				[
 					0,
 					"init-local",
-					["func", "^int", ["^string", "^double", "^int"], true],
+					["func", "int", ["string", "double", "int"], true],
 					"printf",
 					[
 						"function-def",
-						["func", "^int", ["^string", "^double", "^int"], true],
+						["func", "int", ["string", "double", "int"], true],
 						"printf",
-						[{ "name": "a", "type": "^string" }, { "name": "barry", "type": "^double" }, { "name": "c", "type": "^int" }],
-						{ "statements": [[48, "return", ["k", 3, "^int"]]], "symbols": null }
+						[{ "name": "a", "type": "string" }, { "name": "barry", "type": "double" }, { "name": "c", "type": "int" }],
+						{ "statements": [[48, "return", ["k", 3, "int"]]], "symbols": null }
 					]
 				]
 
@@ -552,14 +557,14 @@ QUARK_TEST("", "parse_function_definition_statement()", "Max whitespace", "Corre
 				[
 					1,
 					"init-local",
-					["func", "^int", ["^string", "^double"], true],
+					["func", "int", ["string", "double"], true],
 					"printf",
 					[
 						"function-def",
-						["func", "^int", ["^string", "^double"], true],
+						["func", "int", ["string", "double"], true],
 						"printf",
-						[{ "name": "a", "type": "^string" }, { "name": "b", "type": "^double" }],
-						{ "statements": [[60, "return", ["k", 3, "^int"]]], "symbols": null }
+						[{ "name": "a", "type": "string" }, { "name": "b", "type": "double" }],
+						{ "statements": [[60, "return", ["k", 3, "int"]]], "symbols": null }
 					]
 				]
 
@@ -578,14 +583,14 @@ QUARK_TEST("", "parse_function_definition_statement()", "Min whitespace", "Corre
 				[
 					0,
 					"init-local",
-					["func", "^int", ["^string", "^double"], true],
+					["func", "int", ["string", "double"], true],
 					"printf",
 					[
 						"function-def",
-						["func", "^int", ["^string", "^double"], true],
+						["func", "int", ["string", "double"], true],
 						"printf",
-						[{ "name": "a", "type": "^string" }, { "name": "b", "type": "^double" }],
-						{ "statements": [[35, "return", ["k", 3, "^int"]]], "symbols": null }
+						[{ "name": "a", "type": "string" }, { "name": "b", "type": "double" }],
+						{ "statements": [[35, "return", ["k", 3, "int"]]], "symbols": null }
 					]
 				]
 
@@ -599,15 +604,15 @@ QUARK_TEST("", "parse_function_definition_statement()", "Min whitespace", "Corre
 //////////////////////////////////////////////////		parse_struct_definition_statement()
 
 
-std::pair<json_t, seq_t>  parse_struct_definition_body(const seq_t& p, const std::string& name, const location_t& location){
+static std::pair<json_t, seq_t>  parse_struct_definition_body(types_t& types, const seq_t& p, const std::string& name, const location_t& location){
 	const auto s2 = skip_whitespace(p);
 	const auto start = s2;
 	auto pos = read_required_char(s2, '{');
 	std::vector<member_t> members;
 	while(!pos.empty() && pos.first() != "}"){
-		const auto member_type = read_required_type(pos);
+		const auto member_type = read_required_type(types, pos);
 		const auto member_name = read_required_identifier(member_type.second);
-		members.push_back(member_t(member_type.first, member_name.first));
+		members.push_back(member_t { member_type.first, member_name.first } );
 		pos = read_optional_char(skip_whitespace(member_name.second), ';').second;
 		pos = skip_whitespace(pos);
 	}
@@ -618,25 +623,22 @@ std::pair<json_t, seq_t>  parse_struct_definition_body(const seq_t& p, const std
 		parse_tree_expression_opcode_t::k_struct_def,
 		{
 			name,
-			members_to_json(members)
+			members_to_json(types, members)
 		}
 	);
 
-	const auto struct_type = typeid_t::make_struct2(members);
 	const auto s = make_parser_node(
 		location_t(start.pos()),
-		parse_tree_statement_opcode::k_init_local,
+		parse_tree_statement_opcode::k_expression_statement,
 		{
-			typeid_to_ast_json(typeid_t::make_typeid(), json_tags::k_tag_resolve_state),
-			name,
 			struct_def_expr
 		}
 	);
 	return { s, pos };
-
 }
 
 std::pair<json_t, seq_t>  parse_struct_definition_statement(const seq_t& pos0){
+	types_t types;
 	std::pair<bool, seq_t> token_pos = if_first(pos0, keyword_t::k_struct);
 	QUARK_ASSERT(token_pos.first);
 
@@ -644,7 +646,7 @@ std::pair<json_t, seq_t>  parse_struct_definition_statement(const seq_t& pos0){
 	const auto location = location_t(pos0.pos());
 
 	const auto s2 = skip_whitespace(struct_name_pos.second);
-	const auto b = parse_struct_definition_body(s2, struct_name_pos.first, location);
+	const auto b = parse_struct_definition_body(types, s2, struct_name_pos.first, location);
 	return b;
 }
 
@@ -657,10 +659,8 @@ QUARK_TEST("parser", "parse_struct_definition_statement", "", ""){
 
 			[
 				9,
-				"init-local",
-				"^typeid",
-				"a",
-				["struct-def", "a", [{ "name": "x", "type": "^int" }, { "name": "y", "type": "^string" }, { "name": "z", "type": "^double" }]]
+				"expression-statement",
+				["struct-def", "a", [{ "name": "x", "type": "int" }, { "name": "y", "type": "string" }, { "name": "z", "type": "double" }]]
 			]
 
 		)___"
@@ -692,12 +692,12 @@ std::pair<json_t, seq_t>  parse_protocol_definition_body(const seq_t& p, const s
 		pos = skip_whitespace(pos);
 
 
-		std::vector<typeid_t> arg_types;
+		std::vector<type_t> arg_types;
 		for(const auto& e: args_pos.first){
 			arg_types.push_back(e._type);
 		}
 		const member_t f = {
-			typeid_t::make_function(return_type_pos.first, arg_types, epure::pure),
+			make_function(return_type_pos.first, arg_types, epure::pure),
 			function_name_pos.first
 		};
 		functions.push_back(f);
@@ -752,14 +752,14 @@ OFF_QUARK_UNIT_TEST("parse_protocol_definition_statement", "", "", ""){
 						{ "name", "f"},
 						{
 							"type",
-							json_t::make_array({ "func", "^int", json_t::make_array({"^string", "^double"}), true })
+							json_t::make_array({ "func", "int", json_t::make_array({"string", "double"}), true })
 						}
 					}),
 					json_t::make_object({
 						{ "name", "g"},
 						{
 							"type",
-							json_t::make_array({ "func", "^string", json_t::make_array({"^bool"}), true })
+							json_t::make_array({ "func", "string", json_t::make_array({"bool"}), true })
 						}
 					})
 				})
@@ -862,9 +862,9 @@ QUARK_TEST("", "parse_if_statement()", "if(){}", ""){
 				[
 					0,
 					"if",
-					[">",["k",1,"^int"],["k",2,"^int"]],
+					[">",["k",1,"int"],["k",2,"int"]],
 					[
-						[13, "return", ["k", 3, "^int"]]
+						[13, "return", ["k", 3, "int"]]
 					]
 				]
 			)"
@@ -880,12 +880,12 @@ QUARK_TEST("", "parse_if_statement()", "if(){}else{}", ""){
 				[
 					0,
 					"if",
-					[">",["k",1,"^int"],["k",2,"^int"]],
+					[">",["k",1,"int"],["k",2,"int"]],
 					[
-						[13, "return", ["k", 3, "^int"]]
+						[13, "return", ["k", 3, "int"]]
 					],
 					[
-						[31, "return", ["k", 4, "^int"]]
+						[31, "return", ["k", 4, "int"]]
 					]
 				]
 			)"
@@ -901,12 +901,12 @@ QUARK_TEST("", "parse_if_statement()", "if(){}else{}", ""){
 				[
 					0,
 					"if",
-					[">",["k",1,"^int"],["k",2,"^int"]],
+					[">",["k",1,"int"],["k",2,"int"]],
 					[
-						[13, "return", ["k", 3, "^int"]]
+						[13, "return", ["k", 3, "int"]]
 					],
 					[
-						[31, "return", ["k", 4, "^int"]]
+						[31, "return", ["k", 4, "int"]]
 					]
 				]
 			)"
@@ -923,22 +923,22 @@ QUARK_TEST("", "parse_if_statement()", "if(){} else if(){} else {}", ""){
 			R"(
 				[
 					0,
-					"if", ["==",["k",1,"^int"],["k",1,"^int"]],
+					"if", ["==",["k",1,"int"],["k",1,"int"]],
 					[
-						[14, "return", ["k", 1, "^int"]]
+						[14, "return", ["k", 1, "int"]]
 					],
 					[
-						[ 30, "if", ["==",["k",2,"^int"],["k",2,"^int"]],
+						[ 30, "if", ["==",["k",2,"int"],["k",2,"int"]],
 							[
-								[43, "return", ["k", 2, "^int"]]
+								[43, "return", ["k", 2, "int"]]
 							],
 							[
-								[ 59, "if", ["==",["k",3,"^int"],["k",3,"^int"]],
+								[ 59, "if", ["==",["k",3,"int"],["k",3,"int"]],
 									[
-										[72, "return", ["k", 3, "^int"]]
+										[72, "return", ["k", 3, "int"]]
 									],
 									[
-										[90, "return", ["k", 4, "^int"]]
+										[90, "return", ["k", 4, "int"]]
 									]
 								]
 							]
@@ -1029,10 +1029,10 @@ QUARK_TEST("", "parse_for_statement()", "for(){}", ""){
 					"for",
 					"closed-range",
 					"index",
-					["k",1,"^int"],
-					["k",5,"^int"],
+					["k",1,"int"],
+					["k",5,"int"],
 					[
-						[25, "init-local","^int","y",["k",11,"^int"]]
+						[25, "init-local","int","y",["k",11,"int"]]
 					]
 				]
 			)"
@@ -1049,16 +1049,38 @@ QUARK_TEST("", "parse_for_statement()", "for(){}", ""){
 					"for",
 					"open-range",
 					"index",
-					["k",1,"^int"],
-					["k",5,"^int"],
+					["k",1,"int"],
+					["k",5,"int"],
 					[
-						[25, "init-local","^int","y",["k",11,"^int"]]
+						[25, "init-local","int","y",["k",11,"int"]]
 					]
 				]
 			)"
 		)).first
 	);
 }
+#if 0
+QUARK_TEST("", "parse_for_statement()", "for(){}", ""){
+	ut_verify(QUARK_POS,
+		parse_for_statement(seq_t("for(v in 0 ..< size(benchmark_result)){ let int y = 11 }")).first,
+		parse_json(seq_t(
+			R"(
+				[
+					0,
+					"for",
+					"open-range",
+					"v",
+					["k",1,"int"],
+					["call",5,"int"],
+					[
+						[25, "init-local","int","y",["k",11,"int"]]
+					]
+				]
+			)"
+		)).first
+	);
+}
+#endif
 
 
 //////////////////////////////////////////////////		parse_while_statement()
@@ -1091,7 +1113,7 @@ QUARK_TEST("", "parse_while_statement()", "while(){}", ""){
 				[
 					0,
 					"while",
-					["<", ["@", "a"], ["k",10,"^int"]],
+					["<", ["@", "a"], ["k",10,"int"]],
 					[
 						[17, "expression-statement",
 							["call",
@@ -1150,7 +1172,7 @@ QUARK_TEST("", "parse_benchmark_def_statement()", "while(){}", ""){
 					5,
 					"benchmark-def",
 					"Linear veq 0",
-					[[40, "expression-statement", ["call", ["@", "print"], [["k", 1234, "^int"]]]], [56, "return", ["k", 2000, "^int"]]]
+					[[40, "expression-statement", ["call", ["@", "print"], [["k", 1234, "int"]]]], [56, "return", ["k", 2000, "int"]]]
 				]
 			)"
 		)).first

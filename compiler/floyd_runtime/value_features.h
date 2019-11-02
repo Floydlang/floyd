@@ -73,8 +73,8 @@ int64_t analyse_samples(const int64_t* samples, int64_t count);
 
 
 runtime_value_t concat_strings(value_backend_t& backend, const runtime_value_t& lhs, const runtime_value_t& rhs);
-runtime_value_t concat_vector_carray(value_backend_t& backend, const itype_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs);
-runtime_value_t concat_vector_hamt(value_backend_t& backend, const itype_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs);
+runtime_value_t concat_vector_carray(value_backend_t& backend, const type_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs);
+runtime_value_t concat_vector_hamt(value_backend_t& backend, const type_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs);
 
 
 
@@ -121,7 +121,7 @@ inline const runtime_value_t update__vector_hamt_nonpod(value_backend_t& backend
 	}
 
 	//??? compile time. Provide as a constaint integer arg
-	const auto element_itype = lookup_vector_element_itype(backend, itype_t(coll_type));
+	const auto element_itype = lookup_vector_element_type(backend, type_t(coll_type));
 
 	const auto result = store_immutable(coll_value, i, value);
 

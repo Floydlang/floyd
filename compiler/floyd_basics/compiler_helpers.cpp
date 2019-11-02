@@ -32,12 +32,13 @@ void ut_verify_run_output(const quark::call_context_t& context, const run_output
 	if(result == expected){
 	}
 	else{
+		types_t types;
 		{
 			QUARK_SCOPED_TRACE("  result: ");
 			QUARK_TRACE_SS("main_result: " << result.main_result);
 			QUARK_SCOPED_TRACE("process_results");
 			for(const auto& e: result.process_results){
-				QUARK_TRACE_SS(e.first << ":\t" << value_and_type_to_string(e.second));
+				QUARK_TRACE_SS(e.first << ":\t" << value_and_type_to_string(types, e.second));
 			}
 		}
 
@@ -46,7 +47,7 @@ void ut_verify_run_output(const quark::call_context_t& context, const run_output
 			QUARK_TRACE_SS("main_result: " << expected.main_result);
 			QUARK_SCOPED_TRACE("process_results");
 			for(const auto& e: expected.process_results){
-				QUARK_TRACE_SS(e.first << ":\t" << value_and_type_to_string(e.second));
+				QUARK_TRACE_SS(e.first << ":\t" << value_and_type_to_string(types, e.second));
 			}
 		}
 
@@ -125,8 +126,7 @@ semantic_ast_t compile_to_sematic_ast__errors(const compilation_unit_t& cu){
 //	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
 	const auto parse_tree = parse_program__errors(cu);
 	const auto unchecked_ast = parse_tree_to_ast(parse_tree);
-	const auto unchecked_astb = desugar_pass(unchecked_ast);
-	const auto sem_ast = run_semantic_analysis__errors(unchecked_astb, cu);
+	const auto sem_ast = run_semantic_analysis__errors(unchecked_ast, cu);
 	return sem_ast;
 }
 

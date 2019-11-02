@@ -9,7 +9,8 @@
 #include "floyd_corelib.h"
 
 
-#include "typeid.h"
+#include "utils.h"
+#include "types.h"
 #include "ast_value.h"
 #include "floyd_runtime.h"
 #include "sha1_class.h"
@@ -74,7 +75,6 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 
 
 
-
 	func benchmark_id_t get_benchmarks_f(benchmark_def_t def, int c){
 		return benchmark_id_t( "", def.name)
 	}
@@ -82,7 +82,6 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 	func [benchmark_id_t] get_benchmarks(){
 		return map(benchmark_registry, get_benchmarks_f, 0)
 	}
-
 
 
 
@@ -111,16 +110,17 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 		return out
 	}
 
-
+	//	Implemented in C++
 	func string make_benchmark_report([benchmark_result2_t] results)
+
+
+
 
 	func [string: json] detect_hardware_caps()
 
 	func string make_hardware_caps_report([string: json] caps)
 	func string make_hardware_caps_report_brief([string: json] caps)
 	func string get_current_date_and_time_string() impure
-
-
 
 
 	let double cmath_pi = 3.14159265358979323846
@@ -245,6 +245,8 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 	func string read_text_file(string abs_path) impure
 	func void write_text_file(string abs_path, string data) impure
 
+	func string read_line_stdin() impure
+
 	func [fsentry_t] get_fsentries_shallow(string abs_path) impure
 	func [fsentry_t] get_fsentries_deep(string abs_path) impure
 	func fsentry_info_t get_fsentry_info(string abs_path) impure
@@ -253,7 +255,6 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 	func void create_directory_branch(string abs_path) impure
 	func void delete_fsentry_deep(string abs_path) impure
 	func void rename_fsentry(string abs_path, string n) impure
-
 )";
 
 
@@ -536,7 +537,7 @@ std::string simplify_mem_size(int64_t value){
 
 QUARK_TEST("", "corelib_make_hardware_caps_report()", "", ""){
 	const auto r = simplify_mem_size(3943120896);
-//	QUARK_UT_VERIFY(r == "4 GB");
+//	QUARK_VERIFY(r == "4 GB");
 }
 
 
@@ -655,7 +656,7 @@ QUARK_TEST("", "corelib_make_hardware_caps_report_brief()", "", ""){
 
 //	const auto caps = corelib_detect_hardware_caps();
 	const auto r = corelib_make_hardware_caps_report_brief(caps);
-	QUARK_UT_VERIFY(r == "Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz  16 GB DRAM  8 cores");
+	QUARK_VERIFY(r == "Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz  16 GB DRAM  8 cores");
 }
 
 //	Only does this at top level, not for member strings.
@@ -811,14 +812,17 @@ bool is_valid_absolute_dir_path(const std::string& s){
 }
 
 
-std::vector<value_t> directory_entries_to_values(const std::vector<TDirEntry>& v){
-	const auto k_fsentry_t__type = make__fsentry_t__type();
+std::vector<value_t> directory_entries_to_values(types_t& types, const std::vector<TDirEntry>& v){
+	QUARK_ASSERT(types.check_invariant());
+
+	const auto k_fsentry_t__type = make__fsentry_t__type(types);
 	const auto elements = mapf<value_t>(
 		v,
-		[&k_fsentry_t__type](const auto& e){
+		[&](const auto& e){
 //			const auto t = value_t::make_string(e.fName);
 			const auto type_string = e.fType == TDirEntry::kFile ? "file": "dir";
 			const auto t2 = value_t::make_struct_value(
+				types,
 				k_fsentry_t__type,
 				{
 					value_t::make_string(type_string),
@@ -833,12 +837,15 @@ std::vector<value_t> directory_entries_to_values(const std::vector<TDirEntry>& v
 }
 
 
-typeid_t make__fsentry_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "type" },
-		{ typeid_t::make_string(), "abs_parent_path" },
-		{ typeid_t::make_string(), "name" }
-	});
+type_t make__fsentry_t__type(types_t& types){
+	const auto temp = make_struct(
+		types,
+		struct_type_desc_t({
+			{ type_t::make_string(), "type" },
+			{ type_t::make_string(), "abs_parent_path" },
+			{ type_t::make_string(), "name" }
+		})
+	);
 	return temp;
 }
 
@@ -853,35 +860,41 @@ typeid_t make__fsentry_t__type(){
 		file_pos_t file_size
 	}
 */
-typeid_t make__fsentry_info_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "type" },
-		{ typeid_t::make_string(), "name" },
-		{ typeid_t::make_string(), "abs_parent_path" },
+type_t make__fsentry_info_t__type(types_t& types){
+	const auto temp = make_struct(
+		types,
+		struct_type_desc_t({
+			{ type_t::make_string(), "type" },
+			{ type_t::make_string(), "name" },
+			{ type_t::make_string(), "abs_parent_path" },
 
-		{ typeid_t::make_string(), "creation_date" },
-		{ typeid_t::make_string(), "modification_date" },
-		{ typeid_t::make_int(), "file_size" }
-	});
+			{ type_t::make_string(), "creation_date" },
+			{ type_t::make_string(), "modification_date" },
+			{ type_t::make_int(), "file_size" }
+		})
+	);
 	return temp;
 }
 
 
 
 
-typeid_t make__fs_environment_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "home_dir" },
-		{ typeid_t::make_string(), "documents_dir" },
-		{ typeid_t::make_string(), "desktop_dir" },
+type_t make__fs_environment_t__type(types_t& types){
+	const auto temp = make_struct(
+		types,
+		struct_type_desc_t({
+			{ type_t::make_string(), "home_dir" },
+			{ type_t::make_string(), "documents_dir" },
+			{ type_t::make_string(), "desktop_dir" },
 
-		{ typeid_t::make_string(), "hidden_persistence_dir" },
-		{ typeid_t::make_string(), "preferences_dir" },
-		{ typeid_t::make_string(), "cache_dir" },
-		{ typeid_t::make_string(), "temp_dir" },
+			{ type_t::make_string(), "hidden_persistence_dir" },
+			{ type_t::make_string(), "preferences_dir" },
+			{ type_t::make_string(), "cache_dir" },
+			{ type_t::make_string(), "temp_dir" },
 
-		{ typeid_t::make_string(), "executable_dir" }
-	});
+			{ type_t::make_string(), "executable_dir" }
+		})
+	);
 	return temp;
 }
 
@@ -891,24 +904,33 @@ typeid_t make__fs_environment_t__type(){
 		string utd_date
 	}
 */
-typeid_t make__date_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "utd_date" }
-	});
+type_t make__date_t__type(types_t& types){
+	const auto temp = make_struct(
+		types,
+		struct_type_desc_t({
+			{ type_t::make_string(), "utd_date" }
+		})
+	);
 	return temp;
 }
 
-typeid_t make__sha1_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "ascii40" }
-	});
+type_t make__sha1_t__type(types_t& types){
+	const auto temp = make_struct(
+		types,
+		struct_type_desc_t({
+			{ type_t::make_string(), "ascii40" }
+		})
+	);
 	return temp;
 }
 
-typeid_t make__binary_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "bytes" }
-	});
+type_t make__binary_t__type(types_t& types){
+	const auto temp = make_struct(
+		types,
+		struct_type_desc_t({
+			{ type_t::make_string(), "bytes" }
+		})
+	);
 	return temp;
 }
 
@@ -917,10 +939,13 @@ typeid_t make__binary_t__type(){
 		string absolute_path
 	}
 */
-typeid_t make__absolute_path_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "absolute_path" }
-	});
+type_t make__absolute_path_t__type(types_t& types){
+	const auto temp = make_struct(
+		types,
+		struct_type_desc_t({
+			{ type_t::make_string(), "absolute_path" }
+		})
+	);
 	return temp;
 }
 
@@ -929,10 +954,13 @@ typeid_t make__absolute_path_t__type(){
 		int pos
 	}
 */
-typeid_t make__file_pos_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_int(), "pos" }
-	});
+type_t make__file_pos_t__type(types_t& types){
+	const auto temp = make_struct(
+		types,
+		struct_type_desc_t({
+			{ type_t::make_int(), "pos" }
+		})
+	);
 	return temp;
 }
 
@@ -949,6 +977,12 @@ std::string corelib_calc_string_sha1(const std::string& s){
 
 std::string corelib_read_text_file(const std::string& abs_path){
 	return read_text_file(abs_path);
+}
+
+std::string corelib_read_line_stdin(){
+	std::string s;
+	std::getline(std::cin, s);
+	return s;
 }
 
 void corelib_write_text_file(const std::string& abs_path, const std::string& file_contents){
@@ -997,7 +1031,7 @@ QUARK_TEST("get_time_of_day_ms()", "", "", ""){
 	std::chrono::duration<double> elapsed_seconds = b - a;
 	const int ms = static_cast<int>((static_cast<double>(elapsed_seconds.count()) * 1000.0));
 
-	QUARK_UT_VERIFY(ms >= 7)
+	QUARK_VERIFY(ms >= 7)
 }
 
 
@@ -1068,9 +1102,10 @@ fsentry_info_t corelib_get_fsentry_info(const std::string& abs_path){
 	return result;
 }
 
-value_t pack_fsentry_info(const fsentry_info_t& info){
+value_t pack_fsentry_info(types_t& types, const fsentry_info_t& info){
 	const auto result = value_t::make_struct_value(
-		make__fsentry_info_t__type(),
+		types,
+		make__fsentry_info_t__type(types),
 		{
 			value_t::make_string(info.type),
 			value_t::make_string(info.name),
@@ -1084,7 +1119,7 @@ value_t pack_fsentry_info(const fsentry_info_t& info){
 	);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(result);
+	const auto debug = value_and_type_to_ast_json(types, result);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
@@ -1127,9 +1162,10 @@ fs_environment_t corelib_get_fs_environment(){
 	return result;
 }
 
-value_t pack_fs_environment_t(const fs_environment_t& env){
+value_t pack_fs_environment_t(types_t& types, const fs_environment_t& env){
 	const auto result = value_t::make_struct_value(
-		make__fs_environment_t__type(),
+		types,
+		make__fs_environment_t__type(types),
 		{
 			value_t::make_string(env.home_dir),
 			value_t::make_string(env.documents_dir),
@@ -1145,7 +1181,7 @@ value_t pack_fs_environment_t(const fs_environment_t& env){
 	);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(result);
+	const auto debug = value_and_type_to_ast_json(types, result);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 

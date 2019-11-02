@@ -22,35 +22,35 @@ using std::string;
 QUARK_TEST("", "compare_shared_values()", "", ""){
 	const auto a = std::make_shared<std::string>("a");
 	const auto b = std::make_shared<std::string>("a");
-	QUARK_TEST_VERIFY(compare_shared_values(a, b) == true);
+	QUARK_VERIFY(compare_shared_values(a, b) == true);
 }
 
 QUARK_TEST("", "compare_shared_values()", "", ""){
 	const auto a = std::make_shared<std::string>("a");
 	const auto b = a;
-	QUARK_TEST_VERIFY(compare_shared_values(a, b) == true);
+	QUARK_VERIFY(compare_shared_values(a, b) == true);
 }
 
 
 QUARK_TEST("", "compare_shared_values()", "", ""){
 	const auto a = std::make_shared<std::string>("a");
 	const auto b = std::make_shared<std::string>("b");
-	QUARK_TEST_VERIFY(compare_shared_values(a, b) == false);
+	QUARK_VERIFY(compare_shared_values(a, b) == false);
 }
 QUARK_TEST("", "compare_shared_values()", "", ""){
 	const auto a = std::shared_ptr<std::string>();
 	const auto b = std::make_shared<std::string>("b");
-	QUARK_TEST_VERIFY(compare_shared_values(a, b) == false);
+	QUARK_VERIFY(compare_shared_values(a, b) == false);
 }
 QUARK_TEST("", "compare_shared_values()", "", ""){
 	const auto a = std::make_shared<std::string>("a");
 	const auto b = std::shared_ptr<std::string>();
-	QUARK_TEST_VERIFY(compare_shared_values(a, b) == false);
+	QUARK_VERIFY(compare_shared_values(a, b) == false);
 }
 QUARK_TEST("", "compare_shared_values()", "", ""){
 	const auto a = std::shared_ptr<std::string>();
 	const auto b = std::shared_ptr<std::string>();
-	QUARK_TEST_VERIFY(compare_shared_values(a, b) == true);
+	QUARK_VERIFY(compare_shared_values(a, b) == true);
 }
 
 
@@ -102,12 +102,12 @@ auto map_container(const T& iterable, Func&& func) ->
 
 QUARK_TEST("", "mapf()", "", "") {
 	auto result = mapf<int>(std::vector<int>{ 20, 21, 22, 23 }, [](int e){ return e + 100; });
-	QUARK_UT_VERIFY(result == (std::vector<int>{ 120, 121, 122, 123 }));
+	QUARK_VERIFY(result == (std::vector<int>{ 120, 121, 122, 123 }));
 }
 
 QUARK_TEST("", "mapf()", "", "") {
 	auto result = mapf<string>(std::vector<int>{ 20, 21, 22, 23 }, [](int e){ return std::to_string(e + 100); });
-	QUARK_UT_VERIFY(result == (std::vector<string>{ "120", "121", "122", "123" }));
+	QUARK_VERIFY(result == (std::vector<string>{ "120", "121", "122", "123" }));
 }
 
 
@@ -124,11 +124,11 @@ QUARK_TEST("", "filter()", "", "") {
 
 QUARK_TEST("", "reduce()", "", "") {
 	const auto result = reduce(std::vector<int>{ 1, 2, 3 }, 1000, [](int acc, int e){ return acc + e; });
-	QUARK_UT_VERIFY(result == (1000 + 1 + 2 + 3));
+	QUARK_VERIFY(result == (1000 + 1 + 2 + 3));
 }
 QUARK_TEST("", "reduce()", "", "") {
 	const auto result = reduce(std::vector<std::string>{ "a", "b", "c", "b", "d" }, 100, [](int acc, std::string e){ return e == "b" ? acc + 1 : acc; });
-	QUARK_UT_VERIFY(result == 102);
+	QUARK_VERIFY(result == 102);
 }
 
 
@@ -148,16 +148,16 @@ std::string float_to_string_no_trailing_zeros(float v){
 
 
 QUARK_TEST("", "", "", ""){
-	QUARK_UT_VERIFY(float_to_string_no_trailing_zeros(0) == "0");
+	QUARK_VERIFY(float_to_string_no_trailing_zeros(0) == "0");
 }
 QUARK_TEST("", "", "", ""){
-	QUARK_UT_VERIFY(float_to_string_no_trailing_zeros(123) == "123");
+	QUARK_VERIFY(float_to_string_no_trailing_zeros(123) == "123");
 }
 QUARK_TEST("", "", "", ""){
-	QUARK_UT_VERIFY(float_to_string_no_trailing_zeros(1.123) == "1.123");
+	QUARK_VERIFY(float_to_string_no_trailing_zeros(1.123) == "1.123");
 }
 QUARK_TEST("", "", "", ""){
-	QUARK_UT_VERIFY(float_to_string_no_trailing_zeros(1.5) == "1.5");
+	QUARK_VERIFY(float_to_string_no_trailing_zeros(1.5) == "1.5");
 }
 #endif
 
@@ -174,7 +174,27 @@ std::string ptr_to_hexstring(const void* ptr){
 
 QUARK_TEST("", "ptr_to_hexstring()", "", "") {
 	const auto s = ptr_to_hexstring((void*)0xdeadbeef);
-	QUARK_UT_VERIFY(s == "0x00000000deadbeef");
+	QUARK_VERIFY(s == "0x00000000deadbeef");
 }
 
-#include <sstream>
+
+
+std::string concat_string(const std::vector<std::string>& vec, const std::string& divider){
+	std::string acc;
+
+	if(vec.empty()){
+		return "";
+	}
+	const auto count = vec.size() - 1;
+	for(std::vector<std::string>::size_type i = 0 ; i < count ; i++){
+		acc = acc + vec[i] + divider;
+	}
+	acc = acc + vec.back();
+	return acc;
+}
+
+
+
+
+
+

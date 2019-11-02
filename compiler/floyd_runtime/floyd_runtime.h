@@ -11,7 +11,7 @@
 
 
 #include <string>
-#include "typeid.h"
+#include "types.h"
 #include "compiler_basics.h"
 #include "ast_value.h"
 
@@ -35,7 +35,7 @@ struct runtime_handler_i {
 };
 
 
-value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_type);
+value_t unflatten_json_to_specific_type(types_t& types, const json_t& v, const type_t& target_type);
 
 
 

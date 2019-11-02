@@ -169,7 +169,7 @@ This is the static information the interpreter knows about a stack frame:
 struct bc_frame_t {
 	std::vector<bc_instruction_t> _instrs2;
 	std::vector<std::pair<std::string, bc_symbol_t>> _symbols;
-	std::vector<typeid_t> _args;
+	std::vector<type_t> _args;
 	std::vector<bool> _exts;
 	std::vector<bool> _locals_exts;
 	std::vector<bc_value_t> _locals;

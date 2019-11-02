@@ -21,6 +21,7 @@ static const bool k_trace_function_link_map = false;
 #include "os_process.h"
 #include "compiler_helpers.h"
 #include "format_table.h"
+#include "utils.h"
 
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/GenericValue.h>
@@ -66,9 +67,9 @@ static floyd_runtime_t* make_runtime_ptr(llvm_execution_engine_t* ee){
 ////////////////////////////////	CLIENT ACCESS OF RUNNING PROGRAM
 
 
-const function_link_entry_t& find_function_def_from_link_name(const std::vector<function_link_entry_t>& function_defs, const link_name_t& link_name){
-	auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_link_entry_t& e) { return e.link_name == link_name; } );
-	QUARK_ASSERT(it != function_defs.end());
+const function_link_entry_t& find_function_def_from_link_name(const std::vector<function_link_entry_t>& function_link_map, const link_name_t& link_name){
+	auto it = std::find_if(function_link_map.begin(), function_link_map.end(), [&] (const function_link_entry_t& e) { return e.link_name == link_name; } );
+	QUARK_ASSERT(it != function_link_map.end());
 
 	QUARK_ASSERT(it->llvm_codegen_f != nullptr);
 	return *it;
@@ -91,7 +92,7 @@ static void* get_function_ptr(const llvm_execution_engine_t& ee, const link_name
 }
 
 
-std::pair<void*, typeid_t> bind_global(const llvm_execution_engine_t& ee, const std::string& name){
+std::pair<void*, type_t> bind_global(const llvm_execution_engine_t& ee, const std::string& name){
 	QUARK_ASSERT(ee.check_invariant());
 	QUARK_ASSERT(name.empty() == false);
 
@@ -99,39 +100,38 @@ std::pair<void*, typeid_t> bind_global(const llvm_execution_engine_t& ee, const 
 	if(global_ptr != nullptr){
 		auto symbol = find_symbol(ee.global_symbols, name);
 		QUARK_ASSERT(symbol != nullptr);
-
-		return { global_ptr, symbol->get_type() };
+		return { global_ptr, symbol->get_value_type() };
 	}
 	else{
-		return { nullptr, typeid_t::make_undefined() };
+		return { nullptr, make_undefined() };
 	}
 }
 
-static value_t load_via_ptr(const llvm_execution_engine_t& runtime, const void* value_ptr, const typeid_t& type){
+static value_t load_via_ptr(const llvm_execution_engine_t& runtime, const void* value_ptr, const type_t& type){
 	QUARK_ASSERT(runtime.check_invariant());
 	QUARK_ASSERT(value_ptr != nullptr);
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto result = load_via_ptr2(value_ptr, type);
+	const auto result = load_via_ptr2(runtime.backend.types, value_ptr, type);
 	const auto result2 = from_runtime_value(runtime, result, type);
 	return result2;
 }
 
-value_t load_global(const llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& v){
+value_t load_global(const llvm_execution_engine_t& ee, const std::pair<void*, type_t>& v){
 	QUARK_ASSERT(v.first != nullptr);
 	QUARK_ASSERT(v.second.is_undefined() == false);
 
 	return load_via_ptr(ee, v.first, v.second);
 }
 
-void store_via_ptr(llvm_execution_engine_t& runtime, const typeid_t& member_type, void* value_ptr, const value_t& value){
+void store_via_ptr(llvm_execution_engine_t& runtime, const type_t& member_type, void* value_ptr, const value_t& value){
 	QUARK_ASSERT(runtime.check_invariant());
 	QUARK_ASSERT(member_type.check_invariant());
 	QUARK_ASSERT(value_ptr != nullptr);
 	QUARK_ASSERT(value.check_invariant());
 
 	const auto value2 = to_runtime_value(runtime, value);
-	store_via_ptr2(value_ptr, member_type, value2);
+	store_via_ptr2(runtime.backend.types, value_ptr, member_type, value2);
 }
 
 
@@ -141,7 +141,7 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name)
 
 	const auto f = get_function_ptr(ee, name);
 	if(f != nullptr){
-		const auto def = find_function_def_from_link_name(ee.function_defs, name);
+		const auto def = find_function_def_from_link_name(ee.function_link_map, name);
 		const auto function_type = def.function_type_or_undef;
 		return llvm_bind_t {
 			name,
@@ -153,7 +153,7 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name)
 		return llvm_bind_t {
 			name,
 			nullptr,
-			typeid_t::make_undefined()
+			make_undefined()
 		};
 	}
 }
@@ -166,21 +166,22 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name)
 
 
 //	Make link entries for all runtime functions, like floydrt_retain_vec().
-//	These have no floyd-style function type, only llvm function type, since they use parameters not expressable with typeid_t.
+//	These have no floyd-style function type, only llvm function type, since they use parameters not expressable with type_t.
 static std::vector<function_link_entry_t> make_runtime_function_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	const auto runtime_function_binds = get_runtime_function_binds(context, type_lookup);
+	auto& types = type_lookup.state.types;
 
 	std::vector<function_link_entry_t> result;
 	for(const auto& e: runtime_function_binds){
 		const auto link_name = encode_runtime_func_link_name(e.name);
-		const auto def = function_link_entry_t{ "runtime", link_name, e.llvm_function_type, nullptr, typeid_t::make_undefined(), {}, e.native_f };
+		const auto def = function_link_entry_t{ "runtime", link_name, e.llvm_function_type, nullptr, make_undefined(), {}, e.native_f };
 		result.push_back(def);
 	}
 
 	if(k_trace_function_link_map){
-		trace_function_link_map(result);
+		trace_function_link_map(types, result);
 	}
 
 	return result;
@@ -190,6 +191,7 @@ static std::vector<function_link_entry_t> make_init_deinit_link_map(llvm::LLVMCo
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	std::vector<function_link_entry_t> result;
+	auto& types = type_lookup.state.types;
 
 	//	init()
 	{
@@ -201,7 +203,7 @@ static std::vector<function_link_entry_t> make_init_deinit_link_map(llvm::LLVMCo
 			},
 			false
 		);
-		const auto def = function_link_entry_t{ "runtime", link_name, function_type, nullptr, typeid_t::make_undefined(), {}, nullptr };
+		const auto def = function_link_entry_t{ "runtime", link_name, function_type, nullptr, make_undefined(), {}, nullptr };
 		result.push_back(def);
 	}
 
@@ -215,12 +217,12 @@ static std::vector<function_link_entry_t> make_init_deinit_link_map(llvm::LLVMCo
 			},
 			false
 		);
-		const auto def = function_link_entry_t{ "runtime", link_name, function_type, nullptr, typeid_t::make_undefined(), {}, nullptr };
+		const auto def = function_link_entry_t{ "runtime", link_name, function_type, nullptr, make_undefined(), {}, nullptr };
 		result.push_back(def);
 	}
 
 	if(k_trace_function_link_map){
-		trace_function_link_map(result);
+		trace_function_link_map(types, result);
 	}
 
 	return result;
@@ -232,6 +234,7 @@ static std::vector<function_link_entry_t> make_floyd_code_and_corelib_link_map(l
 
 	std::vector<function_link_entry_t> result0;
 	std::map<link_name_t, void*> binds0;
+	const auto& types = type_lookup.state.types;
 
 	//	Make function def for all functions inside the floyd program (floyd source code).
 	{
@@ -268,7 +271,7 @@ static std::vector<function_link_entry_t> make_floyd_code_and_corelib_link_map(l
 	}
 
 	if(k_trace_function_link_map){
-		trace_function_link_map(result);
+		trace_function_link_map(types, result);
 	}
 
 	return result;
@@ -276,11 +279,11 @@ static std::vector<function_link_entry_t> make_floyd_code_and_corelib_link_map(l
 
 
 
-std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
+std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs, const intrinsic_signatures_t& intrinsic_signatures){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	const auto runtime_functions_link_map = make_runtime_function_link_map(context, type_lookup);
-	const auto intrinsics_link_map = make_intrinsics_link_map(context, type_lookup);
+	const auto intrinsics_link_map = make_intrinsics_link_map(context, type_lookup, intrinsic_signatures);
 	const auto init_deinit_link_map = make_init_deinit_link_map(context, type_lookup);
 	const auto floyd_code_and_corelib_link_map = make_floyd_code_and_corelib_link_map(context, type_lookup, ast_function_defs);
 
@@ -293,14 +296,12 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 }
 
 
-void trace_function_link_map(const std::vector<function_link_entry_t>& defs){
-	std::vector<line_t> table = {
-		line_t( { "LINK-NAME", "MODULE", "LLVM_FUNCTION_TYPE", "LLVM_CODEGEN_F", "FUNCTION TYPE", "ARG NAMES", "NATIVE_F" }, ' ', '|'),
-		line_t( { "", "", "", "", "", "", "" }, '-', '|'),
-	};
+void trace_function_link_map(const types_t& types, const std::vector<function_link_entry_t>& defs){
+	QUARK_SCOPED_TRACE("FUNCTION LINK MAP");
 
+	std::vector<std::vector<std::string>> matrix;
 	for(const auto& e: defs){
-		const auto f0 = e.function_type_or_undef.is_undefined() ? "" : json_to_compact_string(typeid_to_compact_string(e.function_type_or_undef));
+		const auto f0 = e.function_type_or_undef.is_undefined() ? "" : json_to_compact_string(type_to_compact_string(types, e.function_type_or_undef));
 
 		std::string arg_names;
 		for(const auto& m: e.arg_names_or_empty){
@@ -312,35 +313,23 @@ void trace_function_link_map(const std::vector<function_link_entry_t>& defs){
 		const auto f1 = f0.substr(0, 100);
 		const auto f = f1.size() != f0.size() ? (f1 + "...") : f1;
 
-		const auto l = line_t {
-			{
-				e.link_name.s,
-				e.module,
-				print_type(e.llvm_function_type),
-				e.llvm_codegen_f != nullptr ? ptr_to_hexstring(e.llvm_codegen_f) : "",
-				f,
-				arg_names,
-				e.native_f != nullptr ? ptr_to_hexstring(e.native_f) : "",
-			},
-			' ',
-			'|'
+		const auto line = std::vector<std::string>{
+			e.link_name.s,
+			e.module,
+			print_type(e.llvm_function_type),
+			e.llvm_codegen_f != nullptr ? ptr_to_hexstring(e.llvm_codegen_f) : "",
+			f,
+			arg_names,
+			e.native_f != nullptr ? ptr_to_hexstring(e.native_f) : "",
 		};
-		table.push_back(l);
+		matrix.push_back(line);
 	}
 
-	table.push_back(line_t( { "", "", "", "", "", "", "" }, '-', '|'));
-
-	const auto default_column = column_t{ 0, -1, 0 };
-	const auto columns0 = std::vector<column_t>(table[0].columns.size(), default_column);
-	const auto columns = fit_columns(columns0, table);
-	const auto r = generate_table(table, columns);
-
-	std::stringstream ss;
-	ss << std::endl;
-	for(const auto& e: r){
-		ss << e << std::endl;
-	}
-	QUARK_TRACE(ss.str());
+	const auto result = generate_table_type1(
+		{ "LINK-NAME", "MODULE", "LLVM_FUNCTION_TYPE", "LLVM_CODEGEN_F", "FUNCTION TYPE", "ARG NAMES", "NATIVE_F" },
+		matrix
+	);
+	QUARK_TRACE(result);
 }
 
 
@@ -350,8 +339,10 @@ void trace_function_link_map(const std::vector<function_link_entry_t>& defs){
 int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const std::vector<std::string>& main_args){
 	QUARK_ASSERT(f.address != nullptr);
 
+	auto& types = ee.type_lookup.state.types;
+
 	//??? Check this earlier.
-	if(f.type == get_main_signature_arg_impure() || f.type == get_main_signature_arg_pure()){
+	if(f.type == get_main_signature_arg_impure(types) || f.type == get_main_signature_arg_pure(types)){
 		const auto f2 = reinterpret_cast<FLOYD_RUNTIME_MAIN_ARGS_IMPURE>(f.address);
 
 		//??? Slow path via value_t
@@ -359,17 +350,17 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 		for(const auto& e: main_args){
 			main_args2.push_back(value_t::make_string(e));
 		}
-		const auto main_args3 = value_t::make_vector_value(typeid_t::make_string(), main_args2);
+		const auto main_args3 = value_t::make_vector_value(types, type_t::make_string(), main_args2);
 		const auto main_args4 = to_runtime_value(ee, main_args3);
 		const auto main_result_int = (*f2)(make_runtime_ptr(&ee), main_args4);
 
-		const auto return_itype = lookup_itype(ee.backend, typeid_t::make_vector(typeid_t::make_string()));
-		if(is_rc_value(return_itype)){
+		const auto return_itype = make_vector(types, type_t::make_string());
+		if(is_rc_value(peek2(types, return_itype))){
 			release_value(ee.backend, main_args4, return_itype);
 		}
 		return main_result_int;
 	}
-	else if(f.type == get_main_signature_no_arg_impure() || f.type == get_main_signature_no_arg_pure()){
+	else if(f.type == get_main_signature_no_arg_impure(types) || f.type == get_main_signature_no_arg_pure(types)){
 		const auto f2 = reinterpret_cast<FLOYD_RUNTIME_MAIN_NO_ARGS_IMPURE>(f.address);
 		const auto main_result_int = (*f2)(make_runtime_ptr(&ee));
 		return main_result_int;
@@ -386,7 +377,8 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 static void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p){
 	int index = 0;
 	for(const auto& e: p.debug_globals._symbols){
-		if(e.second.get_type().is_function()){
+		const auto t = e.second.get_value_type();
+		if(peek2(ee2.type_lookup.state.types, t).is_function()){
 			const auto global_var = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(ee2, e.first);
 			QUARK_ASSERT(global_var != nullptr);
 
@@ -443,9 +435,9 @@ bool llvm_execution_engine_t::check_invariant() const {
 	return true;
 }
 
-static std::vector<std::pair<link_name_t, void*>> collection_native_func_ptrs(llvm::ExecutionEngine& ee, const std::vector<function_link_entry_t>& function_defs){
+static std::vector<std::pair<link_name_t, void*>> collection_native_func_ptrs(llvm::ExecutionEngine& ee, const std::vector<function_link_entry_t>& function_link_map){
 	std::vector<std::pair<link_name_t, void*>> result;
-	for(const auto& e: function_defs){
+	for(const auto& e: function_link_map){
 		const auto f = (void*)ee.getFunctionAddress(e.link_name.s);
 //		auto f = get_function_ptr(runtime, e.link_name);
 		result.push_back({ e.link_name, f });
@@ -465,29 +457,31 @@ static std::vector<std::pair<link_name_t, void*>> collection_native_func_ptrs(ll
 //??? LLVM codegen unlinks functions not called: need to mark functions external.
 
 
-static std::vector<std::pair<itype_t, struct_layout_t>> make_struct_layouts(const llvm_type_lookup& type_lookup, const llvm::DataLayout& data_layout){
+static std::vector<std::pair<type_t, struct_layout_t>> make_struct_layouts(const llvm_type_lookup& type_lookup, const llvm::DataLayout& data_layout){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	std::vector<std::pair<itype_t, struct_layout_t>> result;
+	const auto& types = type_lookup.state.types;
+	std::vector<std::pair<type_t, struct_layout_t>> result;
 
-	for(int i = 0 ; i < type_lookup.state.types.size() ; i++){
-		const auto& type = type_lookup.state.type_interner.interned[i];
-		if(type.is_struct()){
-			auto t2 = get_exact_struct_type_byvalue(type_lookup, type);
+	for(int i = 0 ; i < type_lookup.state.type_entries.size() ; i++){
+		const auto& type = lookup_type_from_index(types, i);
+		const auto peek_type = peek2(types, type);
+		if(peek_type.is_struct() && is_wellformed(types, peek_type)){
+			auto t2 = get_exact_struct_type_byvalue(type_lookup, peek_type);
 			const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
+
+
+			const auto& source_struct_def = peek_type.get_struct(types);
 
 			const auto struct_bytes = layout->getSizeInBytes();
 			std::vector<member_info_t> member_infos;
-			for(int member_index = 0 ; member_index < type.get_struct()._members.size() ; member_index++){
-				const auto& member = type.get_struct()._members[member_index];
-
+			for(int member_index = 0 ; member_index < source_struct_def._members.size() ; member_index++){
+				const auto& member = source_struct_def._members[member_index];
 				const auto offset = layout->getElementOffset(member_index);
-				const auto& itype = lookup_itype(type_lookup, member._type);
-				member_infos.push_back(member_info_t { offset, itype } );
+				member_infos.push_back(member_info_t { offset, member._type } );
 			}
 
-			const auto itype = lookup_itype(type_lookup.state.type_interner, type);
-			result.push_back( { itype, struct_layout_t{ member_infos, struct_bytes } } );
+			result.push_back( { type, struct_layout_t{ member_infos, struct_bytes } } );
 		}
 	}
 	return result;
@@ -515,7 +509,8 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 	QUARK_ASSERT(program_breaks.check_invariant());
 
 	if(k_trace_function_link_map){
-		trace_function_link_map(program_breaks.function_defs);
+		const auto& types = program_breaks.type_lookup.state.types;
+		trace_function_link_map(types, program_breaks.function_link_map);
 	}
 
 	std::string collectedErrors;
@@ -545,9 +540,9 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 		auto lambda = [&](const std::string& s) -> void* {
 			const auto s2 = strip_link_name(s);
 
-			const auto& function_defs = program_breaks.function_defs;
-			const auto it = std::find_if(function_defs.begin(), function_defs.end(), [&](const function_link_entry_t& def){ return def.link_name.s == s2; });
-			if(it != function_defs.end() && it->native_f != nullptr){
+			const auto& function_link_map = program_breaks.function_link_map;
+			const auto it = std::find_if(function_link_map.begin(), function_link_map.end(), [&](const function_link_entry_t& def){ return def.link_name.s == s2; });
+			if(it != function_link_map.end() && it->native_f != nullptr){
 				return it->native_f;
 			}
 			else {
@@ -568,7 +563,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 
 	//	NOTICE: LLVM strips out unused functions = not all functions in our link map gets a native function pointer.
 	std::vector<function_link_entry_t> final_link_map;
-	for(const auto& e: program_breaks.function_defs){
+	for(const auto& e: program_breaks.function_link_map){
 		const auto addr = (void*)ee1->getFunctionAddress(e.link_name.s);
 
 		//??? null llvm_codegen_f pointer, which makes no sense now?
@@ -583,7 +578,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			value_backend_t(
 				collection_native_func_ptrs(*ee1, final_link_map),
 				make_struct_layouts(program_breaks.type_lookup, ee1->getDataLayout()),
-				program_breaks.type_lookup.state.type_interner,
+				program_breaks.type_lookup.state.types,
 				program_breaks.settings.config
 			),
 			program_breaks.type_lookup,
@@ -595,7 +590,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			{},
 			nullptr,
 			start_time,
-			llvm_bind_t{ link_name_t {}, nullptr, typeid_t::make_undefined() },
+			llvm_bind_t{ link_name_t {}, nullptr, make_undefined() },
 			false,
 			program_breaks.settings.config
 		}
@@ -607,7 +602,8 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 #endif
 
 	if(k_trace_function_link_map){
-		trace_function_link_map(ee2->function_defs);
+		const auto& types = program_breaks.type_lookup.state.types;
+		trace_function_link_map(types, ee2->function_link_map);
 	}
 
 	return ee2;
@@ -730,10 +726,11 @@ static void send_message(llvm_process_runtime_t& runtime, int process_id, const 
 static void run_process(llvm_process_runtime_t& runtime, int process_id){
 	auto& process = *runtime._processes[process_id];
 	bool stop = false;
+	auto& types = runtime.ee->backend.types;
 
 	const auto thread_name = get_current_thread_name();
 
-	const typeid_t process_state_type = process._init_function != nullptr ? process._init_function->type.get_function_return() : typeid_t::make_undefined();
+	const type_t process_state_type = process._init_function != nullptr ? peek2(types, process._init_function->type).get_function_return(types) : make_undefined();
 
 	if(process._processor){
 		process._processor->on_init();
@@ -741,13 +738,13 @@ static void run_process(llvm_process_runtime_t& runtime, int process_id){
 
 	if(process._init_function != nullptr){
 		//	!!! This validation should be done earlier in the startup process / compilation process.
-		if(process._init_function->type != make_process_init_type(process_state_type)){
+		if(process._init_function->type != make_process_init_type(types, process_state_type)){
 			quark::throw_runtime_error("Invalid function prototype for process-init");
 		}
 
 		auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_INIT>(process._init_function->address);
 		const auto result = (*f)(make_runtime_ptr(runtime.ee));
-		process._process_state = from_runtime_value(*runtime.ee, result, process._init_function->type.get_function_return());
+		process._process_state = from_runtime_value(*runtime.ee, result, peek2(types, process._init_function->type).get_function_return(types));
 	}
 
 	while(stop == false){
@@ -786,7 +783,7 @@ static void run_process(llvm_process_runtime_t& runtime, int process_id){
 
 			if(process._process_function != nullptr){
 				//	!!! This validation should be done earlier in the startup process / compilation process.
-				if(process._process_function->type != make_process_message_handler_type(process_state_type)){
+				if(process._process_function->type != make_process_message_handler_type(types, process_state_type)){
 					quark::throw_runtime_error("Invalid function prototype for process message handler");
 				}
 
@@ -794,7 +791,7 @@ static void run_process(llvm_process_runtime_t& runtime, int process_id){
 				const auto state2 = to_runtime_value(*runtime.ee, process._process_state);
 				const auto message2 = to_runtime_value(*runtime.ee, value_t::make_json(message));
 				const auto result = (*f)(make_runtime_ptr(runtime.ee), state2, message2);
-				process._process_state = from_runtime_value(*runtime.ee, result, process._process_function->type.get_function_return());
+				process._process_state = from_runtime_value(*runtime.ee, result, peek2(types, process._process_function->type).get_function_return(types));
 			}
 		}
 	}
@@ -895,11 +892,13 @@ run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::str
 
 
 
-
-std::vector<bench_t> collect_benchmarks(const llvm_execution_engine_t& ee){
-	std::pair<void*, typeid_t> benchmark_registry_bind = bind_global(ee, k_global_benchmark_registry);
+///??? should lookup structs via their name in symbol table!
+std::vector<bench_t> collect_benchmarks(llvm_execution_engine_t& ee){
+	std::pair<void*, type_t> benchmark_registry_bind = bind_global(ee, k_global_benchmark_registry);
 	QUARK_ASSERT(benchmark_registry_bind.first != nullptr);
-	QUARK_ASSERT(benchmark_registry_bind.second == typeid_t::make_vector(make_benchmark_def_t()));
+
+//	??? This requires resolving symbols, which is too late at runtime. Resolve these earlier?
+//	QUARK_ASSERT(benchmark_registry_bind.second == make_vector(ee.backend.types, make_benchmark_def_t(ee.backend.types)));
 
 	const value_t reg = load_global(ee, benchmark_registry_bind);
 	const auto v = reg.get_vector_value();
@@ -915,7 +914,17 @@ std::vector<bench_t> collect_benchmarks(const llvm_execution_engine_t& ee){
 	return result;
 }
 
+///??? should lookup structs via their name in symbol table!
 std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, const std::vector<bench_t>& tests){
+	QUARK_ASSERT(ee.check_invariant());
+
+//	const auto result2 = from_runtime_value(ee, bench_result, make_vector(types2, make_benchmark_result_t(types2)));
+//	QUARK_ASSERT(types2.nodes.size() == types.nodes.size());
+
+	const auto benchmark_result_vec_type_symbol = find_symbol_required(ee.global_symbols, "benchmark_result_vec_t");
+	const auto benchmark_result_vec_type = benchmark_result_vec_type_symbol._value_type;
+
+//	const types_t& types = ee.backend.types;
 	std::vector<benchmark_result2_t> result;
 	for(const auto& b: tests){
 		const auto name = b.benchmark_id.test;
@@ -925,7 +934,7 @@ std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, con
 		QUARK_ASSERT(f_bind.address != nullptr);
 		auto f2 = reinterpret_cast<FLOYD_BENCHMARK_F>(f_bind.address);
 		const auto bench_result = (*f2)(make_runtime_ptr(&ee));
-		const auto result2 = from_runtime_value(ee, bench_result, typeid_t::make_vector(make_benchmark_result_t()));
+		const auto result2 = from_runtime_value(ee, bench_result, benchmark_result_vec_type);
 
 //			QUARK_TRACE(value_and_type_to_string(result2));
 

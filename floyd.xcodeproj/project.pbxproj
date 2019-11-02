@@ -25,7 +25,6 @@
 		2C085CF823140CA6009E6D24 /* format_table.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4DA09023035A0100190C37 /* format_table.cpp */; };
 		2C085CF923140CA6009E6D24 /* cpp_experiments.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00BC411F2428FF0087B8BB /* cpp_experiments.cpp */; };
 		2C085CFA23140CA6009E6D24 /* desugar_pass.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CE0FE7622EE54B100018A96 /* desugar_pass.cpp */; };
-		2C085CFB23140CA6009E6D24 /* typeid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C574E48203107D80035EA62 /* typeid.cpp */; };
 		2C085CFC23140CA6009E6D24 /* ast_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4F355D1D4794CD0061CA93 /* ast_value.cpp */; };
 		2C085CFD23140CA6009E6D24 /* compiler_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB7AA692209E51E0011DE4B /* compiler_basics.cpp */; };
 		2C085CFE23140CA6009E6D24 /* floyd_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180465208B939700F62480 /* floyd_parser.cpp */; };
@@ -66,6 +65,7 @@
 		2C1CEFCD23140F7D00DE9A77 /* software_system.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB30737214ACF09007D2732 /* software_system.cpp */; };
 		2C1CEFCE23140F7D00DE9A77 /* test_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC0B3E122248EBD00C9D584 /* test_helpers.cpp */; };
 		2C1CEFD4231415AE00DE9A77 /* benchmark_soundsystem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1CEFD2231415AE00DE9A77 /* benchmark_soundsystem.cpp */; };
+		2C2B51CD233E348A001D59D9 /* types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C2B51CC233E348A001D59D9 /* types.cpp */; };
 		2C2FB296232A9F1B006105E4 /* process_test1.floyd in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2C2FB28D232A9CFF006105E4 /* process_test1.floyd */; };
 		2C2FB297232A9F1B006105E4 /* hello_world.floyd in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2C2FB28E232A9CFF006105E4 /* hello_world.floyd */; };
 		2C2FB298232A9F1B006105E4 /* benchmarks.floyd in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2C2FB28F232A9CFF006105E4 /* benchmarks.floyd */; };
@@ -93,7 +93,6 @@
 		2C530C3121EE0D0300F962FB /* libncurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CBF330C202143BD0030AE98 /* libncurses.tbd */; };
 		2C5372B9207A9EBA00647AD1 /* bytecode_interpreter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5372B8207A9EBA00647AD1 /* bytecode_interpreter.cpp */; };
 		2C557C382040173E006F6818 /* bytecode_intrinsics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C557C362040173E006F6818 /* bytecode_intrinsics.cpp */; };
-		2C574E4A203107D80035EA62 /* typeid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C574E48203107D80035EA62 /* typeid.cpp */; };
 		2C5E343C21527C6700B02262 /* hardware_caps_macos.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5E343B21527C6700B02262 /* hardware_caps_macos.cpp */; };
 		2C5F8322224644FB009870FC /* floyd_llvm_codegen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5F8320224644FB009870FC /* floyd_llvm_codegen.cpp */; };
 		2C5F8323224644FB009870FC /* floyd_llvm_codegen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5F8320224644FB009870FC /* floyd_llvm_codegen.cpp */; };
@@ -179,7 +178,6 @@
 		2CC9B79F2309FD1D00B195C8 /* value_backend.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC9B79D2309FD1D00B195C8 /* value_backend.cpp */; };
 		2CC9B7A02309FD1D00B195C8 /* value_backend.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC9B79D2309FD1D00B195C8 /* value_backend.cpp */; };
 		2CCA88F522B6B5F100976D8E /* floyd_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CCA88F322B6B5F100976D8E /* floyd_corelib.cpp */; };
-		2CDA9AE22317DC9000231AA8 /* type_interner.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDA9AE02317DC9000231AA8 /* type_interner.cpp */; };
 		2CDA9AE52318933500231AA8 /* write_cache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDA9AE32318933500231AA8 /* write_cache.cpp */; };
 		2CDFD5C922EA1AD0005B002C /* bytecode_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5C822EA1AD0005B002C /* bytecode_corelib.cpp */; };
 		2CDFD5CA22EA1AD0005B002C /* bytecode_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5C822EA1AD0005B002C /* bytecode_corelib.cpp */; };
@@ -269,6 +267,8 @@
 		2C1CEFD5231415FB00DE9A77 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		2C1CEFD623141B4200DE9A77 /* floyd_benchmarks.floyd */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = floyd_benchmarks.floyd; sourceTree = "<group>"; };
 		2C1D84DD1CA765A90042F0A8 /* floyd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = floyd; sourceTree = BUILT_PRODUCTS_DIR; };
+		2C2B51CC233E348A001D59D9 /* types.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = types.cpp; sourceTree = "<group>"; };
+		2C2B51CE233E3495001D59D9 /* types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = types.h; sourceTree = "<group>"; };
 		2C2FB272232A9CFF006105E4 /* floyd_preso.key */ = {isa = PBXFileReference; lastKnownFileType = file; path = floyd_preso.key; sourceTree = "<group>"; };
 		2C2FB273232A9CFF006105E4 /* floyd_logo_banner.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = floyd_logo_banner.png; sourceTree = "<group>"; };
 		2C2FB274232A9CFF006105E4 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -328,8 +328,6 @@
 		2C5372B8207A9EBA00647AD1 /* bytecode_interpreter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = bytecode_interpreter.cpp; sourceTree = "<group>"; };
 		2C557C362040173E006F6818 /* bytecode_intrinsics.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = bytecode_intrinsics.cpp; sourceTree = "<group>"; };
 		2C557C372040173E006F6818 /* bytecode_intrinsics.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bytecode_intrinsics.h; sourceTree = "<group>"; };
-		2C574E48203107D80035EA62 /* typeid.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = typeid.cpp; sourceTree = "<group>"; };
-		2C574E49203107D80035EA62 /* typeid.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = typeid.h; sourceTree = "<group>"; };
 		2C5E343B21527C6700B02262 /* hardware_caps_macos.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = hardware_caps_macos.cpp; sourceTree = "<group>"; };
 		2C5E343E21527C8B00B02262 /* hardware_caps.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hardware_caps.h; sourceTree = "<group>"; };
 		2C5F8320224644FB009870FC /* floyd_llvm_codegen.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_llvm_codegen.cpp; sourceTree = "<group>"; };
@@ -722,8 +720,6 @@
 		2CCA88F422B6B5F100976D8E /* floyd_corelib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_corelib.h; sourceTree = "<group>"; };
 		2CCC0D222141DCC700788BCB /* immer-master */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "immer-master"; sourceTree = "<group>"; };
 		2CCD83361CBA5BA3006033E4 /* floyd_main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_main.cpp; sourceTree = "<group>"; };
-		2CDA9AE02317DC9000231AA8 /* type_interner.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = type_interner.cpp; sourceTree = "<group>"; };
-		2CDA9AE12317DC9000231AA8 /* type_interner.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = type_interner.h; sourceTree = "<group>"; };
 		2CDA9AE32318933500231AA8 /* write_cache.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = write_cache.cpp; sourceTree = "<group>"; };
 		2CDA9AE42318933500231AA8 /* write_cache.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = write_cache.h; sourceTree = "<group>"; };
 		2CDA9AE62319490700231AA8 /* quark.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = quark.md; path = ../../../../quark/quark/quark.md; sourceTree = "<group>"; };
@@ -866,10 +862,8 @@
 				2CB7AA6A2209E51E0011DE4B /* compiler_basics.h */,
 				2C4574D322493DA2008A55B0 /* compiler_helpers.cpp */,
 				2C4574D422493DA2008A55B0 /* compiler_helpers.h */,
-				2CDA9AE02317DC9000231AA8 /* type_interner.cpp */,
-				2CDA9AE12317DC9000231AA8 /* type_interner.h */,
-				2C574E48203107D80035EA62 /* typeid.cpp */,
-				2C574E49203107D80035EA62 /* typeid.h */,
+				2C2B51CC233E348A001D59D9 /* types.cpp */,
+				2C2B51CE233E3495001D59D9 /* types.h */,
 			);
 			path = floyd_basics;
 			sourceTree = "<group>";
@@ -1779,7 +1773,6 @@
 				2CA2D86522F347FC00B45098 /* floyd_llvm_types.cpp in Sources */,
 				2C8C03AB2221D95F0085EBBE /* reporter.cc in Sources */,
 				2C8C03AC2221D95F0085EBBE /* colorprint.cc in Sources */,
-				2C574E4A203107D80035EA62 /* typeid.cpp in Sources */,
 				2C8C03A12221D95F0085EBBE /* console_reporter.cc in Sources */,
 				2C180483208B939800F62480 /* parser_primitives.cpp in Sources */,
 				2CC34CC121EF8882000F3CB6 /* floyd_repl.cpp in Sources */,
@@ -1793,7 +1786,6 @@
 				2CE0FE7822EE54B100018A96 /* desugar_pass.cpp in Sources */,
 				2C18044B208B90E900F62480 /* utils.cpp in Sources */,
 				2C3D2D9722EF869B00B808AA /* ast_visitor.cpp in Sources */,
-				2CDA9AE22317DC9000231AA8 /* type_interner.cpp in Sources */,
 				2CB9AFA82315E88300836EC3 /* floyd_llvm_intrinsics.cpp in Sources */,
 				2CDFD5CD22EA1E1B005B002C /* floyd_llvm_corelib.cpp in Sources */,
 				2CDA9AE52318933500231AA8 /* write_cache.cpp in Sources */,
@@ -1814,6 +1806,7 @@
 				2C18048E208B947C00F62480 /* ast.cpp in Sources */,
 				2CB9AFA52315E2C400836EC3 /* floyd_llvm_runtime_functions.cpp in Sources */,
 				2CC9B79F2309FD1D00B195C8 /* value_backend.cpp in Sources */,
+				2C2B51CD233E348A001D59D9 /* types.cpp in Sources */,
 				2C4DA09223035A0100190C37 /* format_table.cpp in Sources */,
 				2C6CDA9522FD92FD008F65C7 /* floyd_command_line_parser.cpp in Sources */,
 				2C180477208B939800F62480 /* parse_expression.cpp in Sources */,
@@ -1924,7 +1917,6 @@
 				2C1CEFCD23140F7D00DE9A77 /* software_system.cpp in Sources */,
 				2C8C03E92221DBD70085EBBE /* benchmark.cc in Sources */,
 				2C085D0D23140CA6009E6D24 /* file_handling.cpp in Sources */,
-				2C085CFB23140CA6009E6D24 /* typeid.cpp in Sources */,
 				2CA2D86622F347FC00B45098 /* floyd_llvm_types.cpp in Sources */,
 				2C085CEB23140A4E009E6D24 /* floyd_benchmark_main.cpp in Sources */,
 				2C8C03EC2221DBD70085EBBE /* string_util.cc in Sources */,
@@ -1975,7 +1967,6 @@
 				GCC_THREADSAFE_STATICS = NO;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_MISSING_FIELD_INITIALIZERS = YES;
-				GCC_WARN_ABOUT_MISSING_PROTOTYPES = NO;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_HIDDEN_VIRTUAL_FUNCTIONS = YES;
 				GCC_WARN_INITIALIZER_NOT_FULLY_BRACKETED = YES;
@@ -2005,6 +1996,7 @@
 					"$(PROJECT_DIR)",
 					/usr/local/Cellar/llvm/8.0.1/lib,
 				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				PRODUCT_NAME = floyd;
 			};
 			name = "Release - Profiling";
@@ -2047,7 +2039,6 @@
 				GCC_THREADSAFE_STATICS = NO;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_MISSING_FIELD_INITIALIZERS = YES;
-				GCC_WARN_ABOUT_MISSING_PROTOTYPES = NO;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_HIDDEN_VIRTUAL_FUNCTIONS = YES;
 				GCC_WARN_INITIALIZER_NOT_FULLY_BRACKETED = YES;
@@ -2106,7 +2097,6 @@
 				GCC_THREADSAFE_STATICS = NO;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_MISSING_FIELD_INITIALIZERS = YES;
-				GCC_WARN_ABOUT_MISSING_PROTOTYPES = NO;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_HIDDEN_VIRTUAL_FUNCTIONS = YES;
 				GCC_WARN_INITIALIZER_NOT_FULLY_BRACKETED = YES;
@@ -2136,6 +2126,7 @@
 					"$(PROJECT_DIR)",
 					/usr/local/Cellar/llvm/8.0.1/lib,
 				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				PRODUCT_NAME = floyd;
 			};
 			name = Debug;
@@ -2148,6 +2139,7 @@
 					"$(PROJECT_DIR)",
 					/usr/local/Cellar/llvm/8.0.1/lib,
 				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				PRODUCT_NAME = floyd;
 			};
 			name = Release;

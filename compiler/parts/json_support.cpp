@@ -158,15 +158,15 @@ QUARK_TESTQ("json_t()", ""){
 		{ "two", json_t("zwei") }
 	};
 	const auto a = json_t(value);
-	QUARK_UT_VERIFY(a.is_object());
-	QUARK_UT_VERIFY(!a.is_array());
-	QUARK_UT_VERIFY(!a.is_string());
-	QUARK_UT_VERIFY(!a.is_number());
-	QUARK_UT_VERIFY(!a.is_true());
-	QUARK_UT_VERIFY(!a.is_false());
-	QUARK_UT_VERIFY(!a.is_null());
-	QUARK_UT_VERIFY(a.get_object() == value);
-	QUARK_UT_VERIFY((a.get_object() != std::map<string, json_t>()));
+	QUARK_VERIFY(a.is_object());
+	QUARK_VERIFY(!a.is_array());
+	QUARK_VERIFY(!a.is_string());
+	QUARK_VERIFY(!a.is_number());
+	QUARK_VERIFY(!a.is_true());
+	QUARK_VERIFY(!a.is_false());
+	QUARK_VERIFY(!a.is_null());
+	QUARK_VERIFY(a.get_object() == value);
+	QUARK_VERIFY((a.get_object() != std::map<string, json_t>()));
 }
 
 QUARK_TESTQ("json_t()", ""){
@@ -185,88 +185,88 @@ QUARK_TESTQ("json_t()", ""){
 		}
 	};
 	const auto a = json_t(value);
-	QUARK_UT_VERIFY(a.is_object());
-	QUARK_UT_VERIFY(!a.is_array());
-	QUARK_UT_VERIFY(!a.is_string());
-	QUARK_UT_VERIFY(!a.is_number());
-	QUARK_UT_VERIFY(!a.is_true());
-	QUARK_UT_VERIFY(!a.is_false());
-	QUARK_UT_VERIFY(!a.is_null());
-	QUARK_UT_VERIFY(a.get_object() == value);
-	QUARK_UT_VERIFY(a.get_object_element("one") == json_t(1.0));
-	QUARK_UT_VERIFY(a.get_object_element("three").get_object_element("C") == json_t("ccc"));
+	QUARK_VERIFY(a.is_object());
+	QUARK_VERIFY(!a.is_array());
+	QUARK_VERIFY(!a.is_string());
+	QUARK_VERIFY(!a.is_number());
+	QUARK_VERIFY(!a.is_true());
+	QUARK_VERIFY(!a.is_false());
+	QUARK_VERIFY(!a.is_null());
+	QUARK_VERIFY(a.get_object() == value);
+	QUARK_VERIFY(a.get_object_element("one") == json_t(1.0));
+	QUARK_VERIFY(a.get_object_element("three").get_object_element("C") == json_t("ccc"));
 }
 
 
 QUARK_TESTQ("json_t()", ""){
 	std::vector<json_t> value { json_t("A"), json_t("B") };
 	const auto a = json_t(value);
-	QUARK_UT_VERIFY(!a.is_object());
-	QUARK_UT_VERIFY(a.is_array());
-	QUARK_UT_VERIFY(!a.is_string());
-	QUARK_UT_VERIFY(!a.is_number());
-	QUARK_UT_VERIFY(!a.is_true());
-	QUARK_UT_VERIFY(!a.is_false());
-	QUARK_UT_VERIFY(!a.is_null());
-	QUARK_UT_VERIFY(a.get_array() == value);
-//	QUARK_UT_VERIFY((a.get_object() != std::map<string, json_t>()));
+	QUARK_VERIFY(!a.is_object());
+	QUARK_VERIFY(a.is_array());
+	QUARK_VERIFY(!a.is_string());
+	QUARK_VERIFY(!a.is_number());
+	QUARK_VERIFY(!a.is_true());
+	QUARK_VERIFY(!a.is_false());
+	QUARK_VERIFY(!a.is_null());
+	QUARK_VERIFY(a.get_array() == value);
+//	QUARK_VERIFY((a.get_object() != std::map<string, json_t>()));
 }
 
 QUARK_TESTQ("json_t()", ""){
 	const auto a = json_t("hello");
-	QUARK_UT_VERIFY(!a.is_object());
-	QUARK_UT_VERIFY(!a.is_array());
-	QUARK_UT_VERIFY(a.is_string());
-	QUARK_UT_VERIFY(!a.is_number());
-	QUARK_UT_VERIFY(!a.is_true());
-	QUARK_UT_VERIFY(!a.is_false());
-	QUARK_UT_VERIFY(!a.is_null());
-	QUARK_UT_VERIFY(a.get_string() == "hello");
+	QUARK_VERIFY(!a.is_object());
+	QUARK_VERIFY(!a.is_array());
+	QUARK_VERIFY(a.is_string());
+	QUARK_VERIFY(!a.is_number());
+	QUARK_VERIFY(!a.is_true());
+	QUARK_VERIFY(!a.is_false());
+	QUARK_VERIFY(!a.is_null());
+	QUARK_VERIFY(a.get_string() == "hello");
 }
 
 QUARK_TESTQ("json_t()", ""){
 	const auto a = json_t(123.0);
-	QUARK_UT_VERIFY(!a.is_object());
-	QUARK_UT_VERIFY(!a.is_array());
-	QUARK_UT_VERIFY(!a.is_string());
-	QUARK_UT_VERIFY(a.is_number());
-	QUARK_UT_VERIFY(!a.is_true());
-	QUARK_UT_VERIFY(!a.is_false());
-	QUARK_UT_VERIFY(!a.is_null());
-	QUARK_UT_VERIFY(a.get_number() == 123.0);
+	QUARK_VERIFY(!a.is_object());
+	QUARK_VERIFY(!a.is_array());
+	QUARK_VERIFY(!a.is_string());
+	QUARK_VERIFY(a.is_number());
+	QUARK_VERIFY(!a.is_true());
+	QUARK_VERIFY(!a.is_false());
+	QUARK_VERIFY(!a.is_null());
+	QUARK_VERIFY(a.get_number() == 123.0);
 }
 
 QUARK_TESTQ("json_t()", ""){
 	const auto a = json_t(true);
-	QUARK_UT_VERIFY(!a.is_object());
-	QUARK_UT_VERIFY(!a.is_array());
-	QUARK_UT_VERIFY(!a.is_string());
-	QUARK_UT_VERIFY(!a.is_number());
-	QUARK_UT_VERIFY(a.is_true());
-	QUARK_UT_VERIFY(!a.is_false());
-	QUARK_UT_VERIFY(!a.is_null());
+	QUARK_VERIFY(!a.is_object());
+	QUARK_VERIFY(!a.is_array());
+	QUARK_VERIFY(!a.is_string());
+	QUARK_VERIFY(!a.is_number());
+	QUARK_VERIFY(a.is_true());
+	QUARK_VERIFY(!a.is_false());
+	QUARK_VERIFY(!a.is_null());
 }
 
 QUARK_TESTQ("json_t()", ""){
 	const auto a = json_t(false);
-	QUARK_UT_VERIFY(!a.is_object());
-	QUARK_UT_VERIFY(!a.is_array());
-	QUARK_UT_VERIFY(!a.is_string());
-	QUARK_UT_VERIFY(!a.is_number());
-	QUARK_UT_VERIFY(!a.is_true());
-	QUARK_UT_VERIFY(a.is_false());
-	QUARK_UT_VERIFY(!a.is_null());
+	QUARK_VERIFY(!a.is_object());
+	QUARK_VERIFY(!a.is_array());
+	QUARK_VERIFY(!a.is_string());
+	QUARK_VERIFY(!a.is_number());
+	QUARK_VERIFY(!a.is_true());
+	QUARK_VERIFY(a.is_false());
+	QUARK_VERIFY(!a.is_null());
 }
 
 QUARK_TESTQ("json_t()", ""){
 	const auto a = json_t();
-	QUARK_UT_VERIFY(!a.is_object());
-	QUARK_UT_VERIFY(!a.is_array());
-	QUARK_UT_VERIFY(!a.is_string());
-	QUARK_UT_VERIFY(!a.is_number());
-	QUARK_UT_VERIFY(!a.is_true());
-	QUARK_UT_VERIFY(!a.is_false());
-	QUARK_UT_VERIFY(a.is_null());
+	QUARK_VERIFY(!a.is_object());
+	QUARK_VERIFY(!a.is_array());
+	QUARK_VERIFY(!a.is_string());
+	QUARK_VERIFY(!a.is_number());
+	QUARK_VERIFY(!a.is_true());
+	QUARK_VERIFY(!a.is_false());
+	QUARK_VERIFY(a.is_null());
 }
 
 /*
@@ -292,7 +292,7 @@ long long double_to_int(const double value){
 
 QUARK_TESTQ("make_vec()", ""){
 	const auto a = make_vec({ "one", "two" });
-	QUARK_UT_VERIFY(a.size() == 2);
+	QUARK_VERIFY(a.size() == 2);
 }
 
 
@@ -437,38 +437,38 @@ bool exists_in(const json_t& parent, const std::vector<json_t>& path){
 
 QUARK_TESTQ("exists_in()", "object level 0 - found"){
 	const auto obj1 = make_test_tree();
-	QUARK_UT_VERIFY(exists_in(obj1, make_vec({"yeti"})) == false);
-	QUARK_UT_VERIFY(exists_in(obj1, make_vec({"hero", "name"})) == true);
-	QUARK_UT_VERIFY(exists_in(obj1, make_vec({"hero", "height"})) == true);
-	QUARK_UT_VERIFY(exists_in(obj1, make_vec({"villain", "name"})) == true);
-	QUARK_UT_VERIFY(exists_in(obj1, make_vec({"villain", "height"})) == true);
+	QUARK_VERIFY(exists_in(obj1, make_vec({"yeti"})) == false);
+	QUARK_VERIFY(exists_in(obj1, make_vec({"hero", "name"})) == true);
+	QUARK_VERIFY(exists_in(obj1, make_vec({"hero", "height"})) == true);
+	QUARK_VERIFY(exists_in(obj1, make_vec({"villain", "name"})) == true);
+	QUARK_VERIFY(exists_in(obj1, make_vec({"villain", "height"})) == true);
 }
 
 QUARK_TESTQ("exists_in()", "object level 1 - found"){
 	const auto obj1 = make_test_tree();
-	QUARK_UT_VERIFY(exists_in(obj1, make_vec({"hero", "name"})) == true);
-	QUARK_UT_VERIFY(exists_in(obj1, make_vec({"hero", "height"})) == true);
-	QUARK_UT_VERIFY(exists_in(obj1, make_vec({"villain", "name"})) == true);
-	QUARK_UT_VERIFY(exists_in(obj1, make_vec({"villain", "height"})) == true);
+	QUARK_VERIFY(exists_in(obj1, make_vec({"hero", "name"})) == true);
+	QUARK_VERIFY(exists_in(obj1, make_vec({"hero", "height"})) == true);
+	QUARK_VERIFY(exists_in(obj1, make_vec({"villain", "name"})) == true);
+	QUARK_VERIFY(exists_in(obj1, make_vec({"villain", "height"})) == true);
 }
 
 QUARK_TESTQ("exists_in()", "object missing"){
 	const auto obj1 = make_test_tree();
-	QUARK_UT_VERIFY(exists_in(obj1, make_vec({"hero", "job"})) == false);
-	QUARK_UT_VERIFY(exists_in(obj1, make_vec({"yeti"})) == false);
+	QUARK_VERIFY(exists_in(obj1, make_vec({"hero", "job"})) == false);
+	QUARK_VERIFY(exists_in(obj1, make_vec({"yeti"})) == false);
 }
 
 QUARK_TESTQ("exists_in()", "mixed arrays and trees - lost & found"){
 	const auto obj1 = make_mixed_test_tree();
 	QUARK_TRACE(json_to_compact_string(obj1));
-	QUARK_UT_VERIFY(exists_in(obj1, make_vec({ json_t(0.0) })) == true);
-	QUARK_UT_VERIFY(exists_in(obj1, make_vec({ json_t(1.0) })) == true);
-	QUARK_UT_VERIFY(exists_in(obj1, make_vec({ json_t(2.0) })) == false);
-	QUARK_UT_VERIFY(exists_in(obj1, make_vec({ json_t(0.0), "movies", json_t(0.0) })) == true);
-	QUARK_UT_VERIFY(exists_in(obj1, make_vec({ json_t(0.0), "movies", json_t(2.0) })) == true);
-	QUARK_UT_VERIFY(exists_in(obj1, make_vec({ json_t(0.0), "movies", json_t(3.0) })) == false);
-	QUARK_UT_VERIFY(exists_in(obj1, make_vec({ json_t(0.0), "name" })) == true);
-	QUARK_UT_VERIFY(exists_in(obj1, make_vec({ json_t(1.0), "name" })) == true);
+	QUARK_VERIFY(exists_in(obj1, make_vec({ json_t(0.0) })) == true);
+	QUARK_VERIFY(exists_in(obj1, make_vec({ json_t(1.0) })) == true);
+	QUARK_VERIFY(exists_in(obj1, make_vec({ json_t(2.0) })) == false);
+	QUARK_VERIFY(exists_in(obj1, make_vec({ json_t(0.0), "movies", json_t(0.0) })) == true);
+	QUARK_VERIFY(exists_in(obj1, make_vec({ json_t(0.0), "movies", json_t(2.0) })) == true);
+	QUARK_VERIFY(exists_in(obj1, make_vec({ json_t(0.0), "movies", json_t(3.0) })) == false);
+	QUARK_VERIFY(exists_in(obj1, make_vec({ json_t(0.0), "name" })) == true);
+	QUARK_VERIFY(exists_in(obj1, make_vec({ json_t(1.0), "name" })) == true);
 }
 
 
@@ -522,28 +522,28 @@ QUARK_TESTQ("get_in()", "one level get"){
 		{ "name", "James Bond" },
 		{ "height", json_t(178.0) }
 	});
-	QUARK_UT_VERIFY(get_in(obj1, { "name" }) == "James Bond");
-	QUARK_UT_VERIFY(get_in(obj1, { "height" }) == json_t(178.0));
+	QUARK_VERIFY(get_in(obj1, { "name" }) == "James Bond");
+	QUARK_VERIFY(get_in(obj1, { "height" }) == json_t(178.0));
 }
 
 QUARK_TESTQ("get_in()", "two-level get"){
 	const auto obj1 = make_test_tree();
-	QUARK_UT_VERIFY(get_in(obj1, make_vec({"hero", "name"})) == "James Bond");
-	QUARK_UT_VERIFY(get_in(obj1, make_vec({"hero", "height"})) == json_t(178.0));
-	QUARK_UT_VERIFY(get_in(obj1, make_vec({"villain", "name"})) == "Ernst Stavro Blofeld");
-	QUARK_UT_VERIFY(get_in(obj1, make_vec({"villain", "height"})) == json_t(160.0));
+	QUARK_VERIFY(get_in(obj1, make_vec({"hero", "name"})) == "James Bond");
+	QUARK_VERIFY(get_in(obj1, make_vec({"hero", "height"})) == json_t(178.0));
+	QUARK_VERIFY(get_in(obj1, make_vec({"villain", "name"})) == "Ernst Stavro Blofeld");
+	QUARK_VERIFY(get_in(obj1, make_vec({"villain", "height"})) == json_t(160.0));
 }
 
 QUARK_TESTQ("get_in()", "mixed arrays and trees"){
 	const auto obj1 = make_mixed_test_tree();
 	QUARK_TRACE(json_to_compact_string(obj1));
-	QUARK_UT_VERIFY(get_in(obj1, make_vec({ json_t(0.0), "name" })) == "James Bond");
-	QUARK_UT_VERIFY(get_in(obj1, make_vec({ json_t(0.0), "movies", json_t(0.0) })) == "No one lives forever");
-	QUARK_UT_VERIFY(get_in(obj1, make_vec({ json_t(0.0), "movies", json_t(1.0) })) == "Moonraker");
-	QUARK_UT_VERIFY(get_in(obj1, make_vec({ json_t(0.0), "movies", json_t(2.0) })) == "Live and let die");
+	QUARK_VERIFY(get_in(obj1, make_vec({ json_t(0.0), "name" })) == "James Bond");
+	QUARK_VERIFY(get_in(obj1, make_vec({ json_t(0.0), "movies", json_t(0.0) })) == "No one lives forever");
+	QUARK_VERIFY(get_in(obj1, make_vec({ json_t(0.0), "movies", json_t(1.0) })) == "Moonraker");
+	QUARK_VERIFY(get_in(obj1, make_vec({ json_t(0.0), "movies", json_t(2.0) })) == "Live and let die");
 
-	QUARK_UT_VERIFY(get_in(obj1, make_vec({ json_t(1.0) })) != json_t());
-	QUARK_UT_VERIFY(get_in(obj1, make_vec({ json_t(1.0), "name" })) == "Ernst Stavro Blofeld");
+	QUARK_VERIFY(get_in(obj1, make_vec({ json_t(1.0) })) != json_t());
+	QUARK_VERIFY(get_in(obj1, make_vec({ json_t(1.0), "name" })) == "Ernst Stavro Blofeld");
 }
 
 
@@ -591,11 +591,11 @@ QUARK_TESTQ("assoc()", "replace obj member value"){
 		{ "name", json_t("James Bond") },
 		{ "height", json_t(178.0) }
 	});
-	QUARK_UT_VERIFY(obj1.get_object_element("name") == json_t("James Bond"));
-	QUARK_UT_VERIFY(obj1.get_object_element("height") == json_t(178.0));
+	QUARK_VERIFY(obj1.get_object_element("name") == json_t("James Bond"));
+	QUARK_VERIFY(obj1.get_object_element("height") == json_t(178.0));
 	const auto obj2 = assoc(obj1, json_t("name"), json_t("Stewie"));
-	QUARK_UT_VERIFY(obj2.get_object_element("name") == json_t("Stewie"));
-	QUARK_UT_VERIFY(obj2.get_object_element("height") == json_t(178.0));
+	QUARK_VERIFY(obj2.get_object_element("name") == json_t("Stewie"));
+	QUARK_VERIFY(obj2.get_object_element("height") == json_t(178.0));
 }
 
 QUARK_TESTQ("assoc()", "add obj member value"){
@@ -603,24 +603,24 @@ QUARK_TESTQ("assoc()", "add obj member value"){
 		{ "name", json_t("James Bond") },
 		{ "height", json_t(178.0) }
 	});
-	QUARK_UT_VERIFY(obj1.get_object_element("name") == json_t("James Bond"));
-	QUARK_UT_VERIFY(obj1.get_object_element("height") == json_t(178.0));
+	QUARK_VERIFY(obj1.get_object_element("name") == json_t("James Bond"));
+	QUARK_VERIFY(obj1.get_object_element("height") == json_t(178.0));
 	const auto obj2 = assoc(obj1, json_t("score"), json_t("*****"));
-	QUARK_UT_VERIFY(obj2.get_object_element("name") == json_t("James Bond"));
-	QUARK_UT_VERIFY(obj2.get_object_element("height") == json_t(178.0));
-	QUARK_UT_VERIFY(obj2.get_object_element("score") == json_t("*****"));
+	QUARK_VERIFY(obj2.get_object_element("name") == json_t("James Bond"));
+	QUARK_VERIFY(obj2.get_object_element("height") == json_t(178.0));
+	QUARK_VERIFY(obj2.get_object_element("score") == json_t("*****"));
 }
 
 QUARK_TESTQ("assoc()", "add obj member value -- no object causes new to be made"){
 	const auto obj2 = assoc(json_t(), json_t("hello"), json_t("world!"));
-	QUARK_UT_VERIFY(obj2.get_object_element("hello") == json_t("world!"));
+	QUARK_VERIFY(obj2.get_object_element("hello") == json_t("world!"));
 }
 
 QUARK_TESTQ("assoc()", "replace array element"){
 	const auto obj1 = json_t::make_array({ json_t("zero"), json_t("one"), json_t("two") });
-	QUARK_UT_VERIFY((obj1.get_array() == vector<json_t>{ json_t("zero"), json_t("one"), json_t("two") }));
+	QUARK_VERIFY((obj1.get_array() == vector<json_t>{ json_t("zero"), json_t("one"), json_t("two") }));
 	const auto obj2 = assoc(obj1, json_t(1.0), json_t("UNO"));
-	QUARK_UT_VERIFY((obj2.get_array() == vector<json_t>{ json_t("zero"), json_t("UNO"), json_t("two") }));
+	QUARK_VERIFY((obj2.get_array() == vector<json_t>{ json_t("zero"), json_t("UNO"), json_t("two") }));
 }
 
 
@@ -667,8 +667,8 @@ QUARK_TESTQ("dissoc()", "erase obj member value"){
 		{ "height", json_t(178.0) }
 	});
 	const auto obj2 = dissoc(obj1, json_t("name"));
-	QUARK_UT_VERIFY(!exists_in(obj2, {"name"}));
-	QUARK_UT_VERIFY(obj2.get_object_element("height") == json_t(178.0));
+	QUARK_VERIFY(!exists_in(obj2, {"name"}));
+	QUARK_VERIFY(obj2.get_object_element("height") == json_t(178.0));
 }
 
 QUARK_TESTQ("dissoc()", "erase non-existing object member"){
@@ -682,7 +682,7 @@ QUARK_TESTQ("dissoc()", "erase non-existing object member"){
 QUARK_TESTQ("dissoc()", "erase array entry"){
 	const auto obj1 = json_t::make_array({ "one", "two", "three" });
 	const auto obj2 = dissoc(obj1, json_t(1.0));
-	QUARK_UT_VERIFY(obj2 == json_t::make_array({ "one", "three" }));
+	QUARK_VERIFY(obj2 == json_t::make_array({ "one", "three" }));
 }
 
 
@@ -754,30 +754,30 @@ QUARK_TESTQ("assoc_in()", "replace obj member value"){
 		{ "height", json_t(178.0) }
 	});
 	const auto obj2 = assoc_in(obj1, make_vec({ "name" }), "Stewie");
-	QUARK_UT_VERIFY(obj2.get_object_element("name") == "Stewie");
-	QUARK_UT_VERIFY(obj2.get_object_element("height") == json_t(178.0));
+	QUARK_VERIFY(obj2.get_object_element("name") == "Stewie");
+	QUARK_VERIFY(obj2.get_object_element("height") == json_t(178.0));
 }
 
 QUARK_TESTQ("assoc_in()", "replace obj member value - level0"){
 	const auto obj1 = make_test_tree();
 	const auto obj2 = assoc_in(obj1, make_vec({ "hero" }), "Stewie");
-	QUARK_UT_VERIFY(get_in(obj2, make_vec({ "hero", })) == "Stewie");
-	QUARK_UT_VERIFY(get_in(obj2, make_vec({"villain", "name"})) == "Ernst Stavro Blofeld");
-	QUARK_UT_VERIFY(get_in(obj2, make_vec({"villain", "height"})) == json_t(160.0));
+	QUARK_VERIFY(get_in(obj2, make_vec({ "hero", })) == "Stewie");
+	QUARK_VERIFY(get_in(obj2, make_vec({"villain", "name"})) == "Ernst Stavro Blofeld");
+	QUARK_VERIFY(get_in(obj2, make_vec({"villain", "height"})) == json_t(160.0));
 }
 
 QUARK_TESTQ("assoc_in()", "replace obj member value - level1"){
 	const auto obj1 = make_test_tree();
 	const auto obj2 = assoc_in(obj1, make_vec({ "hero", "name" }), "Stewie");
-	QUARK_UT_VERIFY(get_in(obj2, make_vec({"hero", "name"})) == "Stewie");
-	QUARK_UT_VERIFY(get_in(obj2, make_vec({"hero", "height"})) == json_t(178.0));
-	QUARK_UT_VERIFY(get_in(obj2, make_vec({"villain", "name"})) == "Ernst Stavro Blofeld");
-	QUARK_UT_VERIFY(get_in(obj2, make_vec({"villain", "height"})) == json_t(160.0));
+	QUARK_VERIFY(get_in(obj2, make_vec({"hero", "name"})) == "Stewie");
+	QUARK_VERIFY(get_in(obj2, make_vec({"hero", "height"})) == json_t(178.0));
+	QUARK_VERIFY(get_in(obj2, make_vec({"villain", "name"})) == "Ernst Stavro Blofeld");
+	QUARK_VERIFY(get_in(obj2, make_vec({"villain", "height"})) == json_t(160.0));
 }
 
 QUARK_TESTQ("assoc_in()", "force create deep tree"){
 	const auto obj2 = assoc_in(json_t(), make_vec({"Action Movies", "James Bond Series", "hero", "name"}), "Stewie");
-	QUARK_UT_VERIFY(get_in(obj2, make_vec({"Action Movies", "James Bond Series", "hero", "name"})) == "Stewie");
+	QUARK_VERIFY(get_in(obj2, make_vec({"Action Movies", "James Bond Series", "hero", "name"})) == "Stewie");
 }
 
 QUARK_TESTQ("assoc_in()", "array"){
@@ -796,10 +796,10 @@ QUARK_TESTQ("assoc_in()", "mixed arrays and trees"){
 	const auto obj2 = assoc_in(obj1, make_vec({ json_t(0.0), "movies", json_t(1.0) }), "Moonraker SUX");
 
 
-	QUARK_UT_VERIFY(get_in(obj2, make_vec({ json_t(0.0), "movies", json_t(1.0) })) == "Moonraker SUX");
+	QUARK_VERIFY(get_in(obj2, make_vec({ json_t(0.0), "movies", json_t(1.0) })) == "Moonraker SUX");
 
-	QUARK_UT_VERIFY(get_in(obj2, make_vec({ json_t(1.0) })) != json_t());
-	QUARK_UT_VERIFY(get_in(obj2, make_vec({ json_t(1.0), "name" })) == "Ernst Stavro Blofeld");
+	QUARK_VERIFY(get_in(obj2, make_vec({ json_t(1.0) })) != json_t());
+	QUARK_VERIFY(get_in(obj2, make_vec({ json_t(1.0), "name" })) == "Ernst Stavro Blofeld");
 }
 
 
@@ -1200,7 +1200,7 @@ std::string json_to_compact_string2(const json_t& v, bool quote_fields){
 		return array_to_compact_string(v.get_array(), quote_fields);
 	}
 	else if(v.is_string()){
-		return quote(v.get_string());
+		return quote_fields ? quote(v.get_string()) : v.get_string();
 	}
 	else if(v.is_number()){
 		return double_to_string_simplify(v.get_number());
@@ -1250,27 +1250,27 @@ QUARK_TESTQ("json_to_compact_string()", ""){
 }
 
 QUARK_TESTQ("json_to_compact_string()", ""){
-	QUARK_UT_VERIFY(json_to_compact_string(json_t("")) == "\"\"");
+	QUARK_VERIFY(json_to_compact_string(json_t("")) == "\"\"");
 }
 
 QUARK_TESTQ("json_to_compact_string()", ""){
-	QUARK_UT_VERIFY(json_to_compact_string(json_t("xyz")) == "\"xyz\"");
+	QUARK_VERIFY(json_to_compact_string(json_t("xyz")) == "\"xyz\"");
 }
 
 QUARK_TESTQ("json_to_compact_string()", ""){
-	QUARK_UT_VERIFY(json_to_compact_string(json_t(12.3)) == "12.3");
+	QUARK_VERIFY(json_to_compact_string(json_t(12.3)) == "12.3");
 }
 
 QUARK_TESTQ("json_to_compact_string()", ""){
-	QUARK_UT_VERIFY(json_to_compact_string(json_t(true)) == "true");
+	QUARK_VERIFY(json_to_compact_string(json_t(true)) == "true");
 }
 
 QUARK_TESTQ("json_to_compact_string()", ""){
-	QUARK_UT_VERIFY(json_to_compact_string(json_t(false)) == "false");
+	QUARK_VERIFY(json_to_compact_string(json_t(false)) == "false");
 }
 
 QUARK_TESTQ("json_to_compact_string()", ""){
-	QUARK_UT_VERIFY(json_to_compact_string(json_t()) == "null");
+	QUARK_VERIFY(json_to_compact_string(json_t()) == "null");
 }
 
 
@@ -1312,19 +1312,19 @@ size_t count_char_positions(const std::string& s, size_t tab_chars){
 }
 
 QUARK_TESTQ("count_char_positions()", ""){
-	QUARK_UT_VERIFY(count_char_positions("", 4) == 0);
+	QUARK_VERIFY(count_char_positions("", 4) == 0);
 }
 QUARK_TESTQ("count_char_positions()", ""){
-	QUARK_UT_VERIFY(count_char_positions("a", 4) == 1);
+	QUARK_VERIFY(count_char_positions("a", 4) == 1);
 }
 QUARK_TESTQ("count_char_positions()", ""){
-	QUARK_UT_VERIFY(count_char_positions("aaaa\nbb", 4) == 4);
+	QUARK_VERIFY(count_char_positions("aaaa\nbb", 4) == 4);
 }
 QUARK_TESTQ("count_char_positions()", ""){
-	QUARK_UT_VERIFY(count_char_positions("\t", 4) == 4);
+	QUARK_VERIFY(count_char_positions("\t", 4) == 4);
 }
 QUARK_TESTQ("count_char_positions()", ""){
-	QUARK_UT_VERIFY(count_char_positions("a\nbb\nccc\n", 4) == 3);
+	QUARK_VERIFY(count_char_positions("a\nbb\nccc\n", 4) == 3);
 }
 
 
@@ -1332,25 +1332,25 @@ QUARK_TESTQ("count_char_positions()", ""){
 /*
 	key == name of this value inside a parent object if any. If this is an entry in an array, key == "". Else key == "".
 */
-std::string json_to_pretty_string_internal(const string& key, const json_t& value, int pos, const pretty_t& pretty){
+std::string json_to_pretty_string_internal(const string& key, const json_t& value, int indent, const pretty_t& pretty){
 	const auto key_str = make_key_str(key);
 	if(value.is_object()){
 		const auto& object = value.get_object();
 		if(object.empty()){
-			return string(pos, '\t') + key_str + "{}";
+			return string(indent, '\t') + key_str + "{}";
 		}
 		else{
 			/*
 				Attempt to put all object entires on one text line, recursively.
 			*/
-			string one_line = string(pos, '\t') + key_str + json_to_compact_string(value);
+			string one_line = string(indent, '\t') + key_str + json_to_compact_string(value);
 			size_t width = count_char_positions(one_line, pretty._tab_char_setting);
 			if(width <= pretty._max_column_chars){
 				return one_line;
 			}
 
 			else{
-				string lines = string(pos, '\t') + key_str + "{\n";
+				string lines = string(indent, '\t') + key_str + "{\n";
 				size_t index = 0;
 				for(auto member: object){
 					const auto last = index == object.size() - 1;
@@ -1358,11 +1358,11 @@ std::string json_to_pretty_string_internal(const string& key, const json_t& valu
 					const auto member_value = member.second;
 
 					//	Can be multi-line if this member is a collection.
-					const auto member_lines = json_to_pretty_string_internal(member_key, member_value, pos + 1, pretty);
+					const auto member_lines = json_to_pretty_string_internal(member_key, member_value, indent + 1, pretty);
 					lines = lines + member_lines + (last ? "\n" : ",\n");
 					index++;
 				}
-				lines = lines + string(pos, '\t') + "}";
+				lines = lines + string(indent, '\t') + "}";
 				return lines;
 			}
 		}
@@ -1370,7 +1370,7 @@ std::string json_to_pretty_string_internal(const string& key, const json_t& valu
 	else if(value.is_array()){
 		const auto& array = value.get_array();
 		if(array.empty()){
-			return string(pos, '\t') + key_str + "[]";
+			return string(indent, '\t') + key_str + "[]";
 		}
 		else{
 			/*
@@ -1379,7 +1379,7 @@ std::string json_to_pretty_string_internal(const string& key, const json_t& valu
 				"array1": [ 100, 20, 30, 40 ]
 				"array2": [ 100, 20, 30, [ "yes", "no" ], { "x": 10, "y": 100 }]
 			*/
-			string one_line = string(pos, '\t') + key_str + json_to_compact_string(value);
+			string one_line = string(indent, '\t') + key_str + json_to_compact_string(value);
 			size_t width = count_char_positions(one_line, pretty._tab_char_setting);
 			if(width <= pretty._max_column_chars){
 				return one_line;
@@ -1394,33 +1394,33 @@ std::string json_to_pretty_string_internal(const string& key, const json_t& valu
 				]
 			*/
 			else{
-				string lines = string(pos, '\t') + key_str + "[\n";
+				string lines = string(indent, '\t') + key_str + "[\n";
 				const size_t count = array.size();
 				for(auto index = 0 ; index < count ; index++){
 					const auto last = (index == count - 1);
 					const auto member_value = array[index];
-					const auto member_lines = json_to_pretty_string_internal("", member_value, pos + 1, pretty);
+					const auto member_lines = json_to_pretty_string_internal("", member_value, indent + 1, pretty);
 					lines = lines + member_lines + (last ? "\n" : ",\n");
 				}
-				lines = lines + string(pos, '\t') + "]";
+				lines = lines + string(indent, '\t') + "]";
 				return lines;
 			}
 		}
 	}
 	else if(value.is_string()){
-		return string(pos, '\t') + key_str + quote(value.get_string());
+		return string(indent, '\t') + key_str + quote(value.get_string());
 	}
 	else if(value.is_number()){
-		return string(pos, '\t') + key_str + double_to_string_simplify(value.get_number());
+		return string(indent, '\t') + key_str + double_to_string_simplify(value.get_number());
 	}
 	else if(value.is_true()){
-		return string(pos, '\t') + key_str + "true";
+		return string(indent, '\t') + key_str + "true";
 	}
 	else if(value.is_false()){
-		return string(pos, '\t') + key_str + "false";
+		return string(indent, '\t') + key_str + "false";
 	}
 	else if(value.is_null()){
-		return string(pos, '\t') + key_str + "null";
+		return string(indent, '\t') + key_str + "null";
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -1428,8 +1428,8 @@ std::string json_to_pretty_string_internal(const string& key, const json_t& valu
 	}
 }
 
-std::string json_to_pretty_string(const json_t& value, int pos, const pretty_t& pretty){
-	return json_to_pretty_string_internal("", value, pos, pretty);
+std::string json_to_pretty_string(const json_t& value, int indent, const pretty_t& pretty){
+	return json_to_pretty_string_internal("", value, indent, pretty);
 }
 
 

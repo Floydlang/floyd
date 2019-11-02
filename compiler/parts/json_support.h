@@ -357,7 +357,7 @@ struct pretty_t {
 	int _max_column_chars;
 	int _tab_char_setting;
 };
-std::string json_to_pretty_string(const json_t& value, int pos, const pretty_t& pretty);
+std::string json_to_pretty_string(const json_t& value, int indent, const pretty_t& pretty);
 
 
 ////////////////////////////////////////		HELPERS

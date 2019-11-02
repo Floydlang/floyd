@@ -20,10 +20,12 @@
 
 namespace floyd {
 
+#define DEBUG_STATEMENT_DEBUG_STRING 0
+
 struct statement_t;
 struct expression_t;
 
-json_t statement_to_json(const statement_t& e);
+json_t statement_to_json(const types_t& types, const statement_t& e);
 
 
 ////////////////////////////////////////		statement_opcode_t
@@ -59,93 +61,111 @@ namespace statement_opcode_t {
 //////////////////////////////////////		symbol_t
 
 /*
-	This is an entry in the symbol table, kept for each environment/stack frame.
-	When you make a local variable it gets an entry in symbol table, with a type and name but no value. Like a reservered slot.
-	You can also add precalculated constants directly to the symbol table.
+	This is an entry in the symbol table.
+	There is one symbol table for globals and one for each stack frame, like function body, inside an if-body etc.
 
-
-	# Function values
-	These are stored as local variable reservations of correct function-signature-type. They are inited
-	during execution, not const-values in symbol table.
-
-	Function calls needs to evaluate callee expression.
-	??? TODO: make functions const-values when possible.
-
-
-	# Structs
-	Struct-types are stored in symbol table as precalculated values. Struct instances are not.
-
-	struct pixel_t { int red; int green; int blue; }
-
-	- needs to become a precalculated symbol called "pixel_t" so print(pixel_t) etc works.
-	- pixel_t variable =
-		type: typeid_t = struct{ int red; int green; int blue; }
-		const: value_t::typeid_value =
+	Variable slot: When you make a local variable it gets an entry in symbol table, with a type and name but no value. Like a reservered slot.
+	Preinit: You can also add precalculated constants directly to the symbol table. Only works for some basic types right now.
 */
 
 struct symbol_t {
-	enum class mutable_mode {
-		immutable,
-		mutable1
+	enum class symbol_type {
+		immutable_reserve,
+		immutable_arg,
+		immutable_precalc,
+		named_type,
+		mutable_reserve
 	};
 
 	bool operator==(const symbol_t& other) const {
 		return true
-			&& _mutable_mode == other._mutable_mode
+			&& _symbol_type == other._symbol_type
 			&& _value_type == other._value_type
 			&& _init == other._init
 			;
 	}
 
 	public: bool check_invariant() const {
-		QUARK_ASSERT(_init.is_undefined() || _init.get_type() == _value_type);
+		if(_symbol_type == symbol_type::immutable_reserve){
+//			QUARK_ASSERT(is_empty(_value_type) == false);
+			QUARK_ASSERT(_init.is_undefined());
+		}
+		else if(_symbol_type == symbol_type::immutable_arg){
+//			QUARK_ASSERT(is_empty(_value_type) == false);
+			QUARK_ASSERT(_init.is_undefined());
+		}
+		else if(_symbol_type == symbol_type::immutable_precalc){
+//			QUARK_ASSERT(is_empty(_value_type) == false);
+			QUARK_ASSERT(_init.is_undefined() == false);
+		}
+		else if(_symbol_type == symbol_type::named_type){
+//			QUARK_ASSERT(is_empty(_value_type) == false);
+			QUARK_ASSERT(_init.is_undefined());
+		}
+		else if(_symbol_type == symbol_type::mutable_reserve){
+//			QUARK_ASSERT(is_empty(_value_type) == false);
+			QUARK_ASSERT(_init.is_undefined());
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
 		return true;
 	}
 
-	public: symbol_t(mutable_mode mutable_mode, const floyd::typeid_t& value_type, const floyd::value_t& init_value) :
-		_mutable_mode(mutable_mode),
+	public: symbol_t(symbol_type symbol_type, const type_t& value_type, const value_t& init_value) :
+		_symbol_type(symbol_type),
 		_value_type(value_type),
 		_init(init_value)
 	{
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: floyd::typeid_t get_type() const {
+	public: type_t get_value_type() const {
 		QUARK_ASSERT(check_invariant());
 
 		return _value_type;
 	}
 
-	public: static symbol_t make_immutable_reserve(const floyd::typeid_t& value_type){
-		return symbol_t{ mutable_mode::immutable, value_type, {} };
+	public: static symbol_t make_immutable_reserve(const type_t& value_type){
+		return symbol_t{ symbol_type::immutable_reserve, value_type, {} };
 	}
 
-	public: static symbol_t make_immutable_arg(const floyd::typeid_t& value_type){
-		return symbol_t{ mutable_mode::immutable, value_type, {} };
+	public: static symbol_t make_immutable_arg(const type_t& value_type){
+		return symbol_t{ symbol_type::immutable_arg, value_type, {} };
 	}
 
 	//??? Mutable could support init-value too!?
-	public: static symbol_t make_mutable(const floyd::typeid_t& value_type){
-		return symbol_t{ mutable_mode::mutable1, value_type, {} };
+	public: static symbol_t make_mutable(const type_t& value_type){
+		return symbol_t{ symbol_type::mutable_reserve, value_type, {} };
 	}
 
-	public: static symbol_t make_immutable_precalc(const floyd::value_t& init_value){
-		QUARK_ASSERT(is_floyd_literal(init_value.get_type()));
+	public: static symbol_t make_immutable_precalc(const type_t& value_type, const value_t& init_value){
+//		QUARK_ASSERT(is_floyd_literal(init_value.get_type()));
 
-		return symbol_t{ mutable_mode::immutable, init_value.get_type(), init_value };
+		return symbol_t{ symbol_type::immutable_precalc, value_type, init_value };
 	}
+
+
+	public: static symbol_t make_named_type(const type_t& name){
+		return symbol_t{ symbol_type::named_type, name, value_t::make_undefined() };
+	}
+
 
 
 	//////////////////////////////////////		STATE
-	mutable_mode _mutable_mode;
-	floyd::typeid_t _value_type;
+	symbol_type _symbol_type;
+	type_t _value_type;
 
 	//	If there is no initialization value, this member must be value_t::make_undefined();
-	floyd::value_t _init;
+	value_t _init;
 };
 
-symbol_t make_type_symbol(const floyd::typeid_t& t);
-std::string symbol_to_string(const symbol_t& symbol);
+inline bool is_mutable(const symbol_t& s){
+	return s._symbol_type == symbol_t::symbol_type::mutable_reserve;
+}
+
+
+std::string symbol_to_string(const types_t& types, const symbol_t& symbol);
 
 
 
@@ -165,11 +185,11 @@ struct symbol_table_t {
 	public: std::vector<std::pair<std::string, symbol_t>> _symbols;
 };
 
-const floyd::symbol_t* find_symbol(const symbol_table_t& symbol_table, const std::string& name);
-const floyd::symbol_t& find_symbol_required(const symbol_table_t& symbol_table, const std::string& name);
+const symbol_t* find_symbol(const symbol_table_t& symbol_table, const std::string& name);
+const symbol_t& find_symbol_required(const symbol_table_t& symbol_table, const std::string& name);
 
-std::vector<json_t> symbols_to_json(const symbol_table_t& symbols);
-symbol_table_t ast_json_to_symbols(const json_t& p);
+std::vector<json_t> symbols_to_json(const types_t& types, const symbol_table_t& symbols);
+symbol_table_t ast_json_to_symbols(types_t& types, const json_t& p);
 
 
 
@@ -204,8 +224,8 @@ struct body_t {
 bool operator==(const body_t& lhs, const body_t& rhs);
 
 
-json_t body_to_json(const body_t& e);
-body_t json_to_body(const json_t& json);
+json_t body_to_json(const types_t& types, const body_t& e);
+body_t json_to_body(types_t& types, const json_t& json);
 
 
 
@@ -254,11 +274,11 @@ struct statement_t {
 		}
 
 		std::string _new_local_name;
-		typeid_t _bindtype;
+		type_t _bindtype;
 		expression_t _expression;
 		mutable_mode _locals_mutable_mode;
 	};
-	public: static statement_t make__bind_local(const location_t& location, const std::string& new_local_name, const typeid_t& bindtype, const expression_t& expression, bind_local_t::mutable_mode locals_mutable_mode){
+	public: static statement_t make__bind_local(const location_t& location, const std::string& new_local_name, const type_t& bindtype, const expression_t& expression, bind_local_t::mutable_mode locals_mutable_mode){
 		return statement_t(location, { bind_local_t{ new_local_name, bindtype, expression, locals_mutable_mode } });
 	}
 
@@ -292,11 +312,11 @@ struct statement_t {
 				&& _expression == other._expression;
 		}
 
-		variable_address_t _dest_variable;
+		symbol_pos_t _dest_variable;
 		expression_t _expression;
 	};
 
-	public: static statement_t make__assign2(const location_t& location, const variable_address_t& dest_variable, const expression_t& expression){
+	public: static statement_t make__assign2(const location_t& location, const symbol_pos_t& dest_variable, const expression_t& expression){
 		return statement_t(location, { assign2_t{ dest_variable, expression} });
 	}
 
@@ -312,11 +332,11 @@ struct statement_t {
 				&& _expression == other._expression;
 		}
 
-		variable_address_t _dest_variable;
+		symbol_pos_t _dest_variable;
 		expression_t _expression;
 	};
 
-	public: static statement_t make__init2(const location_t& location, const variable_address_t& dest_variable, const expression_t& expression){
+	public: static statement_t make__init2(const location_t& location, const symbol_pos_t& dest_variable, const expression_t& expression){
 		return statement_t(location, { init2_t{ dest_variable, expression} });
 	}
 
@@ -517,18 +537,17 @@ struct statement_t {
 		benchmark_def_statement_t
 	> statement_variant_t;
 
-	statement_t(const location_t& location, const statement_variant_t& contents) :
-#if DEBUG_DEEP
+	statement_t(/*const types_t& types,*/ const location_t& location, const statement_variant_t& contents) :
+#if DEBUG_STATEMENT_DEBUG_STRING
 		debug_string(""),
 #endif
 		location(location),
 		_contents(contents)
 	{
-		const auto json = statement_to_json(*this);
-#if DEBUG_DEEP
+#if DEBUG_STATEMENT_DEBUG_STRING
+		const auto json = statement_to_json(types, *this);
 		debug_string = json_to_compact_string(json);
 #endif
-
 	}
 
 	bool check_invariant() const {
@@ -538,7 +557,7 @@ struct statement_t {
 
 	//////////////////////////////////////		STATE
 
-#if DEBUG_DEEP
+#if DEBUG_STATEMENT_DEBUG_STRING
 	std::string debug_string;
 #endif
 	location_t location;
@@ -550,8 +569,8 @@ static bool operator==(const statement_t& lhs, const statement_t& rhs){
 }
 
 
-const std::vector<statement_t> ast_json_to_statements(const json_t& p);
-json_t statement_to_json(const statement_t& e);
+const std::vector<statement_t> ast_json_to_statements(types_t& types, const json_t& p);
+json_t statement_to_json(const types_t& types, const statement_t& e);
 
 
 

@@ -187,25 +187,25 @@ uint32_t unpack_vlq__verified(const uint8_t data[]){
 }
 
 QUARK_TEST("variable_length_quantity", "pack_vlq()", "", ""){
-	QUARK_UT_VERIFY(unpack_vlq__verified(&test_data[0].second[0]) == test_data[0].first);
-	QUARK_UT_VERIFY(unpack_vlq__verified(&test_data[1].second[0]) == test_data[1].first);
-	QUARK_UT_VERIFY(unpack_vlq__verified(&test_data[2].second[0]) == test_data[2].first);
+	QUARK_VERIFY(unpack_vlq__verified(&test_data[0].second[0]) == test_data[0].first);
+	QUARK_VERIFY(unpack_vlq__verified(&test_data[1].second[0]) == test_data[1].first);
+	QUARK_VERIFY(unpack_vlq__verified(&test_data[2].second[0]) == test_data[2].first);
 
-	QUARK_UT_VERIFY(unpack_vlq__verified(&test_data[3].second[0]) == test_data[3].first);
-	QUARK_UT_VERIFY(unpack_vlq__verified(&test_data[4].second[0]) == test_data[4].first);
-	QUARK_UT_VERIFY(unpack_vlq__verified(&test_data[5].second[0]) == test_data[5].first);
+	QUARK_VERIFY(unpack_vlq__verified(&test_data[3].second[0]) == test_data[3].first);
+	QUARK_VERIFY(unpack_vlq__verified(&test_data[4].second[0]) == test_data[4].first);
+	QUARK_VERIFY(unpack_vlq__verified(&test_data[5].second[0]) == test_data[5].first);
 
-	QUARK_UT_VERIFY(unpack_vlq__verified(&test_data[6].second[0]) == test_data[6].first);
-	QUARK_UT_VERIFY(unpack_vlq__verified(&test_data[7].second[0]) == test_data[7].first);
-	QUARK_UT_VERIFY(unpack_vlq__verified(&test_data[8].second[0]) == test_data[8].first);
+	QUARK_VERIFY(unpack_vlq__verified(&test_data[6].second[0]) == test_data[6].first);
+	QUARK_VERIFY(unpack_vlq__verified(&test_data[7].second[0]) == test_data[7].first);
+	QUARK_VERIFY(unpack_vlq__verified(&test_data[8].second[0]) == test_data[8].first);
 
-	QUARK_UT_VERIFY(unpack_vlq__verified(&test_data[9].second[0]) == test_data[9].first);
-	QUARK_UT_VERIFY(unpack_vlq__verified(&test_data[10].second[0]) == test_data[10].first);
-	QUARK_UT_VERIFY(unpack_vlq__verified(&test_data[11].second[0]) == test_data[11].first);
+	QUARK_VERIFY(unpack_vlq__verified(&test_data[9].second[0]) == test_data[9].first);
+	QUARK_VERIFY(unpack_vlq__verified(&test_data[10].second[0]) == test_data[10].first);
+	QUARK_VERIFY(unpack_vlq__verified(&test_data[11].second[0]) == test_data[11].first);
 }
 
 
 QUARK_TEST("variable_length_quantity", "unpack_vlq()", "", ""){
-	QUARK_UT_VERIFY(pack_vlq__verified(test_data[0].first) == test_data[0].second);
+	QUARK_VERIFY(pack_vlq__verified(test_data[0].first) == test_data[0].second);
 }
 

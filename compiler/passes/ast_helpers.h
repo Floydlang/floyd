@@ -19,25 +19,33 @@ struct function_definition_t;
 struct expression_t;
 struct statement_t;
 struct body_t;
-struct typeid_t;
-struct struct_definition_t;
+struct type_t;
+struct ast_type_t;
+struct types_t;
+struct struct_type_desc_t;
 
-bool check_types_resolved(const expression_t& e);
-bool check_types_resolved(const std::vector<expression_t>& expressions);
+/*
+	All types can be resolved in types (or defect)
+	Interned types are fully defined = all their types and subtypes are OK (undefined or identifer not allowed).
+*/
 
-bool check_types_resolved(const function_definition_t& def);
+bool check_types_resolved(const types_t& types, const expression_t& e);
+bool check_types_resolved(const types_t& types, const std::vector<expression_t>& expressions);
 
-bool check_types_resolved(const body_t& body);
+bool check_types_resolved(const types_t& types, const function_definition_t& def);
 
-bool check_types_resolved(const statement_t& s);
-bool check_types_resolved(const std::vector<std::shared_ptr<statement_t>>& s);
+bool check_types_resolved(const types_t& types, const body_t& body);
 
-bool check_types_resolved(const struct_definition_t& s);
-bool check_types_resolved_int(const std::vector<typeid_t>& elements);
-bool check_types_resolved(const typeid_t& t);
+bool check_types_resolved(const types_t& types, const statement_t& s);
+bool check_types_resolved(const types_t& types, const std::vector<std::shared_ptr<statement_t>>& s);
 
+bool check_types_resolved(const types_t& types, const struct_type_desc_t& s);
+bool check_types_resolved(const types_t& types, const type_t& t);
+
+bool check_types_resolved(const types_t& types);
 bool check_types_resolved(const general_purpose_ast_t& ast);
 
+bool check_types_resolved__type_vector(const types_t& types, const std::vector<type_t>& elements);
 
 
 }	//	floyd

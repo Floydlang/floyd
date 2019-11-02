@@ -24,11 +24,11 @@
 
 namespace floyd {
 
-struct typeid_t;
-struct member_t;
 struct value_t;
+struct type_t;
 struct location_t;
-
+struct member_t;
+struct types_t;
 
 namespace parser {
 
@@ -50,12 +50,6 @@ bool is_whitespace(char ch);
 
 ////////////////////////////////		BALANCING PARANTHESES, BRACKETS
 
-/*
-	First char is the start char, like '(' or '{'.
-	Checks *all* balancing-chars
-	Is recursive and not just checking intermediate chars, also pair match them.
-*/
-std::pair<std::string, seq_t> get_balanced(const seq_t& s);
 
 /*
 	()	=> ""
@@ -97,15 +91,15 @@ std::pair<std::string, seq_t> read_required_identifier(const seq_t& s);
 
 ////////////////////////////////		TYPES
 /*
-??? move this out of this file -- parser should not know about typeid_t.
+??? move this out of this file -- parser should not know about type_t.
 	Skip leading whitespace, get string while type-char.
 	See language reference
 	Validates that this is a legal string, with legal characters. Exception.
 	Does NOT make sure this a known type-identifier.
 	String must not be empty.
 */
-std::pair<std::shared_ptr<typeid_t>, seq_t> read_type(const seq_t& s);
-std::pair<typeid_t, seq_t> read_required_type(const seq_t& s);
+std::pair<std::shared_ptr<type_t>, seq_t> read_type(types_t& types, const seq_t& s);
+std::pair<type_t, seq_t> read_required_type(types_t& types, const seq_t& s);
 
 
 ////////////////////////////////		HIGH LEVEL
@@ -126,10 +120,10 @@ std::pair<typeid_t, seq_t> read_required_type(const seq_t& s);
 
 	(int, int)
 */
-std::pair<std::vector<member_t>, seq_t> read_functiondef_arg_parantheses(const seq_t& s);
+std::pair<std::vector<member_t>, seq_t> read_functiondef_arg_parantheses(types_t& types, const seq_t& s);
 
 //	Member names may be left blank.
-std::pair<std::vector<member_t>, seq_t> read_function_type_args(const seq_t& s);
+std::pair<std::vector<member_t>, seq_t> read_function_type_args(types_t& types, const seq_t& s);
 
 std::pair<std::vector<member_t>, seq_t> read_call_args(const seq_t& s);
 
