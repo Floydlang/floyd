@@ -4286,7 +4286,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Test lexical scopes for named st
 }
 
 
-//??? try using the same type in several blocks inside one function
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "Test lexical scopes for named struct types", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -4307,6 +4306,70 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Test lexical scopes for named st
 
 		)",
 		{ "{a=13}", "{b=14}" }
+	);
+}
+
+//??? Block naming struct members 3 etc.
+
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "Use the same type in several blocks inside one function", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			struct T { int a }
+
+
+			let g = T(300)
+
+			func void f(T p, bool first){
+				struct T { int b }
+
+				let p2 = T(14)
+
+				print(g)
+				print(p)
+				print(p2)
+
+				if(first){
+					struct T { int c }
+					print(g)
+					print(p)
+					print(p2)
+					print(T(15))
+				}
+				else{
+					print(g)
+					print(p)
+
+					//	This time, define the type in the middle of the block.
+					struct T { int d }
+
+					print(p2)
+					print(T(16))
+				}
+			}
+
+			f(T(100), true)
+			f(T(200), false)
+
+		)",
+		{
+			"{a=300}",
+			"{a=100}",
+			"{b=14}",
+			"{a=300}",
+			"{a=100}",
+			"{b=14}",
+			"{c=15}",
+
+			"{a=300}",
+			"{a=200}",
+			"{b=14}",
+			"{a=300}",
+			"{a=200}",
+			"{b=14}",
+			"{d=16}"
+		}
 	);
 }
 
