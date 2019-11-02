@@ -63,6 +63,18 @@ struct action_result_t {
 // FEATURES
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
+	root: []
+	forest: [ "room", "forest" ]
+	chest: [ "room", "forest", "inside", "chest" ]
+	sword: [ "room", "forest", "inside", "chest", "inside", "sword" ]
+*/
+
+struct node_path_t {
+	[string] node
+}
+
+
 
 
 func object_pos_t reach_object_in_room(world_t world, string from_room_id, string object_key){
