@@ -89,6 +89,12 @@ std::pair<std::string, seq_t> read_identifier(const seq_t& s);
 std::pair<std::string, seq_t> read_required_identifier(const seq_t& s);
 
 
+////////////////////////////////		STRUCT
+
+
+std::pair<json_t, seq_t> parse_struct_definition_body(types_t& types, const seq_t& p, const std::string& name, const location_t& location);
+
+
 ////////////////////////////////		TYPES
 /*
 ??? move this out of this file -- parser should not know about type_t.

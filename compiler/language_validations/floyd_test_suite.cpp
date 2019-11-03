@@ -4238,32 +4238,69 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Test struct name-equivalence", "
 	);
 }
 
-#if 0
-??? Not yet support for struct expressions
 
-FLOYD_LANG_PROOF("Floyd test suite", "struct", "Test struct name-equivalence", ""){
+
+
+
+
+
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "Unnamed struct expressions", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
 
-			struct pixel1_t { int a }
-			struct pixel2_t { int b }
-			let p3 = struct { int c }
-
-			print(pixel1_t)
-			print(pixel2_t)
-			print(typeof(p3))
+			let a = struct { string name; int age }("Bob", 62)
+			print(a)
 
 		)",
 		{
-			"struct {int a;}",
-			"struct {int b;}",
-			"struct {int c;}"
+			R"___({name="Bob", age=62})___"
 		}
 	);
 }
 
+#if 0
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "Unnamed struct expressions", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func struct { string message; int err } open(string path){
+				return struct { string message; int err }("File not found", -4)
+			}
+
+			print(f("test"))
+
+		)",
+		{
+			R"___({message="File not found", err=-4})___"
+		}
+	);
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "Unnamed struct expressions", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			struct node_t {
+				int count
+				[struct { int a int b }] elements
+			}
+
+			let a = node_t(10, [struct { int a int b}(100, 1000),struct { int a int b}(200, 2000) ])
+
+			print(a)
+
+		)",
+		{
+			R"___({a=42, b="yes"})___"
+		}
+	);
+}
 #endif
+
+
 
 
 

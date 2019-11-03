@@ -1266,7 +1266,10 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 	}
 
 	else if(is_first(p2, keyword_t::k_struct)){
-		throw_compiler_error(location_t(p2.pos()), "No support for struct definition expressions!");
+		const auto struct_kewword_pos = read_required_identifier(p2);
+		std::pair<json_t, seq_t> a = parse_struct_definition_body(temp, struct_kewword_pos.second, "", location_t(p2.pos()));
+//		throw_compiler_error(location_t(p2.pos()), "No support for struct definition expressions!");
+		return a;
 	}
 
 	/*

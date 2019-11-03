@@ -604,38 +604,6 @@ QUARK_TEST("", "parse_function_definition_statement()", "Min whitespace", "Corre
 //////////////////////////////////////////////////		parse_struct_definition_statement()
 
 
-static std::pair<json_t, seq_t>  parse_struct_definition_body(types_t& types, const seq_t& p, const std::string& name, const location_t& location){
-	const auto s2 = skip_whitespace(p);
-	const auto start = s2;
-	auto pos = read_required_char(s2, '{');
-	std::vector<member_t> members;
-	while(!pos.empty() && pos.first() != "}"){
-		const auto member_type = read_required_type(types, pos);
-		const auto member_name = read_required_identifier(member_type.second);
-		members.push_back(member_t { member_type.first, member_name.first } );
-		pos = read_optional_char(skip_whitespace(member_name.second), ';').second;
-		pos = skip_whitespace(pos);
-	}
-	pos = read_required(pos, "}");
-
-	const auto struct_def_expr = make_parser_node(
-		location_t(k_no_location),
-		parse_tree_expression_opcode_t::k_struct_def,
-		{
-			name,
-			members_to_json(types, members)
-		}
-	);
-
-	const auto s = make_parser_node(
-		location_t(start.pos()),
-		parse_tree_statement_opcode::k_expression_statement,
-		{
-			struct_def_expr
-		}
-	);
-	return { s, pos };
-}
 
 std::pair<json_t, seq_t>  parse_struct_definition_statement(const seq_t& pos0){
 	types_t types;
@@ -646,8 +614,17 @@ std::pair<json_t, seq_t>  parse_struct_definition_statement(const seq_t& pos0){
 	const auto location = location_t(pos0.pos());
 
 	const auto s2 = skip_whitespace(struct_name_pos.second);
-	const auto b = parse_struct_definition_body(types, s2, struct_name_pos.first, location);
-	return b;
+	const auto struct_expr_pos = parse_struct_definition_body(types, s2, struct_name_pos.first, location);
+
+
+	const auto s = make_parser_node(
+		location_t(s2.pos()),
+		parse_tree_statement_opcode::k_expression_statement,
+		{
+			struct_expr_pos.first
+		}
+	);
+	return { s, struct_expr_pos.second };
 }
 
 

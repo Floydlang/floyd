@@ -330,6 +330,37 @@ QUARK_TEST("read_required_identifier()", "", "", ""){
 }
 
 
+//////////////////////////////////////		STRUCT
+
+
+
+std::pair<json_t, seq_t> parse_struct_definition_body(types_t& types, const seq_t& p, const std::string& name, const location_t& location){
+	const auto s2 = skip_whitespace(p);
+	const auto start = s2;
+	auto pos = read_required_char(s2, '{');
+	std::vector<member_t> members;
+	while(!pos.empty() && pos.first() != "}"){
+		const auto member_type = read_required_type(types, pos);
+		const auto member_name = read_required_identifier(member_type.second);
+		members.push_back(member_t { member_type.first, member_name.first } );
+		pos = read_optional_char(skip_whitespace(member_name.second), ';').second;
+		pos = skip_whitespace(pos);
+	}
+	pos = read_required(pos, "}");
+
+	const auto struct_def_expr = make_parser_node(
+		location_t(k_no_location),
+		parse_tree_expression_opcode_t::k_struct_def,
+		{
+			name,
+			members_to_json(types, members)
+		}
+	);
+
+	return { struct_def_expr, pos };
+}
+
+
 //////////////////////////////////////		TYPES
 
 
@@ -460,7 +491,7 @@ QUARK_TEST("", "read_function_type_args()", "", ""){
 	QUARK_VERIFY(result.second.empty());
 }
 
-static std::pair<std::shared_ptr<type_t>, seq_t> read_basic_or_vector(types_t& types, const seq_t& s){
+static std::pair<std::shared_ptr<type_t>, seq_t> parse_type(types_t& types, const seq_t& s){
 	const auto pos0 = skip_whitespace(s);
 	if(pos0.first1() == "["){
 		const auto pos2 = pos0.rest1();
@@ -495,6 +526,11 @@ static std::pair<std::shared_ptr<type_t>, seq_t> read_basic_or_vector(types_t& t
 			throw_compiler_error_nopos("unbalanced [].");
 		}
 	}
+	else if(is_first(pos0, keyword_t::k_struct)){
+		QUARK_ASSERT(false);
+		throw std::exception();
+//		seq_t read_required(const seq_t& s, const std::string& req){
+	}
 	else {
 		//	Read basic type.
 		const auto basic = read_basic_type(types, pos0);
@@ -523,7 +559,7 @@ static std::pair<std::shared_ptr<type_t>, seq_t> read_optional_trailing_function
 }
 
 std::pair<std::shared_ptr<type_t>, seq_t> read_type(types_t& types, const seq_t& s){
-	const auto type_pos = read_basic_or_vector(types, s);
+	const auto type_pos = parse_type(types, s);
 	if(type_pos.first == nullptr){
 		return type_pos;
 	}

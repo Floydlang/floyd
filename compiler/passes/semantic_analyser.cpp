@@ -2282,7 +2282,6 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 		if(callee_symbol.second._symbol_type == symbol_t::symbol_type::named_type){
 			const auto construct_value_type = get_symbol_named_type(a_acc._types, callee_symbol.second);
 
-
 			//	Convert calls to struct-type into construct-value expression.
 			if(peek2(a_acc._types, construct_value_type).is_struct()){
 				const auto construct_value_expr = expression_t::make_construct_value_expr(construct_value_type, details.args);
@@ -2300,6 +2299,20 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 		else{
 		}
 	}
+
+	else if(callee_type_peek.is_typeid()){
+		auto callee_expr_struct_def = std::get_if<expression_t::struct_definition_expr_t>(&details.callee->_expression_variant);
+		const auto construct_value_type = details.callee->get_output_type();
+
+		//	Convert calls to struct-type into construct-value expression.
+		if(callee_expr_struct_def){
+			const auto construct_value_expr = expression_t::make_construct_value_expr(construct_value_type, details.args);
+			const auto result_pair = analyse_expression_to_target(a_acc, parent, construct_value_expr, construct_value_type);
+			return { result_pair.first, result_pair.second };
+		}
+	}
+
+
 
 	{
 		std::stringstream what;
@@ -2329,36 +2342,53 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 	auto a_acc = a;
 
 	const std::string identifier = details.name;
+	if(identifier != ""){
+		// Add symbol for the new struct, with undefined type. Later update with final type.
+		if(does_symbol_exist_shallow(a_acc, identifier)){
+			throw_local_identifier_already_exists(parent.location, identifier);
+		}
 
-	// Add symbol for the new struct, with undefined type. Later update with final type.
-	if(does_symbol_exist_shallow(a_acc, identifier)){
-		throw_local_identifier_already_exists(parent.location, identifier);
-	}
+		const auto name = generate_type_name(a_acc, identifier);
+		const auto named_type = make_named_type(a_acc._types, name, make_undefined());
 
-	const auto name = generate_type_name(a_acc, identifier);
-	const auto named_type = make_named_type(a_acc._types, name, make_undefined());
-
-	const auto type_name_symbol = symbol_t::make_named_type(named_type);
-	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ identifier, type_name_symbol });
+		const auto type_name_symbol = symbol_t::make_named_type(named_type);
+		a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ identifier, type_name_symbol });
 
 
-	std::vector<member_t> members2;
-	for(const auto& m: details.def->_members){
-		members2.push_back(member_t{ resolve_symbols(a_acc, parent.location, m._type), m._name } );
-	}
-	const auto struct_type1 = make_struct(a_acc._types, struct_type_desc_t{ members2 } );
+		std::vector<member_t> members2;
+		for(const auto& m: details.def->_members){
+			members2.push_back(member_t{ resolve_symbols(a_acc, parent.location, m._type), m._name } );
+		}
+		const auto struct_type1 = make_struct(a_acc._types, struct_type_desc_t{ members2 } );
 
-	//	Update our temporary.
-	const auto named_type2 = update_named_type(a_acc._types, named_type, struct_type1);
+		//	Update our temporary.
+		const auto named_type2 = update_named_type(a_acc._types, named_type, struct_type1);
 
-	const auto typeid_value = value_t::make_typeid_value(named_type2);
-	const auto r = expression_t::make_literal(typeid_value, type_desc_t::make_typeid());
+		const auto typeid_value = value_t::make_typeid_value(named_type2);
+		const auto r = expression_t::make_literal(typeid_value, type_desc_t::make_typeid());
 
 #if DEBUG
-	if(false) trace_analyser(a_acc);
+		if(false) trace_analyser(a_acc);
 #endif
 
-	return { a_acc, r };
+		return { a_acc, r };
+	}
+	else{
+		std::vector<member_t> members2;
+		for(const auto& m: details.def->_members){
+			members2.push_back(member_t{ resolve_symbols(a_acc, parent.location, m._type), m._name } );
+		}
+		const auto struct_type1 = make_struct(a_acc._types, struct_type_desc_t{ members2 } );
+
+		const auto typeid_value = value_t::make_typeid_value(struct_type1);
+		const auto r = expression_t::make_literal(typeid_value, type_desc_t::make_typeid());
+
+#if DEBUG
+		if(false) trace_analyser(a_acc);
+#endif
+
+		return { a_acc, r };
+	}
 }
 
 

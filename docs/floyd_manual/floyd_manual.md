@@ -66,6 +66,7 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 		- [VECTOR CONSTRUCTOR](#vector-constructor)
 		- [DICTIONARY CONSTRUCTOR](#dictionary-constructor)
 		- [FUNCTION CALL](#function-call)
+		- [STRUCT DEFINITION EXPRESSION](#struct-definition-expression)
 		- [ARITHMETIC OPERATORS](#arithmetic-operators)
 		- [RELATIONAL OPERATORS](#relational-operators)
 		- [LOGICAL OPERATORS](#logical-operators)
@@ -2244,16 +2245,30 @@ Read more in the vector data type text.
 This lets you create a new dictionary value anywhere an expression can be typed. This expression supports non-constant elements of the constructor.
 Read more in the dictionary data type text.
 
+
 <a id="function-call"></a>
 ### FUNCTION CALL
 
 ```
-	let a = make_friendly_message("Lana")
+let a = make_friendly_message("Lana")
 ```
 
 Anywhere an expression can be put, so can a function call be put. Notice that the function value itself can also be an expression, so can each of its arguments.
 
 
+
+<a id="struct-definition-expression"></a>
+### STRUCT DEFINITION EXPRESSION
+
+This makes a new unnamed type on the fly. The type uses structual equivalence with other unnamed types. It never matches a named struct with the same members. Use the struct definition-statement to create named structs.
+
+```
+let a = struct { string name, int age }("Bob", 62)
+
+func struct { string message, int err } open(string path){
+	return struct { string message, int err }("File not found", -4)
+}
+```
 
 <a id="arithmetic-operators"></a>
 ### ARITHMETIC OPERATORS
@@ -2463,7 +2478,7 @@ struct my_struct_t {
 | struct pixel { int red int green int blue }		|
 | struct pixel { int red = 255 int green = 255 int blue = 255 }|
 
-
+This always results in a named struct that uses name-equivalence. The struct is not compatible or equivalent with another struct with the same members.
 
 
 
