@@ -330,11 +330,12 @@ QUARK_TEST("read_required_identifier()", "", "", ""){
 }
 
 
+
 //////////////////////////////////////		STRUCT
 
 
 
-std::pair<json_t, seq_t> parse_struct_definition_body(types_t& types, const seq_t& p, const std::string& name, const location_t& location){
+static std::pair<struct_type_desc_t, seq_t> parse_struct_def_body(types_t& types, const seq_t& p, const location_t& location){
 	const auto s2 = skip_whitespace(p);
 	const auto start = s2;
 	auto pos = read_required_char(s2, '{');
@@ -348,17 +349,43 @@ std::pair<json_t, seq_t> parse_struct_definition_body(types_t& types, const seq_
 	}
 	pos = read_required(pos, "}");
 
+	type_t make_struct(types_t& types, const struct_type_desc_t& desc);
+
+	return { struct_type_desc_t(members), pos };
+}
+
+
+std::pair<json_t, seq_t> parse_struct_definition_body(types_t& types, const seq_t& p, const std::string& name, const location_t& location){
+	const auto a = parse_struct_def_body(types, p, location);
+
 	const auto struct_def_expr = make_parser_node(
 		location_t(k_no_location),
 		parse_tree_expression_opcode_t::k_struct_def,
 		{
 			name,
-			members_to_json(types, members)
+			members_to_json(types, a.first._members)
 		}
 	);
 
-	return { struct_def_expr, pos };
+	return { struct_def_expr, a.second };
 }
+
+std::pair<json_t, seq_t> parse_unnamed_struct_type_def(types_t& types, const seq_t& p2){
+	QUARK_ASSERT(is_first(p2, keyword_t::k_struct));
+
+	const auto struct_keyword_pos = read_required(p2, keyword_t::k_struct);
+	std::pair<json_t, seq_t> a = parse_struct_definition_body(
+		types,
+		struct_keyword_pos,
+		"",
+		location_t(p2.pos())
+	);
+	return a;
+}
+
+
+
+
 
 
 //////////////////////////////////////		TYPES
@@ -491,6 +518,7 @@ QUARK_TEST("", "read_function_type_args()", "", ""){
 	QUARK_VERIFY(result.second.empty());
 }
 
+//??? shared_ptr<> is used to do optional return.
 static std::pair<std::shared_ptr<type_t>, seq_t> parse_type(types_t& types, const seq_t& s){
 	const auto pos0 = skip_whitespace(s);
 	if(pos0.first1() == "["){
@@ -527,9 +555,9 @@ static std::pair<std::shared_ptr<type_t>, seq_t> parse_type(types_t& types, cons
 		}
 	}
 	else if(is_first(pos0, keyword_t::k_struct)){
-		QUARK_ASSERT(false);
-		throw std::exception();
-//		seq_t read_required(const seq_t& s, const std::string& req){
+		const auto struct_keyword_pos = read_required(pos0, keyword_t::k_struct);
+		std::pair<struct_type_desc_t, seq_t> a = parse_struct_def_body(types, struct_keyword_pos, location_t(pos0.pos()));
+		return { std::make_shared<type_t>(make_struct(types, a.first)), a.second };
 	}
 	else {
 		//	Read basic type.

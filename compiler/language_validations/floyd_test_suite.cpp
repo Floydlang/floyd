@@ -4244,7 +4244,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Test struct name-equivalence", "
 
 
 
-FLOYD_LANG_PROOF("Floyd test suite", "struct", "Unnamed struct expressions", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "Unnamed struct", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -4259,8 +4259,20 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Unnamed struct expressions", "")
 	);
 }
 
-#if 0
-FLOYD_LANG_PROOF("Floyd test suite", "struct", "Unnamed struct expressions", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "Unnamed struct", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func struct { string name; int age } f()
+
+		)",
+		{
+		}
+	);
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "Unnamed struct", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -4269,7 +4281,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Unnamed struct expressions", "")
 				return struct { string message; int err }("File not found", -4)
 			}
 
-			print(f("test"))
+			print(open("test"))
 
 		)",
 		{
@@ -4278,7 +4290,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Unnamed struct expressions", "")
 	);
 }
 
-FLOYD_LANG_PROOF("Floyd test suite", "struct", "Unnamed struct expressions", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "Unnamed struct", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -4294,13 +4306,30 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Unnamed struct expressions", "")
 
 		)",
 		{
-			R"___({a=42, b="yes"})___"
+			R"___({count=10, elements=[{a=100, b=1000}, {a=200, b=2000}]})___"
 		}
 	);
 }
+
+
+#if 0
+//??? more advanced infererence -- very concenient.
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "Unnamed struct", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let struct { string name; int age } a = ("Bob", 62)
+			print(a)
+
+		)",
+		{
+			R"___({name="Bob", age=62})___"
+		}
+	);
+}
+
 #endif
-
-
 
 
 
