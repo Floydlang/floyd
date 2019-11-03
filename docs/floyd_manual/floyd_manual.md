@@ -66,7 +66,6 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 		- [VECTOR CONSTRUCTOR](#vector-constructor)
 		- [DICTIONARY CONSTRUCTOR](#dictionary-constructor)
 		- [FUNCTION CALL](#function-call)
-		- [STRUCT DEFINITION EXPRESSION](#struct-definition-expression)
 		- [ARITHMETIC OPERATORS](#arithmetic-operators)
 		- [RELATIONAL OPERATORS](#relational-operators)
 		- [LOGICAL OPERATORS](#logical-operators)
@@ -461,7 +460,7 @@ You copy dictionaries using = and all comparison expressions work, just like wit
 <a id="112-struct"></a>
 ## 1.12 STRUCT
 
-Structs are the central building block for composing data in Floyd. They are used in place of classes in other programming languages. Structs are always values and immutable. They are very fast and compact: behind the curtains copied structs shares state between them, even when partially modified.
+Structs are the central building block for composing data in Floyd. They are used in place of classes in other programming languages. Structs are alway use value-semantics and are immutable. They are very fast and compact: behind the curtains copied structs shares state between them, even when partially modified.
 
 Every struct type automatically gets a constructor function with the same name. It is the only function that can create a value of the struct. Its arguments match the struct's members.
 
@@ -472,7 +471,7 @@ All comparison operators: == != < > <= >= always work.
 There is no concept of pointers or references or shared structs so there are no problems with aliasing or side effects caused by several clients modifying the same struct.
 
 
-Example:
+##### Example:
 
 ```
 //	Make simple, ready-for use struct.
@@ -497,7 +496,7 @@ assert(c > a)
 ```
 
 
-UPDATE()
+##### UPDATE()
 
 let b = update(a, member, value)
 
@@ -1973,14 +1972,14 @@ assert(exists({ "a": 1, "b": 2, "c": 3 }, "f")	== false)
 <a id="struct"></a>
 ### STRUCT
 
-Structs are aggregate types. The members have name and type. They replace struct and class of other languages. Structs are always values and immutable. They are very fast and compact: behind the curtains copied structs shares state between them, even when partially modified.
+Structs are aggregate types. The members have name and type. They replace objects and class of other languages. Structs are always values and immutable. They are very fast and compact: behind the curtains copied structs shares state between them, even when partially modified.
 
 A struct type automatically gets a construction function with the same name as the struct. This is the only function that can create a value of the struct from scratch. It's arguments match the struct members and are in the order they are listed in the struct definition.
 
 There are no destructors.
 Comparison operators: == != < > <= >= (this allows sorting too) automatically works for every struct.
 
-NOT POSSIBLE:
+##### NOT POSSIBLE
 
 - You cannot make constructors. There is only *one* way to initialize the members, via the constructor, which always takes *all* members
 - There is no way to directly initialize a member when defining the struct.
@@ -1988,8 +1987,15 @@ NOT POSSIBLE:
 - If you want a default constructor, implement one yourself: ```func rect make_zero_rect(){ return rect(0, 0) }```.
 - Unlike struct in the C language, Floyd's struct has an undefined layout so you cannot use them to do byte-level mapping like you often do in C. Floyd is free to store members in any way it wants too - pack or reorder in any way.
 
+Named and unnamed structs:
 
-Example:
+There are two flavors of structs: named structs and unnamed structs.
+
+- A named structs is only compatible with itself, even if another struct has the exact same members. They need to be defined before use, using the struct definition statement.
+- Unnamed structs use structure equivalence and can be defined when you use a type, like this: ```func int get_count(struct { int start; int end } range)```
+
+
+Examples of named structs
 
 ```
 //	Make simple, ready-for use struct.
@@ -2012,6 +2018,20 @@ let b = point(10, 20)
 let c = update(b, x, 123)
 assert(c == point(123, 20))
 ```
+
+Examples of unnamed structs
+
+Next makes a new unnamed struct on the fly. The type uses structual equivalence with other unnamed types. It never matches a named struct with the same members.
+
+```
+let a = struct { string name, int age }("Bob", 62)
+
+func struct { string message, int err } open(string path){
+	return struct { string message, int err }("File not found", -4)
+}
+```
+
+
 
 
 | FEATURE  	| SIGNATURE | DESCRIPTION
@@ -2256,19 +2276,6 @@ let a = make_friendly_message("Lana")
 Anywhere an expression can be put, so can a function call be put. Notice that the function value itself can also be an expression, so can each of its arguments.
 
 
-
-<a id="struct-definition-expression"></a>
-### STRUCT DEFINITION EXPRESSION
-
-This makes a new unnamed type on the fly. The type uses structual equivalence with other unnamed types. It never matches a named struct with the same members. Use the struct definition-statement to create named structs.
-
-```
-let a = struct { string name, int age }("Bob", 62)
-
-func struct { string message, int err } open(string path){
-	return struct { string message, int err }("File not found", -4)
-}
-```
 
 <a id="arithmetic-operators"></a>
 ### ARITHMETIC OPERATORS
