@@ -1182,6 +1182,45 @@ FLOYD_LANG_PROOF("Floyd test suite", "func", "Calling function without implement
 
 
 
+FLOYD_LANG_PROOF("Floyd test suite", "Local function", "", ""){
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"(
+
+			for(i in 0 ..< 2){
+				func bool f(int def, int wanted_name){
+					return false
+				}
+
+			}
+
+		)"
+	);
+}
+
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "Local function", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func string f(int error){
+				func string f2(int error){
+					return error == 1 ? "ONE" : "NOT-ONE";
+				}
+				return "<" + f2(error) + ">"
+			}
+
+			print(f(1))
+			print(f(2))
+		)",
+		{ "<ONE>", "<NOT-ONE>" }
+	);
+}
+
+
+
+
+
 //######################################################################################################################
 //	CALL EXPRESSION
 //######################################################################################################################
@@ -6234,26 +6273,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "detect_hardware_caps()", "", ""){
 }
 
 
-
-#if 0
-??? Fails in llvm codegen. Detect in semana and give error. Or support.
-
-FLOYD_LANG_PROOF("Floyd test suite", "local function", "", ""){
-	ut_run_closed_lib(
-		QUARK_POS,
-		R"(
-
-			for(i in 0 ..< 2){
-				func bool f(int def, int wanted_name){
-					return false
-				}
-
-			}
-
-		)"
-	);
-}
-#endif
 
 FLOYD_LANG_PROOF("Floyd test suite", "make_hardware_caps_report()", "", ""){
 	ut_run_closed_lib(
