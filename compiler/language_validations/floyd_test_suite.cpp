@@ -686,8 +686,8 @@ FLOYD_LANG_PROOF("Floyd test suite", "Forgot let or mutable", "", "Exception"){
 	ut_verify_exception_nolib(QUARK_POS, "int test = 123", "[Syntax] Use 'mutable' or 'let' syntax. Line: 1 \"int test = 123\"");
 }
 
-FLOYD_LANG_PROOF("Floyd test suite", "Access variable", "Access undefined variable", "exception"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		print(a)		)", "[Semantics] Undefined variable \"a\". Line: 1 \"print(a)\"");
+FLOYD_LANG_PROOF("Floyd test suite", "Access variable", "Access Undefined identifier", "exception"){
+	ut_verify_exception_nolib(QUARK_POS, R"(		print(a)		)", "[Semantics] Undefined identifier \"a\". Line: 1 \"print(a)\"");
 }
 
 
@@ -1453,7 +1453,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Simple test-def compiles, call
 	);
 }
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "test-def", "Simple test-def compiles, call to test()", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Simple test-def compiles, call to test()", ""){
 	ut_run_closed_nolib(
 		QUARK_POS,
 		R"___(
@@ -1467,7 +1467,7 @@ FLOYD_LANG_PROOF_VIP("Floyd test suite", "test-def", "Simple test-def compiles, 
 }
 
 
-
+#if 0
 FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Simple test-def compiles", ""){
 	ut_run_closed_nolib(
 		QUARK_POS,
@@ -1478,7 +1478,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Simple test-def compiles", "")
 		)___"
 	);
 }
-
+#endif
 
 
 #if 0
@@ -6076,7 +6076,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Access benchmark registry
 					}
 					assert(result)
 				)",
-				R"___([Semantics] Undefined variable "result". Line: 6 "assert(result)")___"
+				R"___([Semantics] Undefined identifier "result". Line: 6 "assert(result)")___"
 			);
 		}
 
