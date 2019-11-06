@@ -1048,31 +1048,31 @@ Hello
 World
 )foo";
 
-	ut_verify(QUARK_POS, s1, "\nHello\nWorld\n");
+	ut_verify_string(QUARK_POS, s1, "\nHello\nWorld\n");
 
 }
 
 QUARK_TESTQ("C++11 raw string literals", ""){
 	const auto test_cpp11_raw_string_literals = R"aaa({ "firstName": "John", "lastName": "Doe" })aaa";
-	ut_verify(QUARK_POS, test_cpp11_raw_string_literals, "{ \"firstName\": \"John\", \"lastName\": \"Doe\" }");
+	ut_verify_string(QUARK_POS, test_cpp11_raw_string_literals, "{ \"firstName\": \"John\", \"lastName\": \"Doe\" }");
 }
 
 QUARK_TESTQ("C++11 raw string literals", ""){
-	ut_verify(QUARK_POS, R"aaa(["version": 2])aaa", "[\"version\": 2]");
+	ut_verify_string(QUARK_POS, R"aaa(["version": 2])aaa", "[\"version\": 2]");
 }
 
 QUARK_TESTQ("C++11 raw string literals", ""){
-	ut_verify(QUARK_POS, R"___(["version": 2])___", "[\"version\": 2]");
+	ut_verify_string(QUARK_POS, R"___(["version": 2])___", "[\"version\": 2]");
 }
 
 QUARK_TESTQ("C++11 raw string literals", ""){
-	ut_verify(QUARK_POS, R"<>(["version": 2])<>", "[\"version\": 2]");
+	ut_verify_string(QUARK_POS, R"<>(["version": 2])<>", "[\"version\": 2]");
 }
 
 
 QUARK_TESTQ("C++11 raw string literals", ""){
 	const auto test_cpp11_raw_string_literals = R"aaa({ "firstName": "John", "lastName": "Doe" })aaa";
-	ut_verify(QUARK_POS, test_cpp11_raw_string_literals, "{ \"firstName\": \"John\", \"lastName\": \"Doe\" }");
+	ut_verify_string(QUARK_POS, test_cpp11_raw_string_literals, "{ \"firstName\": \"John\", \"lastName\": \"Doe\" }");
 }
 
 
@@ -1108,7 +1108,7 @@ const string beautiful_raw_string = R"___({
 
 
 QUARK_TESTQ("erase_linefeed()", ""){
-	ut_verify(QUARK_POS, erase_linefeed("\raaa\rbbb\r"), "aaabbb");
+	ut_verify_string(QUARK_POS, erase_linefeed("\raaa\rbbb\r"), "aaabbb");
 }
 
 QUARK_TESTQ("C++11 raw string literals", ""){
@@ -1136,11 +1136,11 @@ std::string object_to_compact_string(const std::map<std::string, json_t>& object
 }
 
 QUARK_TESTQ("object_to_compact_string()", ""){
-	ut_verify(QUARK_POS, object_to_compact_string(std::map<string, json_t>{}, true), "{}");
+	ut_verify_string(QUARK_POS, object_to_compact_string(std::map<string, json_t>{}, true), "{}");
 }
 
 QUARK_TESTQ("object_to_compact_string()", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_string(QUARK_POS,
 		object_to_compact_string(std::map<string, json_t>{
 			{ "one", json_t("1") },
 			{ "two", json_t("2") }
@@ -1174,15 +1174,15 @@ std::string array_to_compact_string(const std::vector<json_t>& array, bool quote
 }
 
 QUARK_TESTQ("array_to_compact_string()", ""){
-	ut_verify(QUARK_POS, array_to_compact_string(std::vector<json_t>{}, true), "[]");
+	ut_verify_string(QUARK_POS, array_to_compact_string(std::vector<json_t>{}, true), "[]");
 }
 
 QUARK_TESTQ("array_to_compact_string()", ""){
-	ut_verify(QUARK_POS, array_to_compact_string(std::vector<json_t>{ json_t(13.4) }, true), "[13.4]");
+	ut_verify_string(QUARK_POS, array_to_compact_string(std::vector<json_t>{ json_t(13.4) }, true), "[13.4]");
 }
 
 QUARK_TESTQ("array_to_compact_string()", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_string(QUARK_POS,
 		array_to_compact_string(vector<json_t>{
 			json_t("a"),
 			json_t("b")
@@ -1233,12 +1233,12 @@ QUARK_TESTQ("json_to_compact_string()", ""){
 		{ "firstName", json_t("John") },
 		{ "lastName", json_t("Doe") }
 	};
-	ut_verify(QUARK_POS, json_to_compact_string(json_t(a)), "{ \"firstName\": \"John\", \"lastName\": \"Doe\" }");
-	ut_verify(QUARK_POS, json_to_compact_string(json_t(a)), R"aaa({ "firstName": "John", "lastName": "Doe" })aaa");
+	ut_verify_string(QUARK_POS, json_to_compact_string(json_t(a)), "{ \"firstName\": \"John\", \"lastName\": \"Doe\" }");
+	ut_verify_string(QUARK_POS, json_to_compact_string(json_t(a)), R"aaa({ "firstName": "John", "lastName": "Doe" })aaa");
 }
 
 QUARK_TESTQ("json_to_compact_string()", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_string(QUARK_POS,
 		json_to_compact_string(json_t(
 			vector<json_t>{
 				json_t("a"),

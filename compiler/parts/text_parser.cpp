@@ -101,13 +101,13 @@ std::string concat_strings_with_divider(const std::vector<std::string>& v, const
 }
 
 QUARK_TESTQ("concat_strings_with_divider()", ""){
-	ut_verify(QUARK_POS, concat_strings_with_divider({""},", "), "");
+	ut_verify_string(QUARK_POS, concat_strings_with_divider({""},", "), "");
 }
 QUARK_TESTQ("concat_strings_with_divider()", ""){
-	ut_verify(QUARK_POS, concat_strings_with_divider({"one"},", "), "one");
+	ut_verify_string(QUARK_POS, concat_strings_with_divider({"one"},", "), "one");
 }
 QUARK_TESTQ("concat_strings_with_divider()", ""){
-	ut_verify(QUARK_POS, concat_strings_with_divider({"one","two"},", "), "one, two");
+	ut_verify_string(QUARK_POS, concat_strings_with_divider({"one","two"},", "), "one, two");
 }
 
 
@@ -136,13 +136,13 @@ std::string float_to_string(float value){
 }
 
 QUARK_TESTQ("float_to_string()", ""){
-	ut_verify(QUARK_POS, float_to_string(0.0f), "0");
+	ut_verify_string(QUARK_POS, float_to_string(0.0f), "0");
 }
 QUARK_TESTQ("float_to_string()", ""){
-	ut_verify(QUARK_POS, float_to_string(13.0f), "13");
+	ut_verify_string(QUARK_POS, float_to_string(13.0f), "13");
 }
 QUARK_TESTQ("float_to_string()", ""){
-	ut_verify(QUARK_POS, float_to_string(13.5f), "13.5");
+	ut_verify_string(QUARK_POS, float_to_string(13.5f), "13.5");
 }
 
 bool is_valid_chars(const std::string& s, const std::string& valid_chars){
@@ -191,19 +191,19 @@ std::string double_to_string_simplify(double value){
 }
 
 QUARK_TESTQ("double_to_string_simplify()", ""){
-	ut_verify(QUARK_POS, double_to_string_simplify(0.0), "0");
+	ut_verify_string(QUARK_POS, double_to_string_simplify(0.0), "0");
 }
 QUARK_TESTQ("double_to_string_simplify()", ""){
-	ut_verify(QUARK_POS, double_to_string_simplify(1.0), "1");
+	ut_verify_string(QUARK_POS, double_to_string_simplify(1.0), "1");
 }
 QUARK_TESTQ("double_to_string_simplify()", ""){
-	ut_verify(QUARK_POS, double_to_string_simplify(13.0), "13");
+	ut_verify_string(QUARK_POS, double_to_string_simplify(13.0), "13");
 }
 QUARK_TESTQ("double_to_string_simplify()", ""){
-	ut_verify(QUARK_POS, double_to_string_simplify(13.5), "13.5");
+	ut_verify_string(QUARK_POS, double_to_string_simplify(13.5), "13.5");
 }
 QUARK_TEST("", "double_to_string_simplify()", "", ""){
-	ut_verify(QUARK_POS, double_to_string_simplify(1234567890.0), "1.23457e+09");
+	ut_verify_string(QUARK_POS, double_to_string_simplify(1234567890.0), "1.23457e+09");
 }
 
 
@@ -214,13 +214,13 @@ std::string double_to_string_always_decimals(double value){
 }
 
 QUARK_TESTQ("double_to_string_always_decimals()", ""){
-	ut_verify(QUARK_POS, double_to_string_always_decimals(0.0), "0.0");
+	ut_verify_string(QUARK_POS, double_to_string_always_decimals(0.0), "0.0");
 }
 QUARK_TESTQ("double_to_string_always_decimals()", ""){
-	ut_verify(QUARK_POS, double_to_string_always_decimals(13.0), "13.0");
+	ut_verify_string(QUARK_POS, double_to_string_always_decimals(13.0), "13.0");
 }
 QUARK_TESTQ("double_to_string_always_decimals()", ""){
-	ut_verify(QUARK_POS, double_to_string_always_decimals(13.5), "13.5");
+	ut_verify_string(QUARK_POS, double_to_string_always_decimals(13.5), "13.5");
 }
 
 

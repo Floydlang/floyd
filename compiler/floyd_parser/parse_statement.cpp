@@ -282,7 +282,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 	}
 	catch(const std::runtime_error& e){
 		//	Should come here.
-		ut_verify(QUARK_POS, e.what(), "Expected \'=\' character.");
+		ut_verify_string(QUARK_POS, e.what(), "Expected \'=\' character.");
 	}
 }
 
@@ -644,7 +644,7 @@ QUARK_TEST("parser", "parse_struct_definition_statement", "", ""){
 	)).first;
 
 	ut_verify_json(QUARK_POS, r.first, expected);
-	ut_verify(QUARK_POS, r.second.str(), "");
+	ut_verify_string(QUARK_POS, r.second.str(), "");
 }
 
 

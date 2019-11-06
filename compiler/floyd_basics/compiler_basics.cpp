@@ -765,7 +765,7 @@ const std::string cleanup_line_snippet(const std::string& s){
 	return line;
 }
 QUARK_TEST("", "cleanup_line_snippet()", "", ""){
-	ut_verify(QUARK_POS, cleanup_line_snippet(" \tabc\n\a"), "abc");
+	ut_verify_string(QUARK_POS, cleanup_line_snippet(" \tabc\n\a"), "abc");
 }
 
 location2_t make_loc2(const std::string& program, const std::vector<int>& lookup, const std::string& file, const location_t& loc, int line_index){

@@ -300,28 +300,28 @@ expression_t::expression_t(const expression_variant_t& contents, const type_t& o
 
 QUARK_TEST("expression_t", "expression_to_json()", "literals", ""){
 	const types_t types;
-	ut_verify(QUARK_POS, expression_to_json_string(types, expression_t::make_literal_int(13)), R"(["k", 13, "int"])");
+	ut_verify_string(QUARK_POS, expression_to_json_string(types, expression_t::make_literal_int(13)), R"(["k", 13, "int"])");
 }
 QUARK_TEST("expression", "expression_to_json()", "literals", ""){
 	const types_t types;
-	ut_verify(QUARK_POS, expression_to_json_string(types, expression_t::make_literal_string("xyz")), R"(["k", "xyz", "string"])");
+	ut_verify_string(QUARK_POS, expression_to_json_string(types, expression_t::make_literal_string("xyz")), R"(["k", "xyz", "string"])");
 }
 QUARK_TEST("expression", "expression_to_json()", "literals", ""){
 	const types_t types;
-	ut_verify(QUARK_POS, expression_to_json_string(types, expression_t::make_literal_double(14.0f)), R"(["k", 14, "double"])");
+	ut_verify_string(QUARK_POS, expression_to_json_string(types, expression_t::make_literal_double(14.0f)), R"(["k", 14, "double"])");
 }
 QUARK_TEST("expression", "expression_to_json()", "literals", ""){
 	const types_t types;
-	ut_verify(QUARK_POS, expression_to_json_string(types, expression_t::make_literal_bool(true)), R"(["k", true, "bool"])");
+	ut_verify_string(QUARK_POS, expression_to_json_string(types, expression_t::make_literal_bool(true)), R"(["k", true, "bool"])");
 }
 QUARK_TEST("expression", "expression_to_json()", "literals", ""){
 	const types_t types;
-	ut_verify(QUARK_POS, expression_to_json_string(types, expression_t::make_literal_bool(false)), R"(["k", false, "bool"])");
+	ut_verify_string(QUARK_POS, expression_to_json_string(types, expression_t::make_literal_bool(false)), R"(["k", false, "bool"])");
 }
 
 QUARK_TEST("expression_t", "expression_to_json()", "math2", ""){
 	types_t types;
-	ut_verify(
+	ut_verify_string(
 		QUARK_POS,
 		expression_to_json_string(
 			types,
@@ -334,7 +334,7 @@ QUARK_TEST("expression_t", "expression_to_json()", "math2", ""){
 
 QUARK_TEST("expression_t", "expression_to_json()", "call", ""){
 	const types_t types;
-	ut_verify(
+	ut_verify_string(
 		QUARK_POS,
 		expression_to_json_string(
 			types,
@@ -353,7 +353,7 @@ QUARK_TEST("expression_t", "expression_to_json()", "call", ""){
 
 QUARK_TEST("expression_t", "expression_to_json()", "lookup", ""){
 	const types_t types;
-	ut_verify(QUARK_POS,
+	ut_verify_string(QUARK_POS,
 		expression_to_json_string(
 			types,
 			expression_t::make_lookup(

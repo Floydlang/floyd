@@ -392,7 +392,7 @@ QUARK_TEST("parser", "parse_character_literal()", "", ""){
 	}
 	catch(const compiler_error& e){
 		const auto w = e.what();
-		ut_verify(QUARK_POS, w, R"___(Character literal must be a single character: "AB"!)___");
+		ut_verify_string(QUARK_POS, w, R"___(Character literal must be a single character: "AB"!)___");
 	}
 }
 
@@ -1374,7 +1374,7 @@ QUARK_TEST("parser", "parse_expression()", "", ""){
 		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
-		ut_verify(QUARK_POS, e.what(), "Unexpected end of program.");
+		ut_verify_string(QUARK_POS, e.what(), "Unexpected end of program.");
 	}
 }
 

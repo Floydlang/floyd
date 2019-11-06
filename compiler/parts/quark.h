@@ -613,17 +613,6 @@ inline void ut_verify_stringvec(const quark::call_context_t& context, const std:
 	}
 }
 
-
-inline void ut_verify(const call_context_t& context, const char* result, const char* expected){
-	ut_verify_string(context, std::string(result), std::string(expected));
-}
-inline void ut_verify(const call_context_t& context, const std::string& result, const char* expected){
-	ut_verify_string(context, result, std::string(expected));
-}
-inline void ut_verify(const call_context_t& context, const char* result, const std::string& expected){
-	ut_verify_string(context, std::string(result), expected);
-}
-
 #else
 
 	//	The generated function is static and will be stripped in optimized builds (it will not be referenced).
@@ -642,17 +631,9 @@ inline void fail_test(const call_context_t& context){
 template <typename T> void ut_verify_auto(const quark::call_context_t& context, const T& result, const T& expected){
 }
 
-inline void ut_verify(const quark::call_context_t& context, const std::string& result, const std::string& expected){
+inline void ut_verify_string(const quark::call_context_t& context, const std::string& result, const std::string& expected){
 }
-inline void ut_verify(const quark::call_context_t& context, const std::vector<std::string>& result, const std::vector<std::string>& expected){
-}
-
-
-inline void ut_verify(const call_context_t& context, const char* result, const char* expected){
-}
-inline void ut_verify(const call_context_t& context, const std::string& result, const char* expected){
-}
-inline void ut_verify(const call_context_t& context, const char* result, const std::string& expected){
+inline void ut_verify_stringvec(const quark::call_context_t& context, const std::vector<std::string>& result, const std::vector<std::string>& expected){
 }
 
 #endif

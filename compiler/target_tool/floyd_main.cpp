@@ -462,7 +462,7 @@ QUARK_TEST("", "do_user_benchmarks_list()", "", ""){
 	const auto result = do_user_benchmarks_list(program_source, "module1");
 	std::cout << result;
 //	ut_verify(QUARK_POS, result, "\"\": \"abc\"\n\"\": \"def\"\n\"\": \"g\"\n");
-	ut_verify(QUARK_POS, result, "Benchmarks registry:\n" "abc\n" "def\n" "g\n");
+	ut_verify_string(QUARK_POS, result, "Benchmarks registry:\n" "abc\n" "def\n" "g\n");
 }
 
 
