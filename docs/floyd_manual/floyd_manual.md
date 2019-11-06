@@ -27,24 +27,25 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 	- [1.11 DICTIONARY](#111-dictionary)
 	- [1.12 STRUCT](#112-struct)
 	- [1.13 FUNCTION](#113-function)
-	- [1.14 JSON AND AUTOMATIC SERIALIZATION](#114-json-and-automatic-serialization)
-	- [1.15 FLOYD PROCESSES - TALKING TO THE REAL WORLD](#115-floyd-processes---talking-to-the-real-world)
+	- [1.14 TEST-DEF: MAKING TESTS AND TRYING THINGS OUT](#114-test-def-making-tests-and-trying-things-out)
+	- [1.15 JSON AND AUTOMATIC SERIALIZATION](#115-json-and-automatic-serialization)
+	- [1.16 FLOYD PROCESSES - TALKING TO THE REAL WORLD](#116-floyd-processes---talking-to-the-real-world)
 		- [GAIN PERFORMANCE VIA CONCURRENCY](#gain-performance-via-concurrency)
 		- [CONCURRENCY SCENARIOS](#concurrency-scenarios)
 		- [EXAMPLE: SIMPLE CONSOLE PROGRAM](#example-simple-console-program)
 		- [EXAMPLE: PACMAN IPHONE](#example-pacman-iphone)
-	- [1.16 SYSTEM ARCHITECTURE](#116-system-architecture)
+	- [1.17 SYSTEM ARCHITECTURE](#117-system-architecture)
 		- [DIAGRAMS](#diagrams)
-	- [1.17 TODO: EXCEPTIONS](#117-todo-exceptions)
-	- [1.18 ABOUT PERFORMANCE](#118-about-performance)
-	- [1.19 MICRO BENCHMARKS](#119-micro-benchmarks)
+	- [1.18 TODO: EXCEPTIONS](#118-todo-exceptions)
+	- [1.19 ABOUT PERFORMANCE](#119-about-performance)
+	- [1.20 MICRO BENCHMARKS](#120-micro-benchmarks)
 		- [ABOUT MICRO BENCHMARKS](#about-micro-benchmarks)
 		- [RUNNING MICRO BENCHMARKS FROM COMMAND LINE TOOL](#running-micro-benchmarks-from-command-line-tool)
 		- [RUNNING MICRO BENCHMARKS FROM FLOYD CODE](#running-micro-benchmarks-from-floyd-code)
 		- [HARDWARE CAPS](#hardware-caps)
-	- [1.20 ABOUT PARALLELISM](#120-about-parallelism)
-	- [1.21 TODO: PROBES](#121-todo-probes)
-	- [1.22 TODO: TWEAKERS](#122-todo-tweakers)
+	- [1.21 ABOUT PARALLELISM](#121-about-parallelism)
+	- [1.22 TODO: PROBES](#122-todo-probes)
+	- [1.23 TODO: TWEAKERS](#123-todo-tweakers)
 - [2 FLOYD LANGUAGE REFERENCE MANUAL](#2-floyd-language-reference-manual)
 	- [2.1 SOURCE CODE FILES](#21-source-code-files)
 	- [2.2 MAIN\(\) & EXECUTING PROGRAMS](#22-main--executing-programs)
@@ -77,6 +78,7 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 		- [LET](#let)
 		- [MUTABLE](#mutable)
 		- [FUNCTION DEFINITION](#function-definition)
+		- [TEST-DEF STATEMENT](#test-def-statement)
 		- [STRUCT DEFINITION](#struct-definition)
 		- [IF - THEN - ELSE](#if---then---else)
 		- [FOR LOOP](#for-loop)
@@ -168,8 +170,10 @@ Usage:
 |run      | floyd run game.floyd [arg1 arg2]   | compile and run the floyd program "game.floyd" using native execution. arg1 and arg2 are inputs to your main()
 |run      | floyd run -t mygame.floyd          | -t turns on tracing, which shows compilation steps
 |compile  | floyd compile mygame.floyd         | compile the floyd program "mygame.floyd" to a native object file, output to stdout
-|compile  | floyd compile game.floyd myl.floyd | compile the floyd program "game.floyd" and "myl.floyd" to one native object file, output to stdout
 |compile  | floyd compile game.floyd -o test.o | compile the floyd program "game.floyd" to a native object file .o, called "test.o"
+|test     | floyd test game.floyd              | Runs all unit tests in game.floyd, then quits: Does not call main() or start Floyd processes
+|test     | floyd test game.floyd one two      | Returns tests called "one" and "two" before running main() / starting processes
+|test     | floyd test -l game.floyd           | Returns list of unit tests
 |bench    | floyd bench mygame.floyd           | Runs all benchmarks, as defined by benchmark-def statements in Floyd program
 |bench    | floyd bench game.floyd rle game_lp | Runs specified benchmarks: "rle" and "game_lp"
 |bench    | floyd bench -l mygame.floyd        | Returns list of benchmarks
@@ -185,11 +189,12 @@ Flags:
 | -a       | Output Abstract syntax tree (AST) as a JSON
 | -i       | Output intermediate representation (IR / ASM) as assembly
 | -b       | Use Floyd's bytecode backend instead of default LLVM
+| -u       | Skip running the program's unit tests
 | -g       | Compiler with debug info, no optimizations
 | -O1      | Enable trivial optimizations
 | -O2      | Enable default optimizations
 | -O3      | Enable expensive optimizations
-| -l       | floyd bench returns a list of all benchmarks
+| -l       | returns a list (of tests or benchmarks)
 | -vcarray | Force vectors to use carray backend
 | -vhamt   | Force vectors to use HAMT backend (this is default)
 | -dcppmap | Force dictionaries to use c++ map as backend
@@ -617,25 +622,119 @@ Limit the amount of impure code!
 A number of impure functions are built into the language and its standard library.
 
 
-<a id="gray-pure-functions"></a>
-#### GRAY PURE FUNCTIONS
-
-This is a type of function that *has side effects or state* -- but the calling functions cannot observe this so from their perspective it is pure. Examples are memory allocators and memory pools and logging program execution.
-
-Why is this OK? Well to be picky there are no pure functions, since calling a pure function makes your CPU emit more heat and consumes real-world time, makes other programs run slower, consumes memory bandwidth. But a pure function cannot observe those side effects either.
 
 
+<a id="114-test-def-making-tests-and-trying-things-out"></a>
+## 1.14 TEST-DEF: MAKING TESTS AND TRYING THINGS OUT
+
+Floyd has built-in features for writing unit tests. Tests are critical for making robust software. There are two syntactic features for testing: the test-def statement and the test function. The test-def statement registers one test in a global registry of tests but does not run it. There are detailed controls over running some or all tests via the command line.
+
+Here is simple test where we test that Floyd's subset() function works in a specific scenario:
+
+```
+test-def ("subset()", "skip first character"){ test( subset("abc", 1, 3), "bc" )}
+```
+
+When this test is run, it will execute the test-call by first calling subset(), then comparing subset's output with "bc". If it's not identical the test fails.
+
+
+All unit tests are by default run everytime the program runs, just before main() or the Floyd processes start running.
+
+When you use the Floyd command line tool you can control the tests:
+
+The -u flag skips running the unit tests.
+
+```floyd run -t -u mygame.floyd```
+
+To run all unit tests, but not the program itself:
+
+```floyd test game.floyd```
+
+To run just specific unit tests, use:
+
+```floyd test game.floyd one two```
+
+To get a list of all unit tests:
+
+```floyd test -l game.floyd```
+
+
+#### GUIDELINES FOR TESTING
+
+
+Each test should test **one** function and **prove** it is correct in each scenario it supports. You normally write a handful of tests for each function.
+
+1. The order of the tests are important: first prove the simplest scenario works, then a little more advanced scenario.
+2. Each test proves exactly ONE scenario for the tested function. All other tests relies on this and builds on what's been proved already.
+3. Never check the same things more than once
+4. Put tests directly after the function-under-test in the source file.
+5. Describe the scenario you are testing for and the expected result.
+6. There must not be dependencies between the tests -- they may run in a different order or in parallell.
+
+
+Here is a more realistic example for how a function and it's tests looks:
+
+```
+struct money_format_t {
+	bool add_currency_tag
+	bool skip_minor_if_zero
+}
+
+func money_format_t make_default_format(){
+	return money_format_t(true, false)
+}
+
+
+
+struct sek_t {
+	int kronor
+	int oren
+}
+
+func string sek_to_string(money_format_t format, sek_t amount){
+	assert(amount.oren >= 0 && amount.oren < 100)
+
+	let oren_signed = amount.kronor >= 0 ? amount.oren : -amount.oren
+	let v = amount.kronor * 100 + oren_signed
+
+	let a = to_string(v)
+
+	let r = format.add_currency_tag ? a + " SEK" : a
+	return r
+}
+
+
+let max = get_max_sek_example()
+
+test-def ("sek_to_string()", "zero")	{	test(	sek_to_string(make_default_format(), sek_t(0, 0)),			"0:00 SEK"	)}
+test-def ("sek_to_string()", "one")		{	test(	sek_to_string(make_default_format(), sek_t(1, 0)),			"1:00 SEK"	)}
+test-def ("sek_to_string()", "1 ore")	{	test(	sek_to_string(make_default_format(), sek_t(0, 1)),			"0:01 SEK"	)}
+test-def ("sek_to_string()", "99.99")	{	test(	sek_to_string(make_default_format(), max),					"99:99 SEK"	)}
+
+test-def ("sek_to_string()", "zero")	{	test(	sek_to_string(money_format_t(false, true), sek_t(0, 1)),	"0:00"		)}
+test-def ("sek_to_string()", "99.99")	{	test(	sek_to_string(money_format_t(false, true), max),			"99:99"		)}
+```
+
+This is one of the few instances where it makes scense to align the columns so you can see clearly each call to sek_to_string() and the expected output -- this makes it very simple to make sure you've covered the important scenarios.
+
+If you need setup code for your test - often called "fixtures" - you can make helper functions that you call from within your test-def, like make_default_format() above. If your fixture is expensive to computer you can make a a global instance of it's value and use it in may test-def:s, like "max" in the example above.
+
+
+TIPS: If you aren't sure how a function works - one of yours or a FLoyd or library function -- just put a small test that checks its behaviour right where you are working right now. This test is great documentation / reminder instead of making code comments.
+
+TIPS: Add some tests that demonstrates your function. These are great documentation and copy-pasteable startig points for clients and they are **guaranteed** to be up to date and working, better than docs that often gets out of sync.
+
+TIPS: If you are struggling with getting a function to work: use command line to only run tests for that function: this gives you super-fast iterations.
 
 
 
 
-
-<a id="114-json-and-automatic-serialization"></a>
-## 1.14 JSON AND AUTOMATIC SERIALIZATION
+<a id="115-json-and-automatic-serialization"></a>
+## 1.15 JSON AND AUTOMATIC SERIALIZATION
 
 Serializing any Floyd value is a built-in mechanism. It is always true-deep.
 
->*This is very important in Floyd since values are central to Floyd's design. The JSON features allows any value to be easily passed around, sent as messages, stored in files, copy-pasted from log or debugger into the source code and so on.**
+>**This is very important in Floyd since values are central to Floyd's design. The JSON features allows any value to be easily passed around, sent as messages, stored in files, copy-pasted from log or debugger into the source code and so on.**
 
 There are built in functions for a floyd json to a JSON string and back. The JSON-string can be directly read or written to a text file, sent via a protocol and so on.
 
@@ -675,8 +774,8 @@ let test_json2 = json(
 
 
 
-<a id="115-floyd-processes---talking-to-the-real-world"></a>
-## 1.15 FLOYD PROCESSES - TALKING TO THE REAL WORLD
+<a id="116-floyd-processes---talking-to-the-real-world"></a>
+## 1.16 FLOYD PROCESSES - TALKING TO THE REAL WORLD
 
 Floyd processes is how you express the passing of time, updating state (mutation) and handling concurrency in Floyd. These concepts are tied together.
 
@@ -865,8 +964,8 @@ https://www.youtube.com/watch?v=v2Q_zHG3vqg
 
 
 
-<a id="116-system-architecture"></a>
-## 1.16 SYSTEM ARCHITECTURE
+<a id="117-system-architecture"></a>
+## 1.17 SYSTEM ARCHITECTURE
 
 Floyd uses the C4 model to navigate and present your code and for its terminology. It's completely optional to use these features. They give you a very fast and lightweight way method to think about your system and to automatically generate a few great diagrams that helps you reason about it.
 
@@ -969,16 +1068,16 @@ TODO: support connections between components inside containers.
 
 
 
-<a id="117-todo-exceptions"></a>
-## 1.17 TODO: EXCEPTIONS
+<a id="118-todo-exceptions"></a>
+## 1.18 TODO: EXCEPTIONS
 
 Throw exception. Built in types, free noun. Refine, final.
 
 
 
 
-<a id="118-about-performance"></a>
-## 1.18 ABOUT PERFORMANCE
+<a id="119-about-performance"></a>
+## 1.19 ABOUT PERFORMANCE
 
 Chandler Carruth:
 
@@ -1014,8 +1113,8 @@ TODO: Also draw computing power.
 TOD: Fact check stats.
 
 
-<a id="119-micro-benchmarks"></a>
-## 1.19 MICRO BENCHMARKS
+<a id="120-micro-benchmarks"></a>
+## 1.20 MICRO BENCHMARKS
 
 
 <a id="about-micro-benchmarks"></a>
@@ -1223,8 +1322,8 @@ L2             256 kB              L3                   8 MB
 
 
 
-<a id="120-about-parallelism"></a>
-## 1.20 ABOUT PARALLELISM
+<a id="121-about-parallelism"></a>
+## 1.21 ABOUT PARALLELISM
 
 Parallelism is about finishing a task faster by using more of the available hardware.
 
@@ -1247,16 +1346,16 @@ Notice: map() and map_dag() shares threads with other mechanisms in the Floyd ru
 
 
 
-<a id="121-todo-probes"></a>
-## 1.21 TODO: PROBES
+<a id="122-todo-probes"></a>
+## 1.22 TODO: PROBES
 
 You add probes to wires, processes and individual functions and expressions. They gather intel on how your program runs on the hardware, let's you explore your running code and profile its hardware use.
 
 
 
 
-<a id="122-todo-tweakers"></a>
-## 1.22 TODO: TWEAKERS
+<a id="123-todo-tweakers"></a>
+## 1.23 TODO: TWEAKERS
 
 Tweakers are inserted onto the wires and clocks and functions and expressions of the code and affect how the runtime and language executes that code, without changing its logic. Caching, batching, pre-calculation, parallelization, hardware allocation, collection-type selection are examples of what's possible.
 
@@ -1315,15 +1414,17 @@ These are the steps used by the Floyd runtime to executing a Floyd program that 
 
 1. Main thread initialises all globals and constants
 2. Main thread executes all global statements 
-3. Main thread calls main()
-4. When main() returns, the runtime is taken down and the OS executable is exited
+3. Main thread runs unit tests, if requested
+4. Main thread calls main()
+5. When main() returns, the runtime is taken down and the OS executable is exited
 
 These are the steps used by the Floyd runtime to executing a Floyd program that has no main() function
 
 1. Main thread initialises all globals and constants
 2. Main thread executes all global statements 
-3. Main thread starts all floyd processes in separate threads. How they execute is undefined here but under your control
-4. When all floyd processes have exited, the runtime is taken down and the OS executable is exited.
+3. Main thread runs unit tests, if requested
+4. Main thread starts all floyd processes in separate threads. How they execute is undefined here but under your control
+5. When all floyd processes have exited, the runtime is taken down and the OS executable is exited.
 
 A Floyd program either has a main() function or processes.
 
@@ -2460,6 +2561,35 @@ This defines a new function value and gives it a name in the current scope. If y
 | func int f(string name){ return 13 | Function **f** returns int, accepts a string input.
 | func int print(float a) { ... }			| Function **print** returns int, accepts float argument
 | func int f(string name)					| Function declaration (without body) |
+
+
+
+<a id="test-def-statement"></a>
+### TEST-DEF STATEMENT
+
+This defines a new test and registers it in the global registry.
+
+>test-def ( CONST STRING: FUNCTION UNDER TEST, CONST STRING: SCENARIO) { TEST-STATEMENTS }
+
+Floyd has built-in features for writing unit tests. Tests are critical to makeing robust software.
+
+The test-def is all you need to register tests. If it's TEST-STATEMENTS throw an exception the test fails. But there is special test function you use most of the time. NOTICE: Floyd has no means of explicitly throwing an exceptions yet.
+
+> void test(T result, T expected_result)
+
+Here is simple test where we test that floyd's subset() function work in a specific scenario:
+
+```
+test-def ("subset()", "skip first character")	{	test(	subset("abc", 1, 3),			"bc"	)}
+
+```
+
+When this test is run, it will execute the test-call by first calling subset(), then comparing subset's output with "bc". If it's not identical the test fails.
+
+
+
+**Important:** test-def is pure and you cannot call any impure functions. This make sense since unit-tests cannot have side effects.
+
 
 
 

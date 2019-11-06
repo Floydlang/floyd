@@ -6347,35 +6347,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "cmath_pi", "", ""){
 	);
 }
 
-#if 0
-//??? requires type-description comparison.
-FLOYD_LANG_PROOF("Floyd test suite", "", "pixel_t()", ""){
-	types_t temp;
-
-	const auto pixel_t__def = std::vector<member_t>{
-		member_t(type_t::make_int(), "red"),
-		member_t(type_t::make_int(), "green"),
-		member_t(type_t::make_int(), "blue")
-	};
-
-	ut_verify_global_result_nolib(
-		QUARK_POS,
-
-		"struct pixel_t { int red int green int blue } let result = pixel_t(1,2,3)",
-
-		value_and_type_to_ast_json(
-			temp,
-			value_t::make_struct_value(
-				temp,
-				make_struct(temp, struct_type_desc_t(pixel_t__def)),
-				std::vector<value_t>{ value_t::make_int(1), value_t::make_int(2), value_t::make_int(3) }
-			)
-		)
-	);
-}
-#endif
-
-
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
