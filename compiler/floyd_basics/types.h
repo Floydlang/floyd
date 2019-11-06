@@ -158,7 +158,7 @@ enum class base_type {
 std::string base_type_to_opcode(const base_type t);
 base_type opcode_to_base_type(const std::string& s);
 
-void ut_verify(const quark::call_context_t& context, const base_type& result, const base_type& expected);
+void ut_verify_basetype(const quark::call_context_t& context, const base_type& result, const base_type& expected);
 
 
 //	Is this type final and has no variations? True for int. False for struct or vector because

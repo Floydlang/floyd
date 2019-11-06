@@ -315,19 +315,19 @@ std::pair<std::string, seq_t> parse_string_literal(const seq_t& s){
 }
 
 QUARK_TEST("parser", "parse_string_literal()", "", ""){
-	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"("" xxx)")), std::pair<std::string, seq_t>("", seq_t(" xxx")));
+	ut_verify_string_seq(QUARK_POS, parse_string_literal(seq_t(R"("" xxx)")), std::pair<std::string, seq_t>("", seq_t(" xxx")));
 }
 
 QUARK_TEST("parser", "parse_string_literal()", "", ""){
-	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"("hello" xxx)")), std::pair<std::string, seq_t>("hello", seq_t(" xxx")));
+	ut_verify_string_seq(QUARK_POS, parse_string_literal(seq_t(R"("hello" xxx)")), std::pair<std::string, seq_t>("hello", seq_t(" xxx")));
 }
 
 QUARK_TEST("parser", "parse_string_literal()", "", ""){
-	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"(".5" xxx)")), std::pair<std::string, seq_t>(".5", seq_t(" xxx")));
+	ut_verify_string_seq(QUARK_POS, parse_string_literal(seq_t(R"(".5" xxx)")), std::pair<std::string, seq_t>(".5", seq_t(" xxx")));
 }
 
 QUARK_TEST("parser", "parse_string_literal()", "", ""){
-	ut_verify(
+	ut_verify_string_seq(
 		QUARK_POS,
 		//	NOTICE that \" are Floyd-escapes in the Floyd source code.
 		parse_string_literal(seq_t(R"___("hello \"Bob\"!" xxx)___")),
@@ -336,28 +336,28 @@ QUARK_TEST("parser", "parse_string_literal()", "", ""){
 }
 
 QUARK_TEST("parser", "parse_string_literal()", "Escape \0", ""){
-	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\0" xxx)___")), std::pair<std::string, seq_t>(std::string(1, '\0'), seq_t(" xxx")));
+	ut_verify_string_seq(QUARK_POS, parse_string_literal(seq_t(R"___("\0" xxx)___")), std::pair<std::string, seq_t>(std::string(1, '\0'), seq_t(" xxx")));
 }
 QUARK_TEST("parser", "parse_string_literal()", "Escape \t", ""){
-	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\t" xxx)___")), std::pair<std::string, seq_t>("\t", seq_t(" xxx")));
+	ut_verify_string_seq(QUARK_POS, parse_string_literal(seq_t(R"___("\t" xxx)___")), std::pair<std::string, seq_t>("\t", seq_t(" xxx")));
 }
 QUARK_TEST("parser", "parse_string_literal()", "Escape \\", ""){
-	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\\" xxx)___")), std::pair<std::string, seq_t>("\\", seq_t(" xxx")));
+	ut_verify_string_seq(QUARK_POS, parse_string_literal(seq_t(R"___("\\" xxx)___")), std::pair<std::string, seq_t>("\\", seq_t(" xxx")));
 }
 QUARK_TEST("parser", "parse_string_literal()", "Escape \n", ""){
-	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\n" xxx)___")), std::pair<std::string, seq_t>("\n", seq_t(" xxx")));
+	ut_verify_string_seq(QUARK_POS, parse_string_literal(seq_t(R"___("\n" xxx)___")), std::pair<std::string, seq_t>("\n", seq_t(" xxx")));
 }
 QUARK_TEST("parser", "parse_string_literal()", "Escape \r", ""){
-	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\r" xxx)___")), std::pair<std::string, seq_t>("\r", seq_t(" xxx")));
+	ut_verify_string_seq(QUARK_POS, parse_string_literal(seq_t(R"___("\r" xxx)___")), std::pair<std::string, seq_t>("\r", seq_t(" xxx")));
 }
 QUARK_TEST("parser", "parse_string_literal()", "Escape \"", ""){
-	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\"" xxx)___")), std::pair<std::string, seq_t>("\"", seq_t(" xxx")));
+	ut_verify_string_seq(QUARK_POS, parse_string_literal(seq_t(R"___("\"" xxx)___")), std::pair<std::string, seq_t>("\"", seq_t(" xxx")));
 }
 QUARK_TEST("parser", "parse_string_literal()", "Escape \'", ""){
-	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\'" xxx)___")), std::pair<std::string, seq_t>("\'", seq_t(" xxx")));
+	ut_verify_string_seq(QUARK_POS, parse_string_literal(seq_t(R"___("\'" xxx)___")), std::pair<std::string, seq_t>("\'", seq_t(" xxx")));
 }
 QUARK_TEST("parser", "parse_string_literal()", "Escape \'", ""){
-	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\/" xxx)___")), std::pair<std::string, seq_t>("/", seq_t(" xxx")));
+	ut_verify_string_seq(QUARK_POS, parse_string_literal(seq_t(R"___("\/" xxx)___")), std::pair<std::string, seq_t>("/", seq_t(" xxx")));
 }
 
 

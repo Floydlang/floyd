@@ -276,7 +276,7 @@ base_type opcode_to_base_type(const std::string& s){
 }
 
 
-void ut_verify(const quark::call_context_t& context, const base_type& result, const base_type& expected){
+void ut_verify_basetype(const quark::call_context_t& context, const base_type& result, const base_type& expected){
 	ut_verify_string(
 		context,
 		base_type_to_opcode(result),
@@ -324,92 +324,10 @@ int get_json_type(const json_t& value){
 //////////////////////////////////////////////////		type_t
 
 #if 0
-bool type_t::check_invariant() const{
-#if DEBUG_DEEP_TYPEID_T
-	struct visitor_t {
-		bool operator()(const undefined_t& e) const{
-			return true;
-		}
-		bool operator()(const any_t& e) const{
-			return true;
-		}
-
-		bool operator()(const void_t& e) const{
-			return true;
-		}
-		bool operator()(const bool_t& e) const{
-			return true;
-		}
-		bool operator()(const int_t& e) const{
-			return true;
-		}
-		bool operator()(const double_t& e) const{
-			return true;
-		}
-		bool operator()(const string_t& e) const{
-			return true;
-		}
-
-		bool operator()(const json_type_t& e) const{
-			return true;
-		}
-		bool operator()(const typeid_type_t& e) const{
-			return true;
-		}
-
-		bool operator()(const struct_t& e) const{
-			QUARK_ASSERT(e._struct_def);
-			QUARK_ASSERT(e._struct_def->check_invariant());
-			return true;
-		}
-		bool operator()(const vector_t& e) const{
-			QUARK_ASSERT(e._parts.size() == 1);
-			QUARK_ASSERT(e._parts[0].check_invariant());
-			return true;
-		}
-		bool operator()(const dict_t& e) const{
-			QUARK_ASSERT(e._parts.size() == 1);
-			QUARK_ASSERT(e._parts[0].check_invariant());
-			return true;
-		}
-		bool operator()(const function_t& e) const{
-			//	If function returns a DYN, it must have a dyn_return.
-			QUARK_ASSERT(e._parts[0].is_any() == false || e.dyn_return != return_dyn_type::none);
-
-			QUARK_ASSERT(e._parts.size() >= 1);
-
-			for(const auto& m: e._parts){
-				QUARK_ASSERT(m.check_invariant());
-			}
-			return true;
-		}
-		bool operator()(const identifier_t& e) const {
-			QUARK_ASSERT(e.name != "");
-			return true;
-		}
-	};
-	return std::visit(visitor_t{}, _contents);
-#else
-	return true;
-#endif
-}
-
-void type_t::swap(type_t& other){
-	QUARK_ASSERT(other.check_invariant());
-	QUARK_ASSERT(check_invariant());
-
-#if DEBUG_DEEP_TYPEID_T
-	std::swap(_DEBUG_string, other._DEBUG_string);
-#endif
-	std::swap(_contents, other._contents);
-
-	QUARK_ASSERT(other.check_invariant());
-	QUARK_ASSERT(check_invariant());
-}
 
 
 QUARK_TESTQ("type_t", "make_undefined()"){
-	ut_verify(QUARK_POS, type_t::make_undefined().get_base_type(), base_type::k_undefined);
+	ut_verify_type(QUARK_POS, type_t::make_undefined().get_base_type(), base_type::k_undefined);
 }
 QUARK_TESTQ("type_t", "is_undefined()"){
 	ut_verify_auto(QUARK_POS, type_t::make_undefined().is_undefined(), true);
@@ -420,7 +338,7 @@ QUARK_TESTQ("type_t", "is_undefined()"){
 
 
 QUARK_TESTQ("type_t", "make_any()"){
-	ut_verify(QUARK_POS, type_t::make_any().get_base_type(), base_type::k_any);
+	ut_verify_type(QUARK_POS, type_t::make_any().get_base_type(), base_type::k_any);
 }
 QUARK_TESTQ("type_t", "is_any()"){
 	ut_verify_auto(QUARK_POS, type_t::make_any().is_any(), true);
@@ -431,7 +349,7 @@ QUARK_TESTQ("type_t", "is_any()"){
 
 
 QUARK_TESTQ("type_t", "make_void()"){
-	ut_verify(QUARK_POS, type_t::make_void().get_base_type(), base_type::k_void);
+	ut_verify_type(QUARK_POS, type_t::make_void().get_base_type(), base_type::k_void);
 }
 QUARK_TESTQ("type_t", "is_void()"){
 	ut_verify_auto(QUARK_POS, type_t::make_void().is_void(), true);
@@ -442,7 +360,7 @@ QUARK_TESTQ("type_t", "is_void()"){
 
 
 QUARK_TESTQ("type_t", "make_bool()"){
-	ut_verify(QUARK_POS, type_t::make_bool().get_base_type(), base_type::k_bool);
+	ut_verify_type(QUARK_POS, type_t::make_bool().get_base_type(), base_type::k_bool);
 }
 QUARK_TESTQ("type_t", "is_bool()"){
 	ut_verify_auto(QUARK_POS, type_t::make_bool().is_bool(), true);
@@ -453,7 +371,7 @@ QUARK_TESTQ("type_t", "is_bool()"){
 
 
 QUARK_TESTQ("type_t", "make_int()"){
-	ut_verify(QUARK_POS, type_t::make_int().get_base_type(), base_type::k_int);
+	ut_verify_type(QUARK_POS, type_t::make_int().get_base_type(), base_type::k_int);
 }
 QUARK_TESTQ("type_t", "is_int()"){
 	QUARK_VERIFY(type_t::make_int().is_int() == true);
@@ -639,12 +557,6 @@ QUARK_TESTQ("type_t", "get_unresolved()"){
 
 
 
-
-
-
-
-
-
 QUARK_TESTQ("type_t", "operator==()"){
 	const auto a = type_t::make_vector(type_t::make_int());
 	const auto b = type_t::make_vector(type_t::make_int());
@@ -794,7 +706,7 @@ OFF_QUARK_TEST("typeid_to_ast_json()", "", "", ""){
 
 		//	Test typeid_to_ast_json().
 		const auto result1 = typeid_to_ast_json(start_typeid, json_tags::k_tag_resolve_state);
-		ut_verify(QUARK_POS, result1, expected_ast_json);
+		ut_verify_type(QUARK_POS, result1, expected_ast_json);
 	}
 }
 
@@ -822,7 +734,7 @@ OFF_QUARK_TEST("typeid_to_compact_string", "", "", ""){
 
 		//	Test typeid_to_compact_string().
 		const auto result3 = typeid_to_compact_string(start_typeid);
-		ut_verify(QUARK_POS, result3, f[i]._compact_str);
+		ut_verify_type(QUARK_POS, result3, f[i]._compact_str);
 	}
 	QUARK_TRACE("OK!");
 }
@@ -1273,11 +1185,11 @@ std::vector<member_t> members_from_json(const json_t& members){
 	return r;
 }
 
-void ut_verify(const quark::call_context_t& context, const type_t& result, const type_t& expected){
+void ut_verify_type(const quark::call_context_t& context, const type_t& result, const type_t& expected){
 	QUARK_ASSERT(result.check_invariant());
 	QUARK_ASSERT(expected.check_invariant());
 
-	ut_verify(
+	ut_verify_json(
 		context,
 		typeid_to_ast_json(result),
 		typeid_to_ast_json(expected)
@@ -1285,32 +1197,6 @@ void ut_verify(const quark::call_context_t& context, const type_t& result, const
 }
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

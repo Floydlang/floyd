@@ -642,37 +642,44 @@ All unit tests are by default run everytime the program runs, just before main()
 
 When you use the Floyd command line tool you can control the tests:
 
-The -u flag skips running the unit tests.
 
-```floyd run -t -u mygame.floyd```
-
-To run all unit tests, but not the program itself:
+To **run all unit tests**, but not the program itself:
 
 ```floyd test game.floyd```
 
-To run just specific unit tests, use:
+
+To **run just specific tests**, use:
 
 ```floyd test game.floyd one two```
 
-To get a list of all unit tests:
+TIPS: Use this to quickly run just one or two specifc tests when you are iterating on the implementation of a function, this gives you super-fast iterations.
+
+
+To get a **list** of all unit tests:
 
 ```floyd test -l game.floyd```
 
 
+
+The -u flag skips running the unit tests. This makes your program start faster.
+
+```floyd run -t -u mygame.floyd```
+
+
+
 #### GUIDELINES FOR TESTING
 
-
-Each test should test **one** function and **prove** it is correct in each scenario it supports. You normally write a handful of tests for each function.
+Each test should test **one** function and one scenario and **prove** it is correct in this scenario. You normally write a handful of tests for each function, each testing a specific scenario.
 
 1. The order of the tests are important: first prove the simplest scenario works, then a little more advanced scenario.
 2. Each test proves exactly ONE scenario for the tested function. All other tests relies on this and builds on what's been proved already.
 3. Never check the same things more than once
 4. Put tests directly after the function-under-test in the source file.
 5. Describe the scenario you are testing for and the expected result.
-6. There must not be dependencies between the tests -- they may run in a different order or in parallell.
+6. There must not be runtime dependencies between the tests -- they may run in a different order or in parallell.
 
 
-Here is a realistic example for how a function and it's tests looks:
+Here is a typical function **sek_to_string()** and it's tests:
 
 ```
 struct money_format_t {
@@ -706,25 +713,23 @@ func string sek_to_string(money_format_t format, sek_t amount){
 
 let max = get_max_sek_example()
 
-test-def ("sek_to_string()", "zero")	{	test(	sek_to_string(make_default_format(), sek_t(0, 0)),			"0:00 SEK"	}
-test-def ("sek_to_string()", "one")		{	test(	sek_to_string(make_default_format(), sek_t(1, 0)),			"1:00 SEK"	}
-test-def ("sek_to_string()", "1 ore")	{	test(	sek_to_string(make_default_format(), sek_t(0, 1)),			"0:01 SEK"	}
-test-def ("sek_to_string()", "99.99")	{	test(	sek_to_string(make_default_format(), max),					"99:99 SEK"	}
+test-def ("sek_to_string()", "zero"){ test(		sek_to_string(make_default_format(), sek_t(0, 0)),			"0:00 SEK"	}
+test-def ("sek_to_string()", "one"){ test(		sek_to_string(make_default_format(), sek_t(1, 0)),			"1:00 SEK"	}
+test-def ("sek_to_string()", "1 ore"){ test(	sek_to_string(make_default_format(), sek_t(0, 1)),			"0:01 SEK"	}
+test-def ("sek_to_string()", "99.99"){ test(	sek_to_string(make_default_format(), max),					"99:99 SEK"	}
 
-test-def ("sek_to_string()", "zero")	{	test(	sek_to_string(money_format_t(false, true), sek_t(0, 1)),	"0:00"		}
-test-def ("sek_to_string()", "99.99")	{	test(	sek_to_string(money_format_t(false, true), max),			"99:99"		}
+test-def ("sek_to_string()", "zero"){ test(		sek_to_string(money_format_t(false, true), sek_t(0, 1)),	"0:00"		}
+test-def ("sek_to_string()", "99.99"){ test(	sek_to_string(money_format_t(false, true), max),			"99:99"		}
 ```
 
-This is one of the few instances where it makes scense to align the columns so you can see clearly each call to sek_to_string() and the expected output -- this makes it very simple to make sure you've covered the important scenarios.
+This is one of the few instances where it makes sense to align the source code columns so you can see clearly each call to sek_to_string() and the expected output -- this makes it very simple to make sure you've covered the important scenarios.
 
 If you need setup code for your test - often called "fixtures" - you can make helper functions that you call from within your test-def, like make_default_format() above. If your fixture is expensive to computer you can make a a global instance of it's value and use it in may test-def:s, like "max" in the example above.
 
 
-TIPS: If you aren't sure how a function works - one of yours or a FLoyd or library function -- just put a small test that checks its behaviour right where you are working right now. This test is great documentation / reminder instead of making code comments.
+TIPS: If you aren't sure how a function works - one of yours or a Floyd or library function -- just put a small test that checks its behaviour right where you are working right now. This test is great documentation / reminder instead of making code comments.
 
 TIPS: Add some tests that demonstrates your function. These are great documentation and copy-pasteable startig points for clients and they are **guaranteed** to be up to date and working, better than docs that often gets out of sync.
-
-TIPS: If you are struggling with getting a function to work: use command line to only run tests for that function: this gives you super-fast iterations.
 
 
 

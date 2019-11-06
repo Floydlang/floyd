@@ -722,7 +722,6 @@
 		2CCD83361CBA5BA3006033E4 /* floyd_main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_main.cpp; sourceTree = "<group>"; };
 		2CDA9AE32318933500231AA8 /* write_cache.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = write_cache.cpp; sourceTree = "<group>"; };
 		2CDA9AE42318933500231AA8 /* write_cache.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = write_cache.h; sourceTree = "<group>"; };
-		2CDA9AE62319490700231AA8 /* quark.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = quark.md; path = ../../../../quark/quark/quark.md; sourceTree = "<group>"; };
 		2CDFD5C822EA1AD0005B002C /* bytecode_corelib.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = bytecode_corelib.cpp; sourceTree = "<group>"; };
 		2CDFD5CB22EA1AE2005B002C /* bytecode_corelib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bytecode_corelib.h; sourceTree = "<group>"; };
 		2CDFD5CC22EA1E1B005B002C /* floyd_llvm_corelib.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_llvm_corelib.cpp; sourceTree = "<group>"; };
@@ -1644,7 +1643,6 @@
 				2CBD8931228C9B2900C10CDD /* os_process.h */,
 				2C180454208B911A00F62480 /* quark.cpp */,
 				2C180453208B911A00F62480 /* quark.h */,
-				2CDA9AE62319490700231AA8 /* quark.md */,
 				2CBCA7D91D569C6D000FAE81 /* sha1 */,
 				2CBCA7DC1D569C6D000FAE81 /* sha1_class.cpp */,
 				2CBCA7DD1D569C6D000FAE81 /* sha1_class.h */,

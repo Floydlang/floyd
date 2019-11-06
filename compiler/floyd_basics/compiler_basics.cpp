@@ -882,7 +882,7 @@ void ut_verify_json_and_rest(const quark::call_context_t& context, const std::pa
 	ut_verify_string(context, result_pair.second.str(), expected_rest);
 }
 
-void ut_verify(const quark::call_context_t& context, const std::pair<std::string, seq_t>& result, const std::pair<std::string, seq_t>& expected){
+void ut_verify_string_seq(const quark::call_context_t& context, const std::pair<std::string, seq_t>& result, const std::pair<std::string, seq_t>& expected){
 	if(result == expected){
 	}
 	else{

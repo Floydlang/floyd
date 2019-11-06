@@ -78,18 +78,8 @@ QUARK_TEST("Quark", "ut_verify_string()", "", ""){
 QUARK_TEST("Quark", "ut_verify_string()", "", ""){
 	ut_verify_string(QUARK_POS, "xyz", "xyz");
 }
-/*
-QUARK_TEST("Quark", "ut_verify()", "", ""){
-	try{
-		ut_verify(QUARK_POS, "xyzabc", "xyztbcd");
-		fail_test(QUARK_POS);
-	}
-	catch(...){
-		//	We should land here.
-	}
-}
-*/
 
+/*
 struct custom_type_t {
 	int a;
 	std::string s;
@@ -104,7 +94,7 @@ void ut_verify(const call_context_t& context, const custom_type_t& result, const
 		quark::fail_test(context);
 	}
 }
-
+*/
 #endif
 
 
