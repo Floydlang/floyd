@@ -83,7 +83,7 @@ void ut_verify_report(const quark::call_context_t& context, const test_report_t&
 	}
 
 	if(result.result_variable != expected.result_variable){
-		ut_verify(
+		ut_verify_json(
 			context,
 			result.result_variable,
 			expected.result_variable

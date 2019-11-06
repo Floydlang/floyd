@@ -379,10 +379,10 @@ std::pair<int64_t, seq_t> parse_character_literal(const seq_t& s){
 }
 
 QUARK_TEST("parser", "parse_character_literal()", "", ""){
-	ut_verify(QUARK_POS, parse_character_literal(seq_t(R"('A' xxx)")), std::pair<int64_t, seq_t>(65, seq_t(" xxx")));
+	ut_verify_json_seq(QUARK_POS, parse_character_literal(seq_t(R"('A' xxx)")), std::pair<int64_t, seq_t>(65, seq_t(" xxx")));
 }
 QUARK_TEST("parser", "parse_string_literal()", "Escape \0", ""){
-	ut_verify(QUARK_POS, parse_character_literal(seq_t(R"___('\0' xxx)___")), std::pair<int64_t, seq_t>(0x00, seq_t(" xxx")));
+	ut_verify_json_seq(QUARK_POS, parse_character_literal(seq_t(R"___('\0' xxx)___")), std::pair<int64_t, seq_t>(0x00, seq_t(" xxx")));
 }
 
 QUARK_TEST("parser", "parse_character_literal()", "", ""){
@@ -1358,7 +1358,7 @@ void ut_verify__parse_expression(const quark::call_context_t& context, const std
 	}
 	else{
 		const std::string expected_json2_s = json_to_compact_string(expected_json);
-		ut_verify(context, result.first, expected_json);
+		ut_verify_json(context, result.first, expected_json);
 		ut_verify(context, result.second.str(), expected_rest);
 		fail_test(context);
 	}

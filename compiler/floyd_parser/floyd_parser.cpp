@@ -95,14 +95,14 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& s){
 }
 
 QUARK_TEST("", "parse_statement()", "", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_statement(seq_t("let int x = 10;")).first,
 		parse_json(seq_t(R"([0, "init-local", "int", "x", ["k", 10, "int"]])")).first
 	);
 }
 
 QUARK_TEST("", "parse_statement()", "", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_statement(seq_t("func int f(string name){ return 13; }")).first,
 		parse_json(seq_t(R"(
 			[
@@ -123,7 +123,7 @@ QUARK_TEST("", "parse_statement()", "", ""){
 }
 
 QUARK_TEST("", "parse_statement()", "", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_statement(seq_t("let int x = f(3);")).first,
 		parse_json(seq_t(R"([0, "init-local", "int", "x", ["call", ["@", "f"], [["k", 3, "int"]]]])")).first
 	);
@@ -189,7 +189,7 @@ parse_result_t parse_statements_bracketted(const seq_t& s){
 }
 
 QUARK_TEST("", "parse_statements_bracketted()", "", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_statement_body(seq_t(" { } ")).parse_tree,
 		parse_json(seq_t(
 			R"(
@@ -199,7 +199,7 @@ QUARK_TEST("", "parse_statements_bracketted()", "", ""){
 	);
 }
 QUARK_TEST("", "parse_statements_bracketted()", "", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_statement_body(seq_t(" { let int x = 1; let int y = 2; } ")).parse_tree,
 		parse_json(seq_t(
 			R"(
@@ -256,7 +256,7 @@ const std::string k_test_program_0_parserout = R"(
 )";
 
 QUARK_TEST("", "parse_program2()", "k_test_program_0_source", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_program2(k_test_program_0_source)._value,
 		parse_json(seq_t(k_test_program_0_parserout)).first
 	);
@@ -285,7 +285,7 @@ const std::string k_test_program_1_parserout = R"(
 )";
 
 QUARK_TEST("", "parse_program2()", "k_test_program_1_source", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_program2(k_test_program_1_source)._value,
 		parse_json(seq_t(k_test_program_1_parserout)).first
 	);
@@ -339,7 +339,7 @@ const char k_test_program_100_parserout[] = R"(
 )";
 
 QUARK_TEST("", "parse_program2()", "k_test_program_100_source", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_program2(
 			R"(
 				struct pixel { double red; double green; double blue; }

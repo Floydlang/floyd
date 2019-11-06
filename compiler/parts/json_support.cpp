@@ -23,7 +23,7 @@ using std::vector;
 
 
 
-void ut_verify(const quark::call_context_t& context, const json_t& result, const json_t& expected){
+void ut_verify_json(const quark::call_context_t& context, const json_t& result, const json_t& expected){
 	if(result == expected){
 	}
 	else{
@@ -33,7 +33,7 @@ void ut_verify(const quark::call_context_t& context, const json_t& result, const
 	}
 }
 
-void ut_verify(const quark::call_context_t& context, const std::pair<json_t, seq_t>& result, const std::pair<json_t, seq_t>& expected){
+void ut_verify_json_seq(const quark::call_context_t& context, const std::pair<json_t, seq_t>& result, const std::pair<json_t, seq_t>& expected){
 	if(result == expected){
 	}
 	else{
@@ -931,50 +931,50 @@ std::pair<json_t, seq_t> parse_json(const seq_t& s){
 
 
 QUARK_TEST("", "parse_json()", "primitive", ""){
-	ut_verify(QUARK_POS, parse_json(seq_t("\"xyz\"xxx")), { json_t("xyz"), seq_t("xxx") });
+	ut_verify_json_seq(QUARK_POS, parse_json(seq_t("\"xyz\"xxx")), { json_t("xyz"), seq_t("xxx") });
 }
 
 QUARK_TESTQ("parse_json()", "primitive"){
-	ut_verify(QUARK_POS, parse_json(seq_t("\"\"xxx")), { json_t(""), seq_t("xxx") });
-}
-
-
-QUARK_TESTQ("parse_json()", "primitive"){
-	ut_verify(QUARK_POS, parse_json(seq_t("13.0 xxx")), { json_t(13.0), seq_t(" xxx") });
-}
-
-QUARK_TESTQ("parse_json()", "primitive"){
-	ut_verify(QUARK_POS, parse_json(seq_t("-13.0 xxx")), { json_t(-13.0), seq_t(" xxx") });
-}
-
-QUARK_TESTQ("parse_json()", "primitive"){
-	ut_verify(QUARK_POS, parse_json(seq_t("4 xxx")), { json_t(4.0), seq_t(" xxx") });
+	ut_verify_json_seq(QUARK_POS, parse_json(seq_t("\"\"xxx")), { json_t(""), seq_t("xxx") });
 }
 
 
 QUARK_TESTQ("parse_json()", "primitive"){
-	ut_verify(QUARK_POS, parse_json(seq_t("true xxx")), { json_t(true), seq_t(" xxx") });
+	ut_verify_json_seq(QUARK_POS, parse_json(seq_t("13.0 xxx")), { json_t(13.0), seq_t(" xxx") });
 }
 
 QUARK_TESTQ("parse_json()", "primitive"){
-	ut_verify(QUARK_POS, parse_json(seq_t("false xxx")), { json_t(false), seq_t(" xxx") });
+	ut_verify_json_seq(QUARK_POS, parse_json(seq_t("-13.0 xxx")), { json_t(-13.0), seq_t(" xxx") });
 }
 
 QUARK_TESTQ("parse_json()", "primitive"){
-	ut_verify(QUARK_POS, parse_json(seq_t("null xxx")), { json_t(), seq_t(" xxx") });
+	ut_verify_json_seq(QUARK_POS, parse_json(seq_t("4 xxx")), { json_t(4.0), seq_t(" xxx") });
+}
+
+
+QUARK_TESTQ("parse_json()", "primitive"){
+	ut_verify_json_seq(QUARK_POS, parse_json(seq_t("true xxx")), { json_t(true), seq_t(" xxx") });
+}
+
+QUARK_TESTQ("parse_json()", "primitive"){
+	ut_verify_json_seq(QUARK_POS, parse_json(seq_t("false xxx")), { json_t(false), seq_t(" xxx") });
+}
+
+QUARK_TESTQ("parse_json()", "primitive"){
+	ut_verify_json_seq(QUARK_POS, parse_json(seq_t("null xxx")), { json_t(), seq_t(" xxx") });
 }
 
 
 QUARK_TESTQ("parse_json()", "array - empty"){
-	ut_verify(QUARK_POS, parse_json(seq_t("[] xxx")), { json_t::make_array(), seq_t(" xxx") });
+	ut_verify_json_seq(QUARK_POS, parse_json(seq_t("[] xxx")), { json_t::make_array(), seq_t(" xxx") });
 }
 
 QUARK_TESTQ("parse_json()", "array - two numbers"){
-	ut_verify(QUARK_POS, parse_json(seq_t("[10, 11] xxx")), { json_t::make_array({json_t(10.0), json_t(11.0)}), seq_t(" xxx") });
+	ut_verify_json_seq(QUARK_POS, parse_json(seq_t("[10, 11] xxx")), { json_t::make_array({json_t(10.0), json_t(11.0)}), seq_t(" xxx") });
 }
 
 QUARK_TESTQ("parse_json()", "array - nested"){
-	ut_verify(QUARK_POS,
+	ut_verify_json_seq(QUARK_POS,
 		parse_json(seq_t("[10, 11, [ 12, 13]] xxx")),
 		{
 			json_t::make_array({json_t(10.0), json_t(11.0), json_t::make_array({json_t(12.0), json_t(13.0)}) }),
@@ -985,14 +985,14 @@ QUARK_TESTQ("parse_json()", "array - nested"){
 
 
 QUARK_TESTQ("parse_json()", "object - empty"){
-	ut_verify(QUARK_POS, parse_json(seq_t("{} xxx")), { json_t::make_object(), seq_t(" xxx") });
+	ut_verify_json_seq(QUARK_POS, parse_json(seq_t("{} xxx")), { json_t::make_object(), seq_t(" xxx") });
 }
 
 QUARK_TESTQ("parse_json()", "object - two entries"){
 	const auto result = parse_json(seq_t("{\"one\": 1, \"two\": 2} xxx"));
 	QUARK_TRACE(json_to_compact_string(result.first));
 
-	ut_verify(QUARK_POS, result, { json_t::make_object({{"one", json_t(1.0)}, {"two", json_t(2.0)}}), seq_t(" xxx") });
+	ut_verify_json_seq(QUARK_POS, result, { json_t::make_object({{"one", json_t(1.0)}, {"two", json_t(2.0)}}), seq_t(" xxx") });
 }
 
 

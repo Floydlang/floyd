@@ -366,8 +366,8 @@ std::string json_to_pretty_string(const json_t& value, int indent, const pretty_
 	Used for unit tests, if pretty-string version of inputs are different, trace them and fail.
 */
 
-void ut_verify(const quark::call_context_t& context, const json_t& result, const json_t& expected);
-void ut_verify(const quark::call_context_t& context, const std::pair<json_t, seq_t>& result, const std::pair<json_t, seq_t>& expected);
+void ut_verify_json(const quark::call_context_t& context, const json_t& result, const json_t& expected);
+void ut_verify_json_seq(const quark::call_context_t& context, const std::pair<json_t, seq_t>& result, const std::pair<json_t, seq_t>& expected);
 
 
 

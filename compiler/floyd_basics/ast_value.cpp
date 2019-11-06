@@ -1208,27 +1208,27 @@ json_t value_to_ast_json(const types_t& types, const value_t& v){
 
 QUARK_TESTQ("value_to_ast_json()", ""){
 	types_t types;
-	ut_verify(QUARK_POS, value_to_ast_json(types, value_t::make_string("hello")), json_t("hello"));
+	ut_verify_json(QUARK_POS, value_to_ast_json(types, value_t::make_string("hello")), json_t("hello"));
 }
 
 QUARK_TESTQ("value_to_ast_json()", ""){
 	types_t types;
-	ut_verify(QUARK_POS, value_to_ast_json(types, value_t::make_int(123)), json_t(123.0));
+	ut_verify_json(QUARK_POS, value_to_ast_json(types, value_t::make_int(123)), json_t(123.0));
 }
 
 QUARK_TESTQ("value_to_ast_json()", ""){
 	types_t types;
-	ut_verify(QUARK_POS, value_to_ast_json(types, value_t::make_bool(true)), json_t(true));
+	ut_verify_json(QUARK_POS, value_to_ast_json(types, value_t::make_bool(true)), json_t(true));
 }
 
 QUARK_TESTQ("value_to_ast_json()", ""){
 	types_t types;
-	ut_verify(QUARK_POS, value_to_ast_json(types, value_t::make_bool(false)), json_t(false));
+	ut_verify_json(QUARK_POS, value_to_ast_json(types, value_t::make_bool(false)), json_t(false));
 }
 
 QUARK_TESTQ("value_to_ast_json()", ""){
 	types_t types;
-	ut_verify(QUARK_POS, value_to_ast_json(types, value_t::make_undefined()), json_t());
+	ut_verify_json(QUARK_POS, value_to_ast_json(types, value_t::make_undefined()), json_t());
 }
 
 
@@ -1375,7 +1375,7 @@ value_t make_def(const type_t& type){
 
 void ut_verify_values(const quark::call_context_t& context, const value_t& result, const value_t& expected){
 	types_t types;
-	ut_verify(
+	ut_verify_json(
 		context,
 		value_and_type_to_ast_json(types, result),
 		value_and_type_to_ast_json(types, expected)

@@ -32,7 +32,7 @@ parse_result_t parse_statement_body(const seq_t& s){
 }
 
 QUARK_TEST("", "parse_statement_body()", "", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_statement_body(seq_t("{}")).parse_tree,
 		parse_json(seq_t(
 			R"(
@@ -42,7 +42,7 @@ QUARK_TEST("", "parse_statement_body()", "", ""){
 	);
 }
 QUARK_TEST("", "parse_statement_body()", "", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_statement_body(seq_t("{ let int y = 11; }")).parse_tree,
 		parse_json(seq_t(
 			R"(
@@ -54,7 +54,7 @@ QUARK_TEST("", "parse_statement_body()", "", ""){
 	);
 }
 QUARK_TEST("", "parse_statement_body()", "", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_statement_body(seq_t("{ let int y = 11; print(3); }")).parse_tree,
 		parse_json(seq_t(
 			R"(
@@ -69,7 +69,7 @@ QUARK_TEST("", "parse_statement_body()", "", ""){
 
 //### test nested blocks.
 QUARK_TEST("", "parse_statement_body()", "", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_statement_body(seq_t(" { let int x = 1; let int y = 2; } ")).parse_tree,
 		parse_json(seq_t(
 			R"(
@@ -93,7 +93,7 @@ std::pair<json_t, seq_t> parse_block(const seq_t& s){
 }
 
 QUARK_TEST("", "parse_block()", "Block with two binds", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_block(seq_t(" { let int x = 1; let int y = 2; } ")).first,
 		parse_json(seq_t(
 			R"(
@@ -127,7 +127,7 @@ std::pair<json_t, seq_t> parse_return_statement(const seq_t& s){
 }
 
 QUARK_TEST("", "parse_block()", "Block with two binds", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_return_statement(seq_t("return 0;")).first,
 		parse_json(seq_t(
 			R"(
@@ -301,7 +301,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 
 
 QUARK_TEST("parse_bind_statement", "", "", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_bind_statement(seq_t("let bool bb = true")).first,
 		parse_json(seq_t(
 			R"(
@@ -311,7 +311,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 	);
 }
 QUARK_TEST("parse_bind_statement", "", "", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_bind_statement(seq_t("let int hello = 3")).first,
 		parse_json(seq_t(
 			R"(
@@ -322,7 +322,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 }
 
 QUARK_TEST("parse_bind_statement", "", "", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_bind_statement(seq_t("mutable int a = 14")).first,
 		parse_json(seq_t(
 			R"(
@@ -333,7 +333,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 }
 
 QUARK_TEST("parse_bind_statement", "", "", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_bind_statement(seq_t("mutable hello = 3")).first,
 		parse_json(seq_t(
 			R"(
@@ -376,7 +376,7 @@ std::pair<json_t, seq_t> parse_assign_statement(const seq_t& s){
 }
 
 QUARK_TEST("", "parse_assign_statement()", "", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_assign_statement(seq_t("x = 10;")).first,
 		parse_json(seq_t(
 			R"(
@@ -399,7 +399,7 @@ std::pair<json_t, seq_t> parse_expression_statement(const seq_t& s){
 }
 
 QUARK_TEST("", "parse_expression_statement()", "", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_expression_statement(seq_t("print(14);")).first,
 		parse_json(seq_t(
 			R"(
@@ -495,12 +495,12 @@ QUARK_TEST("", "parse_function_definition_statement()", "Minimal function IMPURE
 			["function-def", ["func", "int", [], false], "f", [], { "statements": [[21, "return", ["k", 3, "int"]]], "symbols": null }]
 		]
 	)";
-	ut_verify(QUARK_POS, parse_function_definition_statement(seq_t(input)).first, parse_json(seq_t(expected)).first);
+	ut_verify_json(QUARK_POS, parse_function_definition_statement(seq_t(input)).first, parse_json(seq_t(expected)).first);
 }
 
 
 QUARK_TEST("", "parse_function_definition_statement()", "function", "Correct output JSON"){
-	ut_verify(
+	ut_verify_json(
 		QUARK_POS,
 		parse_function_definition_statement(seq_t("func int f(){ return 3; }")).first,
 		parse_json(seq_t(
@@ -521,7 +521,7 @@ QUARK_TEST("", "parse_function_definition_statement()", "function", "Correct out
 
 
 QUARK_TEST("", "parse_function_definition_statement()", "3 args of different types", "Correct output JSON"){
-	ut_verify(
+	ut_verify_json(
 		QUARK_POS,
 		parse_function_definition_statement(seq_t("func int printf(string a, double barry, int c){ return 3; }")).first,
 		parse_json(seq_t(
@@ -548,7 +548,7 @@ QUARK_TEST("", "parse_function_definition_statement()", "3 args of different typ
 
 
 QUARK_TEST("", "parse_function_definition_statement()", "Max whitespace", "Correct output JSON"){
-	ut_verify(
+	ut_verify_json(
 		QUARK_POS,
 		parse_function_definition_statement(seq_t(" func  \t int \t printf( \t string \t a \t , \t double \t b \t ){ \t return \t 3 \t ; \t } \t ")).first,
 		parse_json(seq_t(
@@ -574,7 +574,7 @@ QUARK_TEST("", "parse_function_definition_statement()", "Max whitespace", "Corre
 }
 
 QUARK_TEST("", "parse_function_definition_statement()", "Min whitespace", "Correct output JSON"){
-	ut_verify(
+	ut_verify_json(
 		QUARK_POS,
 		parse_function_definition_statement(seq_t("func int printf(string a,double b){return 3;}")).first,
 		parse_json(seq_t(
@@ -643,7 +643,7 @@ QUARK_TEST("parser", "parse_struct_definition_statement", "", ""){
 		)___"
 	)).first;
 
-	ut_verify(QUARK_POS, r.first, expected);
+	ut_verify_json(QUARK_POS, r.first, expected);
 	ut_verify(QUARK_POS, r.second.str(), "");
 }
 
@@ -832,7 +832,7 @@ std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos){
 }
 
 QUARK_TEST("", "parse_if_statement()", "if(){}", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_if_statement(seq_t("if (1 > 2) { return 3 }")).first,
 		parse_json(seq_t(
 			R"(
@@ -850,7 +850,7 @@ QUARK_TEST("", "parse_if_statement()", "if(){}", ""){
 }
 
 QUARK_TEST("", "parse_if_statement()", "if(){}else{}", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_if_statement(seq_t("if (1 > 2) { return 3 } else { return 4 }")).first,
 		parse_json(seq_t(
 			R"(
@@ -871,7 +871,7 @@ QUARK_TEST("", "parse_if_statement()", "if(){}else{}", ""){
 }
 
 QUARK_TEST("", "parse_if_statement()", "if(){}else{}", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_if_statement(seq_t("if (1 > 2) { return 3 } else { return 4 }")).first,
 		parse_json(seq_t(
 			R"(
@@ -892,7 +892,7 @@ QUARK_TEST("", "parse_if_statement()", "if(){}else{}", ""){
 }
 
 QUARK_TEST("", "parse_if_statement()", "if(){} else if(){} else {}", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_if_statement(
 			seq_t("if (1 == 1) { return 1 } else if(2 == 2) { return 2 } else if(3 == 3) { return 3 } else { return 4 }")
 		).first,
@@ -997,7 +997,7 @@ std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos){
 }
 
 QUARK_TEST("", "parse_for_statement()", "for(){}", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_for_statement(seq_t("for ( index in 1...5 ) { let int y = 11 }")).first,
 		parse_json(seq_t(
 			R"(
@@ -1017,7 +1017,7 @@ QUARK_TEST("", "parse_for_statement()", "for(){}", ""){
 	);
 }
 QUARK_TEST("", "parse_for_statement()", "for(){}", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_for_statement(seq_t("for ( index in 1..<5 ) { let int y = 11 }")).first,
 		parse_json(seq_t(
 			R"(
@@ -1083,7 +1083,7 @@ std::pair<json_t, seq_t> parse_while_statement(const seq_t& pos){
 }
 
 QUARK_TEST("", "parse_while_statement()", "while(){}", ""){
-	ut_verify(QUARK_POS, 
+	ut_verify_json(QUARK_POS,
 		parse_while_statement(seq_t("while (a < 10) { print(a) }")).first,
 		parse_json(seq_t(
 			R"(
@@ -1134,7 +1134,7 @@ std::pair<json_t, seq_t> parse_benchmark_def_statement(const seq_t& pos0){
 }
 
 QUARK_TEST("", "parse_benchmark_def_statement()", "", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_benchmark_def_statement(seq_t(R"___(
 
 			benchmark-def "Linear veq 0" {
@@ -1213,7 +1213,7 @@ std::pair<json_t, seq_t> parse_test_def_statement(const seq_t& pos0){
 }
 
 QUARK_TEST("", "parse_test_def_statement()", "", ""){
-	ut_verify(QUARK_POS,
+	ut_verify_json(QUARK_POS,
 		parse_test_def_statement(seq_t(R"___(
 
 			test-def ("size()", "3 char string") {

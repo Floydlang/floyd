@@ -873,7 +873,7 @@ std::pair<location2_t, std::string> refine_compiler_error_with_loc2(const compil
 
 
 void ut_verify_json_and_rest(const quark::call_context_t& context, const std::pair<json_t, seq_t>& result_pair, const std::string& expected_json, const std::string& expected_rest){
-	ut_verify(
+	ut_verify_json(
 		context,
 		result_pair.first,
 		parse_json(seq_t(expected_json)).first
@@ -915,7 +915,7 @@ json_t make_ast_node(const location_t& location, const std::string& opcode, cons
 QUARK_TEST("", "make_ast_node()", "", ""){
 	const auto r = make_ast_node(location_t(1234), "def-struct", std::vector<json_t>{});
 
-	ut_verify(QUARK_POS, r, json_t::make_array({ 1234.0, "def-struct" }));
+	ut_verify_json(QUARK_POS, r, json_t::make_array({ 1234.0, "def-struct" }));
 }
 
 
