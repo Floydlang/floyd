@@ -2015,6 +2015,11 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 	a_acc = left_expr.first;
 
 	const auto lhs_type = analyze_expr_output_type(a_acc, left_expr.second);
+	if(peek2(a_acc._types, lhs_type).is_void()){
+		std::stringstream what;
+		what << "Artithmetics: Left hand side of expression cannot be of type void.";
+		throw_compiler_error(parent.location, what.str());
+	}
 
 	//	Make rhs match lhs if needed/possible.
 	const auto right_expr = analyse_expression_to_target(a_acc, parent, *details.rhs, lhs_type);
@@ -2838,7 +2843,7 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 	symbol_map.push_back( { "test_def_t", symbol_t::make_named_type(test_def_itype2)} );
 
 
-	//	Reserve a symbol table entry for benchmark_registry instance.
+	//	Reserve a symbol table entry for test_registry instance.
 	{
 		const auto test_registry_type = make_vector(a._types, make_symbol_ref(a._types, "test_def_t"));
 		symbol_map.push_back( {
@@ -2896,6 +2901,23 @@ const body_t make_global_body(analyser_t& a){
 			expression_t::make_construct_value_expr(
 				symbol_ptr.first->_value_type,
 				a.benchmark_defs
+			)
+		);
+
+		global_body3._statements.insert(global_body3._statements.begin(), s);
+	}
+
+	//	Add Init test_registry.
+	{
+		auto symbol_ptr = find_symbol_by_name(a, k_global_test_registry);
+		QUARK_ASSERT(symbol_ptr.first != nullptr);
+
+		const auto s = statement_t::make__init2(
+			k_no_location,
+			symbol_ptr.second,
+			expression_t::make_construct_value_expr(
+				symbol_ptr.first->_value_type,
+				a.test_defs
 			)
 		);
 

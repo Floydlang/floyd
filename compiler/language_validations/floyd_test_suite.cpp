@@ -1461,6 +1461,7 @@ FLOYD_LANG_PROOF_VIP("Floyd test suite", "test-def", "Simple test-def compiles, 
 			test-def ("Test 404", "print a message"){ print("Running test 404!") }
 			test-def ("Test 1138", "thx"){ print("Watching THX!") }
 
+			print(to_pretty_string(test_registry) + "\n")
 		)___"
 	);
 }
