@@ -1198,7 +1198,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "Local function", "", ""){
 	);
 }
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "Local function", "", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "Local function", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1429,6 +1429,77 @@ FLOYD_LANG_PROOF("Floyd test suite", "impure", "call impure->impure", "Compiles 
 		)"
 	);
 }
+
+
+
+//######################################################################################################################
+//	TEST-DEF STATEMENT
+//######################################################################################################################
+
+
+
+
+//??? make sure only pure functions can be called inside test-def.
+
+
+FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Simple test-def compiles, call to test()", ""){
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"___(
+
+			test-def ("Test 404", "print a message"){ print("Running test 404!") }
+
+		)___"
+	);
+}
+
+
+
+FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Simple test-def compiles", ""){
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"___(
+
+			test-def ("subset()", "skip first character"){ test( subset("abc", 1, 3), "bc") }
+
+		)___"
+	);
+}
+
+
+
+#if 0
+FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Test running more than one simple benchmark_def", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			test-def ("subset()", "skip first character"){ test( subset("abc", 1, 3), "bc" )}
+
+
+			benchmark-def "AAA" {
+				return [ benchmark_result_t(200, json("0 eleements")) ]
+			}
+			benchmark-def "BBB" {
+				return [ benchmark_result_t(300, json("3 monkeys")) ]
+			}
+
+			for(i in 0 ..< size(benchmark_registry)){
+				let e = benchmark_registry[i]
+				let benchmark_result = e.f()
+				for(v in 0 ..< size(benchmark_result)){
+					print(e.name + ": " + to_string(v) + ": dur: " + to_string(benchmark_result[v].dur) + ", more: " + to_pretty_string(benchmark_result[v].more) )
+				}
+			}
+
+		)",
+		{
+			R"___(AAA: 0: dur: 200, more: "0 eleements")___",
+			R"___(BBB: 0: dur: 300, more: "3 monkeys")___"
+		}
+	);
+}
+#endif
 
 
 
@@ -5982,19 +6053,19 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Access benchmark registry
 	);
 }
 
-FLOYD_LANG_PROOF("Floyd test suite", "for", "Make sure loop variable is hidden outside of for-body", ""){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
+		FLOYD_LANG_PROOF("Floyd test suite", "for", "Make sure loop variable is hidden outside of for-body", ""){
+			ut_verify_exception_nolib(
+				QUARK_POS,
+				R"(
 
-			for(i in 0 ..< 1){
-				let result = 3
-			}
-			assert(result)
-		)",
-		R"___([Semantics] Undefined variable "result". Line: 6 "assert(result)")___"
-	);
-}
+					for(i in 0 ..< 1){
+						let result = 3
+					}
+					assert(result)
+				)",
+				R"___([Semantics] Undefined variable "result". Line: 6 "assert(result)")___"
+			);
+		}
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running more than one simple benchmark_def", ""){

@@ -203,6 +203,7 @@ namespace parse_tree_statement_opcode {
 	const std::string k_software_system_def = "software-system-def";
 	const std::string k_container_def = "container-def";
 	const std::string k_benchmark_def = "benchmark-def";
+	const std::string k_test_def = "test-def";
 };
 
 

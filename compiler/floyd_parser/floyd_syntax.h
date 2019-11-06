@@ -119,6 +119,7 @@ namespace keyword_t {
 	const std::string k_software_system = "software-system-def";
 	const std::string k_container_def = "container-def";
 	const std::string k_benchmark_def = "benchmark-def";
+	const std::string k_test_def = "test-def";
 	const std::string k_benchmark = "benchmark";
 
 	const std::string k_json_object = "json_object";

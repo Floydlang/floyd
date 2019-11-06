@@ -1133,7 +1133,7 @@ std::pair<json_t, seq_t> parse_benchmark_def_statement(const seq_t& pos0){
 	return { r, body.pos };
 }
 
-QUARK_TEST("", "parse_benchmark_def_statement()", "while(){}", ""){
+QUARK_TEST("", "parse_benchmark_def_statement()", "", ""){
 	ut_verify(QUARK_POS,
 		parse_benchmark_def_statement(seq_t(R"___(
 
@@ -1153,6 +1153,75 @@ QUARK_TEST("", "parse_benchmark_def_statement()", "while(){}", ""){
 				]
 			)"
 		)).first
+	);
+}
+
+
+
+static std::string get_string_literal(const json_t& j){
+	const auto a = j.get_array();
+	const auto opcode = a[0].get_string();
+	const auto value = a[1].get_string();
+	const auto type = a[2].get_string();
+	if(opcode == parse_tree_expression_opcode_t::k_literal && type == "string"){
+		return value;
+	}
+	else{
+		throw std::exception();
+	}
+}
+
+
+
+//////////////////////////////////////////////////		parse_test_def_statement()
+
+
+//??? Idea: each parse-function returns a custom struct with the parsed data. Client can convert to JSON if they want to.
+
+std::pair<json_t, seq_t> parse_test_def_statement(const seq_t& pos0){
+	const auto pos = skip_whitespace(pos0);
+	std::pair<bool, seq_t> pos2 = if_first(pos, keyword_t::k_test_def);
+	QUARK_ASSERT(pos2.first);
+
+	const auto params_vs = read_enclosed_in_parantheses(pos2.second);
+	const auto body = parse_statement_body(params_vs.second);
+
+	const auto func_name_vs = parse_expression(seq_t(params_vs.first));
+	const auto comma_vs = read_required(skip_whitespace(func_name_vs.second), ",");
+	const auto scenario_name_vs = parse_expression(skip_whitespace(comma_vs));
+	const auto after = skip_whitespace(scenario_name_vs.second);
+
+	// Check there is nothing more after scenario name.
+	if(after.str() != ""){
+		const auto loc = location_t(pos0.pos());
+		throw_compiler_error(loc, "Syntax error.");
+	}
+
+	const auto func_name = get_string_literal(func_name_vs.first);
+	const auto scenario_name = get_string_literal(scenario_name_vs.first);
+
+	const auto r = make_parser_node(
+		location_t(pos.pos()),
+		parse_tree_statement_opcode::k_test_def,
+		{
+			func_name,
+			scenario_name,
+			body.parse_tree
+		}
+	);
+	return { r, body.pos };
+}
+
+QUARK_TEST_VIP("", "parse_test_def_statement()", "", ""){
+	ut_verify(QUARK_POS,
+		parse_test_def_statement(seq_t(R"___(
+
+			test-def ("size()", "3 char string") {
+				print(1234)
+			}
+
+		)___")).first,
+		parse_json(seq_t(R"___([5, "test-def", "size()", "3 char string", [[48, "expression-statement", ["call", ["@", "print"], [["k", 1234, "int"]]]]]])___")).first
 	);
 }
 

@@ -67,6 +67,9 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& s){
 		else if(is_first(pos, keyword_t::k_benchmark_def)){
 			return parse_benchmark_def_statement(pos);
 		}
+		else if(is_first(pos, keyword_t::k_test_def)){
+			return parse_test_def_statement(pos);
+		}
 		else {
 			//	k_assign and k_expression_statement has no prefix, we need to figure out if it's one of those.
 			return parse_prefixless_statement(pos);
