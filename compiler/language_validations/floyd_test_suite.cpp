@@ -1453,6 +1453,18 @@ FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Simple test-def compiles, call
 	);
 }
 
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "test-def", "Simple test-def compiles, call to test()", ""){
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"___(
+
+			test-def ("Test 404", "print a message"){ print("Running test 404!") }
+			test-def ("Test 1138", "thx"){ print("Watching THX!") }
+
+		)___"
+	);
+}
+
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Simple test-def compiles", ""){

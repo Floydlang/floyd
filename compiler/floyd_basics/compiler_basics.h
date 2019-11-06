@@ -124,6 +124,8 @@ inline type_t make_benchmark_def_t(types_t& types){
 }
 
 
+
+
 //////////////////////////////////////		benchmark_id_t
 
 
@@ -177,6 +179,30 @@ const std::string k_global_benchmark_registry = "benchmark_registry";
 
 
 
+
+
+
+//////////////////////////////////////		make_test_def_t
+
+
+inline type_t make_test_function_t(types_t& types){
+	return make_function(types, type_t::make_void(), {}, epure::pure);
+}
+
+inline type_t make_test_def_t(types_t& types){
+	const auto x = make_struct(
+		types,
+		struct_type_desc_t({
+			member_t{ type_t::make_string(), "function_name" },
+			member_t{ type_t::make_string(), "scenario" },
+			member_t{ make_test_function_t(types), "f" }
+		})
+	);
+	return x;
+}
+
+
+const std::string k_global_test_registry = "test_registry";
 
 
 

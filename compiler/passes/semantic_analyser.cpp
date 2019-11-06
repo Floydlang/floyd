@@ -79,6 +79,7 @@ struct analyser_t {
 	public: container_t _container_def;
 
 	public: std::vector<expression_t> benchmark_defs;
+	public: std::vector<expression_t> test_defs;
 
 	public: int scope_id_generator;
 };
@@ -820,6 +821,65 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 	return a_acc;
 }
 
+//??? Change this to find the symbol instead of using make_test_def_t().
+static analyser_t analyse_test_def_statement(const analyser_t& a, const statement_t& s, const type_t& return_type){
+	QUARK_ASSERT(a.check_invariant());
+
+	auto a_acc = a;
+	const auto statement = std::get<statement_t::test_def_statement_t>(s._contents);
+
+	const auto test_name = statement.function_name + ":" + statement.scenario;
+	const auto function_link_name = "test__" + test_name;
+
+	const auto test_def_itype = resolve_symbols(a_acc, k_no_location, make_symbol_ref(a_acc._types, "test_def_t"));
+	const auto f_itype = resolve_symbols(a_acc, k_no_location, make_test_function_t(a_acc._types));
+
+
+	const auto function_id = function_id_t { function_link_name };
+
+	//	Make a function def expression for the new test function.
+
+	const auto body_pair = analyse_body(a_acc, statement._body, epure::pure, peek2(a_acc._types, f_itype).get_function_return(a_acc._types));
+	a_acc = body_pair.first;
+
+
+	const auto function_def2 = function_definition_t::make_func(
+		k_no_location,
+		function_link_name,
+		peek2(a_acc._types, f_itype),
+		{},
+		std::make_shared<body_t>(body_pair.second)
+	);
+	QUARK_ASSERT(check_types_resolved(a_acc._types, function_def2));
+
+	a_acc._function_defs.insert({ function_id, function_definition_t(function_def2) });
+
+	const auto f = value_t::make_function_value(f_itype, function_id);
+
+
+	//	Add test-def record to test_defs.
+	{
+		const auto new_record_expr = expression_t::make_construct_value_expr(
+			test_def_itype,
+			{
+				expression_t::make_literal_string(statement.function_name),
+				expression_t::make_literal_string(statement.scenario),
+				expression_t::make_literal(f)
+			}
+		);
+		const auto new_record_expr3_pair = analyse_expression_to_target(a_acc, s, new_record_expr, test_def_itype);
+		a_acc = new_record_expr3_pair.first;
+		a_acc.test_defs.push_back(new_record_expr3_pair.second);
+	}
+
+	const auto body2 = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, peek2(a_acc._types, f_itype).get_function_return(a_acc._types));
+	a_acc = body2.first;
+	return a_acc;
+}
+
+
+
+
 //	Output is the RETURN VALUE of the analysed statement, if any.
 static std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement, const type_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
@@ -902,6 +962,12 @@ static std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(con
 //			QUARK_ASSERT(check_types_resolved(e.second));
 			return { e, {} };
 		}
+		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::test_def_statement_t& s) const{
+			const auto e = analyse_test_def_statement(a, statement, return_type);
+//			QUARK_ASSERT(check_types_resolved(e.second));
+			return { e, {} };
+		}
+
 	};
 
 	return std::visit(visitor_t{ a, statement, return_type }, statement._contents);
@@ -2739,6 +2805,9 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 	symbol_map.push_back( { "json_null", symbol_t::make_immutable_precalc(type_t::make_int(), value_t::make_int(7)) });
 
 
+
+	//	Insert the types that are built-into the compiler itself = not part of standard library.
+
 	const auto benchmark_result_itype = resolve_symbols(a, k_no_location, make_benchmark_result_t(a._types));
 	const auto benchmark_result_itype2 = make_named_type(a._types, generate_type_name(a, "benchmark_result_t"), benchmark_result_itype);
 	symbol_map.push_back( { "benchmark_result_t", symbol_t::make_named_type(benchmark_result_itype2) } );
@@ -2760,6 +2829,28 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 			)
 		} );
 	}
+
+
+
+
+	const auto test_def_itype = resolve_symbols(a, k_no_location, make_test_def_t(a._types));
+	const auto test_def_itype2 = make_named_type(a._types, generate_type_name(a, "test_def_t"), test_def_itype);
+	symbol_map.push_back( { "test_def_t", symbol_t::make_named_type(test_def_itype2)} );
+
+
+	//	Reserve a symbol table entry for benchmark_registry instance.
+	{
+		const auto test_registry_type = make_vector(a._types, make_symbol_ref(a._types, "test_def_t"));
+		symbol_map.push_back( {
+			k_global_test_registry,
+			symbol_t::make_immutable_reserve(
+				resolve_symbols(a, k_no_location, test_registry_type)
+			)
+		} );
+	}
+
+
+
 
 	return symbol_map;
 }

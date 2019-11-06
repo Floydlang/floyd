@@ -53,6 +53,7 @@ namespace statement_opcode_t {
 	const std::string k_software_system_def = "software-system-def";
 	const std::string k_container_def = "container-def";
 	const std::string k_benchmark_def = "benchmark-def";
+	const std::string k_test_def = "test-def";
 };
 
 
@@ -464,7 +465,7 @@ struct statement_t {
 
 	struct benchmark_def_statement_t {
 		bool operator==(const benchmark_def_statement_t& other) const {
-			return _body == other._body;
+			return name == other.name && _body == other._body;
 		}
 
 		std::string name;
@@ -477,6 +478,33 @@ struct statement_t {
 		const body_t& body
 	){
 		return statement_t(location, { benchmark_def_statement_t{ name, body } });
+	}
+
+
+	//////////////////////////////////////		test_def_statement_t
+
+
+	struct test_def_statement_t {
+		bool operator==(const test_def_statement_t& other) const {
+			return
+				function_name == other.function_name
+				&& scenario == other.scenario
+				&& _body == other._body
+			;
+		}
+
+		std::string function_name;
+		std::string scenario;
+		body_t _body;
+	};
+
+	public: static statement_t make__test_def_statement(
+		const location_t& location,
+		const std::string& function_name,
+		const std::string& scenario,
+		const body_t& body
+	){
+		return statement_t(location, { test_def_statement_t{ function_name, scenario, body } });
 	}
 
 
@@ -534,7 +562,8 @@ struct statement_t {
 		expression_statement_t,
 		software_system_statement_t,
 		container_def_statement_t,
-		benchmark_def_statement_t
+		benchmark_def_statement_t,
+		test_def_statement_t
 	> statement_variant_t;
 
 	statement_t(/*const types_t& types,*/ const location_t& location, const statement_variant_t& contents) :

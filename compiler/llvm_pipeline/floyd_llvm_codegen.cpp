@@ -2218,6 +2218,9 @@ static function_return_mode generate_statement(llvm_function_generator_t& gen_ac
 		function_return_mode operator()(const statement_t::benchmark_def_statement_t& s) const{
 			UNSUPPORTED();
 		}
+		function_return_mode operator()(const statement_t::test_def_statement_t& s) const{
+			UNSUPPORTED();
+		}
 	};
 
 	return std::visit(visitor_t{ gen_acc }, statement._contents);

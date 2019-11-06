@@ -1188,8 +1188,8 @@ std::pair<json_t, seq_t> parse_test_def_statement(const seq_t& pos0){
 
 	const auto func_name_vs = parse_expression(seq_t(params_vs.first));
 	const auto comma_vs = read_required(skip_whitespace(func_name_vs.second), ",");
-	const auto scenario_name_vs = parse_expression(skip_whitespace(comma_vs));
-	const auto after = skip_whitespace(scenario_name_vs.second);
+	const auto scenario_vs = parse_expression(skip_whitespace(comma_vs));
+	const auto after = skip_whitespace(scenario_vs.second);
 
 	// Check there is nothing more after scenario name.
 	if(after.str() != ""){
@@ -1198,21 +1198,21 @@ std::pair<json_t, seq_t> parse_test_def_statement(const seq_t& pos0){
 	}
 
 	const auto func_name = get_string_literal(func_name_vs.first);
-	const auto scenario_name = get_string_literal(scenario_name_vs.first);
+	const auto scenario = get_string_literal(scenario_vs.first);
 
 	const auto r = make_parser_node(
 		location_t(pos.pos()),
 		parse_tree_statement_opcode::k_test_def,
 		{
 			func_name,
-			scenario_name,
+			scenario,
 			body.parse_tree
 		}
 	);
 	return { r, body.pos };
 }
 
-QUARK_TEST_VIP("", "parse_test_def_statement()", "", ""){
+QUARK_TEST("", "parse_test_def_statement()", "", ""){
 	ut_verify(QUARK_POS,
 		parse_test_def_statement(seq_t(R"___(
 

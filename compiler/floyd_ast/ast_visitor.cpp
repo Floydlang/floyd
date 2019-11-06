@@ -216,6 +216,10 @@ static statement_t visit_ast_statement(visit_ast_t& acc, const statement_t& stat
 			const auto body = visit_ast_body(acc, s._body);
 			return statement_t::make__benchmark_def_statement(statement.location, s.name, body);
 		}
+		statement_t operator()(const statement_t::test_def_statement_t& s) const{
+			const auto body = visit_ast_body(acc, s._body);
+			return statement_t::make__test_def_statement(statement.location, s.function_name, s.scenario, body);
+		}
 	};
 
 	return std::visit(visitor_t{ acc, statement }, statement._contents);
