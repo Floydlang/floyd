@@ -70,19 +70,19 @@ vector<string> split_on_chars(const seq_t& s, const string& match_chars){
 }
 
 QUARK_TESTQ("split_on_chars()", ""){
-	ut_verify(QUARK_POS, split_on_chars(seq_t(""),"#"), vector<string>{});
+	ut_verify_stringvec(QUARK_POS, split_on_chars(seq_t(""),"#"), vector<string>{});
 }
 QUARK_TESTQ("split_on_chars()", ""){
-	ut_verify(QUARK_POS, split_on_chars(seq_t("#"),"#"), vector<string>{""});
+	ut_verify_stringvec(QUARK_POS, split_on_chars(seq_t("#"),"#"), vector<string>{""});
 }
 QUARK_TESTQ("split_on_chars()", ""){
-	ut_verify(QUARK_POS, split_on_chars(seq_t("123#"),"#"), vector<string>{"123"});
+	ut_verify_stringvec(QUARK_POS, split_on_chars(seq_t("123#"),"#"), vector<string>{"123"});
 }
 QUARK_TESTQ("split_on_chars()", ""){
-	ut_verify(QUARK_POS, split_on_chars(seq_t("123#456"),"#"), (vector<string>{"123", "456"}));
+	ut_verify_stringvec(QUARK_POS, split_on_chars(seq_t("123#456"),"#"), (vector<string>{"123", "456"}));
 }
 QUARK_TESTQ("split_on_chars()", ""){
-	ut_verify(QUARK_POS, split_on_chars(seq_t("a##b"),"#"), (vector<string>{"a", "", "b"}));
+	ut_verify_stringvec(QUARK_POS, split_on_chars(seq_t("a##b"),"#"), (vector<string>{"a", "", "b"}));
 }
 
 

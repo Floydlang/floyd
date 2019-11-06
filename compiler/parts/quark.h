@@ -557,7 +557,7 @@ template <typename T> void ut_verify_auto(const quark::call_context_t& context, 
 	}
 }
 
-inline void ut_verify(const quark::call_context_t& context, const std::string& result, const std::string& expected){
+inline void ut_verify_string(const quark::call_context_t& context, const std::string& result, const std::string& expected){
 	if(result == expected){
 	}
 	else{
@@ -597,7 +597,7 @@ inline void ut_verify(const quark::call_context_t& context, const std::string& r
 		fail_test(context);
 	}
 }
-inline void ut_verify(const quark::call_context_t& context, const std::vector<std::string>& result, const std::vector<std::string>& expected){
+inline void ut_verify_stringvec(const quark::call_context_t& context, const std::vector<std::string>& result, const std::vector<std::string>& expected){
 	if(result != expected){
 		if(result.size() != expected.size()){
 			QUARK_TRACE("Vector are different sizes!");
@@ -615,13 +615,13 @@ inline void ut_verify(const quark::call_context_t& context, const std::vector<st
 
 
 inline void ut_verify(const call_context_t& context, const char* result, const char* expected){
-	ut_verify(context, std::string(result), std::string(expected));
+	ut_verify_string(context, std::string(result), std::string(expected));
 }
 inline void ut_verify(const call_context_t& context, const std::string& result, const char* expected){
-	ut_verify(context, result, std::string(expected));
+	ut_verify_string(context, result, std::string(expected));
 }
 inline void ut_verify(const call_context_t& context, const char* result, const std::string& expected){
-	ut_verify(context, std::string(result), expected);
+	ut_verify_string(context, std::string(result), expected);
 }
 
 #else

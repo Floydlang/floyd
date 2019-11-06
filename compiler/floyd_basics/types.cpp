@@ -277,7 +277,7 @@ base_type opcode_to_base_type(const std::string& s){
 
 
 void ut_verify(const quark::call_context_t& context, const base_type& result, const base_type& expected){
-	ut_verify(
+	ut_verify_string(
 		context,
 		base_type_to_opcode(result),
 		base_type_to_opcode(expected)

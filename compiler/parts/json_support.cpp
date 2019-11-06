@@ -29,7 +29,7 @@ void ut_verify_json(const quark::call_context_t& context, const json_t& result, 
 	else{
 		const auto result2 = json_to_pretty_string(result);
 		const auto expected2 = json_to_pretty_string(expected);
-		quark::ut_verify(context, result2, expected2);
+		ut_verify_string(context, result2, expected2);
 	}
 }
 
@@ -40,10 +40,10 @@ void ut_verify_json_seq(const quark::call_context_t& context, const std::pair<js
 		if(result.first != expected.first){
 			const auto result2 = json_to_pretty_string(result.first);
 			const auto expected2 = json_to_pretty_string(expected.first);
-			quark::ut_verify(context, result2, expected2);
+			ut_verify_string(context, result2, expected2);
 		}
 		else {
-			quark::ut_verify(context, result.second.str(), expected.second.str());
+			ut_verify_string(context, result.second.str(), expected.second.str());
 		}
 	}
 }
@@ -1082,7 +1082,7 @@ const string compact_escaped = "{\"menu\": {\"id\": \"file\",\"popup\": {\"menui
 const string compact_raw_string = R"___({"menu": {"id": "file","popup": {"menuitem": [{"value": "New","onclick": "CreateNewDoc()"},{"value": "Close","onclick": "CloseDoc()"}]}}})___";
 
 QUARK_TESTQ("C++11 raw string literals", ""){
-	ut_verify(QUARK_POS, compact_escaped, compact_raw_string);
+	ut_verify_string(QUARK_POS, compact_escaped, compact_raw_string);
 }
 
 
@@ -1112,7 +1112,7 @@ QUARK_TESTQ("erase_linefeed()", ""){
 }
 
 QUARK_TESTQ("C++11 raw string literals", ""){
-	ut_verify(QUARK_POS, erase_linefeed(beautiful_escaped), beautiful_raw_string);
+	ut_verify_string(QUARK_POS, erase_linefeed(beautiful_escaped), beautiful_raw_string);
 }
 
 

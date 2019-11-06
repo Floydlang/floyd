@@ -73,7 +73,7 @@ QUARK_TESTQ("path_to_name()", ""){
 //??? test mixes of string vs char*
 
 QUARK_TEST("Quark", "ut_verify()", "", ""){
-	ut_verify(QUARK_POS, std::string("xyz123"), std::string("xyz123"));
+	ut_verify_string(QUARK_POS, std::string("xyz123"), std::string("xyz123"));
 }
 QUARK_TEST("Quark", "ut_verify()", "", ""){
 	ut_verify(QUARK_POS, "xyz", "xyz");

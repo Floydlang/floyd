@@ -1359,7 +1359,7 @@ void ut_verify__parse_expression(const quark::call_context_t& context, const std
 	else{
 		const std::string expected_json2_s = json_to_compact_string(expected_json);
 		ut_verify_json(context, result.first, expected_json);
-		ut_verify(context, result.second.str(), expected_rest);
+		ut_verify_string(context, result.second.str(), expected_rest);
 		fail_test(context);
 	}
 }
@@ -1978,7 +1978,7 @@ void test__parse_expression__throw(const std::string& expression, const std::str
 	catch(const std::runtime_error& e){
 		const std::string es(e.what());
 		if(!exception_message.empty()){
-			ut_verify(QUARK_POS, es, exception_message);
+			ut_verify_string(QUARK_POS, es, exception_message);
 		}
 	}
 }

@@ -79,7 +79,7 @@ void ut_verify_report(const quark::call_context_t& context, const test_report_t&
 	}
 
 	if(result.print_out != expected.print_out){
-		ut_verify(context, result.print_out, expected.print_out);
+		ut_verify_stringvec(context, result.print_out, expected.print_out);
 	}
 
 	if(result.result_variable != expected.result_variable){
@@ -158,7 +158,7 @@ void test_floyd(const quark::call_context_t& context, const compilation_unit_t& 
 		semast = temp_semast;
 	}
 	catch(const std::runtime_error& e){
-		ut_verify(context, std::string(e.what()), expected.exception_what);
+		ut_verify_string(context, std::string(e.what()), expected.exception_what);
 		return;
 	}
 	catch(...){
