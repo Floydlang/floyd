@@ -102,6 +102,15 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 
 		//	Runs global code.
 		auto interpreter = interpreter_t(exe);
+
+		const auto tests = collect_tests(interpreter);
+		const auto test_results = floyd::run_tests(interpreter, tests);
+		for(const auto& e: test_results){
+			if(e.empty() == false){
+				return test_report_t{ {}, {}, {}, e };
+			}
+		}
+
 		auto run_output = run_program_bc(interpreter, main_args);
 
 		const auto result_variable = find_global_symbol2(interpreter, "result");
@@ -132,6 +141,15 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 		auto exe = generate_llvm_ir_program(llvm_instance, semast, "", settings);
 
 		auto ee = init_llvm_jit(*exe);
+
+		const auto tests = collect_tests(*ee);
+		const auto test_results = floyd::run_tests(*ee, tests);
+		for(const auto& e: test_results){
+			if(e.empty() == false){
+				return test_report_t{ {}, {}, {}, e };
+			}
+		}
+
 		const auto run_output = run_program(*ee, main_args);
 
 		const auto result_global0 = bind_global(*ee, "result");
@@ -185,7 +203,7 @@ void test_floyd(const quark::call_context_t& context, const compilation_unit_t& 
 }
 
 
-QUARK_TEST("test_helpers", "run_program()", "", ""){
+QUARK_TEST("test_helpers", "test_floyd()", "", ""){
 	test_floyd(
 		QUARK_POS,
 		make_compilation_unit("print(\"Hello, world!\")", "", compilation_unit_mode::k_no_core_lib),
@@ -196,7 +214,7 @@ QUARK_TEST("test_helpers", "run_program()", "", ""){
 	);
 }
 
-QUARK_TEST("test_helpers", "run_program()", "", ""){
+QUARK_TEST("test_helpers", "test_floyd()", "", ""){
 	const types_t types;
 	test_floyd(
 		QUARK_POS,
@@ -207,7 +225,7 @@ QUARK_TEST("test_helpers", "run_program()", "", ""){
 		false
 	);
 }
-QUARK_TEST("test_helpers", "run_program()", "", ""){
+QUARK_TEST("test_helpers", "test_floyd()", "", ""){
 	const types_t types;
 	test_floyd(
 		QUARK_POS,
@@ -219,7 +237,7 @@ QUARK_TEST("test_helpers", "run_program()", "", ""){
 	);
 
 }
-QUARK_TEST("test_helpers", "run_program()", "", ""){
+QUARK_TEST("test_helpers", "test_floyd()", "", ""){
 	const types_t types;
 	test_floyd(
 		QUARK_POS,

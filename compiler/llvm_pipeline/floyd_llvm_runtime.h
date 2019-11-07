@@ -232,13 +232,6 @@ run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::str
 ////////////////////////////////		BENCHMARKS
 
 
-
-struct bench_t {
-	benchmark_id_t benchmark_id;
-	link_name_t f;
-};
-inline bool operator==(const bench_t& lhs, const bench_t& rhs){ return lhs.benchmark_id == rhs.benchmark_id && lhs.f == rhs.f; }
-
 std::vector<bench_t> collect_benchmarks(llvm_execution_engine_t& ee);
 std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, const std::vector<bench_t>& tests);
 
@@ -248,11 +241,6 @@ std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, con
 
 
 
-struct test_t {
-	test_id_t test_id;
-	link_name_t f;
-};
-inline bool operator==(const test_t& lhs, const test_t& rhs){ return lhs.test_id == rhs.test_id && lhs.f == rhs.f; }
 
 std::vector<test_t> collect_tests(llvm_execution_engine_t& ee);
 std::vector<std::string> run_tests(llvm_execution_engine_t& ee, const std::vector<test_t>& tests);

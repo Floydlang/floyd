@@ -11,6 +11,7 @@
 #include "floyd_runtime.h"
 
 #include "bytecode_generator.h"
+#include "bytecode_interpreter.h"
 #include "os_process.h"
 #include "bytecode_helpers.h"
 #include "semantic_ast.h"
@@ -360,6 +361,8 @@ static int64_t bc_call_main(interpreter_t& interpreter, const floyd::value_t& f,
 }
 
 run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& main_args){
+	QUARK_ASSERT(vm.check_invariant());
+
 	const auto& main_function = find_global_symbol2(vm, "main");
 	if(main_function != nullptr){
 		const auto main_result_int = bc_call_main(vm, bc_to_value(vm._imm->_program._types, main_function->_value), main_args);
@@ -373,6 +376,66 @@ run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& m
 	}
 }
 
+std::vector<test_t> collect_tests(interpreter_t& vm){
+	QUARK_ASSERT(vm.check_invariant());
+
+	const auto& test_registry_bind = find_global_symbol2(vm, k_global_test_registry);
+	QUARK_ASSERT(test_registry_bind != nullptr);
+
+//	call_function(vm, f, {});
+
+	const auto vec = bc_to_value(vm._imm->_program._types, test_registry_bind->_value);
+	const auto vec2 = vec.get_vector_value();
+	std::vector<test_t> a = unpack_test_registry(vec2);
+	return a;
+/*
+		const auto main_result_int = bc_call_main(vm, bc_to_value(vm._imm->_program._types, main_function->_value), main_args);
+		print_vm_printlog(vm);
+		return { main_result_int, {} };
+	}
+	else{
+		const auto output = run_floyd_processes(vm, main_args);
+		print_vm_printlog(vm);
+		return run_output_t(0, output);
+	}
+*/
+}
+
+std::vector<std::string> run_tests(interpreter_t& vm, const std::vector<test_t>& tests){
+	QUARK_ASSERT(vm.check_invariant());
+
+	std::vector<std::string> result;
+	for(const auto& b: tests){
+		const auto function_id = function_id_t { b.f.s };
+//		const bc_function_definition_t& f_def = get_function_def(vm, function_id);
+
+		const auto f_type = make_function(
+			vm._imm->_program._types,
+			type_t::make_void(),
+			{},
+			epure::pure
+		);
+
+		const auto f_value = bc_value_t::make_function_value(f_type, function_id);
+
+		try {
+			const std::vector<bc_value_t> args2;
+			call_function_bc(vm, f_value, &args2[0], static_cast<int>(args2.size()));
+
+			result.push_back("");
+		}
+		catch(const std::runtime_error& e){
+			result.push_back("fail: runtime_error, what: " + std::string(e.what()));
+		}
+		catch(const std::exception& e){
+			result.push_back("fail: std::exception");
+		}
+		catch(...){
+			result.push_back("fail");
+		}
+	}
+	return result;
+}
 
 
 

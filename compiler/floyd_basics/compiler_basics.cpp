@@ -56,6 +56,22 @@ std::vector<benchmark_result2_t> unpack_vec_benchmark_result2_t(types_t& types, 
 
 
 
+std::vector<test_t> unpack_test_registry(const std::vector<value_t>& r){
+	std::vector<test_t> result;
+	for(const auto& e: r){
+		const auto s = e.get_struct_value();
+
+		const auto function_name = s->_member_values[0].get_string_value();
+		const auto scenario = s->_member_values[1].get_string_value();
+		const auto f_link_name_str = s->_member_values[2].get_function_value().name;
+		const auto test = test_t{ test_id_t { "", function_name, scenario }, link_name_t{ f_link_name_str } };
+
+		result.push_back(test);
+	}
+	return result;
+}
+
+
 bool is_floyd_literal(const type_desc_t& desc){
 	QUARK_ASSERT(desc.check_invariant());
 

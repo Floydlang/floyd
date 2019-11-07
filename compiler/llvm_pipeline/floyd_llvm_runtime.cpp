@@ -892,13 +892,11 @@ run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::str
 ////////////////////////////////		BENCHMARKS
 
 
-///??? should lookup structs via their name in symbol table!
+//	??? should lookup structs via their name in symbol table!
+//	??? This requires resolving symbols, which is too late at runtime. Resolve these earlier?
 std::vector<bench_t> collect_benchmarks(llvm_execution_engine_t& ee){
 	std::pair<void*, type_t> benchmark_registry_bind = bind_global(ee, k_global_benchmark_registry);
 	QUARK_ASSERT(benchmark_registry_bind.first != nullptr);
-
-//	??? This requires resolving symbols, which is too late at runtime. Resolve these earlier?
-//	QUARK_ASSERT(benchmark_registry_bind.second == make_vector(ee.backend.types, make_benchmark_def_t(ee.backend.types)));
 
 	const value_t reg = load_global(ee, benchmark_registry_bind);
 	const auto v = reg.get_vector_value();
@@ -918,13 +916,9 @@ std::vector<bench_t> collect_benchmarks(llvm_execution_engine_t& ee){
 std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, const std::vector<bench_t>& tests){
 	QUARK_ASSERT(ee.check_invariant());
 
-//	const auto result2 = from_runtime_value(ee, bench_result, make_vector(types2, make_benchmark_result_t(types2)));
-//	QUARK_ASSERT(types2.nodes.size() == types.nodes.size());
-
 	const auto benchmark_result_vec_type_symbol = find_symbol_required(ee.global_symbols, "benchmark_result_vec_t");
 	const auto benchmark_result_vec_type = benchmark_result_vec_type_symbol._value_type;
 
-//	const types_t& types = ee.backend.types;
 	std::vector<benchmark_result2_t> result;
 	for(const auto& b: tests){
 		const auto name = b.benchmark_id.test;
@@ -961,43 +955,23 @@ std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, con
 
 
 
-///??? should lookup structs via their name in symbol table!
+//	??? should lookup structs via their name in symbol table!
+//	??? This requires resolving symbols, which is too late at runtime. Resolve these earlier?
 std::vector<test_t> collect_tests(llvm_execution_engine_t& ee){
 	std::pair<void*, type_t> test_registry_bind = bind_global(ee, k_global_test_registry);
 	QUARK_ASSERT(test_registry_bind.first != nullptr);
 
-//	??? This requires resolving symbols, which is too late at runtime. Resolve these earlier?
-//	QUARK_ASSERT(test_registry_bind.second == make_vector(ee.backend.types, make_test_def_t(ee.backend.types)));
-
 	const value_t reg = load_global(ee, test_registry_bind);
 	const auto v = reg.get_vector_value();
-
-	std::vector<test_t> result;
-	for(const auto& e: v){
-		const auto s = e.get_struct_value();
-		const auto function_name = s->_member_values[0].get_string_value();
-		const auto scenario = s->_member_values[1].get_string_value();
-		const auto f_link_name_str = s->_member_values[2].get_function_value().name;
-		const auto f_link_name = link_name_t{ f_link_name_str };
-		result.push_back(test_t{ test_id_t { "", function_name, scenario }, f_link_name });
-	}
-	return result;
+	return unpack_test_registry(v);
 }
 
 ///??? should lookup structs via their name in symbol table!
 std::vector<std::string> run_tests(llvm_execution_engine_t& ee, const std::vector<test_t>& tests){
 	QUARK_ASSERT(ee.check_invariant());
 
-//	const auto result2 = from_runtime_value(ee, test_result, make_vector(types2, make_test_result_t(types2)));
-//	QUARK_ASSERT(types2.nodes.size() == types.nodes.size());
-
-//	const auto test_result_vec_type_symbol = find_symbol_required(ee.global_symbols, "test_result_vec_t");
-//	const auto test_result_vec_type = test_result_vec_type_symbol._value_type;
-
-//	const types_t& types = ee.backend.types;
 	std::vector<std::string> result;
 	for(const auto& b: tests){
-//		const auto name = b.test_id.test;
 		const auto f_link_name = b.f;
 
 		const auto f_bind = bind_function2(ee, f_link_name);
@@ -1017,23 +991,7 @@ std::vector<std::string> run_tests(llvm_execution_engine_t& ee, const std::vecto
 		catch(...){
 			result.push_back("fail");
 		}
-
-//		const auto result2 = from_runtime_value(ee, bench_result, test_result_vec_type);
-
-//			QUARK_TRACE(value_and_type_to_string(result2));
-
-/*
-		std::vector<std::string> test_result;
-		const auto& vec_result = result2.get_vector_value();
-		for(const auto& m: vec_result){
-			const auto x = test_result2_t { b.test_id, "FAIL" };
-			test_result.push_back(x);
-		}
-		result = concat(result, test_result);
-*/
-
 	}
-
 	return result;
 }
 

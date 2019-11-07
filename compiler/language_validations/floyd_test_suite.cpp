@@ -1467,18 +1467,17 @@ FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Simple test-def compiles, call
 }
 
 
-#if 0
 FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Simple test-def compiles", ""){
-	ut_run_closed_nolib(
+	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"___(
 
-			test-def ("subset()", "skip first character"){ test( subset("abc", 1, 3), "bc") }
+			test-def ("subset()", "skip first character"){ assert( subset("abc", 1, 3) == "XXXbc") }
 
-		)___"
+		)___",
+		"fail: runtime_error, what: Floyd assertion failed."
 	);
 }
-#endif
 
 
 #if 0

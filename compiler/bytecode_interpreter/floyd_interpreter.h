@@ -41,17 +41,11 @@ bc_program_t compile_to_bytecode(const compilation_unit_t& cu);
 
 std::shared_ptr<interpreter_t> bc_run_global(const compilation_unit_t& cu);
 
-/*
-	Quickie that compiles a program and calls its main() with the args.
-*/
-std::pair<std::shared_ptr<interpreter_t>, value_t> bc_run_main(
-	const std::string& source,
-	const std::vector<value_t>& args,
-	const std::string& file
-);
-
 
 run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& main_args);
+
+std::vector<test_t> collect_tests(interpreter_t& vm);
+std::vector<std::string> run_tests(interpreter_t& vm, const std::vector<test_t>& tests);
 
 void print_vm_printlog(const interpreter_t& vm);
 

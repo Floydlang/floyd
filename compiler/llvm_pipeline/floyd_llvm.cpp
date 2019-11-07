@@ -220,10 +220,7 @@ QUARK_TEST("", "run_benchmarks_source()", "", ""){
 
 
 
-
-
 //////////////////////////////////////////		TESTS
-
 
 
 
@@ -309,8 +306,6 @@ QUARK_TEST("", "collect_tests_source()", "", ""){
 */
 }
 
-
-
 std::vector<std::string> run_tests_source(
 	const std::string& program_source,
 	const std::string& source_path,
@@ -371,7 +366,7 @@ QUARK_TEST("", "run_tests_source()", "", ""){
 	QUARK_VERIFY(result[1] == "fail: runtime_error, what: Floyd assertion failed.");
 }
 
-QUARK_TEST_VIP("", "run_tests_source()", "", ""){
+QUARK_TEST("", "run_tests_source()", "", ""){
 //	g_trace_on = true;
 	const auto program_source =
 	R"___(

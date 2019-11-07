@@ -632,7 +632,7 @@ Floyd has built-in features for writing unit tests. Tests are critical for makin
 Here is simple test where we test that Floyd's subset() function works in a specific scenario:
 
 ```
-test-def ("subset()", "skip first character"){ test( subset("abc", 1, 3), "bc" }
+test-def ("subset()", "skip first character"){ assert(subset("abc", 1, 3) == "bc") }
 ```
 
 When this test is run, it will execute the test-call by first calling subset(), then comparing subset's output with "bc". If it's not identical the test fails.
@@ -713,13 +713,13 @@ func string sek_to_string(money_format_t format, sek_t amount){
 
 let max = get_max_sek_example()
 
-test-def ("sek_to_string()", "zero"){ test(		sek_to_string(make_default_format(), sek_t(0, 0)),			"0:00 SEK"	}
-test-def ("sek_to_string()", "one"){ test(		sek_to_string(make_default_format(), sek_t(1, 0)),			"1:00 SEK"	}
-test-def ("sek_to_string()", "1 ore"){ test(	sek_to_string(make_default_format(), sek_t(0, 1)),			"0:01 SEK"	}
-test-def ("sek_to_string()", "99.99"){ test(	sek_to_string(make_default_format(), max),					"99:99 SEK"	}
+test-def ("sek_to_string()", "zero"){ assert(	sek_to_string(make_default_format(), sek_t(0, 0))		==	"0:00 SEK"	)}
+test-def ("sek_to_string()", "one"){ assert(	sek_to_string(make_default_format(), sek_t(1, 0))		==	"1:00 SEK"	)}
+test-def ("sek_to_string()", "1 ore"){ assert(	sek_to_string(make_default_format(), sek_t(0, 1))		==	"0:01 SEK"	)}
+test-def ("sek_to_string()", "99.99"){ assert(	sek_to_string(make_default_format(), max)				==	"99:99 SEK"	)}
 
-test-def ("sek_to_string()", "zero"){ test(		sek_to_string(money_format_t(false, true), sek_t(0, 1)),	"0:00"		}
-test-def ("sek_to_string()", "99.99"){ test(	sek_to_string(money_format_t(false, true), max),			"99:99"		}
+test-def ("sek_to_string()", "zero"){ assert(	sek_to_string(money_format_t(false, true), sek_t(0, 1)) ==	"0:00"		)}
+test-def ("sek_to_string()", "99.99"){ assert(	sek_to_string(money_format_t(false, true), max)			==	"99:99"		)}
 ```
 
 This is one of the few instances where it makes sense to align the source code columns so you can see clearly each call to sek_to_string() and the expected output -- this makes it very simple to make sure you've covered the important scenarios.
@@ -2578,14 +2578,12 @@ This defines a new test and registers it in the global registry.
 
 Floyd has built-in features for writing unit tests. Tests are critical to makeing robust software.
 
-The test-def is all you need to register tests. If it's TEST-STATEMENTS throw an exception the test fails. But there is special test function you use most of the time. NOTICE: Floyd has no means of explicitly throwing an exceptions yet.
-
-> void test(T result, T expected_result)
+The test-def is all you need to register tests. If it's TEST-STATEMENTS throw an exception the test fails. Use assert() to check your get the correct result.
 
 Here is simple test where we test that floyd's subset() function work in a specific scenario:
 
 ```
-test-def ("subset()", "skip first character"){ test(subset("abc", 1, 3), "bc" }
+test-def ("subset()", "skip first character"){ assert(subset("abc", 1, 3) == "bc") }
 
 ```
 

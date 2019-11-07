@@ -146,6 +146,16 @@ inline type_t make_benchmark_id_t(types_t& types){
 }
 
 
+//////////////////////////////////////		bench_t
+
+struct bench_t {
+	benchmark_id_t benchmark_id;
+	link_name_t f;
+};
+inline bool operator==(const bench_t& lhs, const bench_t& rhs){ return lhs.benchmark_id == rhs.benchmark_id && lhs.f == rhs.f; }
+
+
+
 //////////////////////////////////////		benchmark_result2_t
 
 
@@ -183,8 +193,8 @@ const std::string k_global_benchmark_registry = "benchmark_registry";
 
 
 
-
 //////////////////////////////////////		make_test_def_t
+
 
 
 inline type_t make_test_function_t(types_t& types){
@@ -227,9 +237,20 @@ inline type_t make_test_id_t(types_t& types){
 }
 
 
+//////////////////////////////////////		test_t
+
+
+struct test_t {
+	test_id_t test_id;
+	link_name_t f;
+};
+inline bool operator==(const test_t& lhs, const test_t& rhs){ return lhs.test_id == rhs.test_id && lhs.f == rhs.f; }
+
+
 
 const std::string k_global_test_registry = "test_registry";
 
+std::vector<test_t> unpack_test_registry(const std::vector<value_t>& r);
 
 
 

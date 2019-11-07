@@ -1444,6 +1444,7 @@ struct interpreter_t {
 
 int get_global_n_pos(int n);
 
+const bc_function_definition_t& get_function_def(const interpreter_t& vm, function_id_t function_id);
 bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_value_t args[], int arg_count);
 json_t interpreter_to_json(const interpreter_t& vm);
 std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions);
