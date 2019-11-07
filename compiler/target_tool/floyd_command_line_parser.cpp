@@ -219,13 +219,13 @@ QUARK_TEST("", "string_to_args()", "", ""){
 
 
 eoutput_type get_output_type(const command_line_args_t& args){
-	if(args.flags.find("p") != args.flags.end()){
+	if(args.flags.count("p") == 1){
 	 	return eoutput_type::parse_tree;
 	}
-	if(args.flags.find("a") != args.flags.end()){
+	if(args.flags.count("a") == 1){
 	 	return eoutput_type::ast;
 	}
-	if(args.flags.find("i") != args.flags.end()){
+	if(args.flags.count("i") == 1){
 	 	return eoutput_type::ir;
 	}
 
@@ -243,7 +243,7 @@ struct compile_more_t {
 };
 
 static eoptimization_level get_optimization_level(const std::map<std::string, flag_info_t>& flags){
-	if(flags.find("g") != flags.end()){
+	if(flags.count("g") == 1){
 		return eoptimization_level::g_no_optimizations_enable_debugging;
 	}
 	else{
@@ -357,6 +357,143 @@ compile_more_t parse_floyd_compile_command_more(const command_line_args_t& comma
 
 
 
+
+
+
+
+command_t parse_help(const command_line_args_t& args){
+	QUARK_ASSERT(args.subcommand == "help");
+
+	return command_t { command_t::help_t { } };
+}
+
+command_t parse_run(const command_line_args_t& args){
+	QUARK_ASSERT(args.subcommand == "run");
+
+	const auto& flags = args.flags;
+	const bool trace_on = flags.count("t") == 1;
+	const bool run_tests = flags.count("u") == 1 ? false : true;
+
+	const bool bytecode_on = flags.count("b") == 1;
+	const ebackend backend = bytecode_on ? ebackend::bytecode : ebackend::llvm;
+
+	if(args.extra_arguments.size() == 0){
+		throw std::runtime_error("Command requires source file name.");
+	}
+
+	const auto floyd_args = args.extra_arguments;
+
+	const auto source_path = floyd_args[0];
+	const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
+
+	const auto compiler_settings = get_compiler_settings(flags);
+	return command_t { command_t::compile_and_run_t { source_path, args2, backend, compiler_settings, trace_on, run_tests } };
+}
+
+command_t parse_compile(const command_line_args_t& args){
+	QUARK_ASSERT(args.subcommand == "compile");
+
+	const auto& flags = args.flags;
+	const bool trace_on = flags.count("t") == 1;
+	const bool bytecode_on = flags.count("b") == 1;
+
+	const ebackend backend = bytecode_on ? ebackend::bytecode : ebackend::llvm;
+	const eoutput_type output_type = get_output_type(args);
+
+	const auto a = parse_floyd_compile_command_more(args);
+	return command_t { command_t::compile_t { a.source_paths, a.output_path, output_type, backend, a.compiler_settings, trace_on } };
+}
+
+command_t parse_bench(const command_line_args_t& args){
+	QUARK_ASSERT(args.subcommand == "bench");
+
+	const auto& flags = args.flags;
+	const bool trace_on = flags.count("t") == 1;
+	const bool run_tests = flags.count("u") == 1 ? false : true;
+
+	const bool bytecode_on = flags.count("b") == 1;
+	const ebackend backend = bytecode_on ? ebackend::bytecode : ebackend::llvm;
+
+	if(args.extra_arguments.size() == 0){
+		throw std::runtime_error("Command requires source file name.");
+	}
+	const auto floyd_args = args.extra_arguments;
+
+	const auto source_path = floyd_args[0];
+	const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
+
+	const auto compiler_settings = get_compiler_settings(flags);
+
+	const bool list_mode = flags.count("l") == 1;
+	if(list_mode){
+		return command_t { command_t::user_benchmarks_t { command_t::user_benchmarks_t::mode::list, source_path, args2, backend, compiler_settings, trace_on, run_tests } };
+	}
+	else{
+		if(args2.size() == 0){
+			return command_t { command_t::user_benchmarks_t { command_t::user_benchmarks_t::mode::run_all, source_path, {}, backend, compiler_settings, trace_on, run_tests } };
+		}
+		else{
+			return command_t { command_t::user_benchmarks_t { command_t::user_benchmarks_t::mode::run_specified, source_path, args2, backend, compiler_settings, trace_on, run_tests } };
+		}
+	}
+}
+
+/*
+ |test     | floyd test game.floyd              | Runs all unit tests in game.floyd, then quits: Does not call main() or start Floyd processes
+ |test     | floyd test game.floyd one two      | Returns tests called "one" and "two" before running main() / starting processes
+ |test     | floyd test -l game.floyd           | Returns list of unit tests
+*/
+command_t parse_test(const command_line_args_t& args){
+	QUARK_ASSERT(args.subcommand == "test");
+
+	const bool trace_on = args.flags.count("t") == 1;
+	const bool run_tests = args.flags.count("u") == 1 ? false : true;
+
+	const bool bytecode_on = args.flags.count("b");
+	const ebackend backend = bytecode_on ? ebackend::bytecode : ebackend::llvm;
+
+
+	if(args.extra_arguments.size() == 0){
+		throw std::runtime_error("Command requires source file name.");
+	}
+	const auto floyd_args = args.extra_arguments;
+
+	const auto source_path = floyd_args[0];
+	const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
+
+	const auto compiler_settings = get_compiler_settings(args.flags);
+
+	const bool list_mode = args.flags.count("l") == 1;
+	if(list_mode){
+		return command_t { command_t::user_test_t { command_t::user_test_t::mode::list, source_path, args2, backend, compiler_settings, trace_on, run_tests } };
+	}
+	else{
+		if(args2.size() == 0){
+			return command_t { command_t::user_test_t { command_t::user_test_t::mode::run_all, source_path, {}, backend, compiler_settings, trace_on, run_tests } };
+		}
+		else{
+			return command_t { command_t::user_test_t { command_t::user_test_t::mode::run_specified, source_path, args2, backend, compiler_settings, trace_on, run_tests } };
+		}
+	}
+}
+
+command_t parse_hwcaps(const command_line_args_t& args){
+	QUARK_ASSERT(args.subcommand == "hwcaps");
+
+	const bool trace_on = args.flags.count("t") == 1;
+
+	return command_t { command_t::hwcaps_t { trace_on } };
+}
+
+command_t parse_runtests(const command_line_args_t& args){
+	QUARK_ASSERT(args.subcommand == "runtests");
+
+	const bool trace_on = args.flags.count("t") == 1;
+
+	return command_t { command_t::runtests_internals_t { trace_on } };
+}
+
+
 command_t parse_floyd_command_line(const std::vector<std::string>& args){
 #if DEBUG && 0
 	for(const auto& e: args){
@@ -367,98 +504,32 @@ command_t parse_floyd_command_line(const std::vector<std::string>& args){
 	const auto command_line_args = parse_command_line_args_subcommand(args, k_flags);
 	const auto path_parts = SplitPath(command_line_args.command);
 	QUARK_ASSERT(path_parts.fName == "floyd" || path_parts.fName == "floydut");
-	const bool trace_on = command_line_args.flags.find("t") != command_line_args.flags.end();
-	const bool run_tests = command_line_args.flags.find("u") != command_line_args.flags.end() ? false : true;
-
-	const bool bytecode_on = command_line_args.flags.find("b") != command_line_args.flags.end();
-	const ebackend backend = bytecode_on ? ebackend::bytecode : ebackend::llvm;
-	const eoutput_type output_type = get_output_type(command_line_args);
-
 #if DEBUG && 0
 	std::cout << command_line_args.subcommand << std::endl;
 #endif
 
 	if(command_line_args.subcommand == "help"){
-		return command_t { command_t::help_t { } };
+		return parse_help(command_line_args);
 	}
 	else if(command_line_args.subcommand == "run"){
-		if(command_line_args.extra_arguments.size() == 0){
-			throw std::runtime_error("Command requires source file name.");
-		}
-
-		const auto floyd_args = command_line_args.extra_arguments;
-
-		const auto source_path = floyd_args[0];
-		const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
-
-		const auto compiler_settings = get_compiler_settings(command_line_args.flags);
-		return command_t { command_t::compile_and_run_t { source_path, args2, backend, compiler_settings, trace_on, run_tests } };
+		return parse_run(command_line_args);
 	}
 	else if(command_line_args.subcommand == "compile"){
-		const auto a = parse_floyd_compile_command_more(command_line_args);
-		return command_t { command_t::compile_t { a.source_paths, a.output_path, output_type, backend, a.compiler_settings, trace_on } };
+		return parse_compile(command_line_args);
 	}
 	else if(command_line_args.subcommand == "bench"){
-		if(command_line_args.extra_arguments.size() == 0){
-			throw std::runtime_error("Command requires source file name.");
-		}
-		const auto floyd_args = command_line_args.extra_arguments;
-
-		const auto source_path = floyd_args[0];
-		const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
-
-		const auto compiler_settings = get_compiler_settings(command_line_args.flags);
-
-		const bool list_mode = command_line_args.flags.find("l") != command_line_args.flags.end();
-		if(list_mode){
-			return command_t { command_t::user_benchmarks_t { command_t::user_benchmarks_t::mode::list, source_path, args2, backend, compiler_settings, trace_on, run_tests } };
-		}
-		else{
-			if(args2.size() == 0){
-				return command_t { command_t::user_benchmarks_t { command_t::user_benchmarks_t::mode::run_all, source_path, {}, backend, compiler_settings, trace_on, run_tests } };
-			}
-			else{
-				return command_t { command_t::user_benchmarks_t { command_t::user_benchmarks_t::mode::run_specified, source_path, args2, backend, compiler_settings, trace_on, run_tests } };
-			}
-		}
+		return parse_bench(command_line_args);
 	}
-
-/*
- |test     | floyd test game.floyd              | Runs all unit tests in game.floyd, then quits: Does not call main() or start Floyd processes
- |test     | floyd test game.floyd one two      | Returns tests called "one" and "two" before running main() / starting processes
- |test     | floyd test -l game.floyd           | Returns list of unit tests
-*/
 	else if(command_line_args.subcommand == "test"){
-		if(command_line_args.extra_arguments.size() == 0){
-			throw std::runtime_error("Command requires source file name.");
-		}
-		const auto floyd_args = command_line_args.extra_arguments;
-
-		const auto source_path = floyd_args[0];
-		const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
-
-		const auto compiler_settings = get_compiler_settings(command_line_args.flags);
-
-		const bool list_mode = command_line_args.flags.find("l") != command_line_args.flags.end();
-		if(list_mode){
-			return command_t { command_t::user_test_t { command_t::user_test_t::mode::list, source_path, args2, backend, compiler_settings, trace_on, run_tests } };
-		}
-		else{
-			if(args2.size() == 0){
-				return command_t { command_t::user_test_t { command_t::user_test_t::mode::run_all, source_path, {}, backend, compiler_settings, trace_on, run_tests } };
-			}
-			else{
-				return command_t { command_t::user_test_t { command_t::user_test_t::mode::run_specified, source_path, args2, backend, compiler_settings, trace_on, run_tests } };
-			}
-		}
+		return parse_test(command_line_args);
 	}
 
 
 	else if(command_line_args.subcommand == "hwcaps"){
-		return command_t { command_t::hwcaps_t { trace_on } };
+		return parse_hwcaps(command_line_args);
 	}
 	else if(command_line_args.subcommand == "runtests"){
-		return command_t { command_t::runtests_internals_t { trace_on } };
+		return parse_runtests(command_line_args);
 	}
 	else{
 		return command_t { command_t::help_t { } };
@@ -477,6 +548,8 @@ QUARK_TEST("", "parse_floyd_command_line()", "floyd xyz", ""){
 	}
 }
 
+
+//??? Move tests together with parse_run() etc.
 QUARK_TEST("", "parse_floyd_command_line()", "floyd run", ""){
 	const auto r = parse_floyd_command_line(string_to_args("floyd run mygame.floyd"));
 	const auto& r2 = std::get<command_t::compile_and_run_t>(r._contents);
