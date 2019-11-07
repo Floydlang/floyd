@@ -182,6 +182,8 @@ const std::string k_global_benchmark_registry = "benchmark_registry";
 
 
 
+
+
 //////////////////////////////////////		make_test_def_t
 
 
@@ -200,6 +202,28 @@ inline type_t make_test_def_t(types_t& types){
 	);
 	return x;
 }
+
+//////////////////////////////////////		test_id_t
+
+
+struct test_id_t {
+	std::string module;
+	std::string test;
+};
+inline bool operator==(const test_id_t& lhs, const test_id_t& rhs){
+	return lhs.module == rhs.module && lhs.test == rhs.test;
+}
+inline type_t make_test_id_t(types_t& types){
+	const auto x = make_struct(
+		types,
+		struct_type_desc_t({
+			member_t{ type_t::make_string(), "module" },
+			member_t{ type_t::make_string(), "test" }
+		})
+	);
+	return x;
+}
+
 
 
 const std::string k_global_test_registry = "test_registry";

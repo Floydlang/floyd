@@ -387,6 +387,44 @@ static int do_user_benchmarks(const command_t& command, const command_t::user_be
 
 
 static int do_user_test(const command_t& command, const command_t::user_test_t& command2){
+	g_trace_on = command2.trace;
+
+	if(command2.backend != ebackend::llvm){
+		throw std::runtime_error("Command requires LLVM backend.");
+	}
+
+	const auto program_source = read_text_file(command2.source_path);
+
+	if(command2.mode == command_t::user_test_t::mode::run_all){
+		const auto s = run_all_tests_source(program_source, command2.source_path, command2.compiler_settings);
+		std::cout << get_current_date_and_time_string() << std::endl;
+		std::cout << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;
+		std::cout << s;
+		return EXIT_SUCCESS;
+	}
+	else if(command2.mode == command_t::user_test_t::mode::run_specified){
+		const auto s = run_specific_tests_source(program_source, command2.source_path, command2.compiler_settings, command2.optional_test_keys);
+		std::cout << get_current_date_and_time_string() << std::endl;
+		std::cout << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;
+		std::cout << s;
+		return EXIT_SUCCESS;
+	}
+	else if(command2.mode == command_t::user_test_t::mode::list){
+		const auto b = collect_tests_source(program_source, command2.source_path, compilation_unit_mode::k_include_core_lib, make_default_compiler_settings());
+
+		std::stringstream ss;
+		ss << "Test registry:" << std::endl;
+		for(const auto& e: b){
+//			ss << e.benchmark_id.test << std::endl;
+		}
+		const auto s = ss.str();
+
+		std::cout << s;
+		return EXIT_SUCCESS;
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
 	return EXIT_FAILURE;
 }
 
