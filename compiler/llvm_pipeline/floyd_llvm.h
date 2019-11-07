@@ -34,8 +34,8 @@ run_output_t run_program_helper(
 	bool run_tests
 );
 
-std::vector<bench_t> collect_benchmarks(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const compiler_settings_t& settings);
-std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const compiler_settings_t& settings, const std::vector<std::string>& tests);
+std::vector<bench_t> collect_benchmarks_source(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const compiler_settings_t& settings);
+std::vector<benchmark_result2_t> run_benchmarks_source(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const compiler_settings_t& settings, const std::vector<std::string>& tests);
 
 }	// floyd
 
