@@ -337,7 +337,7 @@ static int do_user_benchmarks(const command_t& command, const command_t::user_be
 			std::cout << "RELEASE build" << std::endl;
 		}
 
-		const auto s = do_user_benchmarks_run_all(program_source, command2.source_path, command2.compiler_settings);
+		const auto s = run_all_benchmarks_source(program_source, command2.source_path, command2.compiler_settings);
 		std::cout << get_current_date_and_time_string() << std::endl;
 		std::cout << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;
 		std::cout << s;
@@ -351,7 +351,7 @@ static int do_user_benchmarks(const command_t& command, const command_t::user_be
 			std::cout << "RELEASE build" << std::endl;
 		}
 
-		const auto s = do_user_benchmarks_run_specified(program_source, command2.source_path, command2.compiler_settings, command2.optional_benchmark_keys);
+		const auto s = run_specific_benchmarks_source(program_source, command2.source_path, command2.compiler_settings, command2.optional_benchmark_keys);
 		std::cout << get_current_date_and_time_string() << std::endl;
 		std::cout << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;
 		std::cout << s;

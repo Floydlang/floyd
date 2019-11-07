@@ -34,18 +34,28 @@ run_output_t run_program_helper(
 	bool run_tests
 );
 
-std::vector<bench_t> collect_benchmarks_source(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const compiler_settings_t& settings);
-std::vector<benchmark_result2_t> run_benchmarks_source(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const compiler_settings_t& settings, const std::vector<std::string>& tests);
+std::vector<bench_t> collect_benchmarks_source(
+	const std::string& program_source,
+	const std::string& file,
+	compilation_unit_mode mode,
+	const compiler_settings_t& settings
+);
+std::vector<benchmark_result2_t> run_benchmarks_source(
+	const std::string& program_source,
+	const std::string& file,
+	compilation_unit_mode mode,
+	const compiler_settings_t& settings,
+	const std::vector<std::string>& tests
+);
 
 
-
-std::string do_user_benchmarks_run_all(
+std::string run_all_benchmarks_source(
 	const std::string& program_source,
 	const std::string& source_path,
 	const compiler_settings_t& compiler_settings
 );
 
-std::string do_user_benchmarks_run_specified(
+std::string run_specific_benchmarks_source(
 	const std::string& program_source,
 	const std::string& source_path,
 	const compiler_settings_t& compiler_settings,
