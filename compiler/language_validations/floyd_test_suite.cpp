@@ -1475,7 +1475,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Simple test-def compiles", "")
 			test-def ("subset()", "skip first character"){ assert( subset("abc", 1, 3) == "XXXbc") }
 
 		)___",
-		"fail: runtime_error, what: Floyd assertion failed."
+		"TEST FAIL: function subset(), scenario: \"skip first character\": Floyd assertion failed.\n"
 	);
 }
 

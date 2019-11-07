@@ -382,23 +382,10 @@ std::vector<test_t> collect_tests(interpreter_t& vm){
 	const auto& test_registry_bind = find_global_symbol2(vm, k_global_test_registry);
 	QUARK_ASSERT(test_registry_bind != nullptr);
 
-//	call_function(vm, f, {});
-
 	const auto vec = bc_to_value(vm._imm->_program._types, test_registry_bind->_value);
 	const auto vec2 = vec.get_vector_value();
 	std::vector<test_t> a = unpack_test_registry(vec2);
 	return a;
-/*
-		const auto main_result_int = bc_call_main(vm, bc_to_value(vm._imm->_program._types, main_function->_value), main_args);
-		print_vm_printlog(vm);
-		return { main_result_int, {} };
-	}
-	else{
-		const auto output = run_floyd_processes(vm, main_args);
-		print_vm_printlog(vm);
-		return run_output_t(0, output);
-	}
-*/
 }
 
 std::vector<std::string> run_tests(interpreter_t& vm, const std::vector<test_t>& tests){
@@ -407,7 +394,6 @@ std::vector<std::string> run_tests(interpreter_t& vm, const std::vector<test_t>&
 	std::vector<std::string> result;
 	for(const auto& b: tests){
 		const auto function_id = function_id_t { b.f.s };
-//		const bc_function_definition_t& f_def = get_function_def(vm, function_id);
 
 		const auto f_type = make_function(
 			vm._imm->_program._types,
@@ -425,13 +411,13 @@ std::vector<std::string> run_tests(interpreter_t& vm, const std::vector<test_t>&
 			result.push_back("");
 		}
 		catch(const std::runtime_error& e){
-			result.push_back("fail: runtime_error, what: " + std::string(e.what()));
+			result.push_back(std::string(e.what()));
 		}
 		catch(const std::exception& e){
-			result.push_back("fail: std::exception");
+			result.push_back("std::exception");
 		}
 		catch(...){
-			result.push_back("fail");
+			result.push_back("*** unknown exception ***");
 		}
 	}
 	return result;

@@ -71,6 +71,29 @@ std::vector<test_t> unpack_test_registry(const std::vector<value_t>& r){
 	return result;
 }
 
+std::string make_report(const std::vector<test_t>& tests, const std::vector<std::string>& test_results){
+	QUARK_ASSERT(tests.size() == test_results.size());
+
+	std::stringstream ss;
+
+	for(int i = 0 ; i < tests.size() ; i++){
+		const auto& result = test_results[i];
+		const auto& test = tests[i];
+		if(result.empty() == false){
+			ss
+				<< test.test_id.module
+				<< "TEST FAIL: function " << test.test_id.function_name << ", scenario: \"" << test.test_id.scenario
+				<< "\": " << result
+				<< std::endl;
+		}
+	}
+
+	return ss.str();
+}
+
+
+
+
 
 bool is_floyd_literal(const type_desc_t& desc){
 	QUARK_ASSERT(desc.check_invariant());

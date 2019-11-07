@@ -983,13 +983,13 @@ std::vector<std::string> run_tests(llvm_execution_engine_t& ee, const std::vecto
 			result.push_back("");
 		}
 		catch(const std::runtime_error& e){
-			result.push_back("fail: runtime_error, what: " + std::string(e.what()));
+			result.push_back(std::string(e.what()));
 		}
 		catch(const std::exception& e){
-			result.push_back("fail: std::exception");
+			result.push_back("std::exception");
 		}
 		catch(...){
-			result.push_back("fail");
+			result.push_back("*** unknown exception ***");
 		}
 	}
 	return result;

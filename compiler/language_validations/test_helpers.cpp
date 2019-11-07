@@ -105,10 +105,9 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 
 		const auto tests = collect_tests(interpreter);
 		const auto test_results = floyd::run_tests(interpreter, tests);
-		for(const auto& e: test_results){
-			if(e.empty() == false){
-				return test_report_t{ {}, {}, {}, e };
-			}
+		const auto report = make_report(tests, test_results);
+		if(report.empty() == false){
+			return test_report_t{ {}, {}, {}, report };
 		}
 
 		auto run_output = run_program_bc(interpreter, main_args);
@@ -149,10 +148,9 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 
 		const auto tests = collect_tests(*ee);
 		const auto test_results = floyd::run_tests(*ee, tests);
-		for(const auto& e: test_results){
-			if(e.empty() == false){
-				return test_report_t{ {}, {}, {}, e };
-			}
+		const auto report = make_report(tests, test_results);
+		if(report.empty() == false){
+			return test_report_t{ {}, {}, {}, report };
 		}
 
 		const auto run_output = run_program(*ee, main_args);

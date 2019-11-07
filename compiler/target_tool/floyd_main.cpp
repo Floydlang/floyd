@@ -277,17 +277,28 @@ static int do_compile_command(const command_t& command, const command_t::compile
 static int do_run_command(const command_t& command, const command_t::compile_and_run_t& command2){
 	g_trace_on = command2.trace;
 
-	const auto source = read_text_file(command2.source_path);
+	const auto program_source = read_text_file(command2.source_path);
 
 	if(command2.backend == ebackend::llvm){
-		const auto run_results = floyd::run_program_helper(
-			source,
-			command2.source_path,
-			compilation_unit_mode::k_include_core_lib,
-			command2.compiler_settings,
-			command2.floyd_main_args,
-			command2.run_tests
-		);
+		const auto cu = floyd::make_compilation_unit(program_source, command2.source_path, compilation_unit_mode::k_include_core_lib);
+		const auto sem_ast = compile_to_sematic_ast__errors(cu);
+
+		llvm_instance_t instance;
+		auto program = generate_llvm_ir_program(instance, sem_ast, command2.source_path, command2.compiler_settings);
+		auto ee = init_llvm_jit(*program);
+
+		if(command2.run_tests){
+			const auto tests = collect_tests(*ee);
+			const auto test_results = floyd::run_tests(*ee, tests);
+			const auto report = make_report(tests, test_results);
+			if(report.empty() == false){
+				std::cout << "TEST FAILED:" << std::endl;
+				std::cout << report << std::endl;
+				return EXIT_SUCCESS;
+			}
+		}
+
+		const auto run_results = run_program(*ee, command2.floyd_main_args);
 		if(run_results.process_results.empty()){
 			return static_cast<int>(run_results.main_result);
 		}
@@ -296,9 +307,21 @@ static int do_run_command(const command_t& command, const command_t::compile_and
 		}
 	}
 	if(command2.backend == ebackend::bytecode){
-		const auto cu = floyd::make_compilation_unit_lib(source, command2.source_path);
+		const auto cu = floyd::make_compilation_unit_lib(program_source, command2.source_path);
 		auto program = floyd::compile_to_bytecode(cu);
 		auto interpreter = floyd::interpreter_t(program);
+
+		if(command2.run_tests){
+			const auto tests = collect_tests(interpreter);
+			const auto test_results = floyd::run_tests(interpreter, tests);
+			const auto report = make_report(tests, test_results);
+			if(report.empty() == false){
+				std::cout << "TEST FAILED:" << std::endl;
+				std::cout << report << std::endl;
+				return EXIT_SUCCESS;
+			}
+		}
+
 		const auto result = floyd::run_program_bc(interpreter, command2.floyd_main_args);
 		if(result.process_results.size() == 0){
 			return static_cast<int>(result.main_result);

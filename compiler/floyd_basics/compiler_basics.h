@@ -252,6 +252,10 @@ const std::string k_global_test_registry = "test_registry";
 
 std::vector<test_t> unpack_test_registry(const std::vector<value_t>& r);
 
+std::string make_report(const std::vector<test_t>& tests, const std::vector<std::string>& test_results);
+
+
+
 
 
 

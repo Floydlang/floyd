@@ -20,30 +20,6 @@
 namespace floyd {
 
 
-run_output_t run_program_helper(
-	const std::string& program_source,
-	const std::string& file,
-	compilation_unit_mode mode,
-	const compiler_settings_t& settings,
-	const std::vector<std::string>& main_args,
-	bool run_tests
-){
-	QUARK_ASSERT(settings.check_invariant());
-
-	const auto cu = floyd::make_compilation_unit(program_source, file, mode);
-	const auto sem_ast = compile_to_sematic_ast__errors(cu);
-
-	llvm_instance_t instance;
-	auto program = generate_llvm_ir_program(instance, sem_ast, file, settings);
-	auto ee = init_llvm_jit(*program);
-
-	if(run_tests){
-		const auto b3 = floyd::run_tests(*ee, {});
-	}
-
-	const auto result = run_program(*ee, main_args);
-	return result;
-}
 
 
 //////////////////////////////////////////		BENCHMARK
@@ -363,7 +339,7 @@ QUARK_TEST("", "run_tests_source()", "", ""){
 
 	QUARK_VERIFY(result.size() == 2);
 	QUARK_VERIFY(result[0] == "");
-	QUARK_VERIFY(result[1] == "fail: runtime_error, what: Floyd assertion failed.");
+	QUARK_VERIFY(result[1] == "Floyd assertion failed.");
 }
 
 QUARK_TEST("", "run_tests_source()", "", ""){
