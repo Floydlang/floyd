@@ -1003,7 +1003,21 @@ std::vector<std::string> run_tests(llvm_execution_engine_t& ee, const std::vecto
 		const auto f_bind = bind_function2(ee, f_link_name);
 		QUARK_ASSERT(f_bind.address != nullptr);
 		auto f2 = reinterpret_cast<FLOYD_TEST_F>(f_bind.address);
-		/*const auto test_result =*/ (*f2)(make_runtime_ptr(&ee));
+
+		try {
+			(*f2)(make_runtime_ptr(&ee));
+			result.push_back("");
+		}
+		catch(const std::runtime_error& e){
+			result.push_back("fail: runtime_error, what: " + std::string(e.what()));
+		}
+		catch(const std::exception& e){
+			result.push_back("fail: std::exception");
+		}
+		catch(...){
+			result.push_back("fail");
+		}
+
 //		const auto result2 = from_runtime_value(ee, bench_result, test_result_vec_type);
 
 //			QUARK_TRACE(value_and_type_to_string(result2));

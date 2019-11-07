@@ -307,10 +307,7 @@ QUARK_TEST("", "collect_tests_source()", "", ""){
 //	ut_verify(QUARK_POS, result, "\"\": \"abc\"\n\"\": \"def\"\n\"\": \"g\"\n");
 //	ut_verify_string(QUARK_POS, ss.str(), "Test registry:\n" "abc\n" "def\n" "g\n");
 */
-
 }
-
-
 
 
 
@@ -338,6 +335,56 @@ std::vector<std::string> run_tests_source(
 
 	const auto b3 = run_tests(*ee, c);
 	return b3;
+}
+
+QUARK_TEST("", "run_tests_source()", "", ""){
+//	g_trace_on = true;
+	const auto program_source =
+	R"___(
+
+		test-def ("f()", "one"){ print("1") }
+		test-def ("g()", "two"){ print("2") }
+
+	)___";
+
+	const auto result = run_tests_source(program_source, "", make_default_compiler_settings(), {});
+
+	QUARK_VERIFY(result.size() == 2);
+	QUARK_VERIFY(result[0] == "");
+	QUARK_VERIFY(result[1] == "");
+}
+
+QUARK_TEST("", "run_tests_source()", "", ""){
+//	g_trace_on = true;
+	const auto program_source =
+	R"___(
+
+		test-def ("f()", "one"){ print("1") }
+		test-def ("g()", "two"){ assert(false) }
+
+	)___";
+
+	const auto result = run_tests_source(program_source, "", make_default_compiler_settings(), {});
+
+	QUARK_VERIFY(result.size() == 2);
+	QUARK_VERIFY(result[0] == "");
+	QUARK_VERIFY(result[1] == "fail: runtime_error, what: Floyd assertion failed.");
+}
+
+QUARK_TEST_VIP("", "run_tests_source()", "", ""){
+//	g_trace_on = true;
+	const auto program_source =
+	R"___(
+
+		test-def ("f()", "one"){ print("1") }
+		test-def ("g()", "two"){ assert(false) }
+
+	)___";
+
+	const auto result = run_tests_source(program_source, "", make_default_compiler_settings(), { "f():one" } );
+
+	QUARK_VERIFY(result.size() == 1);
+	QUARK_VERIFY(result[0] == "");
 }
 
 

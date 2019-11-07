@@ -67,6 +67,13 @@ std::vector<benchmark_result2_t> run_benchmarks_source(
 
 std::vector<test_t> filter_tests(const std::vector<test_t>& b, const std::vector<std::string>& run_tests);
 
+class test_progress {
+	public: virtual ~test_progress(){};
+
+	public: virtual void test_progress__on_start(int index) = 0;
+	public: virtual void test_progress__on_end(int index, const std::string& result) = 0;
+};
+
 
 std::vector<test_t> collect_tests_source(
 	const std::string& program_source,
