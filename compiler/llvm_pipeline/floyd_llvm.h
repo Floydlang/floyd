@@ -53,13 +53,8 @@ std::vector<bench_t> collect_benchmarks_source(
 	const compiler_settings_t& settings
 );
 
-std::string run_all_benchmarks_source(
-	const std::string& program_source,
-	const std::string& source_path,
-	const compiler_settings_t& compiler_settings
-);
-
-std::string run_specific_benchmarks_source(
+//	Tests empty = ALL tests.
+std::vector<benchmark_result2_t> run_specific_benchmarks_source(
 	const std::string& program_source,
 	const std::string& source_path,
 	const compiler_settings_t& compiler_settings,
@@ -80,12 +75,7 @@ std::vector<test_t> collect_tests_source(
 	const compiler_settings_t& settings
 );
 
-std::string run_all_tests_source(
-	const std::string& program_source,
-	const std::string& source_path,
-	const compiler_settings_t& compiler_settings
-);
-
+//	Tests empty = ALL tests.
 std::string run_specific_tests_source(
 	const std::string& program_source,
 	const std::string& source_path,

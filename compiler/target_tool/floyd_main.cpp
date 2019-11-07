@@ -337,7 +337,9 @@ static int do_user_benchmarks(const command_t& command, const command_t::user_be
 			std::cout << "RELEASE build" << std::endl;
 		}
 
-		const auto s = run_all_benchmarks_source(program_source, command2.source_path, command2.compiler_settings);
+		const auto s0 = run_specific_benchmarks_source(program_source, command2.source_path, command2.compiler_settings, {});
+		const auto s = make_benchmark_report(s0);
+
 		std::cout << get_current_date_and_time_string() << std::endl;
 		std::cout << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;
 		std::cout << s;
@@ -351,14 +353,26 @@ static int do_user_benchmarks(const command_t& command, const command_t::user_be
 			std::cout << "RELEASE build" << std::endl;
 		}
 
-		const auto s = run_specific_benchmarks_source(program_source, command2.source_path, command2.compiler_settings, command2.optional_benchmark_keys);
+		const auto s0 = run_specific_benchmarks_source(
+			program_source,
+			command2.source_path,
+			command2.compiler_settings,
+			command2.optional_benchmark_keys
+		);
+		const auto s = make_benchmark_report(s0);
+
 		std::cout << get_current_date_and_time_string() << std::endl;
 		std::cout << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;
 		std::cout << s;
 		return EXIT_SUCCESS;
 	}
 	else if(command2.mode == command_t::user_benchmarks_t::mode::list){
-		const auto b = collect_benchmarks_source(program_source, command2.source_path, compilation_unit_mode::k_include_core_lib, make_default_compiler_settings());
+		const auto b = collect_benchmarks_source(
+			program_source,
+			command2.source_path,
+			compilation_unit_mode::k_include_core_lib,
+			make_default_compiler_settings()
+		);
 
 		std::stringstream ss;
 		ss << "Benchmarks registry:" << std::endl;
@@ -396,7 +410,7 @@ static int do_user_test(const command_t& command, const command_t::user_test_t& 
 	const auto program_source = read_text_file(command2.source_path);
 
 	if(command2.mode == command_t::user_test_t::mode::run_all){
-		const auto s = run_all_tests_source(program_source, command2.source_path, command2.compiler_settings);
+		const auto s = run_specific_tests_source(program_source, command2.source_path, command2.compiler_settings, {});
 		std::cout << get_current_date_and_time_string() << std::endl;
 		std::cout << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;
 		std::cout << s;
@@ -410,7 +424,12 @@ static int do_user_test(const command_t& command, const command_t::user_test_t& 
 		return EXIT_SUCCESS;
 	}
 	else if(command2.mode == command_t::user_test_t::mode::list){
-		const auto b = collect_tests_source(program_source, command2.source_path, compilation_unit_mode::k_include_core_lib, make_default_compiler_settings());
+		const auto b = collect_tests_source(
+			program_source,
+			command2.source_path,
+			compilation_unit_mode::k_include_core_lib,
+			make_default_compiler_settings()
+		);
 
 		std::stringstream ss;
 		ss << "Test registry:" << std::endl;
