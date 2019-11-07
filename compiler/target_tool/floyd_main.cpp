@@ -337,7 +337,7 @@ static int do_user_benchmarks(const command_t& command, const command_t::user_be
 			std::cout << "RELEASE build" << std::endl;
 		}
 
-		const auto s0 = run_specific_benchmarks_source(program_source, command2.source_path, command2.compiler_settings, {});
+		const auto s0 = run_benchmarks_source(program_source, command2.source_path, command2.compiler_settings, {});
 		const auto s = make_benchmark_report(s0);
 
 		std::cout << get_current_date_and_time_string() << std::endl;
@@ -353,7 +353,7 @@ static int do_user_benchmarks(const command_t& command, const command_t::user_be
 			std::cout << "RELEASE build" << std::endl;
 		}
 
-		const auto s0 = run_specific_benchmarks_source(
+		const auto s0 = run_benchmarks_source(
 			program_source,
 			command2.source_path,
 			command2.compiler_settings,
@@ -410,17 +410,22 @@ static int do_user_test(const command_t& command, const command_t::user_test_t& 
 	const auto program_source = read_text_file(command2.source_path);
 
 	if(command2.mode == command_t::user_test_t::mode::run_all){
-		const auto s = run_specific_tests_source(program_source, command2.source_path, command2.compiler_settings, {});
+		const auto s = run_tests_source(program_source, command2.source_path, command2.compiler_settings, {});
+
 		std::cout << get_current_date_and_time_string() << std::endl;
 		std::cout << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;
-		std::cout << s;
+		for(const auto& e: s){
+			std::cout << e;
+		}
 		return EXIT_SUCCESS;
 	}
 	else if(command2.mode == command_t::user_test_t::mode::run_specified){
-		const auto s = run_specific_tests_source(program_source, command2.source_path, command2.compiler_settings, command2.optional_test_keys);
+		const auto s = run_tests_source(program_source, command2.source_path, command2.compiler_settings, command2.optional_test_keys);
 		std::cout << get_current_date_and_time_string() << std::endl;
 		std::cout << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;
-		std::cout << s;
+		for(const auto& e: s){
+			std::cout << e;
+		}
 		return EXIT_SUCCESS;
 	}
 	else if(command2.mode == command_t::user_test_t::mode::list){
@@ -434,7 +439,7 @@ static int do_user_test(const command_t& command, const command_t::user_test_t& 
 		std::stringstream ss;
 		ss << "Test registry:" << std::endl;
 		for(const auto& e: b){
-//			ss << e.benchmark_id.test << std::endl;
+			ss << e.test_id.module << "\tfunction: " << e.test_id.function_name << "\t\tscenario: " << e.test_id.scenario << std::endl;
 		}
 		const auto s = ss.str();
 

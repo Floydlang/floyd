@@ -208,17 +208,19 @@ inline type_t make_test_def_t(types_t& types){
 
 struct test_id_t {
 	std::string module;
-	std::string test;
+	std::string function_name;
+	std::string scenario;
 };
 inline bool operator==(const test_id_t& lhs, const test_id_t& rhs){
-	return lhs.module == rhs.module && lhs.test == rhs.test;
+	return lhs.module == rhs.module && lhs.function_name == rhs.function_name && lhs.scenario == rhs.scenario;
 }
 inline type_t make_test_id_t(types_t& types){
 	const auto x = make_struct(
 		types,
 		struct_type_desc_t({
 			member_t{ type_t::make_string(), "module" },
-			member_t{ type_t::make_string(), "test" }
+			member_t{ type_t::make_string(), "function_name" },
+			member_t{ type_t::make_string(), "scenario" }
 		})
 	);
 	return x;

@@ -975,10 +975,11 @@ std::vector<test_t> collect_tests(llvm_execution_engine_t& ee){
 	std::vector<test_t> result;
 	for(const auto& e: v){
 		const auto s = e.get_struct_value();
-		const auto name = s->_member_values[0].get_string_value();
-		const auto f_link_name_str = s->_member_values[1].get_function_value().name;
+		const auto function_name = s->_member_values[0].get_string_value();
+		const auto scenario = s->_member_values[1].get_string_value();
+		const auto f_link_name_str = s->_member_values[2].get_function_value().name;
 		const auto f_link_name = link_name_t{ f_link_name_str };
-		result.push_back(test_t{ test_id_t { "", name }, f_link_name });
+		result.push_back(test_t{ test_id_t { "", function_name, scenario }, f_link_name });
 	}
 	return result;
 }
@@ -996,7 +997,7 @@ std::vector<std::string> run_tests(llvm_execution_engine_t& ee, const std::vecto
 //	const types_t& types = ee.backend.types;
 	std::vector<std::string> result;
 	for(const auto& b: tests){
-		const auto name = b.test_id.test;
+//		const auto name = b.test_id.test;
 		const auto f_link_name = b.f;
 
 		const auto f_bind = bind_function2(ee, f_link_name);

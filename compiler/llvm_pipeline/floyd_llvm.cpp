@@ -14,6 +14,7 @@
 #include "semantic_ast.h"
 #include "compiler_helpers.h"
 #include "floyd_corelib.h"
+#include "text_parser.h"
 
 
 namespace floyd {
@@ -37,7 +38,7 @@ run_output_t run_program_helper(
 	auto ee = init_llvm_jit(*program);
 
 	if(run_tests){
-//???		run_tests(ee);
+		const auto b3 = floyd::run_tests(*ee, {});
 	}
 
 	const auto result = run_program(*ee, main_args);
@@ -139,8 +140,7 @@ QUARK_TEST("", "collect_benchmarks_source()", "Return several results from one b
 	QUARK_VERIFY(result[2] == (bench_t{ benchmark_id_t{ "", "g" }, encode_floyd_func_link_name("benchmark__g") }));
 }
 
-//??? Only compile floyd program once!
-std::vector<benchmark_result2_t> run_specific_benchmarks_source(
+std::vector<benchmark_result2_t> run_benchmarks_source(
 	const std::string& program_source,
 	const std::string& source_path,
 	const compiler_settings_t& compiler_settings,
@@ -168,7 +168,7 @@ std::vector<benchmark_result2_t> run_specific_benchmarks_source(
 	return results;
 }
 
-QUARK_TEST("", "run_specific_benchmarks_source()", "", ""){
+QUARK_TEST("", "run_benchmarks_source()", "", ""){
 //	g_trace_on = true;
 	const auto program_source =
 	R"(
@@ -179,13 +179,13 @@ QUARK_TEST("", "run_specific_benchmarks_source()", "", ""){
 
 	)";
 
-	const auto result = run_specific_benchmarks_source(program_source, "module1", make_default_compiler_settings(), { "ABC" });
+	const auto result = run_benchmarks_source(program_source, "module1", make_default_compiler_settings(), { "ABC" });
 
 	QUARK_VERIFY(result.size() == 1);
 	QUARK_VERIFY(result[0] == (benchmark_result2_t { benchmark_id_t{ "", "ABC" }, benchmark_result_t { 200, json_t("0 elements") } }));
 }
 
-QUARK_TEST("", "run_specific_benchmarks_source()", "", ""){
+QUARK_TEST("", "run_benchmarks_source()", "", ""){
 //	g_trace_on = true;
 	const auto program_source =
 	R"(
@@ -208,7 +208,7 @@ QUARK_TEST("", "run_specific_benchmarks_source()", "", ""){
 
 	)";
 
-	const auto result = run_specific_benchmarks_source(program_source, "", make_default_compiler_settings(), { "abc", "def", "g" });
+	const auto result = run_benchmarks_source(program_source, "", make_default_compiler_settings(), { "abc", "def", "g" });
 
 	QUARK_VERIFY(result.size() == 5);
 	QUARK_VERIFY(result[0] == (benchmark_result2_t { benchmark_id_t{ "", "abc" }, benchmark_result_t { 200, json_t("0 elements") } }));
@@ -230,9 +230,23 @@ QUARK_TEST("", "run_specific_benchmarks_source()", "", ""){
 std::vector<test_t> filter_tests(const std::vector<test_t>& b, const std::vector<std::string>& run_tests){
 	std::vector<test_t> filtered;
 	for(const auto& wanted_test: run_tests){
-		const auto it = std::find_if(b.begin(), b.end(), [&] (const test_t& b2) { return b2.test_id.test == wanted_test; } );
-		if(it != b.end()){
-			filtered.push_back(*it);
+		const auto parts = split_on_chars(seq_t(wanted_test), ":");
+		if(parts.size() == 2){
+			const auto wanted_function_name = parts[0];
+			const auto wanted_scenario = parts[1];
+			const auto it = std::find_if(
+				b.begin(),
+				b.end(),
+				[&] (const test_t& b2) {
+					return
+						b2.test_id.function_name == wanted_function_name
+						&& b2.test_id.scenario == wanted_scenario
+						;
+				}
+			);
+			if(it != b.end()){
+				filtered.push_back(*it);
+			}
 		}
 	}
 
@@ -259,28 +273,48 @@ std::vector<test_t> collect_tests_source(
 //	const auto result = mapf<test_id_t>(b, [](auto& e){ return e.test_id; });
 }
 
-static std::vector<std::string> run_tests_source(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const compiler_settings_t& settings, const std::vector<std::string>& tests){
-	QUARK_ASSERT(settings.check_invariant());
+QUARK_TEST("", "collect_tests_source()", "", ""){
+//	g_trace_on = true;
+	const auto program_source =
+	R"___(
 
-	const auto cu = floyd::make_compilation_unit(program_source, file, mode);
-	const auto sem_ast = compile_to_sematic_ast__errors(cu);
+		test-def ("thx()", "print a message"){ print("Running test 404!") }
+		test-def ("1138()", "movie"){ print("Watching THX!") }
 
-	llvm_instance_t instance;
-	auto program = generate_llvm_ir_program(instance, sem_ast, file, settings);
-	auto ee = init_llvm_jit(*program);
+	)___";
 
-	const auto b = collect_tests(*ee);
-	const auto b2 = filter_tests(b, tests);
-	if(b2.size() < tests.size()){
-		QUARK_TRACE("Some specified tests were not found");
+	const auto result = collect_tests_source(program_source, "module1", compilation_unit_mode::k_include_core_lib, make_default_compiler_settings());
+
+	QUARK_VERIFY(result.size() == 2);
+	QUARK_VERIFY(result[0].f.s == "floydf_test__thx():print a message");
+	QUARK_VERIFY(result[0].test_id.module == "");
+	QUARK_VERIFY(result[0].test_id.function_name == "thx()");
+	QUARK_VERIFY(result[0].test_id.scenario == "print a message");
+	QUARK_VERIFY(result[1].f.s == "floydf_test__1138():movie");
+	QUARK_VERIFY(result[1].test_id.module == "");
+	QUARK_VERIFY(result[1].test_id.function_name == "1138()");
+	QUARK_VERIFY(result[1].test_id.scenario == "movie");
+
+/*
+	std::stringstream ss;
+	ss << "Test registry:" << std::endl;
+	for(const auto& e: result){
+		ss << e.test_id.module << "\tfunction: " << e.test_id.function_name << "\t\tscenario: " << e.test_id.scenario << std::endl;
 	}
 
-	std::vector<std::string> b3 = run_tests(*ee, b2);
+	std::cout << ss.str();
 
-	return b3;
+//	ut_verify(QUARK_POS, result, "\"\": \"abc\"\n\"\": \"def\"\n\"\": \"g\"\n");
+//	ut_verify_string(QUARK_POS, ss.str(), "Test registry:\n" "abc\n" "def\n" "g\n");
+*/
+
 }
 
-std::string run_specific_tests_source(
+
+
+
+
+std::vector<std::string> run_tests_source(
 	const std::string& program_source,
 	const std::string& source_path,
 	const compiler_settings_t& compiler_settings,
@@ -288,12 +322,22 @@ std::string run_specific_tests_source(
 ){
 	QUARK_ASSERT(compiler_settings.check_invariant());
 
-	const auto b = collect_tests_source(program_source, source_path, compilation_unit_mode::k_include_core_lib, compiler_settings);
-	const auto c = tests.empty() ? b : filter_tests(b, tests);
-	const auto b2 = mapf<std::string>(c, [](const test_t& e){ return e.test_id.test; });
-	const auto results = run_tests_source(program_source, source_path, compilation_unit_mode::k_include_core_lib, compiler_settings, b2);
+	const auto cu = floyd::make_compilation_unit(program_source, source_path, compilation_unit_mode::k_include_core_lib);
+	const auto sem_ast = compile_to_sematic_ast__errors(cu);
 
-	return "??? TODO";
+	llvm_instance_t instance;
+	auto program = generate_llvm_ir_program(instance, sem_ast, source_path, compiler_settings);
+	auto ee = init_llvm_jit(*program);
+
+	const auto b = collect_tests(*ee);
+	const auto c = tests.empty() ? b : filter_tests(b, tests);
+
+	if(c.size() < tests.size()){
+		QUARK_TRACE("Some specified tests were not found");
+	}
+
+	const auto b3 = run_tests(*ee, c);
+	return b3;
 }
 
 
