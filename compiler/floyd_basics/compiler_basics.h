@@ -79,8 +79,6 @@ type_t make_process_message_handler_type(types_t& types, const type_t& t);
 
 
 
-
-
 //////////////////////////////////////		benchmark_result_t
 
 
@@ -173,11 +171,13 @@ inline type_t make_benchmark_result2_t(types_t& types){
 
 std::vector<benchmark_result2_t> unpack_vec_benchmark_result2_t(types_t& types, const value_t& value);
 
+
+
 //////////////////////////////////////		k_global_benchmark_registry
 
+
+
 const std::string k_global_benchmark_registry = "benchmark_registry";
-
-
 
 
 
