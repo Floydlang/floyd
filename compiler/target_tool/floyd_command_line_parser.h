@@ -44,6 +44,7 @@ struct command_t {
 		ebackend backend;
 		compiler_settings_t compiler_settings;
 		bool trace;
+		bool run_tests;
 	};
 
 /*	inline public: bool operator==(const compile_and_run_t& lhs, const compile_and_run_t& rhs){
@@ -75,6 +76,23 @@ struct command_t {
 		ebackend backend;
 		compiler_settings_t compiler_settings;
 		bool trace;
+		bool run_tests;
+	};
+
+	struct user_test_t {
+		enum class mode {
+			run_all,
+			run_specified,
+			list
+		};
+
+		mode mode;
+		std::string source_path;
+		std::vector<std::string> optional_test_keys;
+		ebackend backend;
+		compiler_settings_t compiler_settings;
+		bool trace;
+		bool run_tests;
 	};
 
 	struct hwcaps_t {
@@ -94,6 +112,7 @@ struct command_t {
 		compile_and_run_t,
 		compile_t,
 		user_benchmarks_t,
+		user_test_t,
 		hwcaps_t,
 
 		runtests_internals_t

@@ -18,7 +18,14 @@
 namespace floyd {
 
 
-run_output_t run_program_helper(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const compiler_settings_t& settings, const std::vector<std::string>& main_args){
+run_output_t run_program_helper(
+	const std::string& program_source,
+	const std::string& file,
+	compilation_unit_mode mode,
+	const compiler_settings_t& settings,
+	const std::vector<std::string>& main_args,
+	bool run_tests
+){
 	QUARK_ASSERT(settings.check_invariant());
 
 	const auto cu = floyd::make_compilation_unit(program_source, file, mode);
@@ -27,12 +34,14 @@ run_output_t run_program_helper(const std::string& program_source, const std::st
 	llvm_instance_t instance;
 	auto program = generate_llvm_ir_program(instance, sem_ast, file, settings);
 	auto ee = init_llvm_jit(*program);
+
+	if(run_tests){
+//???		run_tests(ee);
+	}
+
 	const auto result = run_program(*ee, main_args);
 	return result;
 }
-
-
-
 
 
 std::vector<bench_t> collect_benchmarks(const std::string& program_source, const std::string& file, compilation_unit_mode mode, const compiler_settings_t& settings){

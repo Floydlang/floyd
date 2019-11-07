@@ -368,6 +368,8 @@ command_t parse_floyd_command_line(const std::vector<std::string>& args){
 	const auto path_parts = SplitPath(command_line_args.command);
 	QUARK_ASSERT(path_parts.fName == "floyd" || path_parts.fName == "floydut");
 	const bool trace_on = command_line_args.flags.find("t") != command_line_args.flags.end();
+	const bool run_tests = command_line_args.flags.find("u") != command_line_args.flags.end() ? false : true;
+
 	const bool bytecode_on = command_line_args.flags.find("b") != command_line_args.flags.end();
 	const ebackend backend = bytecode_on ? ebackend::bytecode : ebackend::llvm;
 	const eoutput_type output_type = get_output_type(command_line_args);
@@ -390,7 +392,7 @@ command_t parse_floyd_command_line(const std::vector<std::string>& args){
 		const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
 
 		const auto compiler_settings = get_compiler_settings(command_line_args.flags);
-		return command_t { command_t::compile_and_run_t { source_path, args2, backend, compiler_settings, trace_on } };
+		return command_t { command_t::compile_and_run_t { source_path, args2, backend, compiler_settings, trace_on, run_tests } };
 	}
 	else if(command_line_args.subcommand == "compile"){
 		const auto a = parse_floyd_compile_command_more(command_line_args);
@@ -409,14 +411,44 @@ command_t parse_floyd_command_line(const std::vector<std::string>& args){
 
 		const bool list_mode = command_line_args.flags.find("l") != command_line_args.flags.end();
 		if(list_mode){
-			return command_t { command_t::user_benchmarks_t { command_t::user_benchmarks_t::mode::list, source_path, args2, backend, compiler_settings, trace_on } };
+			return command_t { command_t::user_benchmarks_t { command_t::user_benchmarks_t::mode::list, source_path, args2, backend, compiler_settings, trace_on, run_tests } };
 		}
 		else{
 			if(args2.size() == 0){
-				return command_t { command_t::user_benchmarks_t { command_t::user_benchmarks_t::mode::run_all, source_path, {}, backend, compiler_settings, trace_on } };
+				return command_t { command_t::user_benchmarks_t { command_t::user_benchmarks_t::mode::run_all, source_path, {}, backend, compiler_settings, trace_on, run_tests } };
 			}
 			else{
-				return command_t { command_t::user_benchmarks_t { command_t::user_benchmarks_t::mode::run_specified, source_path, args2, backend, compiler_settings, trace_on } };
+				return command_t { command_t::user_benchmarks_t { command_t::user_benchmarks_t::mode::run_specified, source_path, args2, backend, compiler_settings, trace_on, run_tests } };
+			}
+		}
+	}
+
+/*
+ |test     | floyd test game.floyd              | Runs all unit tests in game.floyd, then quits: Does not call main() or start Floyd processes
+ |test     | floyd test game.floyd one two      | Returns tests called "one" and "two" before running main() / starting processes
+ |test     | floyd test -l game.floyd           | Returns list of unit tests
+*/
+	else if(command_line_args.subcommand == "test"){
+		if(command_line_args.extra_arguments.size() == 0){
+			throw std::runtime_error("Command requires source file name.");
+		}
+		const auto floyd_args = command_line_args.extra_arguments;
+
+		const auto source_path = floyd_args[0];
+		const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
+
+		const auto compiler_settings = get_compiler_settings(command_line_args.flags);
+
+		const bool list_mode = command_line_args.flags.find("l") != command_line_args.flags.end();
+		if(list_mode){
+			return command_t { command_t::user_test_t { command_t::user_test_t::mode::list, source_path, args2, backend, compiler_settings, trace_on, run_tests } };
+		}
+		else{
+			if(args2.size() == 0){
+				return command_t { command_t::user_test_t { command_t::user_test_t::mode::run_all, source_path, {}, backend, compiler_settings, trace_on, run_tests } };
+			}
+			else{
+				return command_t { command_t::user_test_t { command_t::user_test_t::mode::run_specified, source_path, args2, backend, compiler_settings, trace_on, run_tests } };
 			}
 		}
 	}
@@ -452,6 +484,7 @@ QUARK_TEST("", "parse_floyd_command_line()", "floyd run", ""){
 	QUARK_VERIFY(r2.floyd_main_args == (std::vector<std::string>{}));
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
 	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.run_tests == true);
 }
 QUARK_TEST("", "parse_floyd_command_line()", "floyd run", ""){
 	const auto r = parse_floyd_command_line(string_to_args("floyd run mygame.floyd arg1 arg2"));
@@ -460,6 +493,7 @@ QUARK_TEST("", "parse_floyd_command_line()", "floyd run", ""){
 	QUARK_VERIFY(r2.floyd_main_args == (std::vector<std::string>{ "arg1", "arg2" }));
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
 	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.run_tests == true);
 }
 QUARK_TEST("", "parse_floyd_command_line()", "floyd run", ""){
 	const auto r = parse_floyd_command_line(string_to_args("floyd run -b mygame.floyd"));
@@ -468,6 +502,16 @@ QUARK_TEST("", "parse_floyd_command_line()", "floyd run", ""){
 	QUARK_VERIFY(r2.floyd_main_args == (std::vector<std::string>{}));
 	QUARK_VERIFY(r2.backend == ebackend::bytecode);
 	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.run_tests == true);
+}
+QUARK_TEST("", "parse_floyd_command_line()", "floyd run", ""){
+	const auto r = parse_floyd_command_line(string_to_args("floyd run -u mygame.floyd"));
+	const auto& r2 = std::get<command_t::compile_and_run_t>(r._contents);
+	QUARK_VERIFY(r2.source_path == "mygame.floyd");
+	QUARK_VERIFY(r2.floyd_main_args == (std::vector<std::string>{}));
+	QUARK_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.run_tests == false);
 }
 
 
@@ -685,7 +729,6 @@ QUARK_TEST("", "parse_floyd_command_line()", "floyd bench -t mygame.floyd quicks
 	QUARK_VERIFY(r2.trace == true);
 }
 
-
 QUARK_TEST("", "parse_floyd_command_line()", "floyd bench -tl mygame.floyd", ""){
 	const auto r = parse_floyd_command_line(string_to_args("floyd bench -tl mygame.floyd"));
 	const auto& r2 = std::get<command_t::user_benchmarks_t>(r._contents);
@@ -695,6 +738,45 @@ QUARK_TEST("", "parse_floyd_command_line()", "floyd bench -tl mygame.floyd", "")
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
 	QUARK_VERIFY(r2.trace == true);
 }
+
+
+
+/*
+ |test     | floyd test game.floyd              | Runs all unit tests in game.floyd, then quits: Does not call main() or start Floyd processes
+ |test     | floyd test game.floyd one two      | Returns tests called "one" and "two" before running main() / starting processes
+ |test     | floyd test -l game.floyd           | Returns list of unit tests
+*/
+QUARK_TEST("", "parse_floyd_command_line()", "floyd test mygame.floyd", ""){
+	const auto r = parse_floyd_command_line(string_to_args("floyd test mygame.floyd"));
+	const auto& r2 = std::get<command_t::user_test_t>(r._contents);
+	QUARK_VERIFY(r2.mode == command_t::user_test_t::mode::run_all);
+	QUARK_VERIFY(r2.source_path == "mygame.floyd");
+	QUARK_VERIFY(r2.optional_test_keys == (std::vector<std::string>{}));
+	QUARK_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_VERIFY(r2.trace == false);
+}
+
+QUARK_TEST("", "parse_floyd_command_line()", "floyd test -t mygame.floyd quicksort1 merge-sort", ""){
+	const auto r = parse_floyd_command_line(string_to_args("floyd test -t mygame.floyd quicksort1 \"merge sort\""));
+	const auto& r2 = std::get<command_t::user_test_t>(r._contents);
+	QUARK_VERIFY(r2.mode == command_t::user_test_t::mode::run_specified);
+	QUARK_VERIFY(r2.source_path == "mygame.floyd");
+	QUARK_VERIFY(r2.optional_test_keys == (std::vector<std::string>{ "quicksort1", "merge sort" }));
+	QUARK_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_VERIFY(r2.trace == true);
+}
+
+QUARK_TEST("", "parse_floyd_command_line()", "floyd test -tl mygame.floyd", ""){
+	const auto r = parse_floyd_command_line(string_to_args("floyd test -tl mygame.floyd"));
+	const auto& r2 = std::get<command_t::user_test_t>(r._contents);
+	QUARK_VERIFY(r2.mode == command_t::user_test_t::mode::list);
+	QUARK_VERIFY(r2.source_path == "mygame.floyd");
+	QUARK_VERIFY(r2.optional_test_keys == (std::vector<std::string>{}));
+	QUARK_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_VERIFY(r2.trace == true);
+}
+
+
 
 
 

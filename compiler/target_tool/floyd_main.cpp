@@ -177,18 +177,6 @@ void floyd_quark_runtime::runtime_i__on_unit_test_failed(const quark::source_cod
 
 
 
-
-
-
-
-
-
-
-////////////////////////////////	BENCHMARKS
-
-
-
-
 //	If dest_path is empty, print to stdout
 void output_result(const std::string& dest_path, const std::string& s){
 	if(dest_path == ""){
@@ -198,6 +186,20 @@ void output_result(const std::string& dest_path, const std::string& s){
 		SaveFile(dest_path, reinterpret_cast<const uint8_t*>(&s[0]), s.size());
 	}
 }
+
+
+
+
+
+
+
+//######################################################################################################################
+////////////////////////////////	do_compile_command()
+//######################################################################################################################
+
+
+
+
 
 static int do_compile_command(const command_t& command, const command_t::compile_t& command2){
 	const std::string base_path = "";
@@ -267,16 +269,25 @@ static int do_compile_command(const command_t& command, const command_t::compile
 }
 
 
-////////////////////////////////	do_run()
+//######################################################################################################################
+////////////////////////////////	do_run_command()
+//######################################################################################################################
 
 
-static int do_run(const command_t& command, const command_t::compile_and_run_t& command2){
+static int do_run_command(const command_t& command, const command_t::compile_and_run_t& command2){
 	g_trace_on = command2.trace;
 
 	const auto source = read_text_file(command2.source_path);
 
 	if(command2.backend == ebackend::llvm){
-		const auto run_results = floyd::run_program_helper(source, command2.source_path, compilation_unit_mode::k_include_core_lib, command2.compiler_settings, command2.floyd_main_args);
+		const auto run_results = floyd::run_program_helper(
+			source,
+			command2.source_path,
+			compilation_unit_mode::k_include_core_lib,
+			command2.compiler_settings,
+			command2.floyd_main_args,
+			command2.run_tests
+		);
 		if(run_results.process_results.empty()){
 			return static_cast<int>(run_results.main_result);
 		}
@@ -303,7 +314,14 @@ static int do_run(const command_t& command, const command_t::compile_and_run_t& 
 
 
 
-////////////////////////////////	do_user_benchmarks_run_all()
+
+
+//######################################################################################################################
+////////////////////////////////	do_user_benchmarks()
+//######################################################################################################################
+
+
+
 
 //??? Only compile once!
 
@@ -356,9 +374,6 @@ QUARK_TEST("", "do_user_benchmarks_run_all()", "", ""){
 */
 }
 
-////////////////////////////////	do_user_benchmarks_run_specified()
-
-
 static std::string do_user_benchmarks_run_specified(const std::string& program_source, const std::string& source_path, const compiler_settings_t& compiler_settings, const std::vector<std::string>& tests){
 	const auto b = collect_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib, compiler_settings);
 	const auto c = filter_benchmarks(b, tests);
@@ -402,7 +417,6 @@ QUARK_TEST("", "do_user_benchmarks_run_specified()", "", ""){
 	QUARK_VERIFY(result[4] == (benchmark_result2_t { benchmark_id_t{ "", "g" }, benchmark_result_t { 300, json_t("bytes/s") } }));
 }
 */
-
 
 static std::string do_user_benchmarks_list(const std::string& program_source, const std::string& source_path){
 	const auto b = collect_benchmarks(program_source, source_path, compilation_unit_mode::k_include_core_lib, make_default_compiler_settings());
@@ -464,10 +478,6 @@ QUARK_TEST("", "do_user_benchmarks_list()", "", ""){
 //	ut_verify(QUARK_POS, result, "\"\": \"abc\"\n\"\": \"def\"\n\"\": \"g\"\n");
 	ut_verify_string(QUARK_POS, result, "Benchmarks registry:\n" "abc\n" "def\n" "g\n");
 }
-
-
-
-
 
 static int do_user_benchmarks(const command_t& command, const command_t::user_benchmarks_t& command2){
 	g_trace_on = command2.trace;
@@ -567,7 +577,6 @@ QUARK_TEST("", "run_benchmarks()", "", ""){
 	QUARK_VERIFY(result[4] == (benchmark_result2_t { benchmark_id_t{ "", "g" }, benchmark_result_t { 300, json_t("bytes/s") } }));
 }
 
-
 QUARK_TEST("", "collect_benchmarks()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
@@ -600,6 +609,27 @@ QUARK_TEST("", "collect_benchmarks()", "", ""){
 }
 
 
+
+//######################################################################################################################
+//	do_user_test()
+//######################################################################################################################
+
+
+
+
+static int do_user_test(const command_t& command, const command_t::user_test_t& command2){
+	return EXIT_FAILURE;
+}
+
+
+
+//######################################################################################################################
+//	do_hardware_caps()
+//######################################################################################################################
+
+
+
+
 static void do_hardware_caps(){
 	const auto caps = corelib_detect_hardware_caps();
 	const auto r = corelib_make_hardware_caps_report(caps);
@@ -607,6 +637,13 @@ static void do_hardware_caps(){
 	std::cout << get_current_date_and_time_string() << std::endl;
 	std::cout << r << std::endl;
 }
+
+
+
+//######################################################################################################################
+//	do_command()
+//######################################################################################################################
+
 
 
 //	Runs one of the commands, args depends on which command.
@@ -620,7 +657,7 @@ static int do_command(const command_t& command){
 		}
 
 		int operator()(const command_t::compile_and_run_t& command2) const{
-			return do_run(command, command2);
+			return do_run_command(command, command2);
 		}
 
 		int operator()(const command_t::compile_t& command2) const{
@@ -630,6 +667,9 @@ static int do_command(const command_t& command){
 		int operator()(const command_t::user_benchmarks_t& command2) const{
 			return do_user_benchmarks(command, command2);
 		}
+			int operator()(const command_t::user_test_t& command2) const{
+				return do_user_test(command, command2);
+			}
 
 		int operator()(const command_t::hwcaps_t& command2) const{
 			do_hardware_caps();
@@ -692,8 +732,6 @@ int main(int argc, const char * argv[]) {
 
 	return main_internal(argc, argv);
 }
-
-
 
 
 
