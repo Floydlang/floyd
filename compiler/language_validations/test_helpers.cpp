@@ -121,7 +121,12 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 
 		print_vm_printlog(interpreter);
 
-		return test_report_t{ result_global.is_undefined() ? json_t() : value_and_type_to_ast_json(exe._types, result_global), run_output, interpreter._print_output, "" };
+		return test_report_t{
+			result_global.is_undefined() ? json_t() : value_and_type_to_ast_json(exe._types, result_global),
+			run_output,
+			interpreter._print_output,
+			""
+		};
 	}
 	catch(const std::runtime_error& e){
 		return test_report_t{ {}, {}, {}, e.what() };
@@ -155,7 +160,12 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 		const auto result_global0 = bind_global(*ee, "result");
 		const auto result_global = result_global0.first != nullptr ? load_global(*ee, result_global0) : value_t();
 
-		return test_report_t{ result_global.is_undefined() ? json_t() : value_and_type_to_ast_json(exe->type_lookup.state.types, result_global), run_output, ee->_print_output, "" };
+		return test_report_t{
+			result_global.is_undefined() ? json_t() : value_and_type_to_ast_json(exe->type_lookup.state.types, result_global),
+			run_output,
+			ee->_print_output,
+			""
+		};
 	}
 	catch(const std::runtime_error& e){
 		return test_report_t{ {}, {}, {}, e.what() };
