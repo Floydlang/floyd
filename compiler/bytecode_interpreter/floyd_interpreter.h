@@ -45,7 +45,13 @@ std::shared_ptr<interpreter_t> bc_run_global(const compilation_unit_t& cu);
 run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& main_args);
 
 std::vector<test_t> collect_tests(interpreter_t& vm);
-std::vector<std::string> run_tests(interpreter_t& vm, const std::vector<test_t>& tests);
+
+//	Returns one element for every test in the program.
+std::vector<test_result_t> run_tests_bc(
+	interpreter_t& vm,
+	const std::vector<test_t>& all_tests,
+	const std::vector<test_id_t>& wanted
+);
 
 void print_vm_printlog(const interpreter_t& vm);
 

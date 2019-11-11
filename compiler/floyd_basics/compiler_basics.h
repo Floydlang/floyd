@@ -17,6 +17,8 @@
 
 #include "quark.h"
 
+#include <optional>
+
 struct seq_t;
 struct json_t;
 
@@ -252,9 +254,24 @@ const std::string k_global_test_registry = "test_registry";
 
 std::vector<test_t> unpack_test_registry(const std::vector<value_t>& r);
 
-std::string make_report(const std::vector<test_t>& tests, const std::vector<std::string>& test_results);
+struct test_result_t {
+	enum class type { success, fail_with_string, not_run };
+	type type;
+	std::string fail_string;
 
+	test_id_t test_id;
+};
 
+inline bool operator==(const test_result_t& lhs, const test_result_t& rhs){ return lhs.type == rhs.type && lhs.fail_string == rhs.fail_string; }
+
+std::string pack_test_id(const test_id_t& id);
+std::optional<test_id_t> unpack_test_id(const std::string& test);
+std::vector<test_id_t> unpack_test_ids(const std::vector<std::string>& tests);
+std::vector<int> filter_tests(const std::vector<test_t>& b, const std::vector<std::string>& wanted_tests);
+
+std::string make_report(const std::vector<test_result_t>& test_results);
+
+size_t count_fails(const std::vector<test_result_t>& test_results);
 
 
 

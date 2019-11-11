@@ -27,7 +27,7 @@ struct bench_t;
 struct test_t;
 struct run_output_t;
 struct benchmark_result2_t;
-
+struct llvm_execution_engine_t;
 
 
 //////////////////////////////////////////		BENCHMARK
@@ -54,8 +54,6 @@ std::vector<benchmark_result2_t> run_benchmarks_source(
 //////////////////////////////////////////		TESTS
 
 
-std::vector<test_t> filter_tests(const std::vector<test_t>& b, const std::vector<std::string>& run_tests);
-
 class test_progress {
 	public: virtual ~test_progress(){};
 
@@ -72,11 +70,20 @@ std::vector<test_t> collect_tests_source(
 );
 
 //	Tests empty = ALL tests.
-std::vector<std::string> run_tests_source(
+//	Returns one element for every test in the program.
+std::vector<test_result_t> run_tests_llvm(
+	llvm_execution_engine_t& ee,
+	const std::vector<test_t>& all_tests,
+	const std::vector<test_id_t>& wanted
+);
+
+//	Tests empty = ALL tests.
+//	Returns one element for every test in the program.
+std::vector<test_result_t> run_tests_source(
 	const std::string& program_source,
 	const std::string& source_path,
 	const compiler_settings_t& compiler_settings,
-	const std::vector<std::string>& tests
+	const std::vector<std::string>& wanted_tests
 );
 
 

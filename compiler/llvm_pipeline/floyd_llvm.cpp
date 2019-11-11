@@ -200,31 +200,6 @@ QUARK_TEST("", "run_benchmarks_source()", "", ""){
 
 
 
-std::vector<test_t> filter_tests(const std::vector<test_t>& b, const std::vector<std::string>& run_tests){
-	std::vector<test_t> filtered;
-	for(const auto& wanted_test: run_tests){
-		const auto parts = split_on_chars(seq_t(wanted_test), ":");
-		if(parts.size() == 2){
-			const auto wanted_function_name = parts[0];
-			const auto wanted_scenario = parts[1];
-			const auto it = std::find_if(
-				b.begin(),
-				b.end(),
-				[&] (const test_t& b2) {
-					return
-						b2.test_id.function_name == wanted_function_name
-						&& b2.test_id.scenario == wanted_scenario
-						;
-				}
-			);
-			if(it != b.end()){
-				filtered.push_back(*it);
-			}
-		}
-	}
-
-	return filtered;
-}
 
 std::vector<test_t> collect_tests_source(
 	const std::string& program_source,
@@ -282,11 +257,75 @@ QUARK_TEST("", "collect_tests_source()", "", ""){
 */
 }
 
-std::vector<std::string> run_tests_source(
+
+
+
+static std::string run_test(llvm_execution_engine_t& ee, const test_t& test){
+	QUARK_ASSERT(ee.check_invariant());
+
+	const auto f_link_name = test.f;
+
+	const auto f_bind = bind_function2(ee, f_link_name);
+	QUARK_ASSERT(f_bind.address != nullptr);
+	auto f2 = reinterpret_cast<FLOYD_TEST_F>(f_bind.address);
+
+	try {
+		(*f2)(make_runtime_ptr(&ee));
+		return("");
+	}
+	catch(const std::runtime_error& e){
+		return(std::string(e.what()));
+	}
+	catch(const std::exception& e){
+		return("std::exception");
+	}
+	catch(...){
+		return("*** unknown exception ***");
+	}
+}
+
+std::vector<test_result_t> run_tests_llvm(
+	llvm_execution_engine_t& ee,
+	const std::vector<test_t>& all_tests,
+	const std::vector<test_id_t>& wanted
+){
+	QUARK_ASSERT(ee.check_invariant());
+
+	std::vector<test_result_t> result;
+	for(int index = 0 ; index < all_tests.size() ; index++){
+		const auto& test = all_tests[index];
+
+		const auto it = std::find_if(
+			wanted.begin(),
+			wanted.end(),
+			[&] (const test_id_t& e) {
+				return
+					//??? check module in the future.
+					e.function_name == test.test_id.function_name
+					&& e.scenario == test.test_id.scenario
+					;
+			}
+		);
+		if(it != wanted.end()){
+			const auto r = run_test(ee, test);
+			const auto r2 = r == ""
+				? test_result_t { test_result_t::type::success, "", test.test_id }
+				: test_result_t { test_result_t::type::fail_with_string, r, test.test_id };
+			result.push_back(r2);
+		}
+		else{
+			result.push_back(test_result_t { test_result_t::type::not_run, "", test.test_id });
+		}
+	}
+
+	return result;
+}
+
+std::vector<test_result_t> run_tests_source(
 	const std::string& program_source,
 	const std::string& source_path,
 	const compiler_settings_t& compiler_settings,
-	const std::vector<std::string>& tests
+	const std::vector<std::string>& wanted_tests
 ){
 	QUARK_ASSERT(compiler_settings.check_invariant());
 
@@ -297,15 +336,15 @@ std::vector<std::string> run_tests_source(
 	auto program = generate_llvm_ir_program(instance, sem_ast, source_path, compiler_settings);
 	auto ee = init_llvm_jit(*program);
 
-	const auto b = collect_tests(*ee);
-	const auto c = tests.empty() ? b : filter_tests(b, tests);
 
-	if(c.size() < tests.size()){
-		QUARK_TRACE("Some specified tests were not found");
-	}
+	std::vector<test_t> all_tests = collect_tests(*ee);
 
-	const auto b3 = run_tests(*ee, c);
-	return b3;
+	const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
+
+
+	const auto wanted_tests2 = wanted_tests.empty() ? all_test_ids :  unpack_test_ids(wanted_tests);
+	const auto result = run_tests_llvm(*ee, all_tests, wanted_tests2);
+	return result;
 }
 
 QUARK_TEST("", "run_tests_source()", "", ""){
@@ -321,8 +360,8 @@ QUARK_TEST("", "run_tests_source()", "", ""){
 	const auto result = run_tests_source(program_source, "", make_default_compiler_settings(), {});
 
 	QUARK_VERIFY(result.size() == 2);
-	QUARK_VERIFY(result[0] == "");
-	QUARK_VERIFY(result[1] == "");
+	QUARK_VERIFY(result[0].type == test_result_t::type::success);
+	QUARK_VERIFY(result[1].type == test_result_t::type::success);
 }
 
 QUARK_TEST("", "run_tests_source()", "", ""){
@@ -338,8 +377,8 @@ QUARK_TEST("", "run_tests_source()", "", ""){
 	const auto result = run_tests_source(program_source, "", make_default_compiler_settings(), {});
 
 	QUARK_VERIFY(result.size() == 2);
-	QUARK_VERIFY(result[0] == "");
-	QUARK_VERIFY(result[1] == "Floyd assertion failed.");
+	QUARK_VERIFY(result[0].type == test_result_t::type::success);
+	QUARK_VERIFY(result[1] == (test_result_t { test_result_t::type::fail_with_string, "Floyd assertion failed.", test_id_t { "", "g()", "two" } }));
 }
 
 QUARK_TEST("", "run_tests_source()", "", ""){
@@ -354,8 +393,9 @@ QUARK_TEST("", "run_tests_source()", "", ""){
 
 	const auto result = run_tests_source(program_source, "", make_default_compiler_settings(), { "f():one" } );
 
-	QUARK_VERIFY(result.size() == 1);
-	QUARK_VERIFY(result[0] == "");
+	QUARK_VERIFY(result.size() == 2);
+	QUARK_VERIFY(result[0] == (test_result_t { test_result_t::type::success, "", test_id_t { "", "f()", "one" } }));
+	QUARK_VERIFY(result[1] == (test_result_t { test_result_t::type::not_run, "", test_id_t { "", "g()", "two" } }));
 }
 
 

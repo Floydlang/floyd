@@ -12,6 +12,147 @@
 #include "quark.h"
 
 
+
+/*
+ from terminaltables import AsciiTable
+ table_data = [
+	 ['Heading1', 'Heading2'],
+	 ['row1 column1', 'row1 column2'],
+	 ['row2 column1', 'row2 column2']
+ ]
+ table = AsciiTable(table_data)
+ print table.table
+ +--------------+--------------+
+ | Heading1     | Heading2     |
+ +--------------+--------------+
+ | row1 column1 | row1 column2 |
+ | row2 column1 | row2 column2 |
+ +--------------+--------------+
+
+ table.inner_heading_row_border = False
+ print table.table
+ +--------------+--------------+
+ | Heading1     | Heading2     |
+ | row1 column1 | row1 column2 |
+ | row2 column1 | row2 column2 |
+ +--------------+--------------+
+
+ table.inner_row_border = True
+ table.justify_columns[1] = 'right'
+ table.table_data[1][1] += '\nnewline'
+ print table.table
+ +--------------+--------------+
+ | Heading1     |     Heading2 |
+ +--------------+--------------+
+ | row1 column1 | row1 column2 |
+ |              |      newline |
+ +--------------+--------------+
+ | row2 column1 | row2 column2 |
+ +--------------+--------------+
+
+ +----------+------------+----------+----------+
+ | Header 1 | Header 2   | Header3  | Header 4 |
+ +==========+============+==========+==========+
+ | row 1    | column 2   | column 3 | column 4 |
+ +----------+------------+----------+----------+
+ | row 2    | Cells span columns.              |
+ +----------+----------------------------------+
+ | row 3    | Cells      | - Cells             |
+ +----------+ span rows. | - contain           |
+ | row 4    |            | - blocks            |
+ +----------+------------+---------------------+
+
+ +----------+------+--------+
+ |   name   | rank | gender |
+ +----------+------+--------+
+ |  Jacob   |  1   |  boy   |
+ +----------+------+--------+
+ | Isabella |  1   |  girl  |
+ +----------+------+--------+
+ |  Ethan   |  2   |  boy   |
+ +----------+------+--------+
+ |  Sophia  |  2   |  girl  |
+ +----------+------+--------+
+ | Michael  |  3   |  boy   |
+ +----------+------+--------+
+
+            " ----------------------------------------------------- ",
+            "  a                 bb                ccc",
+            " ===================================================== ",
+            "  1                 2                 3",
+            " ----------------------------------------------------- ",
+            "  613.23236243236   613.23236243236   613.23236243236",
+            " ----------------------------------------------------- ",
+
+Planet      R (km)    mass (x 10^29 kg)
+--------  --------  -------------------
+Sun         696000           1.9891e+09
+Earth         6371        5973.6
+Moon          1737          73.5
+Mars          3390         641.85
+
+
+ | item   | qty   |
+ |--------|-------|
+ | spam   | 42    |
+ | eggs   | 451   |
+ | bacon  | 0     |
+
+
+
+ ======  =====
+ item      qty
+ ======  =====
+ spam       42
+ eggs      451
+ bacon       0
+ ======  =====
+
+
+ | item   | qty   |
+ | name   |       |
+ |--------|-------|
+ | eggs   | 451   |
+ | more   | 42    |
+ | spam   |       |
+
+
+ ===========================  ==========  ===========
+ Table formatter                time, μs    rel. time
+ ===========================  ==========  ===========
+ csv to StringIO                     8.2          1.0
+ join with tabs and newlines        10.8          1.3
+ asciitable (0.8.0)                205.2         24.9
+ tabulate (0.8.5)                  421.7         51.2
+ PrettyTable (0.7.2)               787.2         95.6
+ texttable (1.6.2)                1123.4        136.4
+ ===========================  ==========  ===========
+
+
+ |MODULE |FUNCTION |SCENARIO             |RESULT                  |
+ |-------|---------|---------------------|------------------------|
+ |       |subset() |skip first character |Floyd assertion failed. |
+ |-------|---------|---------------------|------------------------|
+
+
+https://beautifultable.readthedocs.io/en/latest/quickstart.html
+
+
+............................
+:   name   : rank : gender :
+............................
+:  Jacob   :  1   :  boy   :
+: Isabella :  1   :  girl  :
+:  Ethan   :  2   :  boy   :
+:  Sophia  :  2   :  girl  :
+: Michael  :  3   :  boy   :
+............................
+
+
+*/
+
+
+
 std::string generate_line(const line_t& line, const std::vector<column_t>& columns){
 	QUARK_ASSERT(columns.size() == line.columns.size());
 

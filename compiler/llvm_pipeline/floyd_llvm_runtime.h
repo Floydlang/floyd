@@ -165,6 +165,7 @@ typedef void (*FLOYD_TEST_F)(floyd_runtime_t* frp);
 
 ////////////////////////////////	CLIENT ACCESS OF RUNNING PROGRAM
 
+floyd_runtime_t* make_runtime_ptr(llvm_execution_engine_t* ee);
 
 const function_link_entry_t& find_function_def_from_link_name(const std::vector<function_link_entry_t>& function_link_map, const link_name_t& link_name);
 
@@ -243,7 +244,6 @@ std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, con
 
 
 std::vector<test_t> collect_tests(llvm_execution_engine_t& ee);
-std::vector<std::string> run_tests(llvm_execution_engine_t& ee, const std::vector<test_t>& tests);
 
 
 

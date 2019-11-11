@@ -388,38 +388,71 @@ std::vector<test_t> collect_tests(interpreter_t& vm){
 	return a;
 }
 
-std::vector<std::string> run_tests(interpreter_t& vm, const std::vector<test_t>& tests){
+static std::string run_test(interpreter_t& vm, const test_t& test){
 	QUARK_ASSERT(vm.check_invariant());
 
-	std::vector<std::string> result;
-	for(const auto& b: tests){
-		const auto function_id = function_id_t { b.f.s };
+	const auto function_id = function_id_t { test.f.s };
 
-		const auto f_type = make_function(
-			vm._imm->_program._types,
-			type_t::make_void(),
-			{},
-			epure::pure
+	const auto f_type = make_function(
+		vm._imm->_program._types,
+		type_t::make_void(),
+		{},
+		epure::pure
+	);
+
+	const auto f_value = bc_value_t::make_function_value(f_type, function_id);
+
+	try {
+		const std::vector<bc_value_t> args2;
+		call_function_bc(vm, f_value, &args2[0], static_cast<int>(args2.size()));
+
+		return "";
+	}
+	catch(const std::runtime_error& e){
+		return std::string(e.what());
+	}
+	catch(const std::exception& e){
+		return "std::exception";
+	}
+	catch(...){
+		return "*** unknown exception ***";
+	}
+}
+
+std::vector<test_result_t> run_tests_bc(
+	interpreter_t& vm,
+	const std::vector<test_t>& all_tests,
+	const std::vector<test_id_t>& wanted
+){
+	QUARK_ASSERT(vm.check_invariant());
+
+	std::vector<test_result_t> result;
+	for(int index = 0 ; index < all_tests.size() ; index++){
+		const auto& test = all_tests[index];
+
+		const auto it = std::find_if(
+			wanted.begin(),
+			wanted.end(),
+			[&] (const test_id_t& e) {
+				return
+					//??? check module in the future.
+					e.function_name == test.test_id.function_name
+					&& e.scenario == test.test_id.scenario
+					;
+			}
 		);
-
-		const auto f_value = bc_value_t::make_function_value(f_type, function_id);
-
-		try {
-			const std::vector<bc_value_t> args2;
-			call_function_bc(vm, f_value, &args2[0], static_cast<int>(args2.size()));
-
-			result.push_back("");
+		if(it != wanted.end()){
+			const auto r = run_test(vm, test);
+			const auto r2 = r == ""
+				? test_result_t { test_result_t::type::success, "", test.test_id }
+				: test_result_t { test_result_t::type::fail_with_string, r, test.test_id };
+			result.push_back(r2);
 		}
-		catch(const std::runtime_error& e){
-			result.push_back(std::string(e.what()));
-		}
-		catch(const std::exception& e){
-			result.push_back("std::exception");
-		}
-		catch(...){
-			result.push_back("*** unknown exception ***");
+		else{
+			result.push_back(test_result_t { test_result_t::type::not_run, "", test.test_id });
 		}
 	}
+
 	return result;
 }
 

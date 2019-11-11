@@ -59,7 +59,7 @@ ret i32 %2
 */
 
 
-static floyd_runtime_t* make_runtime_ptr(llvm_execution_engine_t* ee){
+floyd_runtime_t* make_runtime_ptr(llvm_execution_engine_t* ee){
 	return reinterpret_cast<floyd_runtime_t*>(ee);
 }
 
@@ -964,35 +964,6 @@ std::vector<test_t> collect_tests(llvm_execution_engine_t& ee){
 	const value_t reg = load_global(ee, test_registry_bind);
 	const auto v = reg.get_vector_value();
 	return unpack_test_registry(v);
-}
-
-///??? should lookup structs via their name in symbol table!
-std::vector<std::string> run_tests(llvm_execution_engine_t& ee, const std::vector<test_t>& tests){
-	QUARK_ASSERT(ee.check_invariant());
-
-	std::vector<std::string> result;
-	for(const auto& b: tests){
-		const auto f_link_name = b.f;
-
-		const auto f_bind = bind_function2(ee, f_link_name);
-		QUARK_ASSERT(f_bind.address != nullptr);
-		auto f2 = reinterpret_cast<FLOYD_TEST_F>(f_bind.address);
-
-		try {
-			(*f2)(make_runtime_ptr(&ee));
-			result.push_back("");
-		}
-		catch(const std::runtime_error& e){
-			result.push_back(std::string(e.what()));
-		}
-		catch(const std::exception& e){
-			result.push_back("std::exception");
-		}
-		catch(...){
-			result.push_back("*** unknown exception ***");
-		}
-	}
-	return result;
 }
 
 

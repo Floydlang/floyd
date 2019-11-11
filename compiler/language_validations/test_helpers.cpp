@@ -20,6 +20,7 @@
 #include "floyd_llvm_helpers.h"
 #include "floyd_llvm_codegen.h"
 #include "floyd_llvm_runtime.h"
+#include "floyd_llvm.h"
 
 #include "ast_value.h"
 #include "expression.h"
@@ -72,12 +73,14 @@ bool operator==(const test_report_t& lhs, const test_report_t& rhs){
 void ut_verify_report(const quark::call_context_t& context, const test_report_t& result, const test_report_t& expected){
 	types_t types;
 
+	ut_verify_string(QUARK_POS, result.exception_what, expected.exception_what);
+/*
 	if(result.exception_what != expected.exception_what){
 		std::cout << "Expected exception what: " << expected.exception_what << std::endl;
 		std::cout << "Result exception what: " << result.exception_what << std::endl;
 		throw std::exception();
 	}
-
+*/
 	if(result.print_out != expected.print_out){
 		ut_verify_stringvec(context, result.print_out, expected.print_out);
 	}
@@ -103,10 +106,12 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 		//	Runs global code.
 		auto interpreter = interpreter_t(exe);
 
-		const auto tests = collect_tests(interpreter);
-		const auto test_results = floyd::run_tests(interpreter, tests);
-		const auto report = make_report(tests, test_results);
-		if(report.empty() == false){
+		std::vector<test_t> all_tests = collect_tests(interpreter);
+		const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
+		const auto test_results = run_tests_bc(interpreter, all_tests, all_test_ids);
+
+		if(count_fails(test_results) > 0){
+			const auto report = make_report(test_results);
 			return test_report_t{ {}, {}, {}, report };
 		}
 
@@ -146,10 +151,12 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 
 		auto ee = init_llvm_jit(*exe);
 
-		const auto tests = collect_tests(*ee);
-		const auto test_results = floyd::run_tests(*ee, tests);
-		const auto report = make_report(tests, test_results);
-		if(report.empty() == false){
+		std::vector<test_t> all_tests = collect_tests(*ee);
+		const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
+		const auto test_results = run_tests_llvm(*ee, all_tests, all_test_ids);
+
+		if(count_fails(test_results) > 0){
+			const auto report = make_report(test_results);
 			return test_report_t{ {}, {}, {}, report };
 		}
 

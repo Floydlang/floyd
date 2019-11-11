@@ -188,6 +188,10 @@ void output_result(const std::string& dest_path, const std::string& s){
 }
 
 
+struct tool_i {
+	virtual ~tool_i(){};
+	virtual std::string tool_i__read_source_file(const std::string& abs_path) const = 0;
+};
 
 
 
@@ -274,13 +278,19 @@ static int do_compile_command(const command_t& command, const command_t::compile
 //######################################################################################################################
 
 
+
+
 static int do_run_command(const command_t& command, const command_t::compile_and_run_t& command2){
 	g_trace_on = command2.trace;
 
 	const auto program_source = read_text_file(command2.source_path);
 
 	if(command2.backend == ebackend::llvm){
-		const auto cu = floyd::make_compilation_unit(program_source, command2.source_path, compilation_unit_mode::k_include_core_lib);
+		const auto cu = floyd::make_compilation_unit(
+			program_source,
+			command2.source_path,
+			compilation_unit_mode::k_include_core_lib
+		);
 		const auto sem_ast = compile_to_sematic_ast__errors(cu);
 
 		llvm_instance_t instance;
@@ -288,12 +298,16 @@ static int do_run_command(const command_t& command, const command_t::compile_and
 		auto ee = init_llvm_jit(*program);
 
 		if(command2.run_tests){
-			const auto tests = collect_tests(*ee);
-			const auto test_results = floyd::run_tests(*ee, tests);
-			const auto report = make_report(tests, test_results);
-			if(report.empty() == false){
-				std::cout << "TEST FAILED:" << std::endl;
+			const auto all_tests = collect_tests(*ee);
+			const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
+			const auto test_results = run_tests_llvm(*ee, all_tests, all_test_ids);
+
+			if(count_fails(test_results) > 0){
+				const auto report = make_report(test_results);
 				std::cout << report << std::endl;
+				return EXIT_FAILURE;
+			}
+			else{
 				return EXIT_SUCCESS;
 			}
 		}
@@ -312,12 +326,16 @@ static int do_run_command(const command_t& command, const command_t::compile_and
 		auto interpreter = floyd::interpreter_t(program);
 
 		if(command2.run_tests){
-			const auto tests = collect_tests(interpreter);
-			const auto test_results = floyd::run_tests(interpreter, tests);
-			const auto report = make_report(tests, test_results);
-			if(report.empty() == false){
-				std::cout << "TEST FAILED:" << std::endl;
+			const auto all_tests = collect_tests(interpreter);
+			const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
+			const auto test_results = run_tests_bc(interpreter, all_tests, all_test_ids);
+
+			if(count_fails(test_results) > 0){
+				const auto report = make_report(test_results);
 				std::cout << report << std::endl;
+				return EXIT_FAILURE;
+			}
+			else{
 				return EXIT_SUCCESS;
 			}
 		}
@@ -433,22 +451,25 @@ static int do_user_test(const command_t& command, const command_t::user_test_t& 
 	const auto program_source = read_text_file(command2.source_path);
 
 	if(command2.mode == command_t::user_test_t::mode::run_all){
-		const auto s = run_tests_source(program_source, command2.source_path, command2.compiler_settings, {});
+		const auto test_results = run_tests_source(program_source, command2.source_path, command2.compiler_settings, {});
 
 		std::cout << get_current_date_and_time_string() << std::endl;
-		std::cout << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;
-		for(const auto& e: s){
-			std::cout << e;
-		}
+
+		const auto report = make_report(test_results);
+		std::cout << report << std::endl;
 		return EXIT_SUCCESS;
 	}
 	else if(command2.mode == command_t::user_test_t::mode::run_specified){
-		const auto s = run_tests_source(program_source, command2.source_path, command2.compiler_settings, command2.optional_test_keys);
+		const auto test_results = run_tests_source(
+			program_source,
+			command2.source_path,
+			command2.compiler_settings,
+			command2.optional_test_keys
+		);
 		std::cout << get_current_date_and_time_string() << std::endl;
-		std::cout << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;
-		for(const auto& e: s){
-			std::cout << e;
-		}
+
+		const auto report = make_report(test_results);
+		std::cout << report << std::endl;
 		return EXIT_SUCCESS;
 	}
 	else if(command2.mode == command_t::user_test_t::mode::list){
@@ -586,9 +607,32 @@ int main(int argc, const char * argv[]) {
 	floyd_tracer tracer;
 	quark::set_trace(&tracer);
 
+	struct def_tool : public tool_i {
+		virtual std::string tool_i__read_source_file(const std::string& abs_path) const{
+			const auto f = read_text_file(abs_path);
+			return f;
+		}
+	};
+
 	return main_internal(argc, argv);
 }
 
+
+
+/*
+???
+QUARK_TEST("test_helpers", "test_floyd()", "", ""){
+	const types_t types;
+	test_floyd(
+		QUARK_POS,
+		make_compilation_unit("print(1) print(234)", "", compilation_unit_mode::k_no_core_lib),
+		make_default_compiler_settings(),
+		{},
+		test_report_t{ json_t(), run_output_t(k_default_main_result, {}), {"1", "234" }, "" },
+		false
+	);
+}
+*/
 
 
 

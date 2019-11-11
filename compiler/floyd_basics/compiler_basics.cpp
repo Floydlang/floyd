@@ -10,6 +10,7 @@
 
 #include "text_parser.h"
 #include "parser_primitives.h"
+#include "format_table.h"
 
 namespace floyd {
 
@@ -27,7 +28,6 @@ config_t make_default_config(){
 compiler_settings_t make_default_compiler_settings(){
 	return { make_default_config(), eoptimization_level::g_no_optimizations_enable_debugging };
 }
-
 
 
 
@@ -71,26 +71,113 @@ std::vector<test_t> unpack_test_registry(const std::vector<value_t>& r){
 	return result;
 }
 
-std::string make_report(const std::vector<test_t>& tests, const std::vector<std::string>& test_results){
-	QUARK_ASSERT(tests.size() == test_results.size());
 
-	std::stringstream ss;
 
-	for(int i = 0 ; i < tests.size() ; i++){
-		const auto& result = test_results[i];
-		const auto& test = tests[i];
-		if(result.empty() == false){
-			ss
-				<< test.test_id.module
-				<< "TEST FAIL: function " << test.test_id.function_name << ", scenario: \"" << test.test_id.scenario
-				<< "\": " << result
-				<< std::endl;
+size_t count_fails(const std::vector<test_result_t>& test_results){
+	const auto failed = std::count_if(
+		test_results.begin(),
+		test_results.end(),
+		[](const auto& e){ return e.type == test_result_t::type::fail_with_string; }
+	);
+	return failed;
+}
+
+
+static std::vector<std::vector<std::string>> make_test_result_matrix(const std::vector<test_result_t>& v){
+	std::vector<std::vector<std::string>> matrix;
+	for(const auto& e: v){
+		const std::vector<std::string> matrix_row = { e.test_id.module, e.test_id.function_name, e.test_id.scenario, e.fail_string };
+		matrix.push_back(matrix_row);
+	}
+	return matrix;
+}
+
+std::string make_report(const std::vector<test_result_t>& test_results){
+//	const auto enabled_count = std::count_if(test_results.begin(), test_results.end(), [](const test_result_t& e){ return e.type != test_result_t::type::not_run; });
+	const auto enabled = filterf<test_result_t>(test_results, [](const auto& e){ return e.type != test_result_t::type::not_run; });
+	const auto failed = filterf<test_result_t>(test_results, [](const auto& e){ return e.type == test_result_t::type::fail_with_string; });
+
+	if(enabled.size() == test_results.size()){
+		std::stringstream ss;
+		if(failed.empty() == true){
+			ss << "All tests (" << test_results.size() << "): passed!" << std::endl;
+		}
+		else{
+			std::vector<std::vector<std::string>> matrix = make_test_result_matrix(failed);
+
+			ss << "All tests (" << test_results.size() << "): " << failed.size() << " failed!" << std::endl;
+			ss << generate_table_type1({ "MODULE", "FUNCTION", "SCENARIO", "RESULT" }, matrix);
+		}
+		return ss.str();
+	}
+	else{
+		std::stringstream ss;
+		if(failed.empty() == true){
+			ss << "Specified tests (" << enabled.size() << " of " << test_results.size() << "): passed!" << std::endl;
+		}
+		else{
+			ss << "Specified tests (" << enabled.size() << " of " << test_results.size() << "): " << failed.size() << " failed!" << std::endl;
+		}
+		std::vector<std::vector<std::string>> matrix = make_test_result_matrix(failed);
+
+		return ss.str();
+	}
+}
+
+std::string pack_test_id(const test_id_t& id){
+	return id.function_name + ":" + id.scenario;
+}
+
+std::optional<test_id_t> unpack_test_id(const std::string& test){
+	const auto parts = split_on_chars(seq_t(test), ":");
+	if(parts.size() != 2){
+		return {};
+	}
+
+	const auto function_name = parts[0];
+	const auto scenario = parts[1];
+	return test_id_t { "", function_name, scenario };
+}
+
+std::vector<test_id_t> unpack_test_ids(const std::vector<std::string>& tests){
+	const auto tests2 = mapf<test_id_t>(tests, [&](const auto& e){
+		const auto opt = unpack_test_id(e);
+		if(!opt){
+			throw std::exception();
+		}
+		return *opt;
+	});
+	return tests2;
+}
+
+std::vector<int> filter_tests(const std::vector<test_t>& b, const std::vector<std::string>& wanted_tests){
+	std::vector<int> filtered;
+
+	for(int index = 0 ; index < wanted_tests.size() ; index++){
+		const auto& wanted_test = wanted_tests[index];
+		const auto test_id = unpack_test_id(wanted_test);
+		if(!test_id){
+			throw std::exception();
+		}
+
+		const auto it = std::find_if(
+			b.begin(),
+			b.end(),
+			[&] (const test_t& b2) {
+				return
+					//??? check module in the future.
+					b2.test_id.function_name == test_id->function_name
+					&& b2.test_id.scenario == test_id->scenario
+					;
+			}
+		);
+		if(it != b.end()){
+			filtered.push_back(index);
 		}
 	}
 
-	return ss.str();
+	return filtered;
 }
-
 
 
 
