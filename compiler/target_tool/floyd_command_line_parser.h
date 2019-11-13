@@ -20,6 +20,10 @@
 namespace floyd {
 
 
+//	Supports args with spaces if you quote them.
+std::vector<std::string> string_to_args(const std::string& s);
+
+
 enum class ebackend {
 	llvm,
 	bytecode

@@ -658,7 +658,9 @@ bool operator==(const main_result_t& lhs, const main_result_t& rhs){
 	return lhs.error == rhs.error && lhs.output == rhs.output && lhs.files == rhs.files;
 }
 
-static main_result_t main_test(const std::map<std::string, std::string>& file_system, const std::vector<std::string>& args){
+static main_result_t main_test(const std::map<std::string, std::string>& file_system, const std::string& command_line){
+	const auto args = string_to_args(command_line);
+
 	struct test_tool : public tool_i {
 		std::string tool_i__read_source_file(const std::string& abs_path) const override {
 			const auto it = files.find(abs_path);
@@ -686,15 +688,32 @@ static main_result_t main_test(const std::map<std::string, std::string>& file_sy
 
 QUARK_TEST("", "main_internal()", "run blank source file", ""){
 	const auto files = std::map<std::string, std::string>{ { "examples/test_main.floyd", "" } };
-	const auto result = main_test(files, { "floyd", "run", "examples/test_main.floyd" });
+	const auto result = main_test(files, "floyd run examples/test_main.floyd");
 	QUARK_VERIFY(result == (main_result_t { EXIT_SUCCESS, "", {} }));
 }
 
-QUARK_TEST("", "main_internal()", "run blank source file", ""){
+QUARK_TEST("", "main_internal()", "", ""){
 	const auto files = std::map<std::string, std::string>{ { "examples/test_main.floyd", "print (123)" } };
-	const auto result = main_test(files, { "floyd", "run", "examples/test_main.floyd" });
+	const auto result = main_test(files, "floyd run examples/test_main.floyd");
 	QUARK_VERIFY(result == (main_result_t { EXIT_SUCCESS, "123", {} }));
 }
+
+
+
+
+//////////////////////////////////////////		USAGE
+
+
+
+
+QUARK_TEST_VIP("", "main_internal()", "", ""){
+	const auto result = main_test({}, "floyd help");
+	QUARK_VERIFY(result.error == EXIT_SUCCESS);
+	QUARK_VERIFY(result.output.find("Floyd Programming Language MIT license.\n") == 0);
+	QUARK_VERIFY(result.files.empty());
+}
+
+
 
 
 

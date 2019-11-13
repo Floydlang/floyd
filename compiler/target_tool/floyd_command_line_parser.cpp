@@ -143,7 +143,6 @@ static void XXXXX_trace_function_link_map(const std::vector<function_link_entry_
 
 
 
-//	Supports args with spaces if you quote them.
 std::vector<std::string> string_to_args(const std::string& s){
 	const auto start = seq_t(s);
 
