@@ -293,7 +293,8 @@ UNIT_TEST("sha1", "sha1()", "20 bytes", "valid hash"){
 	char s[41];
 	sha1::toHexString(hash.GetPtr(), s);
 	std::string hex(s);
-	TRACE(hex);
+//	TRACE(hex);
+	QUARK_VERIFY(hex == "d5123da13bcba214f2d111616baed349a68b07b3");
 }
 
 

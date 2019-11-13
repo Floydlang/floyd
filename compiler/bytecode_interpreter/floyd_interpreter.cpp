@@ -80,43 +80,6 @@ bc_program_t compile_to_bytecode(const compilation_unit_t& cu){
 
 
 
-std::shared_ptr<interpreter_t> run_global(const compilation_unit_t& cu){
-	auto program = compile_to_bytecode(cu);
-	auto vm = std::make_shared<interpreter_t>(program);
-//	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
-	print_vm_printlog(*vm);
-	return vm;
-}
-
-std::pair<std::shared_ptr<interpreter_t>, value_t> run_main(const compilation_unit_t& cu, const std::vector<floyd::value_t>& args){
-	auto program = compile_to_bytecode(cu);
-
-	//	Runs global code.
-	auto interpreter = std::make_shared<interpreter_t>(program);
-
-	const auto& main_function = find_global_symbol2(*interpreter, "main");
-	if(main_function != nullptr){
-		const auto& result = call_function(*interpreter, bc_to_value(interpreter->_imm->_program._types, main_function->_value), args);
-		return { interpreter, result };
-	}
-	else{
-		return { interpreter, value_t::make_undefined() };
-	}
-}
-
-void print_vm_printlog(const interpreter_t& vm){
-	QUARK_ASSERT(vm.check_invariant());
-
-#if 0
-	if(vm._print_output.empty() == false){
-		QUARK_SCOPED_TRACE("print output:");
-		for(const auto& line: vm._print_output){
-			QUARK_TRACE_SS(line);
-		}
-	}
-#endif
-}
-
 
 //////////////////////////////////////		container_runner_t
 
@@ -151,12 +114,12 @@ struct bc_process_t {
 	std::shared_ptr<value_entry_t> _process_function;
 	value_t _process_state;
 
-
 	std::shared_ptr<process_interface> _processor;
 };
 
-struct bc_process_runtime_t {
+struct bc_processes_runtime_t {
 	container_t _container;
+	bc_runtime_handler_i* handler;
 	std::map<std::string, std::string> _process_infos;
 	std::thread::id _main_thread_id;
 
@@ -170,7 +133,7 @@ struct bc_process_runtime_t {
 ??? Separate system-interpreter (all processes and many clock busses) vs ONE thread of execution?
 */
 
-static void send_message(bc_process_runtime_t& runtime, int process_id, const json_t& message){
+static void send_message(bc_processes_runtime_t& runtime, int process_id, const json_t& message){
 	auto& process = *runtime._processes[process_id];
 
     {
@@ -184,7 +147,7 @@ static void send_message(bc_process_runtime_t& runtime, int process_id, const js
 //    process._inbox_condition_variable.notify_all();
 }
 
-static void process_process(bc_process_runtime_t& runtime, int process_id){
+static void process_process(bc_processes_runtime_t& runtime, int process_id){
 	auto& process = *runtime._processes[process_id];
 	bool stop = false;
 
@@ -241,6 +204,29 @@ static void process_process(bc_process_runtime_t& runtime, int process_id){
 	}
 }
 
+struct my_interpreter_handler_t : public bc_runtime_handler_i {
+	my_interpreter_handler_t(bc_processes_runtime_t& runtime) : _runtime(runtime) {}
+
+	void on_send(const std::string& process_id, const json_t& message) override {
+		const auto it = std::find_if(
+			_runtime._processes.begin(),
+			_runtime._processes.end(),
+			[&](const std::shared_ptr<bc_process_t>& process){ return process->_name_key == process_id; }
+		);
+		if(it != _runtime._processes.end()){
+			const auto process_index = it - _runtime._processes.begin();
+			send_message(_runtime, static_cast<int>(process_index), message);
+		}
+	}
+
+	void on_print(const std::string& s) override {
+		_runtime.handler->on_print(s);
+	}
+
+	bc_processes_runtime_t& _runtime;
+};
+
+//	NOTICE: Will not run the input VM, it makes new VMs for every thread run(!?)
 static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& vm, const std::vector<std::string>& args){
 	const auto& container_def = vm._imm->_program._container_def;
 
@@ -248,7 +234,8 @@ static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& v
 		return {};
 	}
 	else{
-		bc_process_runtime_t runtime;
+		bc_processes_runtime_t runtime;
+		runtime.handler = vm._handler;
 		runtime._main_thread_id = std::this_thread::get_id();
 
 	/*
@@ -265,49 +252,36 @@ static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& v
 			return acc2;
 		});
 
-		struct my_interpreter_handler_t : public runtime_handler_i {
-			my_interpreter_handler_t(bc_process_runtime_t& runtime) : _runtime(runtime) {}
-
-			virtual void on_send(const std::string& process_id, const json_t& message){
-				const auto it = std::find_if(_runtime._processes.begin(), _runtime._processes.end(), [&](const std::shared_ptr<bc_process_t>& process){ return process->_name_key == process_id; });
-				if(it != _runtime._processes.end()){
-					const auto process_index = it - _runtime._processes.begin();
-					send_message(_runtime, static_cast<int>(process_index), message);
-				}
-			}
-
-			bc_process_runtime_t& _runtime;
-		};
-		auto my_interpreter_handler = my_interpreter_handler_t{runtime};
-
+		auto my_interpreter_handler = my_interpreter_handler_t{ runtime };
 
 		for(const auto& t: runtime._process_infos){
 			auto process = std::make_shared<bc_process_t>();
 			process->_name_key = t.first;
 			process->_function_key = t.second;
-			process->_interpreter = std::make_shared<interpreter_t>(vm._imm->_program, &my_interpreter_handler);
+			process->_interpreter = std::make_shared<interpreter_t>(vm._imm->_program, my_interpreter_handler);
 			process->_init_function = find_global_symbol2(*process->_interpreter, t.second + "__init");
 			process->_process_function = find_global_symbol2(*process->_interpreter, t.second);
 
 			runtime._processes.push_back(process);
 		}
 
-		//	Remember that current thread (main) is also a thread, no need to create a worker thread for one process.
+		//	Remember that current thread (main) is also a thread, no need to create a worker thread for that process.
 		runtime._processes[0]->_thread_id = runtime._main_thread_id;
 
 		for(int process_id = 1 ; process_id < runtime._processes.size() ; process_id++){
-			runtime._worker_threads.push_back(std::thread([&](int process_id){
+			runtime._worker_threads.push_back(
+				std::thread([&](int process_id){
+		//			const auto native_thread = thread::native_handle();
 
-	//			const auto native_thread = thread::native_handle();
+					std::stringstream thread_name;
+					thread_name << std::string() << "process " << process_id << " thread";
+					set_current_threads_name(thread_name.str());
 
-				std::stringstream thread_name;
-				thread_name << std::string() << "process " << process_id << " thread";
-	#if QUARK_MAC
-				pthread_setname_np(/*pthread_self(),*/ thread_name.str().c_str());
-	#endif
-
-				process_process(runtime, process_id);
-			}, process_id));
+					process_process(runtime, process_id);
+				},
+				process_id
+				)
+			);
 		}
 
 		process_process(runtime, 0);
@@ -366,12 +340,10 @@ run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& m
 	const auto& main_function = find_global_symbol2(vm, "main");
 	if(main_function != nullptr){
 		const auto main_result_int = bc_call_main(vm, bc_to_value(vm._imm->_program._types, main_function->_value), main_args);
-		print_vm_printlog(vm);
 		return { main_result_int, {} };
 	}
 	else{
 		const auto output = run_floyd_processes(vm, main_args);
-		print_vm_printlog(vm);
 		return run_output_t(0, output);
 	}
 }

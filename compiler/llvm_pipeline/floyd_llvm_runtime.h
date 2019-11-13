@@ -16,6 +16,8 @@
 
 #include <string>
 #include <vector>
+#include <thread>
+#include <deque>
 
 namespace llvm {
 	struct ExecutionEngine;
@@ -26,7 +28,7 @@ namespace llvm {
 namespace floyd {
 
 struct llvm_ir_program_t;
-struct runtime_handler_i;
+
 struct run_output_t;
 struct floyd_runtime_t;
 struct llvm_instance_t;
@@ -85,7 +87,41 @@ void trace_function_link_map(const types_t& types, const std::vector<function_li
 
 
 
+//////////////////////////////////////		llvm_runtime_handler_i
 
+
+struct llvm_runtime_handler_i {
+	virtual ~llvm_runtime_handler_i(){};
+	virtual void on_print(const std::string& s) = 0;
+};
+
+
+
+
+struct process_interface {
+	virtual ~process_interface(){};
+	virtual void on_message(const json_t& message) = 0;
+	virtual void on_init() = 0;
+};
+
+
+//	NOTICE: Each process inbox has its own mutex + condition variable.
+//	No mutex protects cout.
+struct llvm_process_t {
+	std::condition_variable _inbox_condition_variable;
+	std::mutex _inbox_mutex;
+	std::deque<json_t> _inbox;
+
+	std::string _name_key;
+	std::string _function_key;
+	std::thread::id _thread_id;
+
+//	std::shared_ptr<interpreter_t> _interpreter;
+	std::shared_ptr<llvm_bind_t> _init_function;
+	std::shared_ptr<llvm_bind_t> _process_function;
+	value_t _process_state;
+	std::shared_ptr<process_interface> _processor;
+};
 
 
 ////////////////////////////////		llvm_execution_engine_t
@@ -115,9 +151,8 @@ struct llvm_execution_engine_t {
 	std::shared_ptr<llvm::ExecutionEngine> ee;
 	symbol_table_t global_symbols;
 	std::vector<function_link_entry_t> function_link_map;
-	public: std::vector<std::string> _print_output;
 
-	public: runtime_handler_i* _handler;
+	public: llvm_runtime_handler_i* _handler;
 
 	public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
 
@@ -125,8 +160,17 @@ struct llvm_execution_engine_t {
 	llvm_bind_t main_function;
 	bool inited;
 	config_t config;
+
+
+	std::map<std::string, std::string> _process_infos;
+	std::thread::id _main_thread_id;
+
+	std::vector<std::shared_ptr<llvm_process_t>> _processes;
+	std::vector<std::thread> _worker_threads;
 };
 
+
+void send_message(llvm_execution_engine_t& ee, const std::string& process_id, const json_t& message);
 
 
 ////////////////////////////////		FUNCTION POINTERS
@@ -221,8 +265,9 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 
 
 
+
 //	Calls init() and will perform deinit() when engine is destructed later.
-std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& program);
+std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& program, llvm_runtime_handler_i& handler);
 
 
 //	Calls main() if it exists, else runs the floyd processes. Returns when execution is done.

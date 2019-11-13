@@ -26,7 +26,7 @@
 
 namespace floyd {
 
-
+static const bool k_trace = false;
 
 
 
@@ -38,7 +38,7 @@ bc_value_t bc_intrinsic__assert(interpreter_t& vm, const bc_value_t args[], int 
 	const auto& value = args[0];
 	bool ok = value.get_bool_value();
 	if(!ok){
-		vm._print_output.push_back("Assertion failed.");
+		vm._handler->on_print("Assertion failed.");
 		quark::throw_runtime_error("Floyd assertion failed.");
 	}
 	return bc_value_t::make_undefined();
@@ -581,10 +581,10 @@ bc_value_t bc_intrinsic__map(interpreter_t& vm, const bc_value_t args[], int arg
 
 	const auto result = make_vector(types, r_type, vec2);
 
-#if 1
+if(k_trace && false){
 	const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
 	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
+}
 
 	return result;
 }
@@ -618,10 +618,10 @@ bc_value_t bc_intrinsic__map_string(interpreter_t& vm, const bc_value_t args[], 
 
 	const auto result = bc_value_t::make_string(vec2);
 
-#if 1
+if(k_trace && false){
 	const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
 	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
+}
 
 	return result;
 }
@@ -717,10 +717,10 @@ bc_value_t bc_intrinsic__map_dag(interpreter_t& vm, const bc_value_t args[], int
 
 	const auto result = make_vector(types, r_type, complete);
 
-#if 1
-	const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
+	if(k_trace && false){
+		const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
+		QUARK_TRACE(json_to_pretty_string(debug));
+	}
 
 	return result;
 }
@@ -843,10 +843,10 @@ bc_value_t bc_intrinsic__map_dag2(interpreter_t& vm, const bc_value_t args[], in
 
 	const auto result = make_vector(types, r_type, complete);
 
-#if 1
+if(k_trace && false){
 	const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
 	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
+}
 
 	return result;
 }
@@ -885,10 +885,10 @@ bc_value_t bc_intrinsic__filter(interpreter_t& vm, const bc_value_t args[], int 
 
 	const auto result = make_vector(types, e_type, vec2);
 
-#if 1
-	const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
+	if(k_trace && false){
+		const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
+		QUARK_TRACE(json_to_pretty_string(debug));
+	}
 
 	return result;
 }
@@ -921,10 +921,10 @@ bc_value_t bc_intrinsic__reduce(interpreter_t& vm, const bc_value_t args[], int 
 
 	const auto result = acc;
 
-#if 1
+if(k_trace && false){
 	const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
 	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
+}
 
 	return result;
 }
@@ -970,10 +970,10 @@ bc_value_t bc_intrinsic__stable_sort(interpreter_t& vm, const bc_value_t args[],
 	const auto mutate_inplace_elements2 = immer::vector<bc_value_t>(mutate_inplace_elements.begin(), mutate_inplace_elements.end());
 	const auto result = make_vector(types, e_type, mutate_inplace_elements2);
 
-#if 1
+if(k_trace && false){
 	const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
 	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
+}
 
 	return result;
 }
@@ -998,10 +998,11 @@ bc_value_t bc_intrinsic__print(interpreter_t& vm, const bc_value_t args[], int a
 
 	const auto& value = args[0];
 	const auto s = to_compact_string2(vm._imm->_program._types, bc_to_value(vm._imm->_program._types, value));
-	printf("%s", s.c_str());
+//	printf("%s", s.c_str());
+	vm._handler->on_print(s);
 
-	const auto lines = split_on_chars(seq_t(s), "\n");
-	vm._print_output = concat(vm._print_output, lines);
+//	const auto lines = split_on_chars(seq_t(s), "\n");
+//	vm._print_output = concat(vm._print_output, lines);
 
 	return bc_value_t::make_undefined();
 }

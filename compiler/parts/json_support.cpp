@@ -460,7 +460,7 @@ QUARK_TESTQ("exists_in()", "object missing"){
 
 QUARK_TESTQ("exists_in()", "mixed arrays and trees - lost & found"){
 	const auto obj1 = make_mixed_test_tree();
-	QUARK_TRACE(json_to_compact_string(obj1));
+//	QUARK_TRACE(json_to_compact_string(obj1));
 	QUARK_VERIFY(exists_in(obj1, make_vec({ json_t(0.0) })) == true);
 	QUARK_VERIFY(exists_in(obj1, make_vec({ json_t(1.0) })) == true);
 	QUARK_VERIFY(exists_in(obj1, make_vec({ json_t(2.0) })) == false);
@@ -536,7 +536,7 @@ QUARK_TESTQ("get_in()", "two-level get"){
 
 QUARK_TESTQ("get_in()", "mixed arrays and trees"){
 	const auto obj1 = make_mixed_test_tree();
-	QUARK_TRACE(json_to_compact_string(obj1));
+//	QUARK_TRACE(json_to_compact_string(obj1));
 	QUARK_VERIFY(get_in(obj1, make_vec({ json_t(0.0), "name" })) == "James Bond");
 	QUARK_VERIFY(get_in(obj1, make_vec({ json_t(0.0), "movies", json_t(0.0) })) == "No one lives forever");
 	QUARK_VERIFY(get_in(obj1, make_vec({ json_t(0.0), "movies", json_t(1.0) })) == "Moonraker");

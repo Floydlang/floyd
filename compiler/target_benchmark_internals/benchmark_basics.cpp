@@ -67,6 +67,7 @@ void trace_result(const bench_result_t& result){
 	std::cout << "\t%    : " << p << std::endl;
 }
 
+#if 0
 int64_t measure_floyd_function_f(const std::string& floyd_program, int count){
 	const auto cu = make_compilation_unit_lib(floyd_program, "");
 	const auto program = compile_to_bytecode(cu);
@@ -87,7 +88,7 @@ int64_t measure_floyd_function_f(const std::string& floyd_program, int count){
 	);
 	return floyd_ns;
 }
-
+#endif
 
 //	Returns time in nanoseconds
 std::int64_t measure_execution_time_ns(std::function<void (void)> func, int count){

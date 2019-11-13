@@ -39,9 +39,6 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vec
 
 bc_program_t compile_to_bytecode(const compilation_unit_t& cu);
 
-std::shared_ptr<interpreter_t> bc_run_global(const compilation_unit_t& cu);
-
-
 run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& main_args);
 
 std::vector<test_t> collect_tests(interpreter_t& vm);
@@ -52,8 +49,6 @@ std::vector<test_result_t> run_tests_bc(
 	const std::vector<test_t>& all_tests,
 	const std::vector<test_id_t>& wanted
 );
-
-void print_vm_printlog(const interpreter_t& vm);
 
 
 } //	floyd

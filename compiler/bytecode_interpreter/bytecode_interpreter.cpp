@@ -2442,9 +2442,9 @@ static json_t bcvalue_and_type_to_json(const types_t& types, const bc_value_t& v
 
 
 
-interpreter_t::interpreter_t(const bc_program_t& program, runtime_handler_i* handler) :
+interpreter_t::interpreter_t(const bc_program_t& program, bc_runtime_handler_i& handler) :
 	_stack(program._types, nullptr),
-	_handler(handler)
+	_handler(&handler)
 {
 	QUARK_ASSERT(program.check_invariant());
 
@@ -2473,19 +2473,18 @@ interpreter_t::interpreter_t(const bc_program_t& program, runtime_handler_i* han
 	/*const auto& r =*/ execute_instructions(*this, _imm->_program._globals._instructions);
 	QUARK_ASSERT(check_invariant());
 }
-interpreter_t::interpreter_t(const bc_program_t& program) : interpreter_t(program, nullptr) {}
 
 void interpreter_t::swap(interpreter_t& other) throw(){
 	other._imm.swap(this->_imm);
 	std::swap(other._handler, this->_handler);
 	other._stack.swap(this->_stack);
-	other._print_output.swap(this->_print_output);
 }
 
 #if DEBUG
 bool interpreter_t::check_invariant() const {
 	QUARK_ASSERT(_imm->_program.check_invariant());
 	QUARK_ASSERT(_stack.check_invariant());
+	QUARK_ASSERT(_handler != nullptr);
 	return true;
 }
 #endif

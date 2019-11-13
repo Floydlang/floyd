@@ -178,7 +178,7 @@ static void floyd_llvm_intrinsic__assert(floyd_runtime_t* frp, runtime_value_t a
 
 	bool ok = (arg.bool_value & 0x01) == 0 ? false : true;
 	if(!ok){
-		r._print_output.push_back("Assertion failed.");
+		r._handler->on_print("Assertion failed.");
 		quark::throw_runtime_error("Floyd assertion failed.");
 	}
 }
@@ -1214,7 +1214,7 @@ static runtime_value_t floyd_llvm_intrinsic__stable_sort(
 ){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto& type0 = lookup_type_ref(r.backend, elements_vec_type);
+//	const auto& type0 = lookup_type_ref(r.backend, elements_vec_type);
 	if(is_vector_carray(r.backend.types, r.backend.config, type_t(elements_vec_type))){
 		return stable_sort__carray(frp, r.backend, elements_vec, elements_vec_type, f_value, f_value_type, context_value, context_value_type);
 	}
@@ -1239,10 +1239,11 @@ void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t value, ru
 	auto& r = get_floyd_runtime(frp);
 
 	const auto s = gen_to_string(r, value, value_type);
-	printf("%s", s.c_str());
+//	printf("%s", s.c_str());
+	r._handler->on_print(s);
 
-	const auto lines = split_on_chars(seq_t(s), "\n");
-	r._print_output = concat(r._print_output, lines);
+//	const auto lines = split_on_chars(seq_t(s), "\n");
+//	r._print_output = concat(r._print_output, lines);
 }
 
 
@@ -1456,7 +1457,8 @@ static void floyd_llvm_intrinsic__send(floyd_runtime_t* frp, runtime_value_t pro
 		QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
 	}
 
-	r._handler->on_send(process_id, message_json);
+//	r._handler->on_send(process_id, message_json);
+	send_message(r, process_id, message_json);
 }
 
 

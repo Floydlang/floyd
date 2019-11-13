@@ -99,12 +99,30 @@ void ut_verify_report(const quark::call_context_t& context, const test_report_t&
 }
 
 
+
+struct bc_test_handler_t : public bc_runtime_handler_i {
+	void on_send(const std::string& process_id, const json_t& message) override {
+		QUARK_ASSERT(false);
+	}
+
+	void on_print(const std::string& s) override {
+		const auto lines = split_on_chars(seq_t(s), "\n");
+		_print_output = concat(_print_output, lines);
+//		_print_output.push_back(s);
+	}
+
+	std::vector<std::string> _print_output;
+};
+
+
 static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std::vector<std::string>& main_args){
 	try {
 		const auto exe = generate_bytecode(semast);
 
+		bc_test_handler_t handler;
+
 		//	Runs global code.
-		auto interpreter = interpreter_t(exe);
+		auto interpreter = interpreter_t(exe, handler);
 
 		std::vector<test_t> all_tests = collect_tests(interpreter);
 		const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
@@ -123,12 +141,10 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 			result_global = bc_to_value(interpreter._imm->_program._types, result_variable->_value);
 		}
 
-		print_vm_printlog(interpreter);
-
 		return test_report_t{
 			result_global.is_undefined() ? json_t() : value_and_type_to_ast_json(exe._types, result_global),
 			run_output,
-			interpreter._print_output,
+			handler._print_output,
 			""
 		};
 	}
@@ -141,6 +157,16 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 }
 
 
+struct llvm_test_handler_t : public llvm_runtime_handler_i {
+	void on_print(const std::string& s) override {
+		const auto lines = split_on_chars(seq_t(s), "\n");
+		_print_output = concat(_print_output, lines);
+	}
+
+
+	std::vector<std::string> _print_output;
+};
+
 static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const compiler_settings_t& settings, const std::vector<std::string>& main_args){
 	QUARK_ASSERT(semast.check_invariant());
 	QUARK_ASSERT(settings.check_invariant());
@@ -149,7 +175,9 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 		llvm_instance_t llvm_instance;
 		auto exe = generate_llvm_ir_program(llvm_instance, semast, "", settings);
 
-		auto ee = init_llvm_jit(*exe);
+		llvm_test_handler_t handler;
+
+		auto ee = init_llvm_jit(*exe, handler);
 
 		std::vector<test_t> all_tests = collect_tests(*ee);
 		const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
@@ -168,7 +196,7 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 		return test_report_t{
 			result_global.is_undefined() ? json_t() : value_and_type_to_ast_json(exe->type_lookup.state.types, result_global),
 			run_output,
-			ee->_print_output,
+			handler._print_output,
 			""
 		};
 	}

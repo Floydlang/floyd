@@ -44,7 +44,8 @@ struct types_t;
 struct interpreter_t;
 struct bc_program_t;
 struct bc_static_frame_t;
-struct runtime_handler_i;
+
+struct bc_runtime_handler_i;
 
 struct bc_value_t;
 union bc_pod_value_t;
@@ -54,6 +55,16 @@ struct bc_external_handle_t;
 
 typedef bc_value_t (*BC_NATIVE_FUNCTION_PTR)(interpreter_t& vm, const bc_value_t args[], int arg_count);
 typedef int16_t bc_typeid_t;
+
+
+//////////////////////////////////////		bc_runtime_handler_i
+
+
+struct bc_runtime_handler_i {
+	virtual ~bc_runtime_handler_i(){};
+	virtual void on_send(const std::string& process_id, const json_t& message) = 0;
+	virtual void on_print(const std::string& s) = 0;
+};
 
 
 //////////////////////////////////////		bc_inplace_value_t
@@ -1418,8 +1429,7 @@ struct value_entry_t {
 */
 
 struct interpreter_t {
-	public: explicit interpreter_t(const bc_program_t& program);
-	public: explicit interpreter_t(const bc_program_t& program, runtime_handler_i* handler);
+	public: explicit interpreter_t(const bc_program_t& program, bc_runtime_handler_i& handler);
 	public: interpreter_t(const interpreter_t& other) = delete;
 	public: const interpreter_t& operator=(const interpreter_t& other)= delete;
 #if DEBUG
@@ -1430,12 +1440,11 @@ struct interpreter_t {
 
 	////////////////////////		STATE
 	public: std::shared_ptr<interpreter_imm_t> _imm;
-	public: runtime_handler_i* _handler;
+	public: bc_runtime_handler_i* _handler;
 
 	//	Holds all values for all environments.
 	//	Notice: stack holds refs to RC-counted objects!
 	public: interpreter_stack_t _stack;
-	public: std::vector<std::string> _print_output;
 };
 
 

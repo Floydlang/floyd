@@ -33,8 +33,6 @@ static const bool k_trace_function_link_map = false;
 //#include "llvm/Bitcode/BitstreamWriter.h"
 
 
-#include <thread>
-#include <deque>
 #include <condition_variable>
 #include <iostream>
 
@@ -504,7 +502,7 @@ std::string strip_link_name(const std::string& platform_link_name){
 
 
 //	Destroys program, can only called once!
-static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks){
+static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks, llvm_runtime_handler_i& handler){
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(program_breaks.check_invariant());
 
@@ -587,12 +585,16 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			ee1,
 			program_breaks.debug_globals,
 			final_link_map,
-			{},
-			nullptr,
+			&handler,
 			start_time,
 			llvm_bind_t{ link_name_t {}, nullptr, make_undefined() },
 			false,
-			program_breaks.settings.config
+			program_breaks.settings.config,
+
+			{},
+			std::this_thread::get_id(),
+			{},
+			{}
 		}
 	);
 	QUARK_ASSERT(ee2->check_invariant());
@@ -611,10 +613,10 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 
 //	Destroys program, can only run it once!
 //	Automatically runs floyd_runtime_init() to execute Floyd's global functions and initialize global constants.
-std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& program_breaks){
+std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& program_breaks, llvm_runtime_handler_i& handler){
 	QUARK_ASSERT(program_breaks.check_invariant());
 
-	auto ee = make_engine_no_init(*program_breaks.instance, program_breaks);
+	auto ee = make_engine_no_init(*program_breaks.instance, program_breaks, handler);
 
 	trace_heap(ee->backend.heap);
 
@@ -649,68 +651,31 @@ std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& progra
 	return ee;
 }
 
-
-
-
-//////////////////////////////////////		llvm_process_runtime_t
-
-
-
-/*
-	We use only one LLVM execution engine to run main() and all Floyd processes.
-	They each have a separate llvm_process_t-instance and their own runtime-pointer.
-*/
-
 /*
 	Try using C++ multithreading maps etc?
 	Explore std::packaged_task
 */
 //	https://en.cppreference.com/w/cpp/thread/condition_variable/wait
-
-
-struct process_interface {
-	virtual ~process_interface(){};
-	virtual void on_message(const json_t& message) = 0;
-	virtual void on_init() = 0;
-};
-
-
-//	NOTICE: Each process inbox has its own mutex + condition variable.
-//	No mutex protects cout.
-struct llvm_process_t {
-	std::condition_variable _inbox_condition_variable;
-	std::mutex _inbox_mutex;
-	std::deque<json_t> _inbox;
-
-	std::string _name_key;
-	std::string _function_key;
-	std::thread::id _thread_id;
-
-//	std::shared_ptr<interpreter_t> _interpreter;
-	std::shared_ptr<llvm_bind_t> _init_function;
-	std::shared_ptr<llvm_bind_t> _process_function;
-	value_t _process_state;
-	std::shared_ptr<process_interface> _processor;
-};
-
-struct llvm_process_runtime_t {
-	container_t _container;
-	std::map<std::string, std::string> _process_infos;
-	std::thread::id _main_thread_id;
-
-	llvm_execution_engine_t* ee;
-
-	std::vector<std::shared_ptr<llvm_process_t>> _processes;
-	std::vector<std::thread> _worker_threads;
-};
-
 /*
 ??? have ONE runtime PER computer or one per interpreter?
 ??? Separate system-interpreter (all processes and many clock busses) vs ONE thread of execution?
 */
 
-static void send_message(llvm_process_runtime_t& runtime, int process_id, const json_t& message){
-	auto& process = *runtime._processes[process_id];
+void send_message(llvm_execution_engine_t& ee, const std::string& process_id_str, const json_t& message){
+	const auto it = std::find_if(
+		ee._processes.begin(),
+		ee._processes.end(),
+		[&](const std::shared_ptr<llvm_process_t>& process){ return process->_name_key == process_id_str; }
+	);
+	if(it == ee._processes.end()){
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+
+	const auto process_id = it - ee._processes.begin();
+//	send_message(_runtime, static_cast<int>(process_index), message);
+
+	auto& process = *ee._processes[process_id];
 
     {
         std::lock_guard<std::mutex> lk(process._inbox_mutex);
@@ -723,10 +688,10 @@ static void send_message(llvm_process_runtime_t& runtime, int process_id, const 
 //    process._inbox_condition_variable.notify_all();
 }
 
-static void run_process(llvm_process_runtime_t& runtime, int process_id){
-	auto& process = *runtime._processes[process_id];
+static void run_process(llvm_execution_engine_t& ee, int process_id){
+	auto& process = *ee._processes[process_id];
 	bool stop = false;
-	auto& types = runtime.ee->backend.types;
+	auto& types = ee.backend.types;
 
 	const auto thread_name = get_current_thread_name();
 
@@ -743,8 +708,8 @@ static void run_process(llvm_process_runtime_t& runtime, int process_id){
 		}
 
 		auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_INIT>(process._init_function->address);
-		const auto result = (*f)(make_runtime_ptr(runtime.ee));
-		process._process_state = from_runtime_value(*runtime.ee, result, peek2(types, process._init_function->type).get_function_return(types));
+		const auto result = (*f)(make_runtime_ptr(&ee));
+		process._process_state = from_runtime_value(ee, result, peek2(types, process._init_function->type).get_function_return(types));
 	}
 
 	while(stop == false){
@@ -788,85 +753,87 @@ static void run_process(llvm_process_runtime_t& runtime, int process_id){
 				}
 
 				auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE>(process._process_function->address);
-				const auto state2 = to_runtime_value(*runtime.ee, process._process_state);
-				const auto message2 = to_runtime_value(*runtime.ee, value_t::make_json(message));
-				const auto result = (*f)(make_runtime_ptr(runtime.ee), state2, message2);
-				process._process_state = from_runtime_value(*runtime.ee, result, peek2(types, process._process_function->type).get_function_return(types));
+				const auto state2 = to_runtime_value(ee, process._process_state);
+				const auto message2 = to_runtime_value(ee, value_t::make_json(message));
+				const auto result = (*f)(make_runtime_ptr(&ee), state2, message2);
+				process._process_state = from_runtime_value(ee, result, peek2(types, process._process_function->type).get_function_return(types));
 			}
 		}
 	}
 }
 
 
+
+/*
+struct handler_t : public llvm_runtime_handler_i {
+	void on_send(const std::string& process_id, const json_t& message) override {
+		const auto it = std::find_if(
+			_runtime._processes.begin(),
+			_runtime._processes.end(),
+			[&](const std::shared_ptr<llvm_process_t>& process){ return process->_name_key == process_id; }
+		);
+		if(it != _runtime._processes.end()){
+			const auto process_index = it - _runtime._processes.begin();
+			send_message(_runtime, static_cast<int>(process_index), message);
+		}
+	}
+
+	void on_print(const std::string& s) override {
+		//??? 	Store one print out per process. ??? Also mutex?
+		_runtime.ee->_handler->on_print(s);
+	}
+
+	llvm_process_runtime_t& _runtime;
+};
+*/
+
+/*
+	There is only one LLVM execution engine, shared by all Floyd processes.
+	When client code calls  send() or print() we need to figure out which Floyd process they call from.
+*/
 static std::map<std::string, value_t> run_processes(llvm_execution_engine_t& ee){
 	if(ee.container_def._clock_busses.empty() == true){
 		return {};
 	}
 	else{
-		llvm_process_runtime_t runtime;
-		runtime._main_thread_id = std::this_thread::get_id();
-		runtime.ee = &ee;
-
-		runtime._container = ee.container_def;
-
-		runtime._process_infos = reduce(runtime._container._clock_busses, std::map<std::string, std::string>(), [](const std::map<std::string, std::string>& acc, const std::pair<std::string, clock_bus_t>& e){
-			auto acc2 = acc;
-			acc2.insert(e.second._processes.begin(), e.second._processes.end());
-			return acc2;
-		});
-
-		struct my_interpreter_handler_t : public runtime_handler_i {
-			my_interpreter_handler_t(llvm_process_runtime_t& runtime) : _runtime(runtime) {}
-
-			virtual void on_send(const std::string& process_id, const json_t& message){
-				const auto it = std::find_if(_runtime._processes.begin(), _runtime._processes.end(), [&](const std::shared_ptr<llvm_process_t>& process){ return process->_name_key == process_id; });
-				if(it != _runtime._processes.end()){
-					const auto process_index = it - _runtime._processes.begin();
-					send_message(_runtime, static_cast<int>(process_index), message);
-				}
+		ee._process_infos = reduce(
+			ee.container_def._clock_busses,
+			std::map<std::string, std::string>(), [](const std::map<std::string, std::string>& acc, const std::pair<std::string, clock_bus_t>& e){
+				auto acc2 = acc;
+				acc2.insert(e.second._processes.begin(), e.second._processes.end());
+				return acc2;
 			}
+		);
 
-			llvm_process_runtime_t& _runtime;
-		};
-		auto my_interpreter_handler = my_interpreter_handler_t{runtime};
-
-	//??? We need to pass unique runtime-object to each Floyd process -- not the ee!
-
-		ee._handler = &my_interpreter_handler;
-
-		for(const auto& t: runtime._process_infos){
+		for(const auto& t: ee._process_infos){
 			auto process = std::make_shared<llvm_process_t>();
 			process->_name_key = t.first;
 			process->_function_key = t.second;
-	//		process->_interpreter = std::make_shared<interpreter_t>(program, &my_interpreter_handler);
-
-			process->_init_function = std::make_shared<llvm_bind_t>(bind_function2(*runtime.ee, encode_floyd_func_link_name(t.second + "__init")));
-			process->_process_function = std::make_shared<llvm_bind_t>(bind_function2(*runtime.ee, encode_floyd_func_link_name(t.second)));
-
-			runtime._processes.push_back(process);
+			process->_init_function = std::make_shared<llvm_bind_t>(bind_function2(ee, encode_floyd_func_link_name(t.second + "__init")));
+			process->_process_function = std::make_shared<llvm_bind_t>(bind_function2(ee, encode_floyd_func_link_name(t.second)));
+			ee._processes.push_back(process);
 		}
 
+		//	Start all Floyd processes, each in their own OS thread.
 		//	Remember that current thread (main) is also a thread, no need to create a worker thread for one process.
-		runtime._processes[0]->_thread_id = runtime._main_thread_id;
-
-		for(int process_id = 1 ; process_id < runtime._processes.size() ; process_id++){
-			runtime._worker_threads.push_back(std::thread([&](int process_id){
-
-	//			const auto native_thread = thread::native_handle();
-
-				std::stringstream thread_name;
-				thread_name << std::string() << "process " << process_id << " thread";
-	#if QUARK_MAC
-				pthread_setname_np(/*pthread_self(),*/ thread_name.str().c_str());
-	#endif
-
-				run_process(runtime, process_id);
-			}, process_id));
+		{
+			ee._processes[0]->_thread_id = ee._main_thread_id;
+			for(int process_id = 1 ; process_id < ee._processes.size() ; process_id++){
+				ee._worker_threads.push_back(
+					std::thread([&](int process_id){
+			//			const auto native_thread = thread::native_handle();
+						std::stringstream thread_name;
+						thread_name << std::string() << "process " << process_id << " thread";
+						set_current_threads_name(thread_name.str());
+						run_process(ee, process_id);
+					},
+					process_id)
+				);
+			}
+			run_process(ee, 0);
 		}
 
-		run_process(runtime, 0);
-
-		for(auto &t: runtime._worker_threads){
+		for(auto &t: ee._worker_threads){
 			t.join();
 		}
 

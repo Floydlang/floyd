@@ -12,5 +12,6 @@
 #include <string>
 
 std::string get_current_thread_name();
+void set_current_threads_name(const std::string& s);
 
 #endif /* os_process_hpp */

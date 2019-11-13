@@ -34,6 +34,8 @@ struct bench_result_t {
 
 void trace_result(const bench_result_t& result);
 
+#if 0
 int64_t measure_floyd_function_f(const std::string& floyd_program, int count);
+#endif
 
 #endif

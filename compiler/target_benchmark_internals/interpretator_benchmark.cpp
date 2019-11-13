@@ -128,6 +128,7 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Text metrics", "", ""){
 
 #endif
 
+#if 0
 void floyd_benchmark(){
 //OFF_QUARK_UNIT_TEST_VIP("Basic performance", "", "", ""){
 //	interpreter_context_t context = make_benchmark_context();
@@ -262,6 +263,8 @@ void floyd_benchmark(){
 
 	}
 
-}	// floyd
+}
+
+#endif
 
 

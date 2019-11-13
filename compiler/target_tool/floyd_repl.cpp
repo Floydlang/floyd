@@ -218,6 +218,7 @@ int handle_repl_input(int print_pos, std::shared_ptr<floyd::interpreter_t>& vm_m
 }
 #endif
 
+#if 0
 void run_repl(){
 	init_terminal();
 
@@ -266,3 +267,6 @@ Type "help", "copyright", "credits" or "license" for more information.
 		}
 	}
 }
+#endif
+
+

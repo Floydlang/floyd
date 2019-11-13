@@ -319,7 +319,19 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 
 		llvm_instance_t instance;
 		auto program = generate_llvm_ir_program(instance, sem_ast, command2.source_path, command2.compiler_settings);
-		auto ee = init_llvm_jit(*program);
+
+
+		struct handler_t : public llvm_runtime_handler_i {
+			handler_t(std::ostream& out) : out(out) {}
+
+			void on_print(const std::string& s) override {
+				out << s;
+			}
+			std::ostream& out;
+		};
+		handler_t handler { out };
+
+		auto ee = init_llvm_jit(*program, handler);
 
 		//	Run tests before calling main()?
 		if(command2.run_tests){
@@ -347,7 +359,23 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 	if(command2.backend == ebackend::bytecode){
 		const auto cu = floyd::make_compilation_unit_lib(program_source, command2.source_path);
 		auto program = floyd::compile_to_bytecode(cu);
-		auto interpreter = floyd::interpreter_t(program);
+
+
+		struct handler_t : public bc_runtime_handler_i {
+			handler_t(std::ostream& out) : out(out) {}
+
+			void on_send(const std::string& process_id, const json_t& message) override {
+				QUARK_ASSERT(false);
+			}
+
+			void on_print(const std::string& s) override {
+				out << s;
+			}
+			std::ostream& out;
+		};
+		handler_t handler { out };
+
+		auto interpreter = floyd::interpreter_t(program, handler);
 
 		//	Run tests before calling main()?
 		if(command2.run_tests){
@@ -659,18 +687,15 @@ static main_result_t main_test(const std::map<std::string, std::string>& file_sy
 QUARK_TEST("", "main_internal()", "run blank source file", ""){
 	const auto files = std::map<std::string, std::string>{ { "examples/test_main.floyd", "" } };
 	const auto result = main_test(files, { "floyd", "run", "examples/test_main.floyd" });
-	QUARK_VERIFY(result == (main_result_t { EXIT_SUCCESS, "",{} }));
+	QUARK_VERIFY(result == (main_result_t { EXIT_SUCCESS, "", {} }));
 }
 
 QUARK_TEST("", "main_internal()", "run blank source file", ""){
 	const auto files = std::map<std::string, std::string>{ { "examples/test_main.floyd", "print (123)" } };
 	const auto result = main_test(files, { "floyd", "run", "examples/test_main.floyd" });
-	QUARK_VERIFY(result == (main_result_t { EXIT_SUCCESS, "",{} }));
+	QUARK_VERIFY(result == (main_result_t { EXIT_SUCCESS, "123", {} }));
 }
 
-
-
-//??? need to rerout all floyd program's printing from cout to a callback.
 
 
 int main(int argc, const char * argv[]) {
@@ -699,9 +724,7 @@ int main(int argc, const char * argv[]) {
 
 
 
-
-
-
+#if 0
 /*
 	request:
 		{
@@ -764,3 +787,5 @@ json_t handle_server_request(const json_t& request) {
 	}
 	return json_t::make_object({{ "output", json_t(EXIT_SUCCESS) }});
 }
+#endif
+

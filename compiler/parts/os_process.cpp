@@ -32,3 +32,22 @@ std::string get_current_thread_name(){
 	}
 }
 
+
+
+
+#if QUARK_MAC
+
+void set_current_threads_name(const std::string& s){
+
+//			const auto native_thread = thread::native_handle();
+	pthread_setname_np(/*pthread_self(),*/ s.c_str());
+}
+
+#else
+
+void set_current_threads_name(const std::string& s){
+}
+
+#endif
+
+
