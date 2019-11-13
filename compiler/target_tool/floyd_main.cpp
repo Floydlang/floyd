@@ -321,6 +321,7 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 		auto program = generate_llvm_ir_program(instance, sem_ast, command2.source_path, command2.compiler_settings);
 		auto ee = init_llvm_jit(*program);
 
+		//	Run tests before calling main()?
 		if(command2.run_tests){
 			const auto all_tests = collect_tests(*ee);
 			const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
@@ -332,7 +333,6 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 				return EXIT_FAILURE;
 			}
 			else{
-				return EXIT_SUCCESS;
 			}
 		}
 
@@ -349,6 +349,7 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 		auto program = floyd::compile_to_bytecode(cu);
 		auto interpreter = floyd::interpreter_t(program);
 
+		//	Run tests before calling main()?
 		if(command2.run_tests){
 			const auto all_tests = collect_tests(interpreter);
 			const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
@@ -360,7 +361,6 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 				return EXIT_FAILURE;
 			}
 			else{
-				return EXIT_SUCCESS;
 			}
 		}
 
@@ -591,8 +591,7 @@ static int do_command(tool_i& tool, std::ostream& out, const command_t& command)
 	return result;
 }
 
-static int main_internal(tool_i& tool, std::ostream& out, int argc, const char * argv[]) {
-	const auto args = args_to_vector(argc, argv);
+static int main_internal(tool_i& tool, std::ostream& out, const std::vector<std::string>& args) {
 	try{
 		const auto command = parse_floyd_command_line(args);
 		const auto wd = get_working_dir();
@@ -621,40 +620,57 @@ static int main_internal(tool_i& tool, std::ostream& out, int argc, const char *
 
 
 
-struct test_tool : public tool_i {
-	std::string tool_i__read_source_file(const std::string& abs_path) const override {
-		const auto it = files.find(abs_path);
-		QUARK_ASSERT(it != files.end());
-		return it->second;
-	}
-	void tool_i__save_source_file(const std::string& abs_path, const uint8_t data[], std::size_t size) override{
-		output_files.insert({ abs_path, std::vector<uint8_t>(data, data + size) });
-	}
 
-	test_tool(const std::map<std::string, std::string>& m) : files(m) {}
-
+struct main_result_t {
+	int error;
+	std::string output;
 	std::map<std::string, std::string> files;
-	std::map<std::string, std::vector<uint8_t>> output_files;
 };
+bool operator==(const main_result_t& lhs, const main_result_t& rhs){
+	return lhs.error == rhs.error && lhs.output == rhs.output && lhs.files == rhs.files;
+}
 
+static main_result_t main_test(const std::map<std::string, std::string>& file_system, const std::vector<std::string>& args){
+	struct test_tool : public tool_i {
+		std::string tool_i__read_source_file(const std::string& abs_path) const override {
+			const auto it = files.find(abs_path);
+			QUARK_ASSERT(it != files.end());
+			return it->second;
+		}
+		void tool_i__save_source_file(const std::string& abs_path, const uint8_t data[], std::size_t size) override{
+			output_files.insert({ abs_path, std::string(data, data + size) });
+		}
 
-#if 0
-QUARK_TEST("", "main_internal()", "", ""){
+		test_tool(const std::map<std::string, std::string>& m) : files(m) {}
+
+		std::map<std::string, std::string> files;
+		std::map<std::string, std::string> output_files;
+	};
+
 	test_tool t = test_tool{
-		std::map<std::string, std::string>{ { "examples/test_main.floyd", "" } }
-//		std::map<std::string, std::string>()
+		file_system
 	};
 	std::stringstream out;
 
-	const char* args[] = { "floyd", "run", "examples/test_main.floyd" };
-	const auto result = main_internal(t, out, 3, args);
-	QUARK_VERIFY(result == 0);
+	const auto err = main_internal(t, out, args);
+	return main_result_t { err, out.str(), t.output_files };
 }
-#endif
+
+QUARK_TEST("", "main_internal()", "run blank source file", ""){
+	const auto files = std::map<std::string, std::string>{ { "examples/test_main.floyd", "" } };
+	const auto result = main_test(files, { "floyd", "run", "examples/test_main.floyd" });
+	QUARK_VERIFY(result == (main_result_t { EXIT_SUCCESS, "",{} }));
+}
+
+QUARK_TEST("", "main_internal()", "run blank source file", ""){
+	const auto files = std::map<std::string, std::string>{ { "examples/test_main.floyd", "print (123)" } };
+	const auto result = main_test(files, { "floyd", "run", "examples/test_main.floyd" });
+	QUARK_VERIFY(result == (main_result_t { EXIT_SUCCESS, "",{} }));
+}
 
 
 
-
+//??? need to rerout all floyd program's printing from cout to a callback.
 
 
 int main(int argc, const char * argv[]) {
@@ -675,7 +691,9 @@ int main(int argc, const char * argv[]) {
 	};
 
 	def_tool tool;
-	return main_internal(tool, std::cout, argc, argv);
+
+	const auto args = args_to_vector(argc, argv);
+	return main_internal(tool, std::cout, args);
 }
 
 
