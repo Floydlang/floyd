@@ -25,21 +25,23 @@ jobs:
         cmake compiler
     - name: make
       run: cmake --build . 
+    - name: hw-caps
+      run: './floyd hwcaps'
     
-  build-mac-cmake:
+  #build-mac-cmake:
 
-    runs-on: macos-latest  
-    steps:
-    - uses: actions/checkout@v1
-    - name: Brew install
-      run: |
-        brew install llvm@8
-        brew install cmake
-        brew info llvm
-    - name: configure 
-      run: cmake compiler
-    - name: make
-      run: cmake --build . 
+  #  runs-on: macos-latest  
+  #  steps:
+  #  - uses: actions/checkout@v1
+  #  - name: Brew install
+  #    run: |
+  #      brew install llvm@8
+  #      brew install cmake
+  #      brew info llvm
+  #  - name: configure 
+  #    run: cmake compiler
+  #  - name: make
+  #    run: cmake --build . 
 
   build-mac-xcode:
     runs-on: macos-latest  

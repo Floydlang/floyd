@@ -84,10 +84,6 @@ bytecode_interpreter/bytecode_interpreter.cpp
 bytecode_interpreter/bytecode_intrinsics.cpp
 bytecode_interpreter/floyd_interpreter.cpp
 cpp_experiments.cpp
-#examples/benchmarks.floyd
-#examples/game_of_life.cpp
-#examples/process_test1.floyd
-#examples/test_main.floyd
 floyd_ast/ast.cpp
 floyd_ast/ast_visitor.cpp
 floyd_ast/expression.cpp
@@ -95,8 +91,7 @@ floyd_ast/statement.cpp
 floyd_basics/ast_value.cpp
 floyd_basics/compiler_basics.cpp
 floyd_basics/compiler_helpers.cpp
-floyd_basics/type_interner.cpp
-floyd_basics/typeid.cpp
+floyd_basics/types.cpp
 floyd_parser/floyd_parser.cpp
 floyd_parser/floyd_syntax.cpp
 floyd_parser/parse_expression.cpp
@@ -220,8 +215,8 @@ bytecode_interpreter/bytecode_interpreter.cpp
 bytecode_interpreter/bytecode_intrinsics.cpp
 bytecode_interpreter/floyd_interpreter.cpp
 cpp_experiments.cpp
-examples/process_test1.floyd
-examples/test_main.floyd
+#examples/process_test1.floyd
+#examples/test_main.floyd
 floyd_ast/ast.cpp
 floyd_ast/ast_visitor.cpp
 floyd_ast/expression.cpp
@@ -229,7 +224,6 @@ floyd_ast/statement.cpp
 floyd_basics/ast_value.cpp
 floyd_basics/compiler_basics.cpp
 floyd_basics/compiler_helpers.cpp
-floyd_basics/typeid.cpp
 floyd_parser/floyd_parser.cpp
 floyd_parser/floyd_syntax.cpp
 floyd_parser/parse_expression.cpp
@@ -340,7 +334,7 @@ if(MSVC)
   ${FLOYD_SPEAK_DEPENDENCIES} ${CMAKE_THREAD_LIBS_INIT} Threads::Threads  LLVMMC LLVMLTO Shlwapi)
   # ${CMAKE_SOURCE_DIR}/../../../vcpkg/installed/x64-windows/debug/lib/readline.lib
 elseif(APPLE)
-target_link_options(floyd  PRIVATE "-L/usr/local/opt/llvm@8/lib -Wl,-rpath,/usr/local/opt/llvm@8/lib")
+target_link_options(floyd  PRIVATE "-L/usr/local/opt/llvm/lib,-L/usr/local/opt/llvm@8/lib -Wl,-rpath,/usr/local/opt/llvm@8/lib")
 target_link_libraries( floyd
 ${FLOYD_SPEAK_STATIC_DEPENDENCIES}
 ${FLOYD_SPEAK_DEPENDENCIES} pthread LLVM ${LLVM_LIB} readline)
@@ -348,7 +342,7 @@ ${FLOYD_SPEAK_DEPENDENCIES} pthread LLVM ${LLVM_LIB} readline)
 else()
 target_link_libraries( floyd
 ${FLOYD_SPEAK_STATIC_DEPENDENCIES}
-${FLOYD_SPEAK_DEPENDENCIES} pthread LLVM-8 ${LLVM_LIB} readline)
+${FLOYD_SPEAK_DEPENDENCIES} pthread LLVM-8 ${LLVM_LIB} edit)
 ENDIF()
 
 
