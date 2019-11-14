@@ -1019,8 +1019,8 @@ int64_t corelib__get_time_of_day(){
 }
 
 QUARK_TEST("sizeof(int)", "", "", ""){
-	QUARK_TRACE(std::to_string(sizeof(int)));
-	QUARK_TRACE(std::to_string(sizeof(int64_t)));
+	QUARK_VERIFY(sizeof(int) == 4);
+	QUARK_VERIFY(sizeof(int64_t) == 8);
 }
 
 QUARK_TEST("get_time_of_day_ms()", "", "", ""){
