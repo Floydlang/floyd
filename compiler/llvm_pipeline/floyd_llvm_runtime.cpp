@@ -294,9 +294,7 @@ std::vector<function_link_entry_t> make_function_link_map1(llvm::LLVMContext& co
 }
 
 
-void trace_function_link_map(const types_t& types, const std::vector<function_link_entry_t>& defs){
-	QUARK_SCOPED_TRACE("FUNCTION LINK MAP");
-
+std::string print_function_link_map(const types_t& types, const std::vector<function_link_entry_t>& defs){
 	std::vector<std::vector<std::string>> matrix;
 	for(const auto& e: defs){
 		const auto f0 = e.function_type_or_undef.is_undefined() ? "" : json_to_compact_string(type_to_compact_string(types, e.function_type_or_undef));
@@ -327,7 +325,10 @@ void trace_function_link_map(const types_t& types, const std::vector<function_li
 		{ "LINK-NAME", "MODULE", "LLVM_FUNCTION_TYPE", "LLVM_CODEGEN_F", "FUNCTION TYPE", "ARG NAMES", "NATIVE_F" },
 		matrix
 	);
-	QUARK_TRACE(result);
+	return result;
+}
+void trace_function_link_map(const types_t& types, const std::vector<function_link_entry_t>& defs){
+	QUARK_TRACE(print_function_link_map(types, defs));
 }
 
 

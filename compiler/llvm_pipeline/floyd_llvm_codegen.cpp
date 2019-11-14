@@ -2679,23 +2679,11 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 			QUARK_TRACE_SS(json_to_pretty_string(semantic_ast_to_json(ast0)));
 		}
 
-		{
-			QUARK_SCOPED_TRACE("LLVM CODE GENERATION -- INPUT TYPES");
-			trace_types(ast0._tree._types);
-		}
-
 		auto result = generate_llvm_ir_program_internal(instance, ast0, module_name, settings);
 
 		{
-			{
-				QUARK_SCOPED_TRACE("LLVM CODE GENERATION -- OUTPUT LLVM MODULE");
-				QUARK_TRACE(print_module(*result->module));
-	//			QUARK_TRACE_SS(floyd::print_program(*result));
-			}
-			{
-				QUARK_SCOPED_TRACE("LLVM CODE GENERATION -- OUTPUT LINK MAP");
-				trace_function_link_map(result->type_lookup.state.types, result->function_link_map);
-			}
+			QUARK_SCOPED_TRACE("LLVM CODE GENERATION -- OUTPUT LLVM PROGRAM");
+			QUARK_TRACE(print_llvm_ir_program(*result));
 		}
 		return result;
 	}
@@ -2703,5 +2691,16 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 		return generate_llvm_ir_program_internal(instance, ast0, module_name, settings);
 	}
 }
+
+std::string print_llvm_ir_program(const llvm_ir_program_t& program){
+	QUARK_ASSERT(program.check_invariant());
+
+	const auto a = print_module(*program.module);
+	const auto b = print_function_link_map(program.type_lookup.state.types, program.function_link_map);
+	return a + b;
+}
+
+
+
 
 }	//	floyd

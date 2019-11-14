@@ -47,7 +47,7 @@ struct command_t {
 		std::vector<std::string> floyd_main_args;
 		ebackend backend;
 		compiler_settings_t compiler_settings;
-		bool trace;
+		bool verbose;
 		bool run_tests;
 	};
 
@@ -64,7 +64,7 @@ struct command_t {
 		eoutput_type output_type;
 		ebackend backend;
 		compiler_settings_t compiler_settings;
-		bool trace;
+		bool verbose;
 	};
 
 	struct user_benchmarks_t {
@@ -79,8 +79,7 @@ struct command_t {
 		std::vector<std::string> optional_benchmark_keys;
 		ebackend backend;
 		compiler_settings_t compiler_settings;
-		bool trace;
-		bool run_tests;
+		bool verbose;
 	};
 
 	struct user_test_t {
@@ -95,12 +94,10 @@ struct command_t {
 		std::vector<std::string> optional_test_keys;
 		ebackend backend;
 		compiler_settings_t compiler_settings;
-		bool trace;
-		bool run_tests;
+		bool verbose;
 	};
 
 	struct hwcaps_t {
-		bool trace;
 	};
 	struct runtests_internals_t {
 		bool trace;

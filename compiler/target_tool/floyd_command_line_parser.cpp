@@ -62,12 +62,12 @@ USAGE
 
 FLAGS
 
-| -t       | Verbose tracing
-| -p       | Output parse tree as a JSON
-| -a       | Output Abstract syntax tree (AST) as a JSON
-| -i       | Output intermediate representation (IR / ASM) as assembly
-| -b       | Use Floyd's bytecode backend instead of default LLVM
-| -u       | Skip running the program's unit tests
+| -t       | compile: Verbose tracing
+| -p       | compile: Output parse tree as a JSON
+| -a       | compile: Output Abstract syntax tree (AST) as a JSON
+| -i       | compile: Output intermediate representation (IR / ASM) as assembly
+| -b       | compile: Use Floyd's bytecode backend instead of default LLVM
+| -u       | run: Skip running the program's unit tests
 | -g       | Compiler with debug info, no optimizations
 | -O1      | Enable trivial optimizations
 | -O2      | Enable default optimizations
@@ -414,7 +414,7 @@ QUARK_TEST("", "parse_run()", "floyd run", ""){
 	QUARK_VERIFY(r2.source_path == "mygame.floyd");
 	QUARK_VERIFY(r2.floyd_main_args == (std::vector<std::string>{}));
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
-	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.verbose == false);
 	QUARK_VERIFY(r2.run_tests == true);
 }
 QUARK_TEST("", "parse_run()", "floyd run", ""){
@@ -423,7 +423,7 @@ QUARK_TEST("", "parse_run()", "floyd run", ""){
 	QUARK_VERIFY(r2.source_path == "mygame.floyd");
 	QUARK_VERIFY(r2.floyd_main_args == (std::vector<std::string>{ "arg1", "arg2" }));
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
-	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.verbose == false);
 	QUARK_VERIFY(r2.run_tests == true);
 }
 QUARK_TEST("", "parse_run()", "floyd run", ""){
@@ -432,7 +432,7 @@ QUARK_TEST("", "parse_run()", "floyd run", ""){
 	QUARK_VERIFY(r2.source_path == "mygame.floyd");
 	QUARK_VERIFY(r2.floyd_main_args == (std::vector<std::string>{}));
 	QUARK_VERIFY(r2.backend == ebackend::bytecode);
-	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.verbose == false);
 	QUARK_VERIFY(r2.run_tests == true);
 }
 QUARK_TEST("", "parse_run()", "floyd run", ""){
@@ -441,7 +441,7 @@ QUARK_TEST("", "parse_run()", "floyd run", ""){
 	QUARK_VERIFY(r2.source_path == "mygame.floyd");
 	QUARK_VERIFY(r2.floyd_main_args == (std::vector<std::string>{}));
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
-	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.verbose == false);
 	QUARK_VERIFY(r2.run_tests == false);
 }
 
@@ -470,7 +470,7 @@ QUARK_TEST("", "parse_compile()", "floyd compile", ""){
 	QUARK_VERIFY(r2.output_type == eoutput_type::object_file);
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
 	QUARK_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O2_enable_default_optimizations }));
-	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.verbose == false);
 }
 QUARK_TEST("", "parse_compile()", "floyd compile", ""){
 	const auto r = parse_compile(parse_test_cmd_line("floyd compile -t mygame.floyd"));
@@ -480,7 +480,7 @@ QUARK_TEST("", "parse_compile()", "floyd compile", ""){
 	QUARK_VERIFY(r2.output_type == eoutput_type::object_file);
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
 	QUARK_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O2_enable_default_optimizations }));
-	QUARK_VERIFY(r2.trace == true);
+	QUARK_VERIFY(r2.verbose == true);
 }
 
 QUARK_TEST("", "parse_compile()", "floyd compile", ""){
@@ -491,7 +491,7 @@ QUARK_TEST("", "parse_compile()", "floyd compile", ""){
 	QUARK_VERIFY(r2.output_type == eoutput_type::parse_tree);
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
 	QUARK_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O2_enable_default_optimizations }));
-	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.verbose == false);
 }
 
 QUARK_TEST("", "parse_compile()", "floyd compile", ""){
@@ -502,7 +502,7 @@ QUARK_TEST("", "parse_compile()", "floyd compile", ""){
 	QUARK_VERIFY(r2.output_type == eoutput_type::ast);
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
 	QUARK_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O2_enable_default_optimizations }));
-	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.verbose == false);
 }
 QUARK_TEST("", "parse_compile()", "floyd compile", ""){
 	const auto r = parse_compile(parse_test_cmd_line("floyd compile -i mygame.floyd"));
@@ -512,7 +512,7 @@ QUARK_TEST("", "parse_compile()", "floyd compile", ""){
 	QUARK_VERIFY(r2.output_type == eoutput_type::ir);
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
 	QUARK_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O2_enable_default_optimizations }));
-	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.verbose == false);
 }
 QUARK_TEST("", "parse_compile()", "floyd compile", ""){
 	const auto r = parse_compile(parse_test_cmd_line("floyd compile -pait mygame.floyd"));
@@ -522,7 +522,7 @@ QUARK_TEST("", "parse_compile()", "floyd compile", ""){
 	QUARK_VERIFY(r2.output_type == eoutput_type::parse_tree);
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
 	QUARK_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O2_enable_default_optimizations }));
-	QUARK_VERIFY(r2.trace == true);
+	QUARK_VERIFY(r2.verbose == true);
 }
 
 QUARK_TEST("", "parse_compile()", "floyd compile", ""){
@@ -533,7 +533,7 @@ QUARK_TEST("", "parse_compile()", "floyd compile", ""){
 	QUARK_VERIFY(r2.output_type == eoutput_type::object_file);
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
 	QUARK_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O2_enable_default_optimizations }));
-	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.verbose == false);
 }
 
 QUARK_TEST("", "parse_compile()", "floyd compile", ""){
@@ -544,7 +544,7 @@ QUARK_TEST("", "parse_compile()", "floyd compile", ""){
 	QUARK_VERIFY(r2.output_type == eoutput_type::object_file);
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
 	QUARK_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O2_enable_default_optimizations }));
-	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.verbose == false);
 }
 
 QUARK_TEST("", "parse_compile()", "floyd compile", ""){
@@ -555,7 +555,7 @@ QUARK_TEST("", "parse_compile()", "floyd compile", ""){
 	QUARK_VERIFY(r2.output_type == eoutput_type::ir);
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
 	QUARK_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::g_no_optimizations_enable_debugging }));
-	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.verbose == false);
 }
 
 QUARK_TEST("", "parse_compile()", "floyd compile", ""){
@@ -566,7 +566,7 @@ QUARK_TEST("", "parse_compile()", "floyd compile", ""){
 	QUARK_VERIFY(r2.output_type == eoutput_type::ir);
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
 	QUARK_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O1_enable_trivial_optimizations }));
-	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.verbose == false);
 }
 
 QUARK_TEST("", "parse_compile()", "floyd compile", ""){
@@ -577,7 +577,7 @@ QUARK_TEST("", "parse_compile()", "floyd compile", ""){
 	QUARK_VERIFY(r2.output_type == eoutput_type::ir);
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
 	QUARK_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O2_enable_default_optimizations }));
-	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.verbose == false);
 }
 
 QUARK_TEST("", "parse_compile()", "floyd compile", ""){
@@ -588,7 +588,7 @@ QUARK_TEST("", "parse_compile()", "floyd compile", ""){
 	QUARK_VERIFY(r2.output_type == eoutput_type::ir);
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
 	QUARK_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O3_enable_expensive_optimizations }));
-	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.verbose == false);
 }
 
 QUARK_TEST("", "parse_compile()", "floyd compile", ""){
@@ -599,7 +599,7 @@ QUARK_TEST("", "parse_compile()", "floyd compile", ""){
 	QUARK_VERIFY(r2.output_type == eoutput_type::ir);
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
 	QUARK_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::hamt, dict_backend::hamt, false }, eoptimization_level::O3_enable_expensive_optimizations }));
-	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.verbose == false);
 }
 
 
@@ -612,7 +612,7 @@ QUARK_TEST("", "parse_compile()", "floyd compile", ""){
 	QUARK_VERIFY(r2.output_type == eoutput_type::object_file);
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
 	QUARK_VERIFY(r2.compiler_settings == (compiler_settings_t { config_t{ vector_backend::carray, dict_backend::cppmap, false }, eoptimization_level::O2_enable_default_optimizations }));
-	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.verbose == false);
 }
 
 
@@ -643,14 +643,41 @@ command_t parse_bench(const command_line_args_t& args){
 
 	const bool list_mode = flags.count("l") == 1;
 	if(list_mode){
-		return command_t { command_t::user_benchmarks_t { command_t::user_benchmarks_t::mode::list, source_path, args2, backend, compiler_settings, trace_on, run_tests } };
+		return command_t {
+			command_t::user_benchmarks_t {
+				command_t::user_benchmarks_t::mode::list,
+				source_path,
+				args2,
+				backend,
+				compiler_settings,
+				run_tests
+			}
+		};
 	}
 	else{
 		if(args2.size() == 0){
-			return command_t { command_t::user_benchmarks_t { command_t::user_benchmarks_t::mode::run_all, source_path, {}, backend, compiler_settings, trace_on, run_tests } };
+			return command_t {
+				command_t::user_benchmarks_t {
+					command_t::user_benchmarks_t::mode::run_all,
+					source_path,
+					{},
+					backend,
+					compiler_settings,
+					run_tests
+				}
+			};
 		}
 		else{
-			return command_t { command_t::user_benchmarks_t { command_t::user_benchmarks_t::mode::run_specified, source_path, args2, backend, compiler_settings, trace_on, run_tests } };
+			return command_t {
+				command_t::user_benchmarks_t {
+					command_t::user_benchmarks_t::mode::run_specified,
+					source_path,
+					args2,
+					backend,
+					compiler_settings,
+					run_tests
+				}
+			};
 		}
 	}
 }
@@ -662,7 +689,6 @@ QUARK_TEST("", "parse_bench()", "floyd bench mygame.floyd", ""){
 	QUARK_VERIFY(r2.source_path == "mygame.floyd");
 	QUARK_VERIFY(r2.optional_benchmark_keys == (std::vector<std::string>{}));
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
-	QUARK_VERIFY(r2.trace == false);
 }
 
 QUARK_TEST("", "parse_bench()", "floyd bench -t mygame.floyd quicksort1 merge-sort", ""){
@@ -672,7 +698,6 @@ QUARK_TEST("", "parse_bench()", "floyd bench -t mygame.floyd quicksort1 merge-so
 	QUARK_VERIFY(r2.source_path == "mygame.floyd");
 	QUARK_VERIFY(r2.optional_benchmark_keys == (std::vector<std::string>{ "quicksort1", "merge sort" }));
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
-	QUARK_VERIFY(r2.trace == true);
 }
 
 QUARK_TEST("", "parse_bench()", "floyd bench -tl mygame.floyd", ""){
@@ -682,7 +707,6 @@ QUARK_TEST("", "parse_bench()", "floyd bench -tl mygame.floyd", ""){
 	QUARK_VERIFY(r2.source_path == "mygame.floyd");
 	QUARK_VERIFY(r2.optional_benchmark_keys == (std::vector<std::string>{}));
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
-	QUARK_VERIFY(r2.trace == true);
 }
 
 
@@ -714,14 +738,14 @@ command_t parse_test(const command_line_args_t& args){
 
 	const bool list_mode = args.flags.count("l") == 1;
 	if(list_mode){
-		return command_t { command_t::user_test_t { command_t::user_test_t::mode::list, source_path, args2, backend, compiler_settings, trace_on, run_tests } };
+		return command_t { command_t::user_test_t { command_t::user_test_t::mode::list, source_path, args2, backend, compiler_settings, trace_on } };
 	}
 	else{
 		if(args2.size() == 0){
-			return command_t { command_t::user_test_t { command_t::user_test_t::mode::run_all, source_path, {}, backend, compiler_settings, trace_on, run_tests } };
+			return command_t { command_t::user_test_t { command_t::user_test_t::mode::run_all, source_path, {}, backend, compiler_settings, trace_on } };
 		}
 		else{
-			return command_t { command_t::user_test_t { command_t::user_test_t::mode::run_specified, source_path, args2, backend, compiler_settings, trace_on, run_tests } };
+			return command_t { command_t::user_test_t { command_t::user_test_t::mode::run_specified, source_path, args2, backend, compiler_settings, trace_on } };
 		}
 	}
 }
@@ -733,7 +757,7 @@ QUARK_TEST("", "parse_test()", "floyd test mygame.floyd", ""){
 	QUARK_VERIFY(r2.source_path == "mygame.floyd");
 	QUARK_VERIFY(r2.optional_test_keys == (std::vector<std::string>{}));
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
-	QUARK_VERIFY(r2.trace == false);
+	QUARK_VERIFY(r2.verbose == false);
 }
 
 QUARK_TEST("", "parse_test()", "floyd test -t mygame.floyd quicksort1 merge-sort", ""){
@@ -743,7 +767,7 @@ QUARK_TEST("", "parse_test()", "floyd test -t mygame.floyd quicksort1 merge-sort
 	QUARK_VERIFY(r2.source_path == "mygame.floyd");
 	QUARK_VERIFY(r2.optional_test_keys == (std::vector<std::string>{ "quicksort1", "merge sort" }));
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
-	QUARK_VERIFY(r2.trace == true);
+	QUARK_VERIFY(r2.verbose == true);
 }
 
 QUARK_TEST("", "parse_test()", "floyd test -tl mygame.floyd", ""){
@@ -753,7 +777,7 @@ QUARK_TEST("", "parse_test()", "floyd test -tl mygame.floyd", ""){
 	QUARK_VERIFY(r2.source_path == "mygame.floyd");
 	QUARK_VERIFY(r2.optional_test_keys == (std::vector<std::string>{}));
 	QUARK_VERIFY(r2.backend == ebackend::llvm);
-	QUARK_VERIFY(r2.trace == true);
+	QUARK_VERIFY(r2.verbose == true);
 }
 
 
@@ -763,7 +787,7 @@ command_t parse_hwcaps(const command_line_args_t& args){
 	QUARK_ASSERT(args.subcommand == "hwcaps");
 
 	const bool trace_on = args.flags.count("t") == 1;
-	return command_t { command_t::hwcaps_t { trace_on } };
+	return command_t { command_t::hwcaps_t { } };
 }
 
 command_t parse_runtests(const command_line_args_t& args){

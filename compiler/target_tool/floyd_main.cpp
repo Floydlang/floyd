@@ -276,13 +276,24 @@ static int do_compile_command(tool_i& tool, std::ostream& out, const command_t& 
 		}
 		else if(command2.backend == ebackend::llvm){
 			const auto ast = floyd::compile_to_sematic_ast__errors(cu);
+
+			if(command2.verbose){
+				const auto j = semantic_ast_to_json(ast);
+				out << json_to_pretty_string(j);
+			}
+
 			llvm_instance_t llvm_instance;
 			std::unique_ptr<llvm_ir_program_t> llvm_program = generate_llvm_ir_program(llvm_instance, ast, "", command2.compiler_settings);
+
+			if(command2.verbose){
+				const auto s = print_llvm_ir_program(*llvm_program);
+				out << s;
+			}
+
 			const auto object_file = write_object_file(*llvm_program, llvm_instance.target);
-	
 
 			const auto path = command2.dest_path == "" ? (base_path + "out.o") : command2.dest_path;
-			SaveFile(path, &object_file[0], object_file.size());
+			output_result(tool, out, path, std::string(object_file.begin(), object_file.end()));
 			return EXIT_SUCCESS;
 		}
 		else{
@@ -305,7 +316,6 @@ static int do_compile_command(tool_i& tool, std::ostream& out, const command_t& 
 
 
 static int do_run_command(tool_i& tool, std::ostream& out, const command_t& command, const command_t::compile_and_run_t& command2){
-	g_trace_on = command2.trace;
 
 	const auto program_source = tool.tool_i__read_source_file(command2.source_path);
 
@@ -317,9 +327,19 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 		);
 		const auto sem_ast = compile_to_sematic_ast__errors(cu);
 
+		if(command2.verbose){
+			const auto j = semantic_ast_to_json(sem_ast);
+			out << json_to_pretty_string(j);
+		}
+
+
 		llvm_instance_t instance;
 		auto program = generate_llvm_ir_program(instance, sem_ast, command2.source_path, command2.compiler_settings);
 
+		if(command2.verbose){
+			const auto s = print_llvm_ir_program(*program);
+			out << s;
+		}
 
 		struct handler_t : public llvm_runtime_handler_i {
 			handler_t(std::ostream& out) : out(out) {}
@@ -341,7 +361,7 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 
 			if(count_fails(test_results) > 0){
 				const auto report = make_report(test_results);
-				out << report << std::endl;
+				out << report;
 				return EXIT_FAILURE;
 			}
 			else{
@@ -385,7 +405,7 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 
 			if(count_fails(test_results) > 0){
 				const auto report = make_report(test_results);
-				out << report << std::endl;
+				out << report;
 				return EXIT_FAILURE;
 			}
 			else{
@@ -414,7 +434,6 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 
 
 static int do_user_benchmarks(tool_i& tool, std::ostream& out, const command_t& command, const command_t::user_benchmarks_t& command2){
-	g_trace_on = command2.trace;
 
 	if(command2.backend != ebackend::llvm){
 		throw std::runtime_error("Command requires LLVM backend.");
@@ -433,8 +452,8 @@ static int do_user_benchmarks(tool_i& tool, std::ostream& out, const command_t& 
 		const auto s0 = run_benchmarks_source(program_source, command2.source_path, command2.compiler_settings, {});
 		const auto s = make_benchmark_report(s0);
 
-		out << get_current_date_and_time_string() << std::endl;
-		out << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;
+//		out << get_current_date_and_time_string() << std::endl;
+//		out << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;
 		out << s;
 		return EXIT_SUCCESS;
 	}
@@ -454,8 +473,8 @@ static int do_user_benchmarks(tool_i& tool, std::ostream& out, const command_t& 
 		);
 		const auto s = make_benchmark_report(s0);
 
-		out << get_current_date_and_time_string() << std::endl;
-		out << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;
+//		out << get_current_date_and_time_string() << std::endl;
+//		out << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;
 		out << s;
 		return EXIT_SUCCESS;
 	}
@@ -494,8 +513,6 @@ static int do_user_benchmarks(tool_i& tool, std::ostream& out, const command_t& 
 
 
 static int do_user_test(tool_i& tool, std::ostream& out, const command_t& command, const command_t::user_test_t& command2){
-	g_trace_on = command2.trace;
-
 	if(command2.backend != ebackend::llvm){
 		throw std::runtime_error("Command requires LLVM backend.");
 	}
@@ -504,12 +521,11 @@ static int do_user_test(tool_i& tool, std::ostream& out, const command_t& comman
 
 	if(command2.mode == command_t::user_test_t::mode::run_all){
 		const auto test_results = run_tests_source(program_source, command2.source_path, command2.compiler_settings, {});
-
-		out << get_current_date_and_time_string() << std::endl;
-
+//		out << get_current_date_and_time_string() << std::endl;
+		const auto fails = count_fails(test_results);
 		const auto report = make_report(test_results);
-		out << report << std::endl;
-		return EXIT_SUCCESS;
+		out << report;
+		return fails == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 	else if(command2.mode == command_t::user_test_t::mode::run_specified){
 		const auto test_results = run_tests_source(
@@ -518,11 +534,12 @@ static int do_user_test(tool_i& tool, std::ostream& out, const command_t& comman
 			command2.compiler_settings,
 			command2.optional_test_keys
 		);
-		out << get_current_date_and_time_string() << std::endl;
+//		out << get_current_date_and_time_string() << std::endl;
 
+		const auto fails = count_fails(test_results);
 		const auto report = make_report(test_results);
-		out << report << std::endl;
-		return EXIT_SUCCESS;
+		out << report;
+		return fails == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 	else if(command2.mode == command_t::user_test_t::mode::list){
 		const auto b = collect_tests_source(
@@ -561,7 +578,7 @@ static void do_hardware_caps(tool_i& tool, std::ostream& out){
 	const auto caps = corelib_detect_hardware_caps();
 	const auto r = corelib_make_hardware_caps_report(caps);
 
-	out << get_current_date_and_time_string() << std::endl;
+//	out << get_current_date_and_time_string() << std::endl;
 	out << r << std::endl;
 }
 
@@ -704,17 +721,141 @@ QUARK_TEST("", "main_internal()", "", ""){
 //////////////////////////////////////////		USAGE
 
 
+static bool ends_with(std::string const &fullString, std::string const &ending) {
+    if (fullString.length() >= ending.length()) {
+        return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
+    } else {
+        return false;
+    }
+}
+
+static bool starts_with(const std::string& s, const std::string& wanted){
+	return s.find(wanted) == 0;
+}
 
 
-QUARK_TEST_VIP("", "main_internal()", "", ""){
+static const std::string k_tests_program = R"___(
+
+	print("Hello, ")
+
+	test-def ("Test 404", "print a message"){ print("Running test 404!") }
+	test-def ("Test 1138", "thx"){ print("Watching THX!") }
+
+	print("world!")
+
+)___";
+
+static const std::string k_tests_program2 = R"___(
+
+	print("Hello, ")
+
+	test-def ("f()", "1"){ print("Running 1") }
+	test-def ("g()", "2"){ print("Running 2") ; assert(false) }
+	test-def ("h()", "3"){ print("Running 3") }
+
+	print("world!")
+
+	func int main(){
+		print("main!")
+		return 0
+	}
+)___";
+
+
+
+//////////////////////////////////////////		HELP
+
+QUARK_TEST("", "main_internal()", "", ""){
 	const auto result = main_test({}, "floyd help");
 	QUARK_VERIFY(result.error == EXIT_SUCCESS);
-	QUARK_VERIFY(result.output.find("Floyd Programming Language MIT license.\n") == 0);
+	QUARK_VERIFY(starts_with(result.output, "Floyd Programming Language MIT license.\n"));
 	QUARK_VERIFY(result.files.empty());
 }
 
 
+//////////////////////////////////////////		RUN
 
+
+QUARK_TEST("", "main_internal()", "", ""){
+	const auto files = std::map<std::string, std::string>{ { "mygame.floyd", "print(1234)" } };
+	const auto result = main_test(files, "floyd run -t mygame.floyd");
+//	std::cout << result.output;
+	QUARK_VERIFY(result.error == EXIT_SUCCESS);
+	QUARK_VERIFY(starts_with(result.output, "{\n\t\"function_defs\": "));
+	QUARK_VERIFY(ends_with(result.output, "1234"));
+	QUARK_VERIFY(result.files.empty());
+}
+
+QUARK_TEST("", "main_internal()", "", ""){
+	const auto files = std::map<std::string, std::string>{ { "test.floyd", k_tests_program } };
+	const auto result = main_test(files, "floyd run test.floyd");
+	QUARK_VERIFY(result.error == EXIT_SUCCESS);
+	QUARK_VERIFY(result.output == "Hello, world!Running test 404!Watching THX!");
+	QUARK_VERIFY(result.files.empty());
+}
+
+QUARK_TEST("", "main_internal()", "", ""){
+	const auto files = std::map<std::string, std::string>{ { "test.floyd", k_tests_program2 } };
+	const auto result = main_test(files, "floyd run test.floyd");
+	QUARK_VERIFY(result.error == EXIT_FAILURE);
+	QUARK_VERIFY(starts_with(result.output, "Hello, world!Running 1Running 2Assertion failed.Running 3All tests (3): 1 failed!\n|MODULE |FUNCTION |SCENARIO |RESULT"));
+	QUARK_VERIFY(result.files.empty());
+}
+QUARK_TEST("", "main_internal()", "", ""){
+	const auto files = std::map<std::string, std::string>{ { "test.floyd", k_tests_program2 } };
+	const auto result = main_test(files, "floyd run -u test.floyd");
+	QUARK_VERIFY(result.error == EXIT_SUCCESS);
+	QUARK_VERIFY(result.output == "Hello, world!main!");
+	QUARK_VERIFY(result.files.empty());
+}
+
+
+//////////////////////////////////////////		COMPILE
+
+
+QUARK_TEST("", "main_internal()", "", ""){
+	const auto files = std::map<std::string, std::string>{ { "mygame.floyd", "print(1234)" } };
+	const auto result = main_test(files, "floyd compile mygame.floyd");
+	QUARK_VERIFY(result.error == EXIT_SUCCESS);
+	QUARK_VERIFY(result.output == "");
+	QUARK_VERIFY(result.files.size() == 1);
+	QUARK_VERIFY(result.files.find("out.o")->second.size() > 0);
+}
+
+QUARK_TEST("", "main_internal()", "", ""){
+	const auto files = std::map<std::string, std::string>{ { "game.floyd", "print(9000)" } };
+	const auto result = main_test(files, "floyd compile game.floyd -o test.o");
+	QUARK_VERIFY(result.error == EXIT_SUCCESS);
+	QUARK_VERIFY(result.output == "");
+	QUARK_VERIFY(result.files.size() == 1);
+	QUARK_VERIFY(result.files.find("test.o")->second.size() > 0);
+}
+
+
+//////////////////////////////////////////		TEST
+
+
+QUARK_TEST("", "main_internal()", "", ""){
+	const auto files = std::map<std::string, std::string>{ { "test.floyd", k_tests_program2 } };
+	const auto result = main_test(files, "floyd test test.floyd");
+	QUARK_VERIFY(result.error == EXIT_FAILURE);
+	QUARK_VERIFY(starts_with(result.output, "All tests (3): 1 failed!\n|MODULE |FUNCTION |SCENARIO |RESULT"));
+	QUARK_VERIFY(result.files.empty());
+}
+QUARK_TEST("", "main_internal()", "", ""){
+	const auto files = std::map<std::string, std::string>{ { "test.floyd", k_tests_program2 } };
+	const auto result = main_test(files, "floyd test test.floyd f():1 h():3");
+	QUARK_VERIFY(result.error == EXIT_SUCCESS);
+	QUARK_VERIFY(starts_with(result.output, "Specified tests (2 of 3): passed!\n"));
+	QUARK_VERIFY(result.files.empty());
+}
+QUARK_TEST("", "main_internal()", "", ""){
+	const auto files = std::map<std::string, std::string>{ { "test.floyd", k_tests_program2 } };
+	const auto result = main_test(files, "floyd test test.floyd f():1 g():2");
+	QUARK_VERIFY(result.error == EXIT_FAILURE);
+	QUARK_VERIFY(starts_with(result.output, "Specified tests (2 of 3): 1 failed!\n|MODULE |FUNCTION |SCENARIO |RESULT"));
+	QUARK_VERIFY(result.files.empty());
+}
 
 
 int main(int argc, const char * argv[]) {

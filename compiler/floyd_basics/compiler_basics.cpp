@@ -103,9 +103,9 @@ std::string make_report(const std::vector<test_result_t>& test_results){
 			ss << "All tests (" << test_results.size() << "): passed!" << std::endl;
 		}
 		else{
-			std::vector<std::vector<std::string>> matrix = make_test_result_matrix(failed);
-
 			ss << "All tests (" << test_results.size() << "): " << failed.size() << " failed!" << std::endl;
+
+			std::vector<std::vector<std::string>> matrix = make_test_result_matrix(failed);
 			ss << generate_table_type1({ "MODULE", "FUNCTION", "SCENARIO", "RESULT" }, matrix);
 		}
 		return ss.str();
@@ -117,9 +117,10 @@ std::string make_report(const std::vector<test_result_t>& test_results){
 		}
 		else{
 			ss << "Specified tests (" << enabled.size() << " of " << test_results.size() << "): " << failed.size() << " failed!" << std::endl;
-		}
-		std::vector<std::vector<std::string>> matrix = make_test_result_matrix(failed);
 
+			std::vector<std::vector<std::string>> matrix = make_test_result_matrix(failed);
+			ss << generate_table_type1({ "MODULE", "FUNCTION", "SCENARIO", "RESULT" }, matrix);
+		}
 		return ss.str();
 	}
 }

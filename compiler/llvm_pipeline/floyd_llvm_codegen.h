@@ -67,6 +67,8 @@ struct llvm_ir_program_t {
 //	Converts the semantic AST to LLVM IR code.
 std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& instance, const semantic_ast_t& ast, const std::string& module_name, const compiler_settings_t& settings);
 
+std::string print_llvm_ir_program(const llvm_ir_program_t& program);
+
 std::vector<uint8_t> write_object_file(llvm_ir_program_t& program, const target_t& target);
 std::string write_ir_file(llvm_ir_program_t& program, const target_t& target);
 
