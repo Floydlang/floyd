@@ -10,6 +10,6 @@ func int fibonacci(int n) {
 }
 
 for (i in 0...10) {
-	print(fibonacci(i))
+	print(to_string(fibonacci(i)) + "\n")
 }
 

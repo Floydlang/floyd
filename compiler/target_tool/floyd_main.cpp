@@ -675,7 +675,10 @@ bool operator==(const main_result_t& lhs, const main_result_t& rhs){
 	return lhs.error == rhs.error && lhs.output == rhs.output && lhs.files == rhs.files;
 }
 
-static main_result_t main_test(const std::map<std::string, std::string>& file_system, const std::string& command_line){
+static main_result_t main_test(
+	const std::map<std::string,std::string>& file_system,
+	const std::string& command_line
+){
 	const auto args = string_to_args(command_line);
 
 	struct test_tool : public tool_i {
@@ -789,24 +792,29 @@ QUARK_TEST("", "main_internal()", "", ""){
 QUARK_TEST("", "main_internal()", "", ""){
 	const auto files = std::map<std::string, std::string>{ { "test.floyd", k_tests_program } };
 	const auto result = main_test(files, "floyd run test.floyd");
-	QUARK_VERIFY(result.error == EXIT_SUCCESS);
-	QUARK_VERIFY(result.output == "Hello, world!Running test 404!Watching THX!");
-	QUARK_VERIFY(result.files.empty());
+	QUARK_VERIFY(result == (main_result_t {
+		EXIT_SUCCESS,
+		"Hello, world!Running test 404!Watching THX!",
+		{}
+	}));
 }
 
 QUARK_TEST("", "main_internal()", "", ""){
 	const auto files = std::map<std::string, std::string>{ { "test.floyd", k_tests_program2 } };
 	const auto result = main_test(files, "floyd run test.floyd");
 	QUARK_VERIFY(result.error == EXIT_FAILURE);
-	QUARK_VERIFY(starts_with(result.output, "Hello, world!Running 1Running 2Assertion failed.Running 3All tests (3): 1 failed!\n|MODULE |FUNCTION |SCENARIO |RESULT"));
+	QUARK_VERIFY(
+		starts_with(
+			result.output,
+			"Hello, world!Running 1Running 2Assertion failed.Running 3All tests (3): 1 failed!\n|MO"
+		)
+	);
 	QUARK_VERIFY(result.files.empty());
 }
 QUARK_TEST("", "main_internal()", "", ""){
 	const auto files = std::map<std::string, std::string>{ { "test.floyd", k_tests_program2 } };
 	const auto result = main_test(files, "floyd run -u test.floyd");
-	QUARK_VERIFY(result.error == EXIT_SUCCESS);
-	QUARK_VERIFY(result.output == "Hello, world!main!");
-	QUARK_VERIFY(result.files.empty());
+	QUARK_VERIFY(result == (main_result_t { EXIT_SUCCESS, "Hello, world!main!", {} }));
 }
 
 
@@ -839,23 +847,63 @@ QUARK_TEST("", "main_internal()", "", ""){
 	const auto files = std::map<std::string, std::string>{ { "test.floyd", k_tests_program2 } };
 	const auto result = main_test(files, "floyd test test.floyd");
 	QUARK_VERIFY(result.error == EXIT_FAILURE);
-	QUARK_VERIFY(starts_with(result.output, "All tests (3): 1 failed!\n|MODULE |FUNCTION |SCENARIO |RESULT"));
+	QUARK_VERIFY(
+		starts_with(result.output, "All tests (3): 1 failed!\n|MODULE |FUNCTION |SCENARIO |RESULT")
+	);
 	QUARK_VERIFY(result.files.empty());
 }
 QUARK_TEST("", "main_internal()", "", ""){
 	const auto files = std::map<std::string, std::string>{ { "test.floyd", k_tests_program2 } };
 	const auto result = main_test(files, "floyd test test.floyd f():1 h():3");
-	QUARK_VERIFY(result.error == EXIT_SUCCESS);
-	QUARK_VERIFY(starts_with(result.output, "Specified tests (2 of 3): passed!\n"));
-	QUARK_VERIFY(result.files.empty());
+	QUARK_VERIFY(
+		result == (main_result_t { EXIT_SUCCESS, "Specified tests (2 of 3): passed!\n", {} })
+	);
 }
 QUARK_TEST("", "main_internal()", "", ""){
 	const auto files = std::map<std::string, std::string>{ { "test.floyd", k_tests_program2 } };
 	const auto result = main_test(files, "floyd test test.floyd f():1 g():2");
 	QUARK_VERIFY(result.error == EXIT_FAILURE);
-	QUARK_VERIFY(starts_with(result.output, "Specified tests (2 of 3): 1 failed!\n|MODULE |FUNCTION |SCENARIO |RESULT"));
+	QUARK_VERIFY(
+		starts_with(
+			result.output,
+			"Specified tests (2 of 3): 1 failed!\n|MODULE |FUNCTION |SCENARIO |RESULT"
+		)
+	);
 	QUARK_VERIFY(result.files.empty());
 }
+
+
+
+
+
+//////////////////////////////////////////		EXAMPLE DIRECTORY
+
+//??? test sending arguments to floyd main()
+
+
+QUARK_TEST("", "main_internal()", "examples/hello_world.floyd", ""){
+	const auto files = std::map<std::string, std::string>{ {
+		"examples/hello_world.floyd",
+		read_text_file("examples/hello_world.floyd")
+	} };
+	const auto result = main_test(files, "floyd run examples/hello_world.floyd");
+	QUARK_VERIFY(result == (main_result_t { EXIT_SUCCESS, "Hello, world!", {} }));
+}
+
+QUARK_TEST("", "main_internal()", "examples/fibonacci.floyd", ""){
+	const auto files = std::map<std::string, std::string>{ {
+		"examples/fibonacci.floyd",
+		read_text_file("examples/fibonacci.floyd")
+	} };
+	const auto result = main_test(files, "floyd run examples/fibonacci.floyd");
+	QUARK_VERIFY(result == (main_result_t {
+		EXIT_SUCCESS,
+		"0\n1\n1\n2\n3\n5\n8\n13\n21\n34\n55\n",
+		{}
+	}));
+}
+
+
 
 
 int main(int argc, const char * argv[]) {
