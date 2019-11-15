@@ -18,6 +18,7 @@
 #include <vector>
 #include <thread>
 #include <deque>
+#include <condition_variable>
 
 namespace llvm {
 	struct ExecutionEngine;
