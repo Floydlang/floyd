@@ -131,7 +131,7 @@ Mars          3390         641.85
 
  |MODULE |FUNCTION |SCENARIO             |RESULT                  |
  |-------|---------|---------------------|------------------------|
- |       |subset() |skip first character |Floyd assertion failed. |
+ |       |subset() |skip first character |Assertion failed.       |
  |-------|---------|---------------------|------------------------|
 
 

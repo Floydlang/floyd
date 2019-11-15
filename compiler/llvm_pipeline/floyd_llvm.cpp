@@ -398,7 +398,7 @@ QUARK_TEST("", "run_tests_source()", "", ""){
 
 	QUARK_VERIFY(result.size() == 2);
 	QUARK_VERIFY(result[0].type == test_result_t::type::success);
-	QUARK_VERIFY(result[1] == (test_result_t { test_result_t::type::fail_with_string, "Floyd assertion failed.", test_id_t { "", "g()", "two" } }));
+	QUARK_VERIFY(result[1] == (test_result_t { test_result_t::type::fail_with_string, "Assertion failed.", test_id_t { "", "g()", "two" } }));
 }
 
 QUARK_TEST("", "run_tests_source()", "", ""){

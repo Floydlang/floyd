@@ -926,9 +926,9 @@ FLOYD_LANG_PROOF("Floyd test suite", "print() supports ints and strings", "", ""
 
 //////////////////////////////////////////		INTRINSIC - assert()
 
-//??? add file + line to Floyd's asserts
+
 FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
-	ut_verify_exception_nolib(QUARK_POS, R"(		assert(1 == 2)		)", "Floyd assertion failed.");
+	ut_verify_exception_nolib(QUARK_POS, R"(		assert(1 == 2)		)", "Assertion failed.");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
@@ -1476,10 +1476,10 @@ FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Simple test-def compiles", "")
 
 		)___",
 		"All tests (1): 1 failed!\n"
-		"|MODULE |FUNCTION |SCENARIO             |RESULT                  |\n"
-		"|-------|---------|---------------------|------------------------|\n"
-		"|       |subset() |skip first character |Floyd assertion failed. |\n"
-		"|-------|---------|---------------------|------------------------|\n"
+		"|MODULE |FUNCTION |SCENARIO             |RESULT            |\n"
+		"|-------|---------|---------------------|------------------|\n"
+		"|       |subset() |skip first character |Assertion failed. |\n"
+		"|-------|---------|---------------------|------------------|\n"
 	);
 }
 

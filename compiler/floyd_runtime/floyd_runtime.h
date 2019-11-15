@@ -22,6 +22,15 @@ namespace floyd {
 struct value_t;
 
 
+////////////////////////////////////////		assert_failed_exception
+
+
+class assert_failed_exception : public std::runtime_error {
+	public: assert_failed_exception() :
+		std::runtime_error("Assertion failed.")
+	{
+	}
+};
 
 
 value_t unflatten_json_to_specific_type(types_t& types, const json_t& v, const type_t& target_type);

@@ -39,7 +39,8 @@ bc_value_t bc_intrinsic__assert(interpreter_t& vm, const bc_value_t args[], int 
 	bool ok = value.get_bool_value();
 	if(!ok){
 		vm._handler->on_print("Assertion failed.");
-		quark::throw_runtime_error("Floyd assertion failed.");
+		throw assert_failed_exception();
+//		quark::throw_runtime_error("Assertion failed.");
 	}
 	return bc_value_t::make_undefined();
 }

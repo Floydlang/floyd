@@ -179,7 +179,8 @@ static void floyd_llvm_intrinsic__assert(floyd_runtime_t* frp, runtime_value_t a
 	bool ok = (arg.bool_value & 0x01) == 0 ? false : true;
 	if(!ok){
 		r._handler->on_print("Assertion failed.");
-		quark::throw_runtime_error("Floyd assertion failed.");
+		throw assert_failed_exception();
+//		quark::throw_runtime_error("Assertion failed.");
 	}
 }
 

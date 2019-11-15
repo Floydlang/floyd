@@ -1,8 +1,8 @@
 
-
 func int main([string] args){
-	print(args)
+	print("Welcome!\n")
 	assert(args == ["-c40", "test.json"])
+	print(args)
 
 	return 42
 }

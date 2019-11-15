@@ -13,6 +13,7 @@
 #include <string>
 #include <map>
 
+#include "floyd_runtime.h"
 #include "floyd_interpreter.h"
 #include "floyd_parser.h"
 
@@ -643,6 +644,10 @@ static int main_internal(tool_i& tool, std::ostream& out, const std::vector<std:
 		const int result = do_command(tool, out, command);
 		return result;
 	}
+	catch(const assert_failed_exception& e){
+		//	Already printed a message to the program's output.
+		return EXIT_FAILURE;
+	}
 	catch(const std::runtime_error& e){
 		const auto what = std::string(e.what());
 		out << what << std::endl;
@@ -882,25 +887,39 @@ QUARK_TEST("", "main_internal()", "", ""){
 
 
 QUARK_TEST("", "main_internal()", "examples/hello_world.floyd", ""){
-	const auto files = std::map<std::string, std::string>{ {
-		"examples/hello_world.floyd",
-		read_text_file("examples/hello_world.floyd")
-	} };
+	const auto files = std::map<std::string, std::string>{
+		{ "examples/hello_world.floyd", read_text_file("examples/hello_world.floyd") }
+	};
 	const auto result = main_test(files, "floyd run examples/hello_world.floyd");
 	QUARK_VERIFY(result == (main_result_t { EXIT_SUCCESS, "Hello, world!", {} }));
 }
 
 QUARK_TEST("", "main_internal()", "examples/fibonacci.floyd", ""){
-	const auto files = std::map<std::string, std::string>{ {
-		"examples/fibonacci.floyd",
-		read_text_file("examples/fibonacci.floyd")
-	} };
+	const auto files = std::map<std::string, std::string>{
+		{ "examples/fibonacci.floyd", read_text_file("examples/fibonacci.floyd") }
+	};
 	const auto result = main_test(files, "floyd run examples/fibonacci.floyd");
 	QUARK_VERIFY(result == (main_result_t {
 		EXIT_SUCCESS,
 		"0\n1\n1\n2\n3\n5\n8\n13\n21\n34\n55\n",
 		{}
 	}));
+}
+
+
+QUARK_TEST("", "main_internal()", "examples/test_main.floyd", ""){
+	const auto files = std::map<std::string, std::string>{
+		{ "examples/test_main.floyd", read_text_file("examples/test_main.floyd") }
+	};
+	const auto result = main_test(files, "floyd run examples/test_main.floyd");
+	QUARK_VERIFY(result == (main_result_t { EXIT_FAILURE, "Welcome!\nAssertion failed.", {} }));
+}
+QUARK_TEST("", "main_internal()", "examples/test_main.floyd", ""){
+	const auto files = std::map<std::string, std::string>{
+		{ "examples/test_main.floyd", read_text_file("examples/test_main.floyd") }
+	};
+	const auto result = main_test(files, "floyd run examples/test_main.floyd -c40 \"test.json\"");
+	QUARK_VERIFY(result == (main_result_t { 42, "Welcome!\n[\"-c40\", \"test.json\"]", {} }));
 }
 
 
