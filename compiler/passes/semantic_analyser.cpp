@@ -1004,10 +1004,11 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 
 
 			//	Force generating the function-type into types.
+			const std::vector<floyd::type_t> resolved_type_vec(resolved_arg_types.begin(), resolved_arg_types.end());
 			const auto resolved_function_type = make_function(
 				a_acc._types,
 				callee_return_type,
-				resolved_arg_types,
+				resolved_type_vec,
 				callee_type_peek.get_function_pure(a_acc._types)
 			);
 			(void)resolved_function_type;

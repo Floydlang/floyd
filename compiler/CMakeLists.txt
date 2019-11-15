@@ -84,10 +84,6 @@ bytecode_interpreter/bytecode_interpreter.cpp
 bytecode_interpreter/bytecode_intrinsics.cpp
 bytecode_interpreter/floyd_interpreter.cpp
 cpp_experiments.cpp
-#examples/benchmarks.floyd
-#examples/game_of_life.cpp
-#examples/process_test1.floyd
-#examples/test_main.floyd
 floyd_ast/ast.cpp
 floyd_ast/ast_visitor.cpp
 floyd_ast/expression.cpp
@@ -95,8 +91,7 @@ floyd_ast/statement.cpp
 floyd_basics/ast_value.cpp
 floyd_basics/compiler_basics.cpp
 floyd_basics/compiler_helpers.cpp
-floyd_basics/type_interner.cpp
-floyd_basics/typeid.cpp
+floyd_basics/types.cpp
 floyd_parser/floyd_parser.cpp
 floyd_parser/floyd_syntax.cpp
 floyd_parser/parse_expression.cpp
@@ -220,8 +215,8 @@ bytecode_interpreter/bytecode_interpreter.cpp
 bytecode_interpreter/bytecode_intrinsics.cpp
 bytecode_interpreter/floyd_interpreter.cpp
 cpp_experiments.cpp
-examples/process_test1.floyd
-examples/test_main.floyd
+#examples/process_test1.floyd
+#examples/test_main.floyd
 floyd_ast/ast.cpp
 floyd_ast/ast_visitor.cpp
 floyd_ast/expression.cpp
@@ -229,7 +224,6 @@ floyd_ast/statement.cpp
 floyd_basics/ast_value.cpp
 floyd_basics/compiler_basics.cpp
 floyd_basics/compiler_helpers.cpp
-floyd_basics/typeid.cpp
 floyd_parser/floyd_parser.cpp
 floyd_parser/floyd_syntax.cpp
 floyd_parser/parse_expression.cpp
