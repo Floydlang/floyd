@@ -20,7 +20,6 @@
 
 #include "types.h"
 #include "json_support.h"
-#include "software_system.h"
 #include "compiler_basics.h"
 #include "ast_value.h"
 #include "quark.h"
@@ -40,6 +39,7 @@ namespace floyd {
 
 struct type_t;
 struct types_t;
+
 
 struct interpreter_t;
 struct bc_program_t;
