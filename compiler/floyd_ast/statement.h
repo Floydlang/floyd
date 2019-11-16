@@ -427,17 +427,17 @@ struct statement_t {
 
 	struct software_system_statement_t {
 		bool operator==(const software_system_statement_t& other) const {
-			return _json_data == other._json_data;
+			return _system == other._system;
 		}
 
-		json_t _json_data;
+		software_system_t _system;
 	};
 
 	public: static statement_t make__software_system_statement(
 		const location_t& location,
-		json_t json_data
+		software_system_t system
 	){
-		return statement_t(location, { software_system_statement_t{ json_data } });
+		return statement_t(location, { software_system_statement_t{ system } });
 	}
 
 
@@ -446,17 +446,17 @@ struct statement_t {
 
 	struct container_def_statement_t {
 		bool operator==(const container_def_statement_t& other) const {
-			return _json_data == other._json_data;
+			return _container == other._container;
 		}
 
-		json_t _json_data;
+		container_t _container;
 	};
 
 	public: static statement_t make__container_def_statement(
 		const location_t& location,
-		json_t json_data
+		const container_t& container
 	){
-		return statement_t(location, { container_def_statement_t{ json_data } });
+		return statement_t(location, { container_def_statement_t{ container } });
 	}
 
 

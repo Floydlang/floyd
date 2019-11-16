@@ -285,22 +285,46 @@ struct connection_t {
 	std::string _interaction_desc;
 	std::string _tech_desc;
 };
+inline bool operator==(const connection_t& lhs, const connection_t& rhs){
+	return
+		lhs._source_key == rhs._source_key
+		&& lhs._dest_key == rhs._dest_key
+		&& lhs._interaction_desc == rhs._interaction_desc
+		&& lhs._tech_desc == rhs._tech_desc
+	;
+}
+
 
 struct clock_bus_t {
-	//	Right now an process is the name of the process-function, will probably get more members.
+	//	k: name of bus, v: struct-name of the process' state, also used to find function names.
 	std::map<std::string, std::string> _processes;
 };
+inline bool operator==(const clock_bus_t& lhs, const clock_bus_t& rhs){
+	return
+		lhs._processes == rhs._processes
+	;
+}
+
 
 struct container_t {
 	std::string _name;
 	std::string _desc;
 	std::string _tech;
 	std::map<std::string, clock_bus_t> _clock_busses;
-	std::vector<connection_t> _connections;
-	std::vector<std::string> _components;
 };
 
+inline bool operator==(const container_t& lhs, const container_t& rhs){
+	return
+		lhs._name == rhs._name
+		&& lhs._desc == rhs._desc
+		&& lhs._tech == rhs._tech
+
+		&& lhs._clock_busses == rhs._clock_busses
+	;
+}
+
 container_t parse_container_def_json(const json_t& value);
+json_t container_to_json(const container_t& v);
 
 
 //////////////////////////////////////		software_system_t
@@ -310,17 +334,33 @@ struct person_t {
 	std::string _name_key;
 	std::string _desc;
 };
+inline bool operator==(const person_t& lhs, const person_t& rhs){
+	return
+		lhs._name_key == rhs._name_key
+		&& lhs._desc == rhs._desc
+	;
+}
 
 struct software_system_t {
 	std::string _name;
 	std::string _desc;
 	std::vector<person_t> _people;
-	std::vector<connection_t> _connections;
 	std::vector<std::string> _containers;
 };
 
+inline bool operator==(const software_system_t& lhs, const software_system_t& rhs){
+	return
+		lhs._name == rhs._name
+		&& lhs._desc == rhs._desc
+
+		&& lhs._people == rhs._people
+		&& lhs._containers == rhs._containers
+	;
+}
 
 software_system_t parse_software_system_json(const json_t& value);
+json_t software_system_to_json(const software_system_t& v);
+
 
 
 //////////////////////////////////////		INTRINSICS

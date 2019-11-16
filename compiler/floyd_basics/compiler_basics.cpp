@@ -182,17 +182,8 @@ std::vector<int> filter_tests(const std::vector<test_t>& b, const std::vector<st
 
 
 
+//////////////////////////////////////		container_t
 
-static std::vector<person_t> unpack_persons(const json_t& persons_obj){
-	std::vector<person_t> result;
-	const auto temp = persons_obj.get_object();
-	for(const auto& person_pairs: temp){
-		const auto name = person_pairs.first;
-		const auto desc = person_pairs.second.get_string();
-		result.push_back(person_t { ._name_key = name, ._desc = desc} );
-	}
-	return result;
-}
 
 
 static clock_bus_t unpack_clock_bus(const json_t& clock_bus_obj){
@@ -207,57 +198,110 @@ static clock_bus_t unpack_clock_bus(const json_t& clock_bus_obj){
 	return clock_bus_t{._processes = processes};
 }
 
-static std::map<std::string, clock_bus_t> unpack_clock_busses(const json_t& clocks_obj){
-	std::map<std::string, clock_bus_t> result;
-	const auto temp = clocks_obj.get_object();
-	for(const auto& clock_pair: temp){
-		const auto name = clock_pair.first;
-		const auto clock_bus = unpack_clock_bus(clock_pair.second);
-		result.insert({name, clock_bus});
+static json_t pack_clock_bus(const clock_bus_t& clock_bus){
+	std::map<std::string, json_t> processes;
+	for(const auto& e: clock_bus._processes){
+		processes.insert({ e.first, e.second });
+	}
+	return json_t::make_object(processes);
+}
+
+container_t parse_container_def_json(const json_t& container_obj){
+	if(container_obj.get_object_size() == 0){
+		return {};
+	}
+	else {
+		std::map<std::string, clock_bus_t> clock_busses;
+		const auto temp = container_obj.get_object_element("clocks").get_object();
+		for(const auto& clock_pair: temp){
+			const auto name = clock_pair.first;
+			const auto clock_bus = unpack_clock_bus(clock_pair.second);
+			clock_busses.insert({name, clock_bus});
+		}
+
+		return container_t{
+			._name = container_obj.get_object_element("name").get_string(),
+			._desc = container_obj.get_object_element("desc").get_string(),
+			._tech = container_obj.get_object_element("tech").get_string(),
+			._clock_busses = clock_busses
+		};
+	}
+}
+
+json_t container_to_json(const container_t& v){
+	std::map<std::string, json_t> clock_busses_json;
+	for(const auto& e: v._clock_busses){
+		clock_busses_json.insert({ e.first, pack_clock_bus(e.second) });
+	}
+
+	return json_t::make_object({
+		{ "name", v._name },
+		{ "desc", v._desc },
+		{ "tech", v._tech },
+		{ "clocks", clock_busses_json }
+	});
+}
+
+QUARK_TEST("floyd_basics", "container_to_json()", "", ""){
+		container_t a = { "*name*", "*desc*", "*tech*", {} };
+	const auto b = container_to_json(a);
+	ut_verify_string(QUARK_POS, json_to_compact_string(b), R"___({ "clocks": {}, "desc": "*desc*", "name": "*name*", "tech": "*tech*" })___");
+}
+
+
+
+
+//////////////////////////////////////		software_system_t
+
+
+static std::vector<person_t> unpack_persons(const json_t& persons_obj){
+	std::vector<person_t> result;
+	const auto temp = persons_obj.get_object();
+	for(const auto& person_pairs: temp){
+		const auto name = person_pairs.first;
+		const auto desc = person_pairs.second.get_string();
+		result.push_back(person_t { ._name_key = name, ._desc = desc} );
 	}
 	return result;
 }
-static container_t unpack_container_def(const json_t& container_obj){
-	return container_obj.get_object_size() == 0 ?
-		container_t{}
-	:
-		container_t{
-		._name = container_obj.get_object_element("name").get_string(),
-		._desc = container_obj.get_object_element("desc").get_string(),
-		._tech = container_obj.get_object_element("tech").get_string(),
-		._clock_busses = unpack_clock_busses(container_obj.get_object_element("clocks")),
-		._connections = {},
-		._components = {}
-	};
-}
 
-static std::vector<std::string> unpack_ss_containers(const json_t& containers_obj){
-	std::vector<std::string> result;
-	const auto container_array = containers_obj.get_array();
-	for(const auto& e: container_array){
-		result.push_back(e.get_string());
+json_t pack_persons(const std::vector<person_t>& persons){
+	std::map<std::string, json_t> result;
+	for(const auto& e: persons){
+		result.insert({ e._name_key, e._desc });
 	}
 	return result;
 }
 
 software_system_t parse_software_system_json(const json_t& value){
+	std::vector<std::string> containers;
+	const auto container_array = value.get_object_element("containers").get_array();
+	for(const auto& e: container_array){
+		containers.push_back(e.get_string());
+	}
+
 	const auto name = value.get_object_element("name").get_string();
 	const auto desc = value.get_object_element("desc").get_string();
 	const auto people = unpack_persons(value.get_object_element("people"));
 	const auto connections = value.get_object_element("connections");
-	const auto containers = unpack_ss_containers(value.get_object_element("containers"));
+
 	return software_system_t{
 		._name = name,
 		._desc = desc,
 		._people = people,
-		._connections = {},
 		._containers = containers
 	};
 }
 
-container_t parse_container_def_json(const json_t& value){
-	return unpack_container_def(value);
+json_t software_system_to_json(const software_system_t& v){
+	return json_t::make_object({
+		{ "name", v._name },
+		{ "desc", v._name },
+		{ "people", pack_persons(v._people) },
+	});
 }
+
+
 
 
 

@@ -353,15 +353,15 @@ static statement_t ast_json_to_statement(types_t& types, const json_t& statement
 
 	else if(type == statement_opcode_t::k_software_system_def){
 		QUARK_ASSERT(statement.get_array_size() == 2);
-		const auto json_data = statement.get_array_n(1);
-
-		return statement_t::make__software_system_statement(loc, json_data);
+		const auto s = statement.get_array_n(1);
+		const auto s2 = parse_software_system_json(s);
+		return statement_t::make__software_system_statement(loc, s2);
 	}
 	else if(type == statement_opcode_t::k_container_def){
 		QUARK_ASSERT(statement.get_array_size() == 2);
-		const auto json_data = statement.get_array_n(1);
-
-		return statement_t::make__container_def_statement(loc, json_data);
+		const auto s = statement.get_array_n(1);
+		const auto s2 = parse_container_def_json(s);
+		return statement_t::make__container_def_statement(loc, s2);
 	}
 
 	else if(type == statement_opcode_t::k_benchmark_def){
@@ -512,14 +512,14 @@ json_t statement_to_json(const types_t& types, const statement_t& e){
 			return make_ast_node(
 				statement.location,
 				statement_opcode_t::k_software_system_def,
-				{ s._json_data }
+				{ software_system_to_json(s._system) }
 			);
 		}
 		json_t operator()(const statement_t::container_def_statement_t& s) const{
 			return make_ast_node(
 				statement.location,
 				statement_opcode_t::k_container_def,
-				{ s._json_data }
+				{ container_to_json(s._container) }
 			);
 		}
 		json_t operator()(const statement_t::benchmark_def_statement_t& s) const{

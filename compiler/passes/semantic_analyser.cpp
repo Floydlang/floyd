@@ -1029,7 +1029,7 @@ static std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(con
 		}
 		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::software_system_statement_t& s) const{
 			analyser_t temp = a;
-			temp._software_system = parse_software_system_json(s._json_data);
+			temp._software_system = s._system;
 			return { temp, {} };
 		}
 		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::container_def_statement_t& s) const{
@@ -1038,7 +1038,7 @@ static std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(con
 			return { e, {} };
 #else
 			analyser_t temp = a;
-			temp._container_def = parse_container_def_json(s._json_data);
+			temp._container_def = s._container;
 			return { temp, {} };
 #endif
 		}
