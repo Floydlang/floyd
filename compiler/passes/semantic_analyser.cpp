@@ -883,90 +883,7 @@ static analyser_t analyse_container_def_statement(const analyser_t& a, const sta
 
 	const auto statement = std::get<statement_t::container_def_statement_t>(s._contents);
 	auto a_acc = a;
-
-	auto container_def = statement._container;
-	for(auto& bus: container_def._clock_busses){
-		for(auto& process: bus.second._processes){
-			process.second.init_func_linkname = process.second.name_key + "__init";
-			process.second.msg_func_linkname = process.second.name_key + "";
-		}
-	}
-
-//??? setup state_type and msg_type.
-//??? Make sure functions exists
-//??? Check types of functions.
-
-//??? Make sure send() works with any msg type.
-
-/*
-	std::map<std::string, process_def_t> process_infos = reduce(
-		container_def._clock_busses,
-		std::map<std::string, process_def_t>(), [](const std::map<std::string, std::string>& acc, const std::pair<std::string, clock_bus_t>& e){
-			auto acc2 = acc;
-			acc2.insert(e.second._processes.begin(), e.second._processes.end());
-			return acc2;
-		}
-	);
-*/
-
-/*
-	for(const auto& t: runtime._process_infos){
-		auto process = std::make_shared<bc_process_t>();
-		process->_name_key = t.first;
-		process->_function_key = t.second;
-		process->_interpreter = std::make_shared<interpreter_t>(vm._imm->_program, my_interpreter_handler);
-		process->_init_function = find_global_symbol2(*process->_interpreter, t.second + "__init");
-		process->_process_function = find_global_symbol2(*process->_interpreter, t.second);
-
-		runtime._processes.push_back(process);
-	}
-*/
-
-
-#if 0
-	for(const auto& t: process_infos){
-		process->_name_key = t.first;
-		process->_function_key = t.second;
-		process->_init_function = std::make_shared<llvm_bind_t>(bind_function2(ee, encode_floyd_func_link_name(t.second + "__init")));
-		process->_process_function = std::make_shared<llvm_bind_t>(bind_function2(ee, encode_floyd_func_link_name(t.second)));
-		ee._processes.push_back(process);
-	}
-
-
-		const type_t process_state_type = process._init_function != nullptr ? peek2(types, process._init_function->type).get_function_return(types) : make_undefined();
-
-
-		if(process._init_function != nullptr){
-			//	!!! This validation should be done earlier in the startup process / compilation process.
-			if(process._init_function->type != make_process_init_type(types, process_state_type)){
-				quark::throw_runtime_error("Invalid function prototype for process-init");
-			}
-
-			auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_INIT>(process._init_function->address);
-			const auto result = (*f)(make_runtime_ptr(&ee));
-			process._process_state = from_runtime_value(ee, result, peek2(types, process._init_function->type).get_function_return(types));
-		}
-
-
-
-	if(process._process_function != nullptr){
-		//	!!! This validation should be done earlier in the startup process / compilation process.
-		if(process._process_function->type != make_process_message_handler_type(types, process_state_type)){
-			quark::throw_runtime_error("Invalid function prototype for process message handler");
-		}
-
-		auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE>(process._process_function->address);
-		const auto state2 = to_runtime_value(ee, process._process_state);
-		const auto message2 = to_runtime_value(ee, value_t::make_json(message));
-		const auto result = (*f)(make_runtime_ptr(&ee), state2, message2);
-		process._process_state = from_runtime_value(ee, result, peek2(types, process._process_function->type).get_function_return(types));
-	}
-
-
-
-#endif
-
-	a_acc._container_def = container_def;
+	a_acc._container_def = statement._container;
 
 	return a_acc;
 }
@@ -3015,6 +2932,94 @@ const body_t make_global_body(analyser_t& a){
 
 		global_body3._statements.insert(global_body3._statements.begin(), s);
 	}
+
+
+
+	//	Setup container and Floyd processes.
+	/*
+		STATE_TYPE base__init()
+		STATE_TYPE base(STATE_TYPE, MSG_TYPE msg)
+
+	 	- setup state_type and msg_type.
+	 	- Make sure functions exists
+	 	- Check types of functions.
+	 	- Make sure send() works with any msg type.
+
+		??? make_process_init_type(types, process_state_type), make_process_message_handler_type(types, process_state_type)
+	*/
+	{
+		auto container_def = a._container_def;
+
+		for(auto& bus: container_def._clock_busses){
+			for(auto& process: bus.second._processes){
+
+				const auto init_func_name = process.second.name_key + "__init";
+				auto init_func_symbol = find_symbol_by_name(a, init_func_name);
+				if(init_func_symbol.first == nullptr){
+					std::stringstream what;
+					what << "Missing init function \"" << init_func_name << "\" needed by process \"" << process.second.name_key << "\".";
+					throw_compiler_error(k_no_location, what.str());
+				}
+
+				const auto init_func_type = init_func_symbol.first->get_value_type();
+				const auto init_func_peek = peek2(a._types, init_func_type);
+
+				if(init_func_peek.is_function() == false){
+					throw std::exception();
+				}
+				if(
+					init_func_peek.get_function_args(a._types).size() != 0
+					|| peek2(a._types, init_func_peek.get_function_return(a._types)).is_void()
+				){
+					throw std::exception();
+				}
+				const auto state_type = init_func_peek.get_function_return(a._types);
+
+
+
+
+				const auto msg_func_name = process.second.name_key;
+				auto msg_func_symbol = find_symbol_by_name(a, msg_func_name);
+				if(msg_func_symbol.first == nullptr){
+					std::stringstream what;
+					what << "Missing message function \"" << init_func_name << "\" needed by process \"" << process.second.name_key << "\".";
+					throw_compiler_error(k_no_location, what.str());
+				}
+
+				const auto msg_func_type = msg_func_symbol.first->get_value_type();
+				const auto msg_func_peek = peek2(a._types, msg_func_type);
+
+				if(msg_func_peek.is_function() == false){
+					throw std::exception();
+				}
+
+				if(msg_func_peek.get_function_args(a._types).size() != 2
+					|| msg_func_peek.get_function_return(a._types) != state_type
+					|| msg_func_peek.get_function_args(a._types)[0] != state_type
+				){
+					throw std::exception();
+				}
+				const auto msg_type = peek2(a._types, msg_func_peek.get_function_args(a._types)[1]);
+
+
+
+				process.second.init_func_linkname = init_func_symbol.first->_init.get_function_value().name;
+				process.second.msg_func_linkname = msg_func_symbol.first->_init.get_function_value().name;
+
+				process.second.state_type = state_type;
+				process.second.msg_type = msg_type;
+			}
+		}
+
+		a._container_def = container_def;
+	}
+
+
+
+
+
+
+
 
 	if(false) trace_analyser(a);
 

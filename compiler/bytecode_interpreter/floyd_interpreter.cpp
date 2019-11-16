@@ -94,7 +94,7 @@ std::packaged_task
 
 struct process_interface {
 	virtual ~process_interface(){};
-	virtual void on_message(const json_t& message) = 0;
+	virtual void on_message(const bc_value_t& message) = 0;
 	virtual void on_init() = 0;
 };
 
@@ -103,7 +103,7 @@ struct process_interface {
 struct bc_process_t {
 	std::condition_variable _inbox_condition_variable;
 	std::mutex _inbox_mutex;
-	std::deque<json_t> _inbox;
+	std::deque<bc_value_t> _inbox;
 
 	std::string _name_key;
 	std::thread::id _thread_id;
@@ -137,7 +137,7 @@ static void send_message(bc_processes_runtime_t& runtime, int process_id, const 
 
     {
         std::lock_guard<std::mutex> lk(process._inbox_mutex);
-        process._inbox.push_front(message);
+        process._inbox.push_front(bc_value_t::make_json(message));
         if(k_trace_messaging){
         	QUARK_TRACE("Notifying...");
 		}
@@ -150,6 +150,7 @@ static void process_process(bc_processes_runtime_t& runtime, int process_id){
 	auto& process = *runtime._processes[process_id];
 	bool stop = false;
 
+	const auto& types = process._interpreter->_imm->_program._types;
 	const auto thread_name = get_current_thread_name();
 
 	if(process._processor){
@@ -158,11 +159,11 @@ static void process_process(bc_processes_runtime_t& runtime, int process_id){
 
 	if(process._init_function != nullptr){
 		const std::vector<value_t> args = {};
-		process._process_state = call_function(*process._interpreter, bc_to_value(process._interpreter->_imm->_program._types, process._init_function->_value), args);
+		process._process_state = call_function(*process._interpreter, bc_to_value(types, process._init_function->_value), args);
 	}
 
 	while(stop == false){
-		json_t message;
+		bc_value_t message;
 		{
 			std::unique_lock<std::mutex> lk(process._inbox_mutex);
 
@@ -180,10 +181,11 @@ static void process_process(bc_processes_runtime_t& runtime, int process_id){
 			process._inbox.pop_back();
 		}
 		if(k_trace_messaging){
-			QUARK_TRACE_SS("RECEIVED: " << json_to_pretty_string(message));
+//			QUARK_TRACE_SS("RECEIVED: " << json_to_pretty_string(message));
 		}
 
-		if(message.is_string() && message.get_string() == "stop"){
+		const auto message_type_peek = peek2(types, message._type);
+		if(message_type_peek.is_json() && message.get_json().get_string() == "stop"){
 			stop = true;
 			if(k_trace_messaging){
         		QUARK_TRACE_SS(thread_name << ": STOP");
@@ -195,8 +197,8 @@ static void process_process(bc_processes_runtime_t& runtime, int process_id){
 			}
 
 			if(process._process_function != nullptr){
-				const std::vector<value_t> args = { process._process_state, value_t::make_json(message) };
-				const auto& state2 = call_function(*process._interpreter, bc_to_value(process._interpreter->_imm->_program._types, process._process_function->_value), args);
+				const std::vector<value_t> args = { process._process_state, bc_to_value(types, message) };
+				const auto& state2 = call_function(*process._interpreter, bc_to_value(types, process._process_function->_value), args);
 				process._process_state = state2;
 			}
 		}
