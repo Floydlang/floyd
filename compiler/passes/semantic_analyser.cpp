@@ -878,84 +878,98 @@ static analyser_t analyse_test_def_statement(const analyser_t& a, const statemen
 }
 
 
-#if 0
 static analyser_t analyse_container_def_statement(const analyser_t& a, const statement_t& s, const type_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
-	auto a_acc = a;
 	const auto statement = std::get<statement_t::container_def_statement_t>(s._contents);
+	auto a_acc = a;
 
-
-	container_t unpack_container(const json_t& container_obj){
-		return container_obj.get_object_size() == 0 ?
-			container_t{}
-		:
-			container_t{
-			._name = container_obj.get_object_element("name").get_string(),
-			._desc = container_obj.get_object_element("desc").get_string(),
-			._tech = container_obj.get_object_element("tech").get_string(),
-			._clock_busses = unpack_clock_busses(container_obj.get_object_element("clocks")),
-			._connections = {},
-			._components = {}
-		};
+	auto container_def = statement._container;
+	for(auto& bus: container_def._clock_busses){
+		for(auto& process: bus.second._processes){
+			process.second.init_func_linkname = process.second.name_key + "__init";
+			process.second.msg_func_linkname = process.second.name_key + "";
+		}
 	}
+
+//??? setup state_type and msg_type.
+//??? Make sure functions exists
+//??? Check types of functions.
+
+//??? Make sure send() works with any msg type.
+
+/*
+	std::map<std::string, process_def_t> process_infos = reduce(
+		container_def._clock_busses,
+		std::map<std::string, process_def_t>(), [](const std::map<std::string, std::string>& acc, const std::pair<std::string, clock_bus_t>& e){
+			auto acc2 = acc;
+			acc2.insert(e.second._processes.begin(), e.second._processes.end());
+			return acc2;
+		}
+	);
+*/
+
+/*
+	for(const auto& t: runtime._process_infos){
+		auto process = std::make_shared<bc_process_t>();
+		process->_name_key = t.first;
+		process->_function_key = t.second;
+		process->_interpreter = std::make_shared<interpreter_t>(vm._imm->_program, my_interpreter_handler);
+		process->_init_function = find_global_symbol2(*process->_interpreter, t.second + "__init");
+		process->_process_function = find_global_symbol2(*process->_interpreter, t.second);
+
+		runtime._processes.push_back(process);
+	}
+*/
 
 
 #if 0
-
-	const auto test_name = statement.function_name + ":" + statement.scenario;
-	const auto function_link_name = "test__" + test_name;
-
-	const auto test_def_itype = resolve_symbols(a_acc, k_no_location, make_symbol_ref(a_acc._types, "test_def_t"));
-	const auto f_itype = resolve_symbols(a_acc, k_no_location, make_test_function_t(a_acc._types));
-
-
-	const auto function_id = function_id_t { function_link_name };
-
-	//	Make a function def expression for the new test function.
-
-	const auto body_pair = analyse_body(a_acc, statement._body, epure::pure, peek2(a_acc._types, f_itype).get_function_return(a_acc._types));
-	a_acc = body_pair.first;
-
-
-	const auto function_def2 = function_definition_t::make_func(
-		k_no_location,
-		function_link_name,
-		peek2(a_acc._types, f_itype),
-		{},
-		std::make_shared<body_t>(body_pair.second)
-	);
-	QUARK_ASSERT(check_types_resolved(a_acc._types, function_def2));
-
-	a_acc._function_defs.insert({ function_id, function_definition_t(function_def2) });
-
-	const auto f = value_t::make_function_value(f_itype, function_id);
-
-
-	//	Add test-def record to test_defs.
-	{
-		const auto new_record_expr = expression_t::make_construct_value_expr(
-			test_def_itype,
-			{
-				expression_t::make_literal_string(statement.function_name),
-				expression_t::make_literal_string(statement.scenario),
-				expression_t::make_literal(f)
-			}
-		);
-		const auto new_record_expr3_pair = analyse_expression_to_target(a_acc, s, new_record_expr, test_def_itype);
-		a_acc = new_record_expr3_pair.first;
-		a_acc.test_defs.push_back(new_record_expr3_pair.second);
+	for(const auto& t: process_infos){
+		process->_name_key = t.first;
+		process->_function_key = t.second;
+		process->_init_function = std::make_shared<llvm_bind_t>(bind_function2(ee, encode_floyd_func_link_name(t.second + "__init")));
+		process->_process_function = std::make_shared<llvm_bind_t>(bind_function2(ee, encode_floyd_func_link_name(t.second)));
+		ee._processes.push_back(process);
 	}
 
-	const auto body2 = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, peek2(a_acc._types, f_itype).get_function_return(a_acc._types));
-	a_acc = body2.first;
+
+		const type_t process_state_type = process._init_function != nullptr ? peek2(types, process._init_function->type).get_function_return(types) : make_undefined();
+
+
+		if(process._init_function != nullptr){
+			//	!!! This validation should be done earlier in the startup process / compilation process.
+			if(process._init_function->type != make_process_init_type(types, process_state_type)){
+				quark::throw_runtime_error("Invalid function prototype for process-init");
+			}
+
+			auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_INIT>(process._init_function->address);
+			const auto result = (*f)(make_runtime_ptr(&ee));
+			process._process_state = from_runtime_value(ee, result, peek2(types, process._init_function->type).get_function_return(types));
+		}
+
+
+
+	if(process._process_function != nullptr){
+		//	!!! This validation should be done earlier in the startup process / compilation process.
+		if(process._process_function->type != make_process_message_handler_type(types, process_state_type)){
+			quark::throw_runtime_error("Invalid function prototype for process message handler");
+		}
+
+		auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE>(process._process_function->address);
+		const auto state2 = to_runtime_value(ee, process._process_state);
+		const auto message2 = to_runtime_value(ee, value_t::make_json(message));
+		const auto result = (*f)(make_runtime_ptr(&ee), state2, message2);
+		process._process_state = from_runtime_value(ee, result, peek2(types, process._process_function->type).get_function_return(types));
+	}
+
+
+
+#endif
+
+	a_acc._container_def = container_def;
+
 	return a_acc;
-#endif
-
-
-
 }
-#endif
 
 
 
@@ -1033,14 +1047,8 @@ static std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(con
 			return { temp, {} };
 		}
 		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::container_def_statement_t& s) const{
-#if 0
 			const auto e = analyse_container_def_statement(a, statement, return_type);
 			return { e, {} };
-#else
-			analyser_t temp = a;
-			temp._container_def = s._container;
-			return { temp, {} };
-#endif
 		}
 		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::benchmark_def_statement_t& s) const{
 			const auto e = analyse_benchmark_def_statement(a, statement, return_type);

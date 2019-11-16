@@ -11,6 +11,8 @@
 #include "text_parser.h"
 #include "parser_primitives.h"
 #include "format_table.h"
+#include "types.h"
+
 
 namespace floyd {
 
@@ -186,27 +188,59 @@ std::vector<int> filter_tests(const std::vector<test_t>& b, const std::vector<st
 
 
 
-static clock_bus_t unpack_clock_bus(const json_t& clock_bus_obj){
-	std::map<std::string, std::string> processes;
+static process_def_t unpack_process_def(types_t& types, const json_t& j){
+	const auto name = j.get_object_element("name").get_string();
+	const auto state_type = type_from_json(types, j.get_object_element("state_type"));
+	const auto msg_type = type_from_json(types, j.get_object_element("msg_type"));
+
+	const auto init_func_linkname = j.get_object_element("init_func_linkname").get_string();
+	const auto msg_func_linkname = j.get_object_element("msg_func_linkname").get_string();
+
+	return process_def_t { name, state_type, msg_type, init_func_linkname, msg_func_linkname };
+}
+
+static json_t pack_process_def(const types_t& types, const process_def_t& def){
+	return json_t::make_object({
+		{ "name", def.name_key },
+		{ "state_type", type_to_json(types, def.state_type) },
+		{ "msg_type", type_to_json(types, def.msg_type) },
+		{ "init_func_linkname", def.init_func_linkname },
+		{ "msg_func_linkname", def.msg_func_linkname }
+	});
+}
+
+
+
+
+static clock_bus_t unpack_clock_bus(types_t& types, const json_t& clock_bus_obj){
+	std::map<std::string, process_def_t> processes;
 
 	const auto processes_map = clock_bus_obj.get_object();
 	for(const auto& process_pair: processes_map){
 		const auto name_key = process_pair.first;
-		const auto process_function_key = process_pair.second.get_string();
-		processes.insert({name_key, process_function_key} );
+		if(process_pair.second.is_string()){
+			processes.insert({ name_key, process_def_t { process_pair.second.get_string(), make_undefined(), make_undefined(), "", "" } } );
+		}
+		else if(process_pair.second.is_object()){
+			const auto process_def = unpack_process_def(types, process_pair.second);
+			processes.insert({ name_key, process_def } );
+		}
+		else{
+			throw std::exception();
+		}
 	}
 	return clock_bus_t{._processes = processes};
 }
 
-static json_t pack_clock_bus(const clock_bus_t& clock_bus){
+static json_t pack_clock_bus(const types_t& types, const clock_bus_t& clock_bus){
 	std::map<std::string, json_t> processes;
 	for(const auto& e: clock_bus._processes){
-		processes.insert({ e.first, e.second });
+		processes.insert({ e.first, pack_process_def(types, e.second) });
 	}
 	return json_t::make_object(processes);
 }
 
-container_t parse_container_def_json(const json_t& container_obj){
+container_t parse_container_def_json(types_t& types, const json_t& container_obj){
 	if(container_obj.get_object_size() == 0){
 		return {};
 	}
@@ -215,7 +249,7 @@ container_t parse_container_def_json(const json_t& container_obj){
 		const auto temp = container_obj.get_object_element("clocks").get_object();
 		for(const auto& clock_pair: temp){
 			const auto name = clock_pair.first;
-			const auto clock_bus = unpack_clock_bus(clock_pair.second);
+			const auto clock_bus = unpack_clock_bus(types, clock_pair.second);
 			clock_busses.insert({name, clock_bus});
 		}
 
@@ -228,10 +262,10 @@ container_t parse_container_def_json(const json_t& container_obj){
 	}
 }
 
-json_t container_to_json(const container_t& v){
+json_t container_to_json(const types_t& types, const container_t& v){
 	std::map<std::string, json_t> clock_busses_json;
 	for(const auto& e: v._clock_busses){
-		clock_busses_json.insert({ e.first, pack_clock_bus(e.second) });
+		clock_busses_json.insert({ e.first, pack_clock_bus(types, e.second) });
 	}
 
 	return json_t::make_object({
@@ -242,36 +276,99 @@ json_t container_to_json(const container_t& v){
 	});
 }
 
-QUARK_TEST("floyd_basics", "container_to_json()", "", ""){
+
+
+static const process_def_t make_test_process1(){
+	return { "gui", type_t::make_double(), type_t::make_bool(), "link_gui_init", "link_gui_msg" };
+};
+static const process_def_t make_test_process2(){
+	return { "mem", type_t::make_bool(), type_t::make_double(), "link_mem_init", "link_mem_msg" };
+};
+static const process_def_t make_test_process3(){
+	return { "audio", type_t::make_string(), type_t::make_bool(), "link_audio_init", "link_audio_msg" };
+};
+static const process_def_t make_test_process4(){
+	return { "audio_prefetch", type_t::make_double(), type_t::make_string(), "link_audio_prefetch_init", "link_audio_prefetch_msg" };
+};
+
+
+
+static container_t make_example_container_def(){
+	const types_t types;
+
 	container_t a = {
 		"*name*",
 		"*desc*",
 		"*tech*",
 		std::map<std::string, clock_bus_t>{
-			{ "bus_a", clock_bus_t{{ { "x", "gui_t"}, { "y", "mem" } } } },
-			{ "bus_b", clock_bus_t{{ { "u", "audio" }, { "z", "audio_prefetch" } } } }
+			{ "bus_a", clock_bus_t{{ { "x", make_test_process1() }, { "y", make_test_process2() } } } },
+			{ "bus_b", clock_bus_t{{ { "u", make_test_process3() }, { "z", make_test_process4() } } } }
 		}
 	};
-	const auto b = container_to_json(a);
-	ut_verify_string(
-		QUARK_POS,
-		json_to_compact_string(b),
-		R"___({ "clocks": { "bus_a": { "x": "gui_t", "y": "mem" }, "bus_b": { "u": "audio", "z": "audio_prefetch" } }, "desc": "*desc*", "name": "*name*", "tech": "*tech*" })___"
-	);
+	return a;
+}
+
+static json_t make_example_container_def_json(){
+	static const std::string expected_json = R"___(
+		{
+			"clocks" : {
+				"bus_a" : {
+					"x" : {
+						"init_func_linkname" : "link_gui_init",
+						"msg_func_linkname" : "link_gui_msg",
+						"msg_type" : "bool",
+						"name" : "gui",
+						"state_type" : "double"
+					},
+					"y" : {
+						"init_func_linkname" : "link_mem_init",
+						"msg_func_linkname" : "link_mem_msg",
+						"msg_type" : "double",
+						"name" : "mem",
+						"state_type" : "bool"
+					}
+				},
+				"bus_b" : {
+					"u" : {
+						"init_func_linkname" : "link_audio_init",
+						"msg_func_linkname" : "link_audio_msg",
+						"msg_type" : "bool",
+						"name" : "audio",
+						"state_type" : "string"
+					},
+					"z" : {
+						"init_func_linkname" : "link_audio_prefetch_init",
+						"msg_func_linkname" : "link_audio_prefetch_msg",
+						"msg_type" : "string",
+						"name" : "audio_prefetch",
+						"state_type" : "double"
+					}
+				}
+			},
+			"desc" : "*desc*",
+			"name" : "*name*",
+			"tech" : "*tech*"
+		}
+
+	)___";
+	const auto j = parse_json(seq_t(expected_json)).first;
+	return j;
+}
+
+
+
+QUARK_TEST("floyd_basics", "container_to_json()", "", ""){
+	const types_t types;
+	const auto a = container_to_json(types, make_example_container_def());
+	const auto b = make_example_container_def_json();
+	ut_verify_string(QUARK_POS, json_to_compact_string(a), json_to_compact_string(b));
 }
 
 QUARK_TEST("floyd_basics", "parse_container_def_json()", "", ""){
-	const auto a = R"___({ "clocks": { "bus_a": { "x": "gui_t", "y": "mem" }, "bus_b": { "u": "audio", "z": "audio_prefetch" } }, "desc": "*desc*", "name": "*name*", "tech": "*tech*" })___";
-	const auto b = parse_container_def_json(parse_json(seq_t(a)).first);
-	QUARK_VERIFY(b._name == "*name*");
-	QUARK_VERIFY(b._desc == "*desc*");
-	QUARK_VERIFY(b._tech == "*tech*");
-
-	const auto expected_busses = std::map<std::string, clock_bus_t>{
-		{ "bus_a", clock_bus_t{{ { "x", "gui_t"}, { "y", "mem" } } } },
-		{ "bus_b", clock_bus_t{{ { "u", "audio" }, { "z", "audio_prefetch" } } } }
-	};
-	QUARK_VERIFY(b._clock_busses == expected_busses);
+	types_t types;
+	const auto a = parse_container_def_json(types, make_example_container_def_json());
+	const auto b = make_example_container_def();
+	QUARK_VERIFY(a == b);
 }
 
 

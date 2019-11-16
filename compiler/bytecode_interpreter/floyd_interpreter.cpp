@@ -106,7 +106,6 @@ struct bc_process_t {
 	std::deque<json_t> _inbox;
 
 	std::string _name_key;
-	std::string _function_key;
 	std::thread::id _thread_id;
 
 	std::shared_ptr<interpreter_t> _interpreter;
@@ -120,7 +119,7 @@ struct bc_process_t {
 struct bc_processes_runtime_t {
 	container_t _container;
 	bc_runtime_handler_i* handler;
-	std::map<std::string, std::string> _process_infos;
+	std::map<std::string, process_def_t> _process_infos;
 	std::thread::id _main_thread_id;
 
 	std::vector<std::shared_ptr<bc_process_t>> _processes;
@@ -246,22 +245,24 @@ static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& v
 
 		runtime._container = container_def;
 
-		runtime._process_infos = reduce(runtime._container._clock_busses, std::map<std::string, std::string>(), [](const std::map<std::string, std::string>& acc, const std::pair<std::string, clock_bus_t>& e){
-			auto acc2 = acc;
-			acc2.insert(e.second._processes.begin(), e.second._processes.end());
-			return acc2;
-		});
+		runtime._process_infos = reduce(
+			runtime._container._clock_busses,
+			std::map<std::string, process_def_t>(),
+			[](const std::map<std::string, process_def_t>& acc, const std::pair<std::string, clock_bus_t>& e){
+				auto acc2 = acc;
+				acc2.insert(e.second._processes.begin(), e.second._processes.end());
+				return acc2;
+			}
+		);
 
 		auto my_interpreter_handler = my_interpreter_handler_t{ runtime };
 
 		for(const auto& t: runtime._process_infos){
 			auto process = std::make_shared<bc_process_t>();
 			process->_name_key = t.first;
-			process->_function_key = t.second;
 			process->_interpreter = std::make_shared<interpreter_t>(vm._imm->_program, my_interpreter_handler);
-			process->_init_function = find_global_symbol2(*process->_interpreter, t.second + "__init");
-			process->_process_function = find_global_symbol2(*process->_interpreter, t.second);
-
+			process->_init_function = find_global_symbol2(*process->_interpreter, t.second.init_func_linkname);
+			process->_process_function = find_global_symbol2(*process->_interpreter, t.second.msg_func_linkname);
 			runtime._processes.push_back(process);
 		}
 

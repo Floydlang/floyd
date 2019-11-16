@@ -115,7 +115,6 @@ struct llvm_process_t {
 	std::deque<json_t> _inbox;
 
 	std::string _name_key;
-	std::string _function_key;
 	std::thread::id _thread_id;
 
 //	std::shared_ptr<interpreter_t> _interpreter;
@@ -164,7 +163,7 @@ struct llvm_execution_engine_t {
 	config_t config;
 
 
-	std::map<std::string, std::string> _process_infos;
+	std::map<std::string, process_def_t> _process_infos;
 	std::thread::id _main_thread_id;
 
 	std::vector<std::shared_ptr<llvm_process_t>> _processes;

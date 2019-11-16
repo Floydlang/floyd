@@ -294,10 +294,30 @@ inline bool operator==(const connection_t& lhs, const connection_t& rhs){
 	;
 }
 
+struct process_def_t {
+	std::string name_key;
+
+	type_t state_type;
+	type_t msg_type;
+
+	std::string init_func_linkname;
+	std::string msg_func_linkname;
+};
+inline bool operator==(const process_def_t& lhs, const process_def_t& rhs){
+	return
+		lhs.name_key == rhs.name_key
+
+		&& lhs.state_type == rhs.state_type
+		&& lhs.msg_type == rhs.msg_type
+
+		&& lhs.init_func_linkname == rhs.init_func_linkname
+		&& lhs.msg_func_linkname == rhs.msg_func_linkname
+		;
+}
 
 struct clock_bus_t {
 	//	k: name of bus, v: struct-name of the process' state, also used to find function names.
-	std::map<std::string, std::string> _processes;
+	std::map<std::string, process_def_t> _processes;
 };
 inline bool operator==(const clock_bus_t& lhs, const clock_bus_t& rhs){
 	return
@@ -323,8 +343,8 @@ inline bool operator==(const container_t& lhs, const container_t& rhs){
 	;
 }
 
-container_t parse_container_def_json(const json_t& value);
-json_t container_to_json(const container_t& v);
+container_t parse_container_def_json(types_t& types, const json_t& value);
+json_t container_to_json(const types_t& types, const container_t& v);
 
 
 //////////////////////////////////////		software_system_t

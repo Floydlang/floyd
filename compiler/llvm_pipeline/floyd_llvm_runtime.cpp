@@ -799,7 +799,7 @@ static std::map<std::string, value_t> run_processes(llvm_execution_engine_t& ee)
 	else{
 		ee._process_infos = reduce(
 			ee.container_def._clock_busses,
-			std::map<std::string, std::string>(), [](const std::map<std::string, std::string>& acc, const std::pair<std::string, clock_bus_t>& e){
+			std::map<std::string, process_def_t>(), [](const std::map<std::string, process_def_t>& acc, const std::pair<std::string, clock_bus_t>& e){
 				auto acc2 = acc;
 				acc2.insert(e.second._processes.begin(), e.second._processes.end());
 				return acc2;
@@ -809,9 +809,8 @@ static std::map<std::string, value_t> run_processes(llvm_execution_engine_t& ee)
 		for(const auto& t: ee._process_infos){
 			auto process = std::make_shared<llvm_process_t>();
 			process->_name_key = t.first;
-			process->_function_key = t.second;
-			process->_init_function = std::make_shared<llvm_bind_t>(bind_function2(ee, encode_floyd_func_link_name(t.second + "__init")));
-			process->_process_function = std::make_shared<llvm_bind_t>(bind_function2(ee, encode_floyd_func_link_name(t.second)));
+			process->_init_function = std::make_shared<llvm_bind_t>(bind_function2(ee, encode_floyd_func_link_name(t.second.init_func_linkname)));
+			process->_process_function = std::make_shared<llvm_bind_t>(bind_function2(ee, encode_floyd_func_link_name(t.second.msg_func_linkname)));
 			ee._processes.push_back(process);
 		}
 

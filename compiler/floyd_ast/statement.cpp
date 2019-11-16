@@ -360,7 +360,7 @@ static statement_t ast_json_to_statement(types_t& types, const json_t& statement
 	else if(type == statement_opcode_t::k_container_def){
 		QUARK_ASSERT(statement.get_array_size() == 2);
 		const auto s = statement.get_array_n(1);
-		const auto s2 = parse_container_def_json(s);
+		const auto s2 = parse_container_def_json(types, s);
 		return statement_t::make__container_def_statement(loc, s2);
 	}
 
@@ -519,7 +519,7 @@ json_t statement_to_json(const types_t& types, const statement_t& e){
 			return make_ast_node(
 				statement.location,
 				statement_opcode_t::k_container_def,
-				{ container_to_json(s._container) }
+				{ container_to_json(types, s._container) }
 			);
 		}
 		json_t operator()(const statement_t::benchmark_def_statement_t& s) const{
