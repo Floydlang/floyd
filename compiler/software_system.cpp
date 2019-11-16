@@ -14,7 +14,7 @@ using std::vector;
 
 
 
-vector<person_t> unpack_persons(const json_t& persons_obj){
+static vector<person_t> unpack_persons(const json_t& persons_obj){
 	vector<person_t> result;
 	const auto temp = persons_obj.get_object();
 	for(const auto& person_pairs: temp){
@@ -26,7 +26,7 @@ vector<person_t> unpack_persons(const json_t& persons_obj){
 }
 
 
-clock_bus_t unpack_clock_bus(const json_t& clock_bus_obj){
+static clock_bus_t unpack_clock_bus(const json_t& clock_bus_obj){
 	std::map<std::string, std::string> processes;
 
 	const auto processes_map = clock_bus_obj.get_object();
@@ -38,7 +38,7 @@ clock_bus_t unpack_clock_bus(const json_t& clock_bus_obj){
 	return clock_bus_t{._processes = processes};
 }
 
-std::map<std::string, clock_bus_t> unpack_clock_busses(const json_t& clocks_obj){
+static std::map<std::string, clock_bus_t> unpack_clock_busses(const json_t& clocks_obj){
 	std::map<std::string, clock_bus_t> result;
 	const auto temp = clocks_obj.get_object();
 	for(const auto& clock_pair: temp){
@@ -48,7 +48,7 @@ std::map<std::string, clock_bus_t> unpack_clock_busses(const json_t& clocks_obj)
 	}
 	return result;
 }
-container_t unpack_container(const json_t& container_obj){
+static container_t unpack_container_def(const json_t& container_obj){
 	return container_obj.get_object_size() == 0 ?
 		container_t{}
 	:
@@ -62,7 +62,7 @@ container_t unpack_container(const json_t& container_obj){
 	};
 }
 
-std::vector<string> unpack_containers(const json_t& containers_obj){
+static std::vector<string> unpack_ss_containers(const json_t& containers_obj){
 	std::vector<string> result;
 	const auto container_array = containers_obj.get_array();
 	for(const auto& e: container_array){
@@ -76,7 +76,7 @@ software_system_t parse_software_system_json(const json_t& value){
 	const auto desc = value.get_object_element("desc").get_string();
 	const auto people = unpack_persons(value.get_object_element("people"));
 	const auto connections = value.get_object_element("connections");
-	const auto containers = unpack_containers(value.get_object_element("containers"));
+	const auto containers = unpack_ss_containers(value.get_object_element("containers"));
 	return software_system_t{
 		._name = name,
 		._desc = desc,
@@ -87,5 +87,5 @@ software_system_t parse_software_system_json(const json_t& value){
 }
 
 container_t parse_container_def_json(const json_t& value){
-	return unpack_container(value);
+	return unpack_container_def(value);
 }

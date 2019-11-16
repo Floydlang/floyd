@@ -878,6 +878,86 @@ static analyser_t analyse_test_def_statement(const analyser_t& a, const statemen
 }
 
 
+#if 0
+static analyser_t analyse_container_def_statement(const analyser_t& a, const statement_t& s, const type_t& return_type){
+	QUARK_ASSERT(a.check_invariant());
+
+	auto a_acc = a;
+	const auto statement = std::get<statement_t::container_def_statement_t>(s._contents);
+
+
+	container_t unpack_container(const json_t& container_obj){
+		return container_obj.get_object_size() == 0 ?
+			container_t{}
+		:
+			container_t{
+			._name = container_obj.get_object_element("name").get_string(),
+			._desc = container_obj.get_object_element("desc").get_string(),
+			._tech = container_obj.get_object_element("tech").get_string(),
+			._clock_busses = unpack_clock_busses(container_obj.get_object_element("clocks")),
+			._connections = {},
+			._components = {}
+		};
+	}
+
+
+#if 0
+
+	const auto test_name = statement.function_name + ":" + statement.scenario;
+	const auto function_link_name = "test__" + test_name;
+
+	const auto test_def_itype = resolve_symbols(a_acc, k_no_location, make_symbol_ref(a_acc._types, "test_def_t"));
+	const auto f_itype = resolve_symbols(a_acc, k_no_location, make_test_function_t(a_acc._types));
+
+
+	const auto function_id = function_id_t { function_link_name };
+
+	//	Make a function def expression for the new test function.
+
+	const auto body_pair = analyse_body(a_acc, statement._body, epure::pure, peek2(a_acc._types, f_itype).get_function_return(a_acc._types));
+	a_acc = body_pair.first;
+
+
+	const auto function_def2 = function_definition_t::make_func(
+		k_no_location,
+		function_link_name,
+		peek2(a_acc._types, f_itype),
+		{},
+		std::make_shared<body_t>(body_pair.second)
+	);
+	QUARK_ASSERT(check_types_resolved(a_acc._types, function_def2));
+
+	a_acc._function_defs.insert({ function_id, function_definition_t(function_def2) });
+
+	const auto f = value_t::make_function_value(f_itype, function_id);
+
+
+	//	Add test-def record to test_defs.
+	{
+		const auto new_record_expr = expression_t::make_construct_value_expr(
+			test_def_itype,
+			{
+				expression_t::make_literal_string(statement.function_name),
+				expression_t::make_literal_string(statement.scenario),
+				expression_t::make_literal(f)
+			}
+		);
+		const auto new_record_expr3_pair = analyse_expression_to_target(a_acc, s, new_record_expr, test_def_itype);
+		a_acc = new_record_expr3_pair.first;
+		a_acc.test_defs.push_back(new_record_expr3_pair.second);
+	}
+
+	const auto body2 = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, peek2(a_acc._types, f_itype).get_function_return(a_acc._types));
+	a_acc = body2.first;
+	return a_acc;
+#endif
+
+
+
+}
+#endif
+
+
 
 
 //	Output is the RETURN VALUE of the analysed statement, if any.
@@ -953,18 +1033,21 @@ static std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(con
 			return { temp, {} };
 		}
 		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::container_def_statement_t& s) const{
+#if 0
+			const auto e = analyse_container_def_statement(a, statement, return_type);
+			return { e, {} };
+#else
 			analyser_t temp = a;
 			temp._container_def = parse_container_def_json(s._json_data);
 			return { temp, {} };
+#endif
 		}
 		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::benchmark_def_statement_t& s) const{
 			const auto e = analyse_benchmark_def_statement(a, statement, return_type);
-//			QUARK_ASSERT(check_types_resolved(e.second));
 			return { e, {} };
 		}
 		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::test_def_statement_t& s) const{
 			const auto e = analyse_test_def_statement(a, statement, return_type);
-//			QUARK_ASSERT(check_types_resolved(e.second));
 			return { e, {} };
 		}
 

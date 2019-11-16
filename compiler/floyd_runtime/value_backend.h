@@ -852,6 +852,8 @@ inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, ty
 	QUARK_ASSERT(is_vector_hamt(backend.types, backend.config, type));
 
 	inc_rc(vec.vector_hamt_ptr->alloc);
+
+	QUARK_ASSERT(backend.check_invariant());
 }
 
 inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, type_t type){
@@ -864,6 +866,8 @@ inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t ve
 	if(dec_rc(vec.vector_hamt_ptr->alloc) == 0){
 		dispose_vector_hamt(vec);
 	}
+
+	QUARK_ASSERT(backend.check_invariant());
 }
 
 inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, type_t type){
@@ -877,6 +881,8 @@ inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t
 		release_vector_hamt_elements_internal(backend, vec, type);
 		dispose_vector_hamt(vec);
 	}
+
+	QUARK_ASSERT(backend.check_invariant());
 }
 
 
@@ -900,6 +906,8 @@ inline type_t lookup_vector_element_type(const value_backend_t& backend, type_t 
 	const auto& peek = peek2(backend.types, type);
 	QUARK_ASSERT(peek.is_vector());
 
+	QUARK_ASSERT(backend.check_invariant());
+
 	return backend.child_type[peek.get_lookup_index()];
 }
 
@@ -909,6 +917,7 @@ inline type_t lookup_dict_value_type(const value_backend_t& backend, type_t type
 	const auto& peek = peek2(backend.types, type);
 	QUARK_ASSERT(peek.is_dict());
 
+	QUARK_ASSERT(backend.check_invariant());
 	return backend.child_type[type.get_lookup_index()];
 }
 

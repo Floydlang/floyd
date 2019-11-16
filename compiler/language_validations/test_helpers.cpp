@@ -183,6 +183,8 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 		const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
 		const auto test_results = run_tests_llvm(*ee, all_tests, all_test_ids);
 
+		QUARK_ASSERT(ee->check_invariant());
+
 		if(count_fails(test_results) > 0){
 			const auto report = make_report(test_results);
 			return test_report_t{ {}, {}, {}, report };
@@ -190,8 +192,12 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 
 		const auto run_output = run_program(*ee, main_args);
 
+		QUARK_ASSERT(ee->check_invariant());
+
 		const auto result_global0 = bind_global(*ee, "result");
 		const auto result_global = result_global0.first != nullptr ? load_global(*ee, result_global0) : value_t();
+
+		QUARK_ASSERT(ee->check_invariant());
 
 		return test_report_t{
 			result_global.is_undefined() ? json_t() : value_and_type_to_ast_json(exe->type_lookup.state.types, result_global),

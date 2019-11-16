@@ -1068,10 +1068,8 @@ type_t lookup_type_ref(const value_backend_t& backend, runtime_type_t type){
 
 
 const std::pair<type_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, type_t type){
-#if DEBUG
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
-#endif
 
 	const auto& vec = backend.struct_layouts;
 	const auto it = std::find_if(
@@ -1112,6 +1110,8 @@ void retain_vector_carray(value_backend_t& backend, runtime_value_t vec, type_t 
 	QUARK_ASSERT(is_vector_carray(backend.types, backend.config, type) || peek2(backend.types, type).is_string());
 
 	inc_rc(vec.vector_carray_ptr->alloc);
+
+	QUARK_ASSERT(backend.check_invariant());
 }
 
 
@@ -1124,6 +1124,8 @@ void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, type_t t
 	QUARK_ASSERT(is_dict_cppmap(backend.types, backend.config, type));
 
 	inc_rc(dict.dict_cppmap_ptr->alloc);
+
+	QUARK_ASSERT(backend.check_invariant());
 }
 void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
@@ -1133,6 +1135,8 @@ void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, type_t typ
 	QUARK_ASSERT(is_dict_hamt(backend.types, backend.config, type));
 
 	inc_rc(dict.dict_hamt_ptr->alloc);
+
+	QUARK_ASSERT(backend.check_invariant());
 }
 
 void retain_struct(value_backend_t& backend, runtime_value_t s, type_t type){
@@ -1143,6 +1147,8 @@ void retain_struct(value_backend_t& backend, runtime_value_t s, type_t type){
 	QUARK_ASSERT(peek2(backend.types, type).is_struct());
 
 	inc_rc(s.struct_ptr->alloc);
+
+	QUARK_ASSERT(backend.check_invariant());
 }
 
 void retain_value(value_backend_t& backend, runtime_value_t value, type_t type){
@@ -1177,6 +1183,8 @@ void retain_value(value_backend_t& backend, runtime_value_t value, type_t type){
 			QUARK_ASSERT(false);
 		}
 	}
+
+	QUARK_ASSERT(backend.check_invariant());
 }
 
 
@@ -1202,6 +1210,8 @@ void release_dict_cppmap(value_backend_t& backend, runtime_value_t dict0, type_t
 		}
 		dispose_dict_cppmap(dict0);
 	}
+
+	QUARK_ASSERT(backend.check_invariant());
 }
 
 void release_dict_hamt(value_backend_t& backend, runtime_value_t dict0, type_t type){
@@ -1223,6 +1233,8 @@ void release_dict_hamt(value_backend_t& backend, runtime_value_t dict0, type_t t
 		}
 		dispose_dict_hamt(dict0);
 	}
+
+	QUARK_ASSERT(backend.check_invariant());
 }
 
 void release_dict(value_backend_t& backend, runtime_value_t dict, type_t type){
@@ -1239,6 +1251,8 @@ void release_dict(value_backend_t& backend, runtime_value_t dict, type_t type){
 	else{
 		QUARK_ASSERT(false);
 	}
+
+	QUARK_ASSERT(backend.check_invariant());
 }
 
 
@@ -1261,6 +1275,8 @@ void release_vector_carray_pod(value_backend_t& backend, runtime_value_t vec, ty
 	if(dec_rc(vec.vector_carray_ptr->alloc) == 0){
 		dispose_vector_carray(vec);
 	}
+
+	QUARK_ASSERT(backend.check_invariant());
 }
 
 void release_vector_carray_nonpod(value_backend_t& backend, runtime_value_t vec, type_t type){
@@ -1283,6 +1299,8 @@ void release_vector_carray_nonpod(value_backend_t& backend, runtime_value_t vec,
 		}
 		dispose_vector_carray(vec);
 	}
+
+	QUARK_ASSERT(backend.check_invariant());
 }
 
 void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_value_t vec, type_t type){
@@ -1296,6 +1314,8 @@ void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_val
 		const auto& element = vec.vector_hamt_ptr->load_element(i);
 		release_value(backend, element, element_type);
 	}
+
+	QUARK_ASSERT(backend.check_invariant());
 }
 
 void release_vec(value_backend_t& backend, runtime_value_t vec, type_t type){
@@ -1334,6 +1354,8 @@ void release_vec(value_backend_t& backend, runtime_value_t vec, type_t type){
 	else{
 		QUARK_ASSERT(false);
 	}
+
+	QUARK_ASSERT(backend.check_invariant());
 }
 
 //??? prep data, inluding member types -- so we don't need to acces struct_def and its type_t:s.
@@ -1363,14 +1385,14 @@ void release_struct(value_backend_t& backend, runtime_value_t str, type_t type){
 		}
 		dispose_struct(*s);
 	}
+
+	QUARK_ASSERT(backend.check_invariant());
 }
 
 void release_value(value_backend_t& backend, runtime_value_t value, type_t type){
-#if DEBUG
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
-#endif
 	QUARK_ASSERT(is_rc_value(peek2(backend.types, type)));
 
 	const auto& peek = peek2(backend.types, type);
@@ -1395,6 +1417,8 @@ void release_value(value_backend_t& backend, runtime_value_t value, type_t type)
 	else{
 		QUARK_ASSERT(false);
 	}
+
+	QUARK_ASSERT(backend.check_invariant());
 }
 
 

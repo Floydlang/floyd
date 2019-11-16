@@ -6966,6 +6966,68 @@ FLOYD_LANG_PROOF("software-system-def", "run one process", "", ""){
 	ut_run_closed_nolib(QUARK_POS, program);
 }
 
+#if 0
+FLOYD_LANG_PROOF_VIP("software-system-def", "Test use struct as message", "", ""){
+	const auto program = R"(
+
+		software-system-def {
+			"name": "My Arcade Game",
+			"desc": "Space shooter for mobile devices, with connection to a server.",
+			"people": {},
+			"connections": [],
+			"containers": [ "iphone app" ]
+		}
+
+		container-def {
+			"name": "iphone app",
+			"tech": "Swift, iOS, Xcode, Open GL",
+			"desc": "Mobile shooter game for iOS.",
+			"clocks": {
+				"main": {
+					"a": "my_gui"
+				}
+			}
+		}
+
+		struct my_gui_state_t {
+			int _count
+		}
+
+		func my_gui_state_t my_gui__init() impure {
+			send("a", "dec")
+			send("a", "dec")
+			send("a", "dec")
+			send("a", "dec")
+			send("a", "stop")
+			return my_gui_state_t(1000)
+		}
+
+		struct my_message_t {
+			json data
+		}
+
+		func my_gui_state_t my_gui(my_gui_state_t state, my_message_t message) impure{
+			print("received: " + to_string(message) + ", state: " + to_string(state))
+
+			if(message.data == "inc"){
+				return update(state, _count, state._count + 1)
+			}
+			else if(message.data == "dec"){
+				return update(state, _count, state._count - 1)
+			}
+			else{
+				assert(false)
+				return state
+			}
+		}
+
+	)";
+
+	ut_run_closed_nolib(QUARK_POS, program);
+}
+#endif
+
+
 FLOYD_LANG_PROOF("software-system-def", "run two unconnected processs", "", ""){
 	const auto program = R"(
 
