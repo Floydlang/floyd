@@ -679,8 +679,10 @@ void send_message(llvm_execution_engine_t& ee, const std::string& process_id_str
 	auto& process = *ee._processes[process_id];
 
     {
+		const auto message2 = to_runtime_value2(ee.backend, value_t::make_json(message));
+
         std::lock_guard<std::mutex> lk(process._inbox_mutex);
-        process._inbox.push_front(message);
+        process._inbox.push_front(message2);
         if(k_trace_process_messaging){
         	QUARK_TRACE("Notifying...");
 		}
@@ -714,7 +716,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 	}
 
 	while(stop == false){
-		json_t message;
+		runtime_value_t message;
 		{
 			std::unique_lock<std::mutex> lk(process._inbox_mutex);
 
@@ -733,10 +735,11 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 		}
 
 		if(k_trace_process_messaging){
-			QUARK_TRACE_SS("RECEIVED: " << json_to_pretty_string(message));
+//			QUARK_TRACE_SS("RECEIVED: " << json_to_pretty_string(message));
 		}
 
-		if(message.is_string() && message.get_string() == "stop"){
+		const auto message_type_peek = peek2(types, process._process_def.msg_type);
+		if(message_type_peek.is_json() && message.json_ptr->get_json().get_string() == "stop"){
 			stop = true;
 			if(k_trace_process_messaging){
         		QUARK_TRACE_SS(thread_name << ": STOP");
@@ -755,8 +758,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 
 				auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE>(process._process_function->address);
 				const auto state2 = to_runtime_value(ee, process._process_state);
-				const auto message2 = to_runtime_value(ee, value_t::make_json(message));
-				const auto result = (*f)(make_runtime_ptr(&ee), state2, message2);
+				const auto result = (*f)(make_runtime_ptr(&ee), state2, message);
 				process._process_state = from_runtime_value(ee, result, peek2(types, process._process_function->type).get_function_return(types));
 			}
 		}
@@ -809,6 +811,7 @@ static std::map<std::string, value_t> run_processes(llvm_execution_engine_t& ee)
 		for(const auto& t: ee._process_infos){
 			auto process = std::make_shared<llvm_process_t>();
 			process->_name_key = t.first;
+			process->_process_def = t.second;
 			process->_init_function = std::make_shared<llvm_bind_t>(bind_function2(ee, encode_floyd_func_link_name(t.second.init_func_linkname)));
 			process->_process_function = std::make_shared<llvm_bind_t>(bind_function2(ee, encode_floyd_func_link_name(t.second.msg_func_linkname)));
 			ee._processes.push_back(process);

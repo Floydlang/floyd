@@ -102,7 +102,7 @@ struct llvm_runtime_handler_i {
 
 struct process_interface {
 	virtual ~process_interface(){};
-	virtual void on_message(const json_t& message) = 0;
+	virtual void on_message(const runtime_value_t& message) = 0;
 	virtual void on_init() = 0;
 };
 
@@ -112,12 +112,12 @@ struct process_interface {
 struct llvm_process_t {
 	std::condition_variable _inbox_condition_variable;
 	std::mutex _inbox_mutex;
-	std::deque<json_t> _inbox;
+	std::deque<runtime_value_t> _inbox;
 
 	std::string _name_key;
+	process_def_t _process_def;
 	std::thread::id _thread_id;
 
-//	std::shared_ptr<interpreter_t> _interpreter;
 	std::shared_ptr<llvm_bind_t> _init_function;
 	std::shared_ptr<llvm_bind_t> _process_function;
 	value_t _process_state;
