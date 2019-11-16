@@ -243,9 +243,35 @@ json_t container_to_json(const container_t& v){
 }
 
 QUARK_TEST("floyd_basics", "container_to_json()", "", ""){
-		container_t a = { "*name*", "*desc*", "*tech*", {} };
+	container_t a = {
+		"*name*",
+		"*desc*",
+		"*tech*",
+		std::map<std::string, clock_bus_t>{
+			{ "bus_a", clock_bus_t{{ { "x", "gui_t"}, { "y", "mem" } } } },
+			{ "bus_b", clock_bus_t{{ { "u", "audio" }, { "z", "audio_prefetch" } } } }
+		}
+	};
 	const auto b = container_to_json(a);
-	ut_verify_string(QUARK_POS, json_to_compact_string(b), R"___({ "clocks": {}, "desc": "*desc*", "name": "*name*", "tech": "*tech*" })___");
+	ut_verify_string(
+		QUARK_POS,
+		json_to_compact_string(b),
+		R"___({ "clocks": { "bus_a": { "x": "gui_t", "y": "mem" }, "bus_b": { "u": "audio", "z": "audio_prefetch" } }, "desc": "*desc*", "name": "*name*", "tech": "*tech*" })___"
+	);
+}
+
+QUARK_TEST("floyd_basics", "parse_container_def_json()", "", ""){
+	const auto a = R"___({ "clocks": { "bus_a": { "x": "gui_t", "y": "mem" }, "bus_b": { "u": "audio", "z": "audio_prefetch" } }, "desc": "*desc*", "name": "*name*", "tech": "*tech*" })___";
+	const auto b = parse_container_def_json(parse_json(seq_t(a)).first);
+	QUARK_VERIFY(b._name == "*name*");
+	QUARK_VERIFY(b._desc == "*desc*");
+	QUARK_VERIFY(b._tech == "*tech*");
+
+	const auto expected_busses = std::map<std::string, clock_bus_t>{
+		{ "bus_a", clock_bus_t{{ { "x", "gui_t"}, { "y", "mem" } } } },
+		{ "bus_b", clock_bus_t{{ { "u", "audio" }, { "z", "audio_prefetch" } } } }
+	};
+	QUARK_VERIFY(b._clock_busses == expected_busses);
 }
 
 
