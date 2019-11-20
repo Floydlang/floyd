@@ -110,18 +110,33 @@ struct process_interface {
 //	NOTICE: Each process inbox has its own mutex + condition variable.
 //	No mutex protects cout.
 struct llvm_process_t {
-	std::condition_variable _inbox_condition_variable;
-	std::mutex _inbox_mutex;
-	std::deque<runtime_value_t> _inbox;
+	public: bool check_invariant() const {
+		QUARK_ASSERT(_init_function != nullptr);
+		QUARK_ASSERT(_process_function != nullptr);
+		return true;
+	}
+
+
+	//////////////////////////////////////		STATE - INIT
 
 	std::string _name_key;
 	process_def_t _process_def;
 	std::thread::id _thread_id;
+	std::shared_ptr<process_interface> _processor;
 
 	std::shared_ptr<llvm_bind_t> _init_function;
 	std::shared_ptr<llvm_bind_t> _process_function;
+	type_t _message_type;
+
+
+	//////////////////////////////////////		STATE - MUTATING
+
+	std::condition_variable _inbox_condition_variable;
+	std::mutex _inbox_mutex;
+	std::deque<runtime_value_t> _inbox;
+
 	value_t _process_state;
-	std::shared_ptr<process_interface> _processor;
+	std::atomic<bool> _exiting_flag;
 };
 
 
@@ -170,8 +185,22 @@ struct llvm_execution_engine_t {
 	std::vector<std::thread> _worker_threads;
 };
 
+struct llvm_context_t {
+	public: bool check_invariant() const {
+		QUARK_ASSERT(ee != nullptr);
+		QUARK_ASSERT(ee->check_invariant());
+		QUARK_ASSERT(process == nullptr || process->check_invariant());
+		return true;
+	}
 
-void send_message(llvm_execution_engine_t& ee, const std::string& process_id, const json_t& message);
+	llvm_execution_engine_t* ee;
+	llvm_process_t* process;
+};
+
+
+
+void send_message(llvm_context_t& c, const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type);
+void exit_process(llvm_context_t& c);
 
 
 ////////////////////////////////		FUNCTION POINTERS
@@ -210,22 +239,24 @@ typedef void (*FLOYD_TEST_F)(floyd_runtime_t* frp);
 
 ////////////////////////////////	CLIENT ACCESS OF RUNNING PROGRAM
 
-floyd_runtime_t* make_runtime_ptr(llvm_execution_engine_t* ee);
 
 const function_link_entry_t& find_function_def_from_link_name(const std::vector<function_link_entry_t>& function_link_map, const link_name_t& link_name);
 
-void* get_global_ptr(const llvm_execution_engine_t& ee, const std::string& name);
+void* get_global_ptr(const llvm_execution_engine_t& c, const std::string& name);
 
 
 std::pair<void*, type_t> bind_global(const llvm_execution_engine_t& ee, const std::string& name);
-value_t load_global(const llvm_execution_engine_t& ee, const std::pair<void*, type_t>& v);
+value_t load_global(const llvm_context_t& c, const std::pair<void*, type_t>& v);
 
-void store_via_ptr(llvm_execution_engine_t& runtime, const type_t& member_type, void* value_ptr, const value_t& value);
+void store_via_ptr(llvm_context_t& c, const type_t& member_type, void* value_ptr, const value_t& value);
 
 llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name);
 
 
-inline llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp);
+
+
+inline floyd_runtime_t* make_runtime_ptr(llvm_context_t* p);
+inline llvm_context_t& get_floyd_runtime(floyd_runtime_t* frp);
 
 
 
@@ -233,19 +264,19 @@ inline llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp);
 
 
 
-inline value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const type_t& type){
-	return from_runtime_value2(runtime.backend, encoded_value, type);
+inline value_t from_runtime_value(const llvm_context_t& c, const runtime_value_t encoded_value, const type_t& type){
+	return from_runtime_value2(c.ee->backend, encoded_value, type);
 }
 
-inline runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t& value){
-	return to_runtime_value2(runtime.backend, value);
+inline runtime_value_t to_runtime_value(llvm_context_t& c, const value_t& value){
+	return to_runtime_value2(c.ee->backend, value);
 }
 
-inline std::string from_runtime_string(const llvm_execution_engine_t& runtime, runtime_value_t encoded_value){
-	return from_runtime_string2(runtime.backend, encoded_value);
+inline std::string from_runtime_string(const llvm_context_t& c, runtime_value_t encoded_value){
+	return from_runtime_string2(c.ee->backend, encoded_value);
 }
-inline runtime_value_t to_runtime_string(llvm_execution_engine_t& runtime, const std::string& s){
-	return to_runtime_string2(runtime.backend, s);
+inline runtime_value_t to_runtime_string(llvm_context_t& c, const std::string& s){
+	return to_runtime_string2(c.ee->backend, s);
 }
 
 
@@ -297,13 +328,17 @@ std::vector<test_t> collect_tests(llvm_execution_engine_t& ee);
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+inline floyd_runtime_t* make_runtime_ptr(llvm_context_t* p){
+	return reinterpret_cast<floyd_runtime_t*>(p);
+}
 
-inline llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp){
+inline llvm_context_t& get_floyd_runtime(floyd_runtime_t* frp){
 	QUARK_ASSERT(frp != nullptr);
 
-	auto ptr = reinterpret_cast<llvm_execution_engine_t*>(frp);
+	auto ptr = reinterpret_cast<llvm_context_t*>(frp);
 	QUARK_ASSERT(ptr != nullptr);
-	QUARK_ASSERT(ptr->debug_magic == k_debug_magic);
+	QUARK_ASSERT(ptr->ee != nullptr);
+	QUARK_ASSERT(ptr->ee->debug_magic == k_debug_magic);
 	QUARK_ASSERT(ptr->check_invariant());
 	return *ptr;
 }

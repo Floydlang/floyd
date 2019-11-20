@@ -2697,7 +2697,7 @@ static void call_native(interpreter_t& vm, const bc_instruction_t& i, const type
 	const auto temp_args = function_type_peek.get_function_args(types);
 	const auto function_def_dynamic_arg_count = std::count_if(temp_args.begin(), temp_args.end(), [&](const auto& e){ return peek2(types, e).is_any(); } );
 
-	const int arg0_stack_pos = stack.size() - (function_def_dynamic_arg_count + callee_arg_count);
+	const int arg0_stack_pos = (int)(stack.size() - (function_def_dynamic_arg_count + callee_arg_count));
 	int stack_pos = arg0_stack_pos;
 
 	//	Notice that dynamic functions will have each DYN argument with a leading itype as an extra argument.

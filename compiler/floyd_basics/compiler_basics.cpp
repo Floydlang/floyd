@@ -901,7 +901,10 @@ intrinsic_signature_t make_print_signature(types_t& types){
 	return make_intrinsic("print", make_function(types, type_t::make_void(), { ANY_TYPE }, epure::pure) );
 }
 intrinsic_signature_t make_send_signature(types_t& types){
-	return make_intrinsic("send", make_function(types, type_t::make_void(), { type_t::make_string(), type_t::make_json() }, epure::impure) );
+	return make_intrinsic("send", make_function(types, type_t::make_void(), { type_t::make_string(), ANY_TYPE }, epure::impure) );
+}
+intrinsic_signature_t make_exit_signature(types_t& types){
+	return make_intrinsic("exit", make_function(types, type_t::make_void(), { }, epure::impure) );
 }
 
 
@@ -978,6 +981,7 @@ intrinsic_signatures_t make_intrinsic_signatures(types_t& types){
 
 	result.print = make_print_signature(types);
 	result.send = make_send_signature(types);
+	result.exit = make_exit_signature(types);
 
 	result.bw_not = make_bw_not_signature(types);
 	result.bw_and = make_bw_and_signature(types);
@@ -1021,6 +1025,7 @@ intrinsic_signatures_t make_intrinsic_signatures(types_t& types){
 
 		make_print_signature(types),
 		make_send_signature(types),
+		make_exit_signature(types),
 
 		make_bw_not_signature(types),
 		make_bw_and_signature(types),

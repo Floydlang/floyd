@@ -281,6 +281,7 @@ QUARK_TEST("", "collect_tests_source()", "", ""){
 static std::string run_test(llvm_execution_engine_t& ee, const test_t& test){
 	QUARK_ASSERT(ee.check_invariant());
 
+	auto context = llvm_context_t { &ee, nullptr };
 	const auto f_link_name = test.f;
 
 	const auto f_bind = bind_function2(ee, f_link_name);
@@ -288,7 +289,7 @@ static std::string run_test(llvm_execution_engine_t& ee, const test_t& test){
 	auto f2 = reinterpret_cast<FLOYD_TEST_F>(f_bind.address);
 
 	try {
-		(*f2)(make_runtime_ptr(&ee));
+		(*f2)(make_runtime_ptr(&context));
 		return("");
 	}
 	catch(const std::runtime_error& e){
@@ -438,8 +439,9 @@ QUARK_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'resu
 
 	floyd::handler_t handler;
 	auto ee = init_llvm_jit(*program, handler);
+	auto context = floyd::llvm_context_t { ee.get(), nullptr };
 
-	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(*ee, "result"));
+	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(*context.ee, "result"));
 	QUARK_ASSERT(result == 6);
 
 //	QUARK_TRACE_SS("result = " << floyd::print_program(*program));

@@ -57,9 +57,6 @@ ret i32 %2
 */
 
 
-floyd_runtime_t* make_runtime_ptr(llvm_execution_engine_t* ee){
-	return reinterpret_cast<floyd_runtime_t*>(ee);
-}
 
 
 ////////////////////////////////	CLIENT ACCESS OF RUNNING PROGRAM
@@ -105,31 +102,32 @@ std::pair<void*, type_t> bind_global(const llvm_execution_engine_t& ee, const st
 	}
 }
 
-static value_t load_via_ptr(const llvm_execution_engine_t& runtime, const void* value_ptr, const type_t& type){
-	QUARK_ASSERT(runtime.check_invariant());
+static value_t load_via_ptr(const llvm_context_t& c, const void* value_ptr, const type_t& type){
+	QUARK_ASSERT(c.check_invariant());
 	QUARK_ASSERT(value_ptr != nullptr);
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto result = load_via_ptr2(runtime.backend.types, value_ptr, type);
-	const auto result2 = from_runtime_value(runtime, result, type);
+	const auto result = load_via_ptr2(c.ee->backend.types, value_ptr, type);
+	const auto result2 = from_runtime_value(c, result, type);
 	return result2;
 }
 
-value_t load_global(const llvm_execution_engine_t& ee, const std::pair<void*, type_t>& v){
+value_t load_global(const llvm_context_t& c, const std::pair<void*, type_t>& v){
+	QUARK_ASSERT(c.check_invariant());
 	QUARK_ASSERT(v.first != nullptr);
 	QUARK_ASSERT(v.second.is_undefined() == false);
 
-	return load_via_ptr(ee, v.first, v.second);
+	return load_via_ptr(c, v.first, v.second);
 }
 
-void store_via_ptr(llvm_execution_engine_t& runtime, const type_t& member_type, void* value_ptr, const value_t& value){
-	QUARK_ASSERT(runtime.check_invariant());
+void store_via_ptr(llvm_context_t& c, const type_t& member_type, void* value_ptr, const value_t& value){
+	QUARK_ASSERT(c.check_invariant());
 	QUARK_ASSERT(member_type.check_invariant());
 	QUARK_ASSERT(value_ptr != nullptr);
 	QUARK_ASSERT(value.check_invariant());
 
-	const auto value2 = to_runtime_value(runtime, value);
-	store_via_ptr2(runtime.backend.types, value_ptr, member_type, value2);
+	const auto value2 = to_runtime_value(c, value);
+	store_via_ptr2(c.ee->backend.types, value_ptr, member_type, value2);
 }
 
 
@@ -338,7 +336,9 @@ void trace_function_link_map(const types_t& types, const std::vector<function_li
 int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const std::vector<std::string>& main_args){
 	QUARK_ASSERT(f.address != nullptr);
 
+	auto context = llvm_context_t { &ee, nullptr };
 	auto& types = ee.type_lookup.state.types;
+	auto runtime_ptr = make_runtime_ptr(&context);
 
 	//??? Check this earlier.
 	if(f.type == get_main_signature_arg_impure(types) || f.type == get_main_signature_arg_pure(types)){
@@ -350,18 +350,18 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 			main_args2.push_back(value_t::make_string(e));
 		}
 		const auto main_args3 = value_t::make_vector_value(types, type_t::make_string(), main_args2);
-		const auto main_args4 = to_runtime_value(ee, main_args3);
-		const auto main_result_int = (*f2)(make_runtime_ptr(&ee), main_args4);
+		const auto main_args4 = to_runtime_value(context, main_args3);
+		const auto main_result_int = (*f2)(runtime_ptr, main_args4);
 
 		const auto return_itype = make_vector(types, type_t::make_string());
 		if(is_rc_value(peek2(types, return_itype))){
-			release_value(ee.backend, main_args4, return_itype);
+			release_value(context.ee->backend, main_args4, return_itype);
 		}
 		return main_result_int;
 	}
 	else if(f.type == get_main_signature_no_arg_impure(types) || f.type == get_main_signature_no_arg_pure(types)){
 		const auto f2 = reinterpret_cast<FLOYD_RUNTIME_MAIN_NO_ARGS_IMPURE>(f.address);
-		const auto main_result_int = (*f2)(make_runtime_ptr(&ee));
+		const auto main_result_int = (*f2)(runtime_ptr);
 		return main_result_int;
 	}
 	else{
@@ -417,7 +417,8 @@ llvm_execution_engine_t::~llvm_execution_engine_t(){
 		auto f = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_function_ptr(*this, encode_runtime_func_link_name("deinit")));
 		QUARK_ASSERT(f != nullptr);
 
-		int64_t result = (*f)(make_runtime_ptr(this));
+		auto context = llvm_context_t { this, nullptr };
+		int64_t result = (*f)(make_runtime_ptr(&context));
 		QUARK_ASSERT(result == 668);
 		inited = false;
 	};
@@ -429,6 +430,8 @@ llvm_execution_engine_t::~llvm_execution_engine_t(){
 }
 
 bool llvm_execution_engine_t::check_invariant() const {
+	QUARK_ASSERT(debug_magic == k_debug_magic);
+
 	QUARK_ASSERT(ee);
 	QUARK_ASSERT(backend.check_invariant());
 	return true;
@@ -442,7 +445,7 @@ static std::vector<std::pair<link_name_t, void*>> collection_native_func_ptrs(ll
 		result.push_back({ e.link_name, f });
 	}
 
-	if(k_trace_process_messaging){
+	if(false){
 		QUARK_SCOPED_TRACE("linked functions");
 		for(const auto& e: result){
 			QUARK_TRACE_SS(e.first.s << " = " << (e.second == nullptr ? "nullptr" : ptr_to_hexstring(e.second)));
@@ -618,6 +621,7 @@ std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& progra
 	QUARK_ASSERT(program_breaks.check_invariant());
 
 	auto ee = make_engine_no_init(*program_breaks.instance, program_breaks, handler);
+	auto context = llvm_context_t{ ee.get(), nullptr };
 
 	trace_heap(ee->backend.heap);
 
@@ -625,7 +629,7 @@ std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& progra
 #if DEBUG
 	{
 		{
-			const auto print_global_ptr_ptr = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(*ee, encode_runtime_func_link_name("init").s);
+			const auto print_global_ptr_ptr = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(*context.ee, encode_runtime_func_link_name("init").s);
 			QUARK_ASSERT(print_global_ptr_ptr != nullptr);
 			const auto print_ptr = *print_global_ptr_ptr;
 			QUARK_ASSERT(print_ptr != nullptr);
@@ -635,10 +639,13 @@ std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& progra
 
 	ee->main_function = bind_function2(*ee, encode_floyd_func_link_name("main"));
 
-	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_function_ptr(*ee, encode_runtime_func_link_name("init")));
+	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_function_ptr(*context.ee, encode_runtime_func_link_name("init")));
 	QUARK_ASSERT(a_func != nullptr);
 
-	int64_t init_result = (*a_func)(make_runtime_ptr(ee.get()));
+	auto runtime_ptr = make_runtime_ptr(&context);
+
+
+	int64_t init_result = (*a_func)(runtime_ptr);
 	QUARK_ASSERT(init_result == 667);
 
 
@@ -662,41 +669,54 @@ std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& progra
 ??? Separate system-interpreter (all processes and many clock busses) vs ONE thread of execution?
 */
 
-void send_message(llvm_execution_engine_t& ee, const std::string& process_id_str, const json_t& message){
-	const auto it = std::find_if(
-		ee._processes.begin(),
-		ee._processes.end(),
-		[&](const std::shared_ptr<llvm_process_t>& process){ return process->_name_key == process_id_str; }
-	);
-	if(it == ee._processes.end()){
-		QUARK_ASSERT(false);
+void send_message(llvm_context_t& c, const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type){
+	QUARK_ASSERT(c.check_invariant());
+	auto& backend = c.ee->backend;
+	if(c.process == nullptr){
 		throw std::exception();
 	}
 
-	const auto process_id = it - ee._processes.begin();
-//	send_message(_runtime, static_cast<int>(process_index), message);
+	const auto it = std::find_if(
+		c.ee->_processes.begin(),
+		c.ee->_processes.end(),
+		[&](const std::shared_ptr<llvm_process_t>& process){ return process->_name_key == dest_process_id; }
+	);
+	if(it == c.ee->_processes.end()){
+	}
+	else{
+		auto& dest_process = **it;
 
-	auto& process = *ee._processes[process_id];
+		const auto a = peek2(backend.types, message_type);
+		const auto b = peek2(backend.types, dest_process._message_type);
+		QUARK_ASSERT(a == b);
+		{
+			retain_value(backend, message, message_type);
 
-    {
-		const auto message2 = to_runtime_value2(ee.backend, value_t::make_json(message));
-
-        std::lock_guard<std::mutex> lk(process._inbox_mutex);
-        process._inbox.push_front(message2);
-        if(k_trace_process_messaging){
-        	QUARK_TRACE("Notifying...");
+			std::lock_guard<std::mutex> lk(dest_process._inbox_mutex);
+			dest_process._inbox.push_front(message);
+			if(k_trace_process_messaging){
+				QUARK_TRACE("Notifying...");
+			}
 		}
-    }
-    process._inbox_condition_variable.notify_one();
-//    process._inbox_condition_variable.notify_all();
+		dest_process._inbox_condition_variable.notify_one();
+	//    dest_process._inbox_condition_variable.notify_all();
+	}
+}
+
+void exit_process(llvm_context_t& c){
+	QUARK_ASSERT(c.check_invariant());
+
+	c.process->_exiting_flag = true;
 }
 
 static void run_process(llvm_execution_engine_t& ee, int process_id){
-	auto& process = *ee._processes[process_id];
-	bool stop = false;
-	auto& types = ee.backend.types;
+	auto& backend = ee.backend;
+	auto& types = backend.types;
 
+	auto& process = *ee._processes[process_id];
 	const auto thread_name = get_current_thread_name();
+	auto context = llvm_context_t{ &ee, &process };
+	auto runtime_ptr = make_runtime_ptr(&context);
 
 	const type_t process_state_type = process._init_function != nullptr ? peek2(types, process._init_function->type).get_function_return(types) : make_undefined();
 
@@ -705,17 +725,19 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 	}
 
 	if(process._init_function != nullptr){
+/*
 		//	!!! This validation should be done earlier in the startup process / compilation process.
 		if(process._init_function->type != make_process_init_type(types, process_state_type)){
 			quark::throw_runtime_error("Invalid function prototype for process-init");
 		}
+*/
 
 		auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_INIT>(process._init_function->address);
-		const auto result = (*f)(make_runtime_ptr(&ee));
-		process._process_state = from_runtime_value(ee, result, peek2(types, process._init_function->type).get_function_return(types));
+		const auto result = (*f)(runtime_ptr);
+		process._process_state = from_runtime_value(context, result, peek2(types, process._init_function->type).get_function_return(types));
 	}
 
-	while(stop == false){
+	while(process._exiting_flag == false){
 		runtime_value_t message;
 		{
 			std::unique_lock<std::mutex> lk(process._inbox_mutex);
@@ -732,63 +754,30 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 			QUARK_ASSERT(process._inbox.empty() == false);
 			message = process._inbox.back();
 			process._inbox.pop_back();
+
+			// NOTICE: local variable message has an RC (potentially the only RC) on the value.
 		}
 
 		if(k_trace_process_messaging){
 //			QUARK_TRACE_SS("RECEIVED: " << json_to_pretty_string(message));
 		}
 
-		const auto message_type_peek = peek2(types, process._process_def.msg_type);
-		if(message_type_peek.is_json() && message.json_ptr->get_json().get_string() == "stop"){
-			stop = true;
-			if(k_trace_process_messaging){
-        		QUARK_TRACE_SS(thread_name << ": STOP");
-			}
+		if(process._processor){
+			process._processor->on_message(message);
 		}
-		else{
-			if(process._processor){
-				process._processor->on_message(message);
-			}
 
-			if(process._process_function != nullptr){
-				//	!!! This validation should be done earlier in the startup process / compilation process.
-				if(process._process_function->type != make_process_message_handler_type(types, process_state_type)){
-					quark::throw_runtime_error("Invalid function prototype for process message handler");
-				}
-
-				auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE>(process._process_function->address);
-				const auto state2 = to_runtime_value(ee, process._process_state);
-				const auto result = (*f)(make_runtime_ptr(&ee), state2, message);
-				process._process_state = from_runtime_value(ee, result, peek2(types, process._process_function->type).get_function_return(types));
-			}
+		if(process._process_function != nullptr){
+			auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE>(process._process_function->address);
+			const auto state2 = to_runtime_value(context, process._process_state);
+			const auto result = (*f)(runtime_ptr, state2, message);
+			process._process_state = from_runtime_value(context, result, peek2(types, process._process_function->type).get_function_return(types));
 		}
+
+		//	Release the message.
+		release_value(backend, message, process._message_type);
 	}
 }
 
-
-
-/*
-struct handler_t : public llvm_runtime_handler_i {
-	void on_send(const std::string& process_id, const json_t& message) override {
-		const auto it = std::find_if(
-			_runtime._processes.begin(),
-			_runtime._processes.end(),
-			[&](const std::shared_ptr<llvm_process_t>& process){ return process->_name_key == process_id; }
-		);
-		if(it != _runtime._processes.end()){
-			const auto process_index = it - _runtime._processes.begin();
-			send_message(_runtime, static_cast<int>(process_index), message);
-		}
-	}
-
-	void on_print(const std::string& s) override {
-		//??? 	Store one print out per process. ??? Also mutex?
-		_runtime.ee->_handler->on_print(s);
-	}
-
-	llvm_process_runtime_t& _runtime;
-};
-*/
 
 /*
 	There is only one LLVM execution engine, shared by all Floyd processes.
@@ -810,10 +799,17 @@ static std::map<std::string, value_t> run_processes(llvm_execution_engine_t& ee)
 
 		for(const auto& t: ee._process_infos){
 			auto process = std::make_shared<llvm_process_t>();
+			auto process_context = llvm_context_t { &ee, process.get() };
 			process->_name_key = t.first;
+			process->_message_type = t.second.msg_type;
+			process->_exiting_flag = false;
 			process->_process_def = t.second;
-			process->_init_function = std::make_shared<llvm_bind_t>(bind_function2(ee, encode_floyd_func_link_name(t.second.init_func_linkname)));
-			process->_process_function = std::make_shared<llvm_bind_t>(bind_function2(ee, encode_floyd_func_link_name(t.second.msg_func_linkname)));
+			process->_init_function = std::make_shared<llvm_bind_t>(
+				bind_function2(ee, encode_floyd_func_link_name(t.second.init_func_linkname))
+			);
+			process->_process_function = std::make_shared<llvm_bind_t>(
+				bind_function2(ee, encode_floyd_func_link_name(t.second.msg_func_linkname))
+			);
 			ee._processes.push_back(process);
 		}
 
@@ -865,10 +861,12 @@ run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::str
 //	??? should lookup structs via their name in symbol table!
 //	??? This requires resolving symbols, which is too late at runtime. Resolve these earlier?
 std::vector<bench_t> collect_benchmarks(llvm_execution_engine_t& ee){
+	auto context = llvm_context_t { &ee, nullptr };
+
 	std::pair<void*, type_t> benchmark_registry_bind = bind_global(ee, k_global_benchmark_registry);
 	QUARK_ASSERT(benchmark_registry_bind.first != nullptr);
 
-	const value_t reg = load_global(ee, benchmark_registry_bind);
+	const value_t reg = load_global(context, benchmark_registry_bind);
 	const auto v = reg.get_vector_value();
 
 	std::vector<bench_t> result;
@@ -886,6 +884,8 @@ std::vector<bench_t> collect_benchmarks(llvm_execution_engine_t& ee){
 std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, const std::vector<bench_t>& tests){
 	QUARK_ASSERT(ee.check_invariant());
 
+	auto context = llvm_context_t { &ee, nullptr };
+
 	const auto benchmark_result_vec_type_symbol = find_symbol_required(ee.global_symbols, "benchmark_result_vec_t");
 	const auto benchmark_result_vec_type = benchmark_result_vec_type_symbol._value_type;
 
@@ -897,8 +897,8 @@ std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, con
 		const auto f_bind = bind_function2(ee, f_link_name);
 		QUARK_ASSERT(f_bind.address != nullptr);
 		auto f2 = reinterpret_cast<FLOYD_BENCHMARK_F>(f_bind.address);
-		const auto bench_result = (*f2)(make_runtime_ptr(&ee));
-		const auto result2 = from_runtime_value(ee, bench_result, benchmark_result_vec_type);
+		const auto bench_result = (*f2)(make_runtime_ptr(&context));
+		const auto result2 = from_runtime_value(context, bench_result, benchmark_result_vec_type);
 
 //			QUARK_TRACE(value_and_type_to_string(result2));
 
@@ -928,10 +928,12 @@ std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, con
 //	??? should lookup structs via their name in symbol table!
 //	??? This requires resolving symbols, which is too late at runtime. Resolve these earlier?
 std::vector<test_t> collect_tests(llvm_execution_engine_t& ee){
+	auto context = llvm_context_t { &ee, nullptr };
+
 	std::pair<void*, type_t> test_registry_bind = bind_global(ee, k_global_test_registry);
 	QUARK_ASSERT(test_registry_bind.first != nullptr);
 
-	const value_t reg = load_global(ee, test_registry_bind);
+	const value_t reg = load_global(context, test_registry_bind);
 	const auto v = reg.get_vector_value();
 	return unpack_test_registry(v);
 }

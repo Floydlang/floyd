@@ -456,6 +456,7 @@ bool check_stable_sort_func_type(types_t& types, const type_t& elements, const t
 
 intrinsic_signature_t make_print_signature(types_t& types);
 intrinsic_signature_t make_send_signature(types_t& types);
+intrinsic_signature_t make_exit_signature(types_t& types);
 
 
 
@@ -508,6 +509,7 @@ struct intrinsic_signatures_t {
 
 	intrinsic_signature_t print;
 	intrinsic_signature_t send;
+	intrinsic_signature_t exit;
 
 	intrinsic_signature_t bw_not;
 	intrinsic_signature_t bw_and;

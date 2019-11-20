@@ -1465,7 +1465,7 @@ func int main([string] args){
 <a id="23-compiler-intrinsics"></a>
 ## 2.3 COMPILER INTRINSICS
 
-These functions are built into the language itself and are always available to your code. They are all pure unless except print() and send(). The have special code generation algorithms. Many of these functions are generic -- they work on many different types.
+These functions are built into the language itself and are always available to your code. They are all pure unless except print(), send() and exit(). The have special code generation algorithms. Many of these functions are generic -- they work on many different types.
 
 **COMPLETE LIST OF INTRINSICS:**
 
@@ -1473,6 +1473,7 @@ These functions are built into the language itself and are always available to y
 |:---								|:---
 | print() -- IMPURE					| Prints a value to standard output
 | send() -- IMPURE 					| Posts a message to a process
+| exit() -- IMPURE 					| Requests your process to quit and not get further messages
 | assert()							| Halts program on false
 | to_string()						| Converts any value to a string
 | to_pretty_string()				| Converts value to an exploded multi-line string
@@ -1553,6 +1554,16 @@ The process may run on a different OS thread but send() is guaranteed to be thre
 	send(string process_key, json message) impure
 
 The send function returns immediately.
+
+
+<a id="exit----impure"></a>
+#### exit() -- IMPURE
+
+Call from within a Floyd process. This will flag the current process to close down after current message handler has returned. If you want another process to close down, you neet to send it a custom message to do so, as specified by that process.
+
+	exit() impure
+
+The exit() function returns immediately and the current process keeps running until it returns from its message handler. The message handler will never be called again with a new message.
 
 
 

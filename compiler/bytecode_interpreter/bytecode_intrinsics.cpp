@@ -1007,20 +1007,32 @@ bc_value_t bc_intrinsic__print(interpreter_t& vm, const bc_value_t args[], int a
 
 	return bc_value_t::make_undefined();
 }
+
 bc_value_t bc_intrinsic__send(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
 	const auto& types = vm._imm->_program._types;
 	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
-	QUARK_ASSERT(peek2(types, args[1]._type).is_json());
+//	QUARK_ASSERT(peek2(types, args[1]._type).is_json());
 
-	const auto& process_id = args[0].get_string_value();
-	const auto& message_json = args[1].get_json();
+	const auto& dest_process_id = args[0].get_string_value();
+	const auto& message = args[1];
 
 //	QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
 
-	vm._handler->on_send(process_id, message_json);
+	vm._handler->on_send(dest_process_id, message);
+
+	return bc_value_t::make_undefined();
+}
+
+bc_value_t bc_intrinsic__exit(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 0);
+
+//	QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
+
+	vm._handler->on_exit();
 
 	return bc_value_t::make_undefined();
 }
@@ -1175,6 +1187,7 @@ static std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics_interna
 
 	log.push_back({ make_print_signature(types), bc_intrinsic__print });
 	log.push_back({ make_send_signature(types), bc_intrinsic__send });
+	log.push_back({ make_exit_signature(types), bc_intrinsic__exit });
 
 
 	log.push_back({ make_bw_not_signature(types), bc_intrinsic__bw_not });

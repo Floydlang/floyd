@@ -101,11 +101,16 @@ void ut_verify_report(const quark::call_context_t& context, const test_report_t&
 
 
 struct bc_test_handler_t : public bc_runtime_handler_i {
-	void on_send(const std::string& process_id, const json_t& message) override {
+	void on_send(const std::string& dest_process_id, const bc_value_t& message) override {
+		QUARK_ASSERT(false);
+	}
+
+	void on_exit() override {
 		QUARK_ASSERT(false);
 	}
 
 	void on_print(const std::string& s) override {
+		std::cout << s;
 		const auto lines = split_on_chars(seq_t(s), "\n");
 		_print_output = concat(_print_output, lines);
 //		_print_output.push_back(s);
@@ -194,8 +199,10 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 
 		QUARK_ASSERT(ee->check_invariant());
 
+		auto context = llvm_context_t { ee.get(), nullptr };
+
 		const auto result_global0 = bind_global(*ee, "result");
-		const auto result_global = result_global0.first != nullptr ? load_global(*ee, result_global0) : value_t();
+		const auto result_global = result_global0.first != nullptr ? load_global(context, result_global0) : value_t();
 
 		QUARK_ASSERT(ee->check_invariant());
 

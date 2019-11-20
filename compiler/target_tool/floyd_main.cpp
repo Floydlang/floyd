@@ -382,10 +382,16 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 		auto program = floyd::compile_to_bytecode(cu);
 
 
+	//??? remove on_send() and on_exit() from bc_runtime_handler_i. ALT: Make new general-purpose interface for on_print() and use for LLVM and BC.
+
 		struct handler_t : public bc_runtime_handler_i {
 			handler_t(std::ostream& out) : out(out) {}
 
-			void on_send(const std::string& process_id, const json_t& message) override {
+			void on_send(const std::string& dest_process_id, const bc_value_t& message) override {
+				QUARK_ASSERT(false);
+			}
+
+			void on_exit() override {
 				QUARK_ASSERT(false);
 			}
 

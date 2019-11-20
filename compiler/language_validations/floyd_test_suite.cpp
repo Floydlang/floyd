@@ -6910,8 +6910,43 @@ FLOYD_LANG_PROOF("", "try calling LLVM function", "", ""){
 //######################################################################################################################
 
 
+FLOYD_LANG_PROOF("container-def", "Minimal floyd process demo", "", ""){
+	const auto program = R"(
 
-FLOYD_LANG_PROOF("software-system-def", "run one process", "", ""){
+		container-def {
+			"name": "", "tech": "", "desc": "",
+			"clocks": {
+				"main": {
+					"a": "hello"
+				}
+			}
+		}
+
+		func int hello__init() impure {
+			send("a", "dec")
+			send("a", "stop")
+			return 3
+		}
+
+		func int hello(int state, string message) impure {
+			if(message == "dec"){
+				return state - 1
+			}
+			else if(message == "stop"){
+				exit()
+				return state
+			}
+			return state
+		}
+
+	)";
+
+	ut_run_closed_nolib(QUARK_POS, program);
+}
+
+
+
+FLOYD_LANG_PROOF("container-def", "run one process", "", ""){
 	const auto program = R"(
 
 		software-system-def {
@@ -6946,7 +6981,7 @@ FLOYD_LANG_PROOF("software-system-def", "run one process", "", ""){
 			return my_gui_state_t(1000)
 		}
 
-		func my_gui_state_t my_gui(my_gui_state_t state, json message) impure{
+		func my_gui_state_t my_gui(my_gui_state_t state, string message) impure{
 			print("received: " + to_string(message) + ", state: " + to_string(state))
 
 			if(message == "inc"){
@@ -6954,6 +6989,10 @@ FLOYD_LANG_PROOF("software-system-def", "run one process", "", ""){
 			}
 			else if(message == "dec"){
 				return update(state, _count, state._count - 1)
+			}
+			else if(message == "stop"){
+				exit()
+				return state
 			}
 			else{
 				assert(false)
@@ -6966,8 +7005,7 @@ FLOYD_LANG_PROOF("software-system-def", "run one process", "", ""){
 	ut_run_closed_nolib(QUARK_POS, program);
 }
 
-#if 0
-FLOYD_LANG_PROOF_VIP("software-system-def", "Test use struct as message", "", ""){
+FLOYD_LANG_PROOF("container-def", "Test use struct as message", "", ""){
 	const auto program = R"(
 
 		software-system-def {
@@ -6993,18 +7031,19 @@ FLOYD_LANG_PROOF_VIP("software-system-def", "Test use struct as message", "", ""
 			int _count
 		}
 
+		struct my_message_t {
+			string data
+		}
+
 		func my_gui_state_t my_gui__init() impure {
-			send("a", "dec")
-			send("a", "dec")
-			send("a", "dec")
-			send("a", "dec")
-			send("a", "stop")
+			send("a", my_message_t("dec"))
+			send("a", my_message_t("dec"))
+			send("a", my_message_t("dec"))
+			send("a", my_message_t("dec"))
+			send("a", my_message_t("stop"))
 			return my_gui_state_t(1000)
 		}
 
-		struct my_message_t {
-			json data
-		}
 
 		func my_gui_state_t my_gui(my_gui_state_t state, my_message_t message) impure{
 			print("received: " + to_string(message) + ", state: " + to_string(state))
@@ -7015,6 +7054,10 @@ FLOYD_LANG_PROOF_VIP("software-system-def", "Test use struct as message", "", ""
 			else if(message.data == "dec"){
 				return update(state, _count, state._count - 1)
 			}
+			else if(message.data == "stop"){
+				exit()
+				return state
+			}
 			else{
 				assert(false)
 				return state
@@ -7025,10 +7068,8 @@ FLOYD_LANG_PROOF_VIP("software-system-def", "Test use struct as message", "", ""
 
 	ut_run_closed_nolib(QUARK_POS, program);
 }
-#endif
 
-
-FLOYD_LANG_PROOF("software-system-def", "run two unconnected processs", "", ""){
+FLOYD_LANG_PROOF("container-def", "run two unconnected processs", "", ""){
 	const auto program = R"(
 
 		software-system-def {
@@ -7067,7 +7108,7 @@ FLOYD_LANG_PROOF("software-system-def", "run two unconnected processs", "", ""){
 			return my_gui_state_t(1000)
 		}
 
-		func my_gui_state_t my_gui(my_gui_state_t state, json message) impure {
+		func my_gui_state_t my_gui(my_gui_state_t state, string message) impure {
 			print("my_gui --- received: " + to_string(message) + ", state: " + to_string(state))
 
 			if(message == "inc"){
@@ -7075,6 +7116,10 @@ FLOYD_LANG_PROOF("software-system-def", "run two unconnected processs", "", ""){
 			}
 			else if(message == "dec"){
 				return update(state, _count, state._count - 1)
+			}
+			else if(message == "stop"){
+				exit()
+				return state
 			}
 			else{
 				assert(false)
@@ -7096,11 +7141,15 @@ FLOYD_LANG_PROOF("software-system-def", "run two unconnected processs", "", ""){
 			return my_audio_state_t(0)
 		}
 
-		func my_audio_state_t my_audio(my_audio_state_t state, json message) impure {
+		func my_audio_state_t my_audio(my_audio_state_t state, string message) impure {
 			print("my_audio --- received: " + to_string(message) + ", state: " + to_string(state))
 
 			if(message == "process"){
 				return update(state, _audio, state._audio + 1)
+			}
+			else if(message == "stop"){
+				exit()
+				return state
 			}
 			else{
 				assert(false)
@@ -7113,7 +7162,7 @@ FLOYD_LANG_PROOF("software-system-def", "run two unconnected processs", "", ""){
 	ut_run_closed_nolib(QUARK_POS, program);
 }
 
-FLOYD_LANG_PROOF("software-system-def", "run two CONNECTED processes", "", ""){
+FLOYD_LANG_PROOF("container-def", "run two CONNECTED processes", "", ""){
 	const auto program = R"(
 
 		software-system-def {
@@ -7132,66 +7181,74 @@ FLOYD_LANG_PROOF("software-system-def", "run two CONNECTED processes", "", ""){
 			"desc": "Mobile shooter game for iOS.",
 			"clocks": {
 				"main": {
-					"a": "my_gui",
-					"b": "my_audio",
+					"gui": "gui",
+					"audio": "audio",
 				}
 			}
 		}
 
 
-		////////////////////////////////	my_gui -- process
+		////////////////////////////////	gui -- process
 
-		struct my_gui_state_t {
+		struct gui_state_t {
 			int _count
 		}
 
-		func my_gui_state_t my_gui__init() impure {
-			return my_gui_state_t(1000)
+		func gui_state_t gui__init() impure {
+			return gui_state_t(1000)
 		}
 
-		func my_gui_state_t my_gui(my_gui_state_t state, json message) impure {
-			print("my_gui --- received: " + to_string(message) + ", state: " + to_string(state))
+		func gui_state_t gui(gui_state_t state, string message) impure {
+			print("gui --- received: " + to_string(message) + ", state: " + to_string(state))
 
 			if(message == "2"){
-				send("b", "3")
+				send("audio", "3")
 				return update(state, _count, state._count + 1)
 			}
 			else if(message == "4"){
-				send("a", "stop")
-				send("b", "stop")
+				send("gui", "stop")
+				send("audio", "stop")
 				return update(state, _count, state._count + 10)
 			}
+			else if(message == "stop"){
+				exit()
+				return state
+			}
 			else{
-				assert(false)
+//				assert(false)
 				return state
 			}
 		}
 
 
-		////////////////////////////////	my_audio -- process
+		////////////////////////////////	audio -- process
 
-		struct my_audio_state_t {
+		struct audio_state_t {
 			int _audio
 		}
 
-		func my_audio_state_t my_audio__init() impure {
-			send("b", "1")
-			return my_audio_state_t(0)
+		func audio_state_t audio__init() impure {
+			send("audio", "1")
+			return audio_state_t(0)
 		}
 
-		func my_audio_state_t my_audio(my_audio_state_t state, json message) impure {
-			print("my_audio --- received: " + to_string(message) + ", state: " + to_string(state))
+		func audio_state_t audio(audio_state_t state, string message) impure {
+			print("audio --- received: " + to_string(message) + ", state: " + to_string(state))
 
 			if(message == "1"){
-				send("a", "2")
+				send("gui", "2")
 				return update(state, _audio, state._audio + 1)
 			}
 			else if(message == "3"){
-				send("a", "4")
+				send("gui", "4")
 				return update(state, _audio, state._audio + 4)
 			}
+			else if(message == "stop"){
+				exit()
+				return state
+			}
 			else{
-				assert(false)
+//				assert(false)
 				return state
 			}
 		}

@@ -37,9 +37,10 @@ struct native_sha1_t {
 //		func string make_benchmark_report([benchmark_result2_t] results)
 static runtime_value_t llvm_corelib__make_benchmark_report(floyd_runtime_t* frp, const runtime_value_t b){
 	auto& r = get_floyd_runtime(frp);
-	const auto& types = r.backend.types;
+	auto& backend = r.ee->backend;
+	const auto& types = backend.types;
 
-	const auto s = find_symbol_required(r.global_symbols, "benchmark_result2_t");
+	const auto s = find_symbol_required(r.ee->global_symbols, "benchmark_result2_t");
 	const auto benchmark_result2_vec_type = make_vector(types, s._value_type);
 
 	const auto b2 = from_runtime_value(r, b, benchmark_result2_vec_type);
@@ -58,8 +59,9 @@ static runtime_value_t llvm_corelib__make_benchmark_report(floyd_runtime_t* frp,
 
 static DICT_CPPMAP_T* llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
+	auto& backend = r.ee->backend;
 
-	const auto& types = r.backend.types;
+	const auto& types = backend.types;
 	const std::vector<std::pair<std::string, json_t>> caps = corelib_detect_hardware_caps();
 
 	std::map<std::string, value_t> caps_map;
@@ -74,7 +76,8 @@ static DICT_CPPMAP_T* llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
 
 runtime_value_t llvm_corelib__make_hardware_caps_report(floyd_runtime_t* frp, runtime_value_t caps0){
 	auto& r = get_floyd_runtime(frp);
-	auto& types = r.backend.types;
+	auto& backend = r.ee->backend;
+	auto& types = backend.types;
 
 	const auto type = make_dict(types, type_t::make_json());
 	const auto b2 = from_runtime_value(r, caps0, type);
@@ -88,7 +91,8 @@ runtime_value_t llvm_corelib__make_hardware_caps_report(floyd_runtime_t* frp, ru
 }
 runtime_value_t llvm_corelib__make_hardware_caps_report_brief(floyd_runtime_t* frp, runtime_value_t caps0){
 	auto& r = get_floyd_runtime(frp);
-	auto& types = r.backend.types;
+	auto& backend = r.ee->backend;
+	auto& types = backend.types;
 
 	const auto b2 = from_runtime_value(r, caps0, make_dict(types, type_t::make_json()));
 	const auto m = b2.get_dict_value();
@@ -115,7 +119,8 @@ runtime_value_t llvm_corelib__get_current_date_and_time_string(floyd_runtime_t* 
 
 static STRUCT_T* llvm_corelib__calc_string_sha1(floyd_runtime_t* frp, runtime_value_t s0){
 	auto& r = get_floyd_runtime(frp);
-	auto& types = r.backend.types;
+	auto& backend = r.ee->backend;
+	auto& types = backend.types;
 
 	const auto& s = from_runtime_string(r, s0);
 	const auto ascii40 = corelib_calc_string_sha1(s);
@@ -132,8 +137,9 @@ static STRUCT_T* llvm_corelib__calc_string_sha1(floyd_runtime_t* frp, runtime_va
 
 static STRUCT_T* llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* binary_ptr){
 	auto& r = get_floyd_runtime(frp);
+	auto& backend = r.ee->backend;
 	QUARK_ASSERT(binary_ptr != nullptr);
-	auto& types = r.backend.types;
+	auto& types = backend.types;
 
 	const auto& binary = *reinterpret_cast<const native_binary_t*>(binary_ptr->get_data_ptr());
 
@@ -187,7 +193,8 @@ static runtime_value_t llvm_corelib__read_line_stdin(floyd_runtime_t* frp){
 
 static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
-	auto& types = r.backend.types;
+	auto& backend = r.ee->backend;
+	auto& types = backend.types;
 
 	const auto path = from_runtime_string(r, path0);
 
@@ -208,7 +215,8 @@ static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp
 
 static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
-	auto& types = r.backend.types;
+	auto& backend = r.ee->backend;
+	auto& types = backend.types;
 
 	const auto path = from_runtime_string(r, path0);
 
@@ -229,7 +237,8 @@ static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, r
 
 static STRUCT_T* llvm_corelib__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
-	auto& types = r.backend.types;
+	auto& backend = r.ee->backend;
+	auto& types = backend.types;
 	const auto path = from_runtime_string(r, path0);
 
 	const auto info = corelib_get_fsentry_info(path);
@@ -242,7 +251,8 @@ static STRUCT_T* llvm_corelib__get_fsentry_info(floyd_runtime_t* frp, runtime_va
 
 static runtime_value_t llvm_corelib__get_fs_environment(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
-	auto& types = r.backend.types;
+	auto& backend = r.ee->backend;
+	auto& types = backend.types;
 
 	const auto env = corelib_get_fs_environment();
 
@@ -256,7 +266,8 @@ static runtime_value_t llvm_corelib__get_fs_environment(floyd_runtime_t* frp){
 
 static uint8_t llvm_corelib__does_fsentry_exist(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
-	auto& types = r.backend.types;
+	auto& backend = r.ee->backend;
+	auto& types = backend.types;
 	const auto path = from_runtime_string(r, path0);
 
 	bool exists = corelib_does_fsentry_exist(path);

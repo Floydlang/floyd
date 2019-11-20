@@ -1371,6 +1371,9 @@ static llvm::Value* generate_intrinsic_expression(llvm_function_generator_t& gen
 	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.send)){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
+	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.exit)){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
 
 
 	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.bw_not)){

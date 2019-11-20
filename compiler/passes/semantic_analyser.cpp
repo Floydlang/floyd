@@ -2313,6 +2313,9 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 				else if(s == intrinsic_signatures.send.name){
 					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, intrinsic_signatures.send);
 				}
+				else if(s == intrinsic_signatures.exit.name){
+					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, intrinsic_signatures.exit);
+				}
 
 
 

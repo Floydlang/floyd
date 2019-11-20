@@ -1295,6 +1295,9 @@ static expression_gen_t bcgen_intrinsic_expression(bcgenerator_t& gen_acc, const
 	else if(details.call_name == get_intrinsic_opcode(signs.send)){
 		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
+	else if(details.call_name == get_intrinsic_opcode(signs.exit)){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
+	}
 
 
 	else if(details.call_name == get_intrinsic_opcode(signs.bw_not)){

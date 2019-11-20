@@ -62,7 +62,8 @@ typedef int16_t bc_typeid_t;
 
 struct bc_runtime_handler_i {
 	virtual ~bc_runtime_handler_i(){};
-	virtual void on_send(const std::string& process_id, const json_t& message) = 0;
+	virtual void on_send(const std::string& dest_process_id, const bc_value_t& message) = 0;
+	virtual void on_exit() = 0;
 	virtual void on_print(const std::string& s) = 0;
 };
 
