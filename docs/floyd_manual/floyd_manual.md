@@ -830,7 +830,7 @@ func my_gui_state_t my_gui__init(){
 	return my_gui_state_t(0	)
 }
 
-func my_gui_state_t my_gui(my_gui_state_t state, json message){
+func my_gui_state_t my_gui__msg(my_gui_state_t state, string message){
 	if(message == "inc"){
 		return update(state, _count, state._count + 1)
 	}
@@ -846,7 +846,7 @@ func my_gui_state_t my_gui(my_gui_state_t state, json message){
 |Part		| Details
 |:---	|:---	
 |**my\_gui\_state_t**		| this is a struct that holds the mutable memory of this process and any component instances needed by the container.
-|**my\_gui()**				| this function is specified in the software-system/"containers"/"my_iphone_app"/"clocks". The message is always a json. You can decide how to encode the message into that.
+|**my\_gui__msg()**			| this function is specified in the software-system/"containers"/"my_iphone_app"/"clocks". The message can be any type.
 |**my\_gui__init()**		| this is the init function -- it has the same name with "__init" at the end. It has no arguments and returns the initial state of the process.
 
 
@@ -2873,9 +2873,9 @@ For each floyd process you've listed under "clocks", ("my_gui", "iphone-ux", "se
 
 The init function is called x__init() where x is a placeholder. It takes no arguments, is impure and returns a value of type of your choice. This type is your process' memory slot -- the only mutable state your process has access to.
 
-The message handler is named like your process, takes two arguments: the current state of your memory, of type T and a message to process. It's am impure function. It returns the next state of it's memory. The memory type must be the same between the init and message handler functions. It's usually a struct that represents the top level of your process' entire state.
+The message handler is named like your process, takes two arguments: the current state of your memory, of type T and a message to process. It's an impure function. It returns the next state of it's memory. The memory type must be the same between the init and message handler functions. It's usually a struct that represents the top level of your process' entire state.
 
-The message is represented as a json for now. This is a workaround until there is a proper sumtype feature in Floyd.
+The message is represented an any type you chose.
 
 
 ```
@@ -2888,7 +2888,7 @@ func my_gui_state_t my_gui__init() impure {
 	return my_gui_state_t(1000)
 }
 
-func my_gui_state_t my_gui(my_gui_state_t state, json message) impure{
+func my_gui_state_t my_gui__msg(my_gui_state_t state, json message) impure{
 }
 ```
 

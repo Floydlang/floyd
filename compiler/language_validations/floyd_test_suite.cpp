@@ -6891,7 +6891,7 @@ FLOYD_LANG_PROOF("", "try calling LLVM function", "", ""){
 			return 3.14
 		}
 
-		func double my_gui(double state, json message) impure{
+		func double my_gui__msg(double state, json message) impure{
 			print("received: " + to_string(message) + ", state: " + to_string(state))
 			return state
 		}
@@ -6928,7 +6928,42 @@ FLOYD_LANG_PROOF("container-def", "Minimal floyd process demo", "", ""){
 			return 3
 		}
 
-		func int hello(int state, string message) impure {
+		func int hello__msg(int state, string message) impure {
+			if(message == "dec"){
+				return state - 1
+			}
+			else if(message == "stop"){
+				exit()
+				return state
+			}
+			return state
+		}
+
+	)";
+
+	ut_run_closed_nolib(QUARK_POS, program);
+}
+
+
+FLOYD_LANG_PROOF("container-def", "Minimal floyd process demo", "", ""){
+	const auto program = R"(
+
+		container-def {
+			"name": "", "tech": "", "desc": "",
+			"clocks": {
+				"main": {
+					"a": "hello"
+				}
+			}
+		}
+
+		func int hello__init() impure {
+			send("a", "dec")
+			send("a", "stop")
+			return 3
+		}
+
+		func int hello__msg(int state, string message) impure {
 			if(message == "dec"){
 				return state - 1
 			}
@@ -6971,7 +7006,7 @@ FLOYD_LANG_PROOF("container-def", "run one process", "", ""){
 			return my_gui_state_t(1000)
 		}
 
-		func my_gui_state_t my_gui(my_gui_state_t state, string message) impure{
+		func my_gui_state_t my_gui__msg(my_gui_state_t state, string message) impure{
 			print("received: " + to_string(message) + ", state: " + to_string(state))
 
 			if(message == "inc"){
@@ -7021,7 +7056,7 @@ FLOYD_LANG_PROOF("container-def", "Test use struct as message", "", ""){
 			return my_gui_state_t(1000)
 		}
 
-		func my_gui_state_t my_gui(my_gui_state_t state, my_message_t message) impure{
+		func my_gui_state_t my_gui__msg(my_gui_state_t state, my_message_t message) impure{
 			print("received: " + to_string(message) + ", state: " + to_string(state))
 
 			if(message.data == "inc"){
@@ -7072,7 +7107,7 @@ FLOYD_LANG_PROOF("container-def", "run two unconnected processs", "", ""){
 			return my_gui_state_t(1000)
 		}
 
-		func my_gui_state_t my_gui(my_gui_state_t state, string message) impure {
+		func my_gui_state_t my_gui__msg(my_gui_state_t state, string message) impure {
 			print("my_gui --- received: " + to_string(message) + ", state: " + to_string(state))
 
 			if(message == "inc"){
@@ -7102,7 +7137,7 @@ FLOYD_LANG_PROOF("container-def", "run two unconnected processs", "", ""){
 			return my_audio_state_t(0)
 		}
 
-		func my_audio_state_t my_audio(my_audio_state_t state, string message) impure {
+		func my_audio_state_t my_audio__msg(my_audio_state_t state, string message) impure {
 			print("my_audio --- received: " + to_string(message) + ", state: " + to_string(state))
 
 			if(message == "process"){
@@ -7146,7 +7181,7 @@ FLOYD_LANG_PROOF("container-def", "run two CONNECTED processes", "", ""){
 			return gui_state_t(1000)
 		}
 
-		func gui_state_t gui(gui_state_t state, string message) impure {
+		func gui_state_t gui__msg(gui_state_t state, string message) impure {
 			print("gui --- received: " + to_string(message) + ", state: " + to_string(state))
 
 			if(message == "2"){
@@ -7177,7 +7212,7 @@ FLOYD_LANG_PROOF("container-def", "run two CONNECTED processes", "", ""){
 			return audio_state_t(0)
 		}
 
-		func audio_state_t audio(audio_state_t state, string message) impure {
+		func audio_state_t audio__msg(audio_state_t state, string message) impure {
 			print("audio --- received: " + to_string(message) + ", state: " + to_string(state))
 
 			if(message == "1"){

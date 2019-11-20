@@ -2941,7 +2941,7 @@ const body_t make_global_body(analyser_t& a){
 	//	Setup container and Floyd processes.
 	/*
 		STATE_TYPE base__init()
-		STATE_TYPE base(STATE_TYPE, MSG_TYPE msg)
+		STATE_TYPE base__msg(STATE_TYPE, MSG_TYPE msg)
 
 	 	- setup state_type and msg_type.
 	 	- Make sure functions exists
@@ -2981,7 +2981,7 @@ const body_t make_global_body(analyser_t& a){
 
 
 
-				const auto msg_func_name = process.second.name_key;
+				const auto msg_func_name = process.second.name_key + "__msg";
 				auto msg_func_symbol = find_symbol_by_name(a, msg_func_name);
 				if(msg_func_symbol.first == nullptr){
 					std::stringstream what;

@@ -220,7 +220,7 @@ typedef int64_t (*FLOYD_RUNTIME_MAIN_NO_ARGS_PURE)(floyd_runtime_t* frp);
 //		func my_gui_state_t my_gui__init() impure { }
 typedef runtime_value_t (*FLOYD_RUNTIME_PROCESS_INIT)(floyd_runtime_t* frp);
 
-//		func my_gui_state_t my_gui(my_gui_state_t state, json message) impure{
+//		func my_gui_state_t my_gui__msg(my_gui_state_t state, T message) impure{
 typedef runtime_value_t (*FLOYD_RUNTIME_PROCESS_MESSAGE)(floyd_runtime_t* frp, runtime_value_t state, runtime_value_t message);
 
 typedef runtime_value_t (*FLOYD_BENCHMARK_F)(floyd_runtime_t* frp);

@@ -469,7 +469,9 @@ QUARK_TEST("", "parse_functiondef_arguments2()", "", ""){
 }
 
 std::pair<std::vector<member_t>, seq_t> read_functiondef_arg_parantheses(types_t& types, const seq_t& s){
-	QUARK_ASSERT(s.first1() == "(");
+	if(s.first1() != "("){
+		throw_compiler_error_nopos("Expected (.");
+	}
 
 	std::pair<std::string, seq_t> args_pos = read_balanced2(s, k_bracket_pairs);
 	if(args_pos.first.empty()){
@@ -481,7 +483,9 @@ std::pair<std::vector<member_t>, seq_t> read_functiondef_arg_parantheses(types_t
 
 
 std::pair<std::vector<member_t>, seq_t> read_function_type_args(types_t& types, const seq_t& s){
-	QUARK_ASSERT(s.first1() == "(");
+	if(s.first1() != "("){
+		throw_compiler_error_nopos("Expected (.");
+	}
 
 	std::pair<std::string, seq_t> args_pos = read_balanced2(s, k_bracket_pairs);
 	if(args_pos.first.empty()){
