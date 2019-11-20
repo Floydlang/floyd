@@ -39,13 +39,11 @@ namespace floyd {
 
 struct type_t;
 struct types_t;
-
+struct runtime_handler_i;
 
 struct interpreter_t;
 struct bc_program_t;
 struct bc_static_frame_t;
-
-struct bc_runtime_handler_i;
 
 struct bc_value_t;
 union bc_pod_value_t;

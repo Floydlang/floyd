@@ -105,13 +105,6 @@ struct bc_processes_runtime_t {
 	std::vector<std::thread> _worker_threads;
 };
 
-//??? lose this.
-struct process_interface {
-	virtual ~process_interface(){};
-	virtual void on_message(const bc_value_t& message) = 0;
-	virtual void on_init() = 0;
-};
-
 
 //	NOTICE: Each process inbox has its own mutex + condition variable. No mutex protects cout.
 struct bc_process_t : public bc_runtime_handler_i {
@@ -162,7 +155,6 @@ struct bc_process_t : public bc_runtime_handler_i {
 	std::shared_ptr<value_entry_t> _process_function;
 	value_t _process_state;
 
-	std::shared_ptr<process_interface> _processor;
 	std::atomic<bool> _exiting_flag;
 };
 
@@ -174,10 +166,6 @@ static void process_process(bc_processes_runtime_t& runtime, int process_id){
 	const auto thread_name = process._name_key + " (OS thread: " + get_current_thread_name()+ ")";
 
 	//??? remove _processor interface. LLVM too.
-
-	if(process._processor){
-		process._processor->on_init();
-	}
 
 	if(process._init_function != nullptr){
 		const std::vector<value_t> args = {};
@@ -205,10 +193,6 @@ static void process_process(bc_processes_runtime_t& runtime, int process_id){
 		if(k_trace_messaging){
 			const auto message2 = value_to_ast_json(types, bc_to_value(types, message));
 			QUARK_TRACE_SS(thread_name << "-received message: " << json_to_pretty_string(message2));
-		}
-
-		if(process._processor){
-			process._processor->on_message(message);
 		}
 
 		if(process._process_function != nullptr){

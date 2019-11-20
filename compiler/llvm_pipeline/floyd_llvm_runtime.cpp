@@ -718,12 +718,6 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 	auto context = llvm_context_t{ &ee, &process };
 	auto runtime_ptr = make_runtime_ptr(&context);
 
-	const type_t process_state_type = process._init_function != nullptr ? peek2(types, process._init_function->type).get_function_return(types) : make_undefined();
-
-	if(process._processor){
-		process._processor->on_init();
-	}
-
 	if(process._init_function != nullptr){
 /*
 		//	!!! This validation should be done earlier in the startup process / compilation process.
@@ -762,10 +756,6 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 //			QUARK_TRACE_SS("RECEIVED: " << json_to_pretty_string(message));
 		}
 
-		if(process._processor){
-			process._processor->on_message(message);
-		}
-
 		if(process._process_function != nullptr){
 			auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE>(process._process_function->address);
 			const auto state2 = to_runtime_value(context, process._process_state);
@@ -799,7 +789,6 @@ static std::map<std::string, value_t> run_processes(llvm_execution_engine_t& ee)
 
 		for(const auto& t: ee._process_infos){
 			auto process = std::make_shared<llvm_process_t>();
-			auto process_context = llvm_context_t { &ee, process.get() };
 			process->_name_key = t.first;
 			process->_message_type = t.second.msg_type;
 			process->_exiting_flag = false;

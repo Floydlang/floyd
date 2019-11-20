@@ -381,9 +381,6 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 		const auto cu = floyd::make_compilation_unit_lib(program_source, command2.source_path);
 		auto program = floyd::compile_to_bytecode(cu);
 
-
-	//??? remove on_send() and on_exit() from bc_runtime_handler_i. ALT: Make new general-purpose interface for on_print() and use for LLVM and BC.
-
 		struct handler_t : public bc_runtime_handler_i {
 			handler_t(std::ostream& out) : out(out) {}
 

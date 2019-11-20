@@ -37,6 +37,16 @@ value_t unflatten_json_to_specific_type(types_t& types, const json_t& v, const t
 
 
 
+//////////////////////////////////////		runtime_handler_i
+
+
+struct runtime_handler_i {
+	virtual ~runtime_handler_i(){};
+	virtual void on_print(const std::string& s) = 0;
+};
+
+
+
 }	//	floyd
 
 #endif /* floyd_runtime_hpp */

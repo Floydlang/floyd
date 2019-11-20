@@ -99,14 +99,6 @@ struct llvm_runtime_handler_i {
 
 
 
-
-struct process_interface {
-	virtual ~process_interface(){};
-	virtual void on_message(const runtime_value_t& message) = 0;
-	virtual void on_init() = 0;
-};
-
-
 //	NOTICE: Each process inbox has its own mutex + condition variable.
 //	No mutex protects cout.
 struct llvm_process_t {
@@ -122,7 +114,6 @@ struct llvm_process_t {
 	std::string _name_key;
 	process_def_t _process_def;
 	std::thread::id _thread_id;
-	std::shared_ptr<process_interface> _processor;
 
 	std::shared_ptr<llvm_bind_t> _init_function;
 	std::shared_ptr<llvm_bind_t> _process_function;
