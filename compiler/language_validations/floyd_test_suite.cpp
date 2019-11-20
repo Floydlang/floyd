@@ -6949,14 +6949,6 @@ FLOYD_LANG_PROOF("container-def", "Minimal floyd process demo", "", ""){
 FLOYD_LANG_PROOF("container-def", "run one process", "", ""){
 	const auto program = R"(
 
-		software-system-def {
-			"name": "My Arcade Game",
-			"desc": "Space shooter for mobile devices, with connection to a server.",
-			"people": {},
-			"connections": [],
-			"containers": [ "iphone app" ]
-		}
-
 		container-def {
 			"name": "iphone app",
 			"tech": "Swift, iOS, Xcode, Open GL",
@@ -6968,9 +6960,7 @@ FLOYD_LANG_PROOF("container-def", "run one process", "", ""){
 			}
 		}
 
-		struct my_gui_state_t {
-			int _count
-		}
+		struct my_gui_state_t { int _count }
 
 		func my_gui_state_t my_gui__init() impure {
 			send("a", "dec")
@@ -7008,18 +6998,10 @@ FLOYD_LANG_PROOF("container-def", "run one process", "", ""){
 FLOYD_LANG_PROOF("container-def", "Test use struct as message", "", ""){
 	const auto program = R"(
 
-		software-system-def {
-			"name": "My Arcade Game",
-			"desc": "Space shooter for mobile devices, with connection to a server.",
-			"people": {},
-			"connections": [],
-			"containers": [ "iphone app" ]
-		}
-
 		container-def {
-			"name": "iphone app",
-			"tech": "Swift, iOS, Xcode, Open GL",
-			"desc": "Mobile shooter game for iOS.",
+			"name": "",
+			"tech": "",
+			"desc": "",
 			"clocks": {
 				"main": {
 					"a": "my_gui"
@@ -7027,13 +7009,8 @@ FLOYD_LANG_PROOF("container-def", "Test use struct as message", "", ""){
 			}
 		}
 
-		struct my_gui_state_t {
-			int _count
-		}
-
-		struct my_message_t {
-			string data
-		}
+		struct my_gui_state_t { int _count }
+		struct my_message_t { string data }
 
 		func my_gui_state_t my_gui__init() impure {
 			send("a", my_message_t("dec"))
@@ -7043,7 +7020,6 @@ FLOYD_LANG_PROOF("container-def", "Test use struct as message", "", ""){
 			send("a", my_message_t("stop"))
 			return my_gui_state_t(1000)
 		}
-
 
 		func my_gui_state_t my_gui(my_gui_state_t state, my_message_t message) impure{
 			print("received: " + to_string(message) + ", state: " + to_string(state))
@@ -7072,20 +7048,10 @@ FLOYD_LANG_PROOF("container-def", "Test use struct as message", "", ""){
 FLOYD_LANG_PROOF("container-def", "run two unconnected processs", "", ""){
 	const auto program = R"(
 
-		software-system-def {
-			"name": "My Arcade Game",
-			"desc": "Space shooter for mobile devices, with connection to a server.",
-			"people": {},
-			"connections": [],
-			"containers": [
-				"iphone app"
-			]
-		}
-
 		container-def {
-			"name": "iphone app",
-			"tech": "Swift, iOS, Xcode, Open GL",
-			"desc": "Mobile shooter game for iOS.",
+			"name": "",
+			"tech": "",
+			"desc": "",
 			"clocks": {
 				"main": {
 					"a": "my_gui",
@@ -7094,11 +7060,9 @@ FLOYD_LANG_PROOF("container-def", "run two unconnected processs", "", ""){
 			}
 		}
 
-		////////////////////////////////	my_gui -- process
 
-		struct my_gui_state_t {
-			int _count
-		}
+
+		struct my_gui_state_t { int _count }
 
 		func my_gui_state_t my_gui__init() impure {
 			send("a", "dec")
@@ -7128,11 +7092,8 @@ FLOYD_LANG_PROOF("container-def", "run two unconnected processs", "", ""){
 		}
 
 
-		////////////////////////////////	my_audio -- process
 
-		struct my_audio_state_t {
-			int _audio
-		}
+		struct my_audio_state_t { int _audio }
 
 		func my_audio_state_t my_audio__init() impure {
 			send("b", "process")
@@ -7165,20 +7126,10 @@ FLOYD_LANG_PROOF("container-def", "run two unconnected processs", "", ""){
 FLOYD_LANG_PROOF("container-def", "run two CONNECTED processes", "", ""){
 	const auto program = R"(
 
-		software-system-def {
-			"name": "My Arcade Game",
-			"desc": "Space shooter for mobile devices, with connection to a server.",
-			"people": {},
-			"connections": [],
-			"containers": [
-				"iphone app"
-			]
-		}
-
 		container-def {
-			"name": "iphone app",
-			"tech": "Swift, iOS, Xcode, Open GL",
-			"desc": "Mobile shooter game for iOS.",
+			"name": "",
+			"tech": "",
+			"desc": "",
 			"clocks": {
 				"main": {
 					"gui": "gui",
@@ -7188,11 +7139,8 @@ FLOYD_LANG_PROOF("container-def", "run two CONNECTED processes", "", ""){
 		}
 
 
-		////////////////////////////////	gui -- process
 
-		struct gui_state_t {
-			int _count
-		}
+		struct gui_state_t { int _count }
 
 		func gui_state_t gui__init() impure {
 			return gui_state_t(1000)
@@ -7215,17 +7163,14 @@ FLOYD_LANG_PROOF("container-def", "run two CONNECTED processes", "", ""){
 				return state
 			}
 			else{
-//				assert(false)
+				assert(false)
 				return state
 			}
 		}
 
 
-		////////////////////////////////	audio -- process
 
-		struct audio_state_t {
-			int _audio
-		}
+		struct audio_state_t { int _audio }
 
 		func audio_state_t audio__init() impure {
 			send("audio", "1")
@@ -7248,7 +7193,7 @@ FLOYD_LANG_PROOF("container-def", "run two CONNECTED processes", "", ""){
 				return state
 			}
 			else{
-//				assert(false)
+				assert(false)
 				return state
 			}
 		}
