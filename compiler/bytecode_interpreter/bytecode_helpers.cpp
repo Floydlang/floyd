@@ -162,7 +162,7 @@ bc_value_t value_to_bc(const types_t& types, const value_t& value){
 	else if(basetype == base_type::k_vector){
 		const auto element_type = peek.get_vector_element_type(types);
 
-		if(encode_as_vector_w_inplace_elements(types, element_type)){
+		if(encode_as_vector_w_inplace_elements(types, type)){
 			const auto& vec = value.get_vector_value();
 			immer::vector<bc_inplace_value_t> vec2;
 			for(const auto& e: vec){
@@ -207,7 +207,20 @@ bc_value_t value_to_bc(const types_t& types, const value_t& value){
 	}
 }
 
-//??? add tests!
+//??? add more tests!
+
+QUARK_TEST("", "value_to_bc()", "Make sure vector of inplace values works", ""){
+	types_t types;
+	const auto vec = value_t::make_vector_value(
+		types,
+		type_t::make_double(),
+		std::vector<value_t>{ value_t::make_double( 0.0 ), value_t::make_double( 1.0 ), value_t::make_double( 2.0 ) }
+	);
+
+	const bc_value_t r = value_to_bc(types, vec);
+	QUARK_VERIFY(r.check_invariant());
+}
+
 
 
 }	// floyd

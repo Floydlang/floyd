@@ -164,6 +164,7 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 
 struct llvm_test_handler_t : public llvm_runtime_handler_i {
 	void on_print(const std::string& s) override {
+		std::cout << s;
 		const auto lines = split_on_chars(seq_t(s), "\n");
 		_print_output = concat(_print_output, lines);
 	}

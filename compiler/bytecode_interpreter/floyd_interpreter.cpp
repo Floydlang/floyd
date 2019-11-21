@@ -149,7 +149,7 @@ struct bc_process_t : public bc_runtime_handler_i {
 				std::lock_guard<std::mutex> lk(dest_process._inbox_mutex);
 				dest_process._inbox.push_front(message);
 				if(k_trace_messaging){
-					QUARK_TRACE("Notifying...");
+//					QUARK_TRACE("Notifying...");
 				}
 			}
 			dest_process._inbox_condition_variable.notify_one();
@@ -206,9 +206,6 @@ static void process_process(bc_processes_runtime_t& runtime, int process_id){
 				QUARK_TRACE_SS(thread_name << ": waiting......");
 			}
 			process._inbox_condition_variable.wait(lk, [&]{ return process._inbox.empty() == false; });
-			if(k_trace_messaging){
-				QUARK_TRACE_SS(thread_name << ": continue");
-			}
 
 			//	Pop message.
 			QUARK_ASSERT(process._inbox.empty() == false);
@@ -216,13 +213,15 @@ static void process_process(bc_processes_runtime_t& runtime, int process_id){
 			process._inbox.pop_back();
 		}
 		if(k_trace_messaging){
-			const auto message2 = value_to_ast_json(types, bc_to_value(types, message));
+			const auto v = bc_to_value(types, message);
+			const auto message2 = value_to_ast_json(types, v);
 			QUARK_TRACE_SS(thread_name << "-received message: " << json_to_pretty_string(message2));
 		}
 
 		if(process._process_function != nullptr){
 			const std::vector<value_t> args = { process._process_state, bc_to_value(types, message) };
-			const auto& state2 = call_function(*process._interpreter, bc_to_value(types, process._process_function->_value), args);
+			const auto f = bc_to_value(types, process._process_function->_value);
+			const auto& state2 = call_function(*process._interpreter, f, args);
 			process._process_state = state2;
 		}
 	}

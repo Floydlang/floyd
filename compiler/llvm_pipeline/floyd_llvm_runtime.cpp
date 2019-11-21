@@ -717,7 +717,7 @@ void send_message(llvm_context_t& c, const std::string& dest_process_id, const r
 			std::lock_guard<std::mutex> lk(dest_process._inbox_mutex);
 			dest_process._inbox.push_front(message);
 			if(k_trace_process_messaging){
-				QUARK_TRACE("Notifying...");
+//				QUARK_TRACE("Notifying...");
 			}
 		}
 		dest_process._inbox_condition_variable.notify_one();
@@ -736,7 +736,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 	auto& types = backend.types;
 
 	auto& process = *ee._processes[process_id];
-	const auto thread_name = get_current_thread_name();
+	const auto thread_name = process._name_key + " (OS thread: " + get_current_thread_name()+ ")";
 	auto context = llvm_context_t{ &ee, &process };
 	auto runtime_ptr = make_runtime_ptr(&context);
 
@@ -762,9 +762,6 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
         		QUARK_TRACE_SS(thread_name << ": waiting......");
 			}
 			process._inbox_condition_variable.wait(lk, [&]{ return process._inbox.empty() == false; });
-			if(k_trace_process_messaging){
-        		QUARK_TRACE_SS(thread_name << ": continue");
-			}
 
 			//	Pop message.
 			QUARK_ASSERT(process._inbox.empty() == false);
@@ -775,7 +772,9 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 		}
 
 		if(k_trace_process_messaging){
-//			QUARK_TRACE_SS("RECEIVED: " << json_to_pretty_string(message));
+			const auto v = from_runtime_value(context, message, process._message_type);
+			const auto message2 = value_to_ast_json(types, v);
+			QUARK_TRACE_SS(thread_name << "-received message: " << json_to_pretty_string(message2));
 		}
 
 		if(process._process_function != nullptr){

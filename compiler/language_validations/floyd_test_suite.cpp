@@ -7721,3 +7721,119 @@ FLOYD_LANG_PROOF("REGRESSION TEST", "a inited after ifelsejoin, don't delete it 
 
 
 
+//######################################################################################################################
+//	DEMOS
+//######################################################################################################################
+
+
+
+
+
+
+FLOYD_LANG_PROOF("", "Demo DEEP BY VALUE", "", ""){
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"___(
+
+
+			struct vec2d_t { double x; double y }
+			func vec2d_t make_zero_vec2d(){ return vec2d_t(0.0, 0.0) }
+
+			struct game_object_t {
+				vec2d_t pos
+				vec2d_t velocity
+				string key
+				[game_object_t] children
+			}
+
+			let a = game_object_t(make_zero_vec2d(), vec2d_t(0.0, 1.0), "player", [])
+			let b = game_object_t(make_zero_vec2d(), make_zero_vec2d(), "world", [ a ])
+
+			assert(a != b)
+			assert(a > b)
+
+			let [game_object_t] c = [ a, b ]
+			let [game_object_t] d = push_back(c, a)
+			assert(c != d)
+
+
+		)___"
+	);
+}
+
+FLOYD_LANG_PROOF("", "Demo DEEP BY VALUE", "", ""){
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"___(
+
+
+			container-def {
+				"name": "iphone app",
+				"tech": "Swift, iOS, Xcode, Open GL",
+				"desc": "Mobile shooter game for iOS.",
+				"clocks": {
+					"main": {
+						"gui": "my_gui",
+						"audio": "my_audio",
+					}
+				}
+			}
+
+			struct doc_t { [double] audio }
+
+			struct gui_message_t { string type }
+
+			struct audio_engine_t { int audio ; doc_t doc }
+			struct audio_message_t { string type ; doc_t doc }
+
+			func audio_engine_t my_audio__init() impure {
+				return audio_engine_t(0, doc_t([]))
+			}
+
+			func audio_engine_t my_audio__msg(audio_engine_t state, audio_message_t m) impure {
+				if(m.type == "start_note"){
+					return update(state, audio, state.audio + 1)
+				}
+				else if(m.type == "buffer_switch"){
+					return update(state, audio, state.audio + 1)
+				}
+				else if(m.type == "exit"){
+					exit()
+				}
+				else{
+					assert(false)
+				}
+				return state
+			}
+
+
+			struct gui_t { int count ; doc_t doc }
+
+			func gui_t my_gui__init() impure {
+				send("gui", gui_message_t("key_press"))
+				send("gui", gui_message_t("key_press"))
+				send("gui", gui_message_t("quit"))
+				return gui_t(1000, doc_t([ 0.0, 1.0, 2.0 ]))
+			}
+
+			func gui_t my_gui__msg(gui_t state, gui_message_t m) impure {
+				if(m.type == "key_press"){
+					send("audio", audio_message_t("start_note", state.doc))
+					return update(state, count, state.count + 1)
+				}
+				else if(m.type == "quit"){
+					send("audio", audio_message_t("exit", state.doc))
+					exit()
+				}
+				else{
+					assert(false)
+				}
+				return state
+			}
+
+
+		)___"
+	);
+}
+
+

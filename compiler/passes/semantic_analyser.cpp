@@ -2961,50 +2961,58 @@ const body_t make_global_body(analyser_t& a){
 				if(init_func_symbol.first == nullptr){
 					std::stringstream what;
 					what << "Missing init function \"" << init_func_name << "\" needed by process \"" << process.second.name_key << "\".";
-					throw_compiler_error(k_no_location, what.str());
+
+					//	Cannot throw compiler error since we have no code location.
+					throw std::runtime_error(what.str());
 				}
 
 				const auto init_func_type = init_func_symbol.first->get_value_type();
 				const auto init_func_peek = peek2(a._types, init_func_type);
 
-				if(init_func_peek.is_function() == false){
-					throw std::exception();
-				}
+
 				if(
-					init_func_peek.get_function_args(a._types).size() != 0
-					|| peek2(a._types, init_func_peek.get_function_return(a._types)).is_void()
+					(init_func_peek.is_function() == false)
+					|| (
+						init_func_peek.get_function_args(a._types).size() != 0
+						|| peek2(a._types, init_func_peek.get_function_return(a._types)).is_void()
+					)
 				){
-					throw std::exception();
+					std::stringstream what;
+					what << "Incorrect init function \"" << init_func_name << "\" needed by process \"" << process.second.name_key << "\".";
+
+					//	Cannot throw compiler error since we have no code location.
+					throw std::runtime_error(what.str());
 				}
 				const auto state_type = init_func_peek.get_function_return(a._types);
-
-
 
 
 				const auto msg_func_name = process.second.name_key + "__msg";
 				auto msg_func_symbol = find_symbol_by_name(a, msg_func_name);
 				if(msg_func_symbol.first == nullptr){
 					std::stringstream what;
-					what << "Missing message function \"" << init_func_name << "\" needed by process \"" << process.second.name_key << "\".";
-					throw_compiler_error(k_no_location, what.str());
+					what << "Missing message function \"" << msg_func_name << "\" needed by process \"" << process.second.name_key << "\".";
+
+					//	Cannot throw compiler error since we have no code location.
+					throw std::runtime_error(what.str());
 				}
 
 				const auto msg_func_type = msg_func_symbol.first->get_value_type();
 				const auto msg_func_peek = peek2(a._types, msg_func_type);
 
-				if(msg_func_peek.is_function() == false){
-					throw std::exception();
-				}
-
-				if(msg_func_peek.get_function_args(a._types).size() != 2
-					|| msg_func_peek.get_function_return(a._types) != state_type
-					|| msg_func_peek.get_function_args(a._types)[0] != state_type
+				if(
+					(msg_func_peek.is_function() == false)
+					|| (msg_func_peek.get_function_args(a._types).size() != 2
+						|| msg_func_peek.get_function_return(a._types) != state_type
+						|| msg_func_peek.get_function_args(a._types)[0] != state_type
+					)
 				){
-					throw std::exception();
-				}
-//				const auto msg_type = peek2(a._types, msg_func_peek.get_function_args(a._types)[1]);
-				const auto msg_type = msg_func_peek.get_function_args(a._types)[1];
+					std::stringstream what;
+					what << "Incorrect message function \"" << msg_func_name << "\" needed by process \"" << process.second.name_key << "\".";
 
+					//	Cannot throw compiler error since we have no code location.
+					throw std::runtime_error(what.str());
+				}
+				const auto msg_type = msg_func_peek.get_function_args(a._types)[1];
 
 
 				process.second.init_func_linkname = init_func_symbol.first->_init.get_function_value().name;
