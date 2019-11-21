@@ -1014,7 +1014,6 @@ bc_value_t bc_intrinsic__send(interpreter_t& vm, const bc_value_t args[], int ar
 
 	const auto& types = vm._imm->_program._types;
 	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
-//	QUARK_ASSERT(peek2(types, args[1]._type).is_json());
 
 	const auto& dest_process_id = args[0].get_string_value();
 	const auto& message = args[1];

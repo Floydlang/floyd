@@ -6910,39 +6910,6 @@ FLOYD_LANG_PROOF("", "try calling LLVM function", "", ""){
 //######################################################################################################################
 
 
-FLOYD_LANG_PROOF("container-def", "Minimal floyd process demo", "", ""){
-	const auto program = R"(
-
-		container-def {
-			"name": "", "tech": "", "desc": "",
-			"clocks": {
-				"main": {
-					"a": "hello"
-				}
-			}
-		}
-
-		func int hello__init() impure {
-			send("a", "dec")
-			send("a", "stop")
-			return 3
-		}
-
-		func int hello__msg(int state, string message) impure {
-			if(message == "dec"){
-				return state - 1
-			}
-			else if(message == "stop"){
-				exit()
-				return state
-			}
-			return state
-		}
-
-	)";
-
-	ut_run_closed_nolib(QUARK_POS, program);
-}
 
 
 FLOYD_LANG_PROOF("container-def", "Minimal floyd process demo", "", ""){
@@ -6979,6 +6946,66 @@ FLOYD_LANG_PROOF("container-def", "Minimal floyd process demo", "", ""){
 	ut_run_closed_nolib(QUARK_POS, program);
 }
 
+FLOYD_LANG_PROOF("container-def", "Test named type for message", "", ""){
+	const auto program = R"(
+
+		container-def {
+			"name": "", "tech": "", "desc": "",
+			"clocks": {
+				"main": {
+					"a": "hello"
+				}
+			}
+		}
+
+		struct message_t { string t }
+
+		func int hello__init() impure {
+			send("a", message_t("stop"))
+			return 3
+		}
+
+		func int hello__msg(int state, message_t message) impure {
+			if(message.t == "stop"){
+				exit()
+			}
+			return state
+		}
+
+	)";
+
+	ut_run_closed_nolib(QUARK_POS, program);
+}
+
+FLOYD_LANG_PROOF("container-def", "Missmatch of message type: send() vs __msg()", "", ""){
+	const auto program = R"(
+
+		container-def {
+			"name": "", "tech": "", "desc": "",
+			"clocks": {
+				"main": {
+					"a": "hello"
+				}
+			}
+		}
+
+		func int hello__init() impure {
+			send("a", 1000)
+			return 0
+		}
+
+		func int hello__msg(int state, string message) impure {
+			return state
+		}
+
+	)";
+
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		program,
+		"[Floyd runtime] Message type to send() is <int> but ___msg() requires message type <string>."
+	);
+}
 
 
 FLOYD_LANG_PROOF("container-def", "run one process", "", ""){

@@ -109,6 +109,7 @@ struct bc_processes_runtime_t {
 //	NOTICE: Each process inbox has its own mutex + condition variable. No mutex protects cout.
 struct bc_process_t : public bc_runtime_handler_i {
 	void on_send(const std::string& dest_process_id, const bc_value_t& message) override {
+		const auto& types = _interpreter->_imm->_program._types;
 
 		const auto it = std::find_if(
 			_owning_runtime->_processes.begin(),
@@ -119,7 +120,30 @@ struct bc_process_t : public bc_runtime_handler_i {
 		}
 		else{
 			auto& dest_process = **it;
-//			const auto process_index = static_cast<int>(it - _owning_runtime->_processes.begin());
+
+#if DEBUG
+			const auto a = peek2(types, message._type);
+			const auto b = peek2(types, dest_process._message_type);
+#endif
+			if(message._type != dest_process._message_type){
+				const auto send_message_type_str = type_to_compact_string(
+					types,
+					message._type,
+					enamed_type_mode::short_names
+				);
+
+				const auto msg_message_type_str = type_to_compact_string(
+					types,
+					dest_process._message_type,
+					enamed_type_mode::short_names
+				);
+
+				quark::throw_runtime_error(
+					"[Floyd runtime] Message type to send() is <" + send_message_type_str + ">"
+					+ " but ___msg() requires message type <" + msg_message_type_str + ">"
+					+ "."
+				);
+			}
 
 			{
 				std::lock_guard<std::mutex> lk(dest_process._inbox_mutex);
@@ -154,6 +178,7 @@ struct bc_process_t : public bc_runtime_handler_i {
 	std::shared_ptr<value_entry_t> _init_function;
 	std::shared_ptr<value_entry_t> _process_function;
 	value_t _process_state;
+	type_t _message_type;
 
 	std::atomic<bool> _exiting_flag;
 };
@@ -236,6 +261,7 @@ static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& v
 		for(const auto& t: runtime._process_infos){
 			auto process = std::make_shared<bc_process_t>();
 			process->_exiting_flag = false;
+			process->_message_type = t.second.msg_type;
 			process->_owning_runtime = &runtime;
 			process->_name_key = t.first;
 			process->_interpreter = std::make_shared<interpreter_t>(vm._imm->_program, *process.get());

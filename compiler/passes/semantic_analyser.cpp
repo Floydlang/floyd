@@ -3002,7 +3002,8 @@ const body_t make_global_body(analyser_t& a){
 				){
 					throw std::exception();
 				}
-				const auto msg_type = peek2(a._types, msg_func_peek.get_function_args(a._types)[1]);
+//				const auto msg_type = peek2(a._types, msg_func_peek.get_function_args(a._types)[1]);
+				const auto msg_type = msg_func_peek.get_function_args(a._types)[1];
 
 
 

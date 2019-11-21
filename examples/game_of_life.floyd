@@ -130,7 +130,7 @@ func void print_board ([[int]] board) impure {
 		for (i in 0 ..< BOARD_WIDTH) {
 			row = push_back(row, board[i][j] != 0 ? 120 : 45)
 		}
-		print(row)
+		print(row + "\n")
 	}
 }
 

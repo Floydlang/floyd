@@ -672,6 +672,8 @@ std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& progra
 void send_message(llvm_context_t& c, const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type){
 	QUARK_ASSERT(c.check_invariant());
 	auto& backend = c.ee->backend;
+	const auto& types = backend.types;
+
 	if(c.process == nullptr){
 		throw std::exception();
 	}
@@ -686,9 +688,29 @@ void send_message(llvm_context_t& c, const std::string& dest_process_id, const r
 	else{
 		auto& dest_process = **it;
 
+
 		const auto a = peek2(backend.types, message_type);
 		const auto b = peek2(backend.types, dest_process._message_type);
-		QUARK_ASSERT(a == b);
+		if(message_type != dest_process._message_type){
+			const auto send_message_type_str = type_to_compact_string(
+				types,
+				message_type,
+				enamed_type_mode::short_names
+			);
+
+			const auto msg_message_type_str = type_to_compact_string(
+				types,
+				dest_process._message_type,
+				enamed_type_mode::short_names
+			);
+
+			quark::throw_runtime_error(
+				"[Floyd runtime] Message type to send() is <" + send_message_type_str + ">"
+				+ " but ___msg() requires message type <" + msg_message_type_str + ">"
+				+ "."
+			);
+		}
+
 		{
 			retain_value(backend, message, message_type);
 
