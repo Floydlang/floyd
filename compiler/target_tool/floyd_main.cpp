@@ -317,7 +317,6 @@ static int do_compile_command(tool_i& tool, std::ostream& out, const command_t& 
 
 
 static int do_run_command(tool_i& tool, std::ostream& out, const command_t& command, const command_t::compile_and_run_t& command2){
-
 	const auto program_source = tool.tool_i__read_source_file(command2.source_path);
 
 	if(command2.backend == ebackend::llvm){
@@ -352,7 +351,7 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 		};
 		handler_t handler { out };
 
-		auto ee = init_llvm_jit(*program, handler);
+		auto ee = init_llvm_jit(*program, handler, command2.verbose);
 
 		//	Run tests before calling main()?
 		if(command2.run_tests){

@@ -364,24 +364,25 @@ inline void set_trace(const trace_i* v){
 
 #if QUARK_TRACE_ON
 	struct scoped_trace {
-		scoped_trace(const std::string& s, const trace_i& tracer) :
+		scoped_trace(const std::string& s, bool enabled, const trace_i& tracer) :
 			_tracer(tracer),
-			_trace_brackets(true)
+			_enabled(enabled)
 		{
-			_tracer.trace_i__open_scope((s + " {").c_str());
+			if(_enabled){
+				_tracer.trace_i__open_scope((s + " {").c_str());
+			}
 		}
 
 		~scoped_trace(){
-			if(_trace_brackets){
+			if(_enabled){
 				_tracer.trace_i__close_scope("}");
 			}
 			else{
-				_tracer.trace_i__close_scope("");
 			}
 		}
 
 		private: const trace_i& _tracer;
-		private: bool _trace_brackets = true;
+		private: bool _enabled;
 	};
 
 	////////////////////////////		Hook functions.
@@ -406,10 +407,11 @@ inline void set_trace(const trace_i* v){
 
 	#define QUARK_TRACE(s) ::quark::quark_trace_func(s, quark::get_trace())
 	#define QUARK_TRACE_SS(x) {std::stringstream ss; ss << x; ::quark::quark_trace_func(ss, quark::get_trace());}
-	#define QUARK_SCOPED_TRACE(s) ::quark::scoped_trace QUARK_UNIQUE_LABEL(scoped_trace) (s, quark::get_trace())
+	#define QUARK_SCOPED_TRACE(s) ::quark::scoped_trace QUARK_UNIQUE_LABEL(scoped_trace) (s, true, quark::get_trace())
+	#define QUARK_SCOPED_TRACE_OPTIONAL(s, enabled) ::quark::scoped_trace QUARK_UNIQUE_LABEL(scoped_trace) (s, enabled, quark::get_trace())
 #else
 	struct scoped_trace {
-		scoped_trace(const std::string& s, const trace_i& tracer){
+		scoped_trace(const std::string& s, bool enabled, const trace_i& tracer){
 		}
 
 		~scoped_trace(){
@@ -419,8 +421,8 @@ inline void set_trace(const trace_i* v){
 	#define QUARK_TRACE(s)
 	#define QUARK_TRACE_SS(s)
 	#define QUARK_SCOPED_TRACE(s)
+#define QUARK_SCOPED_TRACE(s, enabled)
 #endif
-
 
 
 	inline int get_log_indent(){
@@ -677,7 +679,7 @@ inline bool run_test(const unit_test_def& test, bool oneline){
 			return true;
 		}
 		else{
-			::quark::scoped_trace tracer(testInfo.str(), quark::get_trace());
+			::quark::scoped_trace tracer(testInfo.str(), true, quark::get_trace());
 			test._test_f();
 			return true;
 		}

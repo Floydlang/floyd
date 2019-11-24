@@ -108,6 +108,13 @@ struct bc_processes_runtime_t {
 
 //	NOTICE: Each process inbox has its own mutex + condition variable. No mutex protects cout.
 struct bc_process_t : public bc_runtime_handler_i {
+	bool check_invariant() const {
+		QUARK_ASSERT(_init_function != nullptr);
+		QUARK_ASSERT(_msg_function != nullptr);
+		return true;
+	}
+
+
 	void on_send(const std::string& dest_process_id, const bc_value_t& message) override {
 		const auto& types = _interpreter->_imm->_program._types;
 
@@ -121,10 +128,6 @@ struct bc_process_t : public bc_runtime_handler_i {
 		else{
 			auto& dest_process = **it;
 
-#if DEBUG
-			const auto a = peek2(types, message._type);
-			const auto b = peek2(types, dest_process._message_type);
-#endif
 			if(message._type != dest_process._message_type){
 				const auto send_message_type_str = type_to_compact_string(
 					types,
@@ -176,7 +179,7 @@ struct bc_process_t : public bc_runtime_handler_i {
 
 	std::shared_ptr<interpreter_t> _interpreter;
 	std::shared_ptr<value_entry_t> _init_function;
-	std::shared_ptr<value_entry_t> _process_function;
+	std::shared_ptr<value_entry_t> _msg_function;
 	value_t _process_state;
 	type_t _message_type;
 
@@ -184,15 +187,24 @@ struct bc_process_t : public bc_runtime_handler_i {
 };
 
 
+static std::string make_trace_process_header(const bc_process_t& process){
+	const auto process_name = process._name_key;
+	const auto os_thread_name = get_current_thread_name();
+
+	const auto header = std::string("[") + process_name + ", OS thread: " + os_thread_name + " ]";
+	return header;
+}
+
+
 static void process_process(bc_processes_runtime_t& runtime, int process_id){
 	auto& process = *runtime._processes[process_id];
 
+	QUARK_ASSERT(process.check_invariant());
+
 	const auto& types = process._interpreter->_imm->_program._types;
-	const auto thread_name = process._name_key + " (OS thread: " + get_current_thread_name()+ ")";
+	const auto trace_header = make_trace_process_header(process);
 
-	//??? remove _processor interface. LLVM too.
-
-	if(process._init_function != nullptr){
+	{
 		const std::vector<value_t> args = {};
 		process._process_state = call_function(*process._interpreter, bc_to_value(types, process._init_function->_value), args);
 	}
@@ -203,7 +215,7 @@ static void process_process(bc_processes_runtime_t& runtime, int process_id){
 			std::unique_lock<std::mutex> lk(process._inbox_mutex);
 
 			if(k_trace_messaging){
-				QUARK_TRACE_SS(thread_name << ": waiting......");
+				QUARK_TRACE_SS(trace_header << ": waiting......");
 			}
 			process._inbox_condition_variable.wait(lk, [&]{ return process._inbox.empty() == false; });
 
@@ -215,12 +227,12 @@ static void process_process(bc_processes_runtime_t& runtime, int process_id){
 		if(k_trace_messaging){
 			const auto v = bc_to_value(types, message);
 			const auto message2 = value_to_ast_json(types, v);
-			QUARK_TRACE_SS(thread_name << "-received message: " << json_to_pretty_string(message2));
+			QUARK_TRACE_SS(trace_header << "-received message: " << json_to_pretty_string(message2));
 		}
 
-		if(process._process_function != nullptr){
+		{
 			const std::vector<value_t> args = { process._process_state, bc_to_value(types, message) };
-			const auto f = bc_to_value(types, process._process_function->_value);
+			const auto f = bc_to_value(types, process._msg_function->_value);
 			const auto& state2 = call_function(*process._interpreter, f, args);
 			process._process_state = state2;
 		}
@@ -238,15 +250,7 @@ static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& v
 		bc_processes_runtime_t runtime;
 		runtime.handler = vm._handler;
 		runtime._main_thread_id = std::this_thread::get_id();
-
-	/*
-		if(program._software_system._name == ""){
-			quark::throw_exception();
-		}
-	*/
-
 		runtime._container = container_def;
-
 		runtime._process_infos = reduce(
 			runtime._container._clock_busses,
 			std::map<std::string, process_def_t>(),
@@ -265,7 +269,15 @@ static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& v
 			process->_name_key = t.first;
 			process->_interpreter = std::make_shared<interpreter_t>(vm._imm->_program, *process.get());
 			process->_init_function = find_global_symbol2(*process->_interpreter, t.second.init_func_linkname);
-			process->_process_function = find_global_symbol2(*process->_interpreter, t.second.msg_func_linkname);
+			process->_msg_function = find_global_symbol2(*process->_interpreter, t.second.msg_func_linkname);
+
+			if(process->_init_function == nullptr){
+				throw std::runtime_error("Cannot link floyd init function: \"" + t.second.init_func_linkname + "\"");
+			}
+			if(process->_msg_function == nullptr){
+				throw std::runtime_error("Cannot link floyd message function: \"" + t.second.msg_func_linkname + "\"");
+			}
+
 			runtime._processes.push_back(process);
 		}
 

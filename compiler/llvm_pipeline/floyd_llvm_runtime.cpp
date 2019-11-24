@@ -506,7 +506,7 @@ std::string strip_link_name(const std::string& platform_link_name){
 
 
 //	Destroys program, can only called once!
-static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks, llvm_runtime_handler_i& handler){
+static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks, llvm_runtime_handler_i& handler, bool trace_processes){
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(program_breaks.check_invariant());
 
@@ -598,7 +598,8 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			{},
 			std::this_thread::get_id(),
 			{},
-			{}
+			{},
+			trace_processes
 		}
 	);
 	QUARK_ASSERT(ee2->check_invariant());
@@ -617,10 +618,10 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 
 //	Destroys program, can only run it once!
 //	Automatically runs floyd_runtime_init() to execute Floyd's global functions and initialize global constants.
-std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& program_breaks, llvm_runtime_handler_i& handler){
+std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& program_breaks, llvm_runtime_handler_i& handler, bool trace_processes){
 	QUARK_ASSERT(program_breaks.check_invariant());
 
-	auto ee = make_engine_no_init(*program_breaks.instance, program_breaks, handler);
+	auto ee = make_engine_no_init(*program_breaks.instance, program_breaks, handler, trace_processes);
 	auto context = llvm_context_t{ ee.get(), nullptr };
 
 	trace_heap(ee->backend.heap);
@@ -664,10 +665,16 @@ std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& progra
 	Explore std::packaged_task
 */
 //	https://en.cppreference.com/w/cpp/thread/condition_variable/wait
-/*
-??? have ONE runtime PER computer or one per interpreter?
-??? Separate system-interpreter (all processes and many clock busses) vs ONE thread of execution?
-*/
+
+
+static std::string make_trace_process_header(const llvm_process_t& process){
+	const auto process_name = process._name_key;
+	const auto os_thread_name = get_current_thread_name();
+
+//	const auto header = std::string("[") + process_name + ", OS thread: " + os_thread_name + " ]";
+	const auto header = std::string("[") + process_name + "]";
+	return header;
+}
 
 void send_message(llvm_context_t& c, const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type){
 	QUARK_ASSERT(c.check_invariant());
@@ -675,22 +682,34 @@ void send_message(llvm_context_t& c, const std::string& dest_process_id, const r
 	const auto& types = backend.types;
 
 	if(c.process == nullptr){
+		//	You can only send messages from within a running floyd process.
 		throw std::exception();
 	}
 
-	const auto it = std::find_if(
+	const auto trace = c.ee->_trace_processes;
+	const auto trace_header = trace ? make_trace_process_header(*c.process) : "";
+	QUARK_SCOPED_TRACE_OPTIONAL(trace_header + ": Send message to dest process ID: " + dest_process_id, trace);
+
+	if(trace){
+		QUARK_SCOPED_TRACE("Message:");
+		const auto v = from_runtime_value(c, message, message_type);
+		const auto message2 = value_to_ast_json(types, v);
+		QUARK_TRACE_SS(json_to_pretty_string(message2));
+	}
+
+	const auto dest_process_it = std::find_if(
 		c.ee->_processes.begin(),
 		c.ee->_processes.end(),
 		[&](const std::shared_ptr<llvm_process_t>& process){ return process->_name_key == dest_process_id; }
 	);
-	if(it == c.ee->_processes.end()){
+	if(dest_process_it == c.ee->_processes.end()){
+		if(trace){
+			QUARK_TRACE("Cannot find floyd process: \"" + dest_process_id + "\", message not sent.");
+		}
 	}
 	else{
-		auto& dest_process = **it;
+		auto& dest_process = **dest_process_it;
 
-
-		const auto a = peek2(backend.types, message_type);
-		const auto b = peek2(backend.types, dest_process._message_type);
 		if(message_type != dest_process._message_type){
 			const auto send_message_type_str = type_to_compact_string(
 				types,
@@ -716,9 +735,6 @@ void send_message(llvm_context_t& c, const std::string& dest_process_id, const r
 
 			std::lock_guard<std::mutex> lk(dest_process._inbox_mutex);
 			dest_process._inbox.push_front(message);
-			if(k_trace_process_messaging){
-//				QUARK_TRACE("Notifying...");
-			}
 		}
 		dest_process._inbox_condition_variable.notify_one();
 	//    dest_process._inbox_condition_variable.notify_all();
@@ -736,56 +752,77 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 	auto& types = backend.types;
 
 	auto& process = *ee._processes[process_id];
-	const auto thread_name = process._name_key + " (OS thread: " + get_current_thread_name()+ ")";
+
+	const auto trace = ee._trace_processes;
+	const auto trace_header = trace ? make_trace_process_header(process) : "";
+
 	auto context = llvm_context_t{ &ee, &process };
 	auto runtime_ptr = make_runtime_ptr(&context);
 
-	if(process._init_function != nullptr){
-/*
-		//	!!! This validation should be done earlier in the startup process / compilation process.
-		if(process._init_function->type != make_process_init_type(types, process_state_type)){
-			quark::throw_runtime_error("Invalid function prototype for process-init");
-		}
-*/
-
+	{
 		auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_INIT>(process._init_function->address);
 		const auto result = (*f)(runtime_ptr);
-		process._process_state = from_runtime_value(context, result, peek2(types, process._init_function->type).get_function_return(types));
+		process._process_state = from_runtime_value(
+			context,
+			result,
+			peek2(types, process._init_function->type).get_function_return(types)
+		);
 	}
 
 	while(process._exiting_flag == false){
-		runtime_value_t message;
+		//	Block until we get a message
+		runtime_value_t message_with_rc;
 		{
 			std::unique_lock<std::mutex> lk(process._inbox_mutex);
 
-			if(k_trace_process_messaging){
-        		QUARK_TRACE_SS(thread_name << ": waiting......");
+			if(trace){
+        		QUARK_TRACE_SS(trace_header << ": waiting for message");
 			}
 			process._inbox_condition_variable.wait(lk, [&]{ return process._inbox.empty() == false; });
 
 			//	Pop message.
 			QUARK_ASSERT(process._inbox.empty() == false);
-			message = process._inbox.back();
+			message_with_rc = process._inbox.back();
 			process._inbox.pop_back();
 
-			// NOTICE: local variable message has an RC (potentially the only RC) on the value.
+			// NOTICE: local variable "message_with_rc" has an RC (potentially the only RC) on the value.
 		}
 
-		if(k_trace_process_messaging){
-			const auto v = from_runtime_value(context, message, process._message_type);
-			const auto message2 = value_to_ast_json(types, v);
-			QUARK_TRACE_SS(thread_name << "-received message: " << json_to_pretty_string(message2));
+		//	Handle message.
+		QUARK_SCOPED_TRACE_OPTIONAL(trace_header + ": Received message, calling floyd process f()", trace);
+
+		if(trace){
+			{
+				QUARK_SCOPED_TRACE("Input message");
+				const auto v = from_runtime_value(context, message_with_rc, process._message_type);
+				const auto message2 = value_to_ast_json(types, v);
+				QUARK_TRACE_SS(json_to_pretty_string(message2));
+			}
+			{
+				QUARK_SCOPED_TRACE("Input state");
+				const auto s = value_to_ast_json(types, process._process_state);
+				QUARK_TRACE_SS(json_to_pretty_string(s));
+			}
 		}
 
-		if(process._process_function != nullptr){
-			auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE>(process._process_function->address);
+		runtime_value_t result = make_blank_runtime_value();
+		{
+			QUARK_SCOPED_TRACE_OPTIONAL("Call msg handler", trace);
+			auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE>(process._msg_function->address);
 			const auto state2 = to_runtime_value(context, process._process_state);
-			const auto result = (*f)(runtime_ptr, state2, message);
-			process._process_state = from_runtime_value(context, result, peek2(types, process._process_function->type).get_function_return(types));
+			result = (*f)(runtime_ptr, state2, message_with_rc);
 		}
 
-		//	Release the message.
-		release_value(backend, message, process._message_type);
+		process._process_state = from_runtime_value(context, result, peek2(types, process._msg_function->type).get_function_return(types));
+
+		if(trace){
+			QUARK_SCOPED_TRACE("Output state");
+			const auto s = value_to_ast_json(types, process._process_state);
+			QUARK_TRACE_SS(json_to_pretty_string(s));
+		}
+
+		//	Release the message_with_rc.
+		release_value(backend, message_with_rc, process._message_type);
 	}
 }
 
@@ -817,9 +854,18 @@ static std::map<std::string, value_t> run_processes(llvm_execution_engine_t& ee)
 			process->_init_function = std::make_shared<llvm_bind_t>(
 				bind_function2(ee, encode_floyd_func_link_name(t.second.init_func_linkname))
 			);
-			process->_process_function = std::make_shared<llvm_bind_t>(
+			process->_msg_function = std::make_shared<llvm_bind_t>(
 				bind_function2(ee, encode_floyd_func_link_name(t.second.msg_func_linkname))
 			);
+
+			if(process->_init_function->address == nullptr){
+				throw std::runtime_error("Cannot link floyd init function: \"" + t.second.init_func_linkname + "\"");
+			}
+			if(process->_msg_function->address == nullptr){
+				throw std::runtime_error("Cannot link floyd message function: \"" + t.second.msg_func_linkname + "\"");
+			}
+
+
 			ee._processes.push_back(process);
 		}
 
@@ -831,9 +877,11 @@ static std::map<std::string, value_t> run_processes(llvm_execution_engine_t& ee)
 				ee._worker_threads.push_back(
 					std::thread([&](int process_id){
 			//			const auto native_thread = thread::native_handle();
+
 						std::stringstream thread_name;
-						thread_name << std::string() << "process " << process_id << " thread";
+						thread_name << std::string() << "floyd process " << process_id << " thread";
 						set_current_threads_name(thread_name.str());
+
 						run_process(ee, process_id);
 					},
 					process_id)

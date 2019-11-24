@@ -1461,11 +1461,13 @@ static void floyd_llvm_intrinsic__send(floyd_runtime_t* frp, runtime_value_t des
 	const auto& dest_process_id = from_runtime_string(r, dest_process_id0);
 	const auto& message_type2 = lookup_type_ref(backend, message_type);
 
+/*
 	if(k_trace_process_messaging){
 		const auto& message2 = from_runtime_value(r, message, message_type2);
 		const auto j = value_and_type_to_ast_json(backend.types, message2);
 		QUARK_TRACE_SS("send(\"" << dest_process_id << "\"," << json_to_pretty_string(j) <<")");
 	}
+*/
 
 //	r._handler->on_send(process_id, message_json);
 	send_message(r, dest_process_id, message, message_type2);

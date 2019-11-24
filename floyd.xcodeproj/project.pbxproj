@@ -903,9 +903,9 @@
 				2C2FB271232A9CFF006105E4 /* docs */,
 				2C2FB28C232A9CFF006105E4 /* examples */,
 				2CBF330B202143BC0030AE98 /* Frameworks */,
-				2C1D84DE1CA765A90042F0A8 /* Products */,
 				2C182F1F220B17780003FC1F /* README.md */,
 				2C2FB29E232A9F35006105E4 /* utilities */,
+				2C1D84DE1CA765A90042F0A8 /* Products */,
 			);
 			sourceTree = "<group>";
 		};

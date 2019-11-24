@@ -173,7 +173,7 @@ struct llvm_test_handler_t : public llvm_runtime_handler_i {
 	std::vector<std::string> _print_output;
 };
 
-static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const compiler_settings_t& settings, const std::vector<std::string>& main_args){
+static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const compiler_settings_t& settings, const std::vector<std::string>& main_args, bool trace_processes){
 	QUARK_ASSERT(semast.check_invariant());
 	QUARK_ASSERT(settings.check_invariant());
 
@@ -183,7 +183,7 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 
 		llvm_test_handler_t handler;
 
-		auto ee = init_llvm_jit(*exe, handler);
+		auto ee = init_llvm_jit(*exe, handler, trace_processes);
 
 		std::vector<test_t> all_tests = collect_tests(*ee);
 		const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
@@ -250,7 +250,7 @@ void test_floyd(const quark::call_context_t& context, const compilation_unit_t& 
 	}
 
 	if(k_run_llvm){
-		const auto llvm_report = run_test_program_llvm(semast, settings, main_args);
+		const auto llvm_report = run_test_program_llvm(semast, settings, main_args, false);
 
 		if(compare(llvm_report, expected, check_printout) == false){
 			QUARK_SCOPED_TRACE("LLVM JIT FAILURE");

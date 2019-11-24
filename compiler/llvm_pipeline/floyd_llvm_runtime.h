@@ -104,7 +104,9 @@ struct llvm_runtime_handler_i {
 struct llvm_process_t {
 	public: bool check_invariant() const {
 		QUARK_ASSERT(_init_function != nullptr);
-		QUARK_ASSERT(_process_function != nullptr);
+		QUARK_ASSERT(_init_function->address != nullptr);
+		QUARK_ASSERT(_msg_function != nullptr);
+		QUARK_ASSERT(_msg_function->address != nullptr);
 		return true;
 	}
 
@@ -116,7 +118,7 @@ struct llvm_process_t {
 	std::thread::id _thread_id;
 
 	std::shared_ptr<llvm_bind_t> _init_function;
-	std::shared_ptr<llvm_bind_t> _process_function;
+	std::shared_ptr<llvm_bind_t> _msg_function;
 	type_t _message_type;
 
 
@@ -174,6 +176,7 @@ struct llvm_execution_engine_t {
 
 	std::vector<std::shared_ptr<llvm_process_t>> _processes;
 	std::vector<std::thread> _worker_threads;
+	bool _trace_processes;
 };
 
 struct llvm_context_t {
@@ -290,7 +293,7 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 
 
 //	Calls init() and will perform deinit() when engine is destructed later.
-std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& program, llvm_runtime_handler_i& handler);
+std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& program, llvm_runtime_handler_i& handler, bool trace_processes);
 
 
 //	Calls main() if it exists, else runs the floyd processes. Returns when execution is done.
