@@ -234,9 +234,9 @@ Escape sequence	Hex value in ASCII	Character represented
 \'	27	Single quotation mark
 \"	22	Double quotation mark
 \?	3F	Question mark (used to avoid trigraphs)
-\nnnnote 1	any	The byte whose numerical value is given by nnn interpreted as an octal number
+\nn nnote 1	any	The byte whose numerical value is given by nnn interpreted as an octal number
 \xhh…	any	The byte whose numerical value is given by hh… interpreted as a hexadecimal number
-\enote 2	1B	escape character (some character sets)
+\e note 2	1B	escape character (some character sets)
 \Uhhhhhhhhnote 3	none	Unicode code point where h is a hexadecimal digit
 \uhhhhnote 4	none	Unicode code point below 10000 hexadecimal
 */

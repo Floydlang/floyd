@@ -1601,6 +1601,22 @@ return R"(
 )";
 }
 
+/*
+the JSON spec at ietf.org/rfc/rfc4627.txt contains this sentence in section 2.5: "All Unicode characters may be placed within the quotation marks except for the characters that must be escaped: quotation mark, reverse solidus, and the control characters (U+0000 through U+001F)." Since a newline is a control character, it must be escaped. – daniel kullmann Apr 25 '13 at 10:48
+
+
+escape
+    '"'
+    '\'
+    '/'
+    'b'
+    'f'
+    'n'
+    'r'
+    't'
+    'u' hex hex hex hex
+
+*/
 
 QUARK_TESTQ("json_to_pretty_string()", ""){
 	const auto a = get_test2();
@@ -1611,5 +1627,96 @@ QUARK_TESTQ("json_to_pretty_string()", ""){
 
 	QUARK_TRACE_SS(b);
 }
+
+
+#if 1
+QUARK_TEST("json", "json_to_pretty_string()", "embedded escapes inside string value", ""){
+	const auto result =	json_to_pretty_string(json_t("test\nline2"));
+	QUARK_TRACE_SS(result);
+//	ut_verify_string(QUARK_POS, result, "");
+}
+#endif
+
+
+
+/*
+Escape sequence		Hex value in ASCII	Character represented
+\b	08	Backspace
+\t	09	Horizontal Tab
+\n	0A	Newline (Line Feed); see notes below
+\f	0C	Formfeed
+\r	0D	Carriage Return
+
+
+
+\"	22	Double quotation mark
+\\	5C	Backslash
+/	2f	forward slash
+
+\'	27	Single quotation mark
+\?	3F	Question mark (used to avoid trigraphs)
+*/
+
+std::string escape_json_string(const std::string& s){
+	std::string result;
+	result.reserve(s.size());
+
+	for(const auto& e: s){
+		if(e >= 0x00 && e <= 0x1f){
+			if(e == '\b'){
+				result = result + "\\b";
+			}
+			else if(e == '\t'){
+				result = result + "\\t";
+			}
+			else if(e == '\n'){
+				result = result + "\\n";
+			}
+			else if(e == '\f'){
+				result = result + "\\f";
+			}
+			else if(e == '\r'){
+				result = result + "\\r";
+			}
+			else{
+				const auto hex4 = value_to_hex_string(e, 4);
+				result = result + "\\u" + hex4;
+			}
+		}
+		//
+		else if(e == '\"'){
+			result = result + "\\\"";
+		}
+		else if(e == '\\'){
+			result = result + "\\\\";
+		}
+		else{
+			result.push_back(e);
+		}
+	}
+
+	return result;
+}
+
+QUARK_TEST("", "escape_json_string()", "", "") {
+	QUARK_VERIFY(escape_json_string("") == "");
+}
+QUARK_TEST("", "escape_json_string()", "", "") {
+	QUARK_VERIFY(escape_json_string("hello") == "hello");
+}
+QUARK_TEST("", "escape_json_string()", "", "") {
+	QUARK_VERIFY(escape_json_string("hello\nbye") == R"___(hello\nbye)___");
+}
+QUARK_TEST("", "escape_json_string()", "", "") {
+//	QUARK_VERIFY(escape_json_string("\xff") == R"___(\x00ff)___");
+}
+
+
+
+std::string unescape_json_string(const std::string& s){
+	return s;
+}
+
+
 
 

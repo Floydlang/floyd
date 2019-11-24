@@ -126,6 +126,7 @@ std::vector<DEST_ELEMENT_TYPE> filterf(const COLLECTION& col, const UNARY_OPERAT
 }
 
 
+std::string value_to_hex_string(uint64_t value, int hexchars);
 
 std::string ptr_to_hexstring(const void* ptr);
 

@@ -163,13 +163,44 @@ QUARK_TEST("", "", "", ""){
 
 
 
+std::string value_to_hex_string(uint64_t value, int hexchars){
+	std::stringstream ss;
+	ss << /*<< std::showbase*/ std::hex << std::setfill('0') << std::setw(hexchars) << value;
+	const auto s2 = ss.str();
+	return s2.substr(0, hexchars);
+}
+
+QUARK_TEST("", "value_to_hex_string()", "", "") {
+	const auto s = value_to_hex_string(0xdeadbeef, 8);
+	QUARK_VERIFY(s == "deadbeef");
+}
+QUARK_TEST("", "value_to_hex_string()", "", "") {
+	const auto s = value_to_hex_string(0xdeadbeef, 0);
+	QUARK_VERIFY(s == "");
+}
+QUARK_TEST("", "value_to_hex_string()", "", "") {
+	const auto s = value_to_hex_string(0xdeadbeef, 16);
+	QUARK_VERIFY(s == "00000000deadbeef");
+}
+QUARK_TEST("", "value_to_hex_string()", "", "") {
+	const auto s = value_to_hex_string(0xdeadbeef00001234, 16);
+	QUARK_VERIFY(s == "deadbeef00001234");
+}
+QUARK_TEST("", "value_to_hex_string()", "", "") {
+	const auto s = value_to_hex_string(0x03, 8);
+	QUARK_VERIFY(s == "00000003");
+}
+QUARK_TEST("", "value_to_hex_string()", "", "") {
+	const auto s = value_to_hex_string(65535, 8);
+	QUARK_VERIFY(s == "0000ffff");
+}
+
+
+
 
 std::string ptr_to_hexstring(const void* ptr){
 	const auto v = reinterpret_cast<std::size_t>(ptr);
-	std::stringstream ss;
-	ss << "0x" /*<< std::showbase*/ << std::hex << std::setfill('0') << std::setw(sizeof(void*) * 2) << v;
-
-	return ss.str();
+	return "0x" + value_to_hex_string(v, sizeof(void*) * 2);
 }
 
 QUARK_TEST("", "ptr_to_hexstring()", "", "") {

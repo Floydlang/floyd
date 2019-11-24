@@ -62,11 +62,11 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "compile"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "test"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "run"
@@ -78,7 +78,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-t"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "examples/test_main.floyd"
@@ -91,6 +91,10 @@
          <CommandLineArgument
             argument = "-i"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-p"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-g"
@@ -109,8 +113,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "/Users/marcus/Desktop/adventure.floyd"
+            argument = "examples/game_of_life.floyd"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "/Users/marcus/Desktop/adventure.floyd"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o o1.ir"
