@@ -762,11 +762,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 	{
 		auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_INIT>(process._init_function->address);
 		const auto result = (*f)(runtime_ptr);
-		process._process_state = from_runtime_value(
-			context,
-			result,
-			peek2(types, process._init_function->type).get_function_return(types)
-		);
+		process._process_state = from_runtime_value(context, result, process._state_type);
 	}
 
 	while(process._exiting_flag == false){
@@ -813,7 +809,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 			result = (*f)(runtime_ptr, state2, message_with_rc);
 		}
 
-		process._process_state = from_runtime_value(context, result, peek2(types, process._msg_function->type).get_function_return(types));
+		process._process_state = from_runtime_value(context, result, process._state_type);
 
 		if(trace){
 			QUARK_SCOPED_TRACE("Output state");
@@ -849,6 +845,7 @@ static std::map<std::string, value_t> run_processes(llvm_execution_engine_t& ee)
 			auto process = std::make_shared<llvm_process_t>();
 			process->_name_key = t.first;
 			process->_message_type = t.second.msg_type;
+			process->_state_type = t.second.state_type;
 			process->_exiting_flag = false;
 			process->_process_def = t.second;
 			process->_init_function = std::make_shared<llvm_bind_t>(

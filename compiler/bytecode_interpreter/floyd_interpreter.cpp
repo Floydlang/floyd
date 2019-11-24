@@ -227,7 +227,7 @@ static void process_process(bc_processes_runtime_t& runtime, int process_id){
 		if(k_trace_messaging){
 			const auto v = bc_to_value(types, message);
 			const auto message2 = value_to_ast_json(types, v);
-			QUARK_TRACE_SS(trace_header << "-received message: " << json_to_pretty_string(message2));
+			QUARK_TRACE_SS(trace_header << ": received message: " << json_to_pretty_string(message2));
 		}
 
 		{

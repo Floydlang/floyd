@@ -119,6 +119,7 @@ struct llvm_process_t {
 
 	std::shared_ptr<llvm_bind_t> _init_function;
 	std::shared_ptr<llvm_bind_t> _msg_function;
+	type_t _state_type;
 	type_t _message_type;
 
 
@@ -128,6 +129,7 @@ struct llvm_process_t {
 	std::mutex _inbox_mutex;
 	std::deque<runtime_value_t> _inbox;
 
+	//	Notice: before init() is called, this value is an undefined.
 	value_t _process_state;
 	std::atomic<bool> _exiting_flag;
 };
