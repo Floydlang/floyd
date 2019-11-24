@@ -6862,45 +6862,6 @@ FLOYD_LANG_PROOF("software-system-def", "parse software-system-def", "", ""){
 	ut_run_closed_nolib(QUARK_POS, test_ss);
 }
 
-#if 0
-FLOYD_LANG_PROOF("", "try calling LLVM function", "", ""){
-	const auto p = R"(
-
-		software-system-def {
-			"name": "My Arcade Game",
-			"desc": "Space shooter for mobile devices, with connection to a server.",
-			"people": {},
-			"connections": [],
-			"containers": [
-				"iphone app"
-			]
-		}
-
-		container-def {
-			"name": "iphone app",
-			"tech": "Swift, iOS, Xcode, Open GL",
-			"desc": "Mobile shooter game for iOS.",
-			"clocks": {
-				"main": {
-					"a": "my_gui"
-				}
-			}
-		}
-
-		func double my_gui__init() impure {
-			return 3.14
-		}
-
-		func double my_gui__msg(double state, json message) impure{
-			print("received: " + to_string(message) + ", state: " + to_string(state))
-			return state
-		}
-
-	)";
-
-	ut_run_closed_nolib(QUARK_POS, p);
-}
-#endif
 
 
 
@@ -6918,7 +6879,7 @@ FLOYD_LANG_PROOF("container-def", "Minimal floyd process demo", "", ""){
 		container-def {
 			"name": "", "tech": "", "desc": "",
 			"clocks": {
-				"main": {
+				"main_clock": {
 					"a": "hello"
 				}
 			}
@@ -6952,7 +6913,7 @@ FLOYD_LANG_PROOF("container-def", "Test named type for message", "", ""){
 		container-def {
 			"name": "", "tech": "", "desc": "",
 			"clocks": {
-				"main": {
+				"main_clock": {
 					"a": "hello"
 				}
 			}
@@ -6983,7 +6944,7 @@ FLOYD_LANG_PROOF("container-def", "Missmatch of message type: send() vs __msg()"
 		container-def {
 			"name": "", "tech": "", "desc": "",
 			"clocks": {
-				"main": {
+				"main_clock": {
 					"a": "hello"
 				}
 			}
@@ -7016,7 +6977,7 @@ FLOYD_LANG_PROOF("container-def", "run one process", "", ""){
 			"tech": "Swift, iOS, Xcode, Open GL",
 			"desc": "Mobile shooter game for iOS.",
 			"clocks": {
-				"main": {
+				"main_clock": {
 					"a": "my_gui"
 				}
 			}
@@ -7065,7 +7026,7 @@ FLOYD_LANG_PROOF("container-def", "Test use struct as message", "", ""){
 			"tech": "",
 			"desc": "",
 			"clocks": {
-				"main": {
+				"main_clock": {
 					"a": "my_gui"
 				}
 			}
@@ -7115,10 +7076,10 @@ FLOYD_LANG_PROOF("container-def", "run two unconnected processs", "", ""){
 			"tech": "",
 			"desc": "",
 			"clocks": {
-				"main": {
+				"main_clock": {
 					"a": "my_gui"
 				},
-				"rt": {
+				"audio_clock": {
 					"b": "my_audio"
 				}
 			}
@@ -7195,10 +7156,10 @@ FLOYD_LANG_PROOF("container-def", "run two CONNECTED processes", "", ""){
 			"tech": "",
 			"desc": "",
 			"clocks": {
-				"main": {
+				"main_clock": {
 					"gui": "gui"
 				},
-				"rt": {
+				"audio_clock": {
 					"audio": "audio"
 				}
 			}
@@ -7776,10 +7737,10 @@ FLOYD_LANG_PROOF("", "Demo DEEP BY VALUE", "", ""){
 				"tech": "Swift, iOS, Xcode, Open GL",
 				"desc": "Mobile shooter game for iOS.",
 				"clocks": {
-					"main": {
+					"main_clock": {
 						"gui": "my_gui"
 					},
-					"rt": {
+					"audio_clock": {
 						"audio": "my_audio"
 					}
 				}
