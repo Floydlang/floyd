@@ -7116,7 +7116,9 @@ FLOYD_LANG_PROOF("container-def", "run two unconnected processs", "", ""){
 			"desc": "",
 			"clocks": {
 				"main": {
-					"a": "my_gui",
+					"a": "my_gui"
+				},
+				"rt": {
 					"b": "my_audio"
 				}
 			}
@@ -7194,8 +7196,10 @@ FLOYD_LANG_PROOF("container-def", "run two CONNECTED processes", "", ""){
 			"desc": "",
 			"clocks": {
 				"main": {
-					"gui": "gui",
-					"audio": "audio",
+					"gui": "gui"
+				},
+				"rt": {
+					"audio": "audio"
 				}
 			}
 		}
@@ -7773,8 +7777,10 @@ FLOYD_LANG_PROOF("", "Demo DEEP BY VALUE", "", ""){
 				"desc": "Mobile shooter game for iOS.",
 				"clocks": {
 					"main": {
-						"gui": "my_gui",
-						"audio": "my_audio",
+						"gui": "my_gui"
+					},
+					"rt": {
+						"audio": "my_audio"
 					}
 				}
 			}
