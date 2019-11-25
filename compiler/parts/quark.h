@@ -421,7 +421,7 @@ inline void set_trace(const trace_i* v){
 	#define QUARK_TRACE(s)
 	#define QUARK_TRACE_SS(s)
 	#define QUARK_SCOPED_TRACE(s)
-#define QUARK_SCOPED_TRACE(s, enabled)
+	#define QUARK_SCOPED_TRACE_OPTIONAL(s, enabled)
 #endif
 
 

@@ -150,7 +150,9 @@ bool encode_as_external(const bc_value_t& value);
 */
 
 struct bc_value_t {
+#if DEBUG
 	public: bool check_invariant() const;
+#endif
 	public: bc_value_t();
 	public: ~bc_value_t();
 	public: bc_value_t(const bc_value_t& other);
