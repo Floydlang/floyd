@@ -509,13 +509,13 @@ static int do_user_benchmarks(tool_i& tool, std::ostream& out, const command_t& 
 
 
 //######################################################################################################################
-//	do_user_test()
+//	do_user_tests()
 //######################################################################################################################
 
 
 
 
-static int do_user_test(tool_i& tool, std::ostream& out, const command_t& command, const command_t::user_test_t& command2){
+static int do_user_tests(tool_i& tool, std::ostream& out, const command_t& command, const command_t::user_test_t& command2){
 	if(command2.backend != ebackend::llvm){
 		throw std::runtime_error("Command requires LLVM backend.");
 	}
@@ -552,14 +552,8 @@ static int do_user_test(tool_i& tool, std::ostream& out, const command_t& comman
 			make_default_compiler_settings()
 		);
 
-		std::stringstream ss;
-		ss << "Test registry:" << std::endl;
-		for(const auto& e: b){
-			ss << e.test_id.module << "\tfunction: " << e.test_id.function_name << "\t\tscenario: " << e.test_id.scenario << std::endl;
-		}
-		const auto s = ss.str();
-
-		out << s;
+		const auto report = make_test_list_report(b);
+		out << report;
 		return EXIT_SUCCESS;
 	}
 	else{
@@ -621,7 +615,7 @@ static int do_command(tool_i& tool, std::ostream& out, const command_t& command)
 		}
 
 		int operator()(const command_t::user_test_t& command2) const{
-			return do_user_test(tool, out, command, command2);
+			return do_user_tests(tool, out, command, command2);
 		}
 
 		int operator()(const command_t::hwcaps_t& command2) const{

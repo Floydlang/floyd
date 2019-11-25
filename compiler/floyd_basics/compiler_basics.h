@@ -273,6 +273,7 @@ std::string make_report(const std::vector<test_result_t>& test_results);
 
 size_t count_fails(const std::vector<test_result_t>& test_results);
 
+std::string make_test_list_report(const std::vector<test_t>& tests);
 
 
 

@@ -184,6 +184,31 @@ std::vector<int> filter_tests(const std::vector<test_t>& b, const std::vector<st
 
 
 
+//std::vector<test_t>
+static std::vector<std::vector<std::string>> make_test_list_report(const std::vector<test_result_t>& v){
+	std::vector<std::vector<std::string>> matrix;
+	for(const auto& e: v){
+		const std::vector<std::string> matrix_row = { e.test_id.module, e.test_id.function_name, e.test_id.scenario, e.fail_string };
+		matrix.push_back(matrix_row);
+	}
+	return matrix;
+}
+
+std::string make_test_list_report(const std::vector<test_t>& tests){
+	std::vector<std::vector<std::string>> matrix;
+	for(const auto& e: tests){
+		matrix.push_back({ e.test_id.function_name, e.test_id.scenario });
+	}
+
+	std::stringstream ss;
+	ss << "Test registry:" << std::endl;
+	ss << generate_table_type1({ "FUNCTION", "SCENARIO" }, matrix);
+	return ss.str();
+}
+
+
+
+
 //////////////////////////////////////		container_t
 
 
