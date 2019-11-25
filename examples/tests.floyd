@@ -1,0 +1,10 @@
+
+
+print("Hello, world!\n")
+
+test-def ("subset()", "skip first character"){ assert( subset("abc", 1, 3) == "bc") }
+test-def ("subset()", "skip last character"){ assert( subset("abc", 0, 2) == "ab") }
+test-def ("subset()", "skip first and last character"){ assert( subset("abc", 1, 2) == "b") }
+test-def ("slow()", ""){ mutable a = 0; for(i in 0 ..< 100000){ a = a + 1; print(a) } ; print(a) ; print("\n") }
+
+test-def ("", "skip last character"){ print("Bye!\n") }
