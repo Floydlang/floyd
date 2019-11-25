@@ -162,62 +162,80 @@ Floyd generates native machine code but also comes with a bytecode interpreter.
 <a id="13-command-line-tool"></a>
 ## 1.3 COMMAND LINE TOOL
 
-Usage:
+This is how you use the Floyd command line tool.
 
-HELP - show instructions for command line tool
-----------------------------------------------------------------------------------------------------
-floyd help
+### HELP
 
-RUN - compile and run a Floyd program                                        -u -b -t -g -O1 -O2 -O3
-----------------------------------------------------------------------------------------------------
-floyd run game.floyd arg1 arg2      - Compile and run "game.floyd" using natively.
-                                      arg1 and arg2 are inputs to your main():
-floyd run -t mygame.floyd           - Run mygame.floyd with no arguments to its main(), use tracing.
+Show instructions for command line tool
 
-COMPILE - compile Floyd source to executable or intermediate           -b -t -p -a -i -g -O1 -O2 -O3
-----------------------------------------------------------------------------------------------------
-floyd compile game.floyd -o test.o                 - Compile program "game.floyd" to a native object
-                                                     file .o, called "test.o".
-floyd compile -i -g examples/fibo.floyd -o a.ir    - Compile "examples/fibo.floyd" to LLVM IR code,
-                                                     disable optimization, write to file "a.ir".
+|COMMAND|EXPLANATION|
+|:------|:-----
+| floyd help |
 
-TEST - run unit tests in the Floyd program, see user-def statement              -b -t -g -O1 -O2 -O3
-----------------------------------------------------------------------------------------------------
-Does not call main() or start any Floyd processes.
 
-floyd test game.floyd                   - Runs all unit tests in game.floyd.
-floyd test game.floyd one two           - Runs only tests called "one" and "two".
-floyd test -l game.floyd                - Returns a list of unit tests in the program.
+### RUN
+Compile and run a Floyd program.
 
-BENCH - run micro benchmarks, see benchmark-def statement                    -l -b -t -g -O1 -O2 -O3
-----------------------------------------------------------------------------------------------------
-floyd bench mygame.floyd                - Runs all benchmarks, as defined in Floyd program.
-floyd bench game.floyd rle game_lp      - Runs specified benchmarks: "rle" and "game_lp".
-floyd bench -l mygame.floyd             - Returns list of benchmarks:
+**FLAGS**: -u -b -t -g -O1 -O2 -O3 
 
-HWCAPS - show hardware capabilities of the computer
-----------------------------------------------------------------------------------------------------
-floyd hwcaps           - Outputs detailed hardware capabilities of the computer: caches and cores.
+|COMMAND|EXPLANATION|
+|:------|:-----
+| floyd run game.floyd arg1 arg2      | Compile and run "game.floyd" using natively. arg1 and arg2 are inputs to your main():
+| floyd run -t mygame.floyd			| Run mygame.floyd with no arguments to its main(), use tracing.
 
-FLAGS DETAILS
-----------------------------------------------------------------------------------------------------
--t             Verbose tracing
--l             returns a list of all tests / micro benchmarks
--u             Skip running the program's unit tests
+### COMPILE
+Compile Floyd source to executable or intermediate.
 
-COMPILER
--b             Use Floyd's bytecode backend (default is LLVM codegen)
--p             Output parse tree as a JSON
--a             Output Abstract syntax tree (AST) as a JSON
--i             Output intermediate representation (IR / ASM) as assembly
--g             Compile with debug info, no optimizations
--O1 -O2 -O3    Enable trivial / default / expensive optimizations
+**FLAGS**: -b -t -p -a -i -g -O1 -O2 -O3  
 
-##### MORE EXAMPLES
+|COMMAND|EXPLANATION|
+|:------|:-----
+| floyd compile game.floyd -o test.o      | Compile program "game.floyd" to a native object file .o, called "test.o".
+| floyd compile -i -g examples/fibo.floyd -o a.ir    | Compile "examples/fibo.floyd" to LLVM IR code, disable optimization, write to file "a.ir".
 
-Compile "examples/fibonacci.floyd" to LLVM IR code, disable optimization, write to file "a.ir"
 
->	floyd compile -i -g examples/fibonacci.floyd -o a.ir
+### TEST
+Run unit tests in the Floyd program. See user-def statement. Does not call main() or start any Floyd processes.
+
+**FLAGS**: -b -t -g -O1 -O2 -O3
+
+|COMMAND|EXPLANATION|
+|:------|:-----
+| floyd test game.floyd                   | Runs all unit tests in game.floyd.
+| floyd test game.floyd one two           | Runs only tests called "one" and "two".
+| floyd test -l game.floyd                | Returns a list of unit tests in the program.
+
+### BENCH
+Run micro benchmarks, see benchmark-def statement
+
+**FLAGS**:                     -l -b -t -g -O1 -O2 -O3
+
+|COMMAND|EXPLANATION|
+|:------|:-----
+| floyd bench mygame.floyd                | Runs all benchmarks, as defined in Floyd program.
+| floyd bench game.floyd rle game_lp      | Runs specified benchmarks: "rle" and "game_lp".
+| floyd bench -l mygame.floyd             | Returns list of benchmarks:
+
+### HWCAPS
+Show hardware capabilities of the computer
+
+|COMMAND|EXPLANATION|
+|:------|:-----
+| floyd hwcaps           | Outputs detailed hardware capabilities of the computer: caches and cores.
+
+### FLAGS DETAILS
+
+|ASPECT | FLAG | EXPLANATION|
+|:------|:-----|:-----
+| |  -t             | Verbose tracing
+| RUNTIME|  -l             | returns a list of all tests / micro benchmarks
+| RUNTIME|  -u             | Skip running the program's unit tests
+| COMPILER | -b             | Use Floyd's bytecode backend (default is LLVM codegen)
+| COMPILER | -p             | Output parse tree as a JSON
+| COMPILER | -a             | Output Abstract syntax tree (AST) as a JSON
+| COMPILER | -i             | Output intermediate representation (IR / ASM) as assembly
+| COMPILER | -g             | Compile with debug info, no optimizations
+| COMPILER | -O1 -O2 -O3    | Enable trivial / default / expensive optimizations
 
 
 
