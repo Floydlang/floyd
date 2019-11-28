@@ -103,6 +103,7 @@
 		2C6CDA9522FD92FD008F65C7 /* floyd_command_line_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C6CDA9322FD92FD008F65C7 /* floyd_command_line_parser.cpp */; };
 		2C6CDA9822FD969B008F65C7 /* command_line_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C6CDA9622FD969B008F65C7 /* command_line_parser.cpp */; };
 		2C7005D1238C4168005298C2 /* tests.floyd in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2C7005D0238C40EF005298C2 /* tests.floyd */; };
+		2C7005D4238FF3BD005298C2 /* floyd_sockets.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7005D2238FF3BD005298C2 /* floyd_sockets.cpp */; };
 		2C7200B421E8FB750013003B /* file_handling.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7200B321E8FB750013003B /* file_handling.cpp */; };
 		2C7E4248231AB9E6006570A2 /* floyd_llvm_codegen_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E4246231AB9E6006570A2 /* floyd_llvm_codegen_basics.cpp */; };
 		2C81894D1D47B62400030C96 /* floyd_interpreter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C81894B1D47B62400030C96 /* floyd_interpreter.cpp */; };
@@ -667,6 +668,8 @@
 		2C6CDA9622FD969B008F65C7 /* command_line_parser.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = command_line_parser.cpp; sourceTree = "<group>"; };
 		2C6CDA9722FD969B008F65C7 /* command_line_parser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = command_line_parser.h; sourceTree = "<group>"; };
 		2C7005D0238C40EF005298C2 /* tests.floyd */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tests.floyd; sourceTree = "<group>"; };
+		2C7005D2238FF3BD005298C2 /* floyd_sockets.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_sockets.cpp; sourceTree = "<group>"; };
+		2C7005D3238FF3BD005298C2 /* floyd_sockets.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_sockets.h; sourceTree = "<group>"; };
 		2C7200B221E8FB750013003B /* file_handling.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = file_handling.h; sourceTree = "<group>"; };
 		2C7200B321E8FB750013003B /* file_handling.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = file_handling.cpp; sourceTree = "<group>"; };
 		2C7E4246231AB9E6006570A2 /* floyd_llvm_codegen_basics.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_llvm_codegen_basics.cpp; sourceTree = "<group>"; };
@@ -778,6 +781,8 @@
 				2CCA88F422B6B5F100976D8E /* floyd_corelib.h */,
 				2C00DEC622198C6300DB322E /* floyd_runtime.cpp */,
 				2C00DEC722198C6300DB322E /* floyd_runtime.h */,
+				2C7005D2238FF3BD005298C2 /* floyd_sockets.cpp */,
+				2C7005D3238FF3BD005298C2 /* floyd_sockets.h */,
 				2CAC5B8E230FFC8800F89608 /* quadratic_probing_hash_table.cpp */,
 				2CAC5B8F230FFC8800F89608 /* quadratic_probing_hash_table.h */,
 				2CC9B79D2309FD1D00B195C8 /* value_backend.cpp */,
@@ -1758,6 +1763,7 @@
 				2C5E343C21527C6700B02262 /* hardware_caps_macos.cpp in Sources */,
 				2C9FC7C52310C25E00CF8F02 /* value_features.cpp in Sources */,
 				2C8C039C2221D9120085EBBE /* gmock-all.cc in Sources */,
+				2C7005D4238FF3BD005298C2 /* floyd_sockets.cpp in Sources */,
 				2CE1C35D2270C7AC007892B4 /* floyd_llvm_runtime.cpp in Sources */,
 				2C40A71F1D76E179003245E3 /* immutable_ref_value.cpp in Sources */,
 				2C5372B9207A9EBA00647AD1 /* bytecode_interpreter.cpp in Sources */,
