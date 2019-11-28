@@ -29,6 +29,45 @@ https://en.wikipedia.org/wiki/Berkeley_sockets
 #include "quark.h"
 
 
+//#define QUARK_TEST QUARK_TEST_VIP
+
+
+
+struct socket_t {
+	bool check_invariant() const;
+	socket_t(int af);
+	~socket_t();
+
+
+	int _fd;
+};
+
+bool socket_t::check_invariant() const{
+	QUARK_ASSERT(_fd >= 0);
+	return true;
+}
+
+socket_t::socket_t(int af){
+	const auto fd = ::socket(af, SOCK_STREAM, 0);
+	if (fd < 0){
+		throw std::runtime_error("Socket creation error");
+	}
+	_fd = fd;
+
+	QUARK_ASSERT(check_invariant());
+}
+
+socket_t::~socket_t(){
+	QUARK_ASSERT(check_invariant());
+
+	const int close_result = ::close(_fd);
+	QUARK_ASSERT(close_result == 0);
+
+	_fd = -1;;
+}
+
+
+
 std::vector<std::string> unpack_vector_of_strings(char** vec){
 	QUARK_ASSERT(vec != nullptr);
 	std::vector<std::string> result;
@@ -324,11 +363,10 @@ struct http_request_t {
 };
 
 
-std::string make_request(const http_request_t& request){
-	const auto fd = socket(request.af, SOCK_STREAM, 0);
-	if (fd < 0){
-		throw std::runtime_error("Socket creation error");
-	}
+
+
+std::string execute_request(const http_request_t& request){
+	const auto socket = socket_t(request.af);
 
 	struct sockaddr_in serv_addr;
 	memset(&serv_addr, '0', sizeof(serv_addr));
@@ -336,22 +374,18 @@ std::string make_request(const http_request_t& request){
 	serv_addr.sin_port = htons(request.port);
 	serv_addr.sin_addr = request.addr;
 
-	const auto connect_err = connect(fd, (const struct sockaddr *)&serv_addr, sizeof(serv_addr));
+	const auto connect_err = connect(socket._fd, (const struct sockaddr *)&serv_addr, sizeof(serv_addr));
 	if (connect_err < 0){
 		throw std::runtime_error("Connection Failed");
 	}
 
-	const auto send_result = send(fd , request.message.c_str() , request.message.size() , 0 );
+	const auto send_result = send(socket._fd , request.message.c_str() , request.message.size() , 0 );
 	if(send_result == -1 || send_result != request.message.size()){
 		// errno
 		throw std::runtime_error("send() failed");
 	}
 
-	std::string response = read_socket(fd);
-
-	const int close_result = close(fd);
-	QUARK_ASSERT(close_result == 0);
-
+	std::string response = read_socket(socket._fd);
 	return response;
 }
 
@@ -370,29 +404,29 @@ http_request_t make_get_request(const std::string& addr, int port, int af, const
 
 
 QUARK_TEST("socket-component", "", "", ""){
-	const auto r = make_request(make_get_request("cnn.com", 80, AF_INET, "GET / HTTP/1.1", { "Host: www.cnn.com" }, ""));
+	const auto r = execute_request(make_get_request("cnn.com", 80, AF_INET, "GET / HTTP/1.1", { "Host: www.cnn.com" }, ""));
 	QUARK_TRACE(r);
 	QUARK_VERIFY(r.empty() == false);
 }
 
 QUARK_TEST("socket-component", "", "", ""){
-	const auto r = make_request(make_get_request("example.com", 80, AF_INET, "GET /index.html HTTP/1.0", { }, ""));
+	const auto r = execute_request(make_get_request("example.com", 80, AF_INET, "GET /index.html HTTP/1.0", { }, ""));
 	QUARK_TRACE(r);
 }
 
 QUARK_TEST("socket-component", "", "", ""){
-	const auto r = make_request(make_get_request("google.com", 80, AF_INET, "GET /index.html HTTP/1.0", { }, ""));
+	const auto r = execute_request(make_get_request("google.com", 80, AF_INET, "GET /index.html HTTP/1.0", { }, ""));
 	QUARK_TRACE(r);
 }
 
 QUARK_TEST("socket-component", "", "", ""){
-	const auto r = make_request(make_get_request("google.com", 80, AF_INET, "GET / HTTP/1.0", { "Host: www.google.com" }, ""));
+	const auto r = execute_request(make_get_request("google.com", 80, AF_INET, "GET / HTTP/1.0", { "Host: www.google.com" }, ""));
 	QUARK_TRACE(r);
 }
 
 QUARK_TEST("socket-component", "", "", ""){
-//	const auto r = make_request(http_request_t { sockets_gethostbyname2("stackoverflow.com", AF_INET).addresses_IPv4[0], 80, AF_INET, "GET / HTTP/1.0" "\r\n" "Host: stackoverflow.com" "\r\n" "\r\n" });
-	const auto r = make_request(make_get_request("stackoverflow.com", 80, AF_INET, "GET /index.html HTTP/1.0", { "Host: www.stackoverflow.com" }, ""));
+//	const auto r = execute_request(http_request_t { sockets_gethostbyname2("stackoverflow.com", AF_INET).addresses_IPv4[0], 80, AF_INET, "GET / HTTP/1.0" "\r\n" "Host: stackoverflow.com" "\r\n" "\r\n" });
+	const auto r = execute_request(make_get_request("stackoverflow.com", 80, AF_INET, "GET /index.html HTTP/1.0", { "Host: www.stackoverflow.com" }, ""));
 	QUARK_TRACE(r);
 }
 
