@@ -25,6 +25,7 @@ https://en.wikipedia.org/wiki/Berkeley_sockets
 
 #include "json_support.h"
 #include "utils.h"
+#include "text_parser.h"
 #include "quark.h"
 
 
@@ -276,6 +277,45 @@ static const std::string k_http_get_minimal = "GET / HTTP/1.1\r\nHost: www.cnn.c
 static const std::string k_http_get_minimal2 = "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n";
 
 
+static const std::string kCRLF = "\r\n";
+
+
+/*
+	Will add CRLF after request_line, headers.
+*/
+std::string make_http_request_str(const std::string& request_line, const std::vector<std::string>& headers, const std::string& optional_body){
+	std::string headers_str;
+	for(const auto& e: headers){
+		headers_str = headers_str + e + kCRLF;
+	}
+
+	return
+		request_line + kCRLF
+		+ headers_str
+		+ kCRLF
+		+ optional_body;
+}
+
+
+
+QUARK_TEST("socket-component", "make_http_request_str()","", ""){
+	const auto r = make_http_request_str("GET /hello.htm HTTP/1.1", {}, "");
+	QUARK_VERIFY(r == "GET /hello.htm HTTP/1.1\r\n\r\n");
+}
+QUARK_TEST("socket-component", "make_http_request_str()","", ""){
+	const auto r = make_http_request_str("GET /hello.htm HTTP/1.1", { "Host: www.tutorialspoint.com", "Accept-Language: en-us" }, "licenseID=string&content=string&/paramsXML=string");
+	ut_verify_string(
+		QUARK_POS,
+		r,
+		"GET /hello.htm HTTP/1.1\r\n"
+		"Host: www.tutorialspoint.com" "\r\n"
+		"Accept-Language: en-us" "\r\n"
+		"\r\n"
+		"licenseID=string&content=string&/paramsXML=string"
+	);
+}
+
+
 struct http_request_t {
 	struct in_addr addr;
 	int port;
@@ -307,42 +347,185 @@ std::string make_request(const http_request_t& request){
 		throw std::runtime_error("send() failed");
 	}
 
-	std::string reply = read_socket(fd);
+	std::string response = read_socket(fd);
 
 	const int close_result = close(fd);
 	QUARK_ASSERT(close_result == 0);
 
-	return reply;
+	return response;
+}
+
+//??? store request as kv too!
+http_request_t make_get_request(const std::string& addr, int port, int af, const std::string& command, const std::vector<std::string>& headers, const std::string& optional_body){
+	const auto e = sockets_gethostbyname2(addr, af);
+	QUARK_ASSERT(e.addresses_IPv4.size() >= 1);
+
+	return http_request_t {
+		e.addresses_IPv4[0],
+		port,
+		af,
+		make_http_request_str(command, headers, optional_body)
+	};
 }
 
 
-QUARK_TEST("socket-component", "","", ""){
-	const auto r = make_request(http_request_t { sockets_gethostbyname2("cnn.com", AF_INET).addresses_IPv4[0], 80, AF_INET, "GET / HTTP/1.1\r\nHost: www.cnn.com\r\n\r\n" });
+QUARK_TEST("socket-component", "", "", ""){
+	const auto r = make_request(make_get_request("cnn.com", 80, AF_INET, "GET / HTTP/1.1", { "Host: www.cnn.com" }, ""));
 	QUARK_TRACE(r);
 	QUARK_VERIFY(r.empty() == false);
 }
 
-#if 0
-QUARK_TEST("socket-component", "","", ""){
-//	const auto r = make_request(http_request_t { sockets_gethostbyname2("google.com", AF_INET).addresses_IPv4[0], 80, AF_INET, "GET / HTTP/1.1" "\r\n" "Host: google.com" "\r\n" "\r\n"  });
-	const auto r = make_request(http_request_t { sockets_gethostbyname2("google.com", AF_INET).addresses_IPv4[0], 80, AF_INET, k_http_request_test2 });
+QUARK_TEST("socket-component", "", "", ""){
+	const auto r = make_request(make_get_request("example.com", 80, AF_INET, "GET /index.html HTTP/1.0", { }, ""));
 	QUARK_TRACE(r);
 }
 
-/*
- s.connect(("example.com" , 80))
- s.sendall(b"GET / HTTP/1.1\r\nHost: example.com\r\nAccept: text/html\r\n\r\n")
- print(str(s.recv(4096), 'utf-8'))
-*/
-
-QUARK_TEST("socket-component", "","", ""){
-//	const auto r = make_request(http_request_t { sockets_gethostbyname2("example.com", AF_INET).addresses_IPv4[0], 80, AF_INET, "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n" });
-//	const auto r = make_request(http_request_t { sockets_gethostbyname2("example.com", AF_INET).addresses_IPv4[0], 80, AF_INET, "GET /index.html HTTP/1.1\r\nHost: example.com\r\nAccept: text/html\r\n\r\n" });
-	const auto r = make_request(http_request_t { sockets_gethostbyname2("stackoverflow.com", AF_INET).addresses_IPv4[0], 80, AF_INET, "GET / HTTP/1.1" "\r\n" "Host: stackoverflow.com" "\r\n" "\r\n" });
-//	const auto r = make_request(http_request_t { sockets_gethostbyname2("example.com", AF_INET).addresses_IPv4[0], 80, AF_INET, "GET / HTTP/1.1" "\r\n" "Host: example.com" "\r\n" "\r\n" });
+QUARK_TEST("socket-component", "", "", ""){
+	const auto r = make_request(make_get_request("google.com", 80, AF_INET, "GET /index.html HTTP/1.0", { }, ""));
 	QUARK_TRACE(r);
 }
-#endif
+
+QUARK_TEST("socket-component", "", "", ""){
+	const auto r = make_request(make_get_request("google.com", 80, AF_INET, "GET / HTTP/1.0", { "Host: www.google.com" }, ""));
+	QUARK_TRACE(r);
+}
+
+QUARK_TEST("socket-component", "", "", ""){
+//	const auto r = make_request(http_request_t { sockets_gethostbyname2("stackoverflow.com", AF_INET).addresses_IPv4[0], 80, AF_INET, "GET / HTTP/1.0" "\r\n" "Host: stackoverflow.com" "\r\n" "\r\n" });
+	const auto r = make_request(make_get_request("stackoverflow.com", 80, AF_INET, "GET /index.html HTTP/1.0", { "Host: www.stackoverflow.com" }, ""));
+	QUARK_TRACE(r);
+}
+
+
+
+static const std::string k_http_response1 =
+	R"___(	HTTP/1.1 301 Moved Permanently)___" "\r\n"
+	R"___(	Server: Varnish)___" "\r\n"
+	R"___(	Retry-After: 0)___" "\r\n"
+	R"___(	Content-Length: 0)___" "\r\n"
+	R"___(	Cache-Control: public, max-age=600)___" "\r\n"
+	R"___(	Location: https://www.cnn.com/)___" "\r\n"
+	R"___(	Accept-Ranges: bytes)___" "\r\n"
+	R"___(	Date: Thu, 28 Nov 2019 19:07:13 GMT)___" "\r\n"
+	R"___(	Via: 1.1 varnish)___" "\r\n"
+	R"___(	Connection: close)___" "\r\n"
+	R"___(	Set-Cookie: countryCode=SE; Domain=.cnn.com; Path=/)___" "\r\n"
+	R"___(	Set-Cookie: geoData=stockholm|AB|117 37|SE|EU|100|broadband; Domain=.cnn.com; Path=/)___" "\r\n"
+	R"___(	X-Served-By: cache-bma1631-BMA)___" "\r\n"
+	R"___(	X-Cache: HIT)___" "\r\n"
+	R"___(	X-Cache-Hits: 0)___" "\r\n"
+	R"___()___" "\r\n"
+	;
+
+static const std::string k_http_response2 =
+	R"___(	HTTP/1.0 200 OK)___" "\r\n"
+	R"___(	Accept-Ranges: bytes)___" "\r\n"
+	R"___(	Content-Type: text/html)___" "\r\n"
+	R"___(	Date: Thu, 28 Nov 2019 19:07:13 GMT)___" "\r\n"
+	R"___(	Last-Modified: Thu, 28 Nov 2019 18:12:02 GMT)___" "\r\n"
+	R"___(	Server: ECS (nyb/1D10))___" "\r\n"
+	R"___(	Content-Length: 94)___" "\r\n"
+	R"___(	Connection: close)___" "\r\n"
+	R"___()___" "\r\n"
+	R"___(	<html><head><title>edgecastcdn.net</title></head><body><h1>edgecastcdn.net</h1></body></html>)___"
+	;
+
+static const std::string k_http_response3 =
+	R"___(	HTTP/1.1 301 Moved Permanently)___" "\r\n"
+	R"___(	Content-Type: text/html; charset=UTF-8)___" "\r\n"
+	R"___(	Location: https://stackoverflow.com/index.html)___" "\r\n"
+	R"___(	Accept-Ranges: bytes)___" "\r\n"
+	R"___(	Content-Length: 159)___" "\r\n"
+	R"___(	Accept-Ranges: bytes)___" "\r\n"
+	R"___(	Date: Thu, 28 Nov 2019 19:07:13 GMT)___" "\r\n"
+	R"___(	Via: 1.1 varnish)___" "\r\n"
+	R"___(	Age: 0)___" "\r\n"
+	R"___(	Connection: close)___" "\r\n"
+	R"___(	X-Served-By: cache-bma1641-BMA)___" "\r\n"
+	R"___(	X-Cache: MISS)___" "\r\n"
+	R"___(	X-Cache-Hits: 0)___" "\r\n"
+	R"___(	X-Timer: S1574968034.643929,VS0,VE112)___" "\r\n"
+	R"___(	Vary: Fastly-SSL)___" "\r\n"
+	R"___(	X-DNS-Prefetch-Control: off)___" "\r\n"
+	R"___(	Set-Cookie: prov=9847efbd-0d62-5ab8-cd80-94d1972a043c; domain=.stackoverflow.com; expires=Fri, 01-Jan-2055 00:00:00 GMT; path=/; HttpOnly)___" "\r\n"
+	R"___()___" "\r\n"
+	R"___(	<head><title>Document Moved</title></head>)___" "\r\n"
+	R"___(	<body><h1>Object Moved</h1>This document may be found <a HREF="https://stackoverflow.com/index.html">here</a></body>)___"
+	;
+
+
+static const std::string k_skip_leading_chars = " \t";
+
+struct http_response_t {
+	std::string status_line;
+	std::vector<std::pair<std::string, std::string>> headers;
+	std::string optional_body;
+};
+bool operator==(const http_response_t& lhs, const http_response_t& rhs){
+	return lhs.status_line == rhs.status_line && lhs.headers == rhs.headers && lhs.optional_body == rhs.optional_body;
+}
+
+
+
+std::pair<std::string, seq_t> read_to_crlf(const seq_t& p){
+	return read_until_str(p, kCRLF, true);
+}
+
+std::pair<std::string, seq_t> read_to_crlf_skip_leads(const seq_t& p){
+	const auto a = read_until_str(p, kCRLF, true);
+	const auto b = skip(seq_t(a.first), k_skip_leading_chars);
+	return { b.str(), a.second };
+}
+
+
+http_response_t unpack_response_string(const std::string& s){
+	seq_t p(s);
+	const auto status_line_pos = read_to_crlf_skip_leads(p);
+	p = status_line_pos.second;
+
+	std::vector<std::pair<std::string, std::string>> headers;
+	while(p.empty() == false && is_first(p, kCRLF) == false){
+		const auto h = read_to_crlf_skip_leads(p);
+
+		const auto key_kv = read_until_str(seq_t(h.first), ": ", true);
+		const auto value = key_kv.second.str();
+		headers.push_back(
+			std::pair<std::string, std::string>(key_kv.first, value)
+		);
+		p = h.second;
+	}
+
+	if(is_first(p, kCRLF)){
+		p = p.rest(kCRLF.size());
+	}
+
+	const auto body = p.first(p.size());
+
+	return {
+		status_line_pos.first,
+		headers,
+		body
+	};
+}
+
+QUARK_TEST("socket-component", "unpack_response_string()", "k_http_response1", ""){
+	const auto r = unpack_response_string(k_http_response1);
+	QUARK_VERIFY(r.status_line == "HTTP/1.1 301 Moved Permanently");
+	QUARK_VERIFY(r.headers.size() == 14);
+	QUARK_VERIFY(r.headers[0] == (std::pair<std::string, std::string>("Server", "Varnish")));
+	QUARK_VERIFY(r.headers[13] == (std::pair<std::string, std::string>("X-Cache-Hits", "0")));
+	QUARK_VERIFY(r.optional_body == "");
+}
+
+QUARK_TEST("socket-component", "unpack_response_string()", "k_http_response2", ""){
+	const auto r = unpack_response_string(k_http_response2);
+	QUARK_VERIFY(r.status_line == "HTTP/1.0 200 OK");
+	QUARK_VERIFY(r.headers.size() == 7);
+	QUARK_VERIFY(r.headers[0] == (std::pair<std::string, std::string>("Accept-Ranges", "bytes")));
+	QUARK_VERIFY(r.headers[6] == (std::pair<std::string, std::string>("Connection", "close")));
+	QUARK_VERIFY(r.optional_body == "\t<html><head><title>edgecastcdn.net</title></head><body><h1>edgecastcdn.net</h1></body></html>");
+}
+
 
 
 

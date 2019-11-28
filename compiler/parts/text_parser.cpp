@@ -664,5 +664,52 @@ QUARK_TEST("", "read_balanced2()", "", ""){
 }
 
 
+//??? use split_at() instead?
+std::pair<std::string, seq_t> read_until_str(const seq_t& p, const std::string& wanted, bool skip){
+	std::string acc;
+	const auto len = wanted.size();
+	auto p2 = p;
+	while(p2.empty() == false && p2.first(len) != wanted){
+		acc = acc + p2.first(1);
+		p2 = p2.rest();
+	}
+	if(p2.first(len) == wanted && skip){
+		return { acc, p2.rest(len) };
+	}
+	else{
+		return { acc, p2 };
+	}
+}
 
+QUARK_TEST("", "read_until_str()", "", ""){
+	const auto r = read_until_str(seq_t("abcdefghij55mnop55"), "55", false);
+	QUARK_VERIFY(r.first == "abcdefghij");
+	QUARK_VERIFY(r.second.pos() == 10);
+}
+QUARK_TEST("", "read_until_str()", "", ""){
+	const auto r = read_until_str(seq_t("abc55"), "55", false);
+	QUARK_VERIFY(r.first == "abc");
+	QUARK_VERIFY(r.second.pos() == 3);
+}
+QUARK_TEST("", "read_until_str()", "", ""){
+	const auto r = read_until_str(seq_t("abcdef"), "55", false);
+	QUARK_VERIFY(r.first == "abcdef");
+	QUARK_VERIFY(r.second.pos() == 6);
+}
+
+QUARK_TEST("", "read_until_str()", "", ""){
+	const auto r = read_until_str(seq_t("abcdefghij55mnop55"), "55", true);
+	QUARK_VERIFY(r.first == "abcdefghij");
+	QUARK_VERIFY(r.second.pos() == 12);
+}
+QUARK_TEST("", "read_until_str()", "", ""){
+	const auto r = read_until_str(seq_t("abc55"), "55", true);
+	QUARK_VERIFY(r.first == "abc");
+	QUARK_VERIFY(r.second.pos() == 5);
+}
+QUARK_TEST("", "read_until_str()", "", ""){
+	const auto r = read_until_str(seq_t("abcdef"), "55", true);
+	QUARK_VERIFY(r.first == "abcdef");
+	QUARK_VERIFY(r.second.pos() == 6);
+}
 
