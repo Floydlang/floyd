@@ -10,8 +10,9 @@
 
 /*
 https://en.wikipedia.org/wiki/Berkeley_sockets
+https://www.ntu.edu.sg/home/ehchua/programming/webprogramming/HTTP_Basics.html
+http://httpbin.org/#/
 */
-
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -31,6 +32,39 @@ https://en.wikipedia.org/wiki/Berkeley_sockets
 
 //#define QUARK_TEST QUARK_TEST_VIP
 
+/*
+	The gethostbyname*() and gethostbyaddr*() functions are obsolete. Applications should use getaddrinfo(3) and getnameinfo(3) instead.
+	const char *gai_strerror(int errcode);
+	gethostbyname2_r() is safer
+*/
+
+void throw_errno2(const std::string& s, int error) QUARK_NO_RETURN;
+void throw_errno2(const std::string& s, int error) {
+	// No such host is known in the database.
+	if(error == HOST_NOT_FOUND){
+		throw std::runtime_error(s + "HOST_NOT_FOUND");
+	}
+
+	// This condition happens when the name server could not be contacted. If you try again later, you may succeed then.
+	else if(error == TRY_AGAIN){
+		throw std::runtime_error(s + "TRY_AGAIN");
+	}
+
+	// A non-recoverable error occurred.
+	else if(error == NO_RECOVERY){
+		throw std::runtime_error(s + "NO_RECOVERY");
+	}
+
+	// The host database contains an entry for the name, but it doesn’t have an associated Internet address.
+	else if(error == NO_ADDRESS){
+		throw std::runtime_error(s + "NO_ADDRESS");
+	}
+	else{
+		throw std::runtime_error(s);
+	}
+}
+
+
 
 
 struct socket_t {
@@ -49,8 +83,8 @@ bool socket_t::check_invariant() const{
 
 socket_t::socket_t(int af){
 	const auto fd = ::socket(af, SOCK_STREAM, 0);
-	if (fd < 0){
-		throw std::runtime_error("Socket creation error");
+	if (fd == -1){
+		throw_errno2("Socket creation error", errno);
 	}
 	_fd = fd;
 
@@ -147,7 +181,7 @@ bool SetSocketBlockingEnabled(int fd, bool blocking){
 //??? network-ordered bytes.
 struct in_addr make_in_addr_from_ip_string(const std::string& s){
 	struct in_addr result;
-	int error = inet_aton(s.c_str(), &result);
+	int r = inet_aton(s.c_str(), &result);
 
 /*
 	// Convert IPv4 and IPv6 addresses from text to binary form
@@ -156,9 +190,9 @@ struct in_addr make_in_addr_from_ip_string(const std::string& s){
 	}
 */
 
-	if(error == 0){
+	if(r == 0){
 		QUARK_ASSERT(false);
-		throw std::exception();
+		throw std::runtime_error("inet_aton() failed");
 	}
 	return result;
 }
@@ -171,24 +205,39 @@ std::string read_socket(int socket){
 	std::string result;
 	while(true){
 		const auto read_result = read(socket , buffer, 1024);
-		if(read_result == -1){
-			// errno
-			throw std::runtime_error("read() failed");
+		if(read_result < 0){
+			QUARK_ASSERT(read_result == -1);
+			throw_errno2("read()", errno);
 		}
-		else if(read_result == 0){
-			return result;
-		}
-		else if(read_result > 0){
-			std::string s(buffer);
-			result = result + s;
-		}
-		else{
-			throw std::runtime_error("read() failed");
+		else {
+			if(read_result == 0){
+				return result;
+			}
+			else if(read_result < 1024){
+				std::string s(buffer);
+				result = result + s;
+				return result;
+			}
+			else if(read_result == 1024){
+				std::string s(buffer);
+				result = result + s;
+
+				//	Out input buffer was full, read more data.
+			}
 		}
 	}
 }
 
+//??? Sockets should use bytes, not string.
 
+void write_socket(int socket, const std::string& data){
+//	::write(socket, data.c_str(), data.size());
+	const auto send_result = ::send(socket , data.c_str() , data.size(), 0);
+	if(send_result < 0){
+		QUARK_ASSERT(send_result == -1);
+		throw_errno2("send()", errno);
+	}
+}
 
 
 hostent_t unpack_hostent(const struct hostent& e){
@@ -197,7 +246,7 @@ hostent_t unpack_hostent(const struct hostent& e){
 	// ??? Add proper support for AF_INET or AF_INET6, with the latter being used for IPv6 hosts.
 	const size_t address_length = e.h_length;
 	if(address_length != 4){
-		throw std::runtime_error("");
+		throw std::runtime_error("Unsupported adress length");
 	}
 
 	std::vector<struct in_addr> addresses;
@@ -220,40 +269,15 @@ hostent_t unpack_hostent(const struct hostent& e){
 
 
 
-//	gethostbyname2_r() is safer
-void throw_socket_err(int error) QUARK_NO_RETURN;
-void throw_socket_err(int error) {
-	// No such host is known in the database.
-	if(error == HOST_NOT_FOUND){
-		throw std::runtime_error("HOST_NOT_FOUND");
-	}
-
-	// This condition happens when the name server could not be contacted. If you try again later, you may succeed then.
-	else if(error == TRY_AGAIN){
-		throw std::runtime_error("TRY_AGAIN");
-	}
-
-	// A non-recoverable error occurred.
-	else if(error == NO_RECOVERY){
-		throw std::runtime_error("NO_RECOVERY");
-	}
-
-	// The host database contains an entry for the name, but it doesn’t have an associated Internet address.
-	else if(error == NO_ADDRESS){
-		throw std::runtime_error("NO_ADDRESS");
-	}
-	else{
-		throw std::runtime_error("");
-	}
-}
 
 //	gethostbyname2_r() is safer
 hostent_t sockets_gethostbyname2(const std::string& name, int af){
 	//	Function: struct hostent * gethostbyname2 (const char *name, int af)
 	const auto e = gethostbyname2(name.c_str(), af);
 	if(e == nullptr){
-		//??? Is there are function to get h_errno?
-		throw_socket_err(h_errno);
+		const auto host_error = ::h_errno;
+		const auto error_str = hstrerror(host_error);
+		throw std::runtime_error("gethostbyname2(): " + std::string(error_str) + ": " + std::to_string(host_error));
 	}
 	else{
 		return unpack_hostent(*e);
@@ -276,8 +300,9 @@ QUARK_TEST("socket-component", "gethostbyname2_r()","google.com", ""){
 hostent_t sockets_gethostbyaddr2(const struct in_addr& addr_v4, int af){
 	const auto e = gethostbyaddr(&addr_v4, 4, af);
 	if(e == nullptr){
-		//??? Is there are function to get h_errno?
-		throw_socket_err(h_errno);
+		const auto host_error = ::h_errno;
+		const auto error_str = hstrerror(host_error);
+		throw std::runtime_error("gethostbyaddr(): " + std::string(error_str) + ": " + std::to_string(host_error));
 	}
 	else{
 		return unpack_hostent(*e);
@@ -355,80 +380,8 @@ QUARK_TEST("socket-component", "make_http_request_str()","", ""){
 }
 
 
-struct http_request_t {
-	struct in_addr addr;
-	int port;
-	int af;
-	std::string message;
-};
 
 
-
-
-std::string execute_request(const http_request_t& request){
-	const auto socket = socket_t(request.af);
-
-	struct sockaddr_in serv_addr;
-	memset(&serv_addr, '0', sizeof(serv_addr));
-	serv_addr.sin_family = (sa_family_t)request.af;
-	serv_addr.sin_port = htons(request.port);
-	serv_addr.sin_addr = request.addr;
-
-	const auto connect_err = connect(socket._fd, (const struct sockaddr *)&serv_addr, sizeof(serv_addr));
-	if (connect_err < 0){
-		throw std::runtime_error("Connection Failed");
-	}
-
-	const auto send_result = send(socket._fd , request.message.c_str() , request.message.size() , 0 );
-	if(send_result == -1 || send_result != request.message.size()){
-		// errno
-		throw std::runtime_error("send() failed");
-	}
-
-	std::string response = read_socket(socket._fd);
-	return response;
-}
-
-//??? store request as kv too!
-http_request_t make_get_request(const std::string& addr, int port, int af, const std::string& command, const std::vector<std::string>& headers, const std::string& optional_body){
-	const auto e = sockets_gethostbyname2(addr, af);
-	QUARK_ASSERT(e.addresses_IPv4.size() >= 1);
-
-	return http_request_t {
-		e.addresses_IPv4[0],
-		port,
-		af,
-		make_http_request_str(command, headers, optional_body)
-	};
-}
-
-
-QUARK_TEST("socket-component", "", "", ""){
-	const auto r = execute_request(make_get_request("cnn.com", 80, AF_INET, "GET / HTTP/1.1", { "Host: www.cnn.com" }, ""));
-	QUARK_TRACE(r);
-	QUARK_VERIFY(r.empty() == false);
-}
-
-QUARK_TEST("socket-component", "", "", ""){
-	const auto r = execute_request(make_get_request("example.com", 80, AF_INET, "GET /index.html HTTP/1.0", { }, ""));
-	QUARK_TRACE(r);
-}
-
-QUARK_TEST("socket-component", "", "", ""){
-	const auto r = execute_request(make_get_request("google.com", 80, AF_INET, "GET /index.html HTTP/1.0", { }, ""));
-	QUARK_TRACE(r);
-}
-
-QUARK_TEST("socket-component", "", "", ""){
-	const auto r = execute_request(make_get_request("google.com", 80, AF_INET, "GET / HTTP/1.0", { "Host: www.google.com" }, ""));
-	QUARK_TRACE(r);
-}
-
-QUARK_TEST("socket-component", "", "", ""){
-//	const auto r = execute_request(http_request_t { sockets_gethostbyname2("stackoverflow.com", AF_INET).addresses_IPv4[0], 80, AF_INET, "GET / HTTP/1.0" "\r\n" "Host: stackoverflow.com" "\r\n" "\r\n" });
-	const auto r = execute_request(make_get_request("stackoverflow.com", 80, AF_INET, "GET /index.html HTTP/1.0", { "Host: www.stackoverflow.com" }, ""));
-	QUARK_TRACE(r);
-}
 
 
 
@@ -511,6 +464,18 @@ std::pair<std::string, seq_t> read_to_crlf_skip_leads(const seq_t& p){
 	return { b.str(), a.second };
 }
 
+std::string make_http_response_str(const std::string& status_line, const std::vector<std::string>& headers, const std::string& optional_body){
+	std::string headers_str;
+	for(const auto& e: headers){
+		headers_str = headers_str + e + kCRLF;
+	}
+
+	return
+		status_line + kCRLF
+		+ headers_str
+		+ kCRLF
+		+ optional_body;
+}
 
 http_response_t unpack_response_string(const std::string& s){
 	seq_t p(s);
@@ -560,6 +525,154 @@ QUARK_TEST("socket-component", "unpack_response_string()", "k_http_response2", "
 	QUARK_VERIFY(r.optional_body == "\t<html><head><title>edgecastcdn.net</title></head><body><h1>edgecastcdn.net</h1></body></html>");
 }
 
+
+
+
+struct http_request_t {
+	struct in_addr addr;
+	int port;
+	int af;
+	std::string message;
+};
+
+
+
+
+std::string execute_request(const http_request_t& request){
+	const auto socket = socket_t(request.af);
+
+	struct sockaddr_in serv_addr;
+	memset(&serv_addr, '0', sizeof(serv_addr));
+	serv_addr.sin_family = (sa_family_t)request.af;
+	serv_addr.sin_port = htons(request.port);
+	serv_addr.sin_addr = request.addr;
+
+	const auto connect_err = ::connect(socket._fd, (const struct sockaddr *)&serv_addr, sizeof(serv_addr));
+	if (connect_err != 0){
+		throw_errno2("connect()", errno);
+	}
+
+	write_socket(socket._fd , request.message);
+
+	std::string response = read_socket(socket._fd);
+	return response;
+}
+
+//??? store request as kv too!
+http_request_t make_get_request(const std::string& addr, int port, int af, const std::string& command, const std::vector<std::string>& headers, const std::string& optional_body){
+	const auto e = sockets_gethostbyname2(addr, af);
+	QUARK_ASSERT(e.addresses_IPv4.size() >= 1);
+
+	return http_request_t {
+		e.addresses_IPv4[0],
+		port,
+		af,
+		make_http_request_str(command, headers, optional_body)
+	};
+}
+
+
+QUARK_TEST("socket-component", "", "", ""){
+	const auto r = execute_request(make_get_request("cnn.com", 80, AF_INET, "GET / HTTP/1.1", { "Host: www.cnn.com" }, ""));
+	QUARK_TRACE(r);
+	QUARK_VERIFY(r.empty() == false);
+}
+
+QUARK_TEST("socket-component", "", "", ""){
+	const auto r = execute_request(make_get_request("example.com", 80, AF_INET, "GET /index.html HTTP/1.0", { }, ""));
+	QUARK_TRACE(r);
+}
+
+QUARK_TEST("socket-component", "", "", ""){
+	const auto r = execute_request(make_get_request("google.com", 80, AF_INET, "GET /index.html HTTP/1.0", { }, ""));
+	QUARK_TRACE(r);
+}
+
+QUARK_TEST("socket-component", "", "", ""){
+	const auto r = execute_request(make_get_request("google.com", 80, AF_INET, "GET / HTTP/1.0", { "Host: www.google.com" }, ""));
+	QUARK_TRACE(r);
+}
+
+QUARK_TEST("socket-component", "", "", ""){
+//	const auto r = execute_request(http_request_t { sockets_gethostbyname2("stackoverflow.com", AF_INET).addresses_IPv4[0], 80, AF_INET, "GET / HTTP/1.0" "\r\n" "Host: stackoverflow.com" "\r\n" "\r\n" });
+	const auto r = execute_request(make_get_request("stackoverflow.com", 80, AF_INET, "GET /index.html HTTP/1.0", { "Host: www.stackoverflow.com" }, ""));
+	QUARK_TRACE(r);
+}
+
+//	http://localhost:8080/info.html
+
+void execute_http_server(){
+	socket_t socket(AF_INET);
+
+	const int PORT = 8080; //Where the clients can reach at
+
+	/* htonl converts a long integer (e.g. address) to a network representation */
+	/* htons converts a short integer (e.g. port) to a network representation */
+	struct sockaddr_in address;
+	memset((char *)&address, 0, sizeof(address));
+	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = htonl(INADDR_ANY);
+	address.sin_port = htons(PORT);
+	const auto bind_result = bind(socket._fd, (struct sockaddr *)&address, sizeof(address));
+	if(bind_result != 0){
+		throw_errno2("bind()", errno);
+	}
+
+	const auto listen_result = ::listen(socket._fd, 3);
+	if (listen_result != 0){
+		throw_errno2("listen()", errno);
+	}
+
+    int addrlen = sizeof(address);
+
+	while(true){
+		const auto new_socket = accept(socket._fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
+		if (new_socket < 0){
+			QUARK_ASSERT(new_socket == -1);
+			throw_errno2("accept()", errno);
+		}
+
+		const auto read_data = read_socket(new_socket);
+//		printf("%s\n",read_data.c_str() );
+
+		auto pos = seq_t(read_data);
+		const auto x = if_first(pos, "GET /info.html HTTP/1.1");
+		if(x.first){
+			const std::string doc0 = "<html><head><title>edgecastcdn.net</title></head><body><h1>edgecastcdn.net</h1></body></html>";
+			const std::string doc = R"___(
+				<head>
+					<title>Hello Floyd Server</title>
+				</head>
+				<body>
+					<h1>Hello Floyd Server</h1>
+					This document may be found <a HREF="https://stackoverflow.com/index.html">here</a>
+				</body>
+			)___";
+
+			std::string r = make_http_response_str(
+				"HTTP/1.1 200 OK",
+				{
+					"Content-Type: text/html",
+					"Content-Length: " + std::to_string(doc.size())
+				},
+				doc
+			);
+			write_socket(new_socket, r);
+		}
+		else {
+			std::string r = make_http_response_str("HTTP/1.1 404 OK", {}, "");
+			write_socket(new_socket, r);
+		}
+
+		close(new_socket);
+	}
+}
+
+#if 0
+QUARK_TEST_VIP("socket-component", "", "", ""){
+	execute_http_server();
+}
+#endif
 
 
 
