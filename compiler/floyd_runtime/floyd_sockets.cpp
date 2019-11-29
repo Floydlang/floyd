@@ -83,8 +83,6 @@ socket_t::~socket_t(){
 	_fd = -1;;
 }
 
-
-
 static std::vector<std::string> unpack_vector_of_strings(char** vec){
 	QUARK_ASSERT(vec != nullptr);
 	std::vector<std::string> result;
@@ -102,7 +100,7 @@ string in IPv4 dotted-decimal notation. The string is returned in a statically a
 which subsequent calls will overwrite.
 */
 std::string to_string(const struct in_addr& a){
-	const std::string s = inet_ntoa(a);
+	const std::string s = ::inet_ntoa(a);
 	return s;
 }
 
@@ -123,7 +121,7 @@ json_t to_json(const hostent_t& value){
 
 static std::string error_to_string(int errnum){
 	char temp[1024 + 1];
-	int r = strerror_r(errnum, temp, 1024);
+	int r = ::strerror_r(errnum, temp, 1024);
 	QUARK_ASSERT(r == 0);
 	return std::string(temp);
 }
@@ -148,12 +146,12 @@ bool SetSocketBlockingEnabled(int fd, bool blocking){
 bool SetSocketBlockingEnabled(int fd, bool blocking){
 	QUARK_ASSERT(fd >= 0);
 
-	int flags = fcntl(fd, F_GETFL, 0);
+	int flags = ::fcntl(fd, F_GETFL, 0);
 	if (flags == -1){
 		return false;
 	}
 	flags = blocking ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK);
-	const auto a = fcntl(fd, F_SETFL, flags);
+	const auto a = ::fcntl(fd, F_SETFL, flags);
 	return a == 0 ? true : false;
 }
 
@@ -162,7 +160,7 @@ bool SetSocketBlockingEnabled(int fd, bool blocking){
 
 struct in_addr make_in_addr_from_ip_string(const std::string& s){
 	struct in_addr result;
-	int r = inet_aton(s.c_str(), &result);
+	int r = ::inet_aton(s.c_str(), &result);
 
 /*
 	// Convert IPv4 and IPv6 addresses from text to binary form
@@ -185,7 +183,7 @@ std::string read_socket(int socket){
 	char buffer[1024] = { 0 };
 	std::string result;
 	while(true){
-		const auto read_result = read(socket , buffer, 1024);
+		const auto read_result = ::read(socket , buffer, 1024);
 		if(read_result < 0){
 			QUARK_ASSERT(read_result == -1);
 			throw_errno2("read()", get_unix_err());
@@ -246,10 +244,10 @@ hostent_t unpack_hostent(const struct hostent& e){
 
 hostent_t sockets_gethostbyname2(const std::string& name, int af){
 	//	Function: struct hostent * gethostbyname2 (const char *name, int af)
-	const auto e = gethostbyname2(name.c_str(), af);
+	const auto e = ::gethostbyname2(name.c_str(), af);
 	if(e == nullptr){
 		const auto host_error = ::h_errno;
-		const auto error_str = hstrerror(host_error);
+		const auto error_str = ::hstrerror(host_error);
 		throw std::runtime_error(
 			"gethostbyname2(): " + std::string(error_str) + ": " + std::to_string(host_error)
 		);
@@ -270,10 +268,10 @@ QUARK_TEST("socket-component", "gethostbyname2_r()","google.com", ""){
 }
 
 hostent_t sockets_gethostbyaddr2(const struct in_addr& addr_v4, int af){
-	const auto e = gethostbyaddr(&addr_v4, 4, af);
+	const auto e = ::gethostbyaddr(&addr_v4, 4, af);
 	if(e == nullptr){
 		const auto host_error = ::h_errno;
-		const auto error_str = hstrerror(host_error);
+		const auto error_str = ::hstrerror(host_error);
 		throw std::runtime_error(
 			"gethostbyaddr(): " + std::string(error_str) + ": " + std::to_string(host_error)
 		);
@@ -596,7 +594,7 @@ void execute_http_server(const tcp_server_params_t& params){
 	address.sin_family = (sa_family_t)params.af;
 	address.sin_addr.s_addr = htonl(INADDR_ANY);
 	address.sin_port = htons(params.port);
-	const auto bind_result = bind(socket._fd, (struct sockaddr *)&address, sizeof(address));
+	const auto bind_result = ::bind(socket._fd, (struct sockaddr *)&address, sizeof(address));
 	if(bind_result != 0){
 		throw_errno2("bind()", get_unix_err());
 	}
