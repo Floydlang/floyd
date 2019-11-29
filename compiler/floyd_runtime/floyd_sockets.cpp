@@ -36,6 +36,12 @@ http://httpbin.org/#/
 	The gethostbyname*() and gethostbyaddr*() functions are obsolete. Applications should use getaddrinfo(3) and getnameinfo(3) instead.
 	const char *gai_strerror(int errcode);
 	gethostbyname2_r() is safer
+	gethostbyaddr() is safer
+
+	??? network-ordered bytes.
+
+	/??? Sockets should use bytes, not string.
+	??? Add proper support for AF_INET or AF_INET6, with the latter being used for IPv6 hosts.
 */
 
 
@@ -150,10 +156,6 @@ bool SetSocketBlockingEnabled(int fd, bool blocking){
 #endif
 
 
-
-
-
-//??? network-ordered bytes.
 struct in_addr make_in_addr_from_ip_string(const std::string& s){
 	struct in_addr result;
 	int r = inet_aton(s.c_str(), &result);
@@ -203,8 +205,6 @@ std::string read_socket(int socket){
 	}
 }
 
-//??? Sockets should use bytes, not string.
-
 void write_socket(int socket, const std::string& data){
 //	::write(socket, data.c_str(), data.size());
 	const auto send_result = ::send(socket , data.c_str() , data.size(), 0);
@@ -214,11 +214,9 @@ void write_socket(int socket, const std::string& data){
 	}
 }
 
-
 hostent_t unpack_hostent(const struct hostent& e){
 	std::vector<std::string> aliases = unpack_vector_of_strings(e.h_aliases);
 
-	// ??? Add proper support for AF_INET or AF_INET6, with the latter being used for IPv6 hosts.
 	const size_t address_length = e.h_length;
 	if(address_length != 4){
 		throw std::runtime_error("Unsupported adress length");
@@ -242,10 +240,6 @@ hostent_t unpack_hostent(const struct hostent& e){
 	return r;
 }
 
-
-
-
-//	gethostbyname2_r() is safer
 hostent_t sockets_gethostbyname2(const std::string& name, int af){
 	//	Function: struct hostent * gethostbyname2 (const char *name, int af)
 	const auto e = gethostbyname2(name.c_str(), af);
@@ -269,9 +263,6 @@ QUARK_TEST("socket-component", "gethostbyname2_r()","google.com", ""){
 //	QUARK_VERIFY(to_string(a.addresses_IPv4[0]) == "216.58.207.238");
 }
 
-
-
-//	gethostbyaddr() is safer
 hostent_t sockets_gethostbyaddr2(const struct in_addr& addr_v4, int af){
 	const auto e = gethostbyaddr(&addr_v4, 4, af);
 	if(e == nullptr){
@@ -336,7 +327,6 @@ std::string make_http_request_str(const std::string& request_line, const std::ve
 }
 
 
-
 QUARK_TEST("socket-component", "make_http_request_str()","", ""){
 	const auto r = make_http_request_str("GET /hello.htm HTTP/1.1", {}, "");
 	QUARK_VERIFY(r == "GET /hello.htm HTTP/1.1\r\n\r\n");
@@ -353,12 +343,6 @@ QUARK_TEST("socket-component", "make_http_request_str()","", ""){
 		"licenseID=string&content=string&/paramsXML=string"
 	);
 }
-
-
-
-
-
-
 
 static const std::string k_http_response1 =
 	R"___(	HTTP/1.1 301 Moved Permanently)___" "\r\n"
@@ -415,7 +399,6 @@ static const std::string k_http_response3 =
 	R"___(	<body><h1>Object Moved</h1>This document may be found <a HREF="https://stackoverflow.com/index.html">here</a></body>)___"
 	;
 
-
 static const std::string k_skip_leading_chars = " \t";
 
 struct http_response_t {
@@ -423,10 +406,10 @@ struct http_response_t {
 	std::vector<std::pair<std::string, std::string>> headers;
 	std::string optional_body;
 };
+
 bool operator==(const http_response_t& lhs, const http_response_t& rhs){
 	return lhs.status_line == rhs.status_line && lhs.headers == rhs.headers && lhs.optional_body == rhs.optional_body;
 }
-
 
 
 std::pair<std::string, seq_t> read_to_crlf(const seq_t& p){
@@ -501,16 +484,12 @@ QUARK_TEST("socket-component", "unpack_response_string()", "k_http_response2", "
 }
 
 
-
-
 struct http_request_t {
 	struct in_addr addr;
 	int port;
 	int af;
 	std::string message;
 };
-
-
 
 
 std::string execute_request(const http_request_t& request){
@@ -576,10 +555,13 @@ QUARK_TEST("socket-component", "", "", ""){
 
 //	http://localhost:8080/info.html
 
-void execute_http_server(){
+struct tcp_server_params_t {
+};
+
+void execute_http_server(const tcp_server_params_t& params){
 	socket_t socket(AF_INET);
 
-	const int PORT = 8080; //Where the clients can reach at
+	const int PORT = 8080;
 
 	/* htonl converts a long integer (e.g. address) to a network representation */
 	/* htons converts a short integer (e.g. port) to a network representation */
@@ -608,7 +590,6 @@ void execute_http_server(){
 		}
 
 		const auto read_data = read_socket(new_socket);
-//		printf("%s\n",read_data.c_str() );
 
 		auto pos = seq_t(read_data);
 		const auto x = if_first(pos, "GET /info.html HTTP/1.1");
@@ -643,11 +624,9 @@ void execute_http_server(){
 	}
 }
 
-#if 0
 QUARK_TEST_VIP("socket-component", "", "", ""){
-	execute_http_server();
+	execute_http_server(tcp_server_params_t {});
 }
-#endif
 
 
 
