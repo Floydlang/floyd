@@ -38,31 +38,6 @@ http://httpbin.org/#/
 	gethostbyname2_r() is safer
 */
 
-void throw_errno2(const std::string& s, int error) QUARK_NO_RETURN;
-void throw_errno2(const std::string& s, int error) {
-	// No such host is known in the database.
-	if(error == HOST_NOT_FOUND){
-		throw std::runtime_error(s + "HOST_NOT_FOUND");
-	}
-
-	// This condition happens when the name server could not be contacted. If you try again later, you may succeed then.
-	else if(error == TRY_AGAIN){
-		throw std::runtime_error(s + "TRY_AGAIN");
-	}
-
-	// A non-recoverable error occurred.
-	else if(error == NO_RECOVERY){
-		throw std::runtime_error(s + "NO_RECOVERY");
-	}
-
-	// The host database contains an entry for the name, but it doesn’t have an associated Internet address.
-	else if(error == NO_ADDRESS){
-		throw std::runtime_error(s + "NO_ADDRESS");
-	}
-	else{
-		throw std::runtime_error(s);
-	}
-}
 
 
 
@@ -84,7 +59,7 @@ bool socket_t::check_invariant() const{
 socket_t::socket_t(int af){
 	const auto fd = ::socket(af, SOCK_STREAM, 0);
 	if (fd == -1){
-		throw_errno2("Socket creation error", errno);
+		throw_errno2("Socket creation error", get_unix_err());
 	}
 	_fd = fd;
 
@@ -102,7 +77,7 @@ socket_t::~socket_t(){
 
 
 
-std::vector<std::string> unpack_vector_of_strings(char** vec){
+static std::vector<std::string> unpack_vector_of_strings(char** vec){
 	QUARK_ASSERT(vec != nullptr);
 	std::vector<std::string> result;
 	for(int i = 0 ; vec[i] != nullptr ; i++){
@@ -207,7 +182,7 @@ std::string read_socket(int socket){
 		const auto read_result = read(socket , buffer, 1024);
 		if(read_result < 0){
 			QUARK_ASSERT(read_result == -1);
-			throw_errno2("read()", errno);
+			throw_errno2("read()", get_unix_err());
 		}
 		else {
 			if(read_result == 0){
@@ -235,7 +210,7 @@ void write_socket(int socket, const std::string& data){
 	const auto send_result = ::send(socket , data.c_str() , data.size(), 0);
 	if(send_result < 0){
 		QUARK_ASSERT(send_result == -1);
-		throw_errno2("send()", errno);
+		throw_errno2("send()", get_unix_err());
 	}
 }
 
@@ -549,7 +524,7 @@ std::string execute_request(const http_request_t& request){
 
 	const auto connect_err = ::connect(socket._fd, (const struct sockaddr *)&serv_addr, sizeof(serv_addr));
 	if (connect_err != 0){
-		throw_errno2("connect()", errno);
+		throw_errno2("connect()", get_unix_err());
 	}
 
 	write_socket(socket._fd , request.message);
@@ -615,12 +590,12 @@ void execute_http_server(){
 	address.sin_port = htons(PORT);
 	const auto bind_result = bind(socket._fd, (struct sockaddr *)&address, sizeof(address));
 	if(bind_result != 0){
-		throw_errno2("bind()", errno);
+		throw_errno2("bind()", get_unix_err());
 	}
 
 	const auto listen_result = ::listen(socket._fd, 3);
 	if (listen_result != 0){
-		throw_errno2("listen()", errno);
+		throw_errno2("listen()", get_unix_err());
 	}
 
     int addrlen = sizeof(address);
@@ -629,7 +604,7 @@ void execute_http_server(){
 		const auto new_socket = accept(socket._fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
 		if (new_socket < 0){
 			QUARK_ASSERT(new_socket == -1);
-			throw_errno2("accept()", errno);
+			throw_errno2("accept()", get_unix_err());
 		}
 
 		const auto read_data = read_socket(new_socket);
@@ -668,7 +643,7 @@ void execute_http_server(){
 	}
 }
 
-#if 1
+#if 0
 QUARK_TEST_VIP("socket-component", "", "", ""){
 	execute_http_server();
 }
