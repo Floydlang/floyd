@@ -3715,8 +3715,9 @@ A universally unique identifier (UUID) is a 128-bit number used to identify info
 Internet IP adress in using IPv6 128-bit number.
 
 	struct ip_address_t {
-		int high64
-		int low_64_bits
+		//	4 chars: ipv4
+		//	16 chars: ipv6
+		string address_ipv4_or_ipv6
 	}
 
 

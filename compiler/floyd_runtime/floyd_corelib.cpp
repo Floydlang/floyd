@@ -141,8 +141,9 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 
 
 	struct ip_address_t {
-		int high64
-		int low_64_bits
+		//	4 chars: ipv4
+		//	16 chars: ipv6
+		string address_ipv4_or_ipv6
 	}
 
 
