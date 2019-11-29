@@ -33,7 +33,9 @@ http://httpbin.org/#/
 //#define QUARK_TEST QUARK_TEST_VIP
 
 /*
-	The gethostbyname*() and gethostbyaddr*() functions are obsolete. Applications should use getaddrinfo(3) and getnameinfo(3) instead.
+	The gethostbyname*() and gethostbyaddr*() functions are obsolete. Applications should use
+	getaddrinfo(3) and getnameinfo(3) instead.
+
 	const char *gai_strerror(int errcode);
 	gethostbyname2_r() is safer
 	gethostbyaddr() is safer
@@ -95,7 +97,9 @@ static std::vector<std::string> unpack_vector_of_strings(char** vec){
 
 
 /*
-The inet_ntoa() function converts the Internet host address in, given in network byte order, to a string in IPv4 dotted-decimal notation. The string is returned in a statically allocated buffer, which subsequent calls will overwrite.
+The inet_ntoa() function converts the Internet host address in, given in network byte order, to a
+string in IPv4 dotted-decimal notation. The string is returned in a statically allocated buffer,
+which subsequent calls will overwrite.
 */
 std::string to_string(const struct in_addr& a){
 	const std::string s = inet_ntoa(a);
@@ -110,7 +114,7 @@ json_t to_json(const hostent_t& value){
 			mapf<json_t>(value.name_aliases, [](const auto& e){ return json_t(e); })
 		) },
 		{ "addresses_IPv4", json_t::make_array(
-			mapf<json_t>(value.addresses_IPv4, [](const auto& e){ return to_string(e) /*+ "(" + sockets_gethostbyaddr2(e, AF_INET).official_host_name + ")"*/; } )
+			mapf<json_t>(value.addresses_IPv4, [](const auto& e){ return to_string(e); } )
 		) }
 	});
 }
@@ -246,7 +250,9 @@ hostent_t sockets_gethostbyname2(const std::string& name, int af){
 	if(e == nullptr){
 		const auto host_error = ::h_errno;
 		const auto error_str = hstrerror(host_error);
-		throw std::runtime_error("gethostbyname2(): " + std::string(error_str) + ": " + std::to_string(host_error));
+		throw std::runtime_error(
+			"gethostbyname2(): " + std::string(error_str) + ": " + std::to_string(host_error)
+		);
 	}
 	else{
 		return unpack_hostent(*e);
@@ -268,7 +274,9 @@ hostent_t sockets_gethostbyaddr2(const struct in_addr& addr_v4, int af){
 	if(e == nullptr){
 		const auto host_error = ::h_errno;
 		const auto error_str = hstrerror(host_error);
-		throw std::runtime_error("gethostbyaddr(): " + std::string(error_str) + ": " + std::to_string(host_error));
+		throw std::runtime_error(
+			"gethostbyaddr(): " + std::string(error_str) + ": " + std::to_string(host_error)
+		);
 	}
 	else{
 		return unpack_hostent(*e);
@@ -313,7 +321,11 @@ static const std::string kCRLF = "\r\n";
 /*
 	Will add CRLF after request_line, headers.
 */
-std::string make_http_request_str(const std::string& request_line, const std::vector<std::string>& headers, const std::string& optional_body){
+std::string make_http_request_str(
+	const std::string& request_line,
+	const std::vector<std::string>& headers,
+	const std::string& optional_body
+){
 	std::string headers_str;
 	for(const auto& e: headers){
 		headers_str = headers_str + e + kCRLF;
@@ -408,7 +420,10 @@ struct http_response_t {
 };
 
 bool operator==(const http_response_t& lhs, const http_response_t& rhs){
-	return lhs.status_line == rhs.status_line && lhs.headers == rhs.headers && lhs.optional_body == rhs.optional_body;
+	return
+		lhs.status_line == rhs.status_line
+		&& lhs.headers == rhs.headers
+		&& lhs.optional_body == rhs.optional_body;
 }
 
 
@@ -422,7 +437,11 @@ std::pair<std::string, seq_t> read_to_crlf_skip_leads(const seq_t& p){
 	return { b.str(), a.second };
 }
 
-std::string make_http_response_str(const std::string& status_line, const std::vector<std::string>& headers, const std::string& optional_body){
+std::string make_http_response_str(
+	const std::string& status_line,
+	const std::vector<std::string>& headers,
+	const std::string& optional_body
+){
 	std::string headers_str;
 	for(const auto& e: headers){
 		headers_str = headers_str + e + kCRLF;
@@ -495,13 +514,13 @@ struct http_request_t {
 std::string execute_request(const http_request_t& request){
 	const auto socket = socket_t(request.af);
 
-	struct sockaddr_in serv_addr;
-	memset(&serv_addr, '0', sizeof(serv_addr));
-	serv_addr.sin_family = (sa_family_t)request.af;
-	serv_addr.sin_port = htons(request.port);
-	serv_addr.sin_addr = request.addr;
+	struct sockaddr_in a;
+	memset(&a, '0', sizeof(a));
+	a.sin_family = (sa_family_t)request.af;
+	a.sin_port = htons(request.port);
+	a.sin_addr = request.addr;
 
-	const auto connect_err = ::connect(socket._fd, (const struct sockaddr *)&serv_addr, sizeof(serv_addr));
+	const auto connect_err = ::connect(socket._fd, (const struct sockaddr*)&a, sizeof(a));
 	if (connect_err != 0){
 		throw_errno2("connect()", get_unix_err());
 	}
@@ -513,7 +532,14 @@ std::string execute_request(const http_request_t& request){
 }
 
 //??? store request as kv too!
-http_request_t make_get_request(const std::string& addr, int port, int af, const std::string& command, const std::vector<std::string>& headers, const std::string& optional_body){
+http_request_t make_get_request(
+	const std::string& addr,
+	int port,
+	int af,
+	const std::string& command,
+	const std::vector<std::string>& headers,
+	const std::string& optional_body
+){
 	const auto e = sockets_gethostbyname2(addr, af);
 	QUARK_ASSERT(e.addresses_IPv4.size() >= 1);
 
@@ -556,20 +582,20 @@ QUARK_TEST("socket-component", "", "", ""){
 //	http://localhost:8080/info.html
 
 struct tcp_server_params_t {
+	int port;
+	int af;
 };
 
 void execute_http_server(const tcp_server_params_t& params){
-	socket_t socket(AF_INET);
-
-	const int PORT = 8080;
+	socket_t socket(params.af);
 
 	/* htonl converts a long integer (e.g. address) to a network representation */
 	/* htons converts a short integer (e.g. port) to a network representation */
 	struct sockaddr_in address;
 	memset((char *)&address, 0, sizeof(address));
-	address.sin_family = AF_INET;
+	address.sin_family = (sa_family_t)params.af;
 	address.sin_addr.s_addr = htonl(INADDR_ANY);
-	address.sin_port = htons(PORT);
+	address.sin_port = htons(params.port);
 	const auto bind_result = bind(socket._fd, (struct sockaddr *)&address, sizeof(address));
 	if(bind_result != 0){
 		throw_errno2("bind()", get_unix_err());
@@ -583,13 +609,13 @@ void execute_http_server(const tcp_server_params_t& params){
     int addrlen = sizeof(address);
 
 	while(true){
-		const auto new_socket = accept(socket._fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
-		if (new_socket < 0){
-			QUARK_ASSERT(new_socket == -1);
+		const auto socket2 = accept(socket._fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
+		if (socket2 < 0){
+			QUARK_ASSERT(socket2 == -1);
 			throw_errno2("accept()", get_unix_err());
 		}
 
-		const auto read_data = read_socket(new_socket);
+		const auto read_data = read_socket(socket2);
 
 		auto pos = seq_t(read_data);
 		const auto x = if_first(pos, "GET /info.html HTTP/1.1");
@@ -613,20 +639,19 @@ void execute_http_server(const tcp_server_params_t& params){
 				},
 				doc
 			);
-			write_socket(new_socket, r);
+			write_socket(socket2, r);
 		}
 		else {
 			std::string r = make_http_response_str("HTTP/1.1 404 OK", {}, "");
-			write_socket(new_socket, r);
+			write_socket(socket2, r);
 		}
 
-		close(new_socket);
+		close(socket2);
 	}
 }
 
 QUARK_TEST_VIP("socket-component", "", "", ""){
-	execute_http_server(tcp_server_params_t {});
+	execute_http_server(tcp_server_params_t { 8080, AF_INET });
 }
-
 
 
