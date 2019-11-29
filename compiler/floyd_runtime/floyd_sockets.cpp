@@ -668,7 +668,7 @@ void execute_http_server(){
 	}
 }
 
-#if 0
+#if 1
 QUARK_TEST_VIP("socket-component", "", "", ""){
 	execute_http_server();
 }
