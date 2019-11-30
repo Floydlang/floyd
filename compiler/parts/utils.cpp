@@ -231,12 +231,22 @@ unix_errno_t get_unix_err(){
 }
 
 
+#ifdef __APPLE__
 std::string unix_err_to_string(const unix_errno_t& error){
 	char temp[200 + 1];
 	int err = strerror_r(error.value, temp, 200);
 	QUARK_ASSERT(err == 0);
 	return std::string(temp);
 }
+#else
+// Gnu specific? return string describing error number
+std::string unix_err_to_string(const unix_errno_t& error){
+	char temp[200 + 1];
+	char* err = strerror_r(error.value, temp, 200);
+	//QUARK_ASSERT(err == 0);
+	return std::string(temp);
+}
+#endif
 
 QUARK_TEST("", "unix_err_to_string()", "", "") {
 	QUARK_VERIFY(unix_err_to_string({ EPERM }) == "Operation not permitted");
