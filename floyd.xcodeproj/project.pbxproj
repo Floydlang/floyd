@@ -160,6 +160,8 @@
 		2CA1F65E221F71AC008BDBD7 /* variable_length_quantity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA1F65C221F71AC008BDBD7 /* variable_length_quantity.cpp */; };
 		2CA2D86522F347FC00B45098 /* floyd_llvm_types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA2D86322F347FC00B45098 /* floyd_llvm_types.cpp */; };
 		2CA2D86622F347FC00B45098 /* floyd_llvm_types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA2D86322F347FC00B45098 /* floyd_llvm_types.cpp */; };
+		2CA673222393F6BA00623050 /* floyd_http.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA673202393F6BA00623050 /* floyd_http.cpp */; };
+		2CA673252393F88D00623050 /* unix_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA673232393F88D00623050 /* unix_helpers.cpp */; };
 		2CAC5B90230FFC8800F89608 /* quadratic_probing_hash_table.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CAC5B8E230FFC8800F89608 /* quadratic_probing_hash_table.cpp */; };
 		2CB2A512203C4AA80001A19E /* interpretator_benchmark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB2A511203C4AA80001A19E /* interpretator_benchmark.cpp */; };
 		2CB2A516203D642B0001A19E /* semantic_analyser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB2A515203D642B0001A19E /* semantic_analyser.cpp */; };
@@ -687,6 +689,10 @@
 		2CA2D86322F347FC00B45098 /* floyd_llvm_types.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_llvm_types.cpp; sourceTree = "<group>"; };
 		2CA2D86422F347FC00B45098 /* floyd_llvm_types.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_llvm_types.h; sourceTree = "<group>"; };
 		2CA3595B22EB6C6200EBA7BE /* parse_tree.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = parse_tree.md; sourceTree = "<group>"; };
+		2CA673202393F6BA00623050 /* floyd_http.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_http.cpp; sourceTree = "<group>"; };
+		2CA673212393F6BA00623050 /* floyd_http.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_http.h; sourceTree = "<group>"; };
+		2CA673232393F88D00623050 /* unix_helpers.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = unix_helpers.cpp; sourceTree = "<group>"; };
+		2CA673242393F88D00623050 /* unix_helpers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = unix_helpers.h; sourceTree = "<group>"; };
 		2CAC5B8E230FFC8800F89608 /* quadratic_probing_hash_table.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = quadratic_probing_hash_table.cpp; sourceTree = "<group>"; };
 		2CAC5B8F230FFC8800F89608 /* quadratic_probing_hash_table.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = quadratic_probing_hash_table.h; sourceTree = "<group>"; };
 		2CB2A511203C4AA80001A19E /* interpretator_benchmark.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = interpretator_benchmark.cpp; sourceTree = "<group>"; };
@@ -779,6 +785,8 @@
 			children = (
 				2CCA88F322B6B5F100976D8E /* floyd_corelib.cpp */,
 				2CCA88F422B6B5F100976D8E /* floyd_corelib.h */,
+				2CA673202393F6BA00623050 /* floyd_http.cpp */,
+				2CA673212393F6BA00623050 /* floyd_http.h */,
 				2C00DEC622198C6300DB322E /* floyd_runtime.cpp */,
 				2C00DEC722198C6300DB322E /* floyd_runtime.h */,
 				2C7005D2238FF3BD005298C2 /* floyd_sockets.cpp */,
@@ -1659,6 +1667,8 @@
 				2C180447208B90E800F62480 /* text_parser.h */,
 				2C180448208B90E800F62480 /* utils.cpp */,
 				2C180449208B90E800F62480 /* utils.h */,
+				2CA673232393F88D00623050 /* unix_helpers.cpp */,
+				2CA673242393F88D00623050 /* unix_helpers.h */,
 			);
 			path = parts;
 			sourceTree = "<group>";
@@ -1780,6 +1790,7 @@
 				2C3DE25622665E7E00807701 /* floyd_llvm_helpers.cpp in Sources */,
 				2CA2D86522F347FC00B45098 /* floyd_llvm_types.cpp in Sources */,
 				2C8C03AB2221D95F0085EBBE /* reporter.cc in Sources */,
+				2CA673222393F6BA00623050 /* floyd_http.cpp in Sources */,
 				2C8C03AC2221D95F0085EBBE /* colorprint.cc in Sources */,
 				2C8C03A12221D95F0085EBBE /* console_reporter.cc in Sources */,
 				2C180483208B939800F62480 /* parser_primitives.cpp in Sources */,
@@ -1844,6 +1855,7 @@
 				2C8C03AF2221D9990085EBBE /* benchmark.cc in Sources */,
 				2CB7AA65220900190011DE4B /* floyd_syntax.cpp in Sources */,
 				2C8C03AD2221D95F0085EBBE /* string_util.cc in Sources */,
+				2CA673252393F88D00623050 /* unix_helpers.cpp in Sources */,
 				2C8C039D2221D95F0085EBBE /* timers.cc in Sources */,
 				2CCA88F522B6B5F100976D8E /* floyd_corelib.cpp in Sources */,
 				2C8C03A92221D95F0085EBBE /* complexity.cc in Sources */,

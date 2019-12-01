@@ -126,20 +126,19 @@ std::vector<DEST_ELEMENT_TYPE> filterf(const COLLECTION& col, const UNARY_OPERAT
 }
 
 
+////////////////////////////////		HEX strings
+
+
 std::string value_to_hex_string(uint64_t value, int hexchars);
 
 std::string ptr_to_hexstring(const void* ptr);
 
+
+////////////////////////////////		STRINGS
+
 std::string concat_string(const std::vector<std::string>& vec, const std::string& divider);
 
 
-////////////////////////////////		UNIX ERRORS()
-
-
-struct unix_errno_t { int value; };
-unix_errno_t get_unix_err();
-std::string unix_err_to_string(const unix_errno_t& error);
-void throw_errno2(const std::string& header, const unix_errno_t& error) QUARK_NO_RETURN;
 
 
 #endif /* utils_hpp */

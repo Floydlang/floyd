@@ -13,6 +13,26 @@
 #include <vector>
 #include <string>
 
+
+struct json_t;
+
+
+struct socket_t {
+	bool check_invariant() const;
+	socket_t(int af);
+	~socket_t();
+
+
+	int _fd;
+};
+
+std::string read_socket(int socket);
+void write_socket(int socket, const std::string& data);
+
+
+
+
+
 struct hostent_t {
 	std::string official_host_name;
 	std::vector<std::string> name_aliases;
@@ -20,7 +40,12 @@ struct hostent_t {
 };
 
 
-hostent_t sockets_gethostbyaddr2(const struct in_addr& addr_v4, int af);
+hostent_t lookup_host(const struct in_addr& addr_v4);
+hostent_t lookup_host(const std::string& name);
 
+std::string to_ipv4_dotted_decimal_string(const struct in_addr& a);
+struct in_addr from_ipv4_dotted_decimal_string(const std::string& s);
+
+json_t to_json(const hostent_t& value);
 
 #endif /* floyd_sockets_hpp */
