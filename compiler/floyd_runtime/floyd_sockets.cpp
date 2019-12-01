@@ -270,9 +270,6 @@ QUARK_TEST("socket-component", "lookup_host()","google.com", ""){
 }
 
 
-
-
-
 connection_to_server_t connect_to_server(const id_address_and_port_t& server_addr){
 	const auto socket = std::make_shared<socket_t>(AF_INET);
 
@@ -289,3 +286,32 @@ connection_to_server_t connect_to_server(const id_address_and_port_t& server_add
 	return connection_to_server_t { socket };
 }
 
+void execute_server(const server_params_t& params, connection_i& connection){
+	socket_t socket1(AF_INET);
+
+	struct sockaddr_in address;
+	memset((char *)&address, 0, sizeof(address));
+	address.sin_family = (sa_family_t)AF_INET;
+	address.sin_addr.s_addr = htonl(INADDR_ANY);
+	address.sin_port = htons(params.port);
+	const auto bind_result = ::bind(socket1._fd, (struct sockaddr *)&address, sizeof(address));
+	if(bind_result != 0){
+		throw_errno2("bind()", get_unix_err());
+	}
+
+	const auto listen_result = ::listen(socket1._fd, 3);
+	if (listen_result != 0){
+		throw_errno2("listen()", get_unix_err());
+	}
+
+	while(true){
+		int addrlen = sizeof(address);
+		const auto socket2 = accept(socket1._fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
+		if (socket2 < 0){
+			QUARK_ASSERT(socket2 == -1);
+			throw_errno2("accept()", get_unix_err());
+		}
+		connection.connection_i__on_accept(socket2);
+		::close(socket2);
+	}
+}

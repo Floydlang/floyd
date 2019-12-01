@@ -286,40 +286,17 @@ QUARK_TEST("socket-component", "", "", ""){
 
 
 
+/* htonl converts a long integer (e.g. address) to a network representation */
+/* htons converts a short integer (e.g. port) to a network representation */
 
 
 //	http://localhost:8080/info.html
 
 
-void execute_http_server(const tcp_server_params_t& params){
-	socket_t socket(params.af);
 
-	/* htonl converts a long integer (e.g. address) to a network representation */
-	/* htons converts a short integer (e.g. port) to a network representation */
-	struct sockaddr_in address;
-	memset((char *)&address, 0, sizeof(address));
-	address.sin_family = (sa_family_t)params.af;
-	address.sin_addr.s_addr = htonl(INADDR_ANY);
-	address.sin_port = htons(params.port);
-	const auto bind_result = ::bind(socket._fd, (struct sockaddr *)&address, sizeof(address));
-	if(bind_result != 0){
-		throw_errno2("bind()", get_unix_err());
-	}
 
-	const auto listen_result = ::listen(socket._fd, 3);
-	if (listen_result != 0){
-		throw_errno2("listen()", get_unix_err());
-	}
-
-    int addrlen = sizeof(address);
-
-	while(true){
-		const auto socket2 = accept(socket._fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
-		if (socket2 < 0){
-			QUARK_ASSERT(socket2 == -1);
-			throw_errno2("accept()", get_unix_err());
-		}
-
+struct test_connection_t : public connection_i {
+	public: void connection_i__on_accept(int socket2) override {
 		const auto read_data = read_socket_string(socket2);
 
 		auto pos = seq_t(read_data);
@@ -350,9 +327,12 @@ void execute_http_server(const tcp_server_params_t& params){
 			std::string r = make_http_response_string("HTTP/1.1 404 OK", {}, "");
 			write_socket_string(socket2, r);
 		}
-
-		close(socket2);
 	}
+};
+
+void execute_http_server(const server_params_t& params){
+	test_connection_t connect;
+	execute_server(params, connect);
 }
 
 #if 0

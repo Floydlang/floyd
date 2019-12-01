@@ -57,11 +57,7 @@ http_request_t make_http_request_helper(
 std::string execute_http_request(const http_request_t& request);
 
 
-struct tcp_server_params_t {
-	int port;
-	int af;
-};
 
-void execute_http_server(const tcp_server_params_t& params);
+void execute_http_server(const server_params_t& params);
 
 #endif /* floyd_http_hpp */

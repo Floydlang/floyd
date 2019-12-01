@@ -64,6 +64,8 @@ json_t to_json(const hostent_t& value);
 
 
 
+//////////////////////////////////////		CLIENT
+
 
 struct connection_to_server_t {
 	std::shared_ptr<socket_t> socket;
@@ -72,5 +74,21 @@ struct connection_to_server_t {
 //	Client uses this to open a connection to server. When connection_to_server_t is destructed, connection is closed.
 connection_to_server_t connect_to_server(const id_address_and_port_t& server_addr);
 
+
+//////////////////////////////////////		SERVER
+
+
+struct server_params_t {
+	int port;
+};
+
+//	Server uses this to run a loop and accept clients.
+struct connection_i {
+	public: virtual ~connection_i(){};
+
+	public: virtual void connection_i__on_accept(int socket2_fd) = 0;
+};
+
+void execute_server(const server_params_t& params, connection_i& connection);
 
 #endif /* floyd_sockets_hpp */
