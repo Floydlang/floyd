@@ -29,14 +29,17 @@ unix_errno_t get_unix_err(){
 }
 
 
-#ifdef __APPLE__
+#if QUARK_MAC || QUARK_WINDOWS
 std::string unix_err_to_string(const unix_errno_t& error){
 	char temp[200 + 1];
 	int err = strerror_r(error.value, temp, 200);
 	QUARK_ASSERT(err == 0);
 	return std::string(temp);
 }
-#else
+#endif
+
+#if QUARK_LINUX
+
 // Gnu specific? return string describing error number
 std::string unix_err_to_string(const unix_errno_t& error){
 	char temp[200 + 1];
