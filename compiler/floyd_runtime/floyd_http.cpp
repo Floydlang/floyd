@@ -25,8 +25,17 @@
 #include "text_parser.h"
 #include "quark.h"
 
-
 //#define QUARK_TEST QUARK_TEST_VIP
+
+static std::string pack_http_request_line(const http_request_line_t& request_line);
+static http_request_line_t unpack_http_request_line(const std::string& request_line);
+
+
+static std::string pack_http_response_status_line(const http_response_status_line_t& value);
+static http_response_status_line_t unpack_http_response_status_line(const std::string& s);
+
+
+
 
 static const std::string k_http_request_test =
 	"GET /hello.htm HTTP/1.1"
@@ -54,30 +63,71 @@ static const std::string k_http_get_minimal2 = "GET / HTTP/1.1\r\nHost: www.exam
 static const std::string kCRLF = "\r\n";
 
 
-std::string make_http_request_string(
-	const std::string& request_line,
-	const std::vector<std::string>& headers,
-	const std::string& optional_body
-){
-	std::string headers_str;
-	for(const auto& e: headers){
-		headers_str = headers_str + e + kCRLF;
-	}
+static std::pair<std::string, seq_t> read_to_crlf(const seq_t& p){
+	return read_until_str(p, kCRLF, true);
+}
 
-	return
-		request_line + kCRLF
-		+ headers_str
-		+ kCRLF
-		+ optional_body;
+static const std::string k_skip_leading_chars = " \t";
+
+static std::pair<std::string, seq_t> read_to_crlf_skip_leads(const seq_t& p){
+	const auto a = read_until_str(p, kCRLF, true);
+	const auto b = skip(seq_t(a.first), k_skip_leading_chars);
+	return { b.str(), a.second };
+}
+
+std::pair<headers_t, seq_t> unpack_headers(const seq_t& p0){
+	auto p = p0;
+	headers_t headers;
+	while(p.empty() == false && is_first(p, kCRLF) == false){
+		const auto h = read_to_crlf_skip_leads(p);
+
+		const auto key_kv = read_until_str(seq_t(h.first), ": ", true);
+		const auto value = key_kv.second.str();
+		headers.elements.push_back(
+			std::pair<std::string, std::string>(key_kv.first, value)
+		);
+		p = h.second;
+	}
+	return { headers, p };
+}
+
+std::string pack_headers(const headers_t& headers){
+	std::string result;
+	for(const auto& e: headers.elements){
+		const auto line = e.first + ": " + e.second;
+		result = result + line + kCRLF;
+	}
+	return result;
 }
 
 
-QUARK_TEST("http", "make_http_request_string()","", ""){
-	const auto r = make_http_request_string("GET /hello.htm HTTP/1.1", {}, "");
+
+
+
+
+std::string pack_http_request(const http_request_t& r){
+	return
+		pack_http_request_line(r.request_line) + kCRLF
+		+ pack_headers(r.headers)
+		+ kCRLF
+		+ r.optional_body;
+}
+
+QUARK_TEST("http", "pack_http_request()","", ""){
+	const auto r = pack_http_request({ http_request_line_t { "GET", "/hello.htm", "HTTP/1.1" }, {}, "" });
 	QUARK_VERIFY(r == "GET /hello.htm HTTP/1.1\r\n\r\n");
 }
-QUARK_TEST("http", "make_http_request_string()","", ""){
-	const auto r = make_http_request_string("GET /hello.htm HTTP/1.1", { "Host: www.tutorialspoint.com", "Accept-Language: en-us" }, "licenseID=string&content=string&/paramsXML=string");
+QUARK_TEST("http", "pack_http_request()","", ""){
+	const auto r = pack_http_request(
+		http_request_t{
+			http_request_line_t { "GET", "/hello.htm", "HTTP/1.1" },
+			headers_t{{
+				{ "Host", "www.tutorialspoint.com" },
+				{ "Accept-Language", "en-us" }
+			}},
+			"licenseID=string&content=string&/paramsXML=string"
+		}
+	);
 	ut_verify_string(
 		QUARK_POS,
 		r,
@@ -88,6 +138,34 @@ QUARK_TEST("http", "make_http_request_string()","", ""){
 		"licenseID=string&content=string&/paramsXML=string"
 	);
 }
+
+
+
+
+http_request_t unpack_http_request(const std::string& s){
+	seq_t p(s);
+	const auto request_line_pos = read_to_crlf_skip_leads(p);
+	p = request_line_pos.second;
+
+	const auto headers = unpack_headers(p);
+	p = headers.second;
+
+	if(is_first(p, kCRLF)){
+		p = p.rest(kCRLF.size());
+	}
+
+	const auto body = p.first(p.size());
+
+	return {
+		unpack_http_request_line(request_line_pos.first),
+		headers.first,
+		body
+	};
+}
+
+
+
+
 
 static const std::string k_http_response1 =
 	R"___(	HTTP/1.1 301 Moved Permanently)___" "\r\n"
@@ -144,7 +222,14 @@ static const std::string k_http_response3 =
 	R"___(	<body><h1>Object Moved</h1>This document may be found <a HREF="https://stackoverflow.com/index.html">here</a></body>)___"
 	;
 
-static const std::string k_skip_leading_chars = " \t";
+
+std::string pack_http_response(const http_response_t& r){
+	return
+		pack_http_response_status_line(r.status_line) + kCRLF
+		+ pack_headers(r.headers)
+		+ kCRLF
+		+ r.optional_body;
+}
 
 
 bool operator==(const http_response_t& lhs, const http_response_t& rhs){
@@ -154,50 +239,13 @@ bool operator==(const http_response_t& lhs, const http_response_t& rhs){
 		&& lhs.optional_body == rhs.optional_body;
 }
 
-
-static std::pair<std::string, seq_t> read_to_crlf(const seq_t& p){
-	return read_until_str(p, kCRLF, true);
-}
-
-static std::pair<std::string, seq_t> read_to_crlf_skip_leads(const seq_t& p){
-	const auto a = read_until_str(p, kCRLF, true);
-	const auto b = skip(seq_t(a.first), k_skip_leading_chars);
-	return { b.str(), a.second };
-}
-
-std::string make_http_response_string(
-	const std::string& status_line,
-	const std::vector<std::string>& headers,
-	const std::string& optional_body
-){
-	std::string headers_str;
-	for(const auto& e: headers){
-		headers_str = headers_str + e + kCRLF;
-	}
-
-	return
-		status_line + kCRLF
-		+ headers_str
-		+ kCRLF
-		+ optional_body;
-}
-
-http_response_t unpack_http_response_string(const std::string& s){
+http_response_t unpack_http_response(const std::string& s){
 	seq_t p(s);
 	const auto status_line_pos = read_to_crlf_skip_leads(p);
 	p = status_line_pos.second;
 
-	std::vector<std::pair<std::string, std::string>> headers;
-	while(p.empty() == false && is_first(p, kCRLF) == false){
-		const auto h = read_to_crlf_skip_leads(p);
-
-		const auto key_kv = read_until_str(seq_t(h.first), ": ", true);
-		const auto value = key_kv.second.str();
-		headers.push_back(
-			std::pair<std::string, std::string>(key_kv.first, value)
-		);
-		p = h.second;
-	}
+	const auto headers = unpack_headers(p);
+	p = headers.second;
 
 	if(is_first(p, kCRLF)){
 		p = p.rest(kCRLF.size());
@@ -206,43 +254,34 @@ http_response_t unpack_http_response_string(const std::string& s){
 	const auto body = p.first(p.size());
 
 	return {
-		status_line_pos.first,
-		headers,
+		unpack_http_response_status_line(status_line_pos.first),
+		headers.first,
 		body
 	};
 }
 
-QUARK_TEST("http", "unpack_http_response_string()", "k_http_response1", ""){
-	const auto r = unpack_http_response_string(k_http_response1);
-	QUARK_VERIFY(r.status_line == "HTTP/1.1 301 Moved Permanently");
-	QUARK_VERIFY(r.headers.size() == 14);
-	QUARK_VERIFY(r.headers[0] == (std::pair<std::string, std::string>("Server", "Varnish")));
-	QUARK_VERIFY(r.headers[13] == (std::pair<std::string, std::string>("X-Cache-Hits", "0")));
+QUARK_TEST("http", "unpack_http_response()", "k_http_response1", ""){
+	const auto r = unpack_http_response(k_http_response1);
+	QUARK_VERIFY(r.status_line == (http_response_status_line_t { "HTTP/1.1", "301 Moved Permanently" }));
+	QUARK_VERIFY(r.headers.elements.size() == 14);
+	QUARK_VERIFY(r.headers.elements[0] == (std::pair<std::string, std::string>("Server", "Varnish")));
+	QUARK_VERIFY(r.headers.elements[13] == (std::pair<std::string, std::string>("X-Cache-Hits", "0")));
 	QUARK_VERIFY(r.optional_body == "");
 }
 
-QUARK_TEST("http", "unpack_http_response_string()", "k_http_response2", ""){
-	const auto r = unpack_http_response_string(k_http_response2);
-	QUARK_VERIFY(r.status_line == "HTTP/1.0 200 OK");
-	QUARK_VERIFY(r.headers.size() == 7);
-	QUARK_VERIFY(r.headers[0] == (std::pair<std::string, std::string>("Accept-Ranges", "bytes")));
-	QUARK_VERIFY(r.headers[6] == (std::pair<std::string, std::string>("Connection", "close")));
+QUARK_TEST("http", "unpack_http_response()", "k_http_response2", ""){
+	const auto r = unpack_http_response(k_http_response2);
+	QUARK_VERIFY(r.status_line == (http_response_status_line_t { "HTTP/1.0", "200 OK" }) );
+	QUARK_VERIFY(r.headers.elements.size() == 7);
+	QUARK_VERIFY(r.headers.elements[0] == (std::pair<std::string, std::string>("Accept-Ranges", "bytes")));
+	QUARK_VERIFY(r.headers.elements[6] == (std::pair<std::string, std::string>("Connection", "close")));
 	QUARK_VERIFY(r.optional_body == "\t<html><head><title>edgecastcdn.net</title></head><body><h1>edgecastcdn.net</h1></body></html>");
 }
 
 
 
-
-
-std::string execute_http_request(const http_request_t& request){
-	const auto connection = connect_to_server(request.addr);
-	write_socket_string(connection.socket->_fd , request.message);
-	std::string response = read_socket_string(connection.socket->_fd);
-	return response;
-}
-
 //??? store request as kv too!
-http_request_t make_http_request_helper(
+http_request_exec_t make_http_request_helper(
 	const std::string& addr,
 	int port,
 	int af,
@@ -251,39 +290,12 @@ http_request_t make_http_request_helper(
 	const auto e = lookup_host(addr);
 	QUARK_ASSERT(e.addresses_IPv4.size() >= 1);
 
-	return http_request_t {
+	return http_request_exec_t {
 		id_address_and_port_t { e.addresses_IPv4[0], port },
 		message
 	};
 }
 
-
-QUARK_TEST("http", "", "", ""){
-	const auto r = execute_http_request(make_http_request_helper("cnn.com", 80, AF_INET, make_http_request_string("GET / HTTP/1.1", { "Host: www.cnn.com" }, "")));
-	QUARK_TRACE(r);
-	QUARK_VERIFY(r.empty() == false);
-}
-
-QUARK_TEST("http", "", "", ""){
-	const auto r = execute_http_request(make_http_request_helper("example.com", 80, AF_INET, make_http_request_string("GET /index.html HTTP/1.0", { }, "")));
-	QUARK_TRACE(r);
-}
-
-QUARK_TEST("http", "", "", ""){
-	const auto r = execute_http_request(make_http_request_helper("google.com", 80, AF_INET, make_http_request_string("GET /index.html HTTP/1.0", { }, "")));
-	QUARK_TRACE(r);
-}
-
-QUARK_TEST("http", "", "", ""){
-	const auto r = execute_http_request(make_http_request_helper("google.com", 80, AF_INET, make_http_request_string("GET / HTTP/1.0", { "Host: www.google.com" }, "")));
-	QUARK_TRACE(r);
-}
-
-QUARK_TEST("http", "", "", ""){
-//	const auto r = execute_http_request(http_request_t { lookup_host("stackoverflow.com", AF_INET).addresses_IPv4[0], 80, AF_INET, "GET / HTTP/1.0" "\r\n" "Host: stackoverflow.com" "\r\n" "\r\n" });
-	const auto r = execute_http_request(make_http_request_helper("stackoverflow.com", 80, AF_INET, make_http_request_string("GET /index.html HTTP/1.0", { "Host: www.stackoverflow.com" }, "")));
-	QUARK_TRACE(r);
-}
 
 
 //const std::string doc0 = "<html><head><title>edgecastcdn.net</title></head><body><h1>edgecastcdn.net</h1></body></html>";
@@ -301,6 +313,7 @@ Examples:
 
 	GET /info.html HTTP/1.1
 */
+//	Input string is the first line of the message only, no CRLF allowed.
 std::string pack_http_request_line(const http_request_line_t& request_line){
 	QUARK_ASSERT(request_line.method.find(" ") == std::string::npos);
 	QUARK_ASSERT(request_line.uri.find(" ") == std::string::npos);
@@ -318,7 +331,6 @@ QUARK_TEST("http", "pack_http_request_line()", "", ""){
 QUARK_TEST("http", "pack_http_request_line()", "", ""){
 	QUARK_VERIFY(pack_http_request_line({ "POST", "/index.html", "HTTP/1.1" }) == "POST /index.html HTTP/1.1");
 }
-
 
 
 http_request_line_t unpack_http_request_line(const std::string& request_line){
@@ -394,7 +406,7 @@ HTTP/1.0 404 Not Found
 The first line of the response message (i.e., the status line) contains the response status code, which is generated by the server to indicate the outcome of the request.
 */
 
-std::string pack_http_response_status_line(const http_response_status_line_t& value){
+static std::string pack_http_response_status_line(const http_response_status_line_t& value){
 	QUARK_ASSERT(value.http_version == "HTTP/1.1" || value.http_version == "HTTP/1.0");
 	QUARK_ASSERT(value.status_code.size() > 0);
 
@@ -406,7 +418,7 @@ QUARK_TEST("http", "pack_http_response_status_line()", "", ""){
 }
 
 
-http_response_status_line_t unpack_http_response_status_line(const std::string& s){
+static http_response_status_line_t unpack_http_response_status_line(const std::string& s){
 	const auto p = seq_t(s);
 	QUARK_ASSERT(does_substr_exist(p, kCRLF) == false);
 
@@ -454,41 +466,79 @@ QUARK_TEST("http", "unpack_http_response_status_line()", "whitespace", ""){
 }
 
 
+std::string execute_http_request(const http_request_exec_t& request){
+	const auto connection = connect_to_server(request.addr);
+	write_socket_string(connection.socket->_fd , request.message);
+	std::string response = read_socket_string(connection.socket->_fd);
+	return response;
+}
+
+QUARK_TEST("http", "execute_http_request()", "", ""){
+	const auto r = execute_http_request(make_http_request_helper("cnn.com", 80, AF_INET, pack_http_request( http_request_t { http_request_line_t { "GET", "/", "HTTP/1.1" }, headers_t{{ { "Host", "www.cnn.com" } }}, "" } )));
+	QUARK_TRACE(r);
+	QUARK_VERIFY(r.empty() == false);
+}
+
+QUARK_TEST("http", "execute_http_request()", "", ""){
+	const auto r = execute_http_request(make_http_request_helper("example.com", 80, AF_INET, pack_http_request(http_request_t { http_request_line_t { "GET", "/index.html", "HTTP/1.0" }, { }, "" } )));
+	QUARK_TRACE(r);
+}
+
+QUARK_TEST("http", "execute_http_request()", "", ""){
+	const auto r = execute_http_request(make_http_request_helper("google.com", 80, AF_INET, pack_http_request(http_request_t { http_request_line_t { "GET", "/index.html", "HTTP/1.0" }, { }, "" } )));
+	QUARK_TRACE(r);
+}
+
+QUARK_TEST("http", "execute_http_request()", "", ""){
+	const auto r = execute_http_request(make_http_request_helper("google.com", 80, AF_INET, pack_http_request(http_request_t { http_request_line_t { "GET", "/", "HTTP/1.0" }, headers_t{{ { "Host", "www.google.com" } }}, "" } )));
+	QUARK_TRACE(r);
+}
+
+QUARK_TEST("http", "execute_http_request()", "", ""){
+//	const auto r = execute_http_request(http_request_t { lookup_host("stackoverflow.com", AF_INET).addresses_IPv4[0], 80, AF_INET, "GET / HTTP/1.0" "\r\n" "Host: stackoverflow.com" "\r\n" "\r\n" });
+	const auto r = execute_http_request(make_http_request_helper("stackoverflow.com", 80, AF_INET, pack_http_request(http_request_t { http_request_line_t { "GET", "/index.html", "HTTP/1.0" }, headers_t{{ { "Host", "www.stackoverflow.com" } }}, "" } )));
+	QUARK_TRACE(r);
+}
 
 
 struct test_connection_t : public connection_i {
 	public: void connection_i__on_accept(int socket2) override {
 		const auto read_data = read_socket_string(socket2);
-
-		auto pos = seq_t(read_data);
-		const auto response = unpack_http_response_string(read_data);
-
-		const auto status
-
-		if(response.status_line == "GET /info.html HTTP/1.1"){
-			const std::string doc = R"___(
-				<head>
-					<title>Hello Floyd Server</title>
-				</head>
-				<body>
-					<h1>Hello Floyd Server</h1>
-					This document may be found <a HREF="https://stackoverflow.com/index.html">here</a>
-				</body>
-			)___";
-
-			std::string r = make_http_response_string(
-				"HTTP/1.1 200 OK",
-				{
-					"Content-Type: text/html",
-					"Content-Length: " + std::to_string(doc.size())
-				},
-				doc
-			);
-			write_socket_string(socket2, r);
+		if(read_data.empty()){
+			QUARK_TRACE("empty");
 		}
-		else {
-			std::string r = make_http_response_string("HTTP/1.1 404 OK", {}, "");
-			write_socket_string(socket2, r);
+		else{
+			auto pos = seq_t(read_data);
+			const auto request = unpack_http_request(read_data);
+			const auto t = pack_http_request_line(request.request_line);
+			QUARK_TRACE_SS(t);
+			if(request.request_line == http_request_line_t{ "GET", "/info.html", "HTTP/1.1" }){
+				const std::string doc = R"___(
+					<head>
+						<title>Hello Floyd Server</title>
+					</head>
+					<body>
+						<h1>Hello Floyd Server</h1>
+						This document may be found <a HREF="https://stackoverflow.com/index.html">here</a>
+					</body>
+				)___";
+
+				std::string r = pack_http_response(
+					http_response_t {
+						http_response_status_line_t { "HTTP/1.1", "200 OK" },
+						{{
+							{ "Content-Type", "text/html" },
+							{ "Content-Length", std::to_string(doc.size()) }
+						}},
+						doc
+					}
+				);
+				write_socket_string(socket2, r);
+			}
+			else {
+				std::string r = pack_http_response(http_response_t { http_response_status_line_t { "HTTP/1.1", "404 OK" }, {}, "" });
+				write_socket_string(socket2, r);
+			}
 		}
 	}
 };

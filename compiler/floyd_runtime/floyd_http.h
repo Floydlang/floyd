@@ -15,31 +15,15 @@
 #include <memory>
 
 
+struct headers_t {
+	std::vector<std::pair<std::string, std::string>> elements;
+};
+inline bool operator==(const headers_t& lhs, const headers_t& rhs){
+	return lhs.elements == rhs.elements;
+}
+
 
 ///////////////////////////////		HTTP REQUESTS
-
-
-/*
-	Will add CRLF after request_line, headers etc.
-*/
-std::string make_http_request_string(
-	const std::string& request_line,
-	const std::vector<std::string>& headers,
-	const std::string& optional_body
-);
-
-struct http_request_t {
-	id_address_and_port_t addr;
-	std::string message;
-};
-
-//	Lookups up addr, uses the first IP. Always IPv4 (for now).
-http_request_t make_http_request_helper(
-	const std::string& addr,
-	int port,
-	int af,
-	const std::string& message
-);
 
 
 struct http_request_line_t {
@@ -51,31 +35,17 @@ inline bool operator==(const http_request_line_t& lhs, const http_request_line_t
 	return lhs.method == rhs.method && lhs.uri == rhs.uri && lhs.http_version == rhs.http_version;
 }
 
-std::string pack_http_request_line(const http_request_line_t& request_line);
-
-//	Input string is the first line of the message only, no CRLF allowed.
-http_request_line_t unpack_http_request_line(const std::string& request_line);
-
-
-///////////////////////////////		HTTP RESPONSES
-
-
-struct http_response_t {
-	std::string status_line;
-	std::vector<std::pair<std::string, std::string>> headers;
+struct http_request_t {
+	http_request_line_t request_line;
+	headers_t headers;
 	std::string optional_body;
 };
 
-bool operator==(const http_response_t& lhs, const http_response_t& rhs);
+std::string pack_http_request(const http_request_t& r);
+http_request_t unpack_http_request(const std::string& r);
 
-std::string make_http_response_string(
-	const std::string& status_line,
-	const std::vector<std::string>& headers,
-	const std::string& optional_body
-);
 
-http_response_t unpack_http_response_string(const std::string& s);
-
+///////////////////////////////		HTTP RESPONSES
 
 
 struct http_response_status_line_t {
@@ -86,16 +56,35 @@ inline bool operator==(const http_response_status_line_t& lhs, const http_respon
 	return lhs.http_version == rhs.http_version && lhs.status_code == rhs.status_code;
 }
 
-std::string pack_http_response_status_line(const http_response_status_line_t& value);
+struct http_response_t {
+	http_response_status_line_t status_line;
+	headers_t headers;
+	std::string optional_body;
+};
 
-//	Input string is the first line of the message only, no CRLF allowed.
-http_response_status_line_t unpack_http_response_status_line(const std::string& s);
+bool operator==(const http_response_t& lhs, const http_response_t& rhs);
+
+std::string pack_http_response(const http_response_t& r);
+http_response_t unpack_http_response(const std::string& s);
+
 
 
 ///////////////////////////////		EXECUTE
 
 
-std::string execute_http_request(const http_request_t& request);
+struct http_request_exec_t {
+	id_address_and_port_t addr;
+	std::string message;
+};
+
+//	Lookups up addr, uses the first IP. Always IPv4 (for now).
+http_request_exec_t make_http_request_helper(
+	const std::string& addr,
+	int port,
+	int af,
+	const std::string& message
+);
+std::string execute_http_request(const http_request_exec_t& request);
 
 
 void execute_http_server(const server_params_t& params, connection_i& connection);
