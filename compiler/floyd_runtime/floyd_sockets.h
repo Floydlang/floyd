@@ -62,4 +62,15 @@ ip_address_t from_ipv4_dotted_decimal_string(const std::string& s);
 
 json_t to_json(const hostent_t& value);
 
+
+
+
+struct connection_to_server_t {
+	std::shared_ptr<socket_t> socket;
+};
+
+//	Client uses this to open a connection to server. When connection_to_server_t is destructed, connection is closed.
+connection_to_server_t connect_to_server(const id_address_and_port_t& server_addr);
+
+
 #endif /* floyd_sockets_hpp */

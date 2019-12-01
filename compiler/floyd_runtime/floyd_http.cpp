@@ -231,25 +231,6 @@ QUARK_TEST("socket-component", "unpack_http_response_string()", "k_http_response
 
 
 
-struct connection_to_server_t {
-	std::shared_ptr<socket_t> socket;
-};
-
-connection_to_server_t connect_to_server(const id_address_and_port_t& server_addr){
-	const auto socket = std::make_shared<socket_t>(AF_INET);
-
-	struct sockaddr_in a;
-	memset(&a, '0', sizeof(a));
-	a.sin_family = (sa_family_t)AF_INET;
-	a.sin_port = htons(server_addr.port);
-	a.sin_addr = server_addr.addr.ipv4;
-
-	const auto connect_err = ::connect(socket->_fd, (const struct sockaddr*)&a, sizeof(a));
-	if (connect_err != 0){
-		throw_errno2("connect()", get_unix_err());
-	}
-	return connection_to_server_t { socket };
-}
 
 
 std::string execute_http_request(const http_request_t& request){
