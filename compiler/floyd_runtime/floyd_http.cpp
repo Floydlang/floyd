@@ -246,9 +246,9 @@ std::string execute_http_request(const http_request_t& request){
 		throw_errno2("connect()", get_unix_err());
 	}
 
-	write_socket(socket._fd , request.message);
+	write_socket_string(socket._fd , request.message);
 
-	std::string response = read_socket(socket._fd);
+	std::string response = read_socket_string(socket._fd);
 	return response;
 }
 
@@ -334,7 +334,7 @@ void execute_http_server(const tcp_server_params_t& params){
 			throw_errno2("accept()", get_unix_err());
 		}
 
-		const auto read_data = read_socket(socket2);
+		const auto read_data = read_socket_string(socket2);
 
 		auto pos = seq_t(read_data);
 		const auto x = if_first(pos, "GET /info.html HTTP/1.1");
@@ -358,11 +358,11 @@ void execute_http_server(const tcp_server_params_t& params){
 				},
 				doc
 			);
-			write_socket(socket2, r);
+			write_socket_string(socket2, r);
 		}
 		else {
 			std::string r = make_http_response_string("HTTP/1.1 404 OK", {}, "");
-			write_socket(socket2, r);
+			write_socket_string(socket2, r);
 		}
 
 		close(socket2);

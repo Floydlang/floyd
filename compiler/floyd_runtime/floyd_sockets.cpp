@@ -104,11 +104,11 @@ bool SetSocketBlockingEnabled(int fd, bool blocking){
 #endif
 
 
-std::string read_socket(int socket){
+std::vector<uint8_t> read_socket_binary(int socket){
 	QUARK_ASSERT(socket >= 0);
 
-	char buffer[1024] = { 0 };
-	std::string result;
+	uint8_t buffer[1024] = { 0 };
+	std::vector<uint8_t> result;
 	while(true){
 		const auto read_result = ::read(socket , buffer, 1024);
 		if(read_result < 0){
@@ -120,29 +120,38 @@ std::string read_socket(int socket){
 				return result;
 			}
 			else if(read_result < 1024){
-				std::string s(buffer);
-				result = result + s;
+				std::vector<uint8_t> s(&buffer[0], &buffer[read_result]);
+				result = concat(result, s);
 				return result;
 			}
 			else if(read_result == 1024){
-				std::string s(buffer);
-				result = result + s;
+				std::vector<uint8_t> s(&buffer[0], &buffer[read_result]);
+				result = concat(result, s);
 
-				//	Out input buffer was full, read more data.
+				//	Out input buffer was full = read more data.
 			}
 		}
 	}
 }
 
-void write_socket(int socket, const std::string& data){
+void write_socket_binary(int socket, const std::vector<uint8_t>& data){
 //	::write(socket, data.c_str(), data.size());
-	const auto send_result = ::send(socket , data.c_str() , data.size(), 0);
+	const auto send_result = ::send(socket , data.data() , data.size(), 0);
 	if(send_result < 0){
 		QUARK_ASSERT(send_result == -1);
 		throw_errno2("send()", get_unix_err());
 	}
 }
 
+std::string read_socket_string(int socket){
+	const auto binary = read_socket_binary(socket);
+	return std::string(binary.begin(), binary.end());
+}
+
+void write_socket_string(int socket, const std::string& data){
+	const std::vector<uint8_t> temp(data.begin(), data.end());
+	write_socket_binary(socket, temp);
+}
 
 
 /*

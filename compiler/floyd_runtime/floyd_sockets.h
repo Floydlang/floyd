@@ -26,10 +26,11 @@ struct socket_t {
 	int _fd;
 };
 
-std::string read_socket(int socket);
-void write_socket(int socket, const std::string& data);
+std::vector<uint8_t> read_socket_binary(int socket);
+void write_socket_binary(int socket, const std::vector<uint8_t>& data);
 
-
+std::string read_socket_string(int socket);
+void write_socket_string(int socket, const std::string& data);
 
 
 
