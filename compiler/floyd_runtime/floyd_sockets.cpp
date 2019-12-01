@@ -48,17 +48,63 @@ http://httpbin.org/#/
 */
 
 
+// 	int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen);
+static void setsockopt__int_safe(int sockfd, int level, int optname, int new_value){
+	const int temp_value = new_value;
+	int err = ::setsockopt(sockfd, level, optname, &temp_value, sizeof(temp_value));
+	if(err != 0){
+		throw_errno2("setsockopt()", get_unix_err());
+	}
+}
+
+//	int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen);
+int getsockopt__int_safe(int sockfd, int level, int optname){
+	int temp_value = 0;
+	socklen_t temp_size = sizeof(temp_value);
+	int err = ::getsockopt(sockfd, level, optname, &temp_value, &temp_size);
+	if(err != 0){
+		throw_errno2("getsockopt()", get_unix_err());
+	}
+	QUARK_ASSERT(temp_size == sizeof(temp_value));
+	return temp_value;
+}
+
+
 bool socket_t::check_invariant() const{
 	QUARK_ASSERT(_fd >= 0);
 	return true;
 }
-
 socket_t::socket_t(int af){
 	const auto fd = ::socket(af, SOCK_STREAM, 0);
 	if (fd == -1){
 		throw_errno2("Socket creation error", get_unix_err());
 	}
 	_fd = fd;
+
+
+#if DEBUG
+	//	When debugging you get "Bind failed: Address already in use" and
+	//	"Bind failed: Port already in use" when rerunning program". This is a fix.
+	{
+		// SO_REUSEADDR, SO_REUSEPORT
+
+		const auto reuse_addr = getsockopt__int_safe(_fd, SOL_SOCKET, SO_REUSEADDR);
+		QUARK_ASSERT(reuse_addr == 0);
+		setsockopt__int_safe(_fd, SOL_SOCKET, SO_REUSEADDR, 1);
+		const auto reuse_addr2 = getsockopt__int_safe(_fd, SOL_SOCKET, SO_REUSEADDR);
+
+		//	Returns 4! https://stackoverflow.com/questions/48245896/so-reuseaddr-seems-to-hold-the-value-4
+		QUARK_ASSERT(reuse_addr2 != 0);
+
+
+		const auto reuse_port = getsockopt__int_safe(_fd, SOL_SOCKET, SO_REUSEPORT);
+		QUARK_ASSERT(reuse_port == 0);
+		setsockopt__int_safe(_fd, SOL_SOCKET, SO_REUSEPORT, 1);
+		const auto reuse_port2 = getsockopt__int_safe(_fd, SOL_SOCKET, SO_REUSEPORT);
+		QUARK_ASSERT(reuse_port2 != 0);
+	}
+#endif
+
 
 	QUARK_ASSERT(check_invariant());
 }
@@ -72,7 +118,6 @@ socket_t::~socket_t(){
 	_fd = -1;;
 }
 
-//??? setsockopt()
 
 /** Returns true on success, or false if there was an error */
 #if QUARK_WIN

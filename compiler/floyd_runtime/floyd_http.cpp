@@ -71,11 +71,11 @@ std::string make_http_request_string(
 }
 
 
-QUARK_TEST("socket-component", "make_http_request_string()","", ""){
+QUARK_TEST("http", "make_http_request_string()","", ""){
 	const auto r = make_http_request_string("GET /hello.htm HTTP/1.1", {}, "");
 	QUARK_VERIFY(r == "GET /hello.htm HTTP/1.1\r\n\r\n");
 }
-QUARK_TEST("socket-component", "make_http_request_string()","", ""){
+QUARK_TEST("http", "make_http_request_string()","", ""){
 	const auto r = make_http_request_string("GET /hello.htm HTTP/1.1", { "Host: www.tutorialspoint.com", "Accept-Language: en-us" }, "licenseID=string&content=string&/paramsXML=string");
 	ut_verify_string(
 		QUARK_POS,
@@ -211,7 +211,7 @@ http_response_t unpack_http_response_string(const std::string& s){
 	};
 }
 
-QUARK_TEST("socket-component", "unpack_http_response_string()", "k_http_response1", ""){
+QUARK_TEST("http", "unpack_http_response_string()", "k_http_response1", ""){
 	const auto r = unpack_http_response_string(k_http_response1);
 	QUARK_VERIFY(r.status_line == "HTTP/1.1 301 Moved Permanently");
 	QUARK_VERIFY(r.headers.size() == 14);
@@ -220,7 +220,7 @@ QUARK_TEST("socket-component", "unpack_http_response_string()", "k_http_response
 	QUARK_VERIFY(r.optional_body == "");
 }
 
-QUARK_TEST("socket-component", "unpack_http_response_string()", "k_http_response2", ""){
+QUARK_TEST("http", "unpack_http_response_string()", "k_http_response2", ""){
 	const auto r = unpack_http_response_string(k_http_response2);
 	QUARK_VERIFY(r.status_line == "HTTP/1.0 200 OK");
 	QUARK_VERIFY(r.headers.size() == 7);
@@ -257,42 +257,35 @@ http_request_t make_http_request_helper(
 }
 
 
-QUARK_TEST("socket-component", "", "", ""){
+QUARK_TEST("http", "", "", ""){
 	const auto r = execute_http_request(make_http_request_helper("cnn.com", 80, AF_INET, make_http_request_string("GET / HTTP/1.1", { "Host: www.cnn.com" }, "")));
 	QUARK_TRACE(r);
 	QUARK_VERIFY(r.empty() == false);
 }
 
-QUARK_TEST("socket-component", "", "", ""){
+QUARK_TEST("http", "", "", ""){
 	const auto r = execute_http_request(make_http_request_helper("example.com", 80, AF_INET, make_http_request_string("GET /index.html HTTP/1.0", { }, "")));
 	QUARK_TRACE(r);
 }
 
-QUARK_TEST("socket-component", "", "", ""){
+QUARK_TEST("http", "", "", ""){
 	const auto r = execute_http_request(make_http_request_helper("google.com", 80, AF_INET, make_http_request_string("GET /index.html HTTP/1.0", { }, "")));
 	QUARK_TRACE(r);
 }
 
-QUARK_TEST("socket-component", "", "", ""){
+QUARK_TEST("http", "", "", ""){
 	const auto r = execute_http_request(make_http_request_helper("google.com", 80, AF_INET, make_http_request_string("GET / HTTP/1.0", { "Host: www.google.com" }, "")));
 	QUARK_TRACE(r);
 }
 
-QUARK_TEST("socket-component", "", "", ""){
+QUARK_TEST("http", "", "", ""){
 //	const auto r = execute_http_request(http_request_t { lookup_host("stackoverflow.com", AF_INET).addresses_IPv4[0], 80, AF_INET, "GET / HTTP/1.0" "\r\n" "Host: stackoverflow.com" "\r\n" "\r\n" });
 	const auto r = execute_http_request(make_http_request_helper("stackoverflow.com", 80, AF_INET, make_http_request_string("GET /index.html HTTP/1.0", { "Host: www.stackoverflow.com" }, "")));
 	QUARK_TRACE(r);
 }
 
 
-
-/* htonl converts a long integer (e.g. address) to a network representation */
-/* htons converts a short integer (e.g. port) to a network representation */
-
-
-//	http://localhost:8080/info.html
-
-
+//const std::string doc0 = "<html><head><title>edgecastcdn.net</title></head><body><h1>edgecastcdn.net</h1></body></html>";
 
 
 struct test_connection_t : public connection_i {
@@ -300,9 +293,8 @@ struct test_connection_t : public connection_i {
 		const auto read_data = read_socket_string(socket2);
 
 		auto pos = seq_t(read_data);
-		const auto x = if_first(pos, "GET /info.html HTTP/1.1");
-		if(x.first){
-			const std::string doc0 = "<html><head><title>edgecastcdn.net</title></head><body><h1>edgecastcdn.net</h1></body></html>";
+		const auto response = unpack_http_response_string(read_data);
+		if(response.status_line == "GET /info.html HTTP/1.1"){
 			const std::string doc = R"___(
 				<head>
 					<title>Hello Floyd Server</title>
@@ -335,10 +327,11 @@ void execute_http_server(const server_params_t& params){
 	execute_server(params, connect);
 }
 
-#if 0
+#if 1
 //	Warning: this is not a real unit test, it runs forever.
-QUARK_TEST_VIP("socket-component", "", "", ""){
-	execute_http_server(tcp_server_params_t { 8080, AF_INET });
+QUARK_TEST_VIP("http", "execute_http_server", "", ""){
+	test_connection_t test_conn;
+	execute_server(server_params_t { 8080 }, test_conn);
 }
 
 #endif

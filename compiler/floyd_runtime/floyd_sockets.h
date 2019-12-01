@@ -89,6 +89,7 @@ struct connection_i {
 	public: virtual void connection_i__on_accept(int socket2_fd) = 0;
 };
 
+//	http://localhost:8080/info.html
 void execute_server(const server_params_t& params, connection_i& connection);
 
 #endif /* floyd_sockets_hpp */
