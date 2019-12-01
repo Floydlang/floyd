@@ -504,6 +504,10 @@ QUARK_TEST("", "split_at()", "", ""){
 	QUARK_VERIFY((split_at(seq_t("hello123world"), "456") == pair<string, seq_t>{ "", seq_t("hello123world") }));
 }
 
+bool does_substr_exist(const seq_t& p, const std::string& sub){
+	const auto p2 = std::strstr(p.c_str(), sub.c_str());
+	return p2 != nullptr;
+}
 
 std::pair<bool, seq_t> if_first(const seq_t& p, const std::string& wanted_string){
 	const auto size = wanted_string.size();
