@@ -23,6 +23,13 @@ struct ip_address_t {
 };
 
 
+struct id_address_and_port_t {
+	ip_address_t addr;
+	int port;
+//	int af;
+};
+
+
 struct socket_t {
 	bool check_invariant() const;
 	socket_t(int af);

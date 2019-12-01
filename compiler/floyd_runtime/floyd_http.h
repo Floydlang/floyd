@@ -41,9 +41,7 @@ http_response_t unpack_http_response_string(const std::string& s);
 
 
 struct http_request_t {
-	ip_address_t addr;
-	int port;
-	int af;
+	id_address_and_port_t addr;
 	std::string message;
 };
 
