@@ -9,8 +9,7 @@
 #ifndef floyd_http_hpp
 #define floyd_http_hpp
 
-#include <netinet/in.h>
-
+#include "floyd_sockets.h"
 #include <string>
 #include <vector>
 
@@ -42,7 +41,7 @@ http_response_t unpack_http_response_string(const std::string& s);
 
 
 struct http_request_t {
-	struct in_addr addr;
+	ip_address_t addr;
 	int port;
 	int af;
 	std::string message;

@@ -159,8 +159,8 @@ The inet_ntoa() function converts the Internet host address in, given in network
 string in IPv4 dotted-decimal notation. The string is returned in a statically allocated buffer,
 which subsequent calls will overwrite.
 */
-std::string to_ipv4_dotted_decimal_string(const struct in_addr& a){
-	const std::string s = ::inet_ntoa(a);
+std::string to_ipv4_dotted_decimal_string(const ip_address_t& a){
+	const std::string s = ::inet_ntoa(a.ipv4);
 	return s;
 }
 
@@ -170,7 +170,7 @@ std::string to_ipv4_dotted_decimal_string(const struct in_addr& a){
 		throw std::runtime_error("Invalid address - Address not supported");
 	}
 */
-struct in_addr from_ipv4_dotted_decimal_string(const std::string& s){
+ip_address_t from_ipv4_dotted_decimal_string(const std::string& s){
 	struct in_addr result;
 	int r = ::inet_aton(s.c_str(), &result);
 
@@ -178,7 +178,7 @@ struct in_addr from_ipv4_dotted_decimal_string(const std::string& s){
 		QUARK_ASSERT(false);
 		throw std::runtime_error("inet_aton() failed");
 	}
-	return result;
+	return ip_address_t { result };
 }
 
 json_t to_json(const hostent_t& value){
@@ -203,10 +203,11 @@ static hostent_t unpack_hostent(const struct hostent& e){
 		throw std::runtime_error("Unsupported adress length");
 	}
 
-	std::vector<struct in_addr> addresses;
+	std::vector<ip_address_t> addresses;
 	for(int i = 0 ; e.h_addr_list[i] != nullptr ; i++){
 		const auto a = (struct in_addr *)e.h_addr_list[i];
-		addresses.push_back(*a);
+		const auto a2 = ip_address_t { *a };
+		addresses.push_back(a2);
 	}
 
 	const auto r = hostent_t { e.h_name, aliases, addresses };
@@ -246,8 +247,8 @@ QUARK_TEST("socket-component", "gethostbyname2_r()","google.com", ""){
 //	QUARK_VERIFY(to_string(a.addresses_IPv4[0]) == "216.58.207.238");
 }
 
-hostent_t lookup_host(const struct in_addr& addr_v4, int af){
-	const auto e = ::gethostbyaddr(&addr_v4, 4, af);
+hostent_t lookup_host(const ip_address_t& addr, int af){
+	const auto e = ::gethostbyaddr(&addr.ipv4, 4, af);
 	if(e == nullptr){
 		const auto host_error = ::h_errno;
 		const auto error_str = ::hstrerror(host_error);

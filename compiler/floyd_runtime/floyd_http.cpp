@@ -239,7 +239,7 @@ std::string execute_http_request(const http_request_t& request){
 	memset(&a, '0', sizeof(a));
 	a.sin_family = (sa_family_t)request.af;
 	a.sin_port = htons(request.port);
-	a.sin_addr = request.addr;
+	a.sin_addr = request.addr.ipv4;
 
 	const auto connect_err = ::connect(socket._fd, (const struct sockaddr*)&a, sizeof(a));
 	if (connect_err != 0){

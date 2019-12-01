@@ -12,9 +12,15 @@
 #include <stdio.h>
 #include <vector>
 #include <string>
-
+#include <netinet/in.h>
 
 struct json_t;
+
+
+//??? Make this a variant with ipv4 and ipv6.
+struct ip_address_t {
+	struct in_addr ipv4;
+};
 
 
 struct socket_t {
@@ -37,15 +43,15 @@ void write_socket_string(int socket, const std::string& data);
 struct hostent_t {
 	std::string official_host_name;
 	std::vector<std::string> name_aliases;
-	std::vector<struct in_addr> addresses_IPv4;
+	std::vector<ip_address_t> addresses_IPv4;
 };
 
 
-hostent_t lookup_host(const struct in_addr& addr_v4);
+hostent_t lookup_host(const ip_address_t& addr);
 hostent_t lookup_host(const std::string& name);
 
-std::string to_ipv4_dotted_decimal_string(const struct in_addr& a);
-struct in_addr from_ipv4_dotted_decimal_string(const std::string& s);
+std::string to_ipv4_dotted_decimal_string(const ip_address_t& a);
+ip_address_t from_ipv4_dotted_decimal_string(const std::string& s);
 
 json_t to_json(const hostent_t& value);
 
