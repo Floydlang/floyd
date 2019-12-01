@@ -30,12 +30,16 @@ unix_errno_t get_unix_err(){
 
 
 #if QUARK_MAC || QUARK_WINDOWS
+
 std::string unix_err_to_string(const unix_errno_t& error){
 	char temp[200 + 1];
 	int err = strerror_r(error.value, temp, 200);
-	QUARK_ASSERT(err == 0);
+	if(err != 0){
+		throw_errno2("strerror_r()", get_unix_err());
+	}
 	return std::string(temp);
 }
+
 #endif
 
 #if QUARK_LINUX
@@ -43,10 +47,13 @@ std::string unix_err_to_string(const unix_errno_t& error){
 // Gnu specific? return string describing error number
 std::string unix_err_to_string(const unix_errno_t& error){
 	char temp[200 + 1];
-	char* err = strerror_r(error.value, temp, 200);
-	//QUARK_ASSERT(err == 0);
+	char* ptr = strerror_r(error.value, temp, 200);
+	if(ptr == nullptr){
+		throw_errno2("strerror_r()", get_unix_err());
+	}
 	return std::string(temp);
 }
+
 #endif
 
 QUARK_TEST("", "unix_err_to_string()", "", "") {
