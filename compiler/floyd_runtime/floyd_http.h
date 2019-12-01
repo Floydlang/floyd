@@ -12,6 +12,7 @@
 #include "floyd_sockets.h"
 #include <string>
 #include <vector>
+#include <memory>
 
 /*
 	Will add CRLF after request_line, headers etc.
