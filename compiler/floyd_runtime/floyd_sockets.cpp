@@ -81,7 +81,6 @@ socket_t::socket_t(int af){
 	}
 	_fd = fd;
 
-
 #if DEBUG
 	//	When debugging you get "Bind failed: Address already in use" and
 	//	"Bind failed: Port already in use" when rerunning program". This is a fix.
@@ -104,7 +103,6 @@ socket_t::socket_t(int af){
 		QUARK_ASSERT(reuse_port2 != 0);
 	}
 #endif
-
 
 	QUARK_ASSERT(check_invariant());
 }
@@ -314,6 +312,30 @@ QUARK_TEST("socket-component", "lookup_host()","google.com", ""){
 	QUARK_VERIFY(to_ipv4_dotted_decimal_string(a.addresses_IPv4[0]) == k_addr);
 }
 
+/*
+# CLIENT
+fd = socket()
+connect(server_addr)
+
+write()
+read()
+
+close()
+
+
+# SERVER
+
+socket()
+bind()
+listen()
+while(socket2 = accept()){
+	read(socket2)
+	write(socket2)
+	close(socket2)
+}
+close()
+
+*/
 
 connection_to_server_t connect_to_server(const id_address_and_port_t& server_addr){
 	const auto socket = std::make_shared<socket_t>(AF_INET);
@@ -356,7 +378,10 @@ void execute_server(const server_params_t& params, connection_i& connection){
 			QUARK_ASSERT(socket2 == -1);
 			throw_errno2("accept()", get_unix_err());
 		}
+
+		//	This returns when the client-server session is done.
 		connection.connection_i__on_accept(socket2);
+
 		::close(socket2);
 	}
 }

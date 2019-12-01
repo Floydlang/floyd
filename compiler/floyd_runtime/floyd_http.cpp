@@ -118,16 +118,15 @@ QUARK_TEST("http", "pack_http_request()","", ""){
 	QUARK_VERIFY(r == "GET /hello.htm HTTP/1.1\r\n\r\n");
 }
 QUARK_TEST("http", "pack_http_request()","", ""){
-	const auto r = pack_http_request(
-		http_request_t{
-			http_request_line_t { "GET", "/hello.htm", "HTTP/1.1" },
-			headers_t{{
-				{ "Host", "www.tutorialspoint.com" },
-				{ "Accept-Language", "en-us" }
-			}},
-			"licenseID=string&content=string&/paramsXML=string"
-		}
-	);
+	const auto a = http_request_t {
+		http_request_line_t { "GET", "/hello.htm", "HTTP/1.1" },
+		headers_t{{
+			{ "Host", "www.tutorialspoint.com" },
+			{ "Accept-Language", "en-us" }
+		}},
+		"licenseID=string&content=string&/paramsXML=string"
+	};
+	const auto r = pack_http_request(a);
 	ut_verify_string(
 		QUARK_POS,
 		r,
@@ -281,7 +280,7 @@ QUARK_TEST("http", "unpack_http_response()", "k_http_response2", ""){
 
 
 //??? store request as kv too!
-http_request_exec_t make_http_request_helper(
+http_request_exec_t make_http_request_exe(
 	const std::string& addr,
 	int port,
 	int af,
@@ -466,39 +465,92 @@ QUARK_TEST("http", "unpack_http_response_status_line()", "whitespace", ""){
 }
 
 
+
+
+
+
+
+/*
+
+
+Uniform Resource Locator (URL)
+A URL (Uniform Resource Locator) is used to uniquely identify a resource over the web. URL has the following syntax:
+
+protocol://hostname:port/path-and-file-name
+There are 4 parts in a URL:
+
+Protocol: The application-level protocol used by the client and server, e.g., HTTP, FTP, and telnet.
+Hostname: The DNS domain name (e.g., www.nowhere123.com) or IP address (e.g., 192.128.1.2) of the server.
+Port: The TCP port number that the server is listening for incoming requests from the clients.
+Path-and-file-name: The name and location of the requested resource, under the server document base directory.
+For example, in the URL http://www.nowhere123.com/docs/index.html, the communication protocol is HTTP; the hostname is www.nowhere123.com. The port number was not specified in the URL, and takes on the default number, which is TCP port 80 for HTTP. The path and file name for the resource to be located is "/docs/index.html".
+
+Other examples of URL are:
+
+ftp://www.ftp.org/docs/test.txt
+mailto:user@test101.com
+news:soc.culture.Singapore
+telnet://www.nowhere123.com/
+
+
+*/
+
+
+
+
+
+
+
+
+
+
 std::string execute_http_request(const http_request_exec_t& request){
 	const auto connection = connect_to_server(request.addr);
-	write_socket_string(connection.socket->_fd , request.message);
+	write_socket_string(connection.socket->_fd, request.message);
 	std::string response = read_socket_string(connection.socket->_fd);
 	return response;
 }
 
 QUARK_TEST("http", "execute_http_request()", "", ""){
-	const auto r = execute_http_request(make_http_request_helper("cnn.com", 80, AF_INET, pack_http_request( http_request_t { http_request_line_t { "GET", "/", "HTTP/1.1" }, headers_t{{ { "Host", "www.cnn.com" } }}, "" } )));
+	const auto a = http_request_t {
+		http_request_line_t { "GET", "/", "HTTP/1.1" },
+		headers_t{{ { "Host", "www.cnn.com" } }},
+		""
+	};
+	const auto r = execute_http_request(make_http_request_exe("cnn.com", 80, AF_INET, pack_http_request(a)));
 	QUARK_TRACE(r);
 	QUARK_VERIFY(r.empty() == false);
 }
 
 QUARK_TEST("http", "execute_http_request()", "", ""){
-	const auto r = execute_http_request(make_http_request_helper("example.com", 80, AF_INET, pack_http_request(http_request_t { http_request_line_t { "GET", "/index.html", "HTTP/1.0" }, { }, "" } )));
+	const auto a = http_request_t { http_request_line_t { "GET", "/index.html", "HTTP/1.0" }, { }, "" };
+	const auto r = execute_http_request(make_http_request_exe("example.com", 80, AF_INET, pack_http_request(a)));
 	QUARK_TRACE(r);
 }
 
 QUARK_TEST("http", "execute_http_request()", "", ""){
-	const auto r = execute_http_request(make_http_request_helper("google.com", 80, AF_INET, pack_http_request(http_request_t { http_request_line_t { "GET", "/index.html", "HTTP/1.0" }, { }, "" } )));
+	const auto a = http_request_t { http_request_line_t { "GET", "/index.html", "HTTP/1.0" }, { }, "" };
+	const auto r = execute_http_request(make_http_request_exe("google.com", 80, AF_INET, pack_http_request(a)));
 	QUARK_TRACE(r);
 }
 
 QUARK_TEST("http", "execute_http_request()", "", ""){
-	const auto r = execute_http_request(make_http_request_helper("google.com", 80, AF_INET, pack_http_request(http_request_t { http_request_line_t { "GET", "/", "HTTP/1.0" }, headers_t{{ { "Host", "www.google.com" } }}, "" } )));
+	const auto a = http_request_t { http_request_line_t { "GET", "/", "HTTP/1.0" }, headers_t{{ { "Host", "www.google.com" } }}, "" };
+	const auto r = execute_http_request(make_http_request_exe("google.com", 80, AF_INET, pack_http_request(a)));
 	QUARK_TRACE(r);
 }
 
 QUARK_TEST("http", "execute_http_request()", "", ""){
 //	const auto r = execute_http_request(http_request_t { lookup_host("stackoverflow.com", AF_INET).addresses_IPv4[0], 80, AF_INET, "GET / HTTP/1.0" "\r\n" "Host: stackoverflow.com" "\r\n" "\r\n" });
-	const auto r = execute_http_request(make_http_request_helper("stackoverflow.com", 80, AF_INET, pack_http_request(http_request_t { http_request_line_t { "GET", "/index.html", "HTTP/1.0" }, headers_t{{ { "Host", "www.stackoverflow.com" } }}, "" } )));
+	const auto a = http_request_t { http_request_line_t { "GET", "/index.html", "HTTP/1.0" }, headers_t{{ { "Host", "www.stackoverflow.com" } }}, "" };
+	const auto r = execute_http_request(make_http_request_exe("stackoverflow.com", 80, AF_INET, pack_http_request(a)));
 	QUARK_TRACE(r);
 }
+
+
+
+
+
 
 
 struct test_connection_t : public connection_i {
@@ -547,7 +599,7 @@ void execute_http_server(const server_params_t& params, connection_i& connection
 	execute_server(params, connection);
 }
 
-#if 1
+#if 0
 //	Warning: this is not a real unit test, it runs forever.
 QUARK_TEST_VIP("http", "execute_http_server", "", ""){
 	test_connection_t test_conn;

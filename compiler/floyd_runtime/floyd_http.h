@@ -78,7 +78,7 @@ struct http_request_exec_t {
 };
 
 //	Lookups up addr, uses the first IP. Always IPv4 (for now).
-http_request_exec_t make_http_request_helper(
+http_request_exec_t make_http_request_exe(
 	const std::string& addr,
 	int port,
 	int af,
