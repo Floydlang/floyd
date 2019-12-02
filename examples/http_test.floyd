@@ -1,3 +1,9 @@
+
+
+func void my_func2(int param)
+//func void my_func3(func void (int param) param)
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////		NETWORK COMPONENT
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -217,13 +223,8 @@ func my_server_state_t server_com__msg(my_server_state_t s, my_server_msg_t m) i
 container-def {
 	"name": "", "tech": "", "desc": "",
 	"clocks": {
-		"main": {
-			"a": "my_gui",
-		},
-
-		"com-clock": {
-			"c": "server_com"
-		}
+		"main": { "a": "my_gui" },
+		"com-clock": { "c": "server_com" }
 	}
 }
 

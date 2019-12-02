@@ -20,6 +20,8 @@
 #include <iostream>
 #include <cmath>
 
+//#define QUARK_TEST QUARK_TEST_VIP
+
 namespace floyd {
 
 namespace parser {
@@ -373,18 +375,38 @@ std::pair<json_t, seq_t> parse_struct_definition_body(types_t& types, const seq_
 std::pair<json_t, seq_t> parse_unnamed_struct_type_def(types_t& types, const seq_t& p2){
 	QUARK_ASSERT(is_first(p2, keyword_t::k_struct));
 
-	const auto struct_keyword_pos = read_required(p2, keyword_t::k_struct);
+	const auto keyword_pos = read_required(p2, keyword_t::k_struct);
 	std::pair<json_t, seq_t> a = parse_struct_definition_body(
 		types,
-		struct_keyword_pos,
+		keyword_pos,
 		"",
 		location_t(p2.pos())
 	);
 	return a;
 }
 
+#if 0
+static std::pair<type_t, seq_t> parse_function_type(types_t& types, const seq_t& p, const location_t& location){
+	const auto s2 = skip_whitespace(p);
 
+	const auto return_type = read_required_type(types, s2);
 
+	auto pos = read_required_char(s2, '{');
+	std::vector<member_t> members;
+	while(!pos.empty() && pos.first() != "}"){
+		const auto member_type = read_required_type(types, pos);
+		const auto member_name = read_required_identifier(member_type.second);
+		members.push_back(member_t { member_type.first, member_name.first } );
+		pos = read_optional_char(skip_whitespace(member_name.second), ';').second;
+		pos = skip_whitespace(pos);
+	}
+	pos = read_required(pos, "}");
+
+	type_t make_struct(types_t& types, const struct_type_desc_t& desc);
+
+	return { struct_type_desc_t(members), pos };
+}
+#endif
 
 
 
@@ -559,10 +581,17 @@ static std::pair<std::shared_ptr<type_t>, seq_t> parse_type(types_t& types, cons
 		}
 	}
 	else if(is_first(pos0, keyword_t::k_struct)){
-		const auto struct_keyword_pos = read_required(pos0, keyword_t::k_struct);
-		std::pair<struct_type_desc_t, seq_t> a = parse_struct_def_body(types, struct_keyword_pos, location_t(pos0.pos()));
+		const auto keyword_pos = read_required(pos0, keyword_t::k_struct);
+		std::pair<struct_type_desc_t, seq_t> a = parse_struct_def_body(types, keyword_pos, location_t(pos0.pos()));
 		return { std::make_shared<type_t>(make_struct(types, a.first)), a.second };
 	}
+#if 0
+	else if(is_first(pos0, keyword_t::k_func)){
+		const auto keyword_pos = read_required(pos0, keyword_t::k_func);
+		std::pair<struct_type_desc_t, seq_t> a = parse_function_type(types, keyword_pos, location_t(pos0.pos()));
+		return { std::make_shared<type_t>(make_struct(types, a.first)), a.second };
+	}
+#endif
 	else {
 		//	Read basic type.
 		const auto basic = read_basic_type(types, pos0);
@@ -658,6 +687,14 @@ QUARK_TEST("", "read_type()", "dict", ""){
 	QUARK_VERIFY(r.second == seq_t(""));
 }
 
+#if 0
+QUARK_TEST("", "read_type()", "", ""){
+	types_t i;
+	const auto r = read_type(i, seq_t("func void () impure"));
+	QUARK_VERIFY(*r.first ==  make_function(i, type_t::make_int(), {}, epure::pure));
+	QUARK_VERIFY(r.second == seq_t(""));
+}
+#endif
 
 QUARK_TEST("", "read_type()", "", ""){
 	types_t i;

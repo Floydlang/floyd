@@ -825,6 +825,14 @@ std::vector<floyd::type_t> get_member_types(const std::vector<member_t>& m){
 	return r;
 }
 
+std::vector<std::string> get_member_names(const std::vector<member_t>& m){
+	std::vector<std::string> r;
+	for(const auto& a: m){
+		r.push_back(a._name);
+	}
+	return r;
+}
+
 std::string members_to_string(const std::vector<member_t>& m){
 	std::string result;
 	for(const auto& e: m){

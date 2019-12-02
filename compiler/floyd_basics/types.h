@@ -255,6 +255,7 @@ enum class return_dyn_type {
 
 
 std::vector<type_t> get_member_types(const std::vector<member_t>& m);
+std::vector<std::string> get_member_names(const std::vector<member_t>& m);
 
 
 

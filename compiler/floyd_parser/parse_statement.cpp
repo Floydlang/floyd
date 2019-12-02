@@ -414,6 +414,35 @@ QUARK_TEST("", "parse_expression_statement()", "", ""){
 //////////////////////////////////////////////////		parse_function_definition_statement()
 
 
+struct function_desc_t {
+	std::string optional_name;
+	type_t return_type;
+	std::vector<member_t> args_with_optional_names;
+	bool impure;
+};
+
+//	Name of function and arguments are optional. Does not parse body, if it is present.
+std::pair<function_desc_t, seq_t> parse_function_prototype(types_t& types, const seq_t& pos){
+	const auto start = skip_whitespace(pos);
+	const auto func_pos = read_required(start, keyword_t::k_func);
+	const auto return_type_pos = read_required_type(types, func_pos);
+	const auto function_name_pos = read_required_identifier(return_type_pos.second);
+	const auto named_args_pos = read_functiondef_arg_parantheses(types, skip_whitespace(function_name_pos.second));
+
+	const auto impure_pos = if_first(skip_whitespace(named_args_pos.second), keyword_t::k_impure);
+
+	return {
+		{
+			function_name_pos.first,
+			return_type_pos.first,
+			named_args_pos.first,
+			impure_pos.first
+		},
+		impure_pos.second
+	};
+}
+
+
 parse_result_t parse_optional_statement_body(const seq_t& s){
 	const auto bracket_pos = read_optional_char(skip_whitespace(s), '{');
 	if(bracket_pos.first){
