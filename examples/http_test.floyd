@@ -1,3 +1,7 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////		NETWORK COMPONENT
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 struct network_component {
 	int internal
 }
@@ -36,9 +40,6 @@ func string to_ipv4_dotted_decimal_string(ip_address2_t a)
 func ip_address2_t from_ipv4_dotted_decimal_string(string s)
 
 
-
-
-
 //////////////////////////////////////		SOCKET CLIENT
 
 
@@ -67,8 +68,8 @@ func void execute_server(server_params_t params, int f)
 
 
 
-
 ///////////////////////////////		HTTP
+
 
 struct header_t {
 	string key
@@ -108,11 +109,27 @@ func int get_time_ns(){
 	return 0
 }
 
+
 ///////////////////////////////		EXECUTE HTTP 
 
 
 //	Blocks for reply.
 func http_response_t execute_http_request(id_address_and_port_t addr, http_request_t r)
+
+
+struct connection_i {
+	int x
+}
+
+func void execute_http_server(server_params_t params, connection_i connection)
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////		DEMO
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 /*
 func void main(){
@@ -124,11 +141,9 @@ func void main(){
 */
 
 
-
 struct my_state_t {
 	string my_stuff
 }
-
 
 //??? needs a custom context
 func void connection_i__on_accept(int socket2){
@@ -141,19 +156,12 @@ func void connection_i__on_accept(int socket2){
 	}
 }
 
-struct connection_i {
-	int x
-}
-
-func void execute_http_server(server_params_t params, connection_i connection)
-
 /*
 QUARK_TEST_VIP("http", "execute_http_server", "", ""){
 	test_connection_t test_conn
 	execute_http_server(server_params_t { 8080 }, test_conn)
 }
 */
-
 
 /*
 # HTTP server alternatives
@@ -176,14 +184,11 @@ func void f(string read, string write, my_state_t context){
 //execute_http_server(server_params_t(8080), f, my_state)
 
 
-
-
 struct my_gui_state_t { int x }
 struct my_gui_msg_t { string type }
 
 struct my_server_state_t { int x }
 struct my_server_msg_t { string type }
-
 
 
 func my_gui_state_t my_gui__init() impure{
@@ -199,7 +204,6 @@ func my_gui_state_t my_gui__msg(my_gui_state_t s, my_gui_msg_t m) impure {
 }
 
 
-
 func my_server_state_t server_com__init(){
 	print("server_com__init\n")
 	return my_server_state_t(3)
@@ -209,8 +213,6 @@ func my_server_state_t server_com__msg(my_server_state_t s, my_server_msg_t m) i
 	exit()
 	return s
 }
-
-
 
 container-def {
 	"name": "", "tech": "", "desc": "",
@@ -226,5 +228,4 @@ container-def {
 }
 
 print("Hello, world!\n")
-
 
