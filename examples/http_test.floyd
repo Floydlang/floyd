@@ -1,0 +1,230 @@
+struct network_component {
+	int internal
+}
+
+
+//////////////////////////////////////		BASICS
+
+
+struct ip_address2_t {
+	string data
+}
+
+
+struct id_address_and_port_t {
+	ip_address2_t addr
+	int port
+}
+
+func string read_socket_binary(int socket)
+func void write_socket_binary(int socket, string data)
+
+func string read_socket_string(int socket)
+func void write_socket_string(int socket, string data)
+
+
+struct hostent_t {
+	string official_host_name
+	[string] name_aliases
+	[ip_address2_t] addresses_IPv4
+}
+
+func hostent_t lookup_host(ip_address2_t addr)
+func hostent_t lookup_host2(string name)
+
+func string to_ipv4_dotted_decimal_string(ip_address2_t a)
+func ip_address2_t from_ipv4_dotted_decimal_string(string s)
+
+
+
+
+
+//////////////////////////////////////		SOCKET CLIENT
+
+
+struct connection_to_server_t {
+	int socket
+}
+
+//	Client uses this to open a connection to server. When connection_to_server_t is
+//	destructed, connection is closed.
+func connection_to_server_t connect_to_server(id_address_and_port_t server_addr)
+
+
+//////////////////////////////////////		SERVER
+
+
+struct server_params_t {
+	int port
+}
+
+//	Server uses this to run a loop and accept clients.
+func void my_on_accept(int socket2_fd)
+
+//	http://localhost:8080/info.html
+func void execute_server(server_params_t params, int f)
+//func void execute_server(server_params_t params, func void on_accept(int socket))
+
+
+
+
+///////////////////////////////		HTTP
+
+struct header_t {
+	string key
+	string value
+}
+
+
+///////////////////////////////		HTTP REQUESTS
+
+
+struct http_request_line_t {
+	string method
+	string uri
+	string http_version
+}
+struct http_request_t {
+	http_request_line_t request_line
+	[header_t] headers
+	string optional_body
+}
+
+
+///////////////////////////////		HTTP RESPONSES
+
+
+struct http_response_status_line_t {
+	string http_version
+	string status_code
+}
+struct http_response_t {
+	http_response_status_line_t status_line
+	[header_t] headers
+	string optional_body
+}
+
+func int get_time_ns(){
+	return 0
+}
+
+///////////////////////////////		EXECUTE HTTP 
+
+
+//	Blocks for reply.
+func http_response_t execute_http_request(id_address_and_port_t addr, http_request_t r)
+
+/*
+func void main(){
+	let timeout = get_time_ns() + 3000000
+	let addr = id_address_and_port_t(ip_address2_t("123234234"), 8080)
+	let r = http_request_t(http_request_line_t("GET", "/", "HTTP/1.1"), [], "")
+	let a = execute_http_request(addr, r)
+}
+*/
+
+
+
+struct my_state_t {
+	string my_stuff
+}
+
+
+//??? needs a custom context
+func void connection_i__on_accept(int socket2){
+	let read_data = read_socket_string(socket2)
+	if(size(read_data) == 0){
+		print("empty")
+	}
+	else{
+		write_socket_string(socket2, "Hello!")
+	}
+}
+
+struct connection_i {
+	int x
+}
+
+func void execute_http_server(server_params_t params, connection_i connection)
+
+/*
+QUARK_TEST_VIP("http", "execute_http_server", "", ""){
+	test_connection_t test_conn
+	execute_http_server(server_params_t { 8080 }, test_conn)
+}
+*/
+
+
+/*
+# HTTP server alternatives
+
+A) Call blocking function (from a dedicated floyd process). It has callback for each accepted session.
+B) Special type of floyd process that fans out.
+C) Dedicated HTTP server process type
+D) Server uses queue_async() that queues a function in its own thread (thread pool).
+
+	void queue_async(T input, F f, C context)
+
+E) Multiplexing floyd process: handles messages in parallel.
+*/
+
+
+//func void f(func string read(), func void write(string v), my_state_t context){
+func void f(string read, string write, my_state_t context){
+}
+
+//execute_http_server(server_params_t(8080), f, my_state)
+
+
+
+
+struct my_gui_state_t { int x }
+struct my_gui_msg_t { string type }
+
+struct my_server_state_t { int x }
+struct my_server_msg_t { string type }
+
+
+
+func my_gui_state_t my_gui__init() impure{
+	print("my_gui__init\n")
+	send("c", my_server_msg_t("hi!"))
+	exit()
+	return my_gui_state_t(3)
+}
+func my_gui_state_t my_gui__msg(my_gui_state_t s, my_gui_msg_t m) impure {
+	print("my_gui__msg" + to_string(s) + to_string(m) + "\n")
+	exit()
+	return s
+}
+
+
+
+func my_server_state_t server_com__init(){
+	print("server_com__init\n")
+	return my_server_state_t(3)
+}
+func my_server_state_t server_com__msg(my_server_state_t s, my_server_msg_t m) impure {
+	print("server_com__msg" + to_string(s) + to_string(m) + "\n")
+	exit()
+	return s
+}
+
+
+
+container-def {
+	"name": "", "tech": "", "desc": "",
+	"clocks": {
+		"main": {
+			"a": "my_gui",
+		},
+
+		"com-clock": {
+			"c": "server_com"
+		}
+	}
+}
+
+print("Hello, world!\n")
+
+

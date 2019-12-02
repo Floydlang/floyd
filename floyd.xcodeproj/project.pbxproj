@@ -162,6 +162,7 @@
 		2CA2D86622F347FC00B45098 /* floyd_llvm_types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA2D86322F347FC00B45098 /* floyd_llvm_types.cpp */; };
 		2CA673222393F6BA00623050 /* floyd_http.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA673202393F6BA00623050 /* floyd_http.cpp */; };
 		2CA673252393F88D00623050 /* unix_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA673232393F88D00623050 /* unix_helpers.cpp */; };
+		2CA673272395458700623050 /* http_test.floyd in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2CA673262395454400623050 /* http_test.floyd */; };
 		2CAC5B90230FFC8800F89608 /* quadratic_probing_hash_table.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CAC5B8E230FFC8800F89608 /* quadratic_probing_hash_table.cpp */; };
 		2CB2A512203C4AA80001A19E /* interpretator_benchmark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB2A511203C4AA80001A19E /* interpretator_benchmark.cpp */; };
 		2CB2A516203D642B0001A19E /* semantic_analyser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB2A515203D642B0001A19E /* semantic_analyser.cpp */; };
@@ -205,6 +206,7 @@
 				2CC88E65232AA0530029C638 /* adventure.floyd in Copy Files - examples */,
 				2C2FB296232A9F1B006105E4 /* process_test1.floyd in Copy Files - examples */,
 				2C2FB297232A9F1B006105E4 /* hello_world.floyd in Copy Files - examples */,
+				2CA673272395458700623050 /* http_test.floyd in Copy Files - examples */,
 				2C2FB298232A9F1B006105E4 /* benchmarks.floyd in Copy Files - examples */,
 				2C2FB299232A9F1B006105E4 /* test_main.floyd in Copy Files - examples */,
 				2C2FB29A232A9F1B006105E4 /* game_of_life.cpp in Copy Files - examples */,
@@ -693,6 +695,7 @@
 		2CA673212393F6BA00623050 /* floyd_http.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_http.h; sourceTree = "<group>"; };
 		2CA673232393F88D00623050 /* unix_helpers.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = unix_helpers.cpp; sourceTree = "<group>"; };
 		2CA673242393F88D00623050 /* unix_helpers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = unix_helpers.h; sourceTree = "<group>"; };
+		2CA673262395454400623050 /* http_test.floyd */ = {isa = PBXFileReference; lastKnownFileType = text; path = http_test.floyd; sourceTree = "<group>"; };
 		2CAC5B8E230FFC8800F89608 /* quadratic_probing_hash_table.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = quadratic_probing_hash_table.cpp; sourceTree = "<group>"; };
 		2CAC5B8F230FFC8800F89608 /* quadratic_probing_hash_table.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = quadratic_probing_hash_table.h; sourceTree = "<group>"; };
 		2CB2A511203C4AA80001A19E /* interpretator_benchmark.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = interpretator_benchmark.cpp; sourceTree = "<group>"; };
@@ -1001,16 +1004,17 @@
 		2C2FB28C232A9CFF006105E4 /* examples */ = {
 			isa = PBXGroup;
 			children = (
-				2C7005D0238C40EF005298C2 /* tests.floyd */,
 				2CC88E64232AA0300029C638 /* adventure.floyd */,
 				2C2FB28F232A9CFF006105E4 /* benchmarks.floyd */,
 				2C2FB293232A9CFF006105E4 /* fibonacci.floyd */,
 				2C2FB291232A9CFF006105E4 /* game_of_life.cpp */,
 				2C2FB294232A9CFF006105E4 /* game_of_life.floyd */,
 				2C2FB28E232A9CFF006105E4 /* hello_world.floyd */,
+				2CA673262395454400623050 /* http_test.floyd */,
 				2C2FB28D232A9CFF006105E4 /* process_test1.floyd */,
 				2C2FB290232A9CFF006105E4 /* test_main.floyd */,
 				2C2FB292232A9CFF006105E4 /* test.json */,
+				2C7005D0238C40EF005298C2 /* tests.floyd */,
 			);
 			path = examples;
 			sourceTree = "<group>";
