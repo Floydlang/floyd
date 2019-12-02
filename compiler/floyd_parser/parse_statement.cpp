@@ -17,6 +17,7 @@
 
 #include "types.h"
 
+//#define QUARK_TEST QUARK_TEST_VIP
 
 namespace floyd {
 namespace parser {
@@ -346,7 +347,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 QUARK_TEST("parse_bind_statement", "", "", ""){
 	ut_verify_json_and_rest(
 		QUARK_POS,
-		parse_bind_statement(seq_t("let int (double, [string]) test = 123 let int a = 4 ")),
+		parse_bind_statement(seq_t("let func int (double, [string]) test = 123 let int a = 4 ")),
 		R"(
 			[0, "init-local", ["func", "int", ["double", ["vector", "string"]], true], "test", ["k", 123, "int"]]
 		)",
@@ -414,33 +415,6 @@ QUARK_TEST("", "parse_expression_statement()", "", ""){
 //////////////////////////////////////////////////		parse_function_definition_statement()
 
 
-struct function_desc_t {
-	std::string optional_name;
-	type_t return_type;
-	std::vector<member_t> args_with_optional_names;
-	bool impure;
-};
-
-//	Name of function and arguments are optional. Does not parse body, if it is present.
-std::pair<function_desc_t, seq_t> parse_function_prototype(types_t& types, const seq_t& pos){
-	const auto start = skip_whitespace(pos);
-	const auto func_pos = read_required(start, keyword_t::k_func);
-	const auto return_type_pos = read_required_type(types, func_pos);
-	const auto function_name_pos = read_required_identifier(return_type_pos.second);
-	const auto named_args_pos = read_functiondef_arg_parantheses(types, skip_whitespace(function_name_pos.second));
-
-	const auto impure_pos = if_first(skip_whitespace(named_args_pos.second), keyword_t::k_impure);
-
-	return {
-		{
-			function_name_pos.first,
-			return_type_pos.first,
-			named_args_pos.first,
-			impure_pos.first
-		},
-		impure_pos.second
-	};
-}
 
 
 parse_result_t parse_optional_statement_body(const seq_t& s){
@@ -459,18 +433,19 @@ std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos){
 	types_t temp;
 
 	const auto start = skip_whitespace(pos);
-	const auto func_pos = read_required(start, keyword_t::k_func);
-	const auto return_type_pos = read_required_type(temp, func_pos);
-	const auto function_name_pos = read_required_identifier(return_type_pos.second);
-	const auto named_args_pos = read_functiondef_arg_parantheses(temp, skip_whitespace(function_name_pos.second));
 
-	const auto impure_pos = if_first(skip_whitespace(named_args_pos.second), keyword_t::k_impure);
+	const auto location = location_t(start.pos());
 
-	const auto body = parse_optional_statement_body(impure_pos.second);
+	const auto prototype_kv = parse_function_prototype(temp, pos, location);
+	const auto function_type = prototype_kv.first.function_type;
+	const auto function_name = prototype_kv.first.optional_name;
+	if(function_name == ""){
+		throw_compiler_error(location_t(pos.pos()), "Function definition statement requires a function name.");
+	}
 
-	const auto named_args = members_to_json(temp, named_args_pos.first);
-	const auto function_name = function_name_pos.first;
+	const auto body = parse_optional_statement_body(prototype_kv.second);
 
+	const auto named_args = members_to_json(temp, prototype_kv.first.args_with_optional_names);
 	const auto body_json = body.parse_tree.is_null()
 	? json_t()
 	: json_t::make_object({
@@ -478,12 +453,6 @@ std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos){
 		{ "symbols", {} }
 	});
 
-	std::vector<type_t> arg_types;
-	for(const auto& e: named_args_pos.first){
-		arg_types.push_back(e._type);
-	}
-
-	const auto function_type = make_function(temp, return_type_pos.first, arg_types, impure_pos.first ? epure::impure : epure::pure);
 	const auto func_def_expr = make_parser_node(
 		location_t(k_no_location),
 		parse_tree_expression_opcode_t::k_function_def,
@@ -676,109 +645,6 @@ QUARK_TEST("parser", "parse_struct_definition_statement", "", ""){
 	ut_verify_string(QUARK_POS, r.second.str(), "");
 }
 
-
-#if 0
-//////////////////////////////////////////////////		parse_protocol_definition_statement()
-
-
-std::pair<json_t, seq_t>  parse_protocol_definition_body(const seq_t& p, const std::string& name){
-	const auto start = skip_whitespace(p);
-	read_required_char(start, '{');
-	const auto body_pos = get_balanced(start);
-
-	std::vector<member_t> functions;
-
-	auto pos = seq_t(trim_ends(body_pos.first));
-	while(!pos.empty()){
-		const auto func_pos = read_required(skip_whitespace(pos), keyword_t::k_func);
-		const auto return_type_pos = read_required_type(func_pos);
-		const auto function_name_pos = read_required_identifier(return_type_pos.second);
-		const auto args_pos = read_functiondef_arg_parantheses(function_name_pos.second);
-		pos = read_optional_char(skip_whitespace(args_pos.second), ';').second;
-		pos = skip_whitespace(pos);
-
-
-		std::vector<type_t> arg_types;
-		for(const auto& e: args_pos.first){
-			arg_types.push_back(e._type);
-		}
-		const member_t f = {
-			make_function(return_type_pos.first, arg_types, epure::pure),
-			function_name_pos.first
-		};
-		functions.push_back(f);
-	}
-
-	const auto r = make_ast_node(
-		location_t(start.pos()),
-		parse_tree_statement_opcode::k_def_protocol,
-		{
-			json_t::make_object({
-				{ "name", name },
-				{ "members", members_to_json(functions)
-				}
-			})
-		}
-	);
-	return { r, skip_whitespace(body_pos.second) };
-}
-
-std::pair<json_t, seq_t>  parse_protocol_definition_statement(const seq_t& p){
-	const auto pos0 = skip_whitespace(p);
-	std::pair<bool, seq_t> token_pos = if_first(pos0, keyword_t::k_protocol);
-	QUARK_ASSERT(token_pos.first);
-
-	const auto protocol_name_pos = read_required_identifier(token_pos.second);
-
-	const auto s2 = skip_whitespace(protocol_name_pos.second);
-	return parse_protocol_definition_body(s2, protocol_name_pos.first);
-}
-
-const std::string k_test_protocol0 = R"(
-	protocol prot {
-		func int f(string a, double b)
-		func string g(bool c)
-	}
-)";
-
-#if 0
-OFF_QUARK_UNIT_TEST("parse_protocol_definition_statement", "", "", ""){
-	const auto r = parse_protocol_definition_statement(seq_t(k_test_protocol0));
-
-	const auto expected =
-	json_t::make_array({
-		17,
-		"def-protocol",
-		json_t::make_object({
-			{ "name", "prot" },
-			{
-				"members",
-				json_t::make_array({
-					json_t::make_object({
-						{ "name", "f"},
-						{
-							"type",
-							json_t::make_array({ "func", "int", json_t::make_array({"string", "double"}), true })
-						}
-					}),
-					json_t::make_object({
-						{ "name", "g"},
-						{
-							"type",
-							json_t::make_array({ "func", "string", json_t::make_array({"bool"}), true })
-						}
-					})
-				})
-			},
-		})
-	});
-
-	ut_verify(QUARK_POS, r.first, expected);
-	ut_verify(QUARK_POS, r.second.str(), "");
-}
-#endif
-
-#endif
 
 
 //////////////////////////////////////////////////		parse_if()

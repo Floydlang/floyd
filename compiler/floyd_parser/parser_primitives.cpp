@@ -357,6 +357,7 @@ static std::pair<struct_type_desc_t, seq_t> parse_struct_def_body(types_t& types
 }
 
 
+//??? Move to parse_expression.cpp
 std::pair<json_t, seq_t> parse_struct_definition_body(types_t& types, const seq_t& p, const std::string& name, const location_t& location){
 	const auto a = parse_struct_def_body(types, p, location);
 
@@ -372,6 +373,7 @@ std::pair<json_t, seq_t> parse_struct_definition_body(types_t& types, const seq_
 	return { struct_def_expr, a.second };
 }
 
+//??? Move to parse_expression.cpp
 std::pair<json_t, seq_t> parse_unnamed_struct_type_def(types_t& types, const seq_t& p2){
 	QUARK_ASSERT(is_first(p2, keyword_t::k_struct));
 
@@ -385,28 +387,6 @@ std::pair<json_t, seq_t> parse_unnamed_struct_type_def(types_t& types, const seq
 	return a;
 }
 
-#if 0
-static std::pair<type_t, seq_t> parse_function_type(types_t& types, const seq_t& p, const location_t& location){
-	const auto s2 = skip_whitespace(p);
-
-	const auto return_type = read_required_type(types, s2);
-
-	auto pos = read_required_char(s2, '{');
-	std::vector<member_t> members;
-	while(!pos.empty() && pos.first() != "}"){
-		const auto member_type = read_required_type(types, pos);
-		const auto member_name = read_required_identifier(member_type.second);
-		members.push_back(member_t { member_type.first, member_name.first } );
-		pos = read_optional_char(skip_whitespace(member_name.second), ';').second;
-		pos = skip_whitespace(pos);
-	}
-	pos = read_required(pos, "}");
-
-	type_t make_struct(types_t& types, const struct_type_desc_t& desc);
-
-	return { struct_type_desc_t(members), pos };
-}
-#endif
 
 
 
@@ -451,38 +431,50 @@ std::pair<std::shared_ptr<type_t>, seq_t> read_basic_type(types_t& types, const 
 }
 
 
-static std::vector<member_t> parse_functiondef_arguments2(types_t& types, const std::string& s, bool require_arg_names){
-	QUARK_ASSERT(s.size() >= 2);
-	QUARK_ASSERT(s[0] == '(');
-	QUARK_ASSERT(s.back() == ')');
 
-	const auto s2 = seq_t(trim_ends(s));
+//	"(int a, string b)"
+//	"(int, string)"
+static std::pair<std::vector<member_t>, seq_t> read_function_args(types_t& types, const seq_t& s){
+	if(s.first1() != "("){
+		throw_compiler_error_nopos("Expected (.");
+	}
+
+	std::pair<std::string, seq_t> args_pos = read_balanced2(s, k_bracket_pairs);
+
+	if(args_pos.first.empty()){
+		throw_compiler_error_nopos("unbalanced ()");
+	}
+
+	const auto s2 = seq_t(trim_ends(args_pos.first));
 	std::vector<member_t> args;
 	auto pos = skip_whitespace(s2);
 	while(!pos.empty()){
 		const auto arg_type = read_required_type(types, pos);
 		const auto arg_name = read_identifier(arg_type.second);
-		if(require_arg_names && arg_name.first.empty()){
+/*
+		if(arg_name.first.empty()){
 			quark::throw_runtime_error("Invalid function definition.");
 		}
+*/
 		const auto optional_comma = read_optional_char(skip_whitespace(arg_name.second), ',');
 		args.push_back({ arg_type.first, arg_name.first });
 		pos = skip_whitespace(optional_comma.second);
 	}
-	return args;
+
+	return { args, args_pos.second };
 }
 
-QUARK_TEST("", "parse_functiondef_arguments2()", "", ""){
+QUARK_TEST("", "read_function_args()", "", ""){
 	types_t types;
-	QUARK_VERIFY((		parse_functiondef_arguments2(types, "()", true) == std::vector<member_t>{}		));
+	QUARK_VERIFY((		read_function_args(types, seq_t("()")).first == std::vector<member_t>{}		));
 }
-QUARK_TEST("", "parse_functiondef_arguments2()", "", ""){
+QUARK_TEST("", "read_function_args()", "", ""){
 	types_t types;
-	QUARK_VERIFY((		parse_functiondef_arguments2(types, "(int a)", true) == std::vector<member_t>{ { type_t::make_int(), "a" }}		));
+	QUARK_VERIFY((		read_function_args(types, seq_t("(int a)")).first == std::vector<member_t>{ { type_t::make_int(), "a" }}		));
 }
-QUARK_TEST("", "parse_functiondef_arguments2()", "", ""){
+QUARK_TEST("", "read_function_args()", "", ""){
 	types_t types;
-	QUARK_VERIFY((		parse_functiondef_arguments2(types, "(int x, string y, double z)", true) == std::vector<member_t>{
+	QUARK_VERIFY((		read_function_args(types, seq_t("(int x, string y, double z)")).first == std::vector<member_t>{
 		{ type_t::make_int(), "x" },
 		{ type_t::make_string(), "y" },
 		{ type_t::make_double(), "z" }
@@ -490,59 +482,31 @@ QUARK_TEST("", "parse_functiondef_arguments2()", "", ""){
 	}		));
 }
 
-std::pair<std::vector<member_t>, seq_t> read_functiondef_arg_parantheses(types_t& types, const seq_t& s){
-	if(s.first1() != "("){
-		throw_compiler_error_nopos("Expected (.");
-	}
 
-	std::pair<std::string, seq_t> args_pos = read_balanced2(s, k_bracket_pairs);
-	if(args_pos.first.empty()){
-		throw_compiler_error_nopos("unbalanced ()");
-	}
-	const auto r = parse_functiondef_arguments2(types, args_pos.first, true);
-	return { r, args_pos.second };
+std::pair<function_desc_t, seq_t> parse_function_prototype(types_t& types, const seq_t& pos, const location_t& location){
+	const auto start = skip_whitespace(pos);
+	const auto func_pos = read_required(start, keyword_t::k_func);
+	const auto return_type_pos = read_required_type(types, func_pos);
+	const auto function_name_pos = read_identifier(return_type_pos.second);
+	const auto named_args_pos = read_function_args(types, skip_whitespace(function_name_pos.second));
+
+	const auto impure_pos = if_first(skip_whitespace(named_args_pos.second), keyword_t::k_impure);
+
+	const auto arg_types = get_member_types(named_args_pos.first);
+	const auto function_type = make_function(types, return_type_pos.first, arg_types, impure_pos.first ? epure::impure : epure::pure);
+
+	return {
+		{
+			function_name_pos.first,
+			return_type_pos.first,
+			named_args_pos.first,
+			impure_pos.first,
+			function_type
+		},
+		impure_pos.second
+	};
 }
 
-
-std::pair<std::vector<member_t>, seq_t> read_function_type_args(types_t& types, const seq_t& s){
-	if(s.first1() != "("){
-		throw_compiler_error_nopos("Expected (.");
-	}
-
-	std::pair<std::string, seq_t> args_pos = read_balanced2(s, k_bracket_pairs);
-	if(args_pos.first.empty()){
-		throw_compiler_error_nopos("unbalanced ()");
-	}
-	const auto r = parse_functiondef_arguments2(types, args_pos.first, false);
-	return { r, args_pos.second };
-}
-
-QUARK_TEST("", "read_function_type_args()", "", ""){
-	types_t types;
-	const auto result = read_function_type_args(types, seq_t("()"));
-	QUARK_VERIFY(result.first.empty());
-	QUARK_VERIFY(result.second.empty());
-}
-QUARK_TEST("", "read_function_type_args()", "", ""){
-	types_t types;
-	const auto result = read_function_type_args(types, seq_t("(int, double)"));
-	QUARK_VERIFY(result.first.size() == 2);
-	QUARK_VERIFY(peek2(types, result.first[0]._type).is_int());
-	QUARK_VERIFY(result.first[0]._name == "");
-	QUARK_VERIFY(peek2(types, result.first[1]._type).is_double());
-	QUARK_VERIFY(result.first[1]._name == "");
-	QUARK_VERIFY(result.second.empty());
-}
-QUARK_TEST("", "read_function_type_args()", "", ""){
-	types_t types;
-	const auto result = read_function_type_args(types, seq_t("(int x, double y)"));
-	QUARK_VERIFY(result.first.size() == 2);
-	QUARK_VERIFY(peek2(types, result.first[0]._type).is_int());
-	QUARK_VERIFY(result.first[0]._name == "x");
-	QUARK_VERIFY(peek2(types, result.first[1]._type).is_double());
-	QUARK_VERIFY(result.first[1]._name == "y");
-	QUARK_VERIFY(result.second.empty());
-}
 
 //??? shared_ptr<> is used to do optional return.
 static std::pair<std::shared_ptr<type_t>, seq_t> parse_type(types_t& types, const seq_t& s){
@@ -585,13 +549,10 @@ static std::pair<std::shared_ptr<type_t>, seq_t> parse_type(types_t& types, cons
 		std::pair<struct_type_desc_t, seq_t> a = parse_struct_def_body(types, keyword_pos, location_t(pos0.pos()));
 		return { std::make_shared<type_t>(make_struct(types, a.first)), a.second };
 	}
-#if 0
 	else if(is_first(pos0, keyword_t::k_func)){
-		const auto keyword_pos = read_required(pos0, keyword_t::k_func);
-		std::pair<struct_type_desc_t, seq_t> a = parse_function_type(types, keyword_pos, location_t(pos0.pos()));
-		return { std::make_shared<type_t>(make_struct(types, a.first)), a.second };
+		const auto r = parse_function_prototype(types, pos0, location_t(pos0.pos()));
+		return { std::make_shared<type_t>(r.first.function_type), r.second };
 	}
-#endif
 	else {
 		//	Read basic type.
 		const auto basic = read_basic_type(types, pos0);
@@ -600,32 +561,13 @@ static std::pair<std::shared_ptr<type_t>, seq_t> parse_type(types_t& types, cons
 }
 
 
-static std::pair<std::shared_ptr<type_t>, seq_t> read_optional_trailing_function_type_args(types_t& types, const type_t& type, const seq_t& s){
-	//	See if there is a () afterward type_pos -- that would be that type_pos is the return value of a function-type.
-	const auto more_pos = skip_whitespace(s);
-	if(more_pos.first1() == "("){
-		const auto function_args_pos = read_function_type_args(types, more_pos);
-		std::vector<type_t> nameless_args = get_member_types(function_args_pos.first);
-
-		const auto impure_pos = if_first(skip_whitespace(function_args_pos.second), keyword_t::k_impure);
-
-		const auto pos = function_args_pos.second;
-		const auto function_type = make_function(types, type, nameless_args, impure_pos.first ? epure::impure : epure::pure);
-		const auto result = read_optional_trailing_function_type_args(types, function_type, pos);
-		return result;
-	}
-	else{
-		return { std::make_shared<type_t>(type), s };
-	}
-}
-
 std::pair<std::shared_ptr<type_t>, seq_t> read_type(types_t& types, const seq_t& s){
 	const auto type_pos = parse_type(types, s);
 	if(type_pos.first == nullptr){
 		return type_pos;
 	}
 	else {
-		return read_optional_trailing_function_type_args(types, *type_pos.first, type_pos.second);
+		return { std::make_shared<type_t>(*type_pos.first), type_pos.second };
 	}
 }
 
@@ -687,43 +629,46 @@ QUARK_TEST("", "read_type()", "dict", ""){
 	QUARK_VERIFY(r.second == seq_t(""));
 }
 
-#if 0
-QUARK_TEST("", "read_type()", "", ""){
-	types_t i;
-	const auto r = read_type(i, seq_t("func void () impure"));
-	QUARK_VERIFY(*r.first ==  make_function(i, type_t::make_int(), {}, epure::pure));
-	QUARK_VERIFY(r.second == seq_t(""));
-}
-#endif
 
-QUARK_TEST("", "read_type()", "", ""){
+QUARK_TEST("", "read_type()", "function prototype - minimal", ""){
 	types_t i;
-	const auto r = read_type(i, seq_t("int ()"));
+	const auto r = read_type(i, seq_t("func int ()"));
 	QUARK_VERIFY(*r.first ==  make_function(i, type_t::make_int(), {}, epure::pure));
 	QUARK_VERIFY(r.second == seq_t(""));
 }
 
-QUARK_TEST("", "read_type()", "", ""){
+QUARK_TEST("", "read_type()", "function prototype - args", ""){
 	types_t i;
-	const auto r = read_type(i, seq_t("string (double a, double b)"));
+	const auto r = read_type(i, seq_t("func string (double a, double b)"));
 	QUARK_VERIFY(	*r.first ==  make_function(i, type_t::make_string(), { type_t::make_double(), type_t::make_double() }, epure::pure)	);
 	QUARK_VERIFY(r.second == seq_t(""));
 }
-QUARK_TEST("", "read_type()", "", ""){
+QUARK_TEST("", "read_type()", "function prototype - IMPURE", ""){
 	types_t i;
-	const auto r = read_type(i, seq_t("int (double a) ()"));
-
-	QUARK_VERIFY( *r.first == make_function(
+	const auto r = read_type(i, seq_t("func string (double a) impure"));
+	QUARK_VERIFY(	*r.first ==  make_function(i, type_t::make_string(), { type_t::make_double() }, epure::impure)	);
+	QUARK_VERIFY(r.second == seq_t(""));
+}
+QUARK_TEST("", "read_type()", "function prototype - complex return type", ""){
+	types_t i;
+	const auto r = read_type(i, seq_t("func [string] (double a)"));
+	QUARK_VERIFY(	*r.first ==  make_function(i, make_vector(i, type_t::make_string()), { type_t::make_double() }, epure::pure)	);
+	QUARK_VERIFY(r.second == seq_t(""));
+}
+QUARK_TEST("", "read_type()", "function prototype - returns another function type", ""){
+	types_t i;
+	const auto r = read_type(i, seq_t("func func string(int x) (double a)"));
+	QUARK_VERIFY(	*r.first ==  make_function(
 		i,
-		make_function(i, type_t::make_int(), { type_t::make_double() }, epure::pure),
-		{},
+		make_function(i, type_t::make_string(), { type_t::make_int() }, epure::pure),
+		{ type_t::make_double() },
 		epure::pure
 	));
-	QUARK_VERIFY(	r.second == seq_t("") );
+	QUARK_VERIFY(r.second == seq_t(""));
 }
-QUARK_TEST("", "read_type()", "", ""){
+QUARK_TEST("", "read_type()", "function prototype - arg is also function type", ""){
 	types_t i;
-	const auto r = read_type(i, seq_t("bool (int (double a) b)"));
+	const auto r = read_type(i, seq_t("func bool (func int (double a) impure b)"));
 
 	QUARK_VERIFY(
 		*r.first
@@ -732,7 +677,7 @@ QUARK_TEST("", "read_type()", "", ""){
 			i,
 			type_t::make_bool(),
 			{
-				make_function(i, type_t::make_int(), { type_t::make_double() }, epure::pure)
+				make_function(i, type_t::make_int(), { type_t::make_double() }, epure::impure)
 			},
 			epure::pure
 		)
@@ -740,15 +685,8 @@ QUARK_TEST("", "read_type()", "", ""){
 
 	QUARK_VERIFY(	r.second == seq_t("") );
 }
-/*
-QUARK_TEST("", "read_type_identifier()", "", ""){
-	QUARK_VERIFY(read_type_identifier(seq_t("int (double a) g(int(double b))")).first == "int (double a) g(int(double b))");
-}
 
--	TYPE-IDENTIFIER (TYPE-IDENTIFIER a, TYPE-IDENTIFIER b, ...)
 
-[int]([int] audio)
-*/
 
 
 std::pair<type_t, seq_t> read_required_type(types_t& types, const seq_t& s){
@@ -758,10 +696,6 @@ std::pair<type_t, seq_t> read_required_type(types_t& types, const seq_t& s){
 	}
 	return { *type_pos.first, type_pos.second };
 }
-
-
-
-
 
 
 

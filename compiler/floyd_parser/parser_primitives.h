@@ -16,6 +16,7 @@
 #include "quark.h"
 #include "text_parser.h"
 #include "json_support.h"
+#include "types.h"
 
 #include <string>
 #include <vector>
@@ -25,7 +26,6 @@
 namespace floyd {
 
 struct value_t;
-struct type_t;
 struct location_t;
 struct member_t;
 struct types_t;
@@ -109,30 +109,36 @@ std::pair<std::shared_ptr<type_t>, seq_t> read_type(types_t& types, const seq_t&
 std::pair<type_t, seq_t> read_required_type(types_t& types, const seq_t& s);
 
 
-////////////////////////////////		HIGH LEVEL
+
+
+////////////////////////////////		FUNCTION TYPES
+
+
+
+struct function_desc_t {
+	std::string optional_name;
+	type_t return_type;
+	std::vector<member_t> args_with_optional_names;
+	bool impure;
+
+	type_t function_type;
+};
+
 /*
-	FUNCTION ARGUMENTS
+	FUNCTION PROTOYPES
 
-	int (double, string)	--	function-type
-	func int f(double x, string y)		-- function definition
-	f(a, b)		-- function call
+	func int (double, string) impure
+	func int f(double x, string y)
+	func int f(double, string)
 
-
-	s: starts and ends with parantheses. Has no other data at end.
-	Argument names are optional.
-
-	()
-	(int a)
-	(int x, int y)
-
-	(int, int)
+	Name of function and arguments are optional. Does not parse body if one is present.
 */
-std::pair<std::vector<member_t>, seq_t> read_functiondef_arg_parantheses(types_t& types, const seq_t& s);
+std::pair<function_desc_t, seq_t> parse_function_prototype(
+	types_t& types,
+	const seq_t& pos,
+	const location_t& location
+);
 
-//	Member names may be left blank.
-std::pair<std::vector<member_t>, seq_t> read_function_type_args(types_t& types, const seq_t& s);
-
-std::pair<std::vector<member_t>, seq_t> read_call_args(const seq_t& s);
 
 
 ////////////////////////////////		parse_result_t
