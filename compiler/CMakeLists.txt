@@ -138,6 +138,7 @@ llvm_pipeline/floyd_llvm_runtime.cpp
 llvm_pipeline/floyd_llvm_runtime_functions.cpp
 llvm_pipeline/floyd_llvm_types.cpp
 parts/command_line_parser.cpp
+parts/unix_helpers.cpp
 parts/file_handling.cpp
 parts/hardware_caps.cpp
 parts/immutable_ref_value.cpp
