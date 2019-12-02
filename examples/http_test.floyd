@@ -1,7 +1,5 @@
 
 
-func void my_func2(int param)
-//func void my_func3(func void (int param) param)
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -148,7 +146,6 @@ func void main(){
 
 
 struct my_state_t {
-	string my_stuff
 }
 
 //??? needs a custom context
@@ -183,8 +180,7 @@ E) Multiplexing floyd process: handles messages in parallel.
 */
 
 
-//func void f(func string read(), func void write(string v), my_state_t context){
-func void f(string read, string write, my_state_t context){
+func void f(func string read(), func void write(string v), my_state_t context){
 }
 
 //execute_http_server(server_params_t(8080), f, my_state)

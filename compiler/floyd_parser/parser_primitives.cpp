@@ -340,6 +340,7 @@ static std::pair<struct_type_desc_t, seq_t> parse_struct_body(types_t& types, co
 	const auto s2 = skip_whitespace(p);
 	const auto start = s2;
 	auto pos = read_required_char(s2, '{');
+	pos = skip_whitespace(pos);
 	std::vector<member_t> members;
 	while(!pos.empty() && pos.first() != "}"){
 		const auto member_type = read_required_type(types, pos);

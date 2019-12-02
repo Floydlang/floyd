@@ -4315,6 +4315,9 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [json] constructor", "", ""){
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(		struct t {}		)");
 }
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "", ""){
+	ut_run_closed_nolib(QUARK_POS, "struct t {\n}");
+}
 
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(		struct t { int a }		)");
