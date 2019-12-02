@@ -561,7 +561,7 @@ seq_t read_required(const seq_t& s, const std::string& req){
 	const auto count = req.size();
 	const auto peek = s.first(count);
 	if(peek != req){
-		quark::throw_runtime_error("Expected '" + req  + "' character.");
+		quark::throw_runtime_error("Expected '" + req  + "' characters.");
 	}
 	return s.rest(count);
 }

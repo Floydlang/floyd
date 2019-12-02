@@ -283,7 +283,7 @@ QUARK_TEST("parse_bind_statement", "", "", ""){
 	}
 	catch(const std::runtime_error& e){
 		//	Should come here.
-		ut_verify_string(QUARK_POS, e.what(), "Expected \'=\' character.");
+		ut_verify_string(QUARK_POS, e.what(), "Expected \'=\' characters.");
 	}
 }
 
@@ -603,26 +603,29 @@ QUARK_TEST("", "parse_function_definition_statement()", "Min whitespace", "Corre
 
 
 
+
 std::pair<json_t, seq_t>  parse_struct_definition_statement(const seq_t& pos0){
 	types_t types;
-	std::pair<bool, seq_t> token_pos = if_first(pos0, keyword_t::k_struct);
-	QUARK_ASSERT(token_pos.first);
-
-	const auto struct_name_pos = read_required_identifier(token_pos.second);
 	const auto location = location_t(pos0.pos());
+	const auto def = parse_struct_def(types, pos0, location);
 
-	const auto s2 = skip_whitespace(struct_name_pos.second);
-	const auto struct_expr_pos = parse_struct_definition_body(types, s2, struct_name_pos.first, location);
-
-
-	const auto s = make_parser_node(
-		location_t(s2.pos()),
-		parse_tree_statement_opcode::k_expression_statement,
+	const auto struct_def_expr = make_parser_node(
+		k_no_location,
+		parse_tree_expression_opcode_t::k_struct_def,
 		{
-			struct_expr_pos.first
+			def.first.optional_name,
+			members_to_json(types, def.first.members_optional_names)
 		}
 	);
-	return { s, struct_expr_pos.second };
+
+	const auto s = make_parser_node(
+		location,
+		parse_tree_statement_opcode::k_expression_statement,
+		{
+			struct_def_expr
+		}
+	);
+	return { s, def.second };
 }
 
 
@@ -633,7 +636,7 @@ QUARK_TEST("parser", "parse_struct_definition_statement", "", ""){
 		R"___(
 
 			[
-				9,
+				0,
 				"expression-statement",
 				["struct-def", "a", [{ "name": "x", "type": "int" }, { "name": "y", "type": "string" }, { "name": "z", "type": "double" }]]
 			]

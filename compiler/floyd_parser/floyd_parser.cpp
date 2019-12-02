@@ -294,7 +294,7 @@ QUARK_TEST("", "parse_program2()", "k_test_program_1_source", ""){
 const char k_test_program_100_parserout[] = R"(
 	[
 		[
-			18,
+			5,
 			"expression-statement",
 			["struct-def", "pixel", [{ "name": "red", "type": "double" }, { "name": "green", "type": "double" }, { "name": "blue", "type": "double" }]]
 		],

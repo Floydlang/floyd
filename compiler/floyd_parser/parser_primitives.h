@@ -92,8 +92,18 @@ std::pair<std::string, seq_t> read_required_identifier(const seq_t& s);
 ////////////////////////////////		STRUCT
 
 
-std::pair<json_t, seq_t> parse_struct_definition_body(types_t& types, const seq_t& p, const std::string& name, const location_t& location);
-std::pair<json_t, seq_t> parse_unnamed_struct_type_def(types_t& types, const seq_t& p2);
+struct struct_def_t {
+	std::string optional_name;
+	std::vector<member_t> members_optional_names;
+	type_t struct_type;
+};
+
+
+/*
+	struct NAME { TYPE NAME; TYPE NAME .. }
+	struct { TYPE NAME; TYPE NAME .. }
+*/
+std::pair<struct_def_t, seq_t> parse_struct_def(types_t& types, const seq_t& p, const location_t& location);
 
 
 ////////////////////////////////		TYPES

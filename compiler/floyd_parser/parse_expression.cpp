@@ -1219,6 +1219,23 @@ static bool is_identifier(const seq_t& p, const std::string identifier){
 }
 
 
+static std::pair<json_t, seq_t> parse_unnamed_struct_type_def(types_t& types, const seq_t& p2){
+	const auto location = location_t(p2.pos());
+	const auto def = parse_struct_def(types, p2, location);
+
+	const auto struct_def_expr = make_parser_node(
+		location_t(k_no_location),
+		parse_tree_expression_opcode_t::k_struct_def,
+		{
+			def.first.optional_name,
+			members_to_json(types, def.first.members_optional_names)
+		}
+	);
+
+	return { struct_def_expr, def.second };
+}
+
+
 /*
 	Atom = standalone expression, like a constant, a function call.
 	It can be composed of subexpressions

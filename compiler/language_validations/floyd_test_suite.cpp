@@ -190,7 +190,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "Define variable", "Error: No initial assig
 			mutable string row
 
 		)",
-		R"___([Syntax] Expected '=' character. Line: 3 "mutable string row")___"
+		R"___([Syntax] Expected '=' characters. Line: 3 "mutable string row")___"
 	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Define variable", "Error: assign to immutable local", "exception"){
