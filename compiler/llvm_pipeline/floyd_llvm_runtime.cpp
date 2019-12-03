@@ -935,14 +935,14 @@ std::vector<bench_t> collect_benchmarks(llvm_execution_engine_t& ee){
 	return result;
 }
 
-///??? should lookup structs via their name in symbol table!
 std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, const std::vector<bench_t>& tests){
 	QUARK_ASSERT(ee.check_invariant());
 
+	const auto& types = ee.backend.types;
 	auto context = llvm_context_t { &ee, nullptr };
 
-	const auto benchmark_result_vec_type_symbol = find_symbol_required(ee.global_symbols, "benchmark_result_vec_t");
-	const auto benchmark_result_vec_type = benchmark_result_vec_type_symbol._value_type;
+	const auto benchmark_result_type = find_symbol_required(ee.global_symbols, "benchmark_result_t")._value_type;
+	const auto benchmark_result_vec_type = make_vector(types, benchmark_result_type);
 
 	std::vector<benchmark_result2_t> result;
 	for(const auto& b: tests){

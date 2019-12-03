@@ -288,6 +288,7 @@ static type_t resolve_symbols_internal(analyser_t& acc, const location_t& loc, c
 	return result;
 }
 
+//??? Rename to Fillin_type()?
 static type_t resolve_symbols(analyser_t& acc, const location_t& loc, const type_t& type){
 	QUARK_ASSERT(acc.check_invariant());
 	QUARK_ASSERT(loc.check_invariant());
@@ -2796,8 +2797,13 @@ static std::pair<std::string, symbol_t> make_builtin_type(types_t& types, const 
 	return { opcode, symbol_t::make_named_type(type) };
 }
 
+void register_named_type(analyser_t& a, std::vector<std::pair<std::string, symbol_t>>& symbol_map, const std::string& name, const type_t& type){
+	const auto type0 = resolve_symbols(a, k_no_location, type);
+	const auto type2 = make_named_type(a._types, generate_type_name(a, name), type0);
+	symbol_map.push_back( { name, symbol_t::make_named_type(type2) } );
+}
 
-static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_t& a, const analyzer_imm_t& input){
+static std::vector<std::pair<std::string, symbol_t>> generate_builtin_symbols(analyser_t& a, const analyzer_imm_t& input){
 	/*
 		Create built-in global symbol map: built in data types, built-in functions (intrinsics).
 	*/
@@ -2825,18 +2831,10 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 
 	//	Insert the types that are built-into the compiler itself = not part of standard library.
 
-	const auto benchmark_result_itype = resolve_symbols(a, k_no_location, make_benchmark_result_t(a._types));
-	const auto benchmark_result_itype2 = make_named_type(a._types, generate_type_name(a, "benchmark_result_t"), benchmark_result_itype);
-	symbol_map.push_back( { "benchmark_result_t", symbol_t::make_named_type(benchmark_result_itype2) } );
+	register_named_type(a, symbol_map, "benchmark_result_t", make_benchmark_result_t(a._types));
+	register_named_type(a, symbol_map, "benchmark_def_t", make_benchmark_def_t(a._types));
 
-	const auto benchmark_def_itype = resolve_symbols(a, k_no_location, make_benchmark_def_t(a._types));
-	const auto benchmark_def_itype2 = make_named_type(a._types, generate_type_name(a, "benchmark_def_t"), benchmark_def_itype);
-	symbol_map.push_back( { "benchmark_def_t", symbol_t::make_named_type(benchmark_def_itype2)} );
-
-	const auto benchmark_result_vec_type = resolve_symbols(a, k_no_location, make_vector(a._types, make_symbol_ref(a._types, "benchmark_result_t")));
-	symbol_map.push_back( { "benchmark_result_vec_t", symbol_t::make_named_type(benchmark_result_vec_type)} );
-
-	//	Reserve a symbol table entry for benchmark_registry instance.
+	//	Reserve a symbol table entry for benchmark_registry **instance**.
 	{
 		const auto benchmark_registry_type = make_vector(a._types, make_symbol_ref(a._types, "benchmark_def_t"));
 		symbol_map.push_back( {
@@ -2847,15 +2845,10 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 		} );
 	}
 
+	register_named_type(a, symbol_map, "test_def_t", make_test_def_t(a._types));
 
 
-
-	const auto test_def_itype = resolve_symbols(a, k_no_location, make_test_def_t(a._types));
-	const auto test_def_itype2 = make_named_type(a._types, generate_type_name(a, "test_def_t"), test_def_itype);
-	symbol_map.push_back( { "test_def_t", symbol_t::make_named_type(test_def_itype2)} );
-
-
-	//	Reserve a symbol table entry for test_registry instance.
+	//	Reserve a symbol table entry for test_registry **instance**.
 	{
 		const auto test_registry_type = make_vector(a._types, make_symbol_ref(a._types, "test_def_t"));
 		symbol_map.push_back( {
@@ -2865,9 +2858,6 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtins(analyser_
 			)
 		} );
 	}
-
-
-
 
 	return symbol_map;
 }
@@ -2885,7 +2875,7 @@ const body_t make_global_body(analyser_t& a){
 	const auto lexical_scope = lexical_scope_t{ new_environment, epure::impure };
 	a._lexical_scope_stack.push_back(lexical_scope);
 
-	const auto builtin_symbols = generate_builtins(a, *a._imm);
+	const auto builtin_symbols = generate_builtin_symbols(a, *a._imm);
 	for(const auto& e: a._imm->intrinsic_signatures.vec){
 		resolve_symbols(a, k_no_location, e._function_type);
 	}

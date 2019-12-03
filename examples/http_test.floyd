@@ -47,13 +47,13 @@ func ip_address2_t from_ipv4_dotted_decimal_string(string s)
 //////////////////////////////////////		TCP CLIENT
 
 
-struct connection_to_server_t {
-	int socket
-}
 
 //	Client uses this to open a connection to server. When connection_to_server_t is
 //	destructed, connection is closed.
-func connection_to_server_t connect_to_server(network_component c, id_address_and_port_t server_addr)
+func int connect_to_server(network_component c, id_address_and_port_t server_addr)
+
+func void close_socket(int socket)
+
 
 
 //////////////////////////////////////		TCP SERVER
@@ -152,19 +152,6 @@ func void test_server() impure {
 
 test-def("execute_http_server()", ""){
 }
-
-/*
-# HTTP server alternatives
-
-A) Call blocking function (from a dedicated floyd process). It has callback for each accepted session.
-B) Special type of floyd process that fans out.
-C) Dedicated HTTP server process type
-D) Server uses queue_async() that queues a function in its own thread (thread pool).
-
-	void queue_async(T input, F f, C context)
-
-E) Multiplexing floyd process: handles messages in parallel.
-*/
 
 
 func void f(func string read(), func void write(string v), my_state_t context){

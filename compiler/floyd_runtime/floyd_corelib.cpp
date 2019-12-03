@@ -850,17 +850,6 @@ type_t make__fsentry_t__type(types_t& types){
 	return temp;
 }
 
-/*
-	struct fsentry_info_t {
-		string type	//	"file" or "dir"
-		string name
-		absolute_path_t parent_path
-
-		date_t creation_date
-		date_t modification_date
-		file_pos_t file_size
-	}
-*/
 type_t make__fsentry_info_t__type(types_t& types){
 	const auto temp = make_struct(
 		types,
@@ -876,9 +865,6 @@ type_t make__fsentry_info_t__type(types_t& types){
 	);
 	return temp;
 }
-
-
-
 
 type_t make__fs_environment_t__type(types_t& types){
 	const auto temp = make_struct(
@@ -899,12 +885,6 @@ type_t make__fs_environment_t__type(types_t& types){
 	return temp;
 }
 
-
-/*
-	struct date_t {
-		string utd_date
-	}
-*/
 type_t make__date_t__type(types_t& types){
 	const auto temp = make_struct(
 		types,
@@ -935,11 +915,6 @@ type_t make__binary_t__type(types_t& types){
 	return temp;
 }
 
-/*
-	struct absolute_path_t {
-		string absolute_path
-	}
-*/
 type_t make__absolute_path_t__type(types_t& types){
 	const auto temp = make_struct(
 		types,
@@ -950,11 +925,6 @@ type_t make__absolute_path_t__type(types_t& types){
 	return temp;
 }
 
-/*
-	struct file_pos_t {
-		int pos
-	}
-*/
 type_t make__file_pos_t__type(types_t& types){
 	const auto temp = make_struct(
 		types,
@@ -1128,22 +1098,6 @@ value_t pack_fsentry_info(types_t& types, const fsentry_info_t& info){
 }
 
 
-
-
-/*
-struct fs_environment_t {
-	std::string home_dir;
-	std::string documents_dir;
-	std::string desktop_dir;
-
-	std::string hidden_persistence_dir;
-	std::string preferences_dir;
-	std::string cache_dir;
-	std::string temp_dir;
-
-	std::string executable_dir;
-};
-*/
 
 fs_environment_t corelib_get_fs_environment(){
 	const auto dirs = GetDirectories();
