@@ -604,7 +604,7 @@ QUARK_TEST("", "parse_function_definition_statement()", "Min whitespace", "Corre
 
 
 
-std::pair<json_t, seq_t>  parse_struct_definition_statement(const seq_t& pos0){
+std::pair<json_t, seq_t> parse_struct_definition_statement(const seq_t& pos0){
 	types_t types;
 	const auto location = location_t(pos0.pos());
 	const auto def = parse_struct_def(types, pos0, location);

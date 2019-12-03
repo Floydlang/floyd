@@ -44,7 +44,7 @@ func string to_ipv4_dotted_decimal_string(ip_address2_t a)
 func ip_address2_t from_ipv4_dotted_decimal_string(string s)
 
 
-//////////////////////////////////////		SOCKET CLIENT
+//////////////////////////////////////		TCP CLIENT
 
 
 struct connection_to_server_t {
@@ -53,22 +53,19 @@ struct connection_to_server_t {
 
 //	Client uses this to open a connection to server. When connection_to_server_t is
 //	destructed, connection is closed.
-func connection_to_server_t connect_to_server(id_address_and_port_t server_addr)
+func connection_to_server_t connect_to_server(network_component c, id_address_and_port_t server_addr)
 
 
-//////////////////////////////////////		SERVER
+//////////////////////////////////////		TCP SERVER
 
 
 struct server_params_t {
 	int port
 }
 
-//	Server uses this to run a loop and accept clients.
-func void my_on_accept(int socket2_fd)
-
 //	http://localhost:8080/info.html
-func void execute_server(server_params_t params, int f)
-//func void execute_server(server_params_t params, func void on_accept(int socket))
+//	Will call the process to handle take care of each client-session, uses message of type string.
+func void execute_server(network_component c, server_params_t params, string process_id)
 
 
 
@@ -79,9 +76,6 @@ struct header_t {
 	string key
 	string value
 }
-
-
-///////////////////////////////		HTTP REQUESTS
 
 
 struct http_request_line_t {
@@ -96,9 +90,6 @@ struct http_request_t {
 }
 
 
-///////////////////////////////		HTTP RESPONSES
-
-
 struct http_response_status_line_t {
 	string http_version
 	string status_code
@@ -109,8 +100,8 @@ struct http_response_t {
 	string optional_body
 }
 
-func int get_time_ns(){
-	return 0
+func int get_time_ns() impure {
+	return get_time_of_day() * 1000
 }
 
 
@@ -118,14 +109,10 @@ func int get_time_ns(){
 
 
 //	Blocks for reply.
-func http_response_t execute_http_request(id_address_and_port_t addr, http_request_t r)
+func http_response_t execute_http_request(network_component c, id_address_and_port_t addr, http_request_t r)
 
-
-struct connection_i {
-	int x
-}
-
-func void execute_http_server(server_params_t params, connection_i connection)
+//	Blocks forever. ??? how to ask it to stop?
+func void execute_http_server(network_component c, server_params_t params, string process_id)
 
 
 
@@ -135,14 +122,12 @@ func void execute_http_server(server_params_t params, connection_i connection)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-/*
-func void main(){
+func void test(network_component c) impure {
 	let timeout = get_time_ns() + 3000000
 	let addr = id_address_and_port_t(ip_address2_t("123234234"), 8080)
 	let r = http_request_t(http_request_line_t("GET", "/", "HTTP/1.1"), [], "")
-	let a = execute_http_request(addr, r)
+	let a = execute_http_request(c, addr, r)
 }
-*/
 
 
 struct my_state_t {
@@ -159,12 +144,14 @@ func void connection_i__on_accept(int socket2){
 	}
 }
 
-/*
-QUARK_TEST_VIP("http", "execute_http_server", "", ""){
-	test_connection_t test_conn
-	execute_http_server(server_params_t { 8080 }, test_conn)
+func void test_server() impure {
+	let c = network_component(666)
+	execute_http_server(c, server_params_t(8080), "resp_process")
 }
-*/
+
+
+test-def("execute_http_server()", ""){
+}
 
 /*
 # HTTP server alternatives
