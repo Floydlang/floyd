@@ -18,6 +18,7 @@
 #include <sys/sysctl.h>
 #include <mach/machine.h>
 
+#include "unix_helpers.h"
 #include "quark.h"
 
 
@@ -54,76 +55,68 @@ https://ark.intel.com/products/80807/Intel-Core-i7-4790K-Processor-8M-Cache-up-t
 
 
 
-static uint64_t sysctlbyname_uint64(const std::string& key){
+static std::pair<bool, uint64_t> sysctlbyname_uint64(const std::string& key){
 	uint64_t result = -1;
 	size_t size = -1;
-
-	int error = sysctlbyname(key.c_str(), &result, &size, NULL, 0);
+	int error = ::sysctlbyname(key.c_str(), &result, &size, NULL, 0);
 	if(error != 0){
-		quark::throw_exception();
+		const auto err = get_unix_err();
+		return { false, -1 };
 	}
 	QUARK_ASSERT(size == 8);
-	return result;
+	return { true, result };
 }
 
 static uint64_t sysctlbyname_uint64_def(const std::string& key, uint64_t def){
-	try{
-		return sysctlbyname_uint64(key);
-	}
-	catch(...){
-		return def;
-	}
+	const auto r = sysctlbyname_uint64(key);
+	return r.first ? r.second : def;
 }
 
-static uint32_t sysctlbyname_uint32(const std::string& key){
+static std::pair<bool, uint32_t> sysctlbyname_uint32(const std::string& key){
 	//	Reserve 8 bytes here.
-	uint64_t result = -1;
-
+	uint64_t result64 = -1;
 	size_t size = -1;
-	int error = sysctlbyname(key.c_str(), &result, &size, NULL, 0);
+	const int error = ::sysctlbyname(key.c_str(), &result64, &size, NULL, 0);
 	if(error != 0){
-		quark::throw_exception();
+		const auto err = get_unix_err();
+		return { false, -1 };
 	}
 
 	//	CTL_HW_NAMES sometimes lies and says this key is a CTLTYPE_INT, then returns 8 bytes.
 	if(size == 8){
 		const auto result2 = sysctlbyname_uint64(key);
-		return static_cast<uint32_t>(result2);
+		return { result2.first, static_cast<uint32_t>(result2.second) };
+	}
+	else if(size == 4){
+		return { true, static_cast<uint32_t>(result64) };
 	}
 	else{
-		QUARK_ASSERT(size == 4);
-		return static_cast<uint32_t>(result);
+		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 
 static uint32_t sysctlbyname_uint32_def(const std::string& key, uint32_t def){
-	try{
-		return sysctlbyname_uint32(key);
-	}
-	catch(...){
-		return def;
-	}
+	const auto r = sysctlbyname_uint32(key);
+	return r.first ? r.second : def;
 }
 
-static std::string sysctlbyname_string(const std::string& key){
+static std::pair<bool, std::string> sysctlbyname_string(const std::string& key){
 	std::vector<char> temp(200, 'x');
 	size_t out_size = temp.size();
-	int error = sysctlbyname(key.c_str(), &temp[0], &out_size, nullptr, 0);
+	int error = ::sysctlbyname(key.c_str(), &temp[0], &out_size, nullptr, 0);
 	if(error != 0){
-		quark::throw_exception();
+		const auto err = get_unix_err();
+		return { false, "*error*" };
 	}
 
 	const std::string result(temp.begin(), temp.begin() + out_size - 1);
-	return result;
+	return { true, result };
 }
 
 static std::string sysctlbyname_string_def(const std::string& key, const std::string& def){
-	try{
-		return sysctlbyname_string(key);
-	}
-	catch(...){
-		return def;
-	}
+	const auto r = sysctlbyname_string(key);
+	return r.first ? r.second : def;
 }
 
 
@@ -246,6 +239,11 @@ machdep.cpu.extfeatures
 		._hw_l3_cache_size = sysctlbyname_uint64_def("hw.l3cachesize", 0)
 	};
 }
+
+QUARK_TEST("hardware_caps", "read_hardware_caps", "", ""){
+	const auto r = read_hardware_caps();
+}
+
 
 
 ////////////////////////////////		AFFINITY
