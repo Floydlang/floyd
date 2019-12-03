@@ -23,6 +23,10 @@ struct value_t;
 
 extern const std::string k_corelib_builtin_types_and_constants;
 
+
+
+type_t make__ip_address_t__type(types_t& types);
+
 type_t make__fsentry_t__type(types_t& types);
 type_t make__fsentry_info_t__type(types_t& types);
 type_t make__fs_environment_t__type(types_t& types);
@@ -100,6 +104,23 @@ bool corelib_does_fsentry_exist(const std::string& abs_path);
 void corelib_create_directory_branch(const std::string& abs_path);
 void corelib_delete_fsentry_deep(const std::string& abs_path);
 void corelib_rename_fsentry(const std::string& abs_path, const std::string& n);
+
+
+
+//######################################################################################################################
+//	NETWORK COMPONENT
+//######################################################################################################################
+
+
+
+type_t make__network_component_t__type(types_t& types);
+type_t make__id_address_and_port_t__type(types_t& types);
+type_t make__host_info_t__type(types_t& types);
+type_t make__header_t__type(types_t& types);
+type_t make__http_request_line_t__type(types_t& types);
+type_t make__http_request_t__type(types_t& types);
+type_t make__http_response_status_line_t__type(types_t& types);
+type_t make__http_response_t__type(types_t& types);
 
 
 }	//	floyd
