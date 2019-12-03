@@ -54,6 +54,20 @@ std::vector<std::pair<std::string, json_t>> corelib_detect_hardware_caps();
 std::string corelib_make_hardware_caps_report(const std::vector<std::pair<std::string, json_t>>& caps);
 std::string corelib_make_hardware_caps_report_brief(const std::vector<std::pair<std::string, json_t>>& caps);
 
+
+
+
+
+
+
+type_t make__ip_address_t__type(types_t& types);
+
+
+
+
+
+
+
 std::string get_current_date_and_time_string();
 
 std::string corelib_calc_string_sha1(const std::string& s);
@@ -106,21 +120,6 @@ void corelib_delete_fsentry_deep(const std::string& abs_path);
 void corelib_rename_fsentry(const std::string& abs_path, const std::string& n);
 
 
-
-//######################################################################################################################
-//	NETWORK COMPONENT
-//######################################################################################################################
-
-
-
-type_t make__network_component_t__type(types_t& types);
-type_t make__id_address_and_port_t__type(types_t& types);
-type_t make__host_info_t__type(types_t& types);
-type_t make__header_t__type(types_t& types);
-type_t make__http_request_line_t__type(types_t& types);
-type_t make__http_request_t__type(types_t& types);
-type_t make__http_response_status_line_t__type(types_t& types);
-type_t make__http_response_t__type(types_t& types);
 
 
 }	//	floyd

@@ -21,6 +21,29 @@
 namespace floyd {
 
 
+
+extern const std::string k_network_component_header;
+
+
+
+
+//######################################################################################################################
+//	NETWORK COMPONENT
+//######################################################################################################################
+
+
+//??? make_type__dddd_t()
+type_t make__network_component_t__type(types_t& types);
+type_t make__id_address_and_port_t__type(types_t& types);
+type_t make__host_info_t__type(types_t& types);
+type_t make__header_t__type(types_t& types);
+type_t make__http_request_line_t__type(types_t& types);
+type_t make__http_request_t__type(types_t& types);
+type_t make__http_response_status_line_t__type(types_t& types);
+type_t make__http_response_t__type(types_t& types);
+
+
+
 } // floyd
 
 #endif /* floyd_network_component_hpp */
