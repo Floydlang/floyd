@@ -7816,16 +7816,16 @@ FLOYD_LANG_PROOF("", "Demo DEEP BY VALUE", "", ""){
 
 
 
-#if 0
+#if 1
 FLOYD_LANG_PROOF_VIP("network component", "", "", ""){
 	ut_run_closed_lib(
 		QUARK_POS,
 		R"(
-			let c = network_component(666)
+			let c = network_component_t(666)
 
 			let request_line = http_request_line_t ( "GET", "/index.html", "HTTP/1.0" )
 			let a = http_request_t ( request_line, [], "" )
-			let ip = lookup_host2("example.com").addresses_IPv4[0]
+			let ip = lookup_host_from_name("example.com").addresses_IPv4[0]
 			let dest = id_address_and_port_t(ip, 80)
 			let r = execute_http_request(c, dest, pack_http_request(a))
 			print(r)

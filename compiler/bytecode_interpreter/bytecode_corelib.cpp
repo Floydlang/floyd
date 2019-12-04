@@ -16,6 +16,11 @@
 #include "bytecode_helpers.h"
 
 
+#include "floyd_sockets.h"
+#include "floyd_http.h"
+#include "floyd_network_component.h"
+
+
 namespace floyd {
 
 
@@ -32,7 +37,7 @@ bc_value_t bc_corelib__make_benchmark_report(interpreter_t& vm, const bc_value_t
 	const auto it = std::find_if(symbols.begin(), symbols.end(), [&](const auto& s){ return s.first == "benchmark_result2_t"; } );
 	QUARK_ASSERT(it != symbols.end());
 
-	const auto benchmark_result2_vec_type = make_vector(temp_types, it->second._value_type);
+//	const auto benchmark_result2_vec_type = make_vector(temp_types, it->second._value_type);
 
 //	QUARK_ASSERT(args[0]._type == benchmark_result2_t__type);
 
@@ -381,6 +386,250 @@ bc_value_t bc_corelib__rename_fsentry(interpreter_t& vm, const bc_value_t args[]
 }
 
 
+//######################################################################################################################
+//	NETWORK COMPONENT
+//######################################################################################################################
+
+
+bc_value_t bc_corelib__read_socket(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, args[0]._type).is_int());
+
+	const auto socket_id = args[0].get_int_value();
+	const auto r = read_socket_string((int)socket_id);
+	return bc_value_t::make_string(r);
+}
+bc_value_t bc_corelib__write_socket(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(arg_count == 2);
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, args[0]._type).is_int());
+	QUARK_ASSERT(peek2(types, args[1]._type).is_string());
+
+	const auto socket_id = args[0].get_int_value();
+	const auto& data = args[1].get_string_value();
+	write_socket_string((int)socket_id, data);
+	return bc_value_t::make_void();
+}
+
+static bc_value_t make__ip_address_t(const types_t& types, const ip_address_t& value){
+	const auto ip_address_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "ip_address_t" }});
+
+	return bc_value_t::make_struct_value(
+		ip_address_t__type,
+		{
+			bc_value_t::make_string(unmake_ipv4(value))
+		}
+	);
+}
+
+static bc_value_t make__host_info_t(const types_t& types, const hostent_t& value){
+	const auto name_aliases = mapf<bc_value_t>(value.name_aliases, [](const auto& e){ return bc_value_t::make_string(e); });
+	const auto addresses_IPv4 = mapf<bc_value_t>(value.addresses_IPv4, [types](const auto& e){ return make__ip_address_t(types, e); });
+
+	const auto host_info_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "host_info_t" }});
+	const auto ip_address_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "ip_address_t" }});
+	return bc_value_t::make_struct_value(
+		host_info_t__type,
+		{
+			bc_value_t::make_string(value.official_host_name),
+			make_vector(types, type_t::make_string(), immer::vector<bc_value_t>(name_aliases.begin(), name_aliases.end())),
+			make_vector(types, ip_address_t__type, immer::vector<bc_value_t>(addresses_IPv4.begin(), addresses_IPv4.end())),
+		}
+	);
+}
+
+bc_value_t bc_corelib__lookup_host_from_ip(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(args[0]._type == make__ip_address_t__type(types));
+
+	const auto addr = args[0].get_struct_value();
+	const auto addr2 = make_ipv4(addr[0].get_string_value());
+	const auto r = lookup_host(addr2);
+	return make__host_info_t(types, r);
+}
+
+bc_value_t bc_corelib__lookup_host_from_name(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
+
+	const auto name = args[0].get_string_value();
+	const auto r = lookup_host(name);
+
+	return make__host_info_t(types, r);
+}
+
+
+
+bc_value_t bc_corelib__pack_http_request(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	const auto& types = vm._imm->_program._types;
+
+	const auto http_request_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_request_t" }});
+
+	QUARK_ASSERT(args[0]._type == http_request_t__type);
+
+	const auto request = args[0].get_struct_value();
+
+	const auto request_line = request[0].get_struct_value();
+	const auto headers = get_vector(types, request[1]);
+	const auto optional_body = request[2].get_string_value();
+
+	const auto headers2 = mapf<header_t>(headers, [](const auto& e){
+		const auto& header = e.get_struct_value();
+		return header_t { header[0].get_string_value(), header[1].get_string_value() };
+	});
+	const auto req = http_request_t {
+		http_request_line_t {
+			request_line[0].get_string_value(),
+			request_line[1].get_string_value(),
+			request_line[2].get_string_value()
+		},
+		headers2,
+		optional_body
+	};
+	const auto r = pack_http_request(req);
+	return bc_value_t::make_string(r);
+}
+
+bc_value_t bc_corelib__unpack_http_request(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
+
+	const auto header_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "header_t" }});
+	const auto http_request_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_request_t_" }});
+	const auto http_request_line_t___type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_request_line_t" }});
+
+	const auto s = args[0].get_string_value();
+	const http_request_t req = unpack_http_request(s);
+
+	const auto headers2 = mapf<bc_value_t>(req.headers, [&](const auto& e){
+		return bc_value_t::make_struct_value(
+			header_t__type,
+			{
+				bc_value_t::make_string(e.key),
+				bc_value_t::make_string(e.value)
+			}
+		);
+	});
+
+	return bc_value_t::make_struct_value(
+		http_request_t__type,
+		{
+			bc_value_t::make_struct_value(
+				http_request_line_t___type,
+				{
+					bc_value_t::make_string(req.request_line.method),
+					bc_value_t::make_string(req.request_line.uri),
+					bc_value_t::make_string(req.request_line.http_version)
+				}
+			),
+			make_vector(types, header_t__type, immer::vector<bc_value_t>(headers2.begin(), headers2.end())),
+			bc_value_t::make_string(req.optional_body)
+		}
+	);
+}
+
+
+
+bc_value_t bc_corelib__pack_http_response(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	const auto& types = vm._imm->_program._types;
+
+	const auto http_response_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_response_t" }});
+	QUARK_ASSERT(args[0]._type == http_response_t__type);
+
+	const auto status_line = args[0].get_struct_value();
+	const auto headers = get_vector(types, args[1]);
+	const auto optional_body = args[2].get_string_value();
+
+	const auto headers2 = mapf<header_t>(headers, [](const auto& e){
+		const auto& header = e.get_struct_value();
+		return header_t { header[0].get_string_value(), header[1].get_string_value() };
+	});
+	const auto req = http_response_t {
+		http_response_status_line_t {
+			status_line[0].get_string_value(),
+			status_line[1].get_string_value()
+		},
+		headers2,
+		optional_body
+	};
+	const auto r = pack_http_response(req);
+	return bc_value_t::make_string(r);
+}
+
+bc_value_t bc_corelib__unpack_http_response(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
+
+	const auto s = args[0].get_string_value();
+	const http_response_t response = unpack_http_response(s);
+
+	const auto header_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "header_t" }});
+	const auto http_response_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_response_t" }});
+	const auto http_response_status_line_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_response_status_line_t" }});
+
+	const auto headers2 = mapf<bc_value_t>(response.headers, [&](const auto& e){
+		return bc_value_t::make_struct_value(
+			header_t__type,
+			{
+				bc_value_t::make_string(e.key),
+				bc_value_t::make_string(e.value)
+			}
+		);
+	});
+
+	return bc_value_t::make_struct_value(
+		http_response_t__type,
+		{
+			bc_value_t::make_struct_value(
+				http_response_status_line_t__type,
+				{
+					bc_value_t::make_string(response.status_line.http_version),
+					bc_value_t::make_string(response.status_line.status_code),
+				}
+			),
+			make_vector(types, header_t__type, immer::vector<bc_value_t>(headers2.begin(), headers2.end())),
+			bc_value_t::make_string(response.optional_body)
+		}
+	);
+}
+
+
+bc_value_t bc_corelib__execute_http_request(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(arg_count == 3);
+
+	const auto network_component_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "network_component_t" }});
+	const auto id_address_and_port_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "id_address_and_port_t" }});
+
+	QUARK_ASSERT(args[0]._type == network_component_t__type);
+	QUARK_ASSERT(args[1]._type == id_address_and_port_t__type);
+	QUARK_ASSERT(peek2(types, args[2]._type).is_string());
+
+	const auto addr = args[1].get_struct_value();
+	const auto request = args[2].get_string_value();
+	const auto addr2 = ip_address_t { make_ipv4(addr[0].get_struct_value()[0].get_string_value()) };
+	const auto response = execute_http_request(id_address_and_port_t { addr2, (int)addr[1].get_int_value() }, request);
+	return bc_value_t::make_string(response);
+}
+
+
 
 /////////////////////////////////////////		REGISTRY
 
@@ -412,7 +661,19 @@ std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_corelib_calls(){
 		{ { "does_fsentry_exist" }, bc_corelib__does_fsentry_exist },
 		{ { "create_directory_branch" }, bc_corelib__create_directory_branch },
 		{ { "delete_fsentry_deep" }, bc_corelib__delete_fsentry_deep },
-		{ { "rename_fsentry" }, bc_corelib__rename_fsentry }
+		{ { "rename_fsentry" }, bc_corelib__rename_fsentry },
+
+		{ { "read_socket" }, bc_corelib__read_socket },
+		{ { "write_socket" }, bc_corelib__write_socket },
+		{ { "lookup_host_from_ip" }, bc_corelib__lookup_host_from_ip },
+		{ { "lookup_host_from_name" }, bc_corelib__lookup_host_from_name },
+		{ { "to_ipv4_dotted_decimal_string" }, nullptr },
+		{ { "from_ipv4_dotted_decimal_string" }, nullptr },
+		{ { "pack_http_request" }, bc_corelib__pack_http_request },
+		{ { "unpack_http_request" }, bc_corelib__unpack_http_request },
+		{ { "pack_http_response" }, bc_corelib__pack_http_response },
+		{ { "unpack_http_response" }, bc_corelib__unpack_http_response },
+		{ { "execute_http_request" }, bc_corelib__execute_http_request }
 	};
 	return result;
 }

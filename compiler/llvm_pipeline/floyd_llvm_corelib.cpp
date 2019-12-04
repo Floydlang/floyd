@@ -15,6 +15,12 @@
 #include "file_handling.h"
 #include "os_process.h"
 
+
+#include "floyd_sockets.h"
+#include "floyd_http.h"
+#include "floyd_network_component.h"
+
+
 #include <iostream>
 #include <fstream>
 
@@ -306,6 +312,86 @@ static void llvm_corelib__rename_fsentry(floyd_runtime_t* frp, runtime_value_t p
 
 
 
+//######################################################################################################################
+//	NETWORK COMPONENT
+//######################################################################################################################
+
+
+
+static void llvm_corelib__read_socket(floyd_runtime_t* frp){
+}
+
+static void llvm_corelib__write_socket(floyd_runtime_t* frp){
+}
+
+static void llvm_corelib__lookup_host_from_ip(floyd_runtime_t* frp){
+}
+
+	static value_t make__ip_address_t(llvm_context_t& r, const types_t& types, const ip_address_t& value){
+		const auto ip_address_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "ip_address_t" }});
+
+		const auto result = value_t::make_struct_value(
+			types,
+			peek2(types, ip_address_t__type),
+			{
+				value_t::make_string(unmake_ipv4(value))
+			}
+		);
+		return result;
+	}
+
+	static value_t make__host_info_t(llvm_context_t& r, const types_t& types, const hostent_t& value){
+		const auto name_aliases = mapf<value_t>(value.name_aliases, [](const auto& e){ return value_t::make_string(e); });
+		const auto addresses_IPv4 = mapf<value_t>(value.addresses_IPv4, [&](const auto& e){ return make__ip_address_t(r, types, e); });
+
+//		trace_types(types);
+		const auto host_info_t__type = peek2(types, lookup_type_from_name(types, type_name_t{{ "global_scope", "host_info_t" }}));
+		const auto ip_address_t__type = peek2(types, lookup_type_from_name(types, type_name_t{{ "global_scope", "ip_address_t" }}));
+		const auto result = value_t::make_struct_value(
+			types,
+			peek2(types, host_info_t__type),
+			{
+				value_t::make_string(value.official_host_name),
+				value_t::make_vector_value(types, type_t::make_string(), name_aliases),
+				value_t::make_vector_value(types, ip_address_t__type, addresses_IPv4),
+			}
+		);
+		return result;
+	}
+
+static runtime_value_t llvm_corelib__lookup_host_from_name(floyd_runtime_t* frp, runtime_value_t name_str){
+	auto& r = get_floyd_runtime(frp);
+	auto& backend = r.ee->backend;
+	auto& types = backend.types;
+
+//	trace_types(types);
+//	trace_llvm_type_lookup(r.ee->type_lookup);
+
+	const auto name = from_runtime_string(r, name_str);
+	const auto result = lookup_host(name);
+	const auto info = make__host_info_t(r, types, result);
+	const auto v = to_runtime_value(r, info);
+	return v;
+}
+
+static void llvm_corelib__pack_http_request(floyd_runtime_t* frp){
+}
+
+static void llvm_corelib__unpack_http_request(floyd_runtime_t* frp){
+}
+
+static void llvm_corelib__pack_http_response(floyd_runtime_t* frp){
+}
+
+static void llvm_corelib__unpack_http_response(floyd_runtime_t* frp){
+}
+
+static void llvm_corelib__execute_http_request(floyd_runtime_t* frp){
+}
+
+
+
+
 std::map<std::string, void*> get_corelib_binds(){
 
 	////////////////////////////////		CORE FUNCTIONS AND HOST FUNCTIONS
@@ -334,7 +420,19 @@ std::map<std::string, void*> get_corelib_binds(){
 		{ "does_fsentry_exist", reinterpret_cast<void *>(&llvm_corelib__does_fsentry_exist) },
 		{ "create_directory_branch", reinterpret_cast<void *>(&llvm_corelib__create_directory_branch) },
 		{ "delete_fsentry_deep", reinterpret_cast<void *>(&llvm_corelib__delete_fsentry_deep) },
-		{ "rename_fsentry", reinterpret_cast<void *>(&llvm_corelib__rename_fsentry) }
+		{ "rename_fsentry", reinterpret_cast<void *>(&llvm_corelib__rename_fsentry) },
+
+		{ "read_socket", reinterpret_cast<void *>(&llvm_corelib__read_socket) },
+		{ "write_socket", reinterpret_cast<void *>(&llvm_corelib__write_socket) },
+		{ "lookup_host_from_ip", reinterpret_cast<void *>(&llvm_corelib__lookup_host_from_ip) },
+		{ "lookup_host_from_name", reinterpret_cast<void *>(&llvm_corelib__lookup_host_from_name) },
+		{ "to_ipv4_dotted_decimal_string", nullptr },
+		{ "from_ipv4_dotted_decimal_string", nullptr },
+		{ "pack_http_request", reinterpret_cast<void *>(&llvm_corelib__pack_http_request) },
+		{ "unpack_http_request", reinterpret_cast<void *>(&llvm_corelib__unpack_http_request) },
+		{ "pack_http_response", reinterpret_cast<void *>(&llvm_corelib__pack_http_response) },
+		{ "unpack_http_response", reinterpret_cast<void *>(&llvm_corelib__unpack_http_response) },
+		{ "execute_http_request", reinterpret_cast<void *>(&llvm_corelib__execute_http_request) }
 	};
 	return host_functions_map;
 }

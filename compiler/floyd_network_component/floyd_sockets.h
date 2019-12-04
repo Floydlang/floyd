@@ -14,6 +14,7 @@
 #include <string>
 #include <netinet/in.h>
 
+#include "utils.h"
 struct json_t;
 
 
@@ -22,11 +23,13 @@ struct ip_address_t {
 	struct in_addr ipv4;
 };
 
+ip_address_t make_ipv4(const std::string& s);
+std::string unmake_ipv4(const ip_address_t& s);
+
 
 struct id_address_and_port_t {
 	ip_address_t addr;
 	int port;
-//	int af;
 };
 
 

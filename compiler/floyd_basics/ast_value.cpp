@@ -733,10 +733,25 @@ value_t::value_t(const type_t& type) :
 	QUARK_ASSERT(check_invariant());
 }
 
-value_t::value_t(const type_t& struct_type, std::shared_ptr<struct_value_t>& instance) :
+value_t::value_t(types_t& types, const type_t& struct_type, std::shared_ptr<struct_value_t>& instance) :
 	_basetype(base_type::k_struct)
 {
-	QUARK_ASSERT(struct_type.get_base_type() == base_type::k_struct);
+	QUARK_ASSERT(peek2(types, struct_type).is_struct());
+	QUARK_ASSERT(instance && instance->check_invariant());
+
+	_value_internals._ext = new value_ext_t{struct_type, instance};
+	QUARK_ASSERT(_value_internals._ext->_rc == 1);
+
+#if DEBUG_DEEP
+	DEBUG_STR = make_value_debug_str(*this);
+#endif
+
+	QUARK_ASSERT(check_invariant());
+}
+value_t::value_t(const types_t& types, const type_t& struct_type, std::shared_ptr<struct_value_t>& instance) :
+	_basetype(base_type::k_struct)
+{
+	QUARK_ASSERT(peek2(types, struct_type).is_struct());
 	QUARK_ASSERT(instance && instance->check_invariant());
 
 	_value_internals._ext = new value_ext_t{struct_type, instance};
@@ -1286,7 +1301,7 @@ value_t value_t::make_struct_value(const types_t& types, const type_t& struct_ty
 	QUARK_ASSERT(peek2(types, struct_type).get_struct(types)._members.size() == values.size());
 
 	auto instance = std::make_shared<struct_value_t>(struct_value_t{ peek2(types, struct_type).get_struct(types), values });
-	return value_t(struct_type, instance);
+	return value_t(types, struct_type, instance);
 }
 value_t value_t::make_struct_value(types_t& types, const type_t& struct_type, const std::vector<value_t>& values){
 	QUARK_ASSERT(types.check_invariant());
@@ -1294,7 +1309,7 @@ value_t value_t::make_struct_value(types_t& types, const type_t& struct_type, co
 	QUARK_ASSERT(peek2(types, struct_type).get_struct(types)._members.size() == values.size());
 
 	auto instance = std::make_shared<struct_value_t>(struct_value_t{ peek2(types, struct_type).get_struct(types), values });
-	return value_t(struct_type, instance);
+	return value_t(types, struct_type, instance);
 }
 
 value_t value_t::make_vector_value(const types_t& types, const type_t& element_type, const std::vector<value_t>& elements){

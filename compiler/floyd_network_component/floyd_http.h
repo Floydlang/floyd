@@ -15,12 +15,16 @@
 #include <memory>
 
 
-struct headers_t {
-	std::vector<std::pair<std::string, std::string>> elements;
+struct header_t {
+	std::string key;
+	std::string value;
 };
-inline bool operator==(const headers_t& lhs, const headers_t& rhs){
-	return lhs.elements == rhs.elements;
+
+
+inline bool operator==(const header_t& lhs, const header_t& rhs){
+	return lhs.key == rhs.key && lhs.value == rhs.value;
 }
+
 
 
 ///////////////////////////////		HTTP REQUESTS
@@ -37,7 +41,7 @@ inline bool operator==(const http_request_line_t& lhs, const http_request_line_t
 
 struct http_request_t {
 	http_request_line_t request_line;
-	headers_t headers;
+	std::vector<header_t> headers;
 	std::string optional_body;
 };
 
@@ -58,7 +62,7 @@ inline bool operator==(const http_response_status_line_t& lhs, const http_respon
 
 struct http_response_t {
 	http_response_status_line_t status_line;
-	headers_t headers;
+	std::vector<header_t> headers;
 	std::string optional_body;
 };
 

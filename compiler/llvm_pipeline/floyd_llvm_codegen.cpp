@@ -2659,6 +2659,7 @@ static std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program_internal(llvm
 	}
 //	write_object_file(module, *result0.target_machine);
 
+	//???	Don't make a new llvm_type_lookup, generate_module() already created one.
 	const auto type_lookup = llvm_type_lookup(instance.context, ast0._tree._types);
 
 	auto result = std::make_unique<llvm_ir_program_t>(&instance, module, type_lookup, ast._tree._globals._symbol_table, result0.link_map, settings);

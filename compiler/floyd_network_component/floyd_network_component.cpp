@@ -33,12 +33,8 @@ extern const std::string k_network_component_header = R"(
 		int port
 	}
 
-	func string read_socket_binary(int socket)
-	func void write_socket_binary(int socket, string data)
-
-	func string read_socket_string(int socket)
-	func void write_socket_string(int socket, string data)
-
+	func string read_socket(int socket)
+	func void write_socket(int socket, string data)
 
 	struct host_info_t {
 		string official_host_name
@@ -178,7 +174,6 @@ type_t make__header_t__type(types_t& types){
 	);
 }
 
-
 type_t make__http_request_line_t__type(types_t& types){
 	return make_struct(
 		types,
@@ -189,7 +184,6 @@ type_t make__http_request_line_t__type(types_t& types){
 		})
 	);
 }
-
 
 type_t make__http_request_t__type(types_t& types){
 	return make_struct(
@@ -223,7 +217,6 @@ type_t make__http_response_t__type(types_t& types){
 		})
 	);
 }
-
 
 
 
