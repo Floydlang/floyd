@@ -18,7 +18,8 @@ ENDIF(MSVC)
 #SET (CMAKE_BUILD_TYPE Release)
 SET (CMAKE_BUILD_TYPE Debug)
 
-include_directories(/usr/local/Cellar/llvm@8/8.0.1/include 
+include_directories(/usr/local/Cellar/llvm@8/8.0.1/include
+floyd_network_component 
 /usr/lib/llvm-8/include passes parts target_tool  /usr/include target_benchmark_internals libs/benchmark/include libs/benchmark/googletest/googlemock/ libs/benchmark/googletest/googlemock/include libs/benchmark/googletest/googletest/include/ floyd_runtime floyd_basics floyd_ast bytecode_interpreter  parts/immer-master floyd_parser parts/sha1 llvm_pipeline  .)
 
 if (MSVC)  # - Microsoft Visual C++
@@ -149,6 +150,9 @@ parts/sha1/sha1.cpp
 parts/sha1_class.cpp
 parts/text_parser.cpp
 parts/utils.cpp
+floyd_network_component/floyd_network_component.cpp
+floyd_network_component/floyd_sockets.cpp
+floyd_network_component/floyd_http.cpp
 passes/ast_helpers.cpp
 passes/collect_used_types.cpp
 passes/desugar_pass.cpp

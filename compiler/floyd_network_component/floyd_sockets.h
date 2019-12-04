@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <vector>
 #include <string>
+#include <memory> 
 #include <netinet/in.h>
 
 struct json_t;
