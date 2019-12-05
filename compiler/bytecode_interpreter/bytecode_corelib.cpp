@@ -474,7 +474,6 @@ bc_value_t bc_corelib__pack_http_request(interpreter_t& vm, const bc_value_t arg
 	const auto& types = vm._imm->_program._types;
 
 	const auto http_request_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_request_t" }});
-
 	QUARK_ASSERT(args[0]._type == http_request_t__type);
 
 	const auto request = args[0].get_struct_value();
