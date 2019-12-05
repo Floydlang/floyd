@@ -13,6 +13,13 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 	- [1.1 ABOUT FLOYD](#11-about-floyd)
 	- [1.2 GETTING STARTED](#12-getting-started)
 	- [1.3 COMMAND LINE TOOL](#13-command-line-tool)
+		- [HELP](#help)
+		- [RUN](#run)
+		- [COMPILE](#compile)
+		- [TEST](#test)
+		- [BENCH](#bench)
+		- [HWCAPS](#hwcaps)
+		- [FLAGS DETAILS](#flags-details)
 	- [1.4 GLOBAL SCOPE AND MAIN FUNCTION](#14-global-scope-and-main-function)
 	- [1.5 DATA TYPES](#15-data-types)
 	- [1.6 OPERATORS AND EXPRESSIONS](#16-operators-and-expressions)
@@ -111,17 +118,27 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 		- [date_t](#date_t)
 		- [get\_time\_of\_day\(\)](#gettime_ofday)
 	- [3.5 FILE SYSTEM FEATURES](#35-file-system-features)
-		- [read\_text\_file\(\)](#readtextfile)
-		- [write\_text\_file\(\)](#writetextfile)
-		- [read\_line\_stdin\(\)](#readlinestdin)
-		- [get\_fsentries_shallow\(\) and get\_fsentries\_deep\(\)](#getfsentries_shallow-and-get_fsentriesdeep)
-		- [get\_fsentry\_info\(\)](#getfsentryinfo)
-		- [get\_fs\_environment\(\)](#getfsenvironment)
-		- [does\_fsentry\_exist\(\)](#doesfsentryexist)
-		- [create\_directory\_branch\(\)](#createdirectorybranch)
-		- [delete\_fsentry\_deep\(\)](#deletefsentrydeep)
-		- [rename\_fsentry\(\)](#rename_fsentry)
-	- [3.6 STANDARD TYPES](#36-standard-types)
+		- [read\_text\_file\(\) impure](#readtextfile-impure)
+		- [write\_text\_file\(\) impure](#writetextfile-impure)
+		- [read\_line\_stdin\(\) impure](#readlinestdin-impure)
+		- [get\_fsentries_shallow\(\) and get\_fsentries\_deep\(\) impure](#getfsentries_shallow-and-get_fsentriesdeep-impure)
+		- [get\_fsentry\_info\(\) impure](#getfsentryinfo-impure)
+		- [get\_fs\_environment\(\) impure](#getfsenvironment-impure)
+		- [does\_fsentry\_exist\(\) impure](#doesfsentryexist-impure)
+		- [create\_directory\_branch\(\) impure](#createdirectorybranch-impure)
+		- [delete\_fsentry\_deep\(\) impure](#deletefsentrydeep-impure)
+		- [rename\_fsentry\(\) impure](#rename_fsentry-impure)
+	- [3.6 NETWORK FEATURES \(SOCKETS, TCP, HTTP\)](#36-network-features-sockets-tcp-http)
+		- [struct network\_component\_t](#struct-networkcomponentt)
+		- [struct ip\_address\_and\_port_t](#struct-ipaddress_and_portt)
+		- [struct host\_info\_t](#struct-hostinfot)
+		- [lookup\_host\_from\_name\(\) impure](#lookuphost_fromname-impure)
+		- [struct http\-header\_t](#struct-http-header_t)
+		- [struct http\_request\_line\_t](#struct-httprequest_linet)
+		- [struct http\_request\_t](#struct-httprequestt)
+		- [pack_http_request\(\)](#packhttprequest)
+		- [execute_http_request\(\) impure](#executehttprequest-impure)
+	- [3.7 STANDARD TYPES](#37-standard-types)
 		- [uuid_t](#uuid_t)
 		- [ip\_address\_t](#ipaddresst)
 		- [url_t](#url_t)
@@ -164,6 +181,7 @@ Floyd generates native machine code but also comes with a bytecode interpreter.
 
 This is how you use the Floyd command line tool.
 
+<a id="help"></a>
 ### HELP
 
 Show instructions for command line tool
@@ -173,6 +191,7 @@ Show instructions for command line tool
 | floyd help |
 
 
+<a id="run"></a>
 ### RUN
 Compile and run a Floyd program.
 
@@ -183,6 +202,7 @@ Compile and run a Floyd program.
 | floyd run game.floyd arg1 arg2      | Compile and run "game.floyd" using natively. arg1 and arg2 are inputs to your main():
 | floyd run -t mygame.floyd			| Run mygame.floyd with no arguments to its main(), use tracing.
 
+<a id="compile"></a>
 ### COMPILE
 Compile Floyd source to executable or intermediate.
 
@@ -194,6 +214,7 @@ Compile Floyd source to executable or intermediate.
 | floyd compile -i -g examples/fibo.floyd -o a.ir    | Compile "examples/fibo.floyd" to LLVM IR code, disable optimization, write to file "a.ir".
 
 
+<a id="test"></a>
 ### TEST
 Run unit tests in the Floyd program. See user-def statement. Does not call main() or start any Floyd processes.
 
@@ -205,6 +226,7 @@ Run unit tests in the Floyd program. See user-def statement. Does not call main(
 | floyd test game.floyd one two           | Runs only tests called "one" and "two".
 | floyd test -l game.floyd                | Returns a list of unit tests in the program.
 
+<a id="bench"></a>
 ### BENCH
 Run micro benchmarks, see benchmark-def statement
 
@@ -216,6 +238,7 @@ Run micro benchmarks, see benchmark-def statement
 | floyd bench game.floyd rle game_lp      | Runs specified benchmarks: "rle" and "game_lp".
 | floyd bench -l mygame.floyd             | Returns list of benchmarks:
 
+<a id="hwcaps"></a>
 ### HWCAPS
 Show hardware capabilities of the computer
 
@@ -223,6 +246,7 @@ Show hardware capabilities of the computer
 |:------|:-----
 | floyd hwcaps           | Outputs detailed hardware capabilities of the computer: caches and cores.
 
+<a id="flags-details"></a>
 ### FLAGS DETAILS
 
 |ASPECT | FLAG | EXPLANATION|
@@ -3463,18 +3487,22 @@ Returns the computer's realtime clock, expressed in the number of milliseconds s
 
 
 
+
+
 <a id="35-file-system-features"></a>
 ## 3.5 FILE SYSTEM FEATURES
 
-These functions allow you to access the OS file system. They are all impure.
+These functions allow you to access the OS file system. Moste are blocking and impure.
 
 Floyd uses unix-style paths in all its APIs. It will convert these to native paths with accessing the OS.
 
-fsentry = File System Entry. This is a node in the file system's graph of files and directories. It can either be a file or a directory.
+"fsentry" = File System Entry. This is a node in the file system's graph of files and directories. It can either be a file or a directory.
+
+If you want to avoid blocking your program while it performs file system calls, make those calls from a separate Floyd process.
 
 
-<a id="readtextfile"></a>
-### read\_text\_file()
+<a id="readtextfile-impure"></a>
+### read\_text\_file() impure
 
 Reads a text file from the file system and returns it as a string.
 
@@ -3484,16 +3512,16 @@ Throws exception if file cannot be found or read.
 
 
 
-<a id="writetextfile"></a>
-### write\_text\_file()
+<a id="writetextfile-impure"></a>
+### write\_text\_file() impure
 
 Write a string to the file system as a text file. Will create any missing directories in the absolute path.
 
 	void write_text_file(string abs_path, string data) impure
 
 
-<a id="readlinestdin"></a>
-### read\_line\_stdin()
+<a id="readlinestdin-impure"></a>
+### read\_line\_stdin() impure
 
 Read a line of text from the program's operating system standard input (stdin). The stdin is usually the computers keyboard. Input ends at a '\n' character (aka ASCII newline, 0x0A). The '\n' is not included in the returned string. The encoding and format of the returned string depends on the OS and what/if redirects to stdin. 
 
@@ -3503,8 +3531,8 @@ Read a line of text from the program's operating system standard input (stdin). 
 
 
 
-<a id="getfsentries_shallow-and-get_fsentriesdeep"></a>
-### get\_fsentries_shallow() and get\_fsentries\_deep()
+<a id="getfsentries_shallow-and-get_fsentriesdeep-impure"></a>
+### get\_fsentries_shallow() and get\_fsentries\_deep() impure
 
 Returns a vector of all the files and directories found at the absolute path.
 
@@ -3526,8 +3554,8 @@ get_fsentries_deep() works the same way, but will also traverse each found direc
 
 
 
-<a id="getfsentryinfo"></a>
-### get\_fsentry\_info()
+<a id="getfsentryinfo-impure"></a>
+### get\_fsentry\_info() impure
 
 Information about an entry in the file system. Can be a file or a directory.
 
@@ -3551,8 +3579,8 @@ Information about an entry in the file system. Can be a file or a directory.
 - file_size: size of the file or directory.
 
 
-<a id="getfsenvironment"></a>
-### get\_fs\_environment()
+<a id="getfsenvironment-impure"></a>
+### get\_fs\_environment() impure
 
 Returns important root locations in the host computer's file system.
 
@@ -3637,32 +3665,32 @@ Example: "/Users/bob/Applications/MyApp.app/"
 
 
 
-<a id="doesfsentryexist"></a>
-### does\_fsentry\_exist()
+<a id="doesfsentryexist-impure"></a>
+### does\_fsentry\_exist() impure
 
 Checks if there is a file or directory at specified path.
 
 	bool does_fsentry_exist(string abs_path) impure
 
 
-<a id="createdirectorybranch"></a>
-### create\_directory\_branch()
+<a id="createdirectorybranch-impure"></a>
+### create\_directory\_branch() impure
 
 Creates a directory at specified path. If the parents directories don't exist, then those will be created too.
 
 	void create_directory_branch(string abs_path) impure
 
 
-<a id="deletefsentrydeep"></a>
-### delete\_fsentry\_deep()
+<a id="deletefsentrydeep-impure"></a>
+### delete\_fsentry\_deep() impure
 
 Deletes a file or directory. If the entry has children those are deleted too - delete folder also deletes is contents.
 
 	void delete_fsentry_deep(string abs_path) impure
 
 
-<a id="rename_fsentry"></a>
-### rename\_fsentry()
+<a id="rename_fsentry-impure"></a>
+### rename\_fsentry() impure
 
 Renames a file or directory. If it is a directory, its contents is unchanged.
 After this call completes, abs_path no longer references an entry.
@@ -3682,6 +3710,125 @@ After:
 
 
 
+<a id="36-network-features-sockets-tcp-http"></a>
+## 3.6 NETWORK FEATURES (SOCKETS, TCP, HTTP)
+
+Floyd's standard library contains a small set of features that lets your programs communicate via TCP and HTTP. Currently only as a client. TODO: Server.
+
+Those of the network functions that does actual communication can take some time to execute and will block your program's execution (and are impure). If you want the rest of your program to keep running while these functions block, you need to run the blocking operations in a separate Floyd process. This is the floyd way of doing concurrent programming. It may be a good idea to create a special Floyd process to run HTTP requests, for example.
+
+The functions have been carefully designed so that as much logic as possible is done with pure functions, outside the communication functions.
+
+
+
+<a id="struct-networkcomponentt"></a>
+### struct network\_component\_t
+
+Represents the network component -- create one instance for your entire program. Initialize it with 0.
+
+	struct network_component_t {
+		int internal
+	}
+
+
+<a id="struct-ipaddress_and_portt"></a>
+### struct ip\_address\_and\_port_t
+
+This value defines an IP address and which port to use. This often used when making requests via TCP. This is a basic building block.
+
+Notice that ip\_address\_t is used here and it is part of the Floyd language itself.
+
+	struct ip_address_and_port_t {
+		ip_address_t addr
+		int port
+	}
+
+
+<a id="struct-hostinfot"></a>
+### struct host\_info\_t
+
+Holds information about one specific Internet host. Use lookup_host_from_name().
+
+	struct host_info_t {
+		string official_host_name
+		[string] name_aliases
+		[ip_address_t] addresses_IPv4
+	}
+
+
+<a id="lookuphost_fromname-impure"></a>
+### lookup\_host\_from\_name() impure
+
+This function lookups up information about an Internet host, based on the host's name. The OS gets this info from a DNS. Use this function to find the IP addresses of an Internet domain.
+
+Warning: Blocksm, impure
+
+	func host_info_t lookup_host_from_name(string name) impure
+
+
+
+<a id="struct-http-header_t"></a>
+### struct http\-header\_t
+
+Used both in HTTP requests and HTTP responses: specifies one header in the message.
+
+Example:
+Message line "Content-Type: text/html"
+Is coded as http_header_t("Content-Type", "text/html")
+
+
+	struct http_header_t {
+		string key
+		string value
+	}
+
+
+<a id="struct-httprequest_linet"></a>
+### struct http\_request\_line\_t
+
+This represents the first line of a HTTP request, which specifies GET, PUT, the path etc.
+
+Example:
+Message line: "POST /test/demo_form.php HTTP/1.1"
+Would be encoded like http_request_line_t("POST", "/test/demo_form.php", "HTTP/1.1")
+
+	struct http_request_line_t {
+		string method
+		string uri
+		string http_version
+	}
+
+
+<a id="struct-httprequestt"></a>
+### struct http\_request\_t
+
+Represents a complete HTTP request, including GET or PUT etc, the path, query strings, headers and an optional message body.
+
+	struct http_request_t {
+		http_request_line_t request_line
+		[http_header_t] headers
+		string optional_body
+	}
+
+
+
+<a id="packhttprequest"></a>
+### pack_http_request()
+
+This function pack a http_request_t-structure, filled out with informations and packs it into a proper HTTP message string. It will insert CR+LF etc.
+
+	func string pack_http_request(http_request_t r)
+
+
+
+<a id="executehttprequest-impure"></a>
+### execute_http_request() impure
+
+Performs a complete HTTP request and returns the response. Messages are encoded as strings. Use the pack-unpack functions to work with their contents.
+
+Warning: Blocks, impure
+
+	func string execute_http_request(network_component_t c, ip_address_and_port_t addr, string request) impure
 
 
 
@@ -3689,12 +3836,11 @@ After:
 
 
 
-<a id="36-standard-types"></a>
-## 3.6 STANDARD TYPES
+
+
+<a id="37-standard-types"></a>
+## 3.7 STANDARD TYPES
 A bunch of common data types are built into Floyd. This is to make composition easier and avoid the noise of converting all simple types between different component's own versions.
-
-
-
 
 
 
@@ -3712,12 +3858,10 @@ A universally unique identifier (UUID) is a 128-bit number used to identify info
 <a id="ipaddresst"></a>
 ### ip\_address\_t
 
-Internet IP adress in using IPv6 128-bit number.
+Internet IP adress. IPv4 are stored as 4 bytes, IPv6 is stored as 8 bytes.
 
 	struct ip_address_t {
-		//	4 chars: ipv4
-		//	16 chars: ipv6
-		string address_ipv4_or_ipv6
+		string data
 	}
 
 

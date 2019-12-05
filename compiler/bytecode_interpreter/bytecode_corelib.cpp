@@ -482,9 +482,9 @@ bc_value_t bc_corelib__pack_http_request(interpreter_t& vm, const bc_value_t arg
 	const auto headers = get_vector(types, request[1]);
 	const auto optional_body = request[2].get_string_value();
 
-	const auto headers2 = mapf<header_t>(headers, [](const auto& e){
+	const auto headers2 = mapf<http_header_t>(headers, [](const auto& e){
 		const auto& header = e.get_struct_value();
-		return header_t { header[0].get_string_value(), header[1].get_string_value() };
+		return http_header_t { header[0].get_string_value(), header[1].get_string_value() };
 	});
 	const auto req = http_request_t {
 		http_request_line_t {
@@ -505,7 +505,7 @@ bc_value_t bc_corelib__unpack_http_request(interpreter_t& vm, const bc_value_t a
 	const auto& types = vm._imm->_program._types;
 	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
 
-	const auto header_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "header_t" }});
+	const auto http_header_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_header_t" }});
 	const auto http_request_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_request_t_" }});
 	const auto http_request_line_t___type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_request_line_t" }});
 
@@ -514,7 +514,7 @@ bc_value_t bc_corelib__unpack_http_request(interpreter_t& vm, const bc_value_t a
 
 	const auto headers2 = mapf<bc_value_t>(req.headers, [&](const auto& e){
 		return bc_value_t::make_struct_value(
-			header_t__type,
+			http_header_t__type,
 			{
 				bc_value_t::make_string(e.key),
 				bc_value_t::make_string(e.value)
@@ -533,7 +533,7 @@ bc_value_t bc_corelib__unpack_http_request(interpreter_t& vm, const bc_value_t a
 					bc_value_t::make_string(req.request_line.http_version)
 				}
 			),
-			make_vector(types, header_t__type, immer::vector<bc_value_t>(headers2.begin(), headers2.end())),
+			make_vector(types, http_header_t__type, immer::vector<bc_value_t>(headers2.begin(), headers2.end())),
 			bc_value_t::make_string(req.optional_body)
 		}
 	);
@@ -553,9 +553,9 @@ bc_value_t bc_corelib__pack_http_response(interpreter_t& vm, const bc_value_t ar
 	const auto headers = get_vector(types, args[1]);
 	const auto optional_body = args[2].get_string_value();
 
-	const auto headers2 = mapf<header_t>(headers, [](const auto& e){
+	const auto headers2 = mapf<http_header_t>(headers, [](const auto& e){
 		const auto& header = e.get_struct_value();
-		return header_t { header[0].get_string_value(), header[1].get_string_value() };
+		return http_header_t { header[0].get_string_value(), header[1].get_string_value() };
 	});
 	const auto req = http_response_t {
 		http_response_status_line_t {
@@ -578,13 +578,13 @@ bc_value_t bc_corelib__unpack_http_response(interpreter_t& vm, const bc_value_t 
 	const auto s = args[0].get_string_value();
 	const http_response_t response = unpack_http_response(s);
 
-	const auto header_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "header_t" }});
+	const auto http_header_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_header_t" }});
 	const auto http_response_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_response_t" }});
 	const auto http_response_status_line_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_response_status_line_t" }});
 
 	const auto headers2 = mapf<bc_value_t>(response.headers, [&](const auto& e){
 		return bc_value_t::make_struct_value(
-			header_t__type,
+			http_header_t__type,
 			{
 				bc_value_t::make_string(e.key),
 				bc_value_t::make_string(e.value)
@@ -602,7 +602,7 @@ bc_value_t bc_corelib__unpack_http_response(interpreter_t& vm, const bc_value_t 
 					bc_value_t::make_string(response.status_line.status_code),
 				}
 			),
-			make_vector(types, header_t__type, immer::vector<bc_value_t>(headers2.begin(), headers2.end())),
+			make_vector(types, http_header_t__type, immer::vector<bc_value_t>(headers2.begin(), headers2.end())),
 			bc_value_t::make_string(response.optional_body)
 		}
 	);
@@ -615,16 +615,16 @@ bc_value_t bc_corelib__execute_http_request(interpreter_t& vm, const bc_value_t 
 	QUARK_ASSERT(arg_count == 3);
 
 	const auto network_component_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "network_component_t" }});
-	const auto id_address_and_port_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "id_address_and_port_t" }});
+	const auto ip_address_and_port_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "ip_address_and_port_t" }});
 
 	QUARK_ASSERT(args[0]._type == network_component_t__type);
-	QUARK_ASSERT(args[1]._type == id_address_and_port_t__type);
+	QUARK_ASSERT(args[1]._type == ip_address_and_port_t__type);
 	QUARK_ASSERT(peek2(types, args[2]._type).is_string());
 
 	const auto addr = args[1].get_struct_value();
 	const auto request = args[2].get_string_value();
 	const auto addr2 = ip_address_t { make_ipv4(addr[0].get_struct_value()[0].get_string_value()) };
-	const auto response = execute_http_request(id_address_and_port_t { addr2, (int)addr[1].get_int_value() }, request);
+	const auto response = execute_http_request(ip_address_and_port_t { addr2, (int)addr[1].get_int_value() }, request);
 	return bc_value_t::make_string(response);
 }
 

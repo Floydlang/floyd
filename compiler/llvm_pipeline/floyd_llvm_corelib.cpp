@@ -374,7 +374,7 @@ static runtime_value_t llvm_corelib__lookup_host_from_name(floyd_runtime_t* frp,
 	return v;
 }
 
-static void llvm_corelib__pack_http_request(floyd_runtime_t* frp, runtime_value_t s){
+static runtime_value_t llvm_corelib__pack_http_request(floyd_runtime_t* frp, runtime_value_t s){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 	auto& types = backend.types;
@@ -387,22 +387,24 @@ static void llvm_corelib__pack_http_request(floyd_runtime_t* frp, runtime_value_
 	const auto headers = request->_member_values[1].get_vector_value();
 	const auto optional_body = request->_member_values[2].get_string_value();
 
-	const auto headers2 = mapf<header_t>(headers, [](const auto& e){
-		const auto& header = e
-		return header_t { header[0].get_string_value(), header[1].get_string_value() };
+	const auto headers2 = mapf<http_header_t>(headers, [](const auto& e){
+		const auto& header = e.get_struct_value();
+		return http_header_t {
+			header->_member_values[0].get_string_value(),
+			header->_member_values[1].get_string_value()
+		};
 	});
 	const auto req = http_request_t {
 		http_request_line_t {
-			request_line[0].get_string_value(),
-			request_line[1].get_string_value(),
-			request_line[2].get_string_value()
+			request_line->_member_values[0].get_string_value(),
+			request_line->_member_values[1].get_string_value(),
+			request_line->_member_values[2].get_string_value()
 		},
 		headers2,
 		optional_body
 	};
-	const auto r = pack_http_request(req);
-	return bc_value_t::make_string(r);
-
+	const auto request_string = pack_http_request(req);
+	return to_runtime_string2(backend, request_string);
 }
 
 static void llvm_corelib__unpack_http_request(floyd_runtime_t* frp){
@@ -414,7 +416,20 @@ static void llvm_corelib__pack_http_response(floyd_runtime_t* frp){
 static void llvm_corelib__unpack_http_response(floyd_runtime_t* frp){
 }
 
-static void llvm_corelib__execute_http_request(floyd_runtime_t* frp){
+static runtime_value_t llvm_corelib__execute_http_request(floyd_runtime_t* frp, runtime_value_t c, runtime_value_t addr, runtime_value_t request_string){
+	auto& r = get_floyd_runtime(frp);
+	auto& backend = r.ee->backend;
+	auto& types = backend.types;
+
+	const auto network_component_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "network_component_t" }});
+	const auto ip_address_and_port_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "ip_address_and_port_t" }});
+
+	const auto addr1 = from_runtime_value2(backend, addr, ip_address_and_port_t__type).get_struct_value();
+	const auto request = from_runtime_string2(backend, request_string);
+
+	const auto addr2 = ip_address_t { make_ipv4(addr1->_member_values[0].get_struct_value()->_member_values[0].get_string_value()) };
+	const auto response = execute_http_request(ip_address_and_port_t { addr2, (int)addr1->_member_values[1].get_int_value() }, request);
+	return to_runtime_string2(backend, response);
 }
 
 

@@ -354,7 +354,7 @@ close()
 
 */
 
-connection_to_server_t connect_to_server(const id_address_and_port_t& server_addr){
+connection_to_server_t connect_to_server(const ip_address_and_port_t& server_addr){
 	const auto socket = std::make_shared<socket_t>(AF_INET);
 
 	struct sockaddr_in a;

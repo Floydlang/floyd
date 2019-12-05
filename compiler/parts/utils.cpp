@@ -242,7 +242,7 @@ uint32_t pack_32bit_little(const byte4_t& data){
 	return pack_32bit_little(data.data);
 }
 
-QUARK_TEST_VIP("", "pack_32bit_little()", "", "") {
+QUARK_TEST("", "pack_32bit_little()", "", "") {
 	const auto data= byte4_t{{ 0x12, 0x34, 0x56, 0x78 }};
 	const auto s = pack_32bit_little(data.data);
 	QUARK_VERIFY(s == 0x78563412);

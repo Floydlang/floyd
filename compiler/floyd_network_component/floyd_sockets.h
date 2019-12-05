@@ -27,7 +27,7 @@ ip_address_t make_ipv4(const std::string& s);
 std::string unmake_ipv4(const ip_address_t& s);
 
 
-struct id_address_and_port_t {
+struct ip_address_and_port_t {
 	ip_address_t addr;
 	int port;
 };
@@ -75,7 +75,7 @@ struct connection_to_server_t {
 };
 
 //	Client uses this to open a connection to server. When connection_to_server_t is destructed, connection is closed.
-connection_to_server_t connect_to_server(const id_address_and_port_t& server_addr);
+connection_to_server_t connect_to_server(const ip_address_and_port_t& server_addr);
 
 
 //////////////////////////////////////		SERVER

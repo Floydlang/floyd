@@ -36,9 +36,9 @@ extern const std::string k_network_component_header;
 
 //??? make_type__dddd_t()
 type_t make__network_component_t__type(types_t& types);
-type_t make__id_address_and_port_t__type(types_t& types);
+type_t make__ip_address_and_port_t__type(types_t& types);
 type_t make__host_info_t__type(types_t& types);
-type_t make__header_t__type(types_t& types);
+type_t make__http_header_t__type(types_t& types);
 type_t make__http_request_line_t__type(types_t& types);
 type_t make__http_request_t__type(types_t& types);
 type_t make__http_response_status_line_t__type(types_t& types);
@@ -58,7 +58,7 @@ std::string to_ipv4_dotted_decimal_string(const ip_address_t& a);
 ip_address_t from_ipv4_dotted_decimal_string(const std::string& s);
 
 
-//	func int connect_to_server(network_component_t c, id_address_and_port_t server_addr)
+//	func int connect_to_server(network_component_t c, ip_address_and_port_t server_addr)
 //	func void close_socket(int socket)
 
 
@@ -76,7 +76,7 @@ http_response_t unpack_http_response(const std::string& s);
 
 
 //	Blocks for reply.
-std::string execute_http_request(id_address_and_port_t addr, const std::string& request);
+std::string execute_http_request(ip_address_and_port_t addr, const std::string& request);
 */
 
 

@@ -15,7 +15,7 @@
 
 func void test(network_component c) impure {
 	let timeout = get_time_ns() + 3000000
-	let addr = id_address_and_port_t(ip_address2_t("123234234"), 8080)
+	let addr = ip_address_and_port_t(ip_address2_t("123234234"), 8080)
 	let r = http_request_t(http_request_line_t("GET", "/", "HTTP/1.1"), [], "")
 	let a = execute_http_request(c, addr, r)
 }
