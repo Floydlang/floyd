@@ -2414,7 +2414,7 @@ static type_name_t generate_type_name(analyser_t& a, const std::string& identifi
 	const auto id = a.scope_id_generator++;
 
 //	const auto b = std::string() + "lexical_scope" + std::to_string(id);
-	const auto b = std::to_string(id);
+	const auto b = a._lexical_scope_stack.size() == 1 ? "global_scope" : std::to_string(id);
 
 	return type_name_t { { b, identifier } };
 }

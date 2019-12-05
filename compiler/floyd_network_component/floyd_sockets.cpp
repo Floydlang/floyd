@@ -33,6 +33,23 @@ http://httpbin.org/#/
 
 //#define QUARK_TEST QUARK_TEST_VIP
 
+
+ip_address_t make_ipv4(const std::string& s){
+	if(s.size() != 4){
+		throw std::runtime_error("Illegal IPv4 address: " + s);
+	}
+	const uint32_t i = pack_32bit_little((const uint8_t*)s.data());
+	return ip_address_t {{ i }};
+}
+
+std::string unmake_ipv4(const ip_address_t& s){
+	const auto r = unpack_32bit_little(s.ipv4.s_addr);
+	return std::string(&r.data[0], &r.data[4]);
+}
+
+
+
+
 /*
 	The gethostbyname*() and gethostbyaddr*() functions are obsolete. Applications should use
 	getaddrinfo(3) and getnameinfo(3) instead.
@@ -290,8 +307,8 @@ QUARK_TEST("socket-component", "gethostbyname2_r()","google.com", ""){
 //	QUARK_VERIFY(to_string(a.addresses_IPv4[0]) == "216.58.207.238");
 }
 
-hostent_t lookup_host(const ip_address_t& addr, int af){
-	const auto e = ::gethostbyaddr(&addr.ipv4, 4, af);
+hostent_t lookup_host(const ip_address_t& addr){
+	const auto e = ::gethostbyaddr(&addr.ipv4, 4, AF_INET);
 	if(e == nullptr){
 		const auto host_error = h_errno;
 		const auto error_str = ::hstrerror(host_error);
@@ -306,7 +323,7 @@ hostent_t lookup_host(const ip_address_t& addr, int af){
 
 QUARK_TEST("socket-component", "lookup_host()","google.com", ""){
 	const std::string k_addr = "172.217.21.174";
-	const auto a = lookup_host(from_ipv4_dotted_decimal_string(k_addr), AF_INET);
+	const auto a = lookup_host(from_ipv4_dotted_decimal_string(k_addr));
 	QUARK_VERIFY(a.official_host_name != "");
 	QUARK_VERIFY(a.addresses_IPv4.size() == 1);
 	QUARK_VERIFY(to_ipv4_dotted_decimal_string(a.addresses_IPv4[0]) == k_addr);
@@ -337,7 +354,7 @@ close()
 
 */
 
-connection_to_server_t connect_to_server(const id_address_and_port_t& server_addr){
+connection_to_server_t connect_to_server(const ip_address_and_port_t& server_addr){
 	const auto socket = std::make_shared<socket_t>(AF_INET);
 
 	struct sockaddr_in a;

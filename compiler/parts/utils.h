@@ -139,6 +139,17 @@ std::string ptr_to_hexstring(const void* ptr);
 std::string concat_string(const std::vector<std::string>& vec, const std::string& divider);
 
 
+////////////////////////////////		BINARY
+
+
+struct byte4_t {
+	uint8_t data[4];
+};
+inline bool operator==(const byte4_t& lhs, const byte4_t& rhs){ return std::memcmp(lhs.data, rhs.data, 4) == 0; }
+
+uint32_t pack_32bit_little(const byte4_t& data);
+uint32_t pack_32bit_little(const uint8_t data[]);
+byte4_t unpack_32bit_little(uint32_t value);
 
 
 #endif /* utils_hpp */

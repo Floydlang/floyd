@@ -28,17 +28,13 @@ extern const std::string k_network_component_header = R"(
 	//////////////////////////////////////		BASICS
 
 
-	struct id_address_and_port_t {
+	struct ip_address_and_port_t {
 		ip_address_t addr
 		int port
 	}
 
-	func string read_socket_binary(int socket)
-	func void write_socket_binary(int socket, string data)
-
-	func string read_socket_string(int socket)
-	func void write_socket_string(int socket, string data)
-
+	func string read_socket(int socket)
+	func void write_socket(int socket, string data)
 
 	struct host_info_t {
 		string official_host_name
@@ -46,8 +42,8 @@ extern const std::string k_network_component_header = R"(
 		[ip_address_t] addresses_IPv4
 	}
 
-	func host_info_t lookup_host_from_ip(ip_address_t addr)
-	func host_info_t lookup_host_from_name(string name)
+	func host_info_t lookup_host_from_ip(ip_address_t addr) impure
+	func host_info_t lookup_host_from_name(string name) impure
 
 	func string to_ipv4_dotted_decimal_string(ip_address_t a)
 	func ip_address_t from_ipv4_dotted_decimal_string(string s)
@@ -56,8 +52,8 @@ extern const std::string k_network_component_header = R"(
 	//////////////////////////////////////		TCP CLIENT
 
 
-//	func int connect_to_server(network_component_t c, id_address_and_port_t server_addr)
-//	func void close_socket(int socket)
+//	func int connect_to_server(network_component_t c, ip_address_and_port_t server_addr) impure
+//	func void close_socket(int socket) impure
 
 
 
@@ -78,7 +74,7 @@ extern const std::string k_network_component_header = R"(
 	///////////////////////////////		HTTP
 
 
-	struct header_t {
+	struct http_header_t {
 		string key
 		string value
 	}
@@ -91,7 +87,7 @@ extern const std::string k_network_component_header = R"(
 	}
 	struct http_request_t {
 		http_request_line_t request_line
-		[header_t] headers
+		[http_header_t] headers
 		string optional_body
 	}
 
@@ -102,7 +98,7 @@ extern const std::string k_network_component_header = R"(
 	}
 	struct http_response_t {
 		http_response_status_line_t status_line
-		[header_t] headers
+		[http_header_t] headers
 		string optional_body
 	}
 
@@ -122,10 +118,10 @@ extern const std::string k_network_component_header = R"(
 
 
 	//	Blocks for reply.
-	func string execute_http_request(network_component_t c, id_address_and_port_t addr, string request)
+	func string execute_http_request(network_component_t c, ip_address_and_port_t addr, string request) impure
 
 	//	Blocks forever. ??? how to ask it to stop?
-//	func void execute_http_server(network_component_t c, server_params_t params, string process_id)
+//	func void execute_http_server(network_component_t c, server_params_t params, string process_id) impure
 
 )";
 
@@ -147,7 +143,7 @@ type_t make__network_component_t__type(types_t& types){
 	);
 }
 
-type_t make__id_address_and_port_t__type(types_t& types){
+type_t make__ip_address_and_port_t__type(types_t& types){
 	return make_struct(
 		types,
 		struct_type_desc_t({
@@ -168,7 +164,7 @@ type_t make__host_info_t__type(types_t& types){
 	);
 }
 
-type_t make__header_t__type(types_t& types){
+type_t make__http_header_t__type(types_t& types){
 	return make_struct(
 		types,
 		struct_type_desc_t({
@@ -177,7 +173,6 @@ type_t make__header_t__type(types_t& types){
 		})
 	);
 }
-
 
 type_t make__http_request_line_t__type(types_t& types){
 	return make_struct(
@@ -190,13 +185,12 @@ type_t make__http_request_line_t__type(types_t& types){
 	);
 }
 
-
 type_t make__http_request_t__type(types_t& types){
 	return make_struct(
 		types,
 		struct_type_desc_t({
 			{ make__http_request_line_t__type(types), "request_line" },
-			{ make_vector(types, make__header_t__type(types)), "headers" },
+			{ make_vector(types, make__http_header_t__type(types)), "headers" },
 			{ type_t::make_string(), "optional_body" }
 		})
 	);
@@ -218,12 +212,11 @@ type_t make__http_response_t__type(types_t& types){
 		types,
 		struct_type_desc_t({
 			{ make__http_response_status_line_t__type(types), "status_line" },
-			{ make_vector(types, make__header_t__type(types)), "headers" },
+			{ make_vector(types, make__http_header_t__type(types)), "headers" },
 			{ type_t::make_string(), "optional_body" }
 		})
 	);
 }
-
 
 
 

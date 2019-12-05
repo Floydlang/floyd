@@ -215,6 +215,8 @@ struct value_ext_t {
 			QUARK_ASSERT(_dict_entries.empty());
 //				QUARK_ASSERT(_function_id != k_no_function_id);
 		}
+		else if(base_type == base_type::k_named_type){
+		}
 		else {
 			QUARK_ASSERT(false);
 		}
@@ -665,8 +667,8 @@ struct value_t {
 	private: explicit value_t(const std::shared_ptr<json_t>& s);
 	private: explicit value_t(const type_t& type);
 
-	private: explicit value_t(const type_t& struct_type, std::shared_ptr<struct_value_t>& instance);
-	private: explicit value_t(type_t& struct_type, std::shared_ptr<struct_value_t>& instance);
+	private: explicit value_t(const types_t& types, const type_t& struct_type, std::shared_ptr<struct_value_t>& instance);
+	private: explicit value_t(types_t& types, const type_t& struct_type, std::shared_ptr<struct_value_t>& instance);
 
 	private: explicit value_t(const types_t& types, const type_t& element_type, const std::vector<value_t>& elements);
 	private: explicit value_t(types_t& types, const type_t& element_type, const std::vector<value_t>& elements);

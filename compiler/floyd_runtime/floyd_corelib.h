@@ -26,6 +26,7 @@ extern const std::string k_corelib_builtin_types_and_constants;
 
 
 type_t make__ip_address_t__type(types_t& types);
+type_t make__ip_address_t__type(const types_t& types);
 
 type_t make__fsentry_t__type(types_t& types);
 type_t make__fsentry_info_t__type(types_t& types);
@@ -53,18 +54,6 @@ std::string make_benchmark_report(const std::vector<benchmark_result2_t>& test_r
 std::vector<std::pair<std::string, json_t>> corelib_detect_hardware_caps();
 std::string corelib_make_hardware_caps_report(const std::vector<std::pair<std::string, json_t>>& caps);
 std::string corelib_make_hardware_caps_report_brief(const std::vector<std::pair<std::string, json_t>>& caps);
-
-
-
-
-
-
-
-type_t make__ip_address_t__type(types_t& types);
-
-
-
-
 
 
 

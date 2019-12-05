@@ -15,12 +15,16 @@
 #include <memory>
 
 
-struct headers_t {
-	std::vector<std::pair<std::string, std::string>> elements;
+struct http_header_t {
+	std::string key;
+	std::string value;
 };
-inline bool operator==(const headers_t& lhs, const headers_t& rhs){
-	return lhs.elements == rhs.elements;
+
+
+inline bool operator==(const http_header_t& lhs, const http_header_t& rhs){
+	return lhs.key == rhs.key && lhs.value == rhs.value;
 }
+
 
 
 ///////////////////////////////		HTTP REQUESTS
@@ -37,7 +41,7 @@ inline bool operator==(const http_request_line_t& lhs, const http_request_line_t
 
 struct http_request_t {
 	http_request_line_t request_line;
-	headers_t headers;
+	std::vector<http_header_t> headers;
 	std::string optional_body;
 };
 
@@ -58,7 +62,7 @@ inline bool operator==(const http_response_status_line_t& lhs, const http_respon
 
 struct http_response_t {
 	http_response_status_line_t status_line;
-	headers_t headers;
+	std::vector<http_header_t> headers;
 	std::string optional_body;
 };
 
@@ -74,9 +78,9 @@ http_response_t unpack_http_response(const std::string& s);
 
 
 //	Lookups up addr, uses the first IP. Always IPv4 (for now).
-id_address_and_port_t make_http_dest(const std::string& addr, int port, int af);
+ip_address_and_port_t make_http_dest(const std::string& addr, int port, int af);
 
-std::string execute_http_request(const id_address_and_port_t& addr, const std::string& message);
+std::string execute_http_request(const ip_address_and_port_t& addr, const std::string& message);
 
 
 void execute_http_server(const server_params_t& params, connection_i& connection);

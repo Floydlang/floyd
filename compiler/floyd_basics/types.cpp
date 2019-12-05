@@ -1649,7 +1649,7 @@ type_t peek0(const types_t& types, const type_t& type){
 		QUARK_ASSERT(info.child_types.size() == 1);
 		const auto dest = info.child_types[0];
 
-		//	Support many linked tags.
+		//	Support many linked tags using recursion.
 		return peek0(types, dest);
 	}
 	else{
@@ -2152,7 +2152,16 @@ type_t make_vector(types_t& types, const type_t& element_type){
 		return_dyn_type::none,
 		""
 	};
-	return intern_node(types, node);
+	const auto result = intern_node(types, node);
+
+	//??? Warning: this should be implemented on each aggregated type (vector, dict, function,
+	//	struct etc.). LLVM codegen flattens all named types. Alt A: make sure all flattended types always exists, B: Make llvm use named types, C: Let llvm add flattened types itself.
+	//	Also make a type for a variant of the vector where named type is flattened.
+	const auto element2 = peek0(types, element_type);
+	if(element2 != element_type){
+		make_vector(types, element2);
+	}
+	return result;
 }
 type_t make_vector(const types_t& types, const type_t& element_type){
 	const auto node = type_node_t{

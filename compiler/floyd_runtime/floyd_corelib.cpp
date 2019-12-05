@@ -416,6 +416,15 @@ type_t make__ip_address_t__type(types_t& types){
 	);
 	return temp;
 }
+type_t make__ip_address_t__type(const types_t& types){
+	const auto temp = make_struct(
+		types,
+		struct_type_desc_t({
+			{ type_t::make_string(), "data" }
+		})
+	);
+	return temp;
+}
 
 
 

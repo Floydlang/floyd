@@ -226,4 +226,44 @@ std::string concat_string(const std::vector<std::string>& vec, const std::string
 
 
 
+/////////////////////////////////////////		BINARY
+
+
+
+uint32_t pack_32bit_little(const uint8_t data[]){
+	const uint32_t byte0 = data[0];
+	const uint32_t byte1 = data[1];
+	const uint32_t byte2 = data[2];
+	const uint32_t byte3 = data[3];
+	return byte0 | (byte1 << 8) | (byte2 << 16) | (byte3 << 24);
+}
+
+uint32_t pack_32bit_little(const byte4_t& data){
+	return pack_32bit_little(data.data);
+}
+
+QUARK_TEST("", "pack_32bit_little()", "", "") {
+	const auto data= byte4_t{{ 0x12, 0x34, 0x56, 0x78 }};
+	const auto s = pack_32bit_little(data.data);
+	QUARK_VERIFY(s == 0x78563412);
+}
+
+
+byte4_t unpack_32bit_little(uint32_t value){
+	const uint8_t byte0 = (value & 0x000000ff);
+	const uint8_t byte1 = (value & 0x0000ff00) >> 8;
+	const uint8_t byte2 = (value & 0x00ff0000) >> 16;
+	const uint8_t byte3 = (value & 0xff000000) >> 24;
+	return byte4_t{ byte0, byte1, byte2, byte3 };
+}
+
+QUARK_TEST("", "unpack_32bit_little()", "", "") {
+	const auto s = unpack_32bit_little(0x78563412);
+	QUARK_VERIFY(s == (byte4_t{ 0x12, 0x34, 0x56, 0x78 }));
+}
+
+
+
+
+
 
