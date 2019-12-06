@@ -117,14 +117,13 @@ value_t bc_to_value(const types_t& types, const bc_value_t& value){
 	}
 }
 
-bc_value_t value_to_bc(const types_t& types, const value_t& value){
+
+static bc_value_t value_to_bc__physical(const types_t& types, const value_t& value, const type_desc_t& physical_type){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(physical_type.check_invariant());
 
-	const auto type = value.get_type();
-	const auto peek = peek2(types, type);
-
-	const auto basetype = value.get_basetype();
+	const auto basetype = physical_type.get_base_type();
 	if(basetype == base_type::k_undefined){
 		return bc_value_t::make_undefined();
 	}
@@ -157,13 +156,13 @@ bc_value_t value_to_bc(const types_t& types, const value_t& value){
 		return bc_value_t::make_typeid_value(value.get_typeid_value());
 	}
 	else if(basetype == base_type::k_struct){
-		return bc_value_t::make_struct_value(type, values_to_bcs(types, value.get_struct_value()->_member_values));
+		return bc_value_t::make_struct_value(physical_type, values_to_bcs(types, value.get_struct_value()->_member_values));
 	}
 
 	else if(basetype == base_type::k_vector){
-		const auto element_type = peek.get_vector_element_type(types);
+		const auto element_type = physical_type.get_vector_element_type(types);
 
-		if(encode_as_vector_w_inplace_elements(types, type)){
+		if(encode_as_vector_w_inplace_elements(types, physical_type)){
 			const auto& vec = value.get_vector_value();
 			immer::vector<bc_inplace_value_t> vec2;
 			for(const auto& e: vec){
@@ -184,7 +183,7 @@ bc_value_t value_to_bc(const types_t& types, const value_t& value){
 		}
 	}
 	else if(basetype == base_type::k_dict){
-		const auto value_type = peek.get_dict_value_type(types);
+		const auto value_type = physical_type.get_dict_value_type(types);
 
 		const auto elements = value.get_dict_value();
 		immer::map<std::string, bc_external_handle_t> entries2;
@@ -200,11 +199,30 @@ bc_value_t value_to_bc(const types_t& types, const value_t& value){
 		return make_dict(types, value_type, entries2);
 	}
 	else if(basetype == base_type::k_function){
-		return bc_value_t::make_function_value(type, value.get_function_value());
+		return bc_value_t::make_function_value(physical_type, value.get_function_value());
+	}
+	else if(basetype == base_type::k_named_type){
+		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 	else{
 		QUARK_ASSERT(false);
 		quark::throw_exception();
+	}
+}
+bc_value_t value_to_bc(const types_t& types, const value_t& value){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(value.check_invariant());
+
+	const auto type = value.get_type();
+	const auto peek = peek2(types, type);
+
+	if(type.is_named_type()){
+		const auto result = value_to_bc__physical(types, value, peek);
+		return result;
+	}
+	else{
+		return value_to_bc__physical(types, value, peek);
 	}
 }
 
@@ -228,6 +246,7 @@ QUARK_TEST("", "value_to_bc()", "Make sure vector of inplace values works", ""){
 bc_value_t bc_from_runtime(const value_backend_t& backend, runtime_value_t value, const type_t& type){
 	const auto temp = from_runtime_value2(backend, value, type);
 	const auto r = value_to_bc(backend.types, temp);
+	QUARK_ASSERT(r._type == type);
 	return r;
 }
 

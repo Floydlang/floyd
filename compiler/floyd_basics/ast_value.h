@@ -145,10 +145,10 @@ struct struct_value_t {
 struct value_ext_t {
 	public: bool check_invariant() const{
 		QUARK_ASSERT(_rc > 0);
-		QUARK_ASSERT(_type.check_invariant());
+		QUARK_ASSERT(_physical_type.check_invariant());
 		QUARK_ASSERT(_typeid_value.check_invariant());
 
-		const auto base_type = _type.get_base_type();
+		const auto base_type = _physical_type.get_base_type();
 		if(base_type == base_type::k_string){
 //				QUARK_ASSERT(_string);
 			QUARK_ASSERT(_json == nullptr);
@@ -232,7 +232,7 @@ struct value_ext_t {
 
 	public: value_ext_t(const std::string& s) :
 		_rc(1),
-		_type(type_t::make_string()),
+		_physical_type(type_t::make_string()),
 		_string(s)
 	{
 		QUARK_ASSERT(check_invariant());
@@ -240,7 +240,7 @@ struct value_ext_t {
 
 	public: value_ext_t(const std::shared_ptr<json_t>& s) :
 		_rc(1),
-		_type(type_t::make_json()),
+		_physical_type(type_t::make_json()),
 		_json(s)
 	{
 		QUARK_ASSERT(check_invariant());
@@ -248,17 +248,17 @@ struct value_ext_t {
 
 	public: value_ext_t(const type_t& s);
 
-	public: value_ext_t(const type_t& type, std::shared_ptr<struct_value_t>& s);
-	public: value_ext_t(const type_t& type, const std::vector<value_t>& s);
-	public: value_ext_t(const type_t& type, const std::map<std::string, value_t>& s);
-	public: value_ext_t(const type_t& type, function_id_t function_id);
+	public: value_ext_t(const type_t& physical_type, std::shared_ptr<struct_value_t>& s);
+	public: value_ext_t(const type_t& physical_type, const std::vector<value_t>& s);
+	public: value_ext_t(const type_t& physical_type, const std::map<std::string, value_t>& s);
+	public: value_ext_t(const type_t& physical_type, function_id_t function_id);
 
 
 	//	??? NOTICE: Use std::variant or subclasses.
 	public: int _rc;
 
-	//??? remove _type, not needed now that we have type inside value_t.
-	public: type_t _type;
+	//??? remove _physical_type, not needed now that we have type inside value_t.
+	public: type_t _physical_type;
 
 	public: std::string _string;
 	public: std::shared_ptr<json_t> _json;
@@ -297,6 +297,11 @@ struct value_t {
 		return _physical_type;
 	}
 
+	public: static value_t replace_logical_type(const value_t& value, const type_t& logical_type){
+		auto copy = value;
+		copy._type = logical_type;
+		return copy;
+	}
 
 	//------------------------------------------------		undefined
 

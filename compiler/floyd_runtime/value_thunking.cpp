@@ -484,10 +484,23 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 			QUARK_ASSERT(false); throw std::exception();
 		}
 		value_t operator()(const named_type_t& e) const {
+#if 1
 			return from_runtime_value2(backend, encoded_value, peek2(backend.types, e.destination_type));
+#else
+			const auto result = from_runtime_value2(backend, encoded_value, peek2(backend.types, e.destination_type));
+			return value_t::replace_logical_type(result, type);
+#endif
+
 		}
 	};
+#if 1
 	return std::visit(visitor_t{ backend, encoded_value, type }, get_type_variant(backend.types, type));
+#else
+	const auto result = std::visit(visitor_t{ backend, encoded_value, type }, get_type_variant(backend.types, type));
+	QUARK_ASSERT(result.get_type() == type);
+	return result;
+#endif
+
 }
 
 

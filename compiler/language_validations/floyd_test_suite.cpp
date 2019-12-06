@@ -6874,6 +6874,7 @@ FLOYD_LANG_PROOF("software-system-def", "parse software-system-def", "", ""){
 //######################################################################################################################
 
 
+//#define FLOYD_LANG_PROOF FLOYD_LANG_PROOF_VIP
 
 
 FLOYD_LANG_PROOF("container-def", "Minimal floyd process demo", "", ""){
@@ -6911,7 +6912,7 @@ FLOYD_LANG_PROOF("container-def", "Minimal floyd process demo", "", ""){
 }
 
 #if 0
-FLOYD_LANG_PROOF("container-def", "Test named type for message", "", ""){
+FLOYD_LANG_PROOF_VIP("container-def", "Test named type for message", "", ""){
 	const auto program = R"(
 
 		container-def {
@@ -6943,7 +6944,6 @@ FLOYD_LANG_PROOF("container-def", "Test named type for message", "", ""){
 }
 #endif
 
-//#define FLOYD_LANG_PROOF FLOYD_LANG_PROOF_VIP
 
 FLOYD_LANG_PROOF("container-def", "Mismatch of message type: send() vs __msg()", "", ""){
 	const auto program = R"(
@@ -7026,7 +7026,7 @@ FLOYD_LANG_PROOF("container-def", "run one process", "", ""){
 }
 
 #if 0
-FLOYD_LANG_PROOF("container-def", "Test use struct as message", "", ""){
+FLOYD_LANG_PROOF_VIP("container-def", "Test use struct as message", "", ""){
 	const auto program = R"(
 
 		container-def {
