@@ -25,6 +25,8 @@
 
 namespace floyd {
 
+static const type_node_t& lookup_typeinfo_from_type(const types_t& types, const type_t& type);
+static type_node_t& lookup_typeinfo_from_type(types_t& types, const type_t& type);
 
 
 type_t::type_t(const type_desc_t& desc) :
@@ -1320,7 +1322,7 @@ type_variant_t get_type_variant(const types_t& types, const type_t& type){
 		}
 		else if(type.is_symbol_ref()){
 			const auto& info = lookup_typeinfo_from_type(types, type);
-			return symbol_ref_t { info.identifier_str };
+			return symbol_ref_t { info.symbol_identifier };
 		}
 		else if(type.is_named_type()){
 			QUARK_ASSERT(false);
@@ -1417,7 +1419,7 @@ std::string type_t::get_symbol_ref(const types_t& types) const {
 	QUARK_ASSERT(is_symbol_ref());
 
 	const auto& info = lookup_typeinfo_from_type(types, *this);
-	return info.identifier_str;
+	return info.symbol_identifier;
 }
 
 
@@ -2307,7 +2309,7 @@ types_t types_from_json(const json_t& j){
 
 
 
-const type_node_t& lookup_typeinfo_from_type(const types_t& types, const type_t& type){
+static const type_node_t& lookup_typeinfo_from_type(const types_t& types, const type_t& type){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -2319,7 +2321,7 @@ const type_node_t& lookup_typeinfo_from_type(const types_t& types, const type_t&
 	return result;
 }
 
-type_node_t& lookup_typeinfo_from_type(types_t& types, const type_t& type){
+static type_node_t& lookup_typeinfo_from_type(types_t& types, const type_t& type){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -2334,26 +2336,7 @@ type_node_t& lookup_typeinfo_from_type(types_t& types, const type_t& type){
 
 bool is_atomic_type(type_t type){
 	const auto bt = type.get_base_type();
-	if(
-		bt == base_type::k_undefined
-		|| bt == base_type::k_any
-		|| bt == base_type::k_void
-
-		|| bt == base_type::k_bool
-		|| bt == base_type::k_int
-		|| bt == base_type::k_double
-		|| bt == base_type::k_string
-		|| bt == base_type::k_json
-
-		|| bt == base_type::k_typeid
-		|| bt == base_type::k_symbol_ref
-//		|| bt == base_type::k_named_type
-	){
-		return true;
-	}
-	else{
-		return false;
-	}
+	return is_atomic_type(bt);
 }
 
 
@@ -2362,14 +2345,14 @@ bool is_atomic_type(type_t type){
 
 
 
-static bool is_wellformed_internal(const types_t& types, const std::set<type_lookup_index_t>& done_types, const type_t& t);
+static bool is_fully_defined_internal(const types_t& types, const std::set<type_lookup_index_t>& done_types, const type_t& t);
 
 
-bool is_wellformed_internal(const types_t& types, const std::set<type_lookup_index_t>& done_types, const struct_type_desc_t& s){
+bool is_fully_defined_internal(const types_t& types, const std::set<type_lookup_index_t>& done_types, const struct_type_desc_t& s){
 	QUARK_ASSERT(s.check_invariant());
 
 	for(const auto& e: s._members){
-		bool result = is_wellformed_internal(types, done_types, e._type);
+		bool result = is_fully_defined_internal(types, done_types, e._type);
 		if(result == false){
 			return false;
 		}
@@ -2378,18 +2361,18 @@ bool is_wellformed_internal(const types_t& types, const std::set<type_lookup_ind
 }
 
 
-bool is_wellformed__type_vector(const types_t& types, const std::set<type_lookup_index_t>& done_types, const std::vector<type_t>& elements){
+bool is_fully_defined__type_vector(const types_t& types, const std::set<type_lookup_index_t>& done_types, const std::vector<type_t>& elements){
 	QUARK_ASSERT(types.check_invariant());
 
 	for(const auto& e: elements){
-		if(is_wellformed_internal(types, done_types, e) == false){
+		if(is_fully_defined_internal(types, done_types, e) == false){
 			return false;
 		}
 	}
 	return true;
 }
 
-static bool is_wellformed_internal(const types_t& types, const std::set<type_lookup_index_t>& done_types, const type_t& t){
+static bool is_fully_defined_internal(const types_t& types, const std::set<type_lookup_index_t>& done_types, const type_t& t){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(t.check_invariant());
 
@@ -2436,22 +2419,22 @@ static bool is_wellformed_internal(const types_t& types, const std::set<type_loo
 			}
 
 			bool operator()(const struct_t& e) const{
-				return is_wellformed_internal(types, done_types, e.desc);
+				return is_fully_defined_internal(types, done_types, e.desc);
 			}
 			bool operator()(const vector_t& e) const{
-				return is_wellformed__type_vector(types, done_types, e._parts);
+				return is_fully_defined__type_vector(types, done_types, e._parts);
 			}
 			bool operator()(const dict_t& e) const{
-				return is_wellformed__type_vector(types, done_types, e._parts);
+				return is_fully_defined__type_vector(types, done_types, e._parts);
 			}
 			bool operator()(const function_t& e) const{
-				return is_wellformed__type_vector(types, done_types, e._parts);
+				return is_fully_defined__type_vector(types, done_types, e._parts);
 			}
 			bool operator()(const symbol_ref_t& e) const {
 				return false;
 			}
 			bool operator()(const named_type_t& e) const {
-				return is_wellformed_internal(types, done_types, e.destination_type);
+				return is_fully_defined_internal(types, done_types, e.destination_type);
 			}
 		};
 		return std::visit(visitor_t { types, done2 }, get_type_variant(types, t));
@@ -2459,14 +2442,23 @@ static bool is_wellformed_internal(const types_t& types, const std::set<type_loo
 }
 
 
-bool is_wellformed(const types_t& types, const type_t& t){
+bool is_fully_defined(const types_t& types, const type_t& t){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(t.check_invariant());
 
 	std::set<type_lookup_index_t> done_types;
-	return is_wellformed_internal(types, done_types, t);
+	return is_fully_defined_internal(types, done_types, t);
 }
 
+QUARK_TEST("Types", "is_fully_defined()", "", ""){
+	types_t types;
+	QUARK_VERIFY(is_fully_defined(types, type_t::make_int()))
+}
+QUARK_TEST("Types", "is_fully_defined()", "", ""){
+	types_t types;
+	const type_t t = make_named_type(types, type_name_t { { "global", "f" } }, type_t::make_int());
+	QUARK_VERIFY(is_fully_defined(types, t))
+}
 
 
 ////////////////////////////////		TESTS
@@ -2480,7 +2472,7 @@ QUARK_TEST("Types", "update_named_type()", "", ""){
 	const auto b = update_named_type(types, a, s);
 
 	if(false) trace_types(types);
-	QUARK_ASSERT(is_wellformed(types, b));
+	QUARK_ASSERT(is_fully_defined(types, b));
 }
 
 

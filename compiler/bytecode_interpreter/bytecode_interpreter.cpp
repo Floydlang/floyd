@@ -2450,7 +2450,7 @@ static std::vector<std::pair<type_t, struct_layout_t>> make_struct_layouts(const
 	for(int i = 0 ; i < types.nodes.size() ; i++){
 		const auto& type = lookup_type_from_index(types, i);
 		const auto peek_type = peek2(types, type);
-		if(peek_type.is_struct() && is_wellformed(types, peek_type)){
+		if(peek_type.is_struct() && is_fully_defined(types, peek_type)){
 			const auto& source_struct_def = peek_type.get_struct(types);
 
 			const auto struct_bytes = source_struct_def._members.size() * 8;

@@ -297,7 +297,7 @@ static const type_entry_t& make_anonymous_struct(builder_t& builder, const type_
 	const auto& types = builder.acc.types;
 	const auto type_peek = peek2(types, type);
 	QUARK_ASSERT(type_peek.is_struct());
-	QUARK_ASSERT(is_wellformed(types, type));
+	QUARK_ASSERT(is_fully_defined(types, type));
 
 	const auto type_index = type.get_lookup_index();
 
@@ -328,7 +328,7 @@ static const type_entry_t& make_named_struct(builder_t& builder, const type_t& t
 	const auto& types = builder.acc.types;
 	const auto type_peek = peek2(types, type);
 	QUARK_ASSERT(type_peek.is_struct());
-	QUARK_ASSERT(is_wellformed(types, type));
+	QUARK_ASSERT(is_fully_defined(types, type));
 
 	const auto type_index = type.get_lookup_index();
 
@@ -379,7 +379,7 @@ static const type_entry_t& make_llvm_struct_type(builder_t& builder, const type_
 	const auto& types = builder.acc.types;
 	const auto type_peek = peek2(types, type);
 	QUARK_ASSERT(type_peek.is_struct());
-	QUARK_ASSERT(is_wellformed(types, type));
+	QUARK_ASSERT(is_fully_defined(types, type));
 
 	if(is_empty_type_name(optional_name)){
 		return make_anonymous_struct(builder, type);
@@ -517,7 +517,7 @@ llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const types_t& ty
 		const auto& type = lookup_type_from_index(acc.types, i);
 		QUARK_ASSERT(type.check_invariant());
 
-		const auto wellformed = is_wellformed(builder.acc.types, type);
+		const auto wellformed = is_fully_defined(builder.acc.types, type);
 		if(wellformed){
 			touch_type(builder, type, make_empty_type_name());
 		}
@@ -715,7 +715,7 @@ QUARK_TEST_VIP("Types", "update_named_type()", "", ""){
 	const auto b = update_named_type(types, a, s);
 
 	if(true) trace_types(types);
-	QUARK_ASSERT(is_wellformed(types, b));
+	QUARK_ASSERT(is_fully_defined(types, b));
 
 	llvm::LLVMContext context;
 	const auto lookup = llvm_type_lookup(context, types);

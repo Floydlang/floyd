@@ -9,44 +9,34 @@
 #ifndef types_h
 #define types_h
 
-
 /*
 These features are very central in the Floyd compiler.
-base_type, type_t and types_t works together to describe, compare and pick apart data types.
+base_type, type_t, type_desc_t and types_t works together to describe, compare and pick apart data types.
 
 They can describe types as you get them from source code with undefined types. vector<undefined> is OK for example.
-They can also referer to types using their symbol name in the source code / lexical scope.
+They can also refer to types using their symbol name in the source code / lexical scope.
 
 Later passes can improve the types gradually to resolve symbols, infer left out (undefined) types and so on.
 
 
 # base_type
-Enum with all basic types of types in Floyd. You need to use type_t to fully describe a composite data structure, these are only the roots.
+Enum with all basic types of types in Floyd. These are only the roots: you need to use type_t to fully describe a composite data structure.
 
 
-
-
-# type_t
-Opaque, immutable value type describing a type. It may be a reference to a named type (like "/main/pixel_t") or a concrete type, like "int".
+# type_t -- LOGICAL TYPE
+Opaque, immutable value that specifies ANY type. It may be a reference to a named type (like "/main/pixel_t") or a concrete type, like "int".
 You can compare and copy these but you cannot access their contents.
+
+- It can hold unresolved symbols (ties to a lexical scope in source code).
+- It can hold the name of a named type, like "pixel_t"
+- The type_t is normalized and can be compared with other type_t:s.
+
 
 # type_desc_t
 Always holds a concrete type, never a named type. Notice that child-types can be named types.
 You can query its type, get function arguments, get struct members etc.
 
-
-
-# type_t
-Immutable value object.
-Specifies an exact Floyd type. Both for base types like "int" and "string" and composite types
-like "struct { [float] p; string s }. It can hold *any Floyd type*.
-It can hold unresolved symbols (ties to a lexical scope in source code).
-It can hold the name of a named type, like "pixel_t"
-
-type_t can be convert to/from JSON and is written in source code according to Floyd source syntax,
-see table below.
-
-The type_t is normalized and can be compared with other type_t:s.
+??? CAN CHILD TYPES BE NAMED?
 
 
 # types_t
@@ -57,12 +47,16 @@ Types are automatically de-duplicated.
 Previous nodes / lookup indexes are never modified and safe to store.
 
 
-
 # Symbols
-These needs to be resolved in semantic analysis since there depend on the lexical scope where it is used. "x" will mean different types depending on where you access "x".
+These needs to be resolved in semantic analysis since there depend on the lexical scope where it is used. "x" will mean
+different types depending on *where* you access "x".
+
 
 # Named types
-Named types can be re-route after they have been stored into types_t. The name must be unique in the entire program. You can encode the name of the lexical scopes where the type is defined in its name, which makes it unique.
+Named types can be re-route after they have been stored into types_t. The name must be unique in
+the entire program. You can encode the name of the lexical scopes where the type is defined in its
+name, which makes it unique.
+
 Named types allows to support recursive types, like
 
 	struct object_t {
@@ -93,9 +87,6 @@ This is the JSON format we use to pass AST around. Use typeid_to_ast_json() and 
 
 COMPACT_STRING
 This is a nice user-visible representation of the type_t. It may be lossy. It's for REPLs etc. UI.
-
-SOURCE CODE TYPE
-Use read_type(), read_required_type()
 */
 
 #define DEBUG_DEEP_TYPEID_T 1
@@ -178,6 +169,7 @@ inline bool is_atomic_type(base_type type){
 		|| type == base_type::k_json
 
 		|| type == base_type::k_typeid
+		|| type == base_type::k_symbol_ref
 
 //		|| type == base_type::k_struct
 //		|| type == base_type::k_vector
@@ -205,7 +197,6 @@ enum class epure {
 //////////////////////////////////////		type_name_t
 
 
-//	Internal name that uniquely names a type in a program. Used for name-equivalence.
 //	A type name is a unique string that names a type that should only type-equivalent to itself,
 //	no other types.
 
@@ -217,7 +208,6 @@ struct type_name_t {
 
 	std::vector<std::string> lexical_path;
 };
-
 
 inline bool operator==(const type_name_t& lhs, const type_name_t& rhs){
 	return lhs.lexical_path == rhs.lexical_path;
@@ -434,8 +424,6 @@ struct type_t {
 
 
 	base_type get_base_type() const {
-//		QUARK_ASSERT(check_invariant());
-
 		return get_bt0(data);
 	}
 
@@ -474,28 +462,6 @@ struct type_t {
 	//////////////////////////////////////////////////		BIT MANGLING
 
 
-#if 0
-	public: static uint32_t assemble(type_lookup_index_t lookup_index, base_type bt1, base_type bt2){
-		const auto a = static_cast<uint32_t>(bt1);
-		const auto b = static_cast<uint32_t>(bt2);
-
-		return (a << 28) | (b << 24) | lookup_index;
-	}
-
-	private: inline static type_lookup_index_t get_index(uint32_t data) {
-		return data & 0b00000000'11111111'11111111'11111111;
-	}
-	private: inline static base_type get_bt0(uint32_t data){
-		const auto value = (data >> 28) & 0x0f;
-		const auto bt = static_cast<base_type>(value);
-		return bt;
-	}
-	private: inline static base_type get_bt1(uint32_t data){
-		const auto value = (data >> 24) & 0x0f;
-		const auto bt = static_cast<base_type>(value);
-		return bt;
-	}
-#else
 	public: static uint32_t assemble(type_lookup_index_t lookup_index, base_type bt1, base_type bt2){
 		const auto a = static_cast<uint32_t>(bt1);
 		const auto b = static_cast<uint32_t>(bt2);
@@ -513,7 +479,6 @@ struct type_t {
 		const uint32_t result = (data / 10000) % 100;
 		return static_cast<base_type>(result);
 	}
-#endif
 
 
 	////////////////////////////////	STATE
@@ -779,18 +744,12 @@ struct type_desc_t {
 	type_name_t get_named_type(const types_t& types) const;
 
 
-
-
-
-
-
 	base_type get_base_type() const {
 		return non_name_type.get_base_type();
 	}
 
 
 	//////////////////////////////////////////////////		INTERNALS
-
 
 
 	static type_desc_t wrap_non_named(const type_t& type){
@@ -814,9 +773,6 @@ inline bool operator==(type_desc_t lhs, type_desc_t rhs){
 	return lhs.non_name_type == rhs.non_name_type;
 }
 inline bool operator!=(type_desc_t lhs, type_desc_t rhs){ return (lhs == rhs) == false; };
-
-
-
 
 
 inline type_t make_undefined(){
@@ -905,7 +861,6 @@ std::string type_to_compact_string(
 //////////////////////////////////////////////////		member_t
 
 
-
 struct member_t {
 	member_t(type_t type, const std::string& name) :
 		_type(type),
@@ -983,7 +938,7 @@ struct type_node_t {
 	//??? I think we can lose this field now that we have intrinsics handling in semast.
 	return_dyn_type func_return_dyn_type;
 
-	std::string identifier_str;
+	std::string symbol_identifier;
 };
 
 inline bool operator==(const type_node_t& lhs, const type_node_t& rhs){
@@ -995,14 +950,12 @@ inline bool operator==(const type_node_t& lhs, const type_node_t& rhs){
 		&& lhs.struct_desc == rhs.struct_desc
 		&& lhs.func_pure == rhs.func_pure
 		&& lhs.func_return_dyn_type == rhs.func_return_dyn_type
-		&& lhs.identifier_str == rhs.identifier_str
+		&& lhs.symbol_identifier == rhs.symbol_identifier
 		;
 }
 
 
-
 //////////////////////////////////////////////////		types_t
-
 
 
 struct types_t {
@@ -1019,8 +972,6 @@ struct types_t {
 };
 
 
-const type_node_t& lookup_typeinfo_from_type(const types_t& types, const type_t& type);
-type_node_t& lookup_typeinfo_from_type(types_t& types, const type_t& type);
 type_t lookup_type_from_index(const types_t& types, type_lookup_index_t type_index);
 
 void trace_types(const types_t& types);
@@ -1031,15 +982,13 @@ json_t types_to_json(const types_t& types);
 types_t types_from_json(const json_t& j);
 
 
-
-
 //////////////////////////////////////////////////		NAMED TYPES
 
 
 type_t lookup_type_from_name(const types_t& types, const type_name_t& n);
 
 //	Allocates a new type for this name. The name must not already exist.
-//	You can use type_t::make_undefined() and
+//	You can use destination_type = type_t::make_undefined() and
 //	later update the type using update_named_type()
 type_t make_named_type(types_t& types, const type_name_t& n, const type_t& destination_type);
 
@@ -1052,10 +1001,10 @@ type_desc_t peek2(const types_t& types, const type_t& type);
 
 
 //	Is this type instantiatable: it uses no symbols and uses no undefined. Deep and follows named types.
-bool is_wellformed(const types_t& types, const type_t& t);
+bool is_fully_defined(const types_t& types, const type_t& t);
+
 
 //////////////////////////////////////////////////		get_type_variant()
-
 
 
 struct undefined_t {};
@@ -1108,8 +1057,6 @@ typedef std::variant<
 
 
 type_variant_t get_type_variant(const types_t& types, const type_t& type);
-
-
 
 }	// floyd
 
