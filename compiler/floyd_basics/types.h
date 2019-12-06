@@ -940,6 +940,9 @@ struct type_node_t {
 	return_dyn_type func_return_dyn_type;
 
 	std::string symbol_identifier;
+
+	//	Physical type backing this logical type. This never has an named type or sub-types.
+	type_t physical_type;
 };
 
 inline bool operator==(const type_node_t& lhs, const type_node_t& rhs){
@@ -1002,6 +1005,20 @@ type_desc_t peek2(const types_t& types, const type_t& type);
 
 //	Is this type instantiatable: it uses no symbols and uses no undefined. Deep and follows named types.
 bool is_fully_defined(const types_t& types, const type_t& t);
+
+
+
+//////////////////////////////////////////////////		physical_type_t
+
+
+//	Represents an instantiatable type where all types and subtypes are built-in floyd types, never named types.
+//??? use this to replace peek2() and type_desc_t.
+struct physical_type_t {
+	type_t physical;
+};
+
+//	Undefined-type = not a physical type.
+physical_type_t get_physical_type(const types_t& types, const type_t& type);
 
 
 //////////////////////////////////////////////////		get_type_variant()

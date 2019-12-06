@@ -1454,15 +1454,17 @@ int find_struct_member_index(const struct_type_desc_t& desc, const std::string& 
 
 
 static type_node_t make_entry(const base_type& bt){
-	return type_node_t{
+	auto result = type_node_t{
 		make_empty_type_name(),
 		bt,
 		std::vector<type_t>{},
 		{},
 		epure::pure,
 		return_dyn_type::none,
-		""
+		"",
+		type_t::make_undefined()
 	};
+	return result;
 }
 
 types_t::types_t(){
@@ -1488,6 +1490,10 @@ types_t::types_t(){
 
 	nodes.push_back(make_entry(base_type::k_symbol_ref));
 	nodes.push_back(make_entry(base_type::k_undefined));
+
+	for(int i = 0 ; i < nodes.size() ; i++){
+		nodes[i].physical_type = lookup_type_from_index(*this, i);
+	}
 
 	QUARK_ASSERT(check_invariant());
 }
@@ -1515,6 +1521,9 @@ bool types_t::check_invariant() const {
 	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_symbol_ref] == make_entry(base_type::k_symbol_ref));
 	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_named_type] == make_entry(base_type::k_undefined));
 
+	for(int i = 0 ; i < nodes.size() ; i++){
+		
+	}
 
 	//??? Add other common combinations, like vectors with each atomic type, dict with each atomic
 	//	type. This allows us to hardcoded their type indexes.
@@ -1541,10 +1550,10 @@ static type_t lookup_node(const types_t& types, const type_node_t& node){
 	}
 }
 
-
-
 static type_t intern_node(types_t& types, const type_node_t& node){
 	QUARK_ASSERT(types.check_invariant());
+
+//??? We find by-value = not OK to modify node right after.
 
 	const auto it = std::find_if(
 		types.nodes.begin(),
@@ -1561,11 +1570,19 @@ static type_t intern_node(types_t& types, const type_node_t& node){
 
 		//	All child type are guaranteed to have types already since those are specified using types_t:s.
 		types.nodes.push_back(node);
-		return lookup_type_from_index_it(types, types.nodes.size() - 1);
+		const auto result = lookup_type_from_index_it(types, types.nodes.size() - 1);
+
+/*
+		//	Write physical type.
+		if(node.physical_type.is_undefined() && is_fully_defined(types, result)){
+			types.nodes.back().physical_type = result;
+		}
+*/
+		if(false) trace_types(types);
+
+		return result;
 	}
 }
-
-
 
 
 type_t make_named_type(types_t& types, const type_name_t& n, const type_t& destination_type){
@@ -1584,6 +1601,8 @@ type_t make_named_type(types_t& types, const type_name_t& n, const type_t& desti
 		throw std::exception();
 	}
 
+	const auto dest_type_node = lookup_typeinfo_from_type(types, destination_type);
+
 	const auto node = type_node_t{
 		n,
 		base_type::k_named_type,
@@ -1591,7 +1610,8 @@ type_t make_named_type(types_t& types, const type_name_t& n, const type_t& desti
 		{},
 		epure::pure,
 		return_dyn_type::none,
-		""
+		"",
+		dest_type_node.physical_type
 	};
 
 	QUARK_ASSERT(node.child_types.size() == 1);
@@ -1611,6 +1631,8 @@ type_t update_named_type(types_t& types, const type_t& named, const type_t& dest
 	QUARK_ASSERT(node.child_types.size() == 1);
 
 	node.child_types = { destination_type };
+
+//??? needs to update the physical type
 
 	//	Returns a new type for the named tag, so it contains the updated byte_type info.
 	return lookup_type_from_index(types, named.get_lookup_index());
@@ -1664,6 +1686,7 @@ type_desc_t peek2(const types_t& types, const type_t& type){
 	const auto type2 = peek0(types, type);
 	return type_desc_t::wrap_non_named(type2);
 }
+
 
 
 
@@ -1724,6 +1747,10 @@ void trace_types(const types_t& types){
 
 			const auto& e = types.nodes[i];
 
+			const type_node_t& node = lookup_typeinfo_from_type(types, type);
+
+			const auto physical = type_to_compact_string(types, node.physical_type, enamed_type_mode::full_names);
+
 			if(e.bt == base_type::k_named_type){
 				const auto contents = std::to_string(e.child_types[0].get_lookup_index());
 				const auto line = std::vector<std::string>{
@@ -1731,6 +1758,7 @@ void trace_types(const types_t& types){
 					pack_type_name(e.optional_name),
 					base_type_to_opcode(e.bt),
 					contents,
+					physical,
 				};
 				matrix.push_back(line);
 			}
@@ -1741,12 +1769,13 @@ void trace_types(const types_t& types){
 					"",
 					base_type_to_opcode(e.bt),
 					contents,
+					physical
 				};
 				matrix.push_back(line);
 			}
 		}
 
-		const auto result = generate_table_type1({ "type_t", "name-tag", "base_type", "contents" }, matrix);
+		const auto result = generate_table_type1({ "type_t", "name-tag", "base_type", "contents", "physical" }, matrix);
 		QUARK_TRACE(result);
 	}
 }
@@ -2118,6 +2147,24 @@ std::string type_to_compact_string(const types_t& types, const type_t& type, ena
 
 
 type_t make_struct(types_t& types, const struct_type_desc_t& desc){
+	const auto physical_members = mapf<member_t>(desc._members, [types](const auto& m){
+		const auto& node = lookup_typeinfo_from_type(types, m._type);
+		return member_t { node.physical_type, m._name };
+	});
+
+	const auto physical_desc = struct_type_desc_t(physical_members);
+	const auto physical_node = type_node_t{
+		make_empty_type_name(),
+		base_type::k_struct,
+		std::vector<type_t>{},
+		physical_desc,
+		epure::pure,
+		return_dyn_type::none,
+		"",
+		type_t::make_undefined()
+	};
+	const auto physical = intern_node(types, physical_node);
+
 	const auto node = type_node_t{
 		make_empty_type_name(),
 		base_type::k_struct,
@@ -2125,7 +2172,8 @@ type_t make_struct(types_t& types, const struct_type_desc_t& desc){
 		desc,
 		epure::pure,
 		return_dyn_type::none,
-		""
+		"",
+		physical
 	};
 	return intern_node(types, node);
 }
@@ -2138,7 +2186,8 @@ type_t make_struct(const types_t& types, const struct_type_desc_t& desc){
 		desc,
 		epure::pure,
 		return_dyn_type::none,
-		""
+		"",
+		type_t::make_undefined()
 	};
 	return lookup_node(types, node);
 }
@@ -2152,7 +2201,8 @@ type_t make_vector(types_t& types, const type_t& element_type){
 		{},
 		epure::pure,
 		return_dyn_type::none,
-		""
+		"",
+		type_t::make_undefined()
 	};
 	const auto result = intern_node(types, node);
 
@@ -2173,7 +2223,8 @@ type_t make_vector(const types_t& types, const type_t& element_type){
 		{},
 		epure::pure,
 		return_dyn_type::none,
-		""
+		"",
+		type_t::make_undefined()
 	};
 	return lookup_node(types, node);
 }
@@ -2186,7 +2237,8 @@ type_t make_dict(types_t& types, const type_t& value_type){
 		{},
 		epure::pure,
 		return_dyn_type::none,
-		""
+		"",
+		type_t::make_undefined()
 	};
 	return intern_node(types, node);
 }
@@ -2199,7 +2251,8 @@ type_t make_dict(const types_t& types, const type_t& value_type){
 		{},
 		epure::pure,
 		return_dyn_type::none,
-		""
+		"",
+		type_t::make_undefined()
 	};
 	return lookup_node(types, node);
 }
@@ -2215,7 +2268,8 @@ type_t make_function3(types_t& types, const type_t& ret, const std::vector<type_
 		{},
 		pure,
 		dyn_return,
-		""
+		"",
+		type_t::make_undefined()
 	};
 	return intern_node(types, node);
 }
@@ -2232,7 +2286,8 @@ type_t make_function3(const types_t& types, const type_t& ret, const std::vector
 		{},
 		pure,
 		dyn_return,
-		""
+		"",
+		type_t::make_undefined()
 	};
 	return lookup_node(types, node);
 }
@@ -2262,7 +2317,8 @@ type_t make_symbol_ref(types_t& types, const std::string& s){
 		{},
 		epure::pure,
 		return_dyn_type::none,
-		s
+		s,
+		type_t::make_undefined()
 	};
 	return intern_node(types, node);
 }
@@ -2461,6 +2517,16 @@ QUARK_TEST("Types", "is_fully_defined()", "", ""){
 }
 
 
+
+physical_type_t get_physical_type(const types_t& types, const type_t& type){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+	const auto& node = lookup_typeinfo_from_type(types, type);
+	return physical_type_t { node.physical_type };
+}
+
+
+
 ////////////////////////////////		TESTS
 
 
@@ -2475,6 +2541,14 @@ QUARK_TEST("Types", "update_named_type()", "", ""){
 	QUARK_ASSERT(is_fully_defined(types, b));
 }
 
+
+
+
+QUARK_TEST("Types", ")", "", ""){
+	types_t types;
+	const auto a = get_physical_type(types, type_t::make_bool());
+	QUARK_VERIFY(a.physical.is_bool());
+}
 
 
 }	// floyd
