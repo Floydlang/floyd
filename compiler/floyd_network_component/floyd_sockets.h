@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <vector>
 #include <string>
+#include <memory> 
 #include <netinet/in.h>
 
 #include "utils.h"

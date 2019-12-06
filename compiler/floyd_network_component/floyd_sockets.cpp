@@ -286,7 +286,7 @@ hostent_t lookup_host(const std::string& name){
 	//	Function: struct hostent * gethostbyname2 (const char *name, int af)
 	const auto e = ::gethostbyname2(name.c_str(), AF_INET);
 	if(e == nullptr){
-		const auto host_error = ::h_errno;
+		const auto host_error = h_errno;
 		const auto error_str = ::hstrerror(host_error);
 		throw std::runtime_error(
 			"gethostbyname2(): " + std::string(error_str) + ": " + std::to_string(host_error)
@@ -310,7 +310,7 @@ QUARK_TEST("socket-component", "gethostbyname2_r()","google.com", ""){
 hostent_t lookup_host(const ip_address_t& addr){
 	const auto e = ::gethostbyaddr(&addr.ipv4, 4, AF_INET);
 	if(e == nullptr){
-		const auto host_error = ::h_errno;
+		const auto host_error = h_errno;
 		const auto error_str = ::hstrerror(host_error);
 		throw std::runtime_error(
 			"gethostbyaddr(): " + std::string(error_str) + ": " + std::to_string(host_error)
