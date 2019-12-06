@@ -383,7 +383,7 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 		struct handler_t : public bc_runtime_handler_i {
 			handler_t(std::ostream& out) : out(out) {}
 
-			void on_send(const std::string& dest_process_id, const bc_value_t& message) override {
+			void on_send(const std::string& dest_process_id, const runtime_value_t& message, const type_t& type) override {
 				QUARK_ASSERT(false);
 			}
 

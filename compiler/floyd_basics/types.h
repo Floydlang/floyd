@@ -294,6 +294,10 @@ struct type_t {
 		return true;
 	}
 
+	static type_t make_undefined(){
+		return type_t(assemble((type_lookup_index_t)base_type::k_undefined, base_type::k_undefined, base_type::k_undefined));
+	}
+
 
 	bool is_undefined() const {
 		QUARK_ASSERT(check_invariant());
@@ -301,33 +305,109 @@ struct type_t {
 		return get_base_type() == base_type::k_undefined;
 	}
 
+
 	static type_t make_any(){
 		return type_t(assemble((type_lookup_index_t)base_type::k_any, base_type::k_any, base_type::k_undefined));
 	}
+	bool is_any() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_any;
+	}
+
 
 	static type_t make_void(){
 		return type_t(assemble((type_lookup_index_t)base_type::k_void, base_type::k_void, base_type::k_undefined));
 	}
+	bool is_void() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_void;
+	}
+
 
 	static type_t make_bool(){
 		return type_t(assemble((type_lookup_index_t)base_type::k_bool, base_type::k_bool, base_type::k_undefined));
+	}
+	bool is_bool() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_bool;
 	}
 
 	static type_t make_int(){
 		return type_t(assemble((type_lookup_index_t)base_type::k_int, base_type::k_int, base_type::k_undefined));
 	}
+	bool is_int() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_int;
+	}
+
 
 	static type_t make_double(){
 		return type_t(assemble((type_lookup_index_t)base_type::k_double, base_type::k_double, base_type::k_undefined));
 	}
+	bool is_double() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_double;
+	}
+
 
 	static type_t make_string(){
 		return type_t(assemble((type_lookup_index_t)base_type::k_string, base_type::k_string, base_type::k_undefined));
 	}
+	bool is_string() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_string;
+	}
+
 
 	static type_t make_json(){
 		return type_t(assemble((type_lookup_index_t)base_type::k_json, base_type::k_json, base_type::k_undefined));
 	}
+	bool is_json() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_json;
+	}
+
+
+	static type_t make_typeid(){
+		return type_t::assemble2((type_lookup_index_t)base_type::k_typeid, base_type::k_typeid, base_type::k_undefined);
+	}
+	bool is_typeid() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_typeid;
+	}
+
+
+	bool is_struct() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_struct;
+	}
+
+	bool is_vector() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_vector;
+	}
+	bool is_dict() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_dict;
+	}
+
+	bool is_function() const {
+		QUARK_ASSERT(check_invariant());
+
+		return get_base_type() == base_type::k_function;
+	}
+
 
 	public: bool is_symbol_ref() const {
 		QUARK_ASSERT(check_invariant());
@@ -590,7 +670,7 @@ struct type_desc_t {
 
 
 	static type_desc_t make_typeid(){
-		return type_desc_t(type_t::assemble2((type_lookup_index_t)base_type::k_typeid, base_type::k_typeid, base_type::k_undefined));
+		return type_desc_t(type_t::make_typeid());
 	}
 
 	bool is_typeid() const {

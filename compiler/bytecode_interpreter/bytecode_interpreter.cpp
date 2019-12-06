@@ -2442,9 +2442,45 @@ static json_t bcvalue_and_type_to_json(const types_t& types, const bc_value_t& v
 
 
 
+static std::vector<std::pair<type_t, struct_layout_t>> make_struct_layouts(const types_t& types){
+	QUARK_ASSERT(types.check_invariant());
+
+	std::vector<std::pair<type_t, struct_layout_t>> result;
+
+	for(int i = 0 ; i < types.nodes.size() ; i++){
+		const auto& type = lookup_type_from_index(types, i);
+		const auto peek_type = peek2(types, type);
+		if(peek_type.is_struct() && is_wellformed(types, peek_type)){
+			const auto& source_struct_def = peek_type.get_struct(types);
+
+			const auto struct_bytes = source_struct_def._members.size() * 8;
+			std::vector<member_info_t> member_infos;
+			for(int member_index = 0 ; member_index < source_struct_def._members.size() ; member_index++){
+				const auto& member = source_struct_def._members[member_index];
+				const size_t offset = member_index * 8;
+				member_infos.push_back(member_info_t { offset, member._type } );
+			}
+
+			result.push_back( { type, struct_layout_t{ member_infos, struct_bytes } } );
+		}
+	}
+	return result;
+}
+
+
+/*???
+value_backend_t(
+	collection_native_func_ptrs(*ee1, final_link_map),
+	make_struct_layouts(program_breaks.type_lookup, ee1->getDataLayout()),
+	program_breaks.type_lookup.state.types,
+	program_breaks.settings.config
+),
+*/
+
 interpreter_t::interpreter_t(const bc_program_t& program, bc_runtime_handler_i& handler) :
 	_stack(program._types, nullptr),
-	_handler(&handler)
+	_handler(&handler),
+	_backend({}, make_struct_layouts(program._types), program._types, config_t { vector_backend::hamt, dict_backend::hamt, false })
 {
 	QUARK_ASSERT(program.check_invariant());
 

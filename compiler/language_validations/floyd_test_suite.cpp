@@ -6910,6 +6910,7 @@ FLOYD_LANG_PROOF("container-def", "Minimal floyd process demo", "", ""){
 	ut_run_closed_nolib(QUARK_POS, program);
 }
 
+#if 0
 FLOYD_LANG_PROOF("container-def", "Test named type for message", "", ""){
 	const auto program = R"(
 
@@ -6940,8 +6941,11 @@ FLOYD_LANG_PROOF("container-def", "Test named type for message", "", ""){
 
 	ut_run_closed_nolib(QUARK_POS, program);
 }
+#endif
 
-FLOYD_LANG_PROOF("container-def", "Missmatch of message type: send() vs __msg()", "", ""){
+//#define FLOYD_LANG_PROOF FLOYD_LANG_PROOF_VIP
+
+FLOYD_LANG_PROOF("container-def", "Mismatch of message type: send() vs __msg()", "", ""){
 	const auto program = R"(
 
 		container-def {
@@ -7021,6 +7025,7 @@ FLOYD_LANG_PROOF("container-def", "run one process", "", ""){
 	ut_run_closed_nolib(QUARK_POS, program);
 }
 
+#if 0
 FLOYD_LANG_PROOF("container-def", "Test use struct as message", "", ""){
 	const auto program = R"(
 
@@ -7070,6 +7075,7 @@ FLOYD_LANG_PROOF("container-def", "Test use struct as message", "", ""){
 
 	ut_run_closed_nolib(QUARK_POS, program);
 }
+#endif
 
 FLOYD_LANG_PROOF("container-def", "run two unconnected processs", "", ""){
 	const auto program = R"(
@@ -7729,6 +7735,7 @@ FLOYD_LANG_PROOF("", "Demo DEEP BY VALUE", "", ""){
 	);
 }
 
+#if 0
 FLOYD_LANG_PROOF("", "Demo DEEP BY VALUE", "", ""){
 	ut_run_closed_nolib(
 		QUARK_POS,
@@ -7805,11 +7812,11 @@ FLOYD_LANG_PROOF("", "Demo DEEP BY VALUE", "", ""){
 		)___"
 	);
 }
+#endif
 
 
-
-
-FLOYD_LANG_PROOF_VIP("generics", "", "", ""){
+#if 0
+FLOYD_LANG_PROOF("generics", "", "", ""){
 	ut_run_closed_nolib(
 		QUARK_POS,
 		R"(
@@ -7824,6 +7831,7 @@ FLOYD_LANG_PROOF_VIP("generics", "", "", ""){
 		)"
 	);
 }
+#endif
 
 
 //######################################################################################################################

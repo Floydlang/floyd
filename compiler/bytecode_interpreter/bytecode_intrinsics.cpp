@@ -17,6 +17,8 @@
 #include "floyd_interpreter.h"
 #include "floyd_runtime.h"
 #include "bytecode_helpers.h"
+#include "value_thunking.h"
+#include "value_features.h"
 
 
 #include <algorithm>
@@ -1020,7 +1022,7 @@ bc_value_t bc_intrinsic__send(interpreter_t& vm, const bc_value_t args[], int ar
 
 //	QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
 
-	vm._handler->on_send(dest_process_id, message);
+	vm._handler->on_send(dest_process_id, runtime_from_bc(vm._backend, message), message._type);
 
 	return bc_value_t::make_undefined();
 }

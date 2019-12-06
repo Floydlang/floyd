@@ -22,6 +22,7 @@
 #include "json_support.h"
 #include "compiler_basics.h"
 #include "ast_value.h"
+#include "value_backend.h"
 #include "quark.h"
 
 #include "immer/vector.hpp"
@@ -60,7 +61,7 @@ typedef int16_t bc_typeid_t;
 
 struct bc_runtime_handler_i {
 	virtual ~bc_runtime_handler_i(){};
-	virtual void on_send(const std::string& dest_process_id, const bc_value_t& message) = 0;
+	virtual void on_send(const std::string& dest_process_id, const runtime_value_t& message, const type_t& type) = 0;
 	virtual void on_exit() = 0;
 	virtual void on_print(const std::string& s) = 0;
 };
@@ -1446,6 +1447,7 @@ struct interpreter_t {
 	//	Holds all values for all environments.
 	//	Notice: stack holds refs to RC-counted objects!
 	public: interpreter_stack_t _stack;
+	public: value_backend_t _backend;
 };
 
 

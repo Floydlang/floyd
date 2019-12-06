@@ -9,6 +9,7 @@
 #include "bytecode_helpers.h"
 
 #include "bytecode_interpreter.h"
+#include "value_thunking.h"
 #include "ast_value.h"
 
 
@@ -220,6 +221,23 @@ QUARK_TEST("", "value_to_bc()", "Make sure vector of inplace values works", ""){
 	const bc_value_t r = value_to_bc(types, vec);
 //	QUARK_VERIFY(r.check_invariant());
 }
+
+
+
+
+bc_value_t bc_from_runtime(const value_backend_t& backend, runtime_value_t value, const type_t& type){
+	const auto temp = from_runtime_value2(backend, value, type);
+	const auto r = value_to_bc(backend.types, temp);
+	return r;
+}
+
+runtime_value_t runtime_from_bc(value_backend_t& backend, const bc_value_t& value){
+	const auto temp = bc_to_value(backend.types, value);
+	const auto r = to_runtime_value2(backend, temp);
+	return r;
+}
+
+
 
 
 

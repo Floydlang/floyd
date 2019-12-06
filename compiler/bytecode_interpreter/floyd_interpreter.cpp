@@ -115,8 +115,9 @@ struct bc_process_t : public bc_runtime_handler_i {
 	}
 
 
-	void on_send(const std::string& dest_process_id, const bc_value_t& message) override {
+	void on_send(const std::string& dest_process_id, const runtime_value_t& message0, const type_t& type) override {
 		const auto& types = _interpreter->_imm->_program._types;
+		const auto message = bc_from_runtime(_interpreter->_backend, message0, type);
 
 		const auto it = std::find_if(
 			_owning_runtime->_processes.begin(),

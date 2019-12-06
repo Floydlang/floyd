@@ -101,7 +101,7 @@ void ut_verify_report(const quark::call_context_t& context, const test_report_t&
 
 
 struct bc_test_handler_t : public bc_runtime_handler_i {
-	void on_send(const std::string& dest_process_id, const bc_value_t& message) override {
+	void on_send(const std::string& dest_process_id, const runtime_value_t& message, const type_t& type) override {
 		QUARK_ASSERT(false);
 	}
 
