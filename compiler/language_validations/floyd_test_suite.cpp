@@ -7809,6 +7809,22 @@ FLOYD_LANG_PROOF("", "Demo DEEP BY VALUE", "", ""){
 
 
 
+FLOYD_LANG_PROOF_VIP("generics", "", "", ""){
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"(
+
+			func string f(any value){
+				return to_string(value)
+			}
+
+			print(f(10))
+			print(f("hello"))
+
+		)"
+	);
+}
+
 
 //######################################################################################################################
 //	NETWORK COMPONENT
@@ -7834,7 +7850,6 @@ FLOYD_LANG_PROOF_VIP("network component", "", "", ""){
 	);
 }
 #endif
-
 
 
 

@@ -2763,7 +2763,7 @@ static void do_call(interpreter_t& vm, const bc_instruction_t& i){
 	else{
 		const auto& function_def = function_def_it->second;
 
-		//	There is a function def but it has no frame_ptr: this is a native function.
+		//	There is a function def but it has no frame_ptr => this is a native function.
 		if(function_def._frame_ptr == nullptr){
 			call_native(vm, i, function_def._function_type);
 		}
