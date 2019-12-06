@@ -35,7 +35,7 @@ static const bool k_trace = false;
 bc_value_t bc_intrinsic__assert(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(peek2(vm._imm->_program._types, args[0]._type).is_bool());
+	QUARK_ASSERT(args[0]._type.is_bool());
 
 	const auto& value = args[0];
 	bool ok = value.get_bool_value();

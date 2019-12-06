@@ -249,26 +249,11 @@ std::vector<std::string> get_member_names(const std::vector<member_t>& m);
 
 
 
+
 //////////////////////////////////////////////////		type_t
 
 
 //	IMPORTANT: Collect all used types in a vector so we can use type_t as an index into it for O(1)
-/*
-	A: 0b11110000'00000000'00000000'00000000;
-	B: 0b00001111'00000000'00000000'00000000;
-	C: 0b00000000'11111111'11111111'11111111;
-
-	A: bits 31 - 28 base_type (4 bits)
-	B: bits 27 - 24 base_type 2 (4 bits) -- used to tell basetype of vector element or dictionary value.
-	C: bits 23 - 0 intern_index (24 bits)
-
-	4294967296
-	0-41 = basetype * 1.000.000.000
-
-	Decimal AA BB CCCCC
-	(bt0 * 100 + bt1) * 10.000.000
-*/
-
 struct type_t {
 	//??? Make this explicit
 	type_t(const type_desc_t& desc);
@@ -483,6 +468,22 @@ struct type_t {
 
 	////////////////////////////////	STATE
 	friend class type_desc_t;
+
+	/*
+		A: 0b11110000'00000000'00000000'00000000;
+		B: 0b00001111'00000000'00000000'00000000;
+		C: 0b00000000'11111111'11111111'11111111;
+
+		A: bits 31 - 28 base_type (4 bits)
+		B: bits 27 - 24 base_type 2 (4 bits) -- used to tell basetype of vector element or dictionary value.
+		C: bits 23 - 0 intern_index (24 bits)
+
+		4294967296
+		0-41 = basetype * 1.000.000.000
+
+		Decimal AA BB CCCCC
+		(bt0 * 100 + bt1) * 10.000.000
+	*/
 
 	private: uint32_t data;
 #if DEBUG
@@ -996,7 +997,6 @@ type_t make_named_type(types_t& types, const type_name_t& n, const type_t& desti
 //	tag will also get the new type.
 type_t update_named_type(types_t& types, const type_t& named, const type_t& destination_type);
 
-type_t peek0(const types_t& types, const type_t& type);
 type_desc_t peek2(const types_t& types, const type_t& type);
 
 

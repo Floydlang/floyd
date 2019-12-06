@@ -2276,7 +2276,7 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 		QUARK_ASSERT(arg_count == arg_types.size());
 
 		for(int i = 0 ; i < arg_count; i++){
-			if(peek0(types, args[i]._type) != peek0(types, arg_types[i])){
+			if(peek2(types, args[i]._type) != peek2(types, arg_types[i])){
 				QUARK_ASSERT(false);
 			}
 		}
@@ -2611,7 +2611,7 @@ void execute_new_vector_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_
 	immer::vector<bc_external_handle_t> elements2;
 	for(int i = 0 ; i < arg_count ; i++){
 		const auto pos = arg0_stack_pos + i;
-		QUARK_ASSERT(vm._stack._debug_types[pos] == peek0(types, element_type));
+		QUARK_ASSERT(vm._stack._debug_types[pos] == type_t(peek2(types, element_type)));
 		const auto e = bc_external_handle_t(vm._stack._entries[pos]._external);
 		elements2 = elements2.push_back(e);
 	}

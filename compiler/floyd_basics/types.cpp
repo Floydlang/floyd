@@ -1640,7 +1640,7 @@ type_t lookup_type_from_name(const types_t& types, const type_name_t& tag){
 
 
 
-type_t peek0(const types_t& types, const type_t& type){
+static type_t peek0(const types_t& types, const type_t& type){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
