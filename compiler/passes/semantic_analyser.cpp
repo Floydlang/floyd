@@ -22,7 +22,7 @@
 
 namespace floyd {
 
-static const bool k_trace_io = true;
+static const bool k_trace_io = false;
 
 
 
