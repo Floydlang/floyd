@@ -819,6 +819,20 @@ static physical_type_t calc_physical_type(const types_t& types, const type_t& ty
 	return physical_type_t { type_t::make_void() };
 }
 
+static type_node_t make_entry(const base_type& bt){
+	return type_node_t{
+		make_empty_type_name(),
+		type_def_t {
+			bt,
+			std::vector<type_t>{},
+			{},
+			epure::pure,
+			return_dyn_type::none,
+			""
+		}
+	};
+}
+
 
 
 
@@ -901,48 +915,34 @@ static type_t update_named_type_internal__mutate(types_t& types, const type_t& n
 	return lookup_type_from_index(types, named.get_lookup_index());
 }
 
-static type_node_t make_entry(const base_type& bt){
-	auto result = type_node_t{
-		make_empty_type_name(),
-		bt,
-		std::vector<type_t>{},
-		{},
-		epure::pure,
-		return_dyn_type::none,
-		""
-	};
-	return result;
+static type_node_t register_basic_type__mutate(types_t& types, const base_type& bt){
+	auto node = make_entry(bt);
+	types.nodes.push_back(node);
+	return node;
 }
 
 types_t::types_t(){
 	//	Order is designed to match up the nodes[] with base_type indexes.
-	nodes.push_back(make_entry(base_type::k_undefined));
-	nodes.push_back(make_entry(base_type::k_any));
-	nodes.push_back(make_entry(base_type::k_void));
+	register_basic_type__mutate(*this, base_type::k_undefined);
+	register_basic_type__mutate(*this, base_type::k_any);
+	register_basic_type__mutate(*this, base_type::k_void);
 
+	register_basic_type__mutate(*this, base_type::k_bool);
+	register_basic_type__mutate(*this, base_type::k_int);
+	register_basic_type__mutate(*this, base_type::k_double);
+	register_basic_type__mutate(*this, base_type::k_string);
+	register_basic_type__mutate(*this, base_type::k_json);
 
-	nodes.push_back(make_entry(base_type::k_bool));
-	nodes.push_back(make_entry(base_type::k_int));
-	nodes.push_back(make_entry(base_type::k_double));
-	nodes.push_back(make_entry(base_type::k_string));
-	nodes.push_back(make_entry(base_type::k_json));
-
-	nodes.push_back(make_entry(base_type::k_typeid));
+	register_basic_type__mutate(*this, base_type::k_typeid);
 
 	//	These are complex types and are undefined. We need them to take up space in the nodes-vector.
-	nodes.push_back(make_entry(base_type::k_undefined));
-	nodes.push_back(make_entry(base_type::k_undefined));
-	nodes.push_back(make_entry(base_type::k_undefined));
-	nodes.push_back(make_entry(base_type::k_undefined));
+	register_basic_type__mutate(*this, base_type::k_undefined);
+	register_basic_type__mutate(*this, base_type::k_undefined);
+	register_basic_type__mutate(*this, base_type::k_undefined);
+	register_basic_type__mutate(*this, base_type::k_undefined);
 
-	nodes.push_back(make_entry(base_type::k_symbol_ref));
-	nodes.push_back(make_entry(base_type::k_undefined));
-
-	for(int i = 0 ; i < nodes.size() ; i++){
-		const auto& type = lookup_type_from_index(*this, i);
-		const auto p = calc_physical_type(*this, type);
-		physical_types.push_back(p);
-	}
+	register_basic_type__mutate(*this, base_type::k_symbol_ref);
+	register_basic_type__mutate(*this, base_type::k_undefined);
 
 	QUARK_ASSERT(check_invariant());
 }
@@ -1295,12 +1295,12 @@ type_t make_struct(types_t& types, const struct_type_desc_t& desc){
 		return m._type;
 	});
 
+/*
 	const auto member_physical_types = mapf<type_t>(desc._members, [types](const auto& m){
 		const auto index = m._type.get_lookup_index();
 		return types.physical_types[index].physical;
 	});
 
-/*
 	const auto physical_node = type_node_t{
 		make_empty_type_name(),
 		base_type::k_struct,
@@ -2004,7 +2004,7 @@ QUARK_TEST("Types", "update_named_type()", "", ""){
 
 QUARK_TEST("Types", ")", "", ""){
 	types_t types;
-	const auto a = get_physical_type(types, type_t::make_bool());
+//	const auto a = get_physical_type(types, type_t::make_bool());
 //	QUARK_VERIFY(a.physical.is_bool());
 }
 
