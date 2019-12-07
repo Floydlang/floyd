@@ -902,17 +902,13 @@ int find_struct_member_index(const struct_type_desc_t& desc, const std::string& 
 //	Each type has exactly ONE ID.
 //	Automatically insert all basetype-types so they ALWAYS have EXPLICIT integer IDs as types.
 
-struct type_node_t {
+struct type_def_t {
 	bool check_invariant() const {
 		for(const auto& e: child_types){
 			QUARK_ASSERT(e.check_invariant());
 		}
 		return true;
 	}
-
-	//	If optional_name is used, this node is a named node and child_type_indexes[0] will be
-	//	undefined or hold the real type.
-	type_name_t optional_name;
 
 	base_type bt;
 	std::vector<type_t> child_types;
@@ -928,17 +924,34 @@ struct type_node_t {
 
 	std::string symbol_identifier;
 };
-
-inline bool operator==(const type_node_t& lhs, const type_node_t& rhs){
+inline bool operator==(const type_def_t& lhs, const type_def_t& rhs){
 	return
-		lhs.optional_name == rhs.optional_name
-		&& lhs.bt == rhs.bt
+		lhs.bt == rhs.bt
 		&& lhs.child_types == rhs.child_types
-
 		&& lhs.names == rhs.names
 		&& lhs.func_pure == rhs.func_pure
 		&& lhs.func_return_dyn_type == rhs.func_return_dyn_type
 		&& lhs.symbol_identifier == rhs.symbol_identifier
+		;
+}
+
+struct type_node_t {
+	bool check_invariant() const {
+		QUARK_ASSERT(def.check_invariant());
+		return true;
+	}
+
+	//	If optional_name is used, this node is a named node and child_type_indexes[0] will be
+	//	undefined or hold the real type.
+	type_name_t optional_name;
+
+	type_def_t def;
+};
+
+inline bool operator==(const type_node_t& lhs, const type_node_t& rhs){
+	return
+		lhs.optional_name == rhs.optional_name
+		&& lhs.def == rhs.def
 		;
 }
 

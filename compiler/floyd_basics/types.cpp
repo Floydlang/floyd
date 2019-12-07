@@ -605,7 +605,7 @@ std::string type_t::get_symbol_ref(const types_t& types) const {
 	QUARK_ASSERT(is_symbol_ref());
 
 	const auto& info = lookup_typeinfo_from_type(types, *this);
-	return info.symbol_identifier;
+	return info.def.symbol_identifier;
 }
 
 
@@ -625,12 +625,12 @@ type_name_t type_t::get_named_type(const types_t& types) const {
 
 static struct_type_desc_t make_struct_desc(const type_node_t& node){
 	QUARK_ASSERT(node.check_invariant());
-	QUARK_ASSERT(node.bt == base_type::k_struct);
+	QUARK_ASSERT(node.def.bt == base_type::k_struct);
 
-	QUARK_ASSERT(node.child_types.size() == node.names.size());
+	QUARK_ASSERT(node.def.child_types.size() == node.def.names.size());
 	std::vector<member_t> members;
-	for(int i = 0 ; i < node.child_types.size() ; i++){
-		const auto m = member_t(node.child_types[i], node.names[i]);
+	for(int i = 0 ; i < node.def.child_types.size() ; i++){
+		const auto m = member_t(node.def.child_types[i], node.def.names[i]);
 		members.push_back(m);
 	}
 
@@ -654,7 +654,7 @@ type_t type_desc_t::get_vector_element_type(const types_t& types) const{
 	QUARK_ASSERT(is_vector());
 
 	const auto& info = lookup_typeinfo_from_type(types, non_name_type);
-	return info.child_types[0];
+	return info.def.child_types[0];
 }
 
 type_t type_desc_t::get_dict_value_type(const types_t& types) const{
@@ -663,7 +663,7 @@ type_t type_desc_t::get_dict_value_type(const types_t& types) const{
 	QUARK_ASSERT(is_dict());
 
 	const auto& info = lookup_typeinfo_from_type(types, *this);
-	return info.child_types[0];
+	return info.def.child_types[0];
 }
 
 
@@ -673,7 +673,7 @@ type_t type_desc_t::get_function_return(const types_t& types) const{
 	QUARK_ASSERT(types.check_invariant());
 
 	const auto& info = lookup_typeinfo_from_type(types, *this);
-	return info.child_types[0];
+	return info.def.child_types[0];
 }
 
 std::vector<type_t> type_desc_t::get_function_args(const types_t& types) const{
@@ -682,7 +682,7 @@ std::vector<type_t> type_desc_t::get_function_args(const types_t& types) const{
 	QUARK_ASSERT(types.check_invariant());
 
 	const auto& info = lookup_typeinfo_from_type(types, *this);
-	return std::vector<type_t>(info.child_types.begin() + 1, info.child_types.end());
+	return std::vector<type_t>(info.def.child_types.begin() + 1, info.def.child_types.end());
 }
 
 return_dyn_type type_desc_t::get_function_dyn_return_type(const types_t& types) const{
@@ -691,7 +691,7 @@ return_dyn_type type_desc_t::get_function_dyn_return_type(const types_t& types) 
 	QUARK_ASSERT(types.check_invariant());
 
 	const auto& info = lookup_typeinfo_from_type(types, *this);
-	return info.func_return_dyn_type;
+	return info.def.func_return_dyn_type;
 }
 
 epure type_desc_t::get_function_pure(const types_t& types) const{
@@ -700,7 +700,7 @@ epure type_desc_t::get_function_pure(const types_t& types) const{
 	QUARK_ASSERT(types.check_invariant());
 
 	const auto& info = lookup_typeinfo_from_type(types, *this);
-	return info.func_pure;
+	return info.def.func_pure;
 }
 
 
@@ -743,7 +743,7 @@ type_variant_t get_type_variant(const types_t& types, const type_t& type){
 
 	if(type.is_named_type()){
 		const auto& info = lookup_typeinfo_from_type(types, type);
-		return named_type_t { info.child_types[0] };
+		return named_type_t { info.def.child_types[0] };
 	}
 	else{
 		const auto& desc = peek2(types, type);
@@ -784,19 +784,19 @@ type_variant_t get_type_variant(const types_t& types, const type_t& type){
 		}
 		else if(desc.is_vector()){
 			const auto& info = lookup_typeinfo_from_type(types, type);
-			return vector_t { info.child_types };
+			return vector_t { info.def.child_types };
 		}
 		else if(desc.is_dict()){
 			const auto& info = lookup_typeinfo_from_type(types, type);
-			return dict_t { info.child_types };
+			return dict_t { info.def.child_types };
 		}
 		else if(desc.is_function()){
 			const auto& info = lookup_typeinfo_from_type(types, desc.non_name_type);
-			return function_t { info.child_types };
+			return function_t { info.def.child_types };
 		}
 		else if(type.is_symbol_ref()){
 			const auto& info = lookup_typeinfo_from_type(types, type);
-			return symbol_ref_t { info.symbol_identifier };
+			return symbol_ref_t { info.def.symbol_identifier };
 		}
 		else if(type.is_named_type()){
 			QUARK_ASSERT(false);
@@ -867,15 +867,17 @@ static type_t make_named_type_internal__mutate(types_t& types, const type_name_t
 
 	const auto node = type_node_t{
 		n,
-		base_type::k_named_type,
-		{ destination_type },
-		{},
-		epure::pure,
-		return_dyn_type::none,
-		""
+		type_def_t {
+			base_type::k_named_type,
+			{ destination_type },
+			{},
+			epure::pure,
+			return_dyn_type::none,
+			""
+		}
 	};
 
-	QUARK_ASSERT(node.child_types.size() == 1);
+	QUARK_ASSERT(node.def.child_types.size() == 1);
 
 	//	Can't use intern_node__mutate() since we have a tag.
 	types.nodes.push_back(node);
@@ -888,10 +890,10 @@ static type_t update_named_type_internal__mutate(types_t& types, const type_t& n
 	QUARK_ASSERT(destination_type.check_invariant());
 
 	auto& node = lookup_typeinfo_from_type(types, named);
-	QUARK_ASSERT(node.bt == base_type::k_named_type);
-	QUARK_ASSERT(node.child_types.size() == 1);
+	QUARK_ASSERT(node.def.bt == base_type::k_named_type);
+	QUARK_ASSERT(node.def.child_types.size() == 1);
 
-	node.child_types = { destination_type };
+	node.def.child_types = { destination_type };
 
 //??? needs to update the physical type
 
@@ -1045,9 +1047,9 @@ static type_t peek0(const types_t& types, const type_t& type){
 	if(false) trace_types(types);
 
 	const auto& info = lookup_typeinfo_from_type(types, type);
-	if(info.bt == base_type::k_named_type){
-		QUARK_ASSERT(info.child_types.size() == 1);
-		const auto dest = info.child_types[0];
+	if(info.def.bt == base_type::k_named_type){
+		QUARK_ASSERT(info.def.child_types.size() == 1);
+		const auto dest = info.def.child_types[0];
 
 		//	Support many linked tags using recursion.
 		return peek0(types, dest);
@@ -1083,29 +1085,29 @@ type_t lookup_type_from_index(const types_t& types, type_lookup_index_t type_ind
 
 	const auto& node = types.nodes[type_index];
 
-	if(node.bt == base_type::k_struct){
+	if(node.def.bt == base_type::k_struct){
 		return type_t(type_t::assemble(type_index, base_type::k_struct, base_type::k_undefined));
 	}
-	else if(node.bt == base_type::k_vector){
-		const auto element_bt = node.child_types[0].get_base_type();
+	else if(node.def.bt == base_type::k_vector){
+		const auto element_bt = node.def.child_types[0].get_base_type();
 		return type_t(type_t::assemble(type_index, base_type::k_vector, element_bt));
 	}
-	else if(node.bt == base_type::k_dict){
-		const auto value_bt = node.child_types[0].get_base_type();
+	else if(node.def.bt == base_type::k_dict){
+		const auto value_bt = node.def.child_types[0].get_base_type();
 		return type_t(type_t::assemble(type_index, base_type::k_dict, value_bt));
 	}
-	else if(node.bt == base_type::k_function){
+	else if(node.def.bt == base_type::k_function){
 		//??? We could keep the return type inside the type
 		return type_t(type_t::assemble(type_index, base_type::k_function, base_type::k_undefined));
 	}
-	else if(node.bt == base_type::k_symbol_ref){
+	else if(node.def.bt == base_type::k_symbol_ref){
 		return type_t::assemble2(type_index, base_type::k_symbol_ref, base_type::k_undefined);
 	}
-	else if(node.bt == base_type::k_named_type){
+	else if(node.def.bt == base_type::k_named_type){
 		return type_t::assemble2(type_index, base_type::k_named_type, base_type::k_undefined);
 	}
 	else{
-		const auto bt = node.bt;
+		const auto bt = node.def.bt;
 		return type_t::assemble2((type_lookup_index_t)type_index, bt, base_type::k_undefined);
 	}
 }
@@ -1138,12 +1140,12 @@ void trace_types(const types_t& types){
 				enamed_type_mode::full_names
 			);
 
-			if(e.bt == base_type::k_named_type){
-				const auto contents = std::to_string(e.child_types[0].get_lookup_index());
+			if(e.def.bt == base_type::k_named_type){
+				const auto contents = std::to_string(e.def.child_types[0].get_lookup_index());
 				const auto line = std::vector<std::string>{
 					std::to_string(i),
 					pack_type_name(e.optional_name),
-					base_type_to_opcode(e.bt),
+					base_type_to_opcode(e.def.bt),
 					contents,
 					physical,
 				};
@@ -1154,7 +1156,7 @@ void trace_types(const types_t& types){
 				const auto line = std::vector<std::string>{
 					std::to_string(i),
 					"",
-					base_type_to_opcode(e.bt),
+					base_type_to_opcode(e.def.bt),
 					contents,
 					physical
 				};
@@ -1314,12 +1316,14 @@ type_t make_struct(types_t& types, const struct_type_desc_t& desc){
 
 	const auto node = type_node_t{
 		make_empty_type_name(),
-		base_type::k_struct,
-		logical_member_types,
-		member_names,
-		epure::pure,
-		return_dyn_type::none,
-		""
+		type_def_t {
+			base_type::k_struct,
+			logical_member_types,
+			member_names,
+			epure::pure,
+			return_dyn_type::none,
+			""
+		}
 	};
 	return intern_node__mutate(types, node);
 }
@@ -1334,12 +1338,14 @@ type_t make_struct(const types_t& types, const struct_type_desc_t& desc){
 
 	const auto node = type_node_t{
 		make_empty_type_name(),
-		base_type::k_struct,
-		logical_member_types,
-		member_names,
-		epure::pure,
-		return_dyn_type::none,
-		"",
+		type_def_t {
+			base_type::k_struct,
+			logical_member_types,
+			member_names,
+			epure::pure,
+			return_dyn_type::none,
+			""
+		}
 	};
 	return lookup_node(types, node);
 }
@@ -1348,12 +1354,14 @@ type_t make_struct(const types_t& types, const struct_type_desc_t& desc){
 type_t make_vector(types_t& types, const type_t& element_type){
 	const auto node = type_node_t{
 		make_empty_type_name(),
-		base_type::k_vector,
-		{ element_type },
-		{},
-		epure::pure,
-		return_dyn_type::none,
-		""
+		type_def_t {
+			base_type::k_vector,
+			{ element_type },
+			{},
+			epure::pure,
+			return_dyn_type::none,
+			""
+		}
 	};
 	const auto result = intern_node__mutate(types, node);
 
@@ -1369,12 +1377,14 @@ type_t make_vector(types_t& types, const type_t& element_type){
 type_t make_vector(const types_t& types, const type_t& element_type){
 	const auto node = type_node_t{
 		make_empty_type_name(),
-		base_type::k_vector,
-		{ element_type },
-		{},
-		epure::pure,
-		return_dyn_type::none,
-		""
+		type_def_t {
+			base_type::k_vector,
+			{ element_type },
+			{},
+			epure::pure,
+			return_dyn_type::none,
+			""
+		}
 	};
 	return lookup_node(types, node);
 }
@@ -1382,12 +1392,14 @@ type_t make_vector(const types_t& types, const type_t& element_type){
 type_t make_dict(types_t& types, const type_t& value_type){
 	const auto node = type_node_t{
 		make_empty_type_name(),
-		base_type::k_dict,
-		{ value_type },
-		{},
-		epure::pure,
-		return_dyn_type::none,
-		""
+		type_def_t {
+			base_type::k_dict,
+			{ value_type },
+			{},
+			epure::pure,
+			return_dyn_type::none,
+			""
+		}
 	};
 	return intern_node__mutate(types, node);
 }
@@ -1395,12 +1407,14 @@ type_t make_dict(types_t& types, const type_t& value_type){
 type_t make_dict(const types_t& types, const type_t& value_type){
 	const auto node = type_node_t{
 		make_empty_type_name(),
-		base_type::k_dict,
-		{ value_type },
-		{},
-		epure::pure,
-		return_dyn_type::none,
-		""
+		type_def_t {
+			base_type::k_dict,
+			{ value_type },
+			{},
+			epure::pure,
+			return_dyn_type::none,
+			""
+		}
 	};
 	return lookup_node(types, node);
 }
@@ -1408,15 +1422,17 @@ type_t make_dict(const types_t& types, const type_t& value_type){
 type_t make_function3(types_t& types, const type_t& ret, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return){
 	const auto node = type_node_t{
 		make_empty_type_name(),
-		base_type::k_function,
-		concat(
-			std::vector<type_t>{ ret },
-			args
-		),
-		{},
-		pure,
-		dyn_return,
-		""
+		type_def_t {
+			base_type::k_function,
+			concat(
+				std::vector<type_t>{ ret },
+				args
+			),
+			{},
+			pure,
+			dyn_return,
+			""
+		}
 	};
 	return intern_node__mutate(types, node);
 }
@@ -1425,15 +1441,17 @@ type_t make_function3(types_t& types, const type_t& ret, const std::vector<type_
 type_t make_function3(const types_t& types, const type_t& ret, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return){
 	const auto node = type_node_t{
 		make_empty_type_name(),
-		base_type::k_function,
-		concat(
-			std::vector<type_t>{ ret },
-			args
-		),
-		{},
-		pure,
-		dyn_return,
-		""
+		type_def_t {
+			base_type::k_function,
+			concat(
+				std::vector<type_t>{ ret },
+				args
+			),
+			{},
+			pure,
+			dyn_return,
+			""
+		}
 	};
 	return lookup_node(types, node);
 }
@@ -1458,12 +1476,14 @@ type_t make_function(const types_t& types, const type_t& ret, const std::vector<
 type_t make_symbol_ref(types_t& types, const std::string& s){
 	const auto node = type_node_t{
 		make_empty_type_name(),
-		base_type::k_symbol_ref,
-		std::vector<type_t>{},
-		{},
-		epure::pure,
-		return_dyn_type::none,
-		s
+		type_def_t {
+			base_type::k_symbol_ref,
+			std::vector<type_t>{},
+			{},
+			epure::pure,
+			return_dyn_type::none,
+			s
+		}
 	};
 	return intern_node__mutate(types, node);
 }
