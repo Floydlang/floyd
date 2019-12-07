@@ -1120,7 +1120,7 @@ void trace_types(const types_t& types){
 
 			const auto physical = type_to_compact_string(
 				types,
-				types.physical_types[i].physical,
+				type_t::make_double(), //types.physical_types[i].physical,
 				enamed_type_mode::full_names
 			);
 
