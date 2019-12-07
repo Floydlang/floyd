@@ -935,6 +935,18 @@ inline bool operator==(const type_def_t& lhs, const type_def_t& rhs){
 		;
 }
 
+
+//////////////////////////////////////////////////		physical_type_t
+
+
+//	Represents an instantiatable type where all types and subtypes are built-in floyd types, never named types.
+//??? use this to replace peek2() and type_desc_t.
+struct physical_type_t {
+	type_t physical;
+};
+
+
+
 struct type_node_t {
 	bool check_invariant() const {
 		QUARK_ASSERT(def.check_invariant());
@@ -946,6 +958,8 @@ struct type_node_t {
 	type_name_t optional_name;
 
 	type_def_t def;
+
+	physical_type_t physical_type;
 };
 
 inline bool operator==(const type_node_t& lhs, const type_node_t& rhs){
@@ -954,16 +968,6 @@ inline bool operator==(const type_node_t& lhs, const type_node_t& rhs){
 		&& lhs.def == rhs.def
 		;
 }
-
-
-//////////////////////////////////////////////////		physical_type_t
-
-
-//	Represents an instantiatable type where all types and subtypes are built-in floyd types, never named types.
-//??? use this to replace peek2() and type_desc_t.
-struct physical_type_t {
-	type_t physical;
-};
 
 
 //////////////////////////////////////////////////		types_t
@@ -980,8 +984,6 @@ struct types_t {
 	//	All types are recorded here, an uniqued. Including named types.
 	//	type uses the INDEX into this array for fast lookups.
 	std::vector<type_node_t> nodes;
-
-	std::vector<physical_type_t> physical_types;
 };
 
 type_t lookup_type_from_index(const types_t& types, type_lookup_index_t type_index);

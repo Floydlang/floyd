@@ -912,15 +912,13 @@ static type_def_t make_symbol_ref0(const std::string& s){
 /////////////////////////////////////////////////		types_t
 
 
-static physical_type_t calc_physical_type(const types_t& types, const type_t& type){
-	const auto index = type.get_lookup_index();
-	const auto& node = types.nodes[index];
+static physical_type_t calc_physical_type(const types_t& types, const type_def_t& def){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(def.check_invariant());
+
 	return physical_type_t { type_t::make_void() };
 }
 
-static type_node_t make_entry(const base_type& bt){
-	return type_node_t{ make_empty_type_name(), make_simple(bt) };
-}
 
 
 
@@ -929,6 +927,7 @@ static type_node_t make_entry(const base_type& bt){
 //	All child type are guaranteed to have types already since those are specified using types_t:s.
 static type_t intern_node__mutate(types_t& types, const type_def_t& def){
 	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(def.check_invariant());
 
 	const auto it = std::find_if(
 		types.nodes.begin(),
@@ -942,7 +941,8 @@ static type_t intern_node__mutate(types_t& types, const type_def_t& def){
 
 	//	New type, store it.
 	else{
-		const auto node = type_node_t { {}, def };
+		const auto physical_type = calc_physical_type(types, def);
+		const auto node = type_node_t { {}, def, physical_type };
 		types.nodes.push_back(node);
 		return lookup_type_from_index_it(types, types.nodes.size() - 1);
 	}
@@ -964,10 +964,14 @@ static type_t make_named_type_internal__mutate(types_t& types, const type_name_t
 		throw std::exception();
 	}
 
-	const auto node = type_node_t { n, make_named_type(destination_type) };
+	const auto def = make_named_type(destination_type);
+	const auto physical_type = calc_physical_type(types, def);
+	const auto node = type_node_t { n, def, physical_type };
 
 	//	Can't use intern_node__mutate() since we have a tag.
 	types.nodes.push_back(node);
+	QUARK_ASSERT(types.check_invariant());
+
 	return lookup_type_from_index_it(types, types.nodes.size() - 1);
 }
 
@@ -984,13 +988,21 @@ static type_t update_named_type_internal__mutate(types_t& types, const type_t& n
 	//	NOTICE: Mutate the type INPLACE!
 	node.def = make_named_type(destination_type);
 
+	QUARK_ASSERT(types.check_invariant());
+
 	//	Returns a new type for the named tag, so it contains the updated byte_type info.
 	return lookup_type_from_index(types, named.get_lookup_index());
 }
 
 static type_node_t register_basic_type__mutate(types_t& types, const base_type& bt){
-	auto node = make_entry(bt);
+	QUARK_ASSERT(types.check_invariant());
+
+	const auto def = make_simple(bt);
+	const auto physical_type = calc_physical_type(types, def);
+	const auto node = type_node_t{ make_empty_type_name(), def, physical_type };
 	types.nodes.push_back(node);
+
+	QUARK_ASSERT(types.check_invariant());
 	return node;
 }
 
@@ -1025,28 +1037,39 @@ types_t::types_t(){
 	QUARK_ASSERT(check_invariant());
 }
 
+
+/*???
+	static type_node_t make_entry(const types_t& types, const base_type& bt){
+		const auto def = make_simple(bt);
+		const auto physical_type = calc_physical_type(types, def);
+		return type_node_t{ make_empty_type_name(), def, {  };
+	}
+*/
 bool types_t::check_invariant() const {
 	QUARK_ASSERT(nodes.size() < INT_MAX);
 
-	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_undefined] == make_entry(base_type::k_undefined));
-	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_any] == make_entry(base_type::k_any));
-	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_void] == make_entry(base_type::k_void));
+/*
+???
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_undefined] == make_entry(*this, base_type::k_undefined));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_any] == make_entry(*this, base_type::k_any));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_void] == make_entry(*this, base_type::k_void));
 
-	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_bool] == make_entry(base_type::k_bool));
-	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_int] == make_entry(base_type::k_int));
-	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_double] == make_entry(base_type::k_double));
-	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_string] == make_entry(base_type::k_string));
-	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_json] == make_entry(base_type::k_json));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_bool] == make_entry(*this, base_type::k_bool));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_int] == make_entry(*this, base_type::k_int));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_double] == make_entry(*this, base_type::k_double));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_string] == make_entry(*this, base_type::k_string));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_json] == make_entry(*this, base_type::k_json));
 
-	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_typeid] == make_entry(base_type::k_typeid));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_typeid] == make_entry(*this, base_type::k_typeid));
 
-	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_struct] == make_entry(base_type::k_undefined));
-	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_vector] == make_entry(base_type::k_undefined));
-	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_dict] == make_entry(base_type::k_undefined));
-	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_function] == make_entry(base_type::k_undefined));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_struct] == make_entry(*this, base_type::k_undefined));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_vector] == make_entry(*this, base_type::k_undefined));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_dict] == make_entry(*this, base_type::k_undefined));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_function] == make_entry(*this, base_type::k_undefined));
 
-	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_symbol_ref] == make_entry(base_type::k_symbol_ref));
-	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_named_type] == make_entry(base_type::k_undefined));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_symbol_ref] == make_entry(*this, base_type::k_symbol_ref));
+	QUARK_ASSERT(nodes[(type_lookup_index_t)base_type::k_named_type] == make_entry(*this, base_type::k_undefined));
+*/
 
 //	QUARK_ASSERT(nodes.size() == physical_types.size());
 
@@ -1628,7 +1651,8 @@ physical_type_t get_physical_type(const types_t& types, const type_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto lookup_index = type.get_lookup_index();
-	return types.physical_types[lookup_index];
+//	return types.physical_types[lookup_index];
+	return { type_t::make_bool() };
 }
 
 
