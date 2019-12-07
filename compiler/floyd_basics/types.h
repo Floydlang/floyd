@@ -110,7 +110,7 @@ struct type_t;
 struct type_desc_t;
 
 
-//////////////////////////////////////		base_type
+////////////////////////////////	base_type
 
 /*
 	The atomic building block of all types.
@@ -179,12 +179,13 @@ inline bool is_atomic_type(base_type type){
 	;
 }
 
-
-//////////////////////////////////////////////////		get_json_type()
+////////////////////////////////	get_json_type()
 
 
 int get_json_type(const json_t& value);
 
+
+////////////////////////////////	function type
 
 
 //	Functions are statically defined as pure or unpure.
@@ -193,9 +194,17 @@ enum class epure {
 	impure
 };
 
+enum class return_dyn_type {
+	none = 0,
+	arg0 = 1,
+	arg1 = 2,
+	arg1_typeid_constant_type = 3,
+	vector_of_arg1func_return = 4,
+	vector_of_arg2func_return = 5
+};
 
 
-//////////////////////////////////////		type_name_t
+////////////////////////////////	type_name_t
 
 
 //	A type name is a unique string that names a type that should only type-equivalent to itself,
@@ -228,26 +237,10 @@ inline bool is_empty_type_name(const type_name_t& n){
 
 
 
-typedef int32_t type_lookup_index_t;
-
-
-enum class return_dyn_type {
-	none = 0,
-	arg0 = 1,
-	arg1 = 2,
-	arg1_typeid_constant_type = 3,
-	vector_of_arg1func_return = 4,
-	vector_of_arg2func_return = 5
-};
-
-std::vector<type_t> get_member_types(const std::vector<member_t>& m);
-std::vector<std::string> get_member_names(const std::vector<member_t>& m);
-
-
-
-
 //////////////////////////////////////////////////		type_t
 
+
+typedef int32_t type_lookup_index_t;
 
 //	IMPORTANT: Collect all used types in a vector so we can use type_t as an index into it for O(1)
 struct type_t {
@@ -772,6 +765,10 @@ inline bool operator==(type_desc_t lhs, type_desc_t rhs){
 inline bool operator!=(type_desc_t lhs, type_desc_t rhs){ return (lhs == rhs) == false; };
 
 
+
+/////////////////////////////////////////////////		FREE FUNCTIONS
+
+
 inline type_t make_undefined(){
 	return type_t::assemble2(
 		(type_lookup_index_t)base_type::k_undefined,
@@ -836,13 +833,6 @@ inline bool is_empty(const type_t& type){
 bool is_atomic_type(type_t type);
 
 
-json_t type_to_json_shallow(const type_t& type);
-type_t type_from_json_shallow(const json_t& j);
-
-json_t type_to_json(const types_t& types, const type_t& type);
-type_t type_from_json(types_t& types, const json_t& j);
-
-
 std::string type_to_debug_string(const type_t& type);
 
 enum class enamed_type_mode { full_names, short_names };
@@ -852,7 +842,6 @@ std::string type_to_compact_string(
 	const type_t& type,
 	enamed_type_mode named_type_mode = enamed_type_mode::short_names
 );
-
 
 
 //////////////////////////////////////////////////		member_t
@@ -874,10 +863,11 @@ inline bool operator==(const member_t& lhs, const member_t& rhs){
 	&& lhs._type == rhs._type;
 }
 
+std::vector<type_t> get_member_types(const std::vector<member_t>& m);
+std::vector<std::string> get_member_names(const std::vector<member_t>& m);
 
 
 //////////////////////////////////////////////////		struct_type_desc_t
-
 
 
 struct struct_type_desc_t {
@@ -903,13 +893,8 @@ inline bool operator==(const struct_type_desc_t& lhs, const struct_type_desc_t& 
 
 int find_struct_member_index(const struct_type_desc_t& desc, const std::string& name);
 
-json_t members_to_json(const types_t& types, const std::vector<member_t>& members);
-std::vector<member_t> members_from_json(types_t& types, const json_t& members);
-
-
 
 //////////////////////////////////////////////////		type_node_t
-
 
 
 //	Assigns 32 bit ID to types. You can lookup the type using the ID.
@@ -958,7 +943,6 @@ inline bool operator==(const type_node_t& lhs, const type_node_t& rhs){
 }
 
 
-
 //////////////////////////////////////////////////		physical_type_t
 
 
@@ -967,7 +951,6 @@ inline bool operator==(const type_node_t& lhs, const type_node_t& rhs){
 struct physical_type_t {
 	type_t physical;
 };
-
 
 
 //////////////////////////////////////////////////		types_t
@@ -998,8 +981,8 @@ physical_type_t get_physical_type(const types_t& types, const type_t& type);
 
 type_t refresh_type(const types_t& types, const type_t& type);
 
-json_t types_to_json(const types_t& types);
-types_t types_from_json(const json_t& j);
+//	Is this type instantiatable: it uses no symbols and uses no undefined. Deep and follows named types.
+bool is_fully_defined(const types_t& types, const type_t& t);
 
 
 //////////////////////////////////////////////////		NAMED TYPES
@@ -1017,11 +1000,6 @@ type_t make_named_type(types_t& types, const type_name_t& n, const type_t& desti
 type_t update_named_type(types_t& types, const type_t& named, const type_t& destination_type);
 
 type_desc_t peek2(const types_t& types, const type_t& type);
-
-
-//	Is this type instantiatable: it uses no symbols and uses no undefined. Deep and follows named types.
-bool is_fully_defined(const types_t& types, const type_t& t);
-
 
 
 
@@ -1078,6 +1056,22 @@ typedef std::variant<
 
 
 type_variant_t get_type_variant(const types_t& types, const type_t& type);
+
+
+//////////////////////////////////////////////////		JSON
+
+
+json_t type_to_json_shallow(const type_t& type);
+type_t type_from_json_shallow(const json_t& j);
+
+json_t type_to_json(const types_t& types, const type_t& type);
+type_t type_from_json(types_t& types, const json_t& j);
+
+json_t members_to_json(const types_t& types, const std::vector<member_t>& members);
+std::vector<member_t> members_from_json(types_t& types, const json_t& members);
+
+json_t types_to_json(const types_t& types);
+types_t types_from_json(const json_t& j);
 
 }	// floyd
 
