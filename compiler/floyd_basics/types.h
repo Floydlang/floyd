@@ -247,7 +247,7 @@ struct type_t {
 	//??? Make this explicit
 	type_t(const type_desc_t& desc);
 	type_t() :
-		type_t(assemble((type_lookup_index_t)base_type::k_undefined, base_type::k_undefined, base_type::k_undefined))
+		type_t(assemble((type_lookup_index_t)base_type::k_undefined, base_type::k_undefined))
 	{
 		QUARK_ASSERT(check_invariant());
 	}
@@ -259,7 +259,7 @@ struct type_t {
 	}
 
 	static type_t make_undefined(){
-		return type_t(assemble((type_lookup_index_t)base_type::k_undefined, base_type::k_undefined, base_type::k_undefined));
+		return type_t(assemble((type_lookup_index_t)base_type::k_undefined, base_type::k_undefined));
 	}
 
 
@@ -271,7 +271,7 @@ struct type_t {
 
 
 	static type_t make_any(){
-		return type_t(assemble((type_lookup_index_t)base_type::k_any, base_type::k_any, base_type::k_undefined));
+		return type_t(assemble((type_lookup_index_t)base_type::k_any, base_type::k_any));
 	}
 	bool is_any() const {
 		QUARK_ASSERT(check_invariant());
@@ -281,7 +281,7 @@ struct type_t {
 
 
 	static type_t make_void(){
-		return type_t(assemble((type_lookup_index_t)base_type::k_void, base_type::k_void, base_type::k_undefined));
+		return type_t(assemble((type_lookup_index_t)base_type::k_void, base_type::k_void));
 	}
 	bool is_void() const {
 		QUARK_ASSERT(check_invariant());
@@ -291,7 +291,7 @@ struct type_t {
 
 
 	static type_t make_bool(){
-		return type_t(assemble((type_lookup_index_t)base_type::k_bool, base_type::k_bool, base_type::k_undefined));
+		return type_t(assemble((type_lookup_index_t)base_type::k_bool, base_type::k_bool));
 	}
 	bool is_bool() const {
 		QUARK_ASSERT(check_invariant());
@@ -300,7 +300,7 @@ struct type_t {
 	}
 
 	static type_t make_int(){
-		return type_t(assemble((type_lookup_index_t)base_type::k_int, base_type::k_int, base_type::k_undefined));
+		return type_t(assemble((type_lookup_index_t)base_type::k_int, base_type::k_int));
 	}
 	bool is_int() const {
 		QUARK_ASSERT(check_invariant());
@@ -310,7 +310,7 @@ struct type_t {
 
 
 	static type_t make_double(){
-		return type_t(assemble((type_lookup_index_t)base_type::k_double, base_type::k_double, base_type::k_undefined));
+		return type_t(assemble((type_lookup_index_t)base_type::k_double, base_type::k_double));
 	}
 	bool is_double() const {
 		QUARK_ASSERT(check_invariant());
@@ -320,7 +320,7 @@ struct type_t {
 
 
 	static type_t make_string(){
-		return type_t(assemble((type_lookup_index_t)base_type::k_string, base_type::k_string, base_type::k_undefined));
+		return type_t(assemble((type_lookup_index_t)base_type::k_string, base_type::k_string));
 	}
 	bool is_string() const {
 		QUARK_ASSERT(check_invariant());
@@ -330,7 +330,7 @@ struct type_t {
 
 
 	static type_t make_json(){
-		return type_t(assemble((type_lookup_index_t)base_type::k_json, base_type::k_json, base_type::k_undefined));
+		return type_t(assemble((type_lookup_index_t)base_type::k_json, base_type::k_json));
 	}
 	bool is_json() const {
 		QUARK_ASSERT(check_invariant());
@@ -340,7 +340,7 @@ struct type_t {
 
 
 	static type_t make_typeid(){
-		return type_t::assemble2((type_lookup_index_t)base_type::k_typeid, base_type::k_typeid, base_type::k_undefined);
+		return type_t::assemble2((type_lookup_index_t)base_type::k_typeid, base_type::k_typeid);
 	}
 	bool is_typeid() const {
 		QUARK_ASSERT(check_invariant());
@@ -428,30 +428,25 @@ struct type_t {
 		return data;
 	}
 
-	public: static type_t assemble2(type_lookup_index_t lookup_index, base_type bt1, base_type bt2){
-		return type_t(assemble(lookup_index, bt1, bt2));
+	public: static type_t assemble2(type_lookup_index_t lookup_index, base_type bt1){
+		return type_t(assemble(lookup_index, bt1));
 	}
 
 
 	//////////////////////////////////////////////////		BIT MANGLING
 
 
-	public: static uint32_t assemble(type_lookup_index_t lookup_index, base_type bt1, base_type bt2){
+	public: static uint32_t assemble(type_lookup_index_t lookup_index, base_type bt1){
 		const auto a = static_cast<uint32_t>(bt1);
-		const auto b = static_cast<uint32_t>(bt2);
-		return a * 100 * 10000 + b * 10000 + lookup_index;
+		return a * 100 * 10000 + lookup_index;
 	}
 
 	///??? bump to large number
 	private: inline static type_lookup_index_t get_index(uint32_t data) {
-		return data % 10000;
+		return data % (100 * 10000);
 	}
 	private: inline static base_type get_bt0(uint32_t data){
 		const uint32_t result = data / (100 * 10000);
-		return static_cast<base_type>(result);
-	}
-	private: inline static base_type get_bt1(uint32_t data){
-		const uint32_t result = (data / 10000) % 100;
 		return static_cast<base_type>(result);
 	}
 
@@ -661,12 +656,6 @@ struct type_desc_t {
 
 	type_t get_vector_element_type(const types_t& types) const;
 
-	base_type get_vector_element_basetype() const {
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(is_vector());
-
-		return type_t::get_bt1(non_name_type.get_data());
-	}
 
 
 	//////////////////////////////////////////////////		DICT
@@ -680,12 +669,6 @@ struct type_desc_t {
 
 	type_t get_dict_value_type(const types_t& types) const;
 
-	base_type get_dict_value_basetype() const {
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(is_dict());
-
-		return type_t::get_bt1(non_name_type.get_data());
-	}
 
 
 	//////////////////////////////////////////////////		FUNCTION
@@ -773,7 +756,6 @@ inline bool operator!=(type_desc_t lhs, type_desc_t rhs){ return (lhs == rhs) ==
 inline type_t make_undefined(){
 	return type_t::assemble2(
 		(type_lookup_index_t)base_type::k_undefined,
-		base_type::k_undefined,
 		base_type::k_undefined
 	);
 }

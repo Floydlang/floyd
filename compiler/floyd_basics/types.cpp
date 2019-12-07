@@ -953,7 +953,7 @@ static type_t intern_physical_def__mutate(types_t& types, const type_def_t& phys
 		return lookup_type_from_index_it(types, pit - types.nodes.begin());
 	}
 	else{
-		const auto ptype = type_t::assemble2((type_lookup_index_t)types.nodes.size(), physical_def.bt, base_type::k_undefined);
+		const auto ptype = type_t::assemble2((type_lookup_index_t)types.nodes.size(), physical_def.bt);
 		const auto pnode = type_node_t { {}, physical_def, { ptype } };
 		types.nodes.push_back(pnode);
 		return ptype;
@@ -1045,7 +1045,7 @@ static void register_basic_type__mutate(types_t& types, const base_type& bt){
 
 	const auto def = make_simple(bt);
 	const auto pdef = calc_physical_type(types, def);
-	const auto ptype = type_t::assemble2((type_lookup_index_t)types.nodes.size(), bt, base_type::k_undefined);
+	const auto ptype = type_t::assemble2((type_lookup_index_t)types.nodes.size(), bt);
 	const auto pnode = type_node_t { {}, pdef, { ptype } };
 	types.nodes.push_back(pnode);
 
@@ -1234,29 +1234,29 @@ type_t lookup_type_from_index(const types_t& types, type_lookup_index_t type_ind
 	const auto& node = types.nodes[type_index];
 
 	if(node.def.bt == base_type::k_struct){
-		return type_t(type_t::assemble(type_index, base_type::k_struct, base_type::k_undefined));
+		return type_t(type_t::assemble(type_index, base_type::k_struct));
 	}
 	else if(node.def.bt == base_type::k_vector){
-		const auto element_bt = node.def.child_types[0].get_base_type();
-		return type_t(type_t::assemble(type_index, base_type::k_vector, element_bt));
+//		const auto element_bt = node.def.child_types[0].get_base_type();
+		return type_t(type_t::assemble(type_index, base_type::k_vector));
 	}
 	else if(node.def.bt == base_type::k_dict){
-		const auto value_bt = node.def.child_types[0].get_base_type();
-		return type_t(type_t::assemble(type_index, base_type::k_dict, value_bt));
+//		const auto value_bt = node.def.child_types[0].get_base_type();
+		return type_t(type_t::assemble(type_index, base_type::k_dict));
 	}
 	else if(node.def.bt == base_type::k_function){
 		//??? We could keep the return type inside the type
-		return type_t(type_t::assemble(type_index, base_type::k_function, base_type::k_undefined));
+		return type_t(type_t::assemble(type_index, base_type::k_function));
 	}
 	else if(node.def.bt == base_type::k_symbol_ref){
-		return type_t::assemble2(type_index, base_type::k_symbol_ref, base_type::k_undefined);
+		return type_t::assemble2(type_index, base_type::k_symbol_ref);
 	}
 	else if(node.def.bt == base_type::k_named_type){
-		return type_t::assemble2(type_index, base_type::k_named_type, base_type::k_undefined);
+		return type_t::assemble2(type_index, base_type::k_named_type);
 	}
 	else{
 		const auto bt = node.def.bt;
-		return type_t::assemble2((type_lookup_index_t)type_index, bt, base_type::k_undefined);
+		return type_t::assemble2((type_lookup_index_t)type_index, bt);
 	}
 }
 

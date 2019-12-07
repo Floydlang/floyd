@@ -594,10 +594,10 @@ QUARK_TEST("", "read_type()", "identifier", ""){
 	QUARK_VERIFY(*r.first ==  make_symbol_ref(i, "temp"));
 	QUARK_VERIFY(r.second == seq_t(""));
 }
-QUARK_TEST_VIP("", "read_type()", "vector", ""){
+QUARK_TEST("", "read_type()", "vector", ""){
 	types_t i;
 	const auto r = read_type(i, seq_t("[int]"));
-	trace_types(i);
+//	trace_types(i);
 	QUARK_VERIFY(	*r.first ==  make_vector(i, type_t::make_int())		);
 	QUARK_VERIFY(r.second == seq_t(""));
 }
