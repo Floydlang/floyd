@@ -442,6 +442,7 @@ struct type_t {
 		return a * 100 * 10000 + b * 10000 + lookup_index;
 	}
 
+	///??? bump to large number
 	private: inline static type_lookup_index_t get_index(uint32_t data) {
 		return data % 10000;
 	}
@@ -987,13 +988,13 @@ struct types_t {
 };
 
 type_t lookup_type_from_index(const types_t& types, type_lookup_index_t type_index);
+const type_node_t& lookup_typeinfo_from_type(const types_t& types, const type_t& type);
 
 void trace_types(const types_t& types);
 
 //	Undefined-type = not a physical type.
 physical_type_t get_physical_type(const types_t& types, const type_t& type);
 
-const type_node_t& lookup_typeinfo_from_type(const types_t& types, const type_t& type);
 
 
 type_t refresh_type(const types_t& types, const type_t& type);
