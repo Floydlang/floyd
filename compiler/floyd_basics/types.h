@@ -109,6 +109,7 @@ struct types_t;
 struct type_t;
 struct type_desc_t;
 
+
 //////////////////////////////////////		base_type
 
 /*
@@ -238,11 +239,6 @@ enum class return_dyn_type {
 	vector_of_arg1func_return = 4,
 	vector_of_arg2func_return = 5
 };
-
-
-//??? store type_variant_t inside type_info_t!
-//??? Name into make_x() vs get_x()
-
 
 std::vector<type_t> get_member_types(const std::vector<member_t>& m);
 std::vector<std::string> get_member_names(const std::vector<member_t>& m);
@@ -922,6 +918,13 @@ std::vector<member_t> members_from_json(types_t& types, const json_t& members);
 //	Automatically insert all basetype-types so they ALWAYS have EXPLICIT integer IDs as types.
 
 struct type_node_t {
+	bool check_invariant() const {
+		for(const auto& e: child_types){
+			QUARK_ASSERT(e.check_invariant());
+		}
+		return true;
+	}
+
 	//	If optional_name is used, this node is a named node and child_type_indexes[0] will be
 	//	undefined or hold the real type.
 	type_name_t optional_name;
@@ -929,8 +932,7 @@ struct type_node_t {
 	base_type bt;
 	std::vector<type_t> child_types;
 
-
-	struct_type_desc_t struct_desc;
+	std::vector<std::string> names;
 
 	//	Only used when bt == k_function.
 	epure func_pure;
@@ -940,9 +942,6 @@ struct type_node_t {
 	return_dyn_type func_return_dyn_type;
 
 	std::string symbol_identifier;
-
-	//	Physical type backing this logical type. This never has an named type or sub-types.
-	type_t physical_type;
 };
 
 inline bool operator==(const type_node_t& lhs, const type_node_t& rhs){
@@ -951,12 +950,24 @@ inline bool operator==(const type_node_t& lhs, const type_node_t& rhs){
 		&& lhs.bt == rhs.bt
 		&& lhs.child_types == rhs.child_types
 
-		&& lhs.struct_desc == rhs.struct_desc
+		&& lhs.names == rhs.names
 		&& lhs.func_pure == rhs.func_pure
 		&& lhs.func_return_dyn_type == rhs.func_return_dyn_type
 		&& lhs.symbol_identifier == rhs.symbol_identifier
 		;
 }
+
+
+
+//////////////////////////////////////////////////		physical_type_t
+
+
+//	Represents an instantiatable type where all types and subtypes are built-in floyd types, never named types.
+//??? use this to replace peek2() and type_desc_t.
+struct physical_type_t {
+	type_t physical;
+};
+
 
 
 //////////////////////////////////////////////////		types_t
@@ -973,12 +984,17 @@ struct types_t {
 	//	All types are recorded here, an uniqued. Including named types.
 	//	type uses the INDEX into this array for fast lookups.
 	std::vector<type_node_t> nodes;
-};
 
+	std::vector<physical_type_t> physical_types;
+};
 
 type_t lookup_type_from_index(const types_t& types, type_lookup_index_t type_index);
 
 void trace_types(const types_t& types);
+
+//	Undefined-type = not a physical type.
+physical_type_t get_physical_type(const types_t& types, const type_t& type);
+
 
 type_t refresh_type(const types_t& types, const type_t& type);
 
@@ -1007,18 +1023,6 @@ type_desc_t peek2(const types_t& types, const type_t& type);
 bool is_fully_defined(const types_t& types, const type_t& t);
 
 
-
-//////////////////////////////////////////////////		physical_type_t
-
-
-//	Represents an instantiatable type where all types and subtypes are built-in floyd types, never named types.
-//??? use this to replace peek2() and type_desc_t.
-struct physical_type_t {
-	type_t physical;
-};
-
-//	Undefined-type = not a physical type.
-physical_type_t get_physical_type(const types_t& types, const type_t& type);
 
 
 //////////////////////////////////////////////////		get_type_variant()
