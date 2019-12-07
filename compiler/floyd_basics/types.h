@@ -993,6 +993,8 @@ void trace_types(const types_t& types);
 //	Undefined-type = not a physical type.
 physical_type_t get_physical_type(const types_t& types, const type_t& type);
 
+const type_node_t& lookup_typeinfo_from_type(const types_t& types, const type_t& type);
+
 
 type_t refresh_type(const types_t& types, const type_t& type);
 
