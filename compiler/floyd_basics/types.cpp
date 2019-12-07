@@ -28,7 +28,6 @@ namespace floyd {
 static const type_node_t& lookup_typeinfo_from_type(const types_t& types, const type_t& type);
 static type_node_t& lookup_typeinfo_from_type(types_t& types, const type_t& type);
 static type_t lookup_type_from_index_it(const types_t& types, size_t type_index);
-static type_t intern_node(types_t& types, const type_node_t& node);
 
 
 
@@ -814,6 +813,91 @@ type_variant_t get_type_variant(const types_t& types, const type_t& type){
 /////////////////////////////////////////////////		types_t
 
 
+static physical_type_t calc_physical_type(const types_t& types, const type_t& type){
+	const auto index = type.get_lookup_index();
+	const auto& node = types.nodes[index];
+	return physical_type_t { type_t::make_void() };
+}
+
+
+
+
+
+static type_t intern_node__mutate(types_t& types, const type_node_t& node){
+	QUARK_ASSERT(types.check_invariant());
+
+//??? We find by-value = not OK to modify node right after.
+
+	const auto it = std::find_if(
+		types.nodes.begin(),
+		types.nodes.end(),
+		[&](const auto& e){ return e == node; }
+	);
+
+	if(it != types.nodes.end()){
+		return lookup_type_from_index_it(types, it - types.nodes.begin());
+	}
+
+	//	New type, store it.
+	else{
+
+		//	All child type are guaranteed to have types already since those are specified using types_t:s.
+		types.nodes.push_back(node);
+		return lookup_type_from_index_it(types, types.nodes.size() - 1);
+	}
+}
+
+static type_t make_named_type_internal__mutate(types_t& types, const type_name_t& n, const type_t& destination_type){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(n.check_invariant());
+	QUARK_ASSERT(destination_type.check_invariant());
+
+	if(false) trace_types(types);
+
+	const auto it = std::find_if(
+		types.nodes.begin(),
+		types.nodes.end(),
+		[&](const auto& e){ return e.optional_name == n; }
+	);
+	if(it != types.nodes.end()){
+		throw std::exception();
+	}
+
+	const auto dest_type_node = lookup_typeinfo_from_type(types, destination_type);
+
+	const auto node = type_node_t{
+		n,
+		base_type::k_named_type,
+		{ destination_type },
+		{},
+		epure::pure,
+		return_dyn_type::none,
+		""
+	};
+
+	QUARK_ASSERT(node.child_types.size() == 1);
+
+	//	Can't use intern_node__mutate() since we have a tag.
+	types.nodes.push_back(node);
+	return lookup_type_from_index_it(types, types.nodes.size() - 1);
+}
+
+static type_t update_named_type_internal__mutate(types_t& types, const type_t& named, const type_t& destination_type){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(named.check_invariant());
+	QUARK_ASSERT(destination_type.check_invariant());
+
+	auto& node = lookup_typeinfo_from_type(types, named);
+	QUARK_ASSERT(node.bt == base_type::k_named_type);
+	QUARK_ASSERT(node.child_types.size() == 1);
+
+	node.child_types = { destination_type };
+
+//??? needs to update the physical type
+
+	//	Returns a new type for the named tag, so it contains the updated byte_type info.
+	return lookup_type_from_index(types, named.get_lookup_index());
+}
 
 static type_node_t make_entry(const base_type& bt){
 	auto result = type_node_t{
@@ -827,13 +911,6 @@ static type_node_t make_entry(const base_type& bt){
 	};
 	return result;
 }
-
-static physical_type_t calc_physical_type(const types_t& types, const type_t& type){
-	const auto index = type.get_lookup_index();
-	const auto& node = types.nodes[index];
-	return physical_type_t { type_t::make_void() };
-}
-
 
 types_t::types_t(){
 	//	Order is designed to match up the nodes[] with base_type indexes.
@@ -925,64 +1002,12 @@ static type_t lookup_node(const types_t& types, const type_node_t& node){
 	}
 }
 
-static type_t intern_node(types_t& types, const type_node_t& node){
-	QUARK_ASSERT(types.check_invariant());
-
-//??? We find by-value = not OK to modify node right after.
-
-	const auto it = std::find_if(
-		types.nodes.begin(),
-		types.nodes.end(),
-		[&](const auto& e){ return e == node; }
-	);
-
-	if(it != types.nodes.end()){
-		return lookup_type_from_index_it(types, it - types.nodes.begin());
-	}
-
-	//	New type, store it.
-	else{
-
-		//	All child type are guaranteed to have types already since those are specified using types_t:s.
-		types.nodes.push_back(node);
-		return lookup_type_from_index_it(types, types.nodes.size() - 1);
-	}
-}
-
-
 type_t make_named_type(types_t& types, const type_name_t& n, const type_t& destination_type){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(n.check_invariant());
 	QUARK_ASSERT(destination_type.check_invariant());
 
-	if(false) trace_types(types);
-
-	const auto it = std::find_if(
-		types.nodes.begin(),
-		types.nodes.end(),
-		[&](const auto& e){ return e.optional_name == n; }
-	);
-	if(it != types.nodes.end()){
-		throw std::exception();
-	}
-
-	const auto dest_type_node = lookup_typeinfo_from_type(types, destination_type);
-
-	const auto node = type_node_t{
-		n,
-		base_type::k_named_type,
-		{ destination_type },
-		{},
-		epure::pure,
-		return_dyn_type::none,
-		""
-	};
-
-	QUARK_ASSERT(node.child_types.size() == 1);
-
-	//	Can't use intern_node() since we have a tag.
-	types.nodes.push_back(node);
-	return lookup_type_from_index_it(types, types.nodes.size() - 1);
+	return make_named_type_internal__mutate(types, n, destination_type);
 }
 
 type_t update_named_type(types_t& types, const type_t& named, const type_t& destination_type){
@@ -990,16 +1015,7 @@ type_t update_named_type(types_t& types, const type_t& named, const type_t& dest
 	QUARK_ASSERT(named.check_invariant());
 	QUARK_ASSERT(destination_type.check_invariant());
 
-	auto& node = lookup_typeinfo_from_type(types, named);
-	QUARK_ASSERT(node.bt == base_type::k_named_type);
-	QUARK_ASSERT(node.child_types.size() == 1);
-
-	node.child_types = { destination_type };
-
-//??? needs to update the physical type
-
-	//	Returns a new type for the named tag, so it contains the updated byte_type info.
-	return lookup_type_from_index(types, named.get_lookup_index());
+	return update_named_type_internal__mutate(types, named, destination_type);
 }
 
 type_t lookup_type_from_name(const types_t& types, const type_name_t& tag){
@@ -1021,8 +1037,6 @@ type_t lookup_type_from_name(const types_t& types, const type_name_t& tag){
 		return lookup_type_from_index_it(types, it - types.nodes.begin());
 	}
 }
-
-
 
 static type_t peek0(const types_t& types, const type_t& type){
 	QUARK_ASSERT(types.check_invariant());
@@ -1295,7 +1309,7 @@ type_t make_struct(types_t& types, const struct_type_desc_t& desc){
 		"",
 		type_t::make_undefined()
 	};
-	const auto physical_type = intern_node(types, physical_node);
+	const auto physical_type = intern_node__mutate(types, physical_node);
 */
 
 	const auto node = type_node_t{
@@ -1307,7 +1321,7 @@ type_t make_struct(types_t& types, const struct_type_desc_t& desc){
 		return_dyn_type::none,
 		""
 	};
-	return intern_node(types, node);
+	return intern_node__mutate(types, node);
 }
 
 type_t make_struct(const types_t& types, const struct_type_desc_t& desc){
@@ -1341,7 +1355,7 @@ type_t make_vector(types_t& types, const type_t& element_type){
 		return_dyn_type::none,
 		""
 	};
-	const auto result = intern_node(types, node);
+	const auto result = intern_node__mutate(types, node);
 
 	//??? Warning: this should be implemented on each aggregated type (vector, dict, function,
 	//	struct etc.). LLVM codegen flattens all named types. Alt A: make sure all flattended types always exists, B: Make llvm use named types, C: Let llvm add flattened types itself.
@@ -1375,7 +1389,7 @@ type_t make_dict(types_t& types, const type_t& value_type){
 		return_dyn_type::none,
 		""
 	};
-	return intern_node(types, node);
+	return intern_node__mutate(types, node);
 }
 
 type_t make_dict(const types_t& types, const type_t& value_type){
@@ -1404,7 +1418,7 @@ type_t make_function3(types_t& types, const type_t& ret, const std::vector<type_
 		dyn_return,
 		""
 	};
-	return intern_node(types, node);
+	return intern_node__mutate(types, node);
 }
 
 
@@ -1451,7 +1465,7 @@ type_t make_symbol_ref(types_t& types, const std::string& s){
 		return_dyn_type::none,
 		s
 	};
-	return intern_node(types, node);
+	return intern_node__mutate(types, node);
 }
 
 static const type_node_t& lookup_typeinfo_from_type(const types_t& types, const type_t& type){
