@@ -989,18 +989,18 @@ std::string make_value_debug_str(const value_t& value){
 
 
 value_t ast_json_to_value(types_t& types, const type_t& type, const json_t& v){
-	const auto type_peek = peek2(types, type);
+	const auto physical_type = get_physical_type(types, type);
 
-	if(type_peek.is_undefined()){
+	if(type.is_undefined()){
 		return value_t();
 	}
-	else if(type_peek.is_any()){
+	else if(type.is_any()){
 		return make_default_value(type);
 	}
-	else if(type_peek.is_void()){
+	else if(type.is_void()){
 		return make_default_value(type);
 	}
-	else if(type_peek.is_bool()){
+	else if(type.is_bool()){
 		if(v.is_true() || v.is_false()){
 			return value_t::make_bool(v.is_true() ? true : false);
 		}
@@ -1008,7 +1008,7 @@ value_t ast_json_to_value(types_t& types, const type_t& type, const json_t& v){
 			throw std::exception();
 		}
 	}
-	else if(type_peek.is_int()){
+	else if(type.is_int()){
 		if(v.is_object()){
 			const auto tag = v.get_object_element("big-int");
 			const auto value = v.get_object_element("value").get_string();
@@ -1022,41 +1022,55 @@ value_t ast_json_to_value(types_t& types, const type_t& type, const json_t& v){
 			quark::throw_exception();
 		}
 	}
-	else if(type_peek.is_double()){
+	else if(type.is_double()){
 		return value_t::make_double(v.get_number());
 	}
-	else if(type_peek.is_string()){
+	else if(type.is_string()){
 		return value_t::make_string(v.get_string());
 	}
-	else if(type_peek.is_json()){
+	else if(type.is_json()){
 		return value_t::make_json(v);
 	}
-	else if(type_peek.is_typeid()){
+	else if(type.is_typeid()){
 		const auto t = type_from_json(types, v);
 		return value_t::make_typeid_value(t);
 	}
-	else if(type_peek.is_struct()){
+	else if(type.is_struct()){
+		//??? Add support!
 		QUARK_ASSERT(false);
 		return make_default_value(type);
 	}
-	else if(type_peek.is_vector()){
+	else if(type.is_vector()){
+		//??? Add support!
 		QUARK_ASSERT(false);
 		return make_default_value(type);
 	}
-	else if(type_peek.is_dict()){
+	else if(type.is_dict()){
+		//??? Add support!
 		QUARK_ASSERT(false);
 		return make_default_value(type);
 	}
-	else if(type_peek.is_function()){
+	else if(type.is_function()){
 		const auto function_id0 = v.get_object_element("function_id").get_string();
 		const auto function_id = function_id_t { function_id0 };
 		return value_t::make_function_value(type, function_id);
+	}
+	else if(type.is_named_type()){
+		//??? Add support!
+		QUARK_ASSERT(false);
+		quark::throw_exception();
 	}
 	else{
 		quark::throw_exception();
 	}
 }
 
+QUARK_TEST("Types", "ast_json_to_value()", "", ""){
+	types_t types;
+
+	const auto r = ast_json_to_value(types, type_t::make_string(), json_t("xyz"));
+	QUARK_VERIFY(r.is_string() && r.get_string_value() == "xyz");
+}
 
 
 
