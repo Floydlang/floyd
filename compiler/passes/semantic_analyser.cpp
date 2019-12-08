@@ -415,10 +415,10 @@ struct fully_resolved_call_t {
 
 	Throws errors on type mismatches.
 */
-static std::pair<analyser_t, fully_resolved_call_t> analyze_resolve_call_type(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& call_args, const type_t& callee_itype){
+static std::pair<analyser_t, fully_resolved_call_t> analyze_resolve_call_type(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& call_args, const type_t& callee_type){
 	auto a_acc = a;
 
-	const auto callee_type_peek = peek2(a_acc._types, callee_itype);
+	const auto callee_type_peek = dereference_type(a_acc._types, callee_type);
 	const auto callee_arg_types = callee_type_peek.get_function_args(a_acc._types);
 
 	//	arity
@@ -608,7 +608,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 
 			//	If symbol can be initialized directly, use make_immutable_precalc(). Else reserve it and create an init2-statement to set it up at runtime.
 			//	??? Better to always initialise it, even if it's a complex value. Codegen then decides if to translate to a reserve + init. BUT PROBLEM: we lose info *when* to init the value.
-			if(is_preinitliteral(peek2(a_acc._types, lhs_itype2)) && mutable_flag == false && get_expression_type(rhs_expr_pair.second) == expression_type::k_literal){
+			if(is_preinitliteral(dereference_type(a_acc._types, lhs_itype2)) && mutable_flag == false && get_expression_type(rhs_expr_pair.second) == expression_type::k_literal){
 				const auto symbol2 = symbol_t::make_immutable_precalc(lhs_itype2, rhs_expr_pair.second.get_literal());
 				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
 				analyze_expr_output_type(a_acc, rhs_expr_pair.second);
@@ -653,7 +653,7 @@ std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& a,
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
-	if(peek2(a_acc._types, return_type).is_void()){
+	if(dereference_type(a_acc._types, return_type).is_void()){
 		std::stringstream what;
 		what << "Cannot return value from function with void-return.";
 		throw_compiler_error(s.location, what.str());
@@ -682,7 +682,7 @@ std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a,
 	a_acc = condition2.first;
 
 	const auto condition_type = analyze_expr_output_type(a_acc, condition2.second);
-	if(peek2(a_acc._types, condition_type).is_bool() == false){
+	if(dereference_type(a_acc._types, condition_type).is_bool() == false){
 		std::stringstream what;
 		what << "Boolean condition required.";
 		throw_compiler_error(s.location, what.str());
@@ -712,13 +712,13 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, co
 	const auto start_type = analyze_expr_output_type(a_acc, start_expr2.second);
 	const auto end_type = analyze_expr_output_type(a_acc, end_expr2.second);
 
-	if(peek2(a_acc._types, start_type).is_int() == false){
+	if(dereference_type(a_acc._types, start_type).is_int() == false){
 		std::stringstream what;
 		what << "For-loop requires integer iterator, start type is " <<  type_to_compact_string(a_acc._types, start_type) << ".";
 		throw_compiler_error(s.location, what.str());
 	}
 
-	if(peek2(a_acc._types, end_type).is_int() == false){
+	if(dereference_type(a_acc._types, end_type).is_int() == false){
 		std::stringstream what;
 		what << "For-loop requires integer iterator, end type is " <<  type_to_compact_string(a_acc._types, end_type) << ".";
 		throw_compiler_error(s.location, what.str());
@@ -762,7 +762,6 @@ std::pair<analyser_t, statement_t> analyse_expression_statement(const analyser_t
 	return { a_acc, statement_t::make__expression_statement(s.location, expr2.second) };
 }
 
-//??? Change this to find the symbol instead of using make_benchmark_def_t().
 //	Make new global function containing the body of the benchmark-def.
 //	Add the function as an entry in the global benchmark registry.
 static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const statement_t& s, const type_t& return_type){
@@ -774,22 +773,22 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 	const auto test_name = statement.name;
 	const auto function_link_name = "benchmark__" + test_name;
 
-	const auto benchmark_def_itype = resolve_type_symbols(a_acc, k_no_location, make_symbol_ref(a_acc._types, "benchmark_def_t"));
-	const auto f_itype = resolve_type_symbols(a_acc, k_no_location, make_benchmark_function_t(a_acc._types));
+	const auto benchmark_def_type = resolve_type_symbols(a_acc, k_no_location, make_symbol_ref(a_acc._types, "benchmark_def_t"));
+	const auto f_type = resolve_type_symbols(a_acc, k_no_location, make_benchmark_function_t(a_acc._types));
 
 
 	const auto function_id = function_id_t { function_link_name };
 
 	//	Make a function def expression for the new benchmark function.
 
-	const auto body_pair = analyse_body(a_acc, statement._body, epure::pure, peek2(a_acc._types, f_itype).get_function_return(a_acc._types));
+	const auto body_pair = analyse_body(a_acc, statement._body, epure::pure, dereference_type(a_acc._types, f_type).get_function_return(a_acc._types));
 	a_acc = body_pair.first;
 
 
 	const auto function_def2 = function_definition_t::make_func(
 		k_no_location,
 		function_link_name,
-		peek2(a_acc._types, f_itype),
+		dereference_type(a_acc._types, f_type),
 		{},
 		std::make_shared<body_t>(body_pair.second)
 	);
@@ -797,24 +796,24 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 
 	a_acc._function_defs.insert({ function_id, function_definition_t(function_def2) });
 
-	const auto f = value_t::make_function_value(f_itype, function_id);
+	const auto f = value_t::make_function_value(f_type, function_id);
 
 
 	//	Add benchmark-def record to benchmark_defs.
 	{
 		const auto new_record_expr = expression_t::make_construct_value_expr(
-			benchmark_def_itype,
+			benchmark_def_type,
 			{
 				expression_t::make_literal_string(test_name),
 				expression_t::make_literal(f)
 			}
 		);
-		const auto new_record_expr3_pair = analyse_expression_to_target(a_acc, s, new_record_expr, benchmark_def_itype);
+		const auto new_record_expr3_pair = analyse_expression_to_target(a_acc, s, new_record_expr, benchmark_def_type);
 		a_acc = new_record_expr3_pair.first;
 		a_acc.benchmark_defs.push_back(new_record_expr3_pair.second);
 	}
 
-	const auto body2 = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, peek2(a_acc._types, f_itype).get_function_return(a_acc._types));
+	const auto body2 = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, dereference_type(a_acc._types, f_type).get_function_return(a_acc._types));
 	a_acc = body2.first;
 	return a_acc;
 }
@@ -837,14 +836,14 @@ static analyser_t analyse_test_def_statement(const analyser_t& a, const statemen
 
 	//	Make a function def expression for the new test function.
 
-	const auto body_pair = analyse_body(a_acc, statement._body, epure::pure, peek2(a_acc._types, f_itype).get_function_return(a_acc._types));
+	const auto body_pair = analyse_body(a_acc, statement._body, epure::pure, dereference_type(a_acc._types, f_itype).get_function_return(a_acc._types));
 	a_acc = body_pair.first;
 
 
 	const auto function_def2 = function_definition_t::make_func(
 		k_no_location,
 		function_link_name,
-		peek2(a_acc._types, f_itype),
+		dereference_type(a_acc._types, f_itype),
 		{},
 		std::make_shared<body_t>(body_pair.second)
 	);
@@ -870,7 +869,7 @@ static analyser_t analyse_test_def_statement(const analyser_t& a, const statemen
 		a_acc.test_defs.push_back(new_record_expr3_pair.second);
 	}
 
-	const auto body2 = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, peek2(a_acc._types, f_itype).get_function_return(a_acc._types));
+	const auto body2 = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, dereference_type(a_acc._types, f_itype).get_function_return(a_acc._types));
 	a_acc = body2.first;
 	return a_acc;
 }
@@ -993,7 +992,7 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 	a_acc = parent_expr.first;
 
 	const auto parent_type0 = analyze_expr_output_type(a_acc, parent_expr.second);
-	const auto parent_type_peek = peek2(a_acc._types, parent_type0);
+	const auto parent_type_peek = dereference_type(a_acc._types, parent_type0);
 	if(parent_type_peek.is_struct()){
 		const auto struct_def = parent_type_peek.get_struct(a_acc._types);
 
@@ -1027,14 +1026,14 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 
 	const auto collection_expr = collection_expr_kv.second;
 	const auto collection_type0 = analyze_expr_output_type(a_acc, collection_expr);
-	const auto collection_type_peek = peek2(a_acc._types, collection_type0);
+	const auto collection_type_peek = dereference_type(a_acc._types, collection_type0);
 
 	if(collection_type_peek.is_struct()){
 		const auto& struct_def = collection_type_peek.get_struct(a_acc._types);
 
 		const auto callee_itype = sign._function_type;
 
-		const auto callee_type_peek = peek2(a_acc._types, callee_itype);
+		const auto callee_type_peek = dereference_type(a_acc._types, callee_itype);
 		const auto callee_arg_types = callee_type_peek.get_function_args(a_acc._types);
 
 
@@ -1105,7 +1104,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 
 		const auto key_expr = resolved_call.second.args[1];
 		const auto key_type = key_expr.get_output_type();
-		const auto key_peek = peek2(a_acc._types, key_type);
+		const auto key_peek = dereference_type(a_acc._types, key_type);
 
 		const auto new_value_expr = resolved_call.second.args[2];
 
@@ -1118,7 +1117,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 				throw_compiler_error(parent.location, what.str());
 			}
 
-			if(peek2(a_acc._types, new_value_type).is_int() == false){
+			if(dereference_type(a_acc._types, new_value_type).is_int() == false){
 				std::stringstream what;
 				what << "Updating string needs an integer value, not a \"" + type_to_compact_string(a_acc._types, key_type) + "\".";
 				throw_compiler_error(parent.location, what.str());
@@ -1180,14 +1179,14 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_push_back_expression(const
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto function_type = dereference_type(a_acc._types, resolved_call.second.function_type);
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
 	const auto value_type = function_type.get_function_args(a_acc._types)[1];
 
-	const auto parent_type_peek = peek2(a_acc._types, parent_type);
+	const auto parent_type_peek = dereference_type(a_acc._types, parent_type);
 
 	if(parent_type_peek.is_string()){
-		if(peek2(a_acc._types, value_type).is_int() == false){
+		if(dereference_type(a_acc._types, value_type).is_int() == false){
 			std::stringstream what;
 			what << "string push_back() needs an integer element, not a \"" + type_to_compact_string(a_acc._types, value_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
@@ -1221,9 +1220,9 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_size_expression(const anal
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto function_type = dereference_type(a_acc._types, resolved_call.second.function_type);
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
-	const auto parent_type_peek = peek2(a_acc._types, parent_type);
+	const auto parent_type_peek = dereference_type(a_acc._types, parent_type);
 	if(parent_type_peek.is_string() || parent_type_peek.is_json() || parent_type_peek.is_vector() || parent_type_peek.is_dict()){
 	}
 	else{
@@ -1247,13 +1246,13 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_find_expression(const anal
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto function_type = dereference_type(a_acc._types, resolved_call.second.function_type);
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
 	const auto wanted_type = function_type.get_function_args(a_acc._types)[1];
-	const auto parent_type_peek = peek2(a_acc._types, parent_type);
+	const auto parent_type_peek = dereference_type(a_acc._types, parent_type);
 
 	if(parent_type_peek.is_string()){
-		if(peek2(a_acc._types, wanted_type).is_string() == false){
+		if(dereference_type(a_acc._types, wanted_type).is_string() == false){
 			throw_compiler_error(parent.location, "find() requires argument 2 to be a string.");
 		}
 	}
@@ -1283,15 +1282,15 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_exists_expression(const an
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto function_type = dereference_type(a_acc._types, resolved_call.second.function_type);
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
 	const auto wanted_type = function_type.get_function_args(a_acc._types)[1];
-	const auto parent_type_peek = peek2(a_acc._types, parent_type);
+	const auto parent_type_peek = dereference_type(a_acc._types, parent_type);
 
 	if(parent_type_peek.is_dict() == false){
 		throw_compiler_error(parent.location, "exists() requires a dictionary.");
 	}
-	if(peek2(a_acc._types, wanted_type).is_string() == false){
+	if(dereference_type(a_acc._types, wanted_type).is_string() == false){
 		throw_compiler_error(parent.location, "exists() requires a string key.");
 	}
 
@@ -1310,15 +1309,15 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_erase_expression(const ana
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto function_type = dereference_type(a_acc._types, resolved_call.second.function_type);
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
 	const auto key_type = function_type.get_function_args(a_acc._types)[1];
-	const auto parent_type_peek = peek2(a_acc._types, parent_type);
+	const auto parent_type_peek = dereference_type(a_acc._types, parent_type);
 
 	if(parent_type_peek.is_dict() == false){
 		throw_compiler_error(parent.location, "erase() requires a dictionary.");
 	}
-	if(peek2(a_acc._types, key_type).is_string() == false){
+	if(dereference_type(a_acc._types, key_type).is_string() == false){
 		throw_compiler_error(parent.location, "erase() requires a string key.");
 	}
 
@@ -1339,10 +1338,10 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_get_keys_expression(const 
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto function_type = dereference_type(a_acc._types, resolved_call.second.function_type);
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
 
-	if(peek2(a_acc._types, parent_type).is_dict() == false){
+	if(dereference_type(a_acc._types, parent_type).is_dict() == false){
 		throw_compiler_error(parent.location, "get_keys() requires a dictionary.");
 	}
 
@@ -1361,10 +1360,10 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_subset_expression(const an
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto function_type = dereference_type(a_acc._types, resolved_call.second.function_type);
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
 //	const auto key_type = function_type.get_function_args(a_acc._types)[1];
-	const auto parent_type_peek = peek2(a_acc._types, parent_type);
+	const auto parent_type_peek = dereference_type(a_acc._types, parent_type);
 
 	if(parent_type_peek.is_string() == false && parent_type_peek.is_vector() == false){
 		throw_compiler_error(parent.location, "subset([]) requires a string or a vector.");
@@ -1385,10 +1384,10 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_replace_expression(const a
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto function_type = dereference_type(a_acc._types, resolved_call.second.function_type);
 	const auto parent_type = function_type.get_function_args(a_acc._types)[0];
 	const auto replace_with_type = function_type.get_function_args(a_acc._types)[3];
-	const auto parent_type_peek = peek2(a_acc._types, parent_type);
+	const auto parent_type_peek = dereference_type(a_acc._types, parent_type);
 
 	if(parent_type != replace_with_type){
 		throw_compiler_error(parent.location, "replace() requires argument 4 to be same type of collection.");
@@ -1420,7 +1419,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_expression(const analy
 
 	//??? Fix this signature check!
 	const auto expected = resolved_call.second.function_type;
-	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto function_type = dereference_type(a_acc._types, resolved_call.second.function_type);
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to map() uses signature \"" + type_to_compact_string(a_acc._types, resolved_call.second.function_type) + "\", needs to be \"" + type_to_compact_string(a_acc._types, expected) + "\".");
@@ -1444,7 +1443,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_string_expression(cons
 
 	//??? Fix this signature check!
 	const auto expected = resolved_call.second.function_type;
-	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto function_type = dereference_type(a_acc._types, resolved_call.second.function_type);
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to map_string() uses signature \"" + type_to_compact_string(a_acc._types, resolved_call.second.function_type) + "\", needs to be \"" + type_to_compact_string(a_acc._types, expected) + "\".");
@@ -1468,7 +1467,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_dag_expression(const a
 
 	//??? Fix this signature check!
 	const auto expected = resolved_call.second.function_type;
-	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto function_type = dereference_type(a_acc._types, resolved_call.second.function_type);
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to map_dag() uses signature \"" + type_to_compact_string(a_acc._types, resolved_call.second.function_type) + "\", needs to be \"" + type_to_compact_string(a_acc._types, expected) + "\".");
@@ -1491,7 +1490,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_filter_expression(const an
 
 	//??? Fix this signature check!
 	const auto expected = resolved_call.second.function_type;
-	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto function_type = dereference_type(a_acc._types, resolved_call.second.function_type);
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to filter() uses signature \"" + type_to_compact_string(a_acc._types, resolved_call.second.function_type) + "\", expected to be \"" + type_to_compact_string(a_acc._types, expected) + "\".");
@@ -1515,7 +1514,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_reduce_expression(const an
 
 	//??? Fix this signature check!
 	const auto expected = resolved_call.second.function_type;
-	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto function_type = dereference_type(a_acc._types, resolved_call.second.function_type);
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to reduce() uses signature \"" + type_to_compact_string(a_acc._types, resolved_call.second.function_type) + "\", expected to be \"" + type_to_compact_string(a_acc._types, expected) + "\".");
@@ -1539,7 +1538,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_stable_sort_expression(con
 
 	//??? Fix this signature check!
 	const auto expected = resolved_call.second.function_type;
-	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto function_type = dereference_type(a_acc._types, resolved_call.second.function_type);
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to stable_sort() uses signature \"" + type_to_compact_string(a_acc._types, resolved_call.second.function_type) + "\", needs to be \"" + type_to_compact_string(a_acc._types, expected) + "\".");
@@ -1568,9 +1567,9 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 	a_acc = key_expr.first;
 
 	const auto parent_type = analyze_expr_output_type(a_acc, parent_expr.second);
-	const auto parent_peek = peek2(a_acc._types, parent_type);
+	const auto parent_peek = dereference_type(a_acc._types, parent_type);
 	const auto key_type = analyze_expr_output_type(a_acc, key_expr.second);
-	const auto key_peek = peek2(a_acc._types, key_type);
+	const auto key_peek = dereference_type(a_acc._types, key_type);
 
 	if(parent_peek.is_string()){
 		if(key_peek.is_int() == false){
@@ -1680,7 +1679,7 @@ static type_t select_inferred_type(const types_t& types, const type_t& target_ty
 	QUARK_ASSERT(rhs_guess_type.check_invariant());
 
 	const bool rhs_guess_type_valid = check_types_resolved(types, rhs_guess_type);
-	const bool have_target_type = peek2(types, target_type_or_any).is_any() == false;
+	const bool have_target_type = dereference_type(types, target_type_or_any).is_any() == false;
 
 	if(have_target_type && rhs_guess_type_valid == false){
 	 	return target_type_or_any;
@@ -1708,12 +1707,12 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 
 	auto a_acc = a;
 
-	const auto target_type_peek = peek2(a_acc._types, target_type0);
+	const auto target_type_peek = dereference_type(a_acc._types, target_type0);
 
 	const auto type0 = analyze_expr_output_type(a_acc, e);
 	QUARK_ASSERT(type0 == details.value_type);
 
-	const auto type_peek = peek2(a_acc._types, type0);
+	const auto type_peek = dereference_type(a_acc._types, type0);
 
 	if(type_peek.is_vector()){
 		//	JSON constants supports mixed element types: convert each element into a json.
@@ -1888,7 +1887,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(co
 
 	//??? We could simplify here and return [ "-", 0, expr]
 	const auto type = analyze_expr_output_type(a_acc, expr2.second);
-	const auto peek_type = peek2(a_acc._types, type);
+	const auto peek_type = dereference_type(a_acc._types, type);
 	if(peek_type.is_int() || peek_type.is_double()){
 		return {a_acc, expression_t::make_unary_minus(expr2.second, type)  };
 	}
@@ -1915,7 +1914,7 @@ std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(cons
 	a_acc = b.first;
 
 	const auto type = analyze_expr_output_type(a_acc, cond_result.second);
-	const auto peek_type = peek2(a_acc._types, type);
+	const auto peek_type = dereference_type(a_acc._types, type);
 	if(peek_type.is_bool() == false){
 		std::stringstream what;
 		what << "Conditional expression needs to be a bool, not a " << type_to_compact_string(a_acc._types, type) << ".";
@@ -2022,7 +2021,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 	a_acc = left_expr.first;
 
 	const auto lhs_type = analyze_expr_output_type(a_acc, left_expr.second);
-	if(peek2(a_acc._types, lhs_type).is_void()){
+	if(dereference_type(a_acc._types, lhs_type).is_void()){
 		std::stringstream what;
 		what << "Artithmetics: Left hand side of expression cannot be of type void.";
 		throw_compiler_error(parent.location, what.str());
@@ -2042,7 +2041,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 	}
 	else{
 		const auto shared_type = lhs_type;
-		const auto shared_type_peek = peek2(a_acc._types, shared_type);
+		const auto shared_type_peek = dereference_type(a_acc._types, shared_type);
 
 
 		//	bool
@@ -2166,7 +2165,7 @@ static std::pair<analyser_t, expression_t> analyse_intrinsic_fallthrough_express
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+	const auto function_type = dereference_type(a_acc._types, resolved_call.second.function_type);
 
 	return {
 		a_acc,
@@ -2205,7 +2204,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 
 	//	This is a call to a function-value. Callee is a function-type.
 	const auto callee_type0 = analyze_expr_output_type(a_acc, callee_expr);
-	const auto callee_type_peek = peek2(a_acc._types, callee_type0);
+	const auto callee_type_peek = dereference_type(a_acc._types, callee_type0);
 
 	if(callee_type_peek.is_function()){
 		const auto callee_pure = callee_type_peek.get_function_pure(a_acc._types);
@@ -2347,7 +2346,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, callee_type_peek);
 		a_acc = resolved_call.first;
 
-		const auto function_type = peek2(a_acc._types, resolved_call.second.function_type);
+		const auto function_type = dereference_type(a_acc._types, resolved_call.second.function_type);
 		return { a_acc, expression_t::make_call(callee_expr, resolved_call.second.args, function_type.get_function_return(a_acc._types)) };
 	}
 
@@ -2363,7 +2362,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 			const auto construct_value_type = get_symbol_named_type(a_acc._types, callee_symbol.second);
 
 			//	Convert calls to struct-type into construct-value expression.
-			if(peek2(a_acc._types, construct_value_type).is_struct()){
+			if(dereference_type(a_acc._types, construct_value_type).is_struct()){
 				const auto construct_value_expr = expression_t::make_construct_value_expr(construct_value_type, details.args);
 				const auto result_pair = analyse_expression_to_target(a_acc, parent, construct_value_expr, construct_value_type);
 				return { result_pair.first, result_pair.second };
@@ -2480,7 +2479,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 
 	const auto function_def = details.def;
 	const auto function_type0 = resolve_type_symbols(a_acc, parent.location, function_def._function_type);
-	const auto function_type_peek = peek2(a_acc._types, function_type0);
+	const auto function_type_peek = dereference_type(a_acc._types, function_type0);
 	const auto function_pure = function_type_peek.get_function_pure(a_acc._types);
 
 	std::vector<member_t> args2;
@@ -2648,9 +2647,9 @@ expression_t auto_cast_expression_type(analyser_t& a, const expression_t& e, con
 	QUARK_ASSERT(wanted_type.is_undefined() == false);
 
 	const auto current_type = analyze_expr_output_type(a, e);
-	const auto current_peek = peek2(a._types, current_type);
+	const auto current_peek = dereference_type(a._types, current_type);
 
-	const auto wanted_type_peek = peek2(a._types, wanted_type);
+	const auto wanted_type_peek = dereference_type(a._types, wanted_type);
 	if(wanted_type_peek.is_any()){
 		return e;
 	}
@@ -2698,7 +2697,7 @@ static std::pair<analyser_t, expression_t> analyse_expression_to_target(const an
 
 	if(false) trace_types(a_acc._types);
 
-	const auto target_type_peek = peek2(a_acc._types, target_type0);
+	const auto target_type_peek = dereference_type(a_acc._types, target_type0);
 
 	QUARK_ASSERT(target_type_peek.is_void() == false && target_type_peek.is_undefined() == false);
 	QUARK_ASSERT(check_types_resolved(a._types, target_type0));
@@ -2954,14 +2953,14 @@ const body_t make_global_body(analyser_t& a){
 				}
 
 				const auto init_func_type = init_func_symbol.first->get_value_type();
-				const auto init_func_peek = peek2(a._types, init_func_type);
+				const auto init_func_peek = dereference_type(a._types, init_func_type);
 
 
 				if(
 					(init_func_peek.is_function() == false)
 					|| (
 						init_func_peek.get_function_args(a._types).size() != 0
-						|| peek2(a._types, init_func_peek.get_function_return(a._types)).is_void()
+						|| dereference_type(a._types, init_func_peek.get_function_return(a._types)).is_void()
 					)
 				){
 					std::stringstream what;
@@ -2984,7 +2983,7 @@ const body_t make_global_body(analyser_t& a){
 				}
 
 				const auto msg_func_type = msg_func_symbol.first->get_value_type();
-				const auto msg_func_peek = peek2(a._types, msg_func_type);
+				const auto msg_func_peek = dereference_type(a._types, msg_func_type);
 
 				if(
 					(msg_func_peek.is_function() == false)
