@@ -2050,7 +2050,7 @@ bc_static_frame_t::bc_static_frame_t(const types_t& types, const std::vector<bc_
 				_locals.push_back(value);
 			}
 			else{
-				const auto value = make_def(symbol.second._value_type);
+				const auto value = make_default_value(symbol.second._value_type);
 				const auto bc = value_to_bc(types, value);
 				_locals.push_back(bc);
 			}
