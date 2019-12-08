@@ -32,13 +32,6 @@ You can compare and copy these but you cannot access their contents.
 - The type_t is normalized and can be compared with other type_t:s.
 
 
-# type_desc_t
-Always holds a concrete type, never a named type. Notice that child-types can be named types.
-You can query its type, get function arguments, get struct members etc.
-
-??? CAN CHILD TYPES BE NAMED?
-
-
 # types_t
 Used to hold all data types used in the program.
 Composite data types are split to their individual parts.
@@ -107,7 +100,6 @@ struct member_t;
 struct struct_type_desc_t;
 struct types_t;
 struct type_t;
-struct type_desc_t;
 
 
 ////////////////////////////////	base_type
@@ -244,8 +236,6 @@ typedef int32_t type_lookup_index_t;
 
 //	IMPORTANT: Collect all used types in a vector so we can use type_t as an index into it for O(1)
 struct type_t {
-	//??? Make this explicit
-	type_t(const type_desc_t& desc);
 	type_t() :
 		type_t(assemble((type_lookup_index_t)base_type::k_undefined, base_type::k_undefined))
 	{
@@ -354,23 +344,39 @@ struct type_t {
 
 		return get_base_type() == base_type::k_struct;
 	}
+	struct_type_desc_t get_struct(const types_t& types) const;
 
 	bool is_vector() const {
 		QUARK_ASSERT(check_invariant());
 
 		return get_base_type() == base_type::k_vector;
 	}
+	type_t get_vector_element_type(const types_t& types) const;
+
+
+
+
 	bool is_dict() const {
 		QUARK_ASSERT(check_invariant());
 
 		return get_base_type() == base_type::k_dict;
 	}
+	type_t get_dict_value_type(const types_t& types) const;
 
 	bool is_function() const {
 		QUARK_ASSERT(check_invariant());
 
 		return get_base_type() == base_type::k_function;
 	}
+
+
+	public: type_t get_function_return(const types_t& types) const;
+	public: std::vector<type_t> get_function_args(const types_t& types) const;
+	public: return_dyn_type get_function_dyn_return_type(const types_t& types) const;
+	public: epure get_function_pure(const types_t& types) const;
+
+
+
 
 
 	public: bool is_symbol_ref() const {
@@ -452,7 +458,6 @@ struct type_t {
 
 
 	////////////////////////////////	STATE
-	friend class type_desc_t;
 
 	/*
 		A: 0b11110000'00000000'00000000'00000000;
@@ -490,264 +495,7 @@ inline bool operator!=(type_t lhs, type_t rhs){ return (lhs == rhs) == false; };
 
 /////////////////////////////////////////////////		type_desc_t
 
-
-struct type_desc_t {
-	bool check_invariant() const {
-//		QUARK_ASSERT(get_base_type() != base_type::k_identifier);
-		return true;
-	}
-
-	type_desc_t(){
-		QUARK_ASSERT(check_invariant());
-	}
-
-	inline type_lookup_index_t get_lookup_index() const {
-		QUARK_ASSERT(check_invariant());
-
-		return non_name_type.get_lookup_index();
-	}
-
-
-	//////////////////////////////////////////////////		UNDEFINED
-
-
-	bool is_undefined() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_undefined;
-	}
-
-
-	//////////////////////////////////////////////////		ANY
-
-
-
-	static type_desc_t make_any(){
-		return type_desc_t(type_t::make_any());
-	}
-
-	bool is_any() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_any;
-	}
-
-
-	//////////////////////////////////////////////////		VOID
-
-
-	static type_desc_t make_void(){
-		return type_desc_t(type_t::make_void());
-	}
-
-	bool is_void() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_void;
-	}
-
-
-	//////////////////////////////////////////////////		BOOL
-
-
-	static type_desc_t make_bool(){
-		return type_desc_t(type_t::make_bool());
-	}
-
-	bool is_bool() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_bool;
-	}
-
-
-	//////////////////////////////////////////////////		INT
-
-
-	static type_desc_t make_int(){
-		return type_desc_t(type_t::make_int());
-	}
-
-	bool is_int() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_int;
-	}
-
-
-	//////////////////////////////////////////////////		DOUBLE
-
-
-	static type_desc_t make_double(){
-		return type_desc_t(type_t::make_double());
-	}
-
-	bool is_double() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_double;
-	}
-
-
-	//////////////////////////////////////////////////		STRING
-
-
-	static type_desc_t make_string(){
-		return type_desc_t(type_t::make_string());
-	}
-
-	bool is_string() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_string;
-	}
-
-
-	//////////////////////////////////////////////////		JSON
-
-
-	static type_desc_t make_json(){
-		return type_desc_t(type_t::make_json());
-	}
-
-	bool is_json() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_json;
-	}
-
-
-	//////////////////////////////////////////////////		TYPEID
-
-
-	static type_desc_t make_typeid(){
-		return type_desc_t(type_t::make_typeid());
-	}
-
-	bool is_typeid() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_typeid;
-	}
-
-
-
-	//////////////////////////////////////////////////		STRUCT
-
-
-	bool is_struct() const {
-		QUARK_ASSERT(check_invariant());
-
-		return non_name_type.get_base_type() == base_type::k_struct;
-	}
-
-	struct_type_desc_t get_struct(const types_t& types) const;
-
-
-	
-	//////////////////////////////////////////////////		VECTOR
-
-
-	bool is_vector() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_vector;
-	}
-
-	type_t get_vector_element_type(const types_t& types) const;
-
-
-
-	//////////////////////////////////////////////////		DICT
-
-
-	bool is_dict() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_dict;
-	}
-
-	type_t get_dict_value_type(const types_t& types) const;
-
-
-
-	//////////////////////////////////////////////////		FUNCTION
-
-
-	bool is_function() const {
-		QUARK_ASSERT(check_invariant());
-
-		return non_name_type.get_base_type() == base_type::k_function;
-	}
-
-	public: type_t get_function_return(const types_t& types) const;
-	public: type_desc_t get_function_return2(const types_t& types) const {
-		return get_function_return(types);
-	}
-	public: std::vector<type_t> get_function_args(const types_t& types) const;
-	public: std::vector<type_desc_t> get_function_args2(const types_t& types) const{
-		const auto args = get_function_args(types);
-		return mapf<type_desc_t>(args, [&](const auto& e){ return type_desc_t(e); } );
-	}
-
-	public: return_dyn_type get_function_dyn_return_type(const types_t& types) const;
-	public: epure get_function_pure(const types_t& types) const;
-
-
-	//////////////////////////////////////////////////		SYMBOL
-
-
-	public: bool is_symbol_ref() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_symbol_ref;
-	}
-
-	std::string get_symbol_ref(const types_t& types) const;
-
-
-	//////////////////////////////////////////////////		NAMED TYPE
-
-
-	bool is_named_type() const {
-		QUARK_ASSERT(check_invariant());
-
-		return get_base_type() == base_type::k_named_type;
-	}
-
-	type_name_t get_named_type(const types_t& types) const;
-
-
-	base_type get_base_type() const {
-		return non_name_type.get_base_type();
-	}
-
-
-	//////////////////////////////////////////////////		INTERNALS
-
-
-	static type_desc_t wrap_non_named(const type_t& type){
-		QUARK_ASSERT(type.is_named_type() == false);
-		return type_desc_t(type);
-	}
-	private: type_desc_t(const type_t& non_name_type) :
-		non_name_type(non_name_type)
-	{
-	}
-
-	////////////////////////////////	STATE
-
-	public: type_t non_name_type;
-};
-
-inline bool operator<(type_desc_t lhs, type_desc_t rhs){
-	return lhs.non_name_type < rhs.non_name_type;
-}
-inline bool operator==(type_desc_t lhs, type_desc_t rhs){
-	return lhs.non_name_type == rhs.non_name_type;
-}
-inline bool operator!=(type_desc_t lhs, type_desc_t rhs){ return (lhs == rhs) == false; };
-
+typedef type_t type_desc_t;
 
 
 /////////////////////////////////////////////////		FREE FUNCTIONS
@@ -953,6 +701,7 @@ inline bool operator==(const type_node_t& lhs, const type_node_t& rhs){
 }
 
 
+
 //////////////////////////////////////////////////		types_t
 
 
@@ -1001,7 +750,8 @@ type_t update_named_type(types_t& types, const type_t& named, const type_t& dest
 
 type_t get_named_type_destination(const types_t& types, const type_t& named_type);
 
-type_desc_t peek2(const types_t& types, const type_t& type);
+//	If type is a named-type, get to the actual type.
+type_t peek2(const types_t& types, const type_t& type);
 
 
 

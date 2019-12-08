@@ -327,10 +327,92 @@ type_name_t make_empty_type_name(){
 //////////////////////////////////////////////////		type_t
 
 
-type_t::type_t(const type_desc_t& desc) :
-	type_t(desc.non_name_type)
-{
+
+static struct_type_desc_t make_struct_desc(const type_node_t& node){
+	QUARK_ASSERT(node.check_invariant());
+	QUARK_ASSERT(node.def.bt == base_type::k_struct);
+
+	QUARK_ASSERT(node.def.child_types.size() == node.def.names.size());
+	std::vector<member_t> members;
+	for(int i = 0 ; i < node.def.child_types.size() ; i++){
+		const auto m = member_t(node.def.child_types[i], node.def.names[i]);
+		members.push_back(m);
+	}
+
+	return struct_type_desc_t { members };
 }
+
+struct_type_desc_t type_t::get_struct(const types_t& types) const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(is_struct());
+
+	const auto& info = lookup_typeinfo_from_type(types, *this);
+	return make_struct_desc(info);
+//	return info.struct_desc;
+}
+
+type_t type_t::get_vector_element_type(const types_t& types) const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(is_vector());
+
+	const auto& info = lookup_typeinfo_from_type(types, *this);
+	return info.def.child_types[0];
+}
+
+type_t type_t::get_dict_value_type(const types_t& types) const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(is_dict());
+
+	const auto& info = lookup_typeinfo_from_type(types, *this);
+	return info.def.child_types[0];
+}
+
+
+
+type_t type_t::get_function_return(const types_t& types) const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(is_function());
+	QUARK_ASSERT(types.check_invariant());
+
+	const auto& info = lookup_typeinfo_from_type(types, *this);
+	return info.def.child_types[0];
+}
+
+std::vector<type_t> type_t::get_function_args(const types_t& types) const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(is_function());
+	QUARK_ASSERT(types.check_invariant());
+
+	const auto& info = lookup_typeinfo_from_type(types, *this);
+	return std::vector<type_t>(info.def.child_types.begin() + 1, info.def.child_types.end());
+}
+
+return_dyn_type type_t::get_function_dyn_return_type(const types_t& types) const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(is_function());
+	QUARK_ASSERT(types.check_invariant());
+
+	const auto& info = lookup_typeinfo_from_type(types, *this);
+	return info.def.func_return_dyn_type;
+}
+
+epure type_t::get_function_pure(const types_t& types) const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(is_function());
+	QUARK_ASSERT(types.check_invariant());
+
+	const auto& info = lookup_typeinfo_from_type(types, *this);
+	return info.def.func_pure;
+}
+
+
+
+
+
+/*
 
 #if 0
 QUARK_TESTQ("type_t", "make_undefined()"){
@@ -431,10 +513,6 @@ QUARK_TESTQ("type_t", "is_typeid()"){
 	QUARK_VERIFY(type_t::make_bool().is_typeid() == false);
 }
 
-
-type_t make_empty_struct(){
-	return make_struct({});
-}
 
 const auto k_struct_test_members_b = std::vector<member_t>({
 	{ type_t::make_int(), "x" },
@@ -595,8 +673,8 @@ QUARK_TESTQ("type_t", "operator=()"){
 	const auto b = a;
 	QUARK_VERIFY(a == b);
 }
-
 #endif
+ */
 
 
 std::string type_t::get_symbol_ref(const types_t& types) const {
@@ -614,92 +692,6 @@ type_name_t type_t::get_named_type(const types_t& types) const {
 
 	const auto& info = lookup_typeinfo_from_type(types, *this);
 	return info.optional_name;
-}
-
-
-
-/////////////////////////////////////////////////		type_desc_t
-
-
-
-static struct_type_desc_t make_struct_desc(const type_node_t& node){
-	QUARK_ASSERT(node.check_invariant());
-	QUARK_ASSERT(node.def.bt == base_type::k_struct);
-
-	QUARK_ASSERT(node.def.child_types.size() == node.def.names.size());
-	std::vector<member_t> members;
-	for(int i = 0 ; i < node.def.child_types.size() ; i++){
-		const auto m = member_t(node.def.child_types[i], node.def.names[i]);
-		members.push_back(m);
-	}
-
-	return struct_type_desc_t { members };
-}
-
-
-struct_type_desc_t type_desc_t::get_struct(const types_t& types) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(is_struct());
-
-	const auto& info = lookup_typeinfo_from_type(types, *this);
-	return make_struct_desc(info);
-//	return info.struct_desc;
-}
-
-type_t type_desc_t::get_vector_element_type(const types_t& types) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(is_vector());
-
-	const auto& info = lookup_typeinfo_from_type(types, non_name_type);
-	return info.def.child_types[0];
-}
-
-type_t type_desc_t::get_dict_value_type(const types_t& types) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(is_dict());
-
-	const auto& info = lookup_typeinfo_from_type(types, *this);
-	return info.def.child_types[0];
-}
-
-
-type_t type_desc_t::get_function_return(const types_t& types) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(is_function());
-	QUARK_ASSERT(types.check_invariant());
-
-	const auto& info = lookup_typeinfo_from_type(types, *this);
-	return info.def.child_types[0];
-}
-
-std::vector<type_t> type_desc_t::get_function_args(const types_t& types) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(is_function());
-	QUARK_ASSERT(types.check_invariant());
-
-	const auto& info = lookup_typeinfo_from_type(types, *this);
-	return std::vector<type_t>(info.def.child_types.begin() + 1, info.def.child_types.end());
-}
-
-return_dyn_type type_desc_t::get_function_dyn_return_type(const types_t& types) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(is_function());
-	QUARK_ASSERT(types.check_invariant());
-
-	const auto& info = lookup_typeinfo_from_type(types, *this);
-	return info.def.func_return_dyn_type;
-}
-
-epure type_desc_t::get_function_pure(const types_t& types) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(is_function());
-	QUARK_ASSERT(types.check_invariant());
-
-	const auto& info = lookup_typeinfo_from_type(types, *this);
-	return info.def.func_pure;
 }
 
 
@@ -783,7 +775,7 @@ type_variant_t get_type_variant(const types_t& types, const type_t& type){
 		}
 
 		else if(desc.is_struct()){
-			const auto& info = lookup_typeinfo_from_type(types, desc.non_name_type);
+			const auto& info = lookup_typeinfo_from_type(types, desc);
 			return struct_t { make_struct_desc(info) };
 		}
 		else if(desc.is_vector()){
@@ -795,7 +787,7 @@ type_variant_t get_type_variant(const types_t& types, const type_t& type){
 			return dict_t { info.def.child_types };
 		}
 		else if(desc.is_function()){
-			const auto& info = lookup_typeinfo_from_type(types, desc.non_name_type);
+			const auto& info = lookup_typeinfo_from_type(types, desc);
 			return function_t { info.def.child_types };
 		}
 		else if(type.is_symbol_ref()){
@@ -1225,9 +1217,9 @@ static type_t peek0(const types_t& types, const type_t& type){
 }
 
 
-type_desc_t peek2(const types_t& types, const type_t& type){
+type_t peek2(const types_t& types, const type_t& type){
 	const auto type2 = peek0(types, type);
-	return type_desc_t::wrap_non_named(type2);
+	return type2;
 }
 
 
@@ -1856,7 +1848,7 @@ type_t type_from_json(types_t& types, const json_t& t){
 				return type_t::make_string();
 			}
 			else if(b == base_type::k_typeid){
-				return type_desc_t::make_typeid();
+				return type_t::make_typeid();
 			}
 			else if(b == base_type::k_json){
 				return type_t::make_json();
