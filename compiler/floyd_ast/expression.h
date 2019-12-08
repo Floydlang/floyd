@@ -23,6 +23,7 @@
 namespace floyd {
 
 struct struct_type_desc_t;
+struct body_t;
 
 
 

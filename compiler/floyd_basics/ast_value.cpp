@@ -179,7 +179,7 @@ std::string dict_instance_to_compact_string(const types_t& types, const std::map
 
 value_ext_t::value_ext_t(const type_t& s) :
 	_rc(1),
-	_physical_type(type_desc_t::make_typeid()),
+	_logical_type(type_desc_t::make_typeid()),
 	_typeid_value(s)
 {
 	QUARK_ASSERT(check_invariant());
@@ -188,7 +188,7 @@ value_ext_t::value_ext_t(const type_t& s) :
 
 value_ext_t::value_ext_t(const type_t& type, std::shared_ptr<struct_value_t>& s) :
 	_rc(1),
-	_physical_type(type),
+	_logical_type(type),
 	_struct(s)
 {
 	QUARK_ASSERT(check_invariant());
@@ -196,7 +196,7 @@ value_ext_t::value_ext_t(const type_t& type, std::shared_ptr<struct_value_t>& s)
 
 value_ext_t::value_ext_t(const type_t& type, const std::vector<value_t>& s) :
 	_rc(1),
-	_physical_type(type),
+	_logical_type(type),
 	_vector_elements(s)
 {
 	QUARK_ASSERT(check_invariant());
@@ -204,7 +204,7 @@ value_ext_t::value_ext_t(const type_t& type, const std::vector<value_t>& s) :
 
 value_ext_t::value_ext_t(const type_t& type, const std::map<std::string, value_t>& s) :
 	_rc(1),
-	_physical_type(type),
+	_logical_type(type),
 	_dict_entries(s)
 {
 	QUARK_ASSERT(check_invariant());
@@ -212,7 +212,7 @@ value_ext_t::value_ext_t(const type_t& type, const std::map<std::string, value_t
 
 value_ext_t::value_ext_t(const type_t& type, function_id_t function_id) :
 	_rc(1),
-	_physical_type(type),
+	_logical_type(type),
 	_function_id(function_id)
 {
 	QUARK_ASSERT(check_invariant());
@@ -225,7 +225,7 @@ bool value_ext_t::operator==(const value_ext_t& other) const{
 
 //			_rc(1),
 
-	const auto base_type = _physical_type.get_base_type();
+	const auto base_type = _logical_type.get_base_type();
 	if(base_type == base_type::k_string){
 		return _string == other._string;
 	}
@@ -481,7 +481,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 
 
 bool value_t::check_invariant() const{
-	const auto basetype = _type.get_base_type();
+	const auto basetype = _logical_type.get_base_type();
 	if(basetype == base_type::k_undefined){
 	}
 	else if(basetype == base_type::k_any){
@@ -1171,7 +1171,7 @@ QUARK_TESTQ("value_to_ast_json()", ""){
 //	Used internally in check_invariant() -- don't call check_invariant().
 type_t value_t::get_type() const{
 //			QUARK_ASSERT(check_invariant());
-	return _type;
+	return _logical_type;
 }
 
 

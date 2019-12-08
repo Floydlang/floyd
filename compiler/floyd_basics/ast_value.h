@@ -13,7 +13,11 @@
 	value_t
 
 	Hold a Floyd value with an explicit type.
+	It is NOT VERY EFFICIENT - limit use in critical paths in final user program exectuables.
 	Immutable, value-semantics.
+
+	In final user program executable: prefer runtime_value_t & runtime_type_t and type_t -- these are fast.
+
 	- type: the semantic type, which could be a "game_object_t" or int.
 	- physical type: a concrete type that tells which field, element etc to use -- all named types are gone here.
 
@@ -23,7 +27,6 @@
 	It will be deep-copied alternatively some internal immutable state may be shared with other instances.
 
 	value_t is mostly used in the API:s of the compiler.
-	It is not very efficient.
 
 	Can hold *any* value that is legal in Floyd.
 	Also supports a handful of types used internally in tools.
@@ -36,7 +39,6 @@
 		function pointer
 		Vector instance
 		Dictionary instance
-
 
 	??? Remove all value_t::is_bool() etc.
 */
@@ -55,7 +57,6 @@
 
 namespace floyd {
 
-struct body_t;
 struct value_t;
 struct value_ext_t;
 
@@ -131,6 +132,7 @@ struct struct_value_t {
 
 
 	////////////////////////////////////////		STATE
+	//??? _def might be unnecessary
 	public: struct_type_desc_t _def;
 	public: std::vector<value_t> _member_values;
 };
@@ -145,10 +147,10 @@ struct struct_value_t {
 struct value_ext_t {
 	public: bool check_invariant() const{
 		QUARK_ASSERT(_rc > 0);
-		QUARK_ASSERT(_physical_type.check_invariant());
+		QUARK_ASSERT(_logical_type.check_invariant());
 		QUARK_ASSERT(_typeid_value.check_invariant());
 
-		const auto base_type = _physical_type.get_base_type();
+		const auto base_type = _logical_type.get_base_type();
 		if(base_type == base_type::k_string){
 //				QUARK_ASSERT(_string);
 			QUARK_ASSERT(_json == nullptr);
@@ -232,7 +234,7 @@ struct value_ext_t {
 
 	public: value_ext_t(const std::string& s) :
 		_rc(1),
-		_physical_type(type_t::make_string()),
+		_logical_type(type_t::make_string()),
 		_string(s)
 	{
 		QUARK_ASSERT(check_invariant());
@@ -240,7 +242,7 @@ struct value_ext_t {
 
 	public: value_ext_t(const std::shared_ptr<json_t>& s) :
 		_rc(1),
-		_physical_type(type_t::make_json()),
+		_logical_type(type_t::make_json()),
 		_json(s)
 	{
 		QUARK_ASSERT(check_invariant());
@@ -248,17 +250,17 @@ struct value_ext_t {
 
 	public: value_ext_t(const type_t& s);
 
-	public: value_ext_t(const type_t& physical_type, std::shared_ptr<struct_value_t>& s);
-	public: value_ext_t(const type_t& physical_type, const std::vector<value_t>& s);
-	public: value_ext_t(const type_t& physical_type, const std::map<std::string, value_t>& s);
-	public: value_ext_t(const type_t& physical_type, function_id_t function_id);
+	public: value_ext_t(const type_t& type, std::shared_ptr<struct_value_t>& s);
+	public: value_ext_t(const type_t& type, const std::vector<value_t>& s);
+	public: value_ext_t(const type_t& type, const std::map<std::string, value_t>& s);
+	public: value_ext_t(const type_t& type, function_id_t function_id);
 
 
 	//	??? NOTICE: Use std::variant or subclasses.
 	public: int _rc;
 
-	//??? remove _physical_type, not needed now that we have type inside value_t.
-	public: type_t _physical_type;
+	//??? remove _logical_type, not needed now that we have type inside value_t?!
+	public: type_t _logical_type;
 
 	public: std::string _string;
 	public: std::shared_ptr<json_t> _json;
@@ -291,7 +293,7 @@ struct value_t {
 	//	Used internally in check_invariant() -- don't call check_invariant().
 	public: type_t get_type() const;
 	public: base_type get_basetype() const{
-		return _type.get_base_type();
+		return _logical_type.get_base_type();
 	}
 	public: type_t get_physical_type() const{
 		return _physical_type;
@@ -299,7 +301,7 @@ struct value_t {
 
 	public: static value_t replace_logical_type(const value_t& value, const type_t& logical_type){
 		auto copy = value;
-		copy._type = logical_type;
+		copy._logical_type = logical_type;
 		return copy;
 	}
 
@@ -312,11 +314,11 @@ struct value_t {
 	public: bool is_undefined() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _type.is_undefined();
+		return _logical_type.is_undefined();
 	}
 
 
-	//------------------------------------------------		internal-dynamic
+	//------------------------------------------------		any
 
 
 	public: static value_t make_any(){
@@ -325,7 +327,7 @@ struct value_t {
 	public: bool is_any() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _type.get_base_type() == base_type::k_any;
+		return _logical_type.get_base_type() == base_type::k_any;
 	}
 
 
@@ -338,7 +340,7 @@ struct value_t {
 	public: bool is_void() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _type.get_base_type() == base_type::k_void;
+		return _logical_type.get_base_type() == base_type::k_void;
 	}
 
 
@@ -351,7 +353,7 @@ struct value_t {
 	public: bool is_bool() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _type.get_base_type() == base_type::k_bool;
+		return _logical_type.get_base_type() == base_type::k_bool;
 	}
 	public: bool get_bool_value() const{
 		QUARK_ASSERT(check_invariant());
@@ -375,7 +377,7 @@ struct value_t {
 	public: bool is_int() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _type.get_base_type() == base_type::k_int;
+		return _logical_type.get_base_type() == base_type::k_int;
 	}
 	public: int64_t get_int_value() const{
 		QUARK_ASSERT(check_invariant());
@@ -399,7 +401,7 @@ struct value_t {
 	public: bool is_double() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _type.get_base_type() == base_type::k_double;
+		return _logical_type.get_base_type() == base_type::k_double;
 	}
 	public: double get_double_value() const{
 		QUARK_ASSERT(check_invariant());
@@ -425,7 +427,7 @@ struct value_t {
 	public: bool is_string() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _type.get_base_type() == base_type::k_string;
+		return _logical_type.get_base_type() == base_type::k_string;
 	}
 	public: std::string get_string_value() const;
 
@@ -446,7 +448,7 @@ struct value_t {
 	public: bool is_json() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _type.get_base_type() == base_type::k_json;
+		return _logical_type.get_base_type() == base_type::k_json;
 	}
 	public: json_t get_json() const;
 
@@ -462,7 +464,7 @@ struct value_t {
 	public: bool is_typeid() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _type.get_base_type() == base_type::k_typeid;
+		return _logical_type.get_base_type() == base_type::k_typeid;
 	}
 	public: type_t get_typeid_value() const;
 
@@ -477,7 +479,7 @@ struct value_t {
 	public: bool is_struct() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _type.get_base_type() == base_type::k_struct;
+		return _logical_type.get_base_type() == base_type::k_struct;
 	}
 	public: std::shared_ptr<struct_value_t> get_struct_value() const;
 
@@ -490,7 +492,7 @@ struct value_t {
 	public: bool is_vector() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _type.get_base_type() == base_type::k_vector;
+		return _logical_type.get_base_type() == base_type::k_vector;
 	}
 	public: const std::vector<value_t>& get_vector_value() const;
 
@@ -503,7 +505,7 @@ struct value_t {
 	public: bool is_dict() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _type.get_base_type() == base_type::k_dict;
+		return _logical_type.get_base_type() == base_type::k_dict;
 	}
 	public: const std::map<std::string, value_t>& get_dict_value() const;
 
@@ -515,7 +517,7 @@ struct value_t {
 	public: bool is_function() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _type.get_base_type() == base_type::k_function;
+		return _logical_type.get_base_type() == base_type::k_function;
 	}
 	public: function_id_t get_function_value() const;
 
@@ -529,7 +531,7 @@ struct value_t {
 	public: bool check_invariant() const;
 
 	public: value_t(const value_t& other):
-		_type(other._type),
+		_logical_type(other._logical_type),
 		_physical_type(other._physical_type),
 		_value_internals(other._value_internals)
 	{
@@ -574,7 +576,7 @@ struct value_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
-		if(!(_type == other._type)){
+		if(!(_logical_type == other._logical_type)){
 			return false;
 		}
 
@@ -627,7 +629,7 @@ struct value_t {
 		std::swap(DEBUG_STR, other.DEBUG_STR);
 #endif
 
-		std::swap(_type, other._type);
+		std::swap(_logical_type, other._logical_type);
 		std::swap(_physical_type, other._physical_type);
 
 		std::swap(_value_internals, other._value_internals);
@@ -643,23 +645,24 @@ struct value_t {
 
 
 
-	private: value_t(const type_t& type) :
+	private: value_t(const type_t& logical_type) :
 		_value_internals(),
-		_type(type),
-		_physical_type(type)
+		_logical_type(logical_type),
+		_physical_type(logical_type)
 #if DEBUG_DEEP
 		,
 		DEBUG_STR = make_value_debug_str(*this);
 #endif
 	{
-		QUARK_ASSERT(_type.is_undefined() || _type.is_any() || _type.is_void())
+		QUARK_ASSERT(logical_type.is_undefined() || logical_type.is_any() || logical_type.is_void())
 	}
 
 
-	private: value_t(const types_t& types, const value_internals_t& value_internals, const type_t& type) :
+		//??? Use get_physical_type()!
+	private: value_t(const types_t& types, const value_internals_t& value_internals, const type_t& logical_type) :
 		_value_internals(value_internals),
-		_type(type),
-		_physical_type(peek2(types, type))
+		_logical_type(logical_type),
+		_physical_type(peek2(types, logical_type))
 #if DEBUG_DEEP
 		,
 		DEBUG_STR = make_value_debug_str(*this);
@@ -668,17 +671,17 @@ struct value_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-
-	private: value_t(const value_internals_t& value_internals, const type_t& type) :
+	//??? Use get_physical_type()!
+	private: value_t(const value_internals_t& value_internals, const type_t& logical_type) :
 		_value_internals(value_internals),
-		_type(type),
-		_physical_type(type)
+		_logical_type(logical_type),
+		_physical_type(logical_type)
 #if DEBUG_DEEP
 		,
 		DEBUG_STR = make_value_debug_str(*this);
 #endif
 	{
-		QUARK_ASSERT(type.is_named_type() == false);
+		QUARK_ASSERT(logical_type.is_named_type() == false);
 
 		QUARK_ASSERT(check_invariant());
 	}
@@ -690,7 +693,7 @@ struct value_t {
 	private: std::string DEBUG_STR;
 #endif
 	private: value_internals_t _value_internals;
-	private: type_t _type;
+	private: type_t _logical_type;
 	private: type_t _physical_type;
 };
 
