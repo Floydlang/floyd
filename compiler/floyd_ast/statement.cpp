@@ -85,7 +85,7 @@ static json_t symbol_to_json(const types_t& types, const symbol_t& symbol){
 	const auto e2 = json_t::make_object({
 		{ "symbol_type", symbol_type_str },
 		{ "value_type", value_type },
-		{ "init", value_to_ast_json(types, symbol._init) }
+		{ "init", value_to_json(types, symbol._init) }
 	});
 	return e2;
 }
@@ -100,7 +100,7 @@ static symbol_t json_to_symbol(types_t& types, const json_t& e){
 	const auto symbol_type2 = symbol_type_from_string(symbol_type);
 	const auto value_type2 = type_from_json(types, value_type);
 	const auto value_type1 = value_type2;
-	value_t init_value2 = init.is_null() ? value_t::make_undefined() : ast_json_to_value(types, value_type1, init);
+	value_t init_value2 = init.is_null() ? value_t::make_undefined() : json_to_value(types, value_type1, init);
 
 	const auto result = symbol_t(symbol_type2, value_type2, init_value2);
 	return result;

@@ -140,7 +140,7 @@ bc_value_t bc_corelib__calc_string_sha1(interpreter_t& vm, const bc_value_t args
 	);
 
 	if(k_trace && false){
-		const auto debug = value_and_type_to_ast_json(vm._imm->_program._types, result);
+		const auto debug = value_and_type_to_json(vm._imm->_program._types, result);
 		QUARK_TRACE(json_to_pretty_string(debug));
 	}
 
@@ -174,7 +174,7 @@ bc_value_t bc_corelib__calc_binary_sha1(interpreter_t& vm, const bc_value_t args
 	);
 
 	if(k_trace && false){
-		const auto debug = value_and_type_to_ast_json(vm._imm->_program._types, result);
+		const auto debug = value_and_type_to_json(vm._imm->_program._types, result);
 		QUARK_TRACE(json_to_pretty_string(debug));
 	}
 
@@ -257,7 +257,7 @@ bc_value_t bc_corelib__get_fsentries_shallow(interpreter_t& vm, const bc_value_t
 	const auto vec2 = value_t::make_vector_value(temp_types, k_fsentry_t__type, elements);
 
 	if(k_trace && false){
-		const auto debug = value_and_type_to_ast_json(temp_types, vec2);
+		const auto debug = value_and_type_to_json(temp_types, vec2);
 		QUARK_TRACE(json_to_pretty_string(debug));
 	}
 
@@ -282,7 +282,7 @@ bc_value_t bc_corelib__get_fsentries_deep(interpreter_t& vm, const bc_value_t ar
 	const auto vec2 = value_t::make_vector_value(temp_types, k_fsentry_t__type, elements);
 
 	if(k_trace && false){
-		const auto debug = value_and_type_to_ast_json(temp_types, vec2);
+		const auto debug = value_and_type_to_json(temp_types, vec2);
 		QUARK_TRACE(json_to_pretty_string(debug));
 	}
 
@@ -334,7 +334,7 @@ bc_value_t bc_corelib__does_fsentry_exist(interpreter_t& vm, const bc_value_t ar
 
 	const auto result = value_t::make_bool(exists);
 	if(k_trace && false){
-		const auto debug = value_and_type_to_ast_json(vm._imm->_program._types, result);
+		const auto debug = value_and_type_to_json(vm._imm->_program._types, result);
 		QUARK_TRACE(json_to_pretty_string(debug));
 	}
 

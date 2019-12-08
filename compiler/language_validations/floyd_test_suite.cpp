@@ -79,33 +79,33 @@ unsupported syntax
 static json_t make_expected_int(int64_t v){
 	types_t types;
 	const auto a = value_t::make_int(v);
-	return value_and_type_to_ast_json(types, a);
+	return value_and_type_to_json(types, a);
 }
 static json_t make_expected_string(const std::string& s){
 	types_t types;
 	const auto a = value_t::make_string(s);
-	return value_and_type_to_ast_json(types, a);
+	return value_and_type_to_json(types, a);
 }
 static json_t make_expected_double(double v){
 	types_t types;
 	const auto a = value_t::make_double(v);
-	return value_and_type_to_ast_json(types, a);
+	return value_and_type_to_json(types, a);
 }
 static json_t make_expected_bool(bool v){
 	types_t types;
 	const auto a = value_t::make_bool(v);
-	return value_and_type_to_ast_json(types, a);
+	return value_and_type_to_json(types, a);
 }
 
 static json_t make_expected_json(const json_t& j){
 	types_t types;
 	const auto a = value_t::make_json(j);
-	return value_and_type_to_ast_json(types, a);
+	return value_and_type_to_json(types, a);
 }
 
 static json_t make_expected_typeid(const types_t& types, const type_t& s){
 	const auto a = value_t::make_typeid_value(s);
-	return value_and_type_to_ast_json(types, a);
+	return value_and_type_to_json(types, a);
 }
 
 
@@ -117,7 +117,7 @@ static json_t make_bool_vec(const std::vector<bool>& elements){
 	}
 
 	const auto v = value_t::make_vector_value(types, type_t::make_bool(), elements2);
-	return value_and_type_to_ast_json(types, v);
+	return value_and_type_to_json(types, v);
 }
 
 static json_t make_int_vec(const std::vector<int64_t>& elements){
@@ -128,7 +128,7 @@ static json_t make_int_vec(const std::vector<int64_t>& elements){
 	}
 
 	const auto v = value_t::make_vector_value(types, type_t::make_int(), elements2);
-	return value_and_type_to_ast_json(types, v);
+	return value_and_type_to_json(types, v);
 }
 
 static json_t make_double_vec(const std::vector<double>& elements){
@@ -139,7 +139,7 @@ static json_t make_double_vec(const std::vector<double>& elements){
 	}
 
 	const auto v = value_t::make_vector_value(types, type_t::make_double(), elements2);
-	return value_and_type_to_ast_json(types, v);
+	return value_and_type_to_json(types, v);
 }
 
 
@@ -5616,7 +5616,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "point_t", ""){
 			let result = from_json(to_json(point_t(1.0, 3.0)), point_t)
 
 		)",
-		value_and_type_to_ast_json(temp, expected)
+		value_and_type_to_json(temp, expected)
 	);
 }
 #endif

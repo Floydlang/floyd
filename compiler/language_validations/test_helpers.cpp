@@ -147,7 +147,7 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 		}
 
 		return test_report_t{
-			result_global.is_undefined() ? json_t() : value_and_type_to_ast_json(exe._types, result_global),
+			result_global.is_undefined() ? json_t() : value_and_type_to_json(exe._types, result_global),
 			run_output,
 			handler._print_output,
 			""
@@ -208,7 +208,7 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 		QUARK_ASSERT(ee->check_invariant());
 
 		return test_report_t{
-			result_global.is_undefined() ? json_t() : value_and_type_to_ast_json(exe->type_lookup.state.types, result_global),
+			result_global.is_undefined() ? json_t() : value_and_type_to_json(exe->type_lookup.state.types, result_global),
 			run_output,
 			handler._print_output,
 			""
@@ -278,7 +278,7 @@ QUARK_TEST("test_helpers", "test_floyd()", "", ""){
 		make_compilation_unit("let result = 112", "", compilation_unit_mode::k_no_core_lib),
 		make_default_compiler_settings(),
 		{},
-		test_report_t{ value_and_type_to_ast_json(types, value_t::make_int(112)), run_output_t( k_default_main_result, {}), {}, "" },
+		test_report_t{ value_and_type_to_json(types, value_t::make_int(112)), run_output_t( k_default_main_result, {}), {}, "" },
 		false
 	);
 }

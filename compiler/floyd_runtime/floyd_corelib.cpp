@@ -1113,7 +1113,7 @@ value_t pack_fsentry_info(types_t& types, const fsentry_info_t& info){
 	);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(types, result);
+	const auto debug = value_and_type_to_json(types, result);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
@@ -1159,7 +1159,7 @@ value_t pack_fs_environment_t(types_t& types, const fs_environment_t& env){
 	);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(types, result);
+	const auto debug = value_and_type_to_json(types, result);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 

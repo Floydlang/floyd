@@ -377,7 +377,7 @@ json_t expression_to_json(const types_t& types, const expression_t& e){
 				floyd::k_no_location,
 				expression_opcode_t::k_literal,
 				{
-					value_to_ast_json(types, e.value),
+					value_to_json(types, e.value),
 					type_to_json(types, e.value.get_type())
 				}
 			);
@@ -557,7 +557,7 @@ expression_t ast_json_to_expression(types_t& types, const json_t& e){
 		const auto type2 = type_from_json(types, type);
 
 
-		const auto value2 = ast_json_to_value(types, type2, value);
+		const auto value2 = json_to_value(types, type2, value);
 		return expression_t::make_literal(value2);
 	}
 	else if(op == expression_opcode_t::k_unary_minus){

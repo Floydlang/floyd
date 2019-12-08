@@ -1464,7 +1464,7 @@ static void floyd_llvm_intrinsic__send(floyd_runtime_t* frp, runtime_value_t des
 /*
 	if(k_trace_process_messaging){
 		const auto& message2 = from_runtime_value(r, message, message_type2);
-		const auto j = value_and_type_to_ast_json(backend.types, message2);
+		const auto j = value_and_type_to_json(backend.types, message2);
 		QUARK_TRACE_SS("send(\"" << dest_process_id << "\"," << json_to_pretty_string(j) <<")");
 	}
 */
@@ -1641,7 +1641,7 @@ static runtime_value_t floyd_llvm_intrinsic__to_pretty_string(floyd_runtime_t* f
 
 	const auto& type0 = lookup_type_ref(backend, value_type);
 	const auto& value2 = from_runtime_value(r, value, type0);
-	const auto json = value_to_ast_json(backend.types, value2);
+	const auto json = value_to_json(backend.types, value2);
 	const auto s = json_to_pretty_string(json, 0, pretty_t{ 80, 4 });
 	return to_runtime_string(r, s);
 }
@@ -1955,7 +1955,7 @@ static JSON_T* floyd_llvm_intrinsic__to_json(floyd_runtime_t* frp, runtime_value
 
 	const auto& type0 = lookup_type_ref(backend, value_type);
 	const auto value0 = from_runtime_value(r, value, type0);
-	const auto j = value_to_ast_json(backend.types, value0);
+	const auto j = value_to_json(backend.types, value0);
 	auto result = alloc_json(backend.heap, j);
 	return result;
 }

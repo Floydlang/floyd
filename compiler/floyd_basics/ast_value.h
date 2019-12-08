@@ -67,7 +67,6 @@ std::string make_value_debug_str(const value_t& v);
 
 
 
-
 ////////////////////////////////////////		link_name_t
 
 
@@ -89,7 +88,6 @@ const link_name_t k_no_link_name = link_name_t { "" };
 
 
 
-
 ////////////////////////////////////////		function_id_t
 
 
@@ -108,8 +106,6 @@ inline bool operator<(const function_id_t& lhs, const function_id_t& rhs){
 }
 
 const function_id_t k_no_function_id = function_id_t { "" };
-
-
 
 
 
@@ -367,9 +363,6 @@ struct value_t {
 
 
 	public: static value_t make_struct_value(const types_t& types, const type_t& struct_type, const std::vector<value_t>& values);
-
-		//??? still needed?
-	public: static value_t make_struct_value(types_t& types, const type_t& struct_type, const std::vector<value_t>& values);
 	public: bool is_struct() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -499,7 +492,7 @@ struct value_t {
 		}
 	}
 
-	public: bool operator!=(const value_t& other) const{
+	public: bool operator !=(const value_t& other) const{
 		return !(*this == other);
 	}
 
@@ -533,10 +526,7 @@ struct value_t {
 	}
 
 
-
-
 	//////////////////////////////////////////////////		INTERNALS
-
 
 
 	private: value_t(const type_t& logical_type) :
@@ -591,9 +581,15 @@ struct value_t {
 };
 
 
-//////////////////////////////////////////////////		Helpers
+//////////////////////////////////////////////////		HELPERS
 
 
+value_t make_default_value(const type_t& type);
+
+void ut_verify_values(const quark::call_context_t& context, const value_t& result, const value_t& expected);
+
+
+//////////////////////////////////////////////////		STRING
 
 /*
 	"true"
@@ -604,9 +600,6 @@ struct value_t {
 */
 std::string to_compact_string2(const types_t& types, const value_t& value);
 
-//	Special handling of strings, we want to wrap in "".
-std::string to_compact_string_quote_strings(const types_t& types, const value_t& value);
-
 /*
 	bool: "true"
 	int: "0"
@@ -615,24 +608,24 @@ std::string to_compact_string_quote_strings(const types_t& types, const value_t&
 */
 std::string value_and_type_to_string(const types_t& types, const value_t& value);
 
-json_t value_to_ast_json(const types_t& types, const value_t& v);
-value_t ast_json_to_value(types_t& types, const type_t& type, const json_t& v);
+
+//////////////////////////////////////////////////		JSON
+
+
+json_t value_to_json(const types_t& types, const value_t& v);
+value_t json_to_value(types_t& types, const type_t& type, const json_t& v);
 
 
 //	json array: [ TYPE, VALUE ]
-json_t value_and_type_to_ast_json(const types_t& types, const value_t& v);
+json_t value_and_type_to_json(const types_t& types, const value_t& v);
 
 //	json array: [ TYPE, VALUE ]
-value_t ast_json_to_value_and_type(types_t& types, const json_t& v);
+value_t json_to_value_and_type(types_t& types, const json_t& v);
 
 
-json_t values_to_json_array(const types_t& types, const std::vector<value_t>& values);
 
 
-value_t make_default_value(const type_t& type);
-
-void ut_verify_values(const quark::call_context_t& context, const value_t& result, const value_t& expected);
-
+//////////////////////////////////////////////////		INLINES
 
 
 inline static bool is_basetype_ext__slow(base_type basetype){

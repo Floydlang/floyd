@@ -518,7 +518,7 @@ bc_value_t bc_intrinsic__to_json(interpreter_t& vm, const bc_value_t args[], int
 	const auto value = args[0];
 	const auto value2 = bc_to_value(vm._imm->_program._types, args[0]);
 
-	const auto j = value_to_ast_json(types, value2);
+	const auto j = value_to_json(types, value2);
 	value_t result = value_t::make_json(j);
 
 	return value_to_bc(vm._imm->_program._types, result);
@@ -585,7 +585,7 @@ bc_value_t bc_intrinsic__map(interpreter_t& vm, const bc_value_t args[], int arg
 	const auto result = make_vector(types, r_type, vec2);
 
 if(k_trace && false){
-	const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
+	const auto debug = value_and_type_to_json(types, bc_to_value(types, result));
 	QUARK_TRACE(json_to_pretty_string(debug));
 }
 
@@ -622,7 +622,7 @@ bc_value_t bc_intrinsic__map_string(interpreter_t& vm, const bc_value_t args[], 
 	const auto result = bc_value_t::make_string(vec2);
 
 if(k_trace && false){
-	const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
+	const auto debug = value_and_type_to_json(types, bc_to_value(types, result));
 	QUARK_TRACE(json_to_pretty_string(debug));
 }
 
@@ -721,7 +721,7 @@ bc_value_t bc_intrinsic__map_dag(interpreter_t& vm, const bc_value_t args[], int
 	const auto result = make_vector(types, r_type, complete);
 
 	if(k_trace && false){
-		const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
+		const auto debug = value_and_type_to_json(types, bc_to_value(types, result));
 		QUARK_TRACE(json_to_pretty_string(debug));
 	}
 
@@ -847,7 +847,7 @@ bc_value_t bc_intrinsic__map_dag2(interpreter_t& vm, const bc_value_t args[], in
 	const auto result = make_vector(types, r_type, complete);
 
 if(k_trace && false){
-	const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
+	const auto debug = value_and_type_to_json(types, bc_to_value(types, result));
 	QUARK_TRACE(json_to_pretty_string(debug));
 }
 
@@ -889,7 +889,7 @@ bc_value_t bc_intrinsic__filter(interpreter_t& vm, const bc_value_t args[], int 
 	const auto result = make_vector(types, e_type, vec2);
 
 	if(k_trace && false){
-		const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
+		const auto debug = value_and_type_to_json(types, bc_to_value(types, result));
 		QUARK_TRACE(json_to_pretty_string(debug));
 	}
 
@@ -925,7 +925,7 @@ bc_value_t bc_intrinsic__reduce(interpreter_t& vm, const bc_value_t args[], int 
 	const auto result = acc;
 
 if(k_trace && false){
-	const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
+	const auto debug = value_and_type_to_json(types, bc_to_value(types, result));
 	QUARK_TRACE(json_to_pretty_string(debug));
 }
 
@@ -974,7 +974,7 @@ bc_value_t bc_intrinsic__stable_sort(interpreter_t& vm, const bc_value_t args[],
 	const auto result = make_vector(types, e_type, mutate_inplace_elements2);
 
 if(k_trace && false){
-	const auto debug = value_and_type_to_ast_json(types, bc_to_value(types, result));
+	const auto debug = value_and_type_to_json(types, bc_to_value(types, result));
 	QUARK_TRACE(json_to_pretty_string(debug));
 }
 

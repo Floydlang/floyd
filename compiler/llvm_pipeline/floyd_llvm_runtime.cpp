@@ -693,7 +693,7 @@ void send_message(llvm_context_t& c, const std::string& dest_process_id, const r
 	if(trace){
 		QUARK_SCOPED_TRACE("Message:");
 		const auto v = from_runtime_value(c, message, message_type);
-		const auto message2 = value_to_ast_json(types, v);
+		const auto message2 = value_to_json(types, v);
 		QUARK_TRACE_SS(json_to_pretty_string(message2));
 	}
 
@@ -791,12 +791,12 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 			{
 				QUARK_SCOPED_TRACE("Input message");
 				const auto v = from_runtime_value(context, message_with_rc, process._message_type);
-				const auto message2 = value_to_ast_json(types, v);
+				const auto message2 = value_to_json(types, v);
 				QUARK_TRACE_SS(json_to_pretty_string(message2));
 			}
 			{
 				QUARK_SCOPED_TRACE("Input state");
-				const auto s = value_to_ast_json(types, process._process_state);
+				const auto s = value_to_json(types, process._process_state);
 				QUARK_TRACE_SS(json_to_pretty_string(s));
 			}
 		}
@@ -813,7 +813,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 
 		if(trace){
 			QUARK_SCOPED_TRACE("Output state");
-			const auto s = value_to_ast_json(types, process._process_state);
+			const auto s = value_to_json(types, process._process_state);
 			QUARK_TRACE_SS(json_to_pretty_string(s));
 		}
 
