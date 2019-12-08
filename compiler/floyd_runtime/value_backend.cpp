@@ -871,7 +871,7 @@ void dispose_struct(STRUCT_T& s){
 
 //??? If we stuff child[0].get_base_type() into the data-integer, we don't need types here.
 bool is_rc_value(const types_t& types, const type_t& type){
-	const auto physical_type = get_physical_type(types, type).physical;
+	const auto physical_type = get_physical_type(types, type);
 	return physical_type.is_string() || physical_type.is_vector() || physical_type.is_dict() || physical_type.is_struct() || physical_type.is_json();
 }
 

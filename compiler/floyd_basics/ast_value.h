@@ -552,7 +552,7 @@ struct value_t {
 	private: value_t(const types_t& types, const value_internals_t& value_internals, const type_t& logical_type) :
 		_value_internals(value_internals),
 		_logical_type(logical_type),
-		_physical_type(floyd::get_physical_type(types, logical_type).physical)
+		_physical_type(floyd::get_physical_type(types, logical_type))
 #if DEBUG_DEEP
 		,
 		DEBUG_STR = make_value_debug_str(*this);

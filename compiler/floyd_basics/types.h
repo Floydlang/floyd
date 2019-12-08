@@ -655,6 +655,7 @@ struct typedef_t {
 
 	std::string symbol_identifier;
 };
+
 inline bool operator==(const typedef_t& lhs, const typedef_t& rhs){
 	return
 		lhs.bt == rhs.bt
@@ -665,17 +666,6 @@ inline bool operator==(const typedef_t& lhs, const typedef_t& rhs){
 		&& lhs.symbol_identifier == rhs.symbol_identifier
 		;
 }
-
-
-//////////////////////////////////////////////////		physical_type_t
-
-
-//	Represents an instantiatable type where all types and subtypes are built-in floyd types, never named types.
-//??? use this to replace peek2() and typedef_t.
-struct physical_type_t {
-	type_t physical;
-};
-
 
 
 struct type_node_t {
@@ -690,7 +680,7 @@ struct type_node_t {
 
 	typedef_t def;
 
-	physical_type_t physical_type;
+	type_t physical_type;
 };
 
 inline bool operator==(const type_node_t& lhs, const type_node_t& rhs){
@@ -724,7 +714,7 @@ const type_node_t& lookup_typeinfo_from_type(const types_t& types, const type_t&
 void trace_types(const types_t& types);
 
 //	Undefined-type = not a physical type.
-physical_type_t get_physical_type(const types_t& types, const type_t& type);
+type_t get_physical_type(const types_t& types, const type_t& type);
 
 typedef_t get_type_desc(const types_t& types, const type_t& type);
 
