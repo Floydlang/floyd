@@ -903,8 +903,8 @@ static typedef_t make_symbol_ref0(const std::string& s){
 }
 
 
-
 /////////////////////////////////////////////////		types_t
+
 
 static bool is_physical(const base_type& bt){
 	return
@@ -913,7 +913,6 @@ static bool is_physical(const base_type& bt){
 		|| bt == base_type::k_symbol_ref
 		|| bt == base_type::k_named_type? false : true;
 }
-
 
 static typedef_t calc_physical_type(const types_t& types, const typedef_t& def){
 	QUARK_ASSERT(types.check_invariant());
@@ -929,9 +928,9 @@ static typedef_t calc_physical_type(const types_t& types, const typedef_t& def){
 		physical_child_types.end(),
 		[&](const auto& e){ return is_physical(e.get_base_type()) == false; }
 	);
-	bool is_fully_defined = is_physical(def.bt) && (it == physical_child_types.end());
+	bool is_physical_flag = is_physical(def.bt) && (it == physical_child_types.end());
 
-	if(is_fully_defined){
+	if(is_physical_flag){
 		auto temp = def;
 		temp.child_types = physical_child_types;
 		return temp;
@@ -940,7 +939,6 @@ static typedef_t calc_physical_type(const types_t& types, const typedef_t& def){
 		return make_simple(base_type::k_undefined);
 	}
 }
-
 
 static type_t intern_physical_def__mutate(types_t& types, const typedef_t& physical_def){
 	QUARK_ASSERT(types.check_invariant());
@@ -962,7 +960,6 @@ static type_t intern_physical_def__mutate(types_t& types, const typedef_t& physi
 		return ptype;
 	}
 }
-
 
 //	All child type are guaranteed to have types already since those are specified using types_t:s.
 static type_t intern_node__mutate(types_t& types, const typedef_t& def){
@@ -1551,34 +1548,30 @@ bool is_atomic_type(type_t type){
 
 
 
-static bool is_fully_defined_internal(const types_t& types, const std::set<type_lookup_index_t>& done_types, const type_t& t);
+static bool is_physical_internal(const types_t& types, const std::set<type_lookup_index_t>& done_types, const type_t& t);
 
-
-bool is_fully_defined_internal(const types_t& types, const std::set<type_lookup_index_t>& done_types, const struct_type_desc_t& s){
+static bool is_physical_internal(const types_t& types, const std::set<type_lookup_index_t>& done_types, const struct_type_desc_t& s){
 	QUARK_ASSERT(s.check_invariant());
 
 	for(const auto& e: s._members){
-		bool result = is_fully_defined_internal(types, done_types, e._type);
+		bool result = is_physical_internal(types, done_types, e._type);
 		if(result == false){
 			return false;
 		}
 	}
 	return true;
 }
-
-
-bool is_fully_defined__type_vector(const types_t& types, const std::set<type_lookup_index_t>& done_types, const std::vector<type_t>& elements){
+static bool is_physical__type_vector(const types_t& types, const std::set<type_lookup_index_t>& done_types, const std::vector<type_t>& elements){
 	QUARK_ASSERT(types.check_invariant());
 
 	for(const auto& e: elements){
-		if(is_fully_defined_internal(types, done_types, e) == false){
+		if(is_physical_internal(types, done_types, e) == false){
 			return false;
 		}
 	}
 	return true;
 }
-
-static bool is_fully_defined_internal(const types_t& types, const std::set<type_lookup_index_t>& done_types, const type_t& t){
+static bool is_physical_internal(const types_t& types, const std::set<type_lookup_index_t>& done_types, const type_t& t){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(t.check_invariant());
 
@@ -1625,35 +1618,33 @@ static bool is_fully_defined_internal(const types_t& types, const std::set<type_
 			}
 
 			bool operator()(const struct_t& e) const{
-				return is_fully_defined_internal(types, done_types, e.desc);
+				return is_physical_internal(types, done_types, e.desc);
 			}
 			bool operator()(const vector_t& e) const{
-				return is_fully_defined__type_vector(types, done_types, e._parts);
+				return is_physical__type_vector(types, done_types, e._parts);
 			}
 			bool operator()(const dict_t& e) const{
-				return is_fully_defined__type_vector(types, done_types, e._parts);
+				return is_physical__type_vector(types, done_types, e._parts);
 			}
 			bool operator()(const function_t& e) const{
-				return is_fully_defined__type_vector(types, done_types, e._parts);
+				return is_physical__type_vector(types, done_types, e._parts);
 			}
 			bool operator()(const symbol_ref_t& e) const {
 				return false;
 			}
 			bool operator()(const named_type_t& e) const {
-				return is_fully_defined_internal(types, done_types, e.destination_type);
+				return is_physical_internal(types, done_types, e.destination_type);
 			}
 		};
 		return std::visit(visitor_t { types, done2 }, get_type_variant(types, t));
 	}
 }
-
-
 bool is_fully_defined(const types_t& types, const type_t& t){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(t.check_invariant());
 
 	std::set<type_lookup_index_t> done_types;
-	return is_fully_defined_internal(types, done_types, t);
+	return is_physical_internal(types, done_types, t);
 }
 
 QUARK_TEST("Types", "is_fully_defined()", "", ""){

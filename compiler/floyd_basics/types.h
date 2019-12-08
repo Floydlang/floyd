@@ -19,17 +19,53 @@ They can also refer to types using their symbol name in the source code / lexica
 Later passes can improve the types gradually to resolve symbols, infer left out (undefined) types and so on.
 
 
+
 # base_type
 Enum with all basic types of types in Floyd. These are only the roots: you need to use type_t to fully describe a composite data structure.
 
 
-# type_t -- LOGICAL TYPE
+# type_t
 Opaque, immutable value that specifies ANY type. It may be a reference to a named type (like "/main/pixel_t") or a concrete type, like "int".
 You can compare and copy these but you cannot access their contents.
 
 - It can hold unresolved symbols (ties to a lexical scope in source code).
 - It can hold the name of a named type, like "pixel_t"
 - The type_t is normalized and can be compared with other type_t:s.
+
+
+# Logical & physical types
+Logical type. Abstract definition of a type -- can contain any type (directly or in child type). Can holds ymbol, undefined, void, named_type, any etc. It can represent even unfinished, forward declared or partially computed types. CANNOT BE INSTANTIATED.
+
+Physical type: It's fully defined and can have a backing storage of 0 ... many bytes. It CAN BE INSTANTIATED.
+CANNOT hold: symbol, undefined. But CAN hold void, named_type, any.
+
+	k_undefined				LOGICAL		-
+
+	k_any					LOGICAL		PHYSICAL
+
+	k_void					LOGICAL		PHYSICAL
+
+	k_bool					LOGICAL		PHYSICAL
+	k_int					LOGICAL		PHYSICAL
+	k_double				LOGICAL		PHYSICAL
+	k_string				LOGICAL		PHYSICAL
+	k_json					LOGICAL		PHYSICAL
+
+	k_typeid				LOGICAL		PHYSICAL
+
+	k_struct				LOGICAL		PHYSICAL (if all children are too)
+	k_vector				LOGICAL		PHYSICAL (if all children are too)
+	k_dict					LOGICAL		PHYSICAL (if all children are too)
+	k_function				LOGICAL		PHYSICAL (if all children are too)
+
+	k_symbol_ref			LOGICAL		-
+	k_named_type			LOGICAL		PHYSICAL
+
+	A composite type (like struct and vector) needs to be deeply physical to be physical: this means all child types must be examined too.
+
+??? fully-formed: has no symbol/undefined
+??? flattened-fully-formed: all named_types have been removed.
+
 
 
 # types_t
@@ -709,21 +745,20 @@ struct types_t {
 };
 
 type_t lookup_type_from_index(const types_t& types, type_lookup_index_t type_index);
+typedef_t get_type_desc(const types_t& types, const type_t& type);
 const type_node_t& lookup_typeinfo_from_type(const types_t& types, const type_t& type);
 
 void trace_types(const types_t& types);
 
 //	Undefined-type = not a physical type.
 type_t get_physical_type(const types_t& types, const type_t& type);
+bool is_fully_defined(const types_t& types, const type_t& type);
 
-typedef_t get_type_desc(const types_t& types, const type_t& type);
 
 
 
 type_t refresh_type(const types_t& types, const type_t& type);
 
-//	Is this type instantiatable: it uses no symbols and uses no undefined. Deep and follows named types.
-bool is_fully_defined(const types_t& types, const type_t& t);
 
 
 type_t make_recursive_type_test(types_t& types);
