@@ -633,7 +633,7 @@ int find_struct_member_index(const struct_type_desc_t& desc, const std::string& 
 //	Each type has exactly ONE ID.
 //	Automatically insert all basetype-types so they ALWAYS have EXPLICIT integer IDs as types.
 
-struct type_def_t {
+struct typedef_t {
 	bool check_invariant() const {
 		for(const auto& e: child_types){
 			QUARK_ASSERT(e.check_invariant());
@@ -655,7 +655,7 @@ struct type_def_t {
 
 	std::string symbol_identifier;
 };
-inline bool operator==(const type_def_t& lhs, const type_def_t& rhs){
+inline bool operator==(const typedef_t& lhs, const typedef_t& rhs){
 	return
 		lhs.bt == rhs.bt
 		&& lhs.child_types == rhs.child_types
@@ -671,7 +671,7 @@ inline bool operator==(const type_def_t& lhs, const type_def_t& rhs){
 
 
 //	Represents an instantiatable type where all types and subtypes are built-in floyd types, never named types.
-//??? use this to replace peek2() and type_desc_t.
+//??? use this to replace peek2() and typedef_t.
 struct physical_type_t {
 	type_t physical;
 };
@@ -688,7 +688,7 @@ struct type_node_t {
 	//	undefined or hold the real type.
 	type_name_t optional_name;
 
-	type_def_t def;
+	typedef_t def;
 
 	physical_type_t physical_type;
 };
@@ -725,6 +725,8 @@ void trace_types(const types_t& types);
 
 //	Undefined-type = not a physical type.
 physical_type_t get_physical_type(const types_t& types, const type_t& type);
+
+typedef_t get_type_desc(const types_t& types, const type_t& type);
 
 
 

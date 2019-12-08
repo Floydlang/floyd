@@ -354,7 +354,7 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 		const auto main_result_int = (*f2)(runtime_ptr, main_args4);
 
 		const auto return_itype = make_vector(types, type_t::make_string());
-		if(is_rc_value(peek2(types, return_itype))){
+		if(is_rc_value(types, return_itype)){
 			release_value(context.ee->backend, main_args4, return_itype);
 		}
 		return main_result_int;

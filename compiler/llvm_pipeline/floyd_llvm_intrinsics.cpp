@@ -105,7 +105,7 @@ static bool matches_specialization(const config_t& config, const types_t& types,
 		return wanted == eresolved_type::k_string;
 	}
 	else if(is_vector_carray(types, config, arg_type)){
-		const auto is_rc = is_rc_value(peek2(types, arg_type_peek.get_vector_element_type(types)));
+		const auto is_rc = is_rc_value(types, arg_type_peek.get_vector_element_type(types));
 		if(is_rc){
 			return wanted == eresolved_type::k_vector_carray_nonpod;
 		}
@@ -114,7 +114,7 @@ static bool matches_specialization(const config_t& config, const types_t& types,
 		}
 	}
 	else if(is_vector_hamt(types, config, arg_type)){
-		const auto is_rc = is_rc_value(peek2(types, arg_type_peek.get_vector_element_type(types)));
+		const auto is_rc = is_rc_value(types, arg_type_peek.get_vector_element_type(types));
 		if(is_rc){
 			return wanted == eresolved_type::k_vector_hamt_nonpod;
 		}
@@ -124,7 +124,7 @@ static bool matches_specialization(const config_t& config, const types_t& types,
 	}
 
 	else if(is_dict_cppmap(types, config, arg_type)){
-		const auto is_rc = is_rc_value(peek2(types, arg_type_peek.get_dict_value_type(types)));
+		const auto is_rc = is_rc_value(types, arg_type_peek.get_dict_value_type(types));
 		if(is_rc){
 			return wanted == eresolved_type::k_dict_cppmap_nonpod;
 		}
@@ -133,7 +133,7 @@ static bool matches_specialization(const config_t& config, const types_t& types,
 		}
 	}
 	else if(is_dict_hamt(types, config, arg_type)){
-		const auto is_rc = is_rc_value(peek2(types, arg_type_peek.get_dict_value_type(types)));
+		const auto is_rc = is_rc_value(types, arg_type_peek.get_dict_value_type(types));
 		if(is_rc){
 			return wanted == eresolved_type::k_dict_hamt_nonpod;
 		}
@@ -217,7 +217,7 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 		const auto key_string = from_runtime_string(r, key_value);
 		m.erase(key_string);
 
-		if(is_rc_value(peek2(types, value_type))){
+		if(is_rc_value(types, value_type)){
 			for(auto& e: m){
 				retain_value(backend, e.second, value_type);
 			}
@@ -237,7 +237,7 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 		const auto key_string = from_runtime_string(r, key_value);
 		m = m.erase(key_string);
 
-		if(is_rc_value(peek2(types, value_type))){
+		if(is_rc_value(types, value_type)){
 			for(auto& e: m){
 				retain_value(backend, e.second, value_type);
 			}
@@ -922,7 +922,7 @@ static runtime_value_t filter__carray(floyd_runtime_t* frp, runtime_value_t elem
 		if(keep.bool_value != 0){
 			acc.push_back(element_value);
 
-			if(is_rc_value(peek2(backend.types, e_element_itype))){
+			if(is_rc_value(backend.types, e_element_itype)){
 				retain_value(backend, element_value, e_element_itype);
 			}
 		}
@@ -967,7 +967,7 @@ static runtime_value_t filter__hamt(floyd_runtime_t* frp, runtime_value_t elemen
 		if(keep.bool_value != 0){
 			acc.push_back(element_value);
 
-			if(is_rc_value(peek2(backend.types, e_element_itype))){
+			if(is_rc_value(backend.types, e_element_itype)){
 				retain_value(backend, element_value, e_element_itype);
 			}
 		}
@@ -1031,7 +1031,7 @@ static runtime_value_t reduce__carray(floyd_runtime_t* frp, runtime_value_t elem
 		const auto element_value = vec.get_element_ptr()[i];
 		const auto acc2 = (*f)(frp, acc, element_value, context);
 
-		if(is_rc_value(peek2(backend.types, type_t(init_value_type)))){
+		if(is_rc_value(backend.types, type_t(init_value_type))){
 			release_value(backend, acc, type_t(init_value_type));
 		}
 		acc = acc2;
@@ -1063,7 +1063,7 @@ static runtime_value_t reduce__hamt(floyd_runtime_t* frp, runtime_value_t elemen
 		const auto element_value = vec.load_element(i);
 		const auto acc2 = (*f)(frp, acc, element_value, context);
 
-		if(is_rc_value(peek2(backend.types, type_t(init_value_type)))){
+		if(is_rc_value(backend.types, type_t(init_value_type))){
 			release_value(backend, acc, type_t(init_value_type));
 		}
 		acc = acc2;

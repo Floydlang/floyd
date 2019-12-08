@@ -715,7 +715,7 @@ static bool is_struct_pod(const types_t& types, const struct_type_desc_t& struct
 
 	for(const auto& e: struct_def._members){
 		const auto& member_type = e._type;
-		if(is_rc_value(peek2(types, member_type))){
+		if(is_rc_value(types, member_type)){
 			return false;
 		}
 	}
@@ -751,7 +751,7 @@ static const STRUCT_T* floydrt_update_struct_member_nonpod(floyd_runtime_t* frp,
 	//	Retain every member of new struct.
 	for(const auto& e: struct_layout_info.second.members){
 		const auto member_itype = e.type;
-		if(is_rc_value(peek2(backend.types, member_itype))){
+		if(is_rc_value(backend.types, member_itype)){
 			const auto offset = e.offset;
 			const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
 			retain_value(backend, *member_ptr, member_itype);
@@ -1012,7 +1012,7 @@ static void floydrt_retain_vector_carray(floyd_runtime_t* frp, runtime_value_t v
 #if DEBUG
 	const auto& type = lookup_type_ref(backend, type0);
 	QUARK_ASSERT(peek2(backend.types, type).is_string() || peek2(backend.types, type).is_vector());
-	QUARK_ASSERT(is_rc_value(peek2(backend.types, type_t(type0))));
+	QUARK_ASSERT(is_rc_value(backend.types, type_t(type0)));
 #endif
 
 	retain_vector_carray(backend, vec, type_t(type0));
@@ -1024,7 +1024,7 @@ static void floydrt_retain_vector_hamt(floyd_runtime_t* frp, runtime_value_t vec
 #if DEBUG
 	const auto& type = lookup_type_ref(backend, type0);
 	QUARK_ASSERT(peek2(backend.types, type).is_string() || peek2(backend.types, type).is_vector());
-	QUARK_ASSERT(is_rc_value(peek2(backend.types, type_t(type0))));
+	QUARK_ASSERT(is_rc_value(backend.types, type_t(type0)));
 #endif
 
 	retain_vector_hamt(backend, vec, type_t(type0));
@@ -1037,7 +1037,7 @@ static void floydrt_retain_dict_cppmap(floyd_runtime_t* frp, runtime_value_t dic
 	auto& backend = r.ee->backend;
 	const auto& type = lookup_type_ref(backend, type0);
 #if DEBUG
-	QUARK_ASSERT(is_rc_value(peek2(backend.types, type)));
+	QUARK_ASSERT(is_rc_value(backend.types, type));
 	QUARK_ASSERT(peek2(backend.types, type).is_dict());
 	QUARK_ASSERT(is_dict_cppmap(backend.types, backend.config, type));
 #endif
@@ -1049,7 +1049,7 @@ static void floydrt_retain_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict,
 	auto& backend = r.ee->backend;
 #if DEBUG
 	const auto& type = lookup_type_ref(backend, type0);
-	QUARK_ASSERT(is_rc_value(peek2(backend.types, type)));
+	QUARK_ASSERT(is_rc_value(backend.types, type));
 	QUARK_ASSERT(peek2(backend.types, type).is_dict());
 	QUARK_ASSERT(is_dict_hamt(backend.types, backend.config, type));
 #endif
@@ -1064,7 +1064,7 @@ static void floydrt_retain_json(floyd_runtime_t* frp, JSON_T* json, runtime_type
 	auto& backend = r.ee->backend;
 
 	const auto& type = lookup_type_ref(backend, type0);
-	QUARK_ASSERT(is_rc_value(peek2(backend.types, type)));
+	QUARK_ASSERT(is_rc_value(backend.types, type));
 
 	//	NOTICE: Floyd runtime() init will destruct globals, including json::null.
 	if(json == nullptr){
@@ -1084,7 +1084,7 @@ static void floydrt_retain_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_typ
 
 const auto& type = lookup_type_ref(backend, type0);
 #if DEBUG
-	QUARK_ASSERT(is_rc_value(peek2(backend.types, type)));
+	QUARK_ASSERT(is_rc_value(backend.types, type));
 	QUARK_ASSERT(peek2(backend.types, type).is_struct());
 #endif
 
@@ -1104,7 +1104,7 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 	auto& itype_reg = *generate_itype_constant(gen_acc.gen, type_peek);
 	auto& builder = gen_acc.get_builder();
 
-	if(is_rc_value(type_peek)){
+	if(is_rc_value(types, type0)){
 		if(type_peek.is_string()){
 			const auto res = resolve_func(gen_acc.gen.link_map, "retain_vector_carray");
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
@@ -1191,7 +1191,7 @@ static void floydrt_release_vector_carray_pod(floyd_runtime_t* frp, runtime_valu
 #if DEBUG
 	QUARK_ASSERT(peek2(backend.types, type).is_string() || is_vector_carray(backend.types, backend.config, type));
 	if(peek2(backend.types, type).is_vector()){
-		QUARK_ASSERT(is_rc_value(peek2(backend.types, peek2(backend.types, type).get_vector_element_type(backend.types))) == false);
+		QUARK_ASSERT(is_rc_value(backend.types, peek2(backend.types, type).get_vector_element_type(backend.types)) == false);
 	}
 #endif
 
@@ -1207,7 +1207,7 @@ static void floydrt_release_vector_carray_nonpod(floyd_runtime_t* frp, runtime_v
 	const auto& type = lookup_type_ref(backend, type0);
 #if DEBUG
 	QUARK_ASSERT(is_vector_carray(backend.types, backend.config, type));
-	QUARK_ASSERT(is_rc_value(peek2(backend.types, peek2(backend.types, type).get_vector_element_type(backend.types))) == true);
+	QUARK_ASSERT(is_rc_value(backend.types, peek2(backend.types, type).get_vector_element_type(backend.types)) == true);
 #endif
 
 	//	Check really only required when unwinding locals.
@@ -1222,7 +1222,7 @@ static void floydrt_release_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_
 	const auto& type = lookup_type_ref(backend, type0);
 #if DEBUG
 	QUARK_ASSERT(is_vector_hamt(backend.types, backend.config, type));
-	QUARK_ASSERT(is_rc_value(peek2(backend.types, peek2(backend.types, type).get_vector_element_type(backend.types))) == false);
+	QUARK_ASSERT(is_rc_value(backend.types, peek2(backend.types, type).get_vector_element_type(backend.types)) == false);
 #endif
 
 	//	Check really only required when unwinding locals.
@@ -1237,7 +1237,7 @@ static void floydrt_release_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_val
 	const auto& type = lookup_type_ref(backend, type0);
 #if DEBUG
 	QUARK_ASSERT(is_vector_hamt(backend.types, backend.config, type));
-	QUARK_ASSERT(is_rc_value(peek2(backend.types, peek2(backend.types, type).get_vector_element_type(backend.types))) == true);
+	QUARK_ASSERT(is_rc_value(backend.types, peek2(backend.types, type).get_vector_element_type(backend.types)) == true);
 #endif
 
 	//	Check really only required when unwinding locals.
@@ -1343,13 +1343,13 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 	const auto& types = gen_acc.gen.type_lookup.state.types;
 	const auto peek = peek2(types, type);
 
-	if(is_rc_value(peek)){
+	if(is_rc_value(types, type)){
 		if(peek.is_string()){
 			const auto res = resolve_func(gen_acc.gen.link_map, "release_vector_carray_pod");
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 		}
 		else if(peek.is_vector()){
-			const bool is_element_pod = is_rc_value(peek2(types, peek.get_vector_element_type(types))) ? false : true;
+			const bool is_element_pod = is_rc_value(types, peek.get_vector_element_type(types)) ? false : true;
 
 			if(is_vector_carray(types, gen_acc.gen.settings.config, type) && is_element_pod == true){
 				const auto res = resolve_func(gen_acc.gen.link_map, "release_vector_carray_pod");

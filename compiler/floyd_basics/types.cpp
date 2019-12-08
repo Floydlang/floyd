@@ -806,11 +806,11 @@ type_variant_t get_type_variant(const types_t& types, const type_t& type){
 }
 
 
-/////////////////////////////////////////////////		type_def_t
+/////////////////////////////////////////////////		typedef_t
 
 
-static type_def_t make_simple(const base_type& bt){
-	return type_def_t {
+static typedef_t make_simple(const base_type& bt){
+	return typedef_t {
 		bt,
 		std::vector<type_t>{},
 		{},
@@ -820,8 +820,8 @@ static type_def_t make_simple(const base_type& bt){
 	};
 }
 
-static type_def_t make_named_type(const type_t& destination_type){
-	return type_def_t {
+static typedef_t make_named_type(const type_t& destination_type){
+	return typedef_t {
 		base_type::k_named_type,
 		{ destination_type },
 		{},
@@ -831,7 +831,7 @@ static type_def_t make_named_type(const type_t& destination_type){
 	};
 }
 
-static type_def_t make_struct0(const types_t& types, const struct_type_desc_t& desc){
+static typedef_t make_struct0(const types_t& types, const struct_type_desc_t& desc){
 	QUARK_ASSERT(types.check_invariant());
 
 	const auto member_names = mapf<std::string>(desc._members, [types](const auto& m){
@@ -841,7 +841,7 @@ static type_def_t make_struct0(const types_t& types, const struct_type_desc_t& d
 		return m._type;
 	});
 
-	return type_def_t {
+	return typedef_t {
 		base_type::k_struct,
 		logical_member_types,
 		member_names,
@@ -851,10 +851,10 @@ static type_def_t make_struct0(const types_t& types, const struct_type_desc_t& d
 	};
 }
 
-static type_def_t make_vector0(const type_t& element_type){
+static typedef_t make_vector0(const type_t& element_type){
 	QUARK_ASSERT(element_type.check_invariant());
 
-	return type_def_t {
+	return typedef_t {
 		base_type::k_vector,
 		{ element_type },
 		{},
@@ -864,10 +864,10 @@ static type_def_t make_vector0(const type_t& element_type){
 	};
 }
 
-static type_def_t make_dict0(const type_t& value_type){
+static typedef_t make_dict0(const type_t& value_type){
 	QUARK_ASSERT(value_type.check_invariant());
 
-	return type_def_t {
+	return typedef_t {
 		base_type::k_dict,
 		{ value_type },
 		{},
@@ -877,8 +877,8 @@ static type_def_t make_dict0(const type_t& value_type){
 	};
 }
 
-static type_def_t make_function0(const type_t& ret, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return){
-	return type_def_t {
+static typedef_t make_function0(const type_t& ret, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return){
+	return typedef_t {
 		base_type::k_function,
 		concat(
 			std::vector<type_t>{ ret },
@@ -891,8 +891,8 @@ static type_def_t make_function0(const type_t& ret, const std::vector<type_t>& a
 	};
 }
 
-static type_def_t make_symbol_ref0(const std::string& s){
-	return type_def_t {
+static typedef_t make_symbol_ref0(const std::string& s){
+	return typedef_t {
 		base_type::k_symbol_ref,
 		std::vector<type_t>{},
 		{},
@@ -915,7 +915,7 @@ static bool is_physical(const base_type& bt){
 }
 
 
-static type_def_t calc_physical_type(const types_t& types, const type_def_t& def){
+static typedef_t calc_physical_type(const types_t& types, const typedef_t& def){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(def.check_invariant());
 
@@ -942,7 +942,7 @@ static type_def_t calc_physical_type(const types_t& types, const type_def_t& def
 }
 
 
-static type_t intern_physical_def__mutate(types_t& types, const type_def_t& physical_def){
+static type_t intern_physical_def__mutate(types_t& types, const typedef_t& physical_def){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(physical_def.check_invariant());
 
@@ -965,7 +965,7 @@ static type_t intern_physical_def__mutate(types_t& types, const type_def_t& phys
 
 
 //	All child type are guaranteed to have types already since those are specified using types_t:s.
-static type_t intern_node__mutate(types_t& types, const type_def_t& def){
+static type_t intern_node__mutate(types_t& types, const typedef_t& def){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(def.check_invariant());
 
@@ -1043,7 +1043,7 @@ static type_t update_named_type_internal__mutate(types_t& types, const type_t& n
 	return lookup_type_from_index(types, named.get_lookup_index());
 }
 
-static void register_basic_type0__mutate(types_t& types, const type_def_t& def){
+static void register_basic_type0__mutate(types_t& types, const typedef_t& def){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(def.check_invariant());
 
@@ -1142,7 +1142,7 @@ bool types_t::check_invariant() const {
 
 
 
-static type_t lookup_node(const types_t& types, const type_def_t& def){
+static type_t lookup_node(const types_t& types, const typedef_t& def){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(def.check_invariant());
 
@@ -1665,6 +1665,14 @@ physical_type_t get_physical_type(const types_t& types, const type_t& type){
 	return types.nodes[lookup_index].physical_type;
 }
 
+typedef_t get_type_desc(const types_t& types, const type_t& type){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto lookup_index = type.get_lookup_index();
+	return types.nodes[lookup_index].def;
+}
+
 
 
 
@@ -2013,7 +2021,7 @@ QUARK_TEST("Types", "update_named_type()", "", ""){
 	QUARK_VERIFY(is_fully_defined(types, b));
 }
 
-//	NOTICE: We need to handle a specific type_def_t BOTH as an unnamed type AND as one or several
+//	NOTICE: We need to handle a specific typedef_t BOTH as an unnamed type AND as one or several
 //	uniquely named types -- as separate types. This means we need separate lookup_index for each of those types.
 
 /*

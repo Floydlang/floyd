@@ -118,7 +118,7 @@ value_t bc_to_value(const types_t& types, const bc_value_t& value){
 }
 
 
-static bc_value_t value_to_bc__physical(const types_t& types, const value_t& value, const type_desc_t& physical_type){
+static bc_value_t value_to_bc__physical(const types_t& types, const value_t& value, const type_t& physical_type){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(physical_type.check_invariant());

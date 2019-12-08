@@ -181,7 +181,7 @@ struct function_definition_t {
 	static function_definition_t make_func(
 		const location_t& location,
 		const std::string& definition_name,
-		const type_desc_t& function_type,
+		const type_t& function_type,
 		const std::vector<member_t>& named_args,
 		const std::shared_ptr<body_t>& body
 	){
@@ -196,7 +196,7 @@ struct function_definition_t {
 	static function_definition_t make_intrinsic(
 		const location_t& location,
 		const std::string& definition_name,
-		const type_desc_t& function_type,
+		const type_t& function_type,
 		const std::vector<member_t>& named_args
 	){
 		return {
@@ -218,7 +218,7 @@ struct function_definition_t {
 
 	//	This is optional and may be different than the function name in the code.
 	std::string _definition_name;
-	type_desc_t _function_type;
+	type_t _function_type;
 
 	//	Same types as in _function_type, but augumented with argument names.
 	//??? Remove. Instead have vector of just the argument names. Or update type_t to contain the argument names of functions!?

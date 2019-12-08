@@ -443,7 +443,7 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_genera
 					QUARK_ASSERT(symbol._init.is_undefined());
 
 					//	Make sure to null all RC values.
-					if(is_rc_value(type_peek)){
+					if(is_rc_value(types, type)){
 						auto c = llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(itype));
 						builder.CreateStore(c, dest);
 					}
@@ -458,7 +458,7 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_genera
 					QUARK_ASSERT(symbol._init.is_undefined() == false);
 
 					//	Make sure to null all RC values.
-					if(is_rc_value(type_peek)){
+					if(is_rc_value(types, type)){
 						auto c = llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(itype));
 						builder.CreateStore(c, dest);
 					}
@@ -467,7 +467,7 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_genera
 				}
 				else if(symbol._symbol_type == symbol_t::symbol_type::mutable_reserve){
 					//	Make sure to null all RC values.
-					if(is_rc_value(type_peek)){
+					if(is_rc_value(types, type)){
 						auto c = llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(itype));
 						builder.CreateStore(c, dest);
 					}
@@ -510,7 +510,7 @@ static void generate_destruct_scope_locals(llvm_function_generator_t& gen_acc, c
 			}
 			else{
 				const auto type = e.symbol.get_value_type();
-				if(is_rc_value(peek2(types, type))){
+				if(is_rc_value(types, type)){
 					auto reg = builder.CreateLoad(e.value_ptr);
 					generate_release(gen_acc, *reg, type);
 				}
@@ -1899,7 +1899,7 @@ static void generate_assign2_statement(llvm_function_generator_t& gen_acc, const
 	auto dest = find_symbol(gen_acc.gen, s._dest_variable);
 	const auto type = dest.symbol.get_value_type();
 
-	if(is_rc_value(peek2(types, type))){
+	if(is_rc_value(types, type)){
 		auto prev_value = gen_acc.get_builder().CreateLoad(dest.value_ptr);
 		generate_release(gen_acc, *prev_value, type);
 
@@ -2526,7 +2526,7 @@ static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const 
 					bool needs_destruct = e.symbol._symbol_type != symbol_t::symbol_type::named_type;
 					if(needs_destruct){
 						const auto type = e.symbol.get_value_type();
-						if(is_rc_value(peek2(types, type))){
+						if(is_rc_value(types, type)){
 							auto reg = builder.CreateLoad(e.value_ptr);
 							generate_release(function_gen_acc, *reg, type);
 						}

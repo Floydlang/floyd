@@ -723,7 +723,7 @@ const std::pair<type_t, struct_layout_t>& find_struct_layout(const value_backend
 ////////////////////////////////		REFERENCE COUNTING
 
 //	Tells if this type uses reference counting for its values.
-bool is_rc_value(const type_desc_t& type);
+bool is_rc_value(const types_t& types, const type_t& type);
 
 
 
@@ -848,7 +848,7 @@ inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, ty
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(is_rc_value(peek2(backend.types, type)));
+	QUARK_ASSERT(is_rc_value(backend.types, type));
 	QUARK_ASSERT(is_vector_hamt(backend.types, backend.config, type));
 
 	inc_rc(vec.vector_hamt_ptr->alloc);
@@ -861,7 +861,7 @@ inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t ve
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(is_vector_hamt(backend.types, backend.config, type));
-	QUARK_ASSERT(is_rc_value(peek2(backend.types, lookup_vector_element_type(backend, type))) == false);
+	QUARK_ASSERT(is_rc_value(backend.types, lookup_vector_element_type(backend, type)) == false);
 
 	if(dec_rc(vec.vector_hamt_ptr->alloc) == 0){
 		dispose_vector_hamt(vec);
@@ -875,7 +875,7 @@ inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(is_vector_hamt(backend.types, backend.config, type));
-	QUARK_ASSERT(is_rc_value(peek2(backend.types, lookup_vector_element_type(backend, type))) == true);
+	QUARK_ASSERT(is_rc_value(backend.types, lookup_vector_element_type(backend, type)) == true);
 
 	if(dec_rc(vec.vector_hamt_ptr->alloc) == 0){
 		release_vector_hamt_elements_internal(backend, vec, type);
