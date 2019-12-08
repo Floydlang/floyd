@@ -109,7 +109,11 @@ value_t bc_to_value(const types_t& types, const bc_value_t& value){
 		return value_t::make_dict_value(types, value_type, entries2);
 	}
 	else if(basetype == base_type::k_function){
-		return value_t::make_function_value(type, value.get_function_value());
+		return value_t::make_function_value(types, type, value.get_function_value());
+	}
+	else if(basetype == base_type::k_named_type){
+		QUARK_ASSERT(false);
+		quark::throw_exception();
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -117,52 +121,75 @@ value_t bc_to_value(const types_t& types, const bc_value_t& value){
 	}
 }
 
+#if 0
+QUARK_TEST("", "bc_to_value()", "", ""){
+	types_t types;
+	make_recursive_type_test(types);
 
-static bc_value_t value_to_bc__physical(const types_t& types, const value_t& value, const type_t& physical_type){
+	const auto n = lookup_type_from_name(types, type_name_t{{ "glob", "object_t" }});
+	const auto objs = value_t::make_vector_value(types, n, {});
+	const value_t a = value_t::make_struct_value(types, n, std::vector<value_t> { objs });
+
+	trace_types(types);
+
+	const auto b = value_to_bc(types, a);
+
+	const auto r = bc_to_value(types, b);
+	QUARK_VERIFY(r == a);
+}
+#endif
+
+static bc_value_t value_to_bc__physical(const types_t& types, const value_t& value, const type_t& type){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
-	QUARK_ASSERT(physical_type.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
 
-	const auto basetype = physical_type.get_base_type();
-	if(basetype == base_type::k_undefined){
+	const auto logical_type = value.get_type();
+	const auto physical_type = value.get_type();
+
+	//	Only structs have named types right now.
+	QUARK_ASSERT(physical_type.is_struct() || logical_type == physical_type);
+
+	const auto bt = type.get_base_type();
+	if(bt == base_type::k_undefined){
 		return bc_value_t::make_undefined();
 	}
-	else if(basetype == base_type::k_any){
+	else if(bt == base_type::k_any){
 		return bc_value_t::make_any();
 	}
-	else if(basetype == base_type::k_void){
+	else if(bt == base_type::k_void){
 		return bc_value_t::make_void();
 	}
-	else if(basetype == base_type::k_bool){
+	else if(bt == base_type::k_bool){
 		return bc_value_t::make_bool(value.get_bool_value());
 	}
-	else if(basetype == base_type::k_bool){
+	else if(bt == base_type::k_bool){
 		return bc_value_t::make_bool(value.get_bool_value());
 	}
-	else if(basetype == base_type::k_int){
+	else if(bt == base_type::k_int){
 		return bc_value_t::make_int(value.get_int_value());
 	}
-	else if(basetype == base_type::k_double){
+	else if(bt == base_type::k_double){
 		return bc_value_t::make_double(value.get_double_value());
 	}
 
-	else if(basetype == base_type::k_string){
+	else if(bt == base_type::k_string){
 		return bc_value_t::make_string(value.get_string_value());
 	}
-	else if(basetype == base_type::k_json){
+	else if(bt == base_type::k_json){
 		return bc_value_t::make_json(value.get_json());
 	}
-	else if(basetype == base_type::k_typeid){
+	else if(bt == base_type::k_typeid){
 		return bc_value_t::make_typeid_value(value.get_typeid_value());
 	}
-	else if(basetype == base_type::k_struct){
-		return bc_value_t::make_struct_value(physical_type, values_to_bcs(types, value.get_struct_value()->_member_values));
+	else if(bt == base_type::k_struct){
+		return bc_value_t::make_struct_value(logical_type, values_to_bcs(types, value.get_struct_value()->_member_values));
 	}
 
-	else if(basetype == base_type::k_vector){
-		const auto element_type = physical_type.get_vector_element_type(types);
+	else if(bt == base_type::k_vector){
+		const auto element_type = logical_type.get_vector_element_type(types);
 
-		if(encode_as_vector_w_inplace_elements(types, physical_type)){
+		if(encode_as_vector_w_inplace_elements(types, logical_type)){
 			const auto& vec = value.get_vector_value();
 			immer::vector<bc_inplace_value_t> vec2;
 			for(const auto& e: vec){
@@ -182,8 +209,8 @@ static bc_value_t value_to_bc__physical(const types_t& types, const value_t& val
 			return make_vector(types, element_type, vec2);
 		}
 	}
-	else if(basetype == base_type::k_dict){
-		const auto value_type = physical_type.get_dict_value_type(types);
+	else if(bt == base_type::k_dict){
+		const auto value_type = logical_type.get_dict_value_type(types);
 
 		const auto elements = value.get_dict_value();
 		immer::map<std::string, bc_external_handle_t> entries2;
@@ -198,10 +225,15 @@ static bc_value_t value_to_bc__physical(const types_t& types, const value_t& val
 		}
 		return make_dict(types, value_type, entries2);
 	}
-	else if(basetype == base_type::k_function){
-		return bc_value_t::make_function_value(physical_type, value.get_function_value());
+	else if(bt == base_type::k_function){
+		return bc_value_t::make_function_value(logical_type, value.get_function_value());
 	}
-	else if(basetype == base_type::k_named_type){
+	else if(bt == base_type::k_named_type){
+		const auto type2 = dereference_type(types, type);
+		auto a = value_to_bc__physical(types, value, type2);
+//		a._type = logical_type;
+		return a;
+
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
@@ -215,16 +247,27 @@ bc_value_t value_to_bc(const types_t& types, const value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 
 	const auto type = value.get_type();
-	const auto peek = peek2(types, type);
-
-	if(type.is_named_type()){
-		const auto result = value_to_bc__physical(types, value, peek);
-		return result;
-	}
-	else{
-		return value_to_bc__physical(types, value, peek);
-	}
+	const auto result = value_to_bc__physical(types, value, type);
+	return result;
 }
+
+QUARK_TEST("", "value_to_bc()", "", ""){
+	types_t types;
+	const auto a = value_t::make_string("abc");
+	const bc_value_t r = value_to_bc(types, a);
+	QUARK_VERIFY(r.get_string_value() == "abc");
+}
+QUARK_TEST("", "value_to_bc()", "", ""){
+	types_t types;
+
+	const auto t = make_struct(types, struct_type_desc_t({ member_t(type_t::make_int(), "x") }));
+	const auto n = make_named_type(types, type_name_t{{ "glob", "my_struct" }}, t);
+
+	const value_t a = value_t::make_struct_value(types, n, std::vector<value_t> { value_t::make_int(100)});
+	const bc_value_t r = value_to_bc(types, a);
+	QUARK_VERIFY(r.get_struct_value()[0].get_int_value() == 100);
+}
+
 
 //??? add more tests!
 

@@ -478,7 +478,7 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 		}
 		value_t operator()(const function_t& e) const{
 			const auto link_name = native_func_ptr_to_link_name(backend, encoded_value.function_ptr);
-			return value_t::make_function_value(type, function_id_t { link_name.s });
+			return value_t::make_function_value(backend.types, type, function_id_t { link_name.s });
 		}
 		value_t operator()(const symbol_ref_t& e) const {
 			QUARK_ASSERT(false); throw std::exception();

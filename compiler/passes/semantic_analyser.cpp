@@ -796,7 +796,7 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 
 	a_acc._function_defs.insert({ function_id, function_definition_t(function_def2) });
 
-	const auto f = value_t::make_function_value(f_type, function_id);
+	const auto f = value_t::make_function_value(a_acc._types, f_type, function_id);
 
 
 	//	Add benchmark-def record to benchmark_defs.
@@ -851,7 +851,7 @@ static analyser_t analyse_test_def_statement(const analyser_t& a, const statemen
 
 	a_acc._function_defs.insert({ function_id, function_definition_t(function_def2) });
 
-	const auto f = value_t::make_function_value(f_itype, function_id);
+	const auto f = value_t::make_function_value(a_acc._types, f_itype, function_id);
 
 
 	//	Add test-def record to test_defs.
@@ -2516,7 +2516,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 
 	a_acc._function_defs.insert({ function_id, function_def2 });
 
-	const auto r = expression_t::make_literal(value_t::make_function_value(function_type0, function_id), function_type0);
+	const auto r = expression_t::make_literal(value_t::make_function_value(a_acc._types, function_type0, function_id), function_type0);
 
 	return { a_acc, r };
 }

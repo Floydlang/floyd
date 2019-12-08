@@ -597,7 +597,9 @@ type_t value_t::get_typeid_value() const{
 
 std::shared_ptr<struct_value_t> value_t::get_struct_value() const{
 	QUARK_ASSERT(check_invariant());
-	if(!is_struct()){
+
+	//??? sloppy check
+	if(_physical_type.is_struct() == false && _logical_type.is_struct() == false){
 		quark::throw_runtime_error("Type mismatch!");
 	}
 
@@ -819,12 +821,23 @@ type_t value_t::get_type() const{
 value_t value_t::make_struct_value(const types_t& types, const type_t& struct_type, const std::vector<value_t>& values){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(struct_type.check_invariant());
-	QUARK_ASSERT(peek2(types, struct_type).get_struct(types)._members.size() == values.size());
+
+	const auto struct_desc = peek2(types, struct_type).get_struct(types);
+
+	QUARK_ASSERT(struct_desc._members.size() == values.size());
+
+#if DEBUG && 0
+	for(int i = 0; i < values.size() ; i++){
+		const auto lhs = struct_desc._members[i]._type;
+		const auto rhs = values[i].get_type();
+		QUARK_ASSERT(lhs == rhs);
+	}
+#endif
 
 	auto instance = std::make_shared<struct_value_t>(struct_value_t{ peek2(types, struct_type).get_struct(types), values });
 	auto ext = new value_ext_t{ instance };
 	QUARK_ASSERT(ext->_rc == 1);
-	return value_t(value_internals_t { ._ext = ext }, struct_type);
+	return value_t(types, value_internals_t { ._ext = ext }, struct_type);
 
 
 
@@ -834,7 +847,7 @@ value_t value_t::make_vector_value(const types_t& types, const type_t& element_t
 	const auto type = make_vector(types, element_type);
 	auto ext = new value_ext_t{ elements };
 	QUARK_ASSERT(ext->_rc == 1);
-	return value_t(value_internals_t { ._ext = ext }, type);
+	return value_t(types, value_internals_t { ._ext = ext }, type);
 
 
 }
@@ -842,29 +855,58 @@ value_t value_t::make_vector_value(types_t& types, const type_t& element_type, c
 	const auto type = make_vector(types, element_type);
 	auto ext = new value_ext_t{ elements };
 	QUARK_ASSERT(ext->_rc == 1);
-	return value_t(value_internals_t { ._ext = ext }, type);
+	return value_t(types, value_internals_t { ._ext = ext }, type);
 }
 
 value_t value_t::make_dict_value(const types_t& types, const type_t& value_type, const std::map<std::string, value_t>& entries){
 	const auto type = make_dict(types, value_type);
 	auto ext = new value_ext_t{ entries };
 	QUARK_ASSERT(ext->_rc == 1);
-	return value_t(value_internals_t { ._ext = ext }, type);
+	return value_t(types, value_internals_t { ._ext = ext }, type);
 }
 value_t value_t::make_dict_value(types_t& types, const type_t& value_type, const std::map<std::string, value_t>& entries){
 	const auto type = make_dict(types, value_type);
 	auto ext = new value_ext_t{ entries };
 	QUARK_ASSERT(ext->_rc == 1);
-	return value_t(value_internals_t { ._ext = ext }, type);
+	return value_t(types, value_internals_t { ._ext = ext }, type);
 }
 
-value_t value_t::make_function_value(const type_t& type, const function_id_t& function_id){
+value_t value_t::make_function_value(const types_t& types, const type_t& type, const function_id_t& function_id){
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(type.is_function());
 
 	auto ext = new value_ext_t{ function_id };
 	QUARK_ASSERT(ext->_rc == 1);
-	return value_t(value_internals_t { ._ext = ext }, type);
+	return value_t(types, value_internals_t { ._ext = ext }, type);
+}
+value_t value_t::make_function_value(types_t& types, const type_t& type, const function_id_t& function_id){
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(type.is_function());
+
+	auto ext = new value_ext_t{ function_id };
+	QUARK_ASSERT(ext->_rc == 1);
+	return value_t(types, value_internals_t { ._ext = ext }, type);
+}
+
+
+
+QUARK_TEST("value_t", "", "", ""){
+	types_t types;
+	const auto a = value_t::make_string("xyz");
+	QUARK_VERIFY(!a.is_undefined());
+}
+
+QUARK_TEST("value_t", "", "", ""){
+	types_t types;
+	const auto t = make_struct(types, struct_type_desc_t({ member_t(type_t::make_int(), "x") }));
+	const auto n = make_named_type(types, type_name_t{{ "glob", "my_struct" }}, t);
+	QUARK_VERIFY(n.is_named_type());
+	trace_types(types);
+
+	const value_t a = value_t::make_struct_value(types, n, std::vector<value_t> { value_t::make_int(100)});
+	QUARK_VERIFY(a.get_type().get_named_type(types).lexical_path[1] == "my_struct");
+	QUARK_VERIFY(a.get_physical_type().is_struct());
+	QUARK_VERIFY(a.get_struct_value()->_member_values[0].get_int_value() == 100);
 }
 
 
@@ -898,12 +940,16 @@ value_t make_default_value(const type_t& type){
 		return value_t::make_typeid_value(type_t::make_void());
 	}
 	else if(bt == base_type::k_struct){
-//		return value_t::make_struct_value(typid_t::make_struct(), {});
+		return value_t::make_undefined();
 	}
-	else if(bt == base_type::k_struct){
+	else if(bt == base_type::k_vector){
+		return value_t::make_undefined();
+	}
+	else if(bt == base_type::k_dict){
+		return value_t::make_undefined();
 	}
 	else if(bt == base_type::k_function){
-		return value_t::make_function_value(type, function_id_t {});
+		return value_t::make_undefined();
 	}
 	else if(bt == base_type::k_undefined){
 		return value_t::make_undefined();
@@ -1141,7 +1187,7 @@ value_t json_to_value(types_t& types, const type_t& type, const json_t& v){
 	else if(type.is_function()){
 		const auto function_id0 = v.get_object_element("function_id").get_string();
 		const auto function_id = function_id_t { function_id0 };
-		return value_t::make_function_value(type, function_id);
+		return value_t::make_function_value(types, type, function_id);
 	}
 	else if(type.is_named_type()){
 		//??? Add support!

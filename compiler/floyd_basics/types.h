@@ -736,6 +736,9 @@ type_t refresh_type(const types_t& types, const type_t& type);
 bool is_fully_defined(const types_t& types, const type_t& t);
 
 
+type_t make_recursive_type_test(types_t& types);
+
+
 //////////////////////////////////////////////////		NAMED TYPES
 
 

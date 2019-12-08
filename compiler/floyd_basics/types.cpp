@@ -1034,8 +1034,19 @@ static type_t update_named_type_internal__mutate(types_t& types, const type_t& n
 	QUARK_ASSERT(node.def.child_types.size() == 1);
 
 	//	NOTICE: Mutate the type INPLACE! This requires updating the physical type too.
+#if 1
 	node.def = make_named_type(destination_type);
 	node.physical_type = get_physical_type(types, destination_type);
+#else
+	const auto def = make_named_type(destination_type);
+
+	const auto pdef = calc_physical_type(types, def);
+	const auto ptype = intern_physical_def__mutate(types, pdef);
+
+	node.def = def;
+	node.physical_type = { ptype };
+//	node.physical_type = get_physical_type(types, destination_type);
+#endif
 
 	QUARK_ASSERT(types.check_invariant());
 
@@ -2010,17 +2021,6 @@ types_t types_from_json(const json_t& j){
 ////////////////////////////////		TESTS
 
 
-QUARK_TEST("Types", "update_named_type()", "", ""){
-	types_t types;
-	const auto name = unpack_type_name("/a/b");
-	const auto a = make_named_type(types, name, make_undefined());
-	const auto s = make_struct(types, struct_type_desc_t( { member_t(a, "f") } ));
-	const auto b = update_named_type(types, a, s);
-
-	if(false) trace_types(types);
-	QUARK_VERIFY(is_fully_defined(types, b));
-}
-
 //	NOTICE: We need to handle a specific typedef_t BOTH as an unnamed type AND as one or several
 //	uniquely named types -- as separate types. This means we need separate lookup_index for each of those types.
 
@@ -2109,6 +2109,43 @@ QUARK_TEST("Types", "types_t()", "", ""){
 
 //	|15     |                                 |func       |func void(bool) pure                                                     |15          |func void(bool) pure                                                |
 }
+
+QUARK_TEST("Types", "update_named_type()", "", ""){
+	types_t types;
+	const auto name = unpack_type_name("/a/b");
+	const auto a = make_named_type(types, name, make_undefined());
+	const auto s = make_struct(types, struct_type_desc_t( { member_t(a, "f") } ));
+	const auto b = update_named_type(types, a, s);
+
+	if(false) trace_types(types);
+	QUARK_VERIFY(is_fully_defined(types, b));
+}
+
+type_t make_recursive_type_test(types_t& types){
+	const auto trace = true;
+
+	const auto a = make_named_type(types, type_name_t{{ "glob", "object_t" }}, make_undefined());
+	if(trace) trace_types(types);
+	const auto v = make_vector(types, a);
+	if(trace) trace_types(types);
+	const auto s = make_struct(types, struct_type_desc_t( { member_t(v, "inside") } ));
+	if(trace) trace_types(types);
+	const auto b = update_named_type(types, a, s);
+	if(trace) trace_types(types);
+
+	QUARK_VERIFY(is_fully_defined(types, b));
+	return b;
+}
+
+
+QUARK_TEST("Types", "update_named_type()", "", ""){
+	types_t types;
+	const auto r = make_recursive_type_test(types);
+
+	if(true) trace_types(types);
+	QUARK_VERIFY(is_fully_defined(types, r));
+}
+
 
 
 }	// floyd

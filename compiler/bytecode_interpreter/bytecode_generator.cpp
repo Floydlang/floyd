@@ -1134,7 +1134,7 @@ static expression_gen_t generate_callee(bcgenerator_t& gen_acc, const expression
 		const auto name = intrinsic.name;
 
 		const auto function_type = get_expr_output(gen_acc, *details.callee);
-		const auto value = value_t::make_function_value(function_type, function_id_t { name });
+		const auto value = value_t::make_function_value(types, function_type, function_id_t { name });
 		const auto r = add_local_const(types, body_acc, value, "temp: intrinsics-" + name);
 		return expression_gen_t { body_acc, r, function_type };
 	}

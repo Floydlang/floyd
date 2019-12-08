@@ -400,13 +400,20 @@ struct value_t {
 	//------------------------------------------------		function
 
 
-	public: static value_t make_function_value(const type_t& type, const function_id_t& function_id);
+	public: static value_t make_function_value(const types_t& types, const type_t& type, const function_id_t& function_id);
+	public: static value_t make_function_value(types_t& types, const type_t& type, const function_id_t& function_id);
 	public: bool is_function() const {
 		QUARK_ASSERT(check_invariant());
 
 		return _logical_type.is_function();
 	}
 	public: function_id_t get_function_value() const;
+
+
+	//------------------------------------------------		named type
+
+	//??? Helper that makes a value where logical type and physical type are different
+
 
 
 	//////////////////////////////////////////////////		PUBLIC - TYPE INDEPENDANT
