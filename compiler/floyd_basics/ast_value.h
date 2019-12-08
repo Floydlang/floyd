@@ -290,11 +290,7 @@ struct value_t {
 	public: value_t() : value_t(type_t::make_undefined()) {}
 
 
-	//	Used internally in check_invariant() -- don't call check_invariant().
 	public: type_t get_type() const;
-	public: base_type get_basetype() const{
-		return _logical_type.get_base_type();
-	}
 	public: type_t get_physical_type() const{
 		return _physical_type;
 	}
@@ -580,7 +576,7 @@ struct value_t {
 			return false;
 		}
 
-		const auto basetype = get_basetype();
+		const auto basetype = _logical_type.get_base_type();
 		if(basetype == base_type::k_undefined){
 			return true;
 		}
@@ -763,7 +759,7 @@ inline static bool is_basetype_ext(base_type basetype){
 
 inline bool value_t::is_ext() const{
 #if 1
-	return is_basetype_ext(get_basetype());
+	return is_basetype_ext(_logical_type.get_base_type());
 #else
 	const auto bt = _physical_type.get_base_type();
 	return is_basetype_ext(bt);
