@@ -755,6 +755,9 @@ type_t get_named_type_destination(const types_t& types, const type_t& named_type
 //	If type is a named-type, get to the actual type.
 type_t peek2(const types_t& types, const type_t& type);
 
+inline type_t dereference_type(const types_t& types, const type_t& type){
+	return peek2(types, type);
+}
 
 
 //////////////////////////////////////////////////		get_type_variant()

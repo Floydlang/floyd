@@ -321,19 +321,17 @@ static type_t analyze_expr_output_type(analyser_t& a, const expression_t& e){
 }
 
 
-
-
-
-
-//	When callee has "any" as return type, we need to figure out its return type using its algorithm and the actual types
+//	When callee has "any" as return type, we need to figure out its return type using its algorithm and the actual types.
 static const type_t figure_out_callee_return_type(analyser_t& a, const statement_t& parent, const type_t& callee_type, const std::vector<expression_t>& call_args){
-	const auto callee_return_type = peek2(a._types, callee_type).get_function_return(a._types);
 
-	const auto ret_type_algo = peek2(a._types, callee_type).get_function_dyn_return_type(a._types);
+	const auto callee_type_desc = dereference_type(a._types, callee_type);
+	const auto callee_return_type = callee_type_desc.get_function_return(a._types);
+
+	const auto ret_type_algo = callee_type_desc.get_function_dyn_return_type(a._types);
 	switch(ret_type_algo){
 		case return_dyn_type::none:
 			{
-				QUARK_ASSERT(peek2(a._types, callee_return_type).is_any() == false);
+				QUARK_ASSERT(dereference_type(a._types, callee_return_type).is_any() == false);
 				return callee_return_type;
 			}
 			break;
@@ -356,9 +354,7 @@ static const type_t figure_out_callee_return_type(analyser_t& a, const statement
 			{
 				QUARK_ASSERT(call_args.size() >= 2);
 
-
-
-//???named-type, unify duplicated code for looking up variable addr in symbol tables
+				//???named-type, unify duplicated code for looking up variable addr in symbol tables
 				const auto e = call_args[1];
 				if(std::holds_alternative<expression_t::load2_t>(e._expression_variant) == false){
 					std::stringstream what;
@@ -378,20 +374,23 @@ static const type_t figure_out_callee_return_type(analyser_t& a, const statement
 			break;
 		case return_dyn_type::vector_of_arg1func_return:
 			{
-		//	x = make_vector(arg1.get_function_return());
+				//	x = make_vector(arg1.get_function_return());
 				QUARK_ASSERT(call_args.size() >= 2);
 
-				const auto f = peek2(a._types, analyze_expr_output_type(a, call_args[1])).get_function_return(a._types);
-				const auto ret = make_vector(a._types, f);
+				const auto arg1_type = analyze_expr_output_type(a, call_args[1]);
+				const auto element_type = dereference_type(a._types, arg1_type).get_function_return(a._types);
+				const auto ret = make_vector(a._types, element_type);
 				return ret;
 			}
 			break;
 		case return_dyn_type::vector_of_arg2func_return:
 			{
-			//	x = make_vector(arg2.get_function_return());
+				//	x = make_vector(arg2.get_function_return());
 				QUARK_ASSERT(call_args.size() >= 3);
-				const auto f = peek2(a._types, analyze_expr_output_type(a, call_args[2])).get_function_return(a._types);
-				const auto ret = make_vector(a._types, f);
+
+				const auto arg1_type = analyze_expr_output_type(a, call_args[2]);
+				const auto element_type = dereference_type(a._types, arg1_type).get_function_return(a._types);
+				const auto ret = make_vector(a._types, element_type);
 				return ret;
 			}
 			break;
@@ -402,7 +401,6 @@ static const type_t figure_out_callee_return_type(analyser_t& a, const statement
 			break;
 	}
 }
-
 
 struct fully_resolved_call_t {
 	std::vector<expression_t> args;
