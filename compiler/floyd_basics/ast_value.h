@@ -641,24 +641,6 @@ struct value_t {
 
 	//////////////////////////////////////////////////		INTERNALS
 
-	private: static bool is_ext__slow(base_type basetype){
-		return false
-			|| basetype == base_type::k_string
-			|| basetype == base_type::k_json
-			|| basetype == base_type::k_typeid
-			|| basetype == base_type::k_struct
-			|| basetype == base_type::k_vector
-			|| basetype == base_type::k_dict
-			|| basetype == base_type::k_function;
-	}
-
-	private: static bool is_ext(base_type basetype){
-		bool ext = basetype > base_type::k_double;
-
-		//	Make sure above assumtion about order of base types is valid.
-		QUARK_ASSERT(ext == is_ext__slow(basetype));
-		return ext;
-	}
 
 
 	private: value_t(const type_t& type) :
@@ -757,9 +739,33 @@ void ut_verify_values(const quark::call_context_t& context, const value_t& resul
 
 
 
+inline static bool is_basetype_ext__slow(base_type basetype){
+	return false
+		|| basetype == base_type::k_string
+		|| basetype == base_type::k_json
+		|| basetype == base_type::k_typeid
+		|| basetype == base_type::k_struct
+		|| basetype == base_type::k_vector
+		|| basetype == base_type::k_dict
+		|| basetype == base_type::k_function;
+}
+
+inline static bool is_basetype_ext(base_type basetype){
+	bool ext = basetype > base_type::k_double;
+
+	//	Make sure above assumtion about order of base types is valid.
+	QUARK_ASSERT(ext == is_basetype_ext__slow(basetype));
+	return ext;
+}
 
 inline bool value_t::is_ext() const{
-	return is_ext(get_basetype());
+#if 1
+	return is_basetype_ext(get_basetype());
+#else
+	const auto bt = _physical_type.get_base_type();
+	return is_basetype_ext(bt);
+#endif
+
 }
 
 }	//	floyd

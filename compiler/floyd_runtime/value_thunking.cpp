@@ -487,10 +487,9 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 #if 1
 			return from_runtime_value2(backend, encoded_value, peek2(backend.types, e.destination_type));
 #else
-			const auto result = from_runtime_value2(backend, encoded_value, peek2(backend.types, e.destination_type));
+			const auto result = from_runtime_value2(backend, encoded_value, e.destination_type);
 			return value_t::replace_logical_type(result, type);
 #endif
-
 		}
 	};
 #if 1

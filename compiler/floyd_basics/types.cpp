@@ -733,7 +733,12 @@ int find_struct_member_index(const struct_type_desc_t& desc, const std::string& 
 }
 
 
+type_t get_named_type_destination(const types_t& types, const type_t& named_type){
+	QUARK_ASSERT(named_type.is_named_type());
 
+	const auto& info = lookup_typeinfo_from_type(types, named_type);
+	return info.def.child_types[0];
+}
 
 
 type_variant_t get_type_variant(const types_t& types, const type_t& type){
@@ -1669,8 +1674,6 @@ physical_type_t get_physical_type(const types_t& types, const type_t& type){
 }
 
 
-
-//////////////////////////////////////////////////		get_type_variant()
 
 
 

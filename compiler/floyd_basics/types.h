@@ -999,6 +999,8 @@ type_t make_named_type(types_t& types, const type_name_t& n, const type_t& desti
 //	tag will also get the new type.
 type_t update_named_type(types_t& types, const type_t& named, const type_t& destination_type);
 
+type_t get_named_type_destination(const types_t& types, const type_t& named_type);
+
 type_desc_t peek2(const types_t& types, const type_t& type);
 
 
