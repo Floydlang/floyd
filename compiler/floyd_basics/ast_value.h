@@ -552,11 +552,10 @@ struct value_t {
 	}
 
 
-		//??? Use get_physical_type()!
 	private: value_t(const types_t& types, const value_internals_t& value_internals, const type_t& logical_type) :
 		_value_internals(value_internals),
 		_logical_type(logical_type),
-		_physical_type(peek2(types, logical_type))
+		_physical_type(floyd::get_physical_type(types, logical_type).physical)
 #if DEBUG_DEEP
 		,
 		DEBUG_STR = make_value_debug_str(*this);
@@ -565,7 +564,7 @@ struct value_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	//??? Use get_physical_type()!
+	//	WARNING: Can only be used for types guaranteed to be physical, like built-in simple types. Bool etc.
 	private: value_t(const value_internals_t& value_internals, const type_t& logical_type) :
 		_value_internals(value_internals),
 		_logical_type(logical_type),
@@ -656,13 +655,12 @@ inline static bool is_basetype_ext(base_type basetype){
 }
 
 inline bool value_t::uses_ext_data() const{
-#if 1
+#if 0
 	return is_basetype_ext(_logical_type.get_base_type());
 #else
 	const auto bt = _physical_type.get_base_type();
 	return is_basetype_ext(bt);
 #endif
-
 }
 
 }	//	floyd
