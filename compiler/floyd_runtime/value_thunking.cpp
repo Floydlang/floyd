@@ -375,6 +375,12 @@ runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value
 			return to_runtime_dict(backend, e, value);
 		}
 		runtime_value_t operator()(const function_t& e) const{
+
+
+//			const auto link_name = native_func_ptr_to_link_name(backend, encoded_value.function_ptr);
+//			return value_t::make_function_value(backend.types, type, function_id_t { link_name.s });
+
+
 			NOT_IMPLEMENTED_YET();
 			QUARK_ASSERT(false);
 		}

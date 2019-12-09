@@ -220,16 +220,9 @@ bc_static_frame_t::bc_static_frame_t(const types_t& types, const std::vector<bc_
 		//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
 		//	Problem is that IF this is an RC_object, it WILL be decremented when written to.
 		//	Use a placeholder object of correct type.
-		if(symbol.second._init._type.get_base_type() == base_type::k_undefined){
-			if(is_rc){
-				const auto value = bc_value_t(symbol.second._value_type, bc_value_t::mode::k_unwritten_ext_value);
-				_locals.push_back(value);
-			}
-			else{
-				const auto value = make_default_value(symbol.second._value_type);
-				const auto bc = make_non_rc(value);
-				_locals.push_back(bc);
-			}
+		if(symbol.second._init.is_undefined()){
+			const auto value = make_default_value(symbol.second._value_type);
+			_locals.push_back(value);
 		}
 
 		//	Constant.
@@ -401,7 +394,7 @@ json_t interpreter_stack_t::stack_to_json(value_backend_t& backend) const{
 //////////////////////////////////////////		GLOBAL FUNCTIONS
 
 
-const bc_function_definition_t& get_function_def(const interpreter_t& vm, function_id_t function_id){
+static const bc_function_definition_t& get_function_def(const interpreter_t& vm, function_id_t function_id){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& function_def = vm._imm->_program._function_defs.at(function_id);
@@ -664,7 +657,7 @@ static void execute_new_vector_obj(interpreter_t& vm, int16_t dest_reg, int16_t 
 
 	const auto& backend = vm._stack._backend;
 	const auto& types = backend.types;
-	if(true) trace_types(types);
+	if(false) trace_types(types);
 
 	const auto& target_type = lookup_full_type(vm, target_itype);
 	const auto target_peek = peek2(types, target_type);
@@ -1950,12 +1943,12 @@ static std::vector<json_t> bc_symbols_to_json(value_backend_t& backend, const st
 		const auto& symbol = e.second;
 		const auto symbol_type_str = symbol._symbol_type == bc_symbol_t::type::immutable ? "immutable" : "mutable";
 
-		if(symbol._const_value._type.is_undefined() == false){
+		if(symbol._init.is_undefined() == false){
 			const auto e2 = json_t::make_array({
 				symbol_index,
 				e.first,
 				"CONST",
-				bcvalue_and_type_to_json(backend, symbol._const_value)
+				value_and_type_to_json(backend.types, symbol._init)
 			});
 			r.push_back(e2);
 		}

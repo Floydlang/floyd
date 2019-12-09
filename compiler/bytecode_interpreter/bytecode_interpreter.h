@@ -24,6 +24,7 @@
 #include "ast_value.h"
 #include "value_backend.h"
 #include "value_backend.h"
+#include "bytecode_helpers.h"
 #include "quark.h"
 
 #include "immer/vector.hpp"
@@ -515,7 +516,7 @@ struct bc_static_frame_t {
 	//	Is the local value external values?
 	//	This doesn't count arguments.
 	std::vector<type_t> _locals_exts;
-	std::vector<bc_value_t> _locals;
+	std::vector<value_t> _locals;
 };
 
 
@@ -733,10 +734,15 @@ struct interpreter_stack_t {
 			const bool ext = is_rc_value(_backend.types, type);
 			const auto& local = frame._locals[i];
 			if(ext){
-				push_external_value(local);
+				if(local.is_undefined()){
+					push_external_value(bc_value_t(type, bc_value_t::mode::k_unwritten_ext_value));
+				}
+				else{
+					push_external_value(value_to_bc(_backend, local));
+				}
 			}
 			else{
-				push_inplace_value(local);
+				push_inplace_value(value_to_bc(_backend, local));
 			}
 		}
 		_current_frame_ptr = &frame;
@@ -1118,7 +1124,6 @@ void trace_interpreter(interpreter_t& vm);
 
 int get_global_n_pos(int n);
 
-const bc_function_definition_t& get_function_def(const interpreter_t& vm, function_id_t function_id);
 bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_value_t args[], int arg_count);
 json_t interpreter_to_json(interpreter_t& vm);
 std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions);
