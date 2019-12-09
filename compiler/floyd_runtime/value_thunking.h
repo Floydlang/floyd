@@ -17,6 +17,7 @@ struct value_backend_t;
 struct value_t;
 union runtime_value_t;
 struct type_t;
+struct dict_t;
 
 runtime_value_t alloc_carray_8bit(value_backend_t& backend, const uint8_t data[], std::size_t count);
 
@@ -26,6 +27,13 @@ std::string from_runtime_string2(const value_backend_t& backend, runtime_value_t
 
 runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value);
 value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type);
+
+
+runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t& value);
+value_t from_runtime_vector(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type);
+
+runtime_value_t to_runtime_dict(value_backend_t& backend, const dict_t& exact_type, const value_t& value);
+value_t from_runtime_dict(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type);
 
 
 }	// floyd

@@ -200,54 +200,9 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 	const auto& types = backend.types;
 	const auto& type0 = lookup_type_ref(backend, coll_type);
 	const auto& type1 = lookup_type_ref(backend, key_type);
-
 	QUARK_ASSERT(peek2(types, type0).is_dict());
 	QUARK_ASSERT(peek2(types, type1).is_string());
-
-	if(is_dict_cppmap(types, backend.config, type0)){
-		const auto& dict = unpack_dict_cppmap_arg(backend, coll_value, coll_type);
-
-		const auto value_type = peek2(types, type0).get_dict_value_type(types);
-
-		//	Deep copy dict.
-		auto dict2 = alloc_dict_cppmap(backend.heap, type0);
-		auto& m = dict2.dict_cppmap_ptr->get_map_mut();
-		m = dict->get_map();
-
-		const auto key_string = from_runtime_string(r, key_value);
-		m.erase(key_string);
-
-		if(is_rc_value(types, value_type)){
-			for(auto& e: m){
-				retain_value(backend, e.second, value_type);
-			}
-		}
-		return dict2;
-	}
-	else if(is_dict_hamt(types, backend.config, type0)){
-		const auto& dict = *coll_value.dict_hamt_ptr;
-
-		const auto value_type = peek2(types, type0).get_dict_value_type(types);
-
-		//	Deep copy dict.
-		auto dict2 = alloc_dict_hamt(backend.heap, type0);
-		auto& m = dict2.dict_hamt_ptr->get_map_mut();
-		m = dict.get_map();
-
-		const auto key_string = from_runtime_string(r, key_value);
-		m = m.erase(key_string);
-
-		if(is_rc_value(types, value_type)){
-			for(auto& e: m){
-				retain_value(backend, e.second, value_type);
-			}
-		}
-		return dict2;
-	}
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
+	return erase(backend, coll_value, coll_type, key_value, key_type);
 }
 
 
@@ -265,35 +220,7 @@ static runtime_value_t floyd_llvm_intrinsic__get_keys(floyd_runtime_t* frp, runt
 	const auto& types = backend.types;
 	const auto& type0 = lookup_type_ref(backend, coll_type);
 	QUARK_ASSERT(peek2(types, type0).is_dict());
-
-	if(is_dict_cppmap(types, backend.config, type0)){
-		if(backend.config.vector_backend_mode == vector_backend::carray){
-			return get_keys__cppmap_carray(backend, coll_value, coll_type);
-		}
-		else if(backend.config.vector_backend_mode == vector_backend::hamt){
-			return get_keys__cppmap_hamt(backend, coll_value, coll_type);
-		}
-		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-	}
-	else if(is_dict_hamt(types, backend.config, type0)){
-		if(backend.config.vector_backend_mode == vector_backend::carray){
-			return get_keys__hamtmap_carray(backend, coll_value, coll_type);
-		}
-		else if(backend.config.vector_backend_mode == vector_backend::hamt){
-			return get_keys__hamtmap_hamt(backend, coll_value, coll_type);
-		}
-		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-	}
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
+	return get_keys(backend, coll_value, coll_type);
 }
 
 
@@ -313,26 +240,8 @@ static uint32_t floyd_llvm_intrinsic__exists(floyd_runtime_t* frp, runtime_value
 	const auto& type1 = lookup_type_ref(backend, value_type);
 	QUARK_ASSERT(peek2(types, type0).is_dict());
 
-	if(is_dict_cppmap(types, backend.config, type0)){
-		const auto& dict = unpack_dict_cppmap_arg(backend, coll_value, coll_type);
-		const auto key_string = from_runtime_string(r, value);
-
-		const auto& m = dict->get_map();
-		const auto it = m.find(key_string);
-		return it != m.end() ? 1 : 0;
-	}
-	else if(is_dict_hamt(types, backend.config, type0)){
-		const auto& dict = *coll_value.dict_hamt_ptr;
-		const auto key_string = from_runtime_string(r, value);
-
-		const auto& m = dict.get_map();
-		const auto it = m.find(key_string);
-		return it != nullptr ? 1 : 0;
-	}
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
+	const bool result = exists(backend, coll_value, coll_type, value, value_type);
+	return result ? 1 : 0;
 }
 
 
@@ -345,21 +254,7 @@ static uint32_t floyd_llvm_intrinsic__exists(floyd_runtime_t* frp, runtime_value
 static int64_t floyd_llvm_intrinsic__find(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
-
-	const auto& type0 = lookup_type_ref(backend, coll_type);
-	if(peek2(backend.types, type0).is_string()){
-		return find__string(backend, coll_value, coll_type, value, value_type);
-	}
-	else if(is_vector_carray(backend.types, backend.config, type0)){
-		return find__carray(backend, coll_value, coll_type, value, value_type);
-	}
-	else if(is_vector_hamt(backend.types, backend.config, type0)){
-		return find__hamt(backend, coll_value, coll_type, value, value_type);
-	}
-	else{
-		//	No other types allowed.
-		UNSUPPORTED();
-	}
+	return find2(backend, coll_value, coll_type, value, value_type);
 }
 
 

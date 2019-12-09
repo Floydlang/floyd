@@ -297,6 +297,8 @@ union runtime_value_t {
 	JSON_T* json_ptr;
 	STRUCT_T* struct_ptr;
 	void* function_ptr;
+	char* function_id_str;
+	void* frame_ptr;
 
 	bool check_invariant() const {
 		return true;
@@ -320,6 +322,11 @@ uint64_t get_vec_string_size(runtime_value_t str);
 
 void copy_elements(runtime_value_t dest[], runtime_value_t source[], uint64_t count);
 
+inline function_id_t get_function_id(const runtime_value_t& value){
+	QUARK_ASSERT(value.function_id_str != nullptr);
+	const auto s = std::string(value.function_id_str);
+	return function_id_t { s };
+}
 
 
 ////////////////////////////////		WIDE_RETURN_T
@@ -645,12 +652,150 @@ void dispose_struct(STRUCT_T& v);
 
 
 
+
+
+
 ////////////////////////////////		HELPERS
 
 
 
 runtime_value_t load_via_ptr2(const types_t& types, const void* value_ptr, const type_t& type);
 void store_via_ptr2(const types_t& types, void* value_ptr, const type_t& type, const runtime_value_t& value);
+
+
+
+
+
+
+
+struct bc_static_frame_t;
+struct value_backend_t;
+
+
+//////////////////////////////////////		bc_value_t
+
+/*
+	Efficent representation of any value supported by the interpreter.
+	It's immutable and uses value-semantics.
+	Holds either an inplace value or an external value. Handles reference counting automatically when required.
+	??? replace with variant<>
+*/
+
+struct bc_value_t {
+#if DEBUG
+	public: bool check_invariant() const;
+#endif
+	public: bc_value_t();
+	public: ~bc_value_t();
+	public: bc_value_t(const bc_value_t& other);
+	public: bc_value_t& operator=(const bc_value_t& other);
+	public: void swap(bc_value_t& other);
+	public: explicit bc_value_t(const bc_static_frame_t* frame_ptr);
+
+	enum class mode {
+		k_unwritten_ext_value
+	};
+	public: explicit bc_value_t(const type_t& type, mode mode);
+
+
+	//////////////////////////////////////		internal-undefined type
+	public: static bc_value_t make_undefined();
+
+
+	//////////////////////////////////////		internal-dynamic type
+	public: static bc_value_t make_any();
+
+
+	//////////////////////////////////////		void
+	public: static bc_value_t make_void();
+
+
+	//////////////////////////////////////		bool
+	public: static bc_value_t make_bool(bool v);
+	public: bool get_bool_value() const;
+	private: explicit bc_value_t(bool value);
+
+
+	//////////////////////////////////////		int
+	public: static bc_value_t make_int(int64_t v);
+	public: int64_t get_int_value() const;
+	private: explicit bc_value_t(int64_t value);
+
+
+	//////////////////////////////////////		double
+	public: static bc_value_t make_double(double v);
+	public: double get_double_value() const;
+	private: explicit bc_value_t(double value);
+
+
+	//////////////////////////////////////		string
+	public: static bc_value_t make_string(value_backend_t& backend, const std::string& v);
+	public: std::string get_string_value(const value_backend_t& backend) const;
+	private: explicit bc_value_t(value_backend_t& backend, const std::string& value);
+
+
+	//////////////////////////////////////		json
+	public: static bc_value_t make_json(value_backend_t& backend, const json_t& v);
+	public: json_t get_json() const;
+	private: explicit bc_value_t(value_backend_t& backend, const std::shared_ptr<json_t>& value);
+
+
+	//////////////////////////////////////		typeid
+	public: static bc_value_t make_typeid_value(const type_t& type_id);
+	public: type_t get_typeid_value() const;
+	private: explicit bc_value_t(const type_t& type_id);
+
+
+	//////////////////////////////////////		struct
+	public: static bc_value_t make_struct_value(value_backend_t& backend, const type_t& struct_type, const std::vector<bc_value_t>& values);
+	public: const std::vector<bc_value_t> get_struct_value(value_backend_t& backend) const;
+	private: explicit bc_value_t(value_backend_t& backend, const type_t& struct_type, const std::vector<bc_value_t>& values, bool struct_tag);
+
+
+	//////////////////////////////////////		function
+	public: static bc_value_t make_function_value(const type_t& function_type, const function_id_t& function_id);
+	public: function_id_t get_function_value() const;
+	private: explicit bc_value_t(const type_t& function_type, const function_id_t& function_id, bool dummy);
+
+
+	//	Bumps RC if needed.
+	public: explicit bc_value_t(value_backend_t& backend, const type_t& type, const runtime_value_t& internals);
+
+	//	Only works for simple values.
+	public: explicit bc_value_t(const type_t& type, const runtime_value_t& internals);
+
+
+
+	//////////////////////////////////////		STATE
+
+	//	IDEA: have two types: bc_value_t and bc_pod_t. bc_pod_t has type + value but does no RC.
+	public: value_backend_t* _backend;
+	public: type_t _type;
+	public: runtime_value_t _pod;
+};
+
+
+////////////////////////////////////////////			FREE
+
+
+const immer::vector<bc_value_t> get_vector(value_backend_t& backend, const bc_value_t& value);
+bc_value_t make_vector(value_backend_t& backend, const type_t& element_type, const immer::vector<bc_value_t>& elements);
+
+const immer::map<std::string, bc_value_t> get_dict_values(value_backend_t& backend, const bc_value_t& value);
+bc_value_t make_dict(value_backend_t& backend, const type_t& value_type, const immer::map<std::string, bc_value_t>& entries);
+
+
+json_t bcvalue_to_json(value_backend_t& backend, const bc_value_t& v);
+json_t bcvalue_and_type_to_json(value_backend_t& backend, const bc_value_t& v);
+
+int bc_compare_value_true_deep(value_backend_t& backend, const bc_value_t& left, const bc_value_t& right, const type_t& type);
+
+
+
+
+////////////////////////////////		bc_value_t JSON
+
+
 
 
 
@@ -717,6 +862,8 @@ inline type_t lookup_dict_value_type(const value_backend_t& backend, type_t type
 
 //??? Don't return pair, only struct_layout_t.
 const std::pair<type_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, type_t type);
+
+runtime_value_t load_struct_member(const value_backend_t& backend, uint8_t* data_ptr, const type_t& struct_type, int member_index);
 
 
 

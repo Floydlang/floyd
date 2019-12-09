@@ -43,6 +43,529 @@ DICT_CPPMAP_T* unpack_dict_cppmap_arg(const value_backend_t& backend, runtime_va
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+#if 0
+
+//////////////////////////////////////////		COMPARE
+
+
+
+static int compare(int64_t value){
+	if(value < 0){
+		return -1;
+	}
+	else if(value > 0){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+static int bc_compare_string(const std::string& left, const std::string& right){
+	// ??? Better if it doesn't use c_ptr since that is non-pure string handling.
+	return compare(std::strcmp(left.c_str(), right.c_str()));
+}
+
+QUARK_TEST("bc_compare_string()", "", "", ""){
+	ut_verify_auto(QUARK_POS, bc_compare_string("", ""), 0);
+}
+QUARK_TEST("bc_compare_string()", "", "", ""){
+	ut_verify_auto(QUARK_POS, bc_compare_string("aaa", "aaa"), 0);
+}
+QUARK_TEST("bc_compare_string()", "", "", ""){
+	ut_verify_auto(QUARK_POS, bc_compare_string("b", "a"), 1);
+}
+
+
+static int bc_compare_struct_true_deep(const types_t& types, const std::vector<bc_value_t>& left, const std::vector<bc_value_t>& right, const type_t& type){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto& struct_def = peek2(types, type).get_struct(types);
+
+	for(int i = 0 ; i < struct_def._members.size() ; i++){
+		const auto& member_type = struct_def._members[i]._type;
+		int diff = bc_compare_value_true_deep(types, left[i], right[i], member_type);
+		if(diff != 0){
+			return diff;
+		}
+	}
+	return 0;
+}
+
+static int bc_compare_vectors_obj(const types_t& types, const immer::vector<bc_external_handle_t>& left, const immer::vector<bc_external_handle_t>& right, const type_t& type){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto& peek = peek2(types, type);
+	QUARK_ASSERT(peek.is_vector());
+
+	const auto& shared_count = std::min(left.size(), right.size());
+	const auto& element_type = peek.get_vector_element_type(types);
+	for(int i = 0 ; i < shared_count ; i++){
+		const auto element_result = bc_compare_value_true_deep(
+			types,
+			bc_value_t(element_type, left[i]),
+			bc_value_t(element_type, right[i]),
+			element_type
+		);
+		if(element_result != 0){
+			return element_result;
+		}
+	}
+	if(left.size() == right.size()){
+		return 0;
+	}
+	else if(left.size() > right.size()){
+		return -1;
+	}
+	else{
+		return +1;
+	}
+}
+
+static int compare_bools(const bc_inplace_value_t& left, const bc_inplace_value_t& right){
+	auto left2 = left.bool_value ? 1 : 0;
+	auto right2 = right.bool_value ? 1 : 0;
+	if(left2 < right2){
+		return -1;
+	}
+	else if(left2 > right2){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+static int compare_ints(const bc_inplace_value_t& left, const bc_inplace_value_t& right){
+	if(left.int64_value < right.int64_value){
+		return -1;
+	}
+	else if(left.int64_value > right.int64_value){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+static int compare_doubles(const bc_inplace_value_t& left, const bc_inplace_value_t& right){
+	if(left.double_value < right.double_value){
+		return -1;
+	}
+	else if(left.double_value > right.double_value){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+static int bc_compare_vectors_bool(const immer::vector<bc_inplace_value_t>& left, const immer::vector<bc_inplace_value_t>& right){
+	const auto& shared_count = std::min(left.size(), right.size());
+	for(int i = 0 ; i < shared_count ; i++){
+		int result = compare_bools(left[i], right[i]);
+		if(result != 0){
+			return result;
+		}
+	}
+	if(left.size() == right.size()){
+		return 0;
+	}
+	else if(left.size() > right.size()){
+		return -1;
+	}
+	else{
+		return +1;
+	}
+}
+static int bc_compare_vectors_int(const immer::vector<bc_inplace_value_t>& left, const immer::vector<bc_inplace_value_t>& right){
+	const auto& shared_count = std::min(left.size(), right.size());
+	for(int i = 0 ; i < shared_count ; i++){
+		int result = compare_ints(left[i], right[i]);
+		if(result != 0){
+			return result;
+		}
+	}
+	if(left.size() == right.size()){
+		return 0;
+	}
+	else if(left.size() > right.size()){
+		return -1;
+	}
+	else{
+		return +1;
+	}
+}
+static int bc_compare_vectors_double(const immer::vector<bc_inplace_value_t>& left, const immer::vector<bc_inplace_value_t>& right){
+	const auto& shared_count = std::min(left.size(), right.size());
+	for(int i = 0 ; i < shared_count ; i++){
+		int result = compare_doubles(left[i], right[i]);
+		if(result != 0){
+			return result;
+		}
+	}
+	if(left.size() == right.size()){
+		return 0;
+	}
+	else if(left.size() > right.size()){
+		return -1;
+	}
+	else{
+		return +1;
+	}
+}
+
+
+
+template <typename Map> bool bc_map_compare(Map const &lhs, Map const &rhs) {
+	// No predicate needed because there is operator== for pairs already.
+	return lhs.size() == rhs.size() && std::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
+
+static int bc_compare_dicts_obj(const types_t& types, const immer::map<std::string, bc_external_handle_t>& left, const immer::map<std::string, bc_external_handle_t>& right, const type_t& type){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto peek = peek2(types, type);
+	const auto& element_type = peek.get_dict_value_type(types);
+
+	auto left_it = left.begin();
+	auto left_end_it = left.end();
+
+	auto right_it = right.begin();
+	auto right_end_it = right.end();
+
+	while(left_it != left_end_it && right_it != right_end_it){
+		auto left_key = (*left_it).first;
+		auto right_key = (*right_it).first;
+
+		const auto key_result = bc_compare_string(left_key, right_key);
+		if(key_result != 0){
+			return key_result;
+		}
+
+		const auto element_result = bc_compare_value_true_deep(
+			types,
+			bc_value_t(element_type, (*left_it).second),
+			bc_value_t(element_type, (*right_it).second),
+			element_type
+		);
+		if(element_result != 0){
+			return element_result;
+		}
+
+		left_it++;
+		right_it++;
+	}
+
+	if(left_it == left_end_it && right_it == right_end_it){
+		return 0;
+	}
+	else if(left_it == left_end_it && right_it != right_end_it){
+		return 1;
+	}
+	else if(left_it != left_end_it && right_it == right_end_it){
+		return -1;
+	}
+	QUARK_ASSERT(false)
+	quark::throw_exception();
+}
+
+//??? make template.
+static int bc_compare_dicts_bool(const immer::map<std::string, bc_inplace_value_t>& left, const immer::map<std::string, bc_inplace_value_t>& right){
+	auto left_it = left.begin();
+	auto left_end_it = left.end();
+
+	auto right_it = right.begin();
+	auto right_end_it = right.end();
+
+	while(left_it != left_end_it && right_it != right_end_it){
+		auto left_key = (*left_it).first;
+		auto right_key = (*right_it).first;
+
+		const auto key_result = bc_compare_string(left_key, right_key);
+		if(key_result != 0){
+			return key_result;
+		}
+
+		int result = compare_bools((*left_it).second, (*right_it).second);
+		if(result != 0){
+			return result;
+		}
+
+		left_it++;
+		right_it++;
+	}
+
+	if(left_it == left_end_it && right_it == right_end_it){
+		return 0;
+	}
+	else if(left_it == left_end_it && right_it != right_end_it){
+		return 1;
+	}
+	else if(left_it != left_end_it && right_it == right_end_it){
+		return -1;
+	}
+	QUARK_ASSERT(false)
+	quark::throw_exception();
+}
+
+static int bc_compare_dicts_int(const immer::map<std::string, bc_inplace_value_t>& left, const immer::map<std::string, bc_inplace_value_t>& right){
+	auto left_it = left.begin();
+	auto left_end_it = left.end();
+
+	auto right_it = right.begin();
+	auto right_end_it = right.end();
+
+	while(left_it != left_end_it && right_it != right_end_it){
+		auto left_key = (*left_it).first;
+		auto right_key = (*right_it).first;
+
+		const auto key_result = bc_compare_string(left_key, right_key);
+		if(key_result != 0){
+			return key_result;
+		}
+
+		int result = compare_ints((*left_it).second, (*right_it).second);
+		if(result != 0){
+			return result;
+		}
+
+		left_it++;
+		right_it++;
+	}
+
+	if(left_it == left_end_it && right_it == right_end_it){
+		return 0;
+	}
+	else if(left_it == left_end_it && right_it != right_end_it){
+		return 1;
+	}
+	else if(left_it != left_end_it && right_it == right_end_it){
+		return -1;
+	}
+	QUARK_ASSERT(false)
+	quark::throw_exception();
+}
+
+static int bc_compare_dicts_double(const immer::map<std::string, bc_inplace_value_t>& left, const immer::map<std::string, bc_inplace_value_t>& right){
+	auto left_it = left.begin();
+	auto left_end_it = left.end();
+
+	auto right_it = right.begin();
+	auto right_end_it = right.end();
+
+	while(left_it != left_end_it && right_it != right_end_it){
+		auto left_key = (*left_it).first;
+		auto right_key = (*right_it).first;
+
+		const auto key_result = bc_compare_string(left_key, right_key);
+		if(key_result != 0){
+			return key_result;
+		}
+
+		int result = compare_doubles((*left_it).second, (*right_it).second);
+		if(result != 0){
+			return result;
+		}
+
+		left_it++;
+		right_it++;
+	}
+
+	if(left_it == left_end_it && right_it == right_end_it){
+		return 0;
+	}
+	else if(left_it == left_end_it && right_it != right_end_it){
+		return 1;
+	}
+	else if(left_it != left_end_it && right_it == right_end_it){
+		return -1;
+	}
+	QUARK_ASSERT(false)
+	quark::throw_exception();
+}
+
+static int bc_compare_jsons(const json_t& lhs, const json_t& rhs){
+	if(lhs == rhs){
+		return 0;
+	}
+	else{
+		const auto lhs_type = get_json_type(lhs);
+		const auto rhs_type = get_json_type(rhs);
+		int type_diff = rhs_type - lhs_type;
+		if(type_diff != 0){
+			return type_diff;
+		}
+		else{
+			if(lhs.is_object()){
+				//??? NOT IMPLEMENTED YET
+				QUARK_ASSERT(false);
+				quark::throw_exception();
+			}
+			else if(lhs.is_array()){
+				//??? NOT IMPLEMENTED YET
+				QUARK_ASSERT(false);
+				quark::throw_exception();
+			}
+			else if(lhs.is_string()){
+				const auto diff = std::strcmp(lhs.get_string().c_str(), rhs.get_string().c_str());
+				return diff < 0 ? -1 : 1;
+			}
+			else if(lhs.is_number()){
+				const auto lhs_number = lhs.get_number();
+				const auto rhs_number = rhs.get_number();
+				return lhs_number < rhs_number ? -1 : 1;
+			}
+			else if(lhs.is_true()){
+				return 0;
+			}
+			else if(lhs.is_false()){
+				return 0;
+			}
+			else if(lhs.is_null()){
+				return 0;
+			}
+			else{
+				QUARK_ASSERT(false);
+				quark::throw_exception();
+			}
+		}
+	}
+}
+
+static int bc_compare_value_exts(const types_t& types, const bc_external_handle_t& left, const bc_external_handle_t& right, const type_t& type){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(left.check_invariant());
+	QUARK_ASSERT(right.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	return bc_compare_value_true_deep(types, bc_value_t(type, left), bc_value_t(type, right), type);
+}
+
+int bc_compare_value_true_deep(value_backend_t& backend, const bc_value_t& left, const bc_value_t& right, const type_t& type0){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(left._type == right._type);
+	QUARK_ASSERT(left.check_invariant());
+	QUARK_ASSERT(right.check_invariant());
+
+	auto& types = backend.types;
+
+	const auto type = type0;
+	const auto peek = peek2(types, type);
+
+	if(type.is_undefined()){
+		return 0;
+	}
+	else if(peek.is_bool()){
+		return (left.get_bool_value() ? 1 : 0) - (right.get_bool_value() ? 1 : 0);
+	}
+	else if(peek.is_int()){
+		return compare(left.get_int_value() - right.get_int_value());
+	}
+	else if(peek.is_double()){
+		const auto a = left.get_double_value();
+		const auto b = right.get_double_value();
+		if(a > b){
+			return 1;
+		}
+		else if(a < b){
+			return -1;
+		}
+		else{
+			return 0;
+		}
+	}
+	else if(peek.is_string()){
+		return bc_compare_string(left.get_string_value(), right.get_string_value());
+	}
+	else if(peek.is_json()){
+		return bc_compare_jsons(left.get_json(), right.get_json());
+	}
+	else if(peek.is_typeid()){
+		if(left.get_typeid_value() == right.get_typeid_value()){
+			return 0;
+		}
+		else{
+			return -1;//??? Hack -- should return +1 depending on values.
+		}
+	}
+	else if(peek.is_struct()){
+		//	Make sure the EXACT struct types are the same -- not only that they are both structs
+		return bc_compare_struct_true_deep(types, left.get_struct_value(), right.get_struct_value(), type0);
+	}
+	else if(peek.is_vector()){
+		const auto element_type_peek = peek2(types, peek.get_vector_element_type(types));
+		if(false){
+		}
+		else if(element_type_peek.is_bool()){
+			return bc_compare_vectors_bool(left._pod._external->_vector_w_inplace_elements, right._pod._external->_vector_w_inplace_elements);
+		}
+		else if(element_type_peek.is_int()){
+			return bc_compare_vectors_int(left._pod._external->_vector_w_inplace_elements, right._pod._external->_vector_w_inplace_elements);
+		}
+		else if(element_type_peek.is_double()){
+			return bc_compare_vectors_double(left._pod._external->_vector_w_inplace_elements, right._pod._external->_vector_w_inplace_elements);
+		}
+		else{
+			const auto& left_vec = get_vector_external_elements(types, left);
+			const auto& right_vec = get_vector_external_elements(types, right);
+			return bc_compare_vectors_obj(types, *left_vec, *right_vec, type0);
+		}
+	}
+	else if(peek.is_dict()){
+		const auto dict_value_peek = peek2(types, peek.get_dict_value_type(types));
+		if(false){
+		}
+		else if(dict_value_peek.is_bool()){
+			return bc_compare_dicts_bool(left._pod._external->_dict_w_inplace_values, right._pod._external->_dict_w_inplace_values);
+		}
+		else if(dict_value_peek.is_int()){
+			return bc_compare_dicts_int(left._pod._external->_dict_w_inplace_values, right._pod._external->_dict_w_inplace_values);
+		}
+		else if(dict_value_peek.is_double()){
+			return bc_compare_dicts_double(left._pod._external->_dict_w_inplace_values, right._pod._external->_dict_w_inplace_values);
+		}
+		else  {
+			QUARK_ASSERT(encode_as_dict_w_inplace_values(types, type) == false);
+
+			const auto& left2 = get_dict_external_values(types, left);
+			const auto& right2 = get_dict_external_values(types, right);
+			return bc_compare_dicts_obj(types, left2, right2, type0);
+		}
+	}
+	else if(peek2(types, type).is_function()){
+		QUARK_ASSERT(false);
+		return 0;
+	}
+	else{
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+	}
+}
+#endif
+
+
+
+
+
+
+
+
+
 int compare_values(value_backend_t& backend, int64_t op, const runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
 	QUARK_ASSERT(backend.check_invariant());
 
@@ -79,7 +602,47 @@ int compare_values(value_backend_t& backend, int64_t op, const runtime_type_t ty
 	}
 }
 
+runtime_value_t update_vector(value_backend_t& backend, runtime_value_t obj1, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value){
+	QUARK_ASSERT(backend.check_invariant());
 
+	const auto& types = backend.types;
+	const auto vector_type = type_t(coll_type);
+
+	const auto& obj1_peek = peek2(types, vector_type);
+	const auto element_type = obj1_peek.get_vector_element_type(types);
+	const bool element_is_rc = is_rc_value(backend.types, peek2(types, element_type));
+
+	const auto backend_mode = backend.config.vector_backend_mode;
+	if(backend_mode == vector_backend::carray){
+		return update__vector_carray(backend, obj1, coll_type, index, value);
+	}
+	else if(backend_mode == vector_backend::hamt){
+		if(element_is_rc){
+			return update__vector_hamt_nonpod(backend, obj1, coll_type, index, value);
+		}
+		else{
+			return update__vector_hamt_pod(backend, obj1, coll_type, index, value);
+		}
+	}
+	else{
+		UNSUPPORTED();
+	}
+}
+
+runtime_value_t update_dict(value_backend_t& backend, runtime_value_t obj1, runtime_type_t coll_type, runtime_value_t key_value, runtime_value_t value){
+	QUARK_ASSERT(backend.check_invariant());
+
+	const auto backend_mode = backend.config.dict_backend_mode;
+	if(backend_mode == dict_backend::cppmap){
+		return update__dict_cppmap(backend, obj1, coll_type, key_value, value);
+	}
+	else if(backend_mode == dict_backend::hamt){
+		return update__dict_hamt(backend, obj1, coll_type, key_value, value);
+	}
+	else{
+		UNSUPPORTED();
+	}
+}
 
 
 
@@ -269,8 +832,29 @@ const runtime_value_t subset__hamt(value_backend_t& backend, runtime_value_t col
 }
 
 
+//	assert(subset("abc", 1, 3) == "bc");
+runtime_value_t subset(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, int64_t start, int64_t end){
+	QUARK_ASSERT(backend.check_invariant());
 
 
+	if(start < 0 || end < 0){
+		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
+	}
+
+	const auto obj_type = type_t(coll_type);
+	if(obj_type.is_string()){
+		return subset__string(backend, coll_value, coll_type, start, end);
+	}
+	else if(is_vector_carray(backend.types, backend.config, obj_type)){
+		return subset__carray(backend, coll_value, coll_type, start, end);
+	}
+	else if(is_vector_hamt(backend.types, backend.config, obj_type)){
+		return subset__hamt(backend, coll_value, coll_type, start, end);
+	}
+	else{
+		quark::throw_runtime_error("Calling push_back() on unsupported type of value.");
+	}
+}
 
 
 
@@ -288,7 +872,7 @@ static void check_replace_indexes(std::size_t start, std::size_t end){
 	}
 }
 
-const runtime_value_t replace__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t replacement_value, runtime_type_t replacement_type){
+runtime_value_t replace__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t replacement_value, runtime_type_t replacement_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	check_replace_indexes(start, end);
@@ -317,7 +901,7 @@ const runtime_value_t replace__string(value_backend_t& backend, runtime_value_t 
 	return result2;
 }
 
-const runtime_value_t replace__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t replacement_value, runtime_type_t replacement_type){
+runtime_value_t replace__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t replacement_value, runtime_type_t replacement_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	check_replace_indexes(start, end);
@@ -351,7 +935,7 @@ const runtime_value_t replace__carray(value_backend_t& backend, runtime_value_t 
 
 	return vec2;
 }
-const runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t replacement_value, runtime_type_t replacement_type){
+runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t replacement_value, runtime_type_t replacement_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	check_replace_indexes(start, end);
@@ -396,6 +980,35 @@ const runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t co
 }
 
 
+
+
+
+//	assert(replace("One ring to rule them all", 4, 7, "rabbit") == "One rabbit to rule them all");
+runtime_value_t replace(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, int64_t start, int64_t end, runtime_value_t replacement_value, runtime_type_t replacement_type){
+	QUARK_ASSERT(backend.check_invariant());
+
+	if(start < 0 || end < 0){
+		quark::throw_runtime_error("replace() requires start and end to be non-negative.");
+	}
+	if(start > end){
+		quark::throw_runtime_error("replace() requires start <= end.");
+	}
+	QUARK_ASSERT(coll_type == replacement_type);
+
+	const auto obj_type = type_t(coll_type);
+	if(obj_type.is_string()){
+		return replace__string(backend, coll_value, coll_type, start, end, replacement_value, replacement_type);
+	}
+	else if(is_vector_carray(backend.types, backend.config, obj_type)){
+		return replace__carray(backend, coll_value, coll_type, start, end, replacement_value, replacement_type);
+	}
+	else if(is_vector_hamt(backend.types, backend.config, obj_type)){
+		return replace__hamt(backend, coll_value, coll_type, start, end, replacement_value, replacement_type);
+	}
+	else{
+		quark::throw_runtime_error("Calling push_back() on unsupported type of value.");
+	}
+}
 
 
 
@@ -466,6 +1079,144 @@ int64_t find__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime
 	}
 }
 
+
+int64_t find2(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type){
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	if(peek2(backend.types, type0).is_string()){
+		return find__string(backend, coll_value, coll_type, value, value_type);
+	}
+	else if(is_vector_carray(backend.types, backend.config, type0)){
+		return find__carray(backend, coll_value, coll_type, value, value_type);
+	}
+	else if(is_vector_hamt(backend.types, backend.config, type0)){
+		return find__hamt(backend, coll_value, coll_type, value, value_type);
+	}
+	else{
+		//	No other types allowed.
+		UNSUPPORTED();
+	}
+}
+
+//??? use bc_value_t as primitive for all features.
+
+bool exists(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t value, runtime_type_t value_type){
+	const auto& types = backend.types;
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	const auto& type1 = lookup_type_ref(backend, value_type);
+	QUARK_ASSERT(peek2(types, type0).is_dict());
+
+	if(is_dict_cppmap(types, backend.config, type0)){
+		const auto& dict = unpack_dict_cppmap_arg(backend, coll_value, coll_type);
+		const auto key_string = from_runtime_string2(backend, value);
+
+		const auto& m = dict->get_map();
+		const auto it = m.find(key_string);
+		return it != m.end() ? 1 : 0;
+	}
+	else if(is_dict_hamt(types, backend.config, type0)){
+		const auto& dict = *coll_value.dict_hamt_ptr;
+		const auto key_string = from_runtime_string2(backend, value);
+
+		const auto& m = dict.get_map();
+		const auto it = m.find(key_string);
+		return it != nullptr ? 1 : 0;
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+runtime_value_t erase(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type){
+	const auto& types = backend.types;
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	const auto& type1 = lookup_type_ref(backend, key_type);
+
+	QUARK_ASSERT(peek2(types, type0).is_dict());
+	QUARK_ASSERT(peek2(types, type1).is_string());
+
+	if(is_dict_cppmap(types, backend.config, type0)){
+		const auto& dict = unpack_dict_cppmap_arg(backend, coll_value, coll_type);
+
+		const auto value_type = peek2(types, type0).get_dict_value_type(types);
+
+		//	Deep copy dict.
+		auto dict2 = alloc_dict_cppmap(backend.heap, type0);
+		auto& m = dict2.dict_cppmap_ptr->get_map_mut();
+		m = dict->get_map();
+
+		const auto key_string = from_runtime_string2(backend, key_value);
+		m.erase(key_string);
+
+		if(is_rc_value(types, value_type)){
+			for(auto& e: m){
+				retain_value(backend, e.second, value_type);
+			}
+		}
+		return dict2;
+	}
+	else if(is_dict_hamt(types, backend.config, type0)){
+		const auto& dict = *coll_value.dict_hamt_ptr;
+
+		const auto value_type = peek2(types, type0).get_dict_value_type(types);
+
+		//	Deep copy dict.
+		auto dict2 = alloc_dict_hamt(backend.heap, type0);
+		auto& m = dict2.dict_hamt_ptr->get_map_mut();
+		m = dict.get_map();
+
+		const auto key_string = from_runtime_string2(backend, key_value);
+		m = m.erase(key_string);
+
+		if(is_rc_value(types, value_type)){
+			for(auto& e: m){
+				retain_value(backend, e.second, value_type);
+			}
+		}
+		return dict2;
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+//??? optimize prio 1
+//??? We need to figure out the return type *again*, knowledge we have already in semast.
+runtime_value_t get_keys(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type){
+	const auto& types = backend.types;
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	QUARK_ASSERT(peek2(types, type0).is_dict());
+
+	if(is_dict_cppmap(types, backend.config, type0)){
+		if(backend.config.vector_backend_mode == vector_backend::carray){
+			return get_keys__cppmap_carray(backend, coll_value, coll_type);
+		}
+		else if(backend.config.vector_backend_mode == vector_backend::hamt){
+			return get_keys__cppmap_hamt(backend, coll_value, coll_type);
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+	}
+	else if(is_dict_hamt(types, backend.config, type0)){
+		if(backend.config.vector_backend_mode == vector_backend::carray){
+			return get_keys__hamtmap_carray(backend, coll_value, coll_type);
+		}
+		else if(backend.config.vector_backend_mode == vector_backend::hamt){
+			return get_keys__hamtmap_hamt(backend, coll_value, coll_type);
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
 
 
 

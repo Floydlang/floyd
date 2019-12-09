@@ -33,7 +33,7 @@
 #include <algorithm>
 #include <cstdint>
 
-const auto trace_io_flag = false;
+const auto trace_io_flag = true;
 
 namespace floyd {
 struct semantic_ast_t;
@@ -104,7 +104,6 @@ struct bcgen_body_t {
 	std::vector<bcgen_instruction_t> _instrs;
 };
 
-static bc_static_frame_t make_frame(const types_t& types, const bcgen_body_t& body, const std::vector<type_t>& args);
 
 
 //////////////////////////////////////		bcgenerator_t
@@ -368,7 +367,7 @@ static bcgen_body_t copy_value(const bcgenerator_t& gen, const type_t& type, con
 
 	auto body_acc = body;
 	const auto& types = gen._ast_imm->_tree._types;
-	bool is_ext = encode_as_external(types, type);
+	bool is_ext = is_rc_value(types, type);
 
 	//	If this asserts, we should special-case and do nothing.
 	QUARK_ASSERT(!(dest_reg == source_reg));
@@ -804,12 +803,7 @@ static bc_opcode convert_call_to_pushback_opcode(const types_t& types, const typ
 
 	const auto& arg1_peek = peek2(types, arg1_type);
 	if(arg1_peek.is_vector()){
-		if(encode_as_vector_w_inplace_elements(types, arg1_type)){
-			return bc_opcode::k_pushback_vector_w_inplace_elements;
-		}
-		else{
-			return bc_opcode::k_pushback_vector_w_external_elements;
-		}
+		return bc_opcode::k_pushback_vector_w_external_elements;
 	}
 	else if(arg1_peek.is_string()){
 		return bc_opcode::k_pushback_string;
@@ -866,20 +860,10 @@ static bc_opcode convert_call_to_size_opcode(const types_t& types, const type_t&
 
 	const auto& arg1_peek = peek2(types, arg1_type);
 	if(arg1_peek.is_vector()){
-		if(encode_as_vector_w_inplace_elements(types, arg1_type)){
-			return bc_opcode::k_get_size_vector_w_inplace_elements;
-		}
-		else{
-			return bc_opcode::k_get_size_vector_w_external_elements;
-		}
+		return bc_opcode::k_get_size_vector_w_external_elements;
 	}
 	else if(arg1_peek.is_dict()){
-		if(encode_as_dict_w_inplace_values(types, arg1_type)){
-			return bc_opcode::k_get_size_dict_w_inplace_values;
-		}
-		else{
-			return bc_opcode::k_get_size_dict_w_external_values;
-		}
+		return bc_opcode::k_get_size_dict_w_external_values;
 	}
 	else if(arg1_peek.is_string()){
 		return bc_opcode::k_get_size_string;
@@ -962,20 +946,10 @@ static expression_gen_t bcgen_lookup_element_expression(bcgenerator_t& gen_acc, 
 			return bc_opcode::k_lookup_element_json;
 		}
 		else if(parent_peek.is_vector()){
-			if(encode_as_vector_w_inplace_elements(types, parent_type)){
-				return bc_opcode::k_lookup_element_vector_w_inplace_elements;
-			}
-			else{
-				return bc_opcode::k_lookup_element_vector_w_external_elements;
-			}
+			return bc_opcode::k_lookup_element_vector_w_external_elements;
 		}
 		else if(parent_peek.is_dict()){
-			if(encode_as_dict_w_inplace_values(types, parent_type)){
-				return bc_opcode::k_lookup_element_dict_w_inplace_values;
-			}
-			else{
-				return bc_opcode::k_lookup_element_dict_w_external_values;
-			}
+			return bc_opcode::k_lookup_element_dict_w_external_values;
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -1100,15 +1074,8 @@ static call_setup_t gen_call_setup(bcgenerator_t& gen_acc, const std::vector<typ
 			exts.push_back(false);
 		}
 
-		bool ext = encode_as_external(types, callee_arg_type);
-		if(ext){
-			body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_external_value, arg_reg, {}, {} ));
-			exts.push_back(true);
-		}
-		else{
-			body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_inplace_value, arg_reg, {}, {} ));
-			exts.push_back(false);
-		}
+		body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_external_value, arg_reg, {}, {} ));
+		exts.push_back(true);
 	}
 	const auto stack_count = arg_count + dynamic_arg_count;
 
@@ -1363,40 +1330,20 @@ static expression_gen_t bcgen_construct_value_expression(bcgenerator_t& gen_acc,
 
 	const auto target_peek = peek2(types, target_type);
 	if(target_peek.is_vector()){
-		if(encode_as_vector_w_inplace_elements(types, target_type)){
-			body_acc._instrs.push_back(bcgen_instruction_t(
-				bc_opcode::k_new_vector_w_inplace_elements,
-				target_reg2,
-				make_imm_int(0),
-				make_imm_int(arg_count)
-			));
-		}
-		else{
-			body_acc._instrs.push_back(bcgen_instruction_t(
-				bc_opcode::k_new_vector_w_external_elements,
-				target_reg2,
-				make_imm_int(target_itype),
-				make_imm_int(arg_count)
-			));
-		}
+		body_acc._instrs.push_back(bcgen_instruction_t(
+			bc_opcode::k_new_vector_w_external_elements,
+			target_reg2,
+			make_imm_int(target_itype),
+			make_imm_int(arg_count)
+		));
 	}
 	else if(target_peek.is_dict()){
-		if(encode_as_dict_w_inplace_values(types, target_type)){
-			body_acc._instrs.push_back(bcgen_instruction_t(
-				bc_opcode::k_new_dict_w_inplace_values,
-				target_reg2,
-				make_imm_int(target_itype),
-				make_imm_int(arg_count)
-			));
-		}
-		else{
-			body_acc._instrs.push_back(bcgen_instruction_t(
-				bc_opcode::k_new_dict_w_external_values,
-				target_reg2,
-				make_imm_int(target_itype),
-				make_imm_int(arg_count)
-			));
-		}
+		body_acc._instrs.push_back(bcgen_instruction_t(
+			bc_opcode::k_new_dict_w_external_values,
+			target_reg2,
+			make_imm_int(target_itype),
+			make_imm_int(arg_count)
+		));
 	}
 	else if(target_peek.is_struct()){
 		body_acc._instrs.push_back(bcgen_instruction_t(
@@ -1669,32 +1616,17 @@ static expression_gen_t bcgen_arithmetic_expression(bcgenerator_t& gen_acc, cons
 			return conv_opcode.at(details.op);
 		}
 		else if(peek.is_vector()){
-			if(encode_as_vector_w_inplace_elements(types, type)){
-				static const std::map<expression_type, bc_opcode> conv_opcode = {
-					{ expression_type::k_arithmetic_add, bc_opcode::k_concat_vectors_w_inplace_elements },
-					{ expression_type::k_arithmetic_subtract, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_multiply, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_divide, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_remainder, bc_opcode::k_nop },
+			static const std::map<expression_type, bc_opcode> conv_opcode = {
+				{ expression_type::k_arithmetic_add, bc_opcode::k_concat_vectors_w_external_elements },
+				{ expression_type::k_arithmetic_subtract, bc_opcode::k_nop },
+				{ expression_type::k_arithmetic_multiply, bc_opcode::k_nop },
+				{ expression_type::k_arithmetic_divide, bc_opcode::k_nop },
+				{ expression_type::k_arithmetic_remainder, bc_opcode::k_nop },
 
-					{ expression_type::k_logical_and, bc_opcode::k_nop },
-					{ expression_type::k_logical_or, bc_opcode::k_nop }
-				};
-				return conv_opcode.at(details.op);
-			}
-			else{
-				static const std::map<expression_type, bc_opcode> conv_opcode = {
-					{ expression_type::k_arithmetic_add, bc_opcode::k_concat_vectors_w_external_elements },
-					{ expression_type::k_arithmetic_subtract, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_multiply, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_divide, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_remainder, bc_opcode::k_nop },
-
-					{ expression_type::k_logical_and, bc_opcode::k_nop },
-					{ expression_type::k_logical_or, bc_opcode::k_nop }
-				};
-				return conv_opcode.at(details.op);
-			}
+				{ expression_type::k_logical_and, bc_opcode::k_nop },
+				{ expression_type::k_logical_or, bc_opcode::k_nop }
+			};
+			return conv_opcode.at(details.op);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -1876,6 +1808,19 @@ static bc_instruction_t squeeze_instruction(const bcgen_instruction_t& instructi
 	return result;
 }
 
+static bc_value_t make_constant(const value_t& value){
+	QUARK_ASSERT(value.check_invariant());
+
+	//	Special handling from string constants -- we stuff them into a separate string in the symbol table.
+	if(value.get_type().is_string()){
+		return bc_value_t(value.get_type(), runtime_value_t { .vector_carray_ptr = nullptr } );
+	}
+	else{
+		bc_value_t r = make_non_rc(value);
+		return r;
+	}
+}
+
 static bc_static_frame_t make_frame(const types_t& types, const bcgen_body_t& body, const std::vector<type_t>& args){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -1890,23 +1835,12 @@ static bc_static_frame_t make_frame(const types_t& types, const bcgen_body_t& bo
 		const auto t0 = e.second.get_value_type();
 		const auto t = peek2(types, t0);
 		if(e.second._symbol_type == symbol_t::symbol_type::named_type){
-/*
-			const auto e2 = std::pair<std::string, bc_symbol_t>{
-				e.first,
-				bc_symbol_t{
-					bc_symbol_t::type::named_type,
-					type_desc_t::make_typeid(),
-					bc_value_t::make_typeid_value(t)
-				}
-			};
-*/
 			const auto e2 = std::pair<std::string, bc_symbol_t>{
 				e.first,
 				bc_symbol_t{
 					bc_symbol_t::type::immutable,
 					type_desc_t::make_typeid(),
-					bc_value_t::make_typeid_value(t)
-//					value_to_bc(types, value_t::make_typeid_value(t))
+					value_t::make_typeid_value(t)
 				}
 			};
 			symbols2.push_back(e2);
@@ -1917,14 +1851,13 @@ static bc_static_frame_t make_frame(const types_t& types, const bcgen_body_t& bo
 				bc_symbol_t{
 					is_mutable(e.second) ? bc_symbol_t::type::mutable1 : bc_symbol_t::type::immutable,
 					t,
-					value_to_bc(types, e.second._init)
+					e.second._init
 				}
 			};
 			symbols2.push_back(e2);
 		}
 	}
 
-//	const auto flat_args = mapf<type_t>(args, [&](const auto& e) { return flatten_type_description_deep(types, e); });
 	return bc_static_frame_t(types, instrs2, symbols2, args);
 }
 
@@ -1939,6 +1872,9 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 	bcgenerator_t a(ast);
 
 	const auto& types = ast._tree._types;
+
+	//	??? We should not require a backend here -- all init-values should be primitives
+//	value_backend_t hack_backend({}, bc_make_struct_layouts(types), types, config_t { vector_backend::hamt, dict_backend::hamt, false });
 
 	bcgen_globals(a, a._ast_imm->_tree._globals);
 
@@ -1966,7 +1902,6 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 				types,
 				function_def._function_type,
 				function_def._named_args,
-//						std::shared_ptr<bc_static_frame_t>(),
 				nullptr,
 				function_id_t { function_def._definition_name }
 			};

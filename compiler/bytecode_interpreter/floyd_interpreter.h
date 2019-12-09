@@ -32,8 +32,8 @@ struct compilation_unit_t;
 //////////////////////////////////////		Free functions
 
 
-value_t find_global_symbol(const interpreter_t& vm, const std::string& s);
-value_t get_global(const interpreter_t& vm, const std::string& name);
+value_t find_global_symbol(interpreter_t& vm, const std::string& s);
+value_t get_global(interpreter_t& vm, const std::string& name);
 
 value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vector<value_t>& args);
 

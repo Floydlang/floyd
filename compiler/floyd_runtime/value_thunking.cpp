@@ -66,7 +66,7 @@ QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
 }
 
 
-
+// backend not used???
 std::string from_runtime_string2(const value_backend_t& backend, runtime_value_t encoded_value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(encoded_value.check_invariant());
@@ -159,7 +159,7 @@ static value_t from_runtime_struct(const value_backend_t& backend, const runtime
 }
 
 
-static runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t& value){
+runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t& value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 
@@ -199,7 +199,7 @@ static runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t
 	}
 }
 
-static value_t from_runtime_vector(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
+value_t from_runtime_vector(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(encoded_value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -242,7 +242,7 @@ static value_t from_runtime_vector(const value_backend_t& backend, const runtime
 	}
 }
 
-static runtime_value_t to_runtime_dict(value_backend_t& backend, const dict_t& exact_type, const value_t& value){
+runtime_value_t to_runtime_dict(value_backend_t& backend, const dict_t& exact_type, const value_t& value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 
@@ -282,7 +282,7 @@ static runtime_value_t to_runtime_dict(value_backend_t& backend, const dict_t& e
 	}
 }
 
-static value_t from_runtime_dict(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
+value_t from_runtime_dict(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(encoded_value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());

@@ -177,7 +177,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "Define variable", "double", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let double result = 3.5", make_expected_double(double(3.5)));
 }
 
-FLOYD_LANG_PROOF("Floyd test suite", "Define variable", "string", ""){
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "Define variable", "string", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"xxx(let string result = "xyz")xxx", make_expected_string("xyz"));
 }
 
