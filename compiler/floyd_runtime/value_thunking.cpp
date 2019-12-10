@@ -366,18 +366,8 @@ runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value
 			return to_runtime_dict(backend, e, value);
 		}
 		runtime_value_t operator()(const function_t& e) const{
-			const auto wanted_s = value.get_function_value().name;
-			const auto& v = backend.func_link_lookup;
-			const auto it = std::find_if(v.begin(), v.end(), [&] (auto& m) { return m.link_name.s == wanted_s; });
-			if(it != v.end()){
-				const auto id = (int64_t)(it - v.begin());
-				return runtime_value_t { .function_link_id = id };
-			}
-			else{
-				QUARK_ASSERT(false);
-				throw std::exception();
-//				return link_name_t { "" };
-			}
+			const auto id = find_function_by_name(backend, value.get_function_value());
+			return runtime_value_t { .function_link_id = id };
 		}
 		runtime_value_t operator()(const symbol_ref_t& e) const {
 			QUARK_ASSERT(false); throw std::exception();

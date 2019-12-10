@@ -758,9 +758,9 @@ struct bc_value_t {
 
 
 	//////////////////////////////////////		function
-	public: static bc_value_t make_function_value(const type_t& function_type, const function_id_t& function_id);
+	public: static bc_value_t make_function_value(value_backend_t& backend, const type_t& function_type, const function_id_t& function_id);
 	public: int64_t get_function_value() const;
-	private: explicit bc_value_t(const type_t& function_type, const function_id_t& function_id, bool dummy);
+	private: explicit bc_value_t(value_backend_t& backend, const type_t& function_type, const function_id_t& function_id);
 
 
 	//	Bumps RC if needed.
@@ -827,7 +827,7 @@ struct func_link_t {
 		QUARK_ASSERT(link_name.s.empty() == false);
 		QUARK_ASSERT(function_type.is_function());
 		QUARK_ASSERT(dynamic_arg_count >= 0 && dynamic_arg_count < 1000);
-		QUARK_ASSERT(f != nullptr);
+//		QUARK_ASSERT(f != nullptr);
 		return true;
 	}
 
@@ -840,7 +840,7 @@ struct func_link_t {
 
 	bool is_bc_function;
 
-	//	Points to a native function or to a bc_static_frame_t.
+	//	Points to a native function or to a bc_static_frame_t. Nullptr: only a prototype, no implementation.
 	void* f;
 };
 
@@ -890,6 +890,9 @@ struct value_backend_t {
 	//	Future: make this flag a per-vector setting.
 	config_t config;
 };
+
+int64_t find_function_by_name(const value_backend_t& backend, const function_id_t& s);
+
 
 
 inline const func_link_t& lookup_func_link(const value_backend_t& backend, runtime_value_t value){

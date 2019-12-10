@@ -797,9 +797,7 @@ static void call_native(interpreter_t& vm, int target_reg, const func_link_t& fu
 
 	interpreter_stack_t& stack = vm._stack;
 
-	if(func_link.f == nullptr){
-		quark::throw_runtime_error("Attempting to calling unimplemented function.");
-	}
+	QUARK_ASSERT(func_link.f != nullptr);
 	const auto f = (BC_NATIVE_FUNCTION_PTR)func_link.f;
 
 	const auto function_type_peek = peek2(types, func_link.function_type);
@@ -879,8 +877,13 @@ static void do_call(interpreter_t& vm, int target_reg, const runtime_value_t cal
 		}
 	}
 	else{
-		QUARK_ASSERT(func_link.f != nullptr);
-		call_native(vm, target_reg, func_link, callee_arg_count);
+		if(func_link.f == nullptr){
+			quark::throw_runtime_error("Attempting to calling unimplemented function.");
+		}
+		else{
+			QUARK_ASSERT(func_link.f != nullptr);
+			call_native(vm, target_reg, func_link, callee_arg_count);
+		}
 	}
 }
 

@@ -1112,7 +1112,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "func", "void function, no return statement
 	);
 }
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "Function value", "", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "Function value", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1120,10 +1120,7 @@ FLOYD_LANG_PROOF_VIP("Floyd test suite", "Function value", "", ""){
 			func int a(string s){
 				return 2
 			}
-			let b = a
-			let x = b("hi")
-			print(x)
-//			print(a)
+			print(a)
 
 		)",
 		{
@@ -1445,7 +1442,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "impure", "call impure->impure", "Compiles 
 //??? make sure only pure functions can be called inside test-def.
 
 
-FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Simple test-def compiles, call to test()", ""){
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "test-def", "Simple test-def compiles, call to test()", ""){
 	ut_run_closed_nolib(
 		QUARK_POS,
 		R"___(

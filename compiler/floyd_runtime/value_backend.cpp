@@ -1282,23 +1282,26 @@ bc_value_t::bc_value_t(value_backend_t& backend, const type_t& struct_type, cons
 	QUARK_ASSERT(check_invariant());
 }
 
-bc_value_t bc_value_t::make_function_value(const type_t& function_type, const function_id_t& function_id){
-	return bc_value_t{ function_type, function_id, true };
+bc_value_t bc_value_t::make_function_value(value_backend_t& backend, const type_t& function_type, const function_id_t& function_id){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(function_type.is_function());
+
+	return bc_value_t{ backend, function_type, function_id };
 }
 int64_t bc_value_t::get_function_value() const{
 	QUARK_ASSERT(check_invariant());
 
 	return _pod.function_link_id;
 }
-bc_value_t::bc_value_t(const type_t& function_type, const function_id_t& function_id, bool dummy) :
+bc_value_t::bc_value_t(value_backend_t& backend, const type_t& function_type, const function_id_t& function_id) :
 	_backend(nullptr),
 	_type(function_type)
 {
-	QUARK_ASSERT(function_type.check_invariant());
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(function_type.is_function());
 
-	QUARK_ASSERT(false);
-	throw std::exception();
-//	_pod._external = new bc_external_value_t(function_type, function_id);
+	const auto id = find_function_by_name(backend, function_id);
+	_pod = runtime_value_t { .function_link_id = id };
 
 	QUARK_ASSERT(check_invariant());
 }
@@ -1677,6 +1680,21 @@ void trace_func_link(const types_t& types, const std::vector<func_link_t>& defs)
 
 
 ////////////////////////////////		value_backend_t
+
+
+int64_t find_function_by_name(const value_backend_t& backend, const function_id_t& s){
+	const auto wanted_s = s.name;
+	const auto& v = backend.func_link_lookup;
+	const auto it = std::find_if(v.begin(), v.end(), [&] (auto& m) { return m.link_name.s == wanted_s; });
+	if(it != v.end()){
+		const auto result = (int64_t)(it - v.begin());
+		return result;
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
 
 
 value_backend_t::value_backend_t(

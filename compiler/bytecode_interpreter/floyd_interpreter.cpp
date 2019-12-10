@@ -389,7 +389,7 @@ static std::string run_test(interpreter_t& vm, const test_t& test){
 		epure::pure
 	);
 
-	const auto f_value = bc_value_t::make_function_value(f_type, function_id);
+	const auto f_value = bc_value_t::make_function_value(vm._stack._backend, f_type, function_id);
 
 	try {
 		const std::vector<bc_value_t> args2;
