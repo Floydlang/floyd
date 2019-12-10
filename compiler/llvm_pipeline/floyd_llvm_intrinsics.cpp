@@ -337,7 +337,8 @@ static runtime_value_t map__carray(floyd_runtime_t* frp, runtime_value_t element
 	const auto f_arg_types = peek2(types, type1).get_function_args(types);
 #endif
 
-	const auto f = reinterpret_cast<MAP_F>(f_value.function_ptr);
+	const auto& func_link = lookup_func_link(backend, f_value);
+	const auto f = reinterpret_cast<MAP_F>(func_link.f);
 
 	const auto count = elements_vec.vector_carray_ptr->get_element_count();
 	auto result_vec = alloc_vector_carray(backend.heap, count, count, type_t(result_vec_type));
@@ -367,7 +368,8 @@ static runtime_value_t map__hamt(floyd_runtime_t* frp, runtime_value_t elements_
 	const auto f_arg_types = peek2(types, type1).get_function_args(types);
 #endif
 
-	const auto f = reinterpret_cast<MAP_F>(f_value.function_ptr);
+	const auto& func_link = lookup_func_link(backend, f_value);
+	const auto f = reinterpret_cast<MAP_F>(func_link.f);
 
 	const auto count = elements_vec.vector_hamt_ptr->get_element_count();
 	auto result_vec = alloc_vector_hamt(backend.heap, count, count, type_t(result_vec_type));
@@ -460,6 +462,7 @@ typedef runtime_value_t (*MAP_STRING_F)(floyd_runtime_t* frp, runtime_value_t s,
 
 static runtime_value_t floyd_llvm_intrinsic__map_string(floyd_runtime_t* frp, runtime_value_t input_string0, runtime_value_t func, runtime_type_t func_type, runtime_value_t context, runtime_type_t context_type){
 	auto& r = get_floyd_runtime(frp);
+	auto& backend = r.ee->backend;
 
 /*
 	QUARK_ASSERT(check_map_string_func_type(
@@ -469,7 +472,8 @@ static runtime_value_t floyd_llvm_intrinsic__map_string(floyd_runtime_t* frp, ru
 	));
 */
 
-	const auto f = reinterpret_cast<MAP_STRING_F>(func.function_ptr);
+	const auto& func_link = lookup_func_link(backend, func);
+	const auto f = reinterpret_cast<MAP_STRING_F>(func_link.f);
 
 	const auto input_string = from_runtime_string(r, input_string0);
 
@@ -532,7 +536,8 @@ static runtime_value_t map_dag__carray(
 
 	const auto return_type = make_vector(types, r_type);
 
-	const auto f2 = reinterpret_cast<map_dag_F>(f.function_ptr);
+	const auto& func_link = lookup_func_link(backend, f);
+	const auto f2 = reinterpret_cast<map_dag_F>(func_link.f);
 
 	const auto elements2 = elements.vector_carray_ptr;
 	const auto parents2 = parents.vector_carray_ptr;
@@ -660,7 +665,8 @@ static runtime_value_t map_dag__hamt(
 
 	const auto return_type = make_vector(types, r_type);
 
-	const auto f2 = reinterpret_cast<map_dag_F>(f.function_ptr);
+	const auto& func_link = lookup_func_link(backend, f);
+	const auto f2 = reinterpret_cast<map_dag_F>(func_link.f);
 
 	const auto elements2 = elements.vector_hamt_ptr;
 	const auto parents2 = parents.vector_hamt_ptr;
@@ -804,7 +810,9 @@ static runtime_value_t filter__carray(floyd_runtime_t* frp, runtime_value_t elem
 	QUARK_ASSERT(is_vector_carray(backend.types, backend.config, type_t(elements_vec_type)));
 
 	const auto& vec = *elements_vec.vector_carray_ptr;
-	const auto f = reinterpret_cast<FILTER_F>(f_value.function_ptr);
+
+	const auto& func_link = lookup_func_link(backend, f_value);
+	const auto f = reinterpret_cast<FILTER_F>(func_link.f);
 
 	auto count = vec.get_element_count();
 
@@ -849,7 +857,9 @@ static runtime_value_t filter__hamt(floyd_runtime_t* frp, runtime_value_t elemen
 	QUARK_ASSERT(is_vector_hamt(backend.types, backend.config, type_t(elements_vec_type)));
 
 	const auto& vec = *elements_vec.vector_hamt_ptr;
-	const auto f = reinterpret_cast<FILTER_F>(f_value.function_ptr);
+
+	const auto& func_link = lookup_func_link(backend, f_value);
+	const auto f = reinterpret_cast<FILTER_F>(func_link.f);
 
 	auto count = vec.get_element_count();
 
@@ -916,7 +926,9 @@ static runtime_value_t reduce__carray(floyd_runtime_t* frp, runtime_value_t elem
 
 	const auto& vec = *elements_vec.vector_carray_ptr;
 	const auto& init = init_value;
-	const auto f = reinterpret_cast<REDUCE_F>(f_value.function_ptr);
+
+	const auto& func_link = lookup_func_link(backend, f_value);
+	const auto f = reinterpret_cast<REDUCE_F>(func_link.f);
 
 	auto count = vec.get_element_count();
 	runtime_value_t acc = init;
@@ -948,7 +960,9 @@ static runtime_value_t reduce__hamt(floyd_runtime_t* frp, runtime_value_t elemen
 
 	const auto& vec = *elements_vec.vector_hamt_ptr;
 	const auto& init = init_value;
-	const auto f = reinterpret_cast<REDUCE_F>(f_value.function_ptr);
+
+	const auto& func_link = lookup_func_link(backend, f_value);
+	const auto f = reinterpret_cast<REDUCE_F>(func_link.f);
 
 	auto count = vec.get_element_count();
 	runtime_value_t acc = init;
@@ -1021,7 +1035,9 @@ static runtime_value_t stable_sort__carray(
 	const auto& context = context_value;
 
 	const auto elements2 = from_runtime_value2(backend, elements, type0);
-	const auto f2 = reinterpret_cast<stable_sort_F>(f.function_ptr);
+
+	const auto& func_link = lookup_func_link(backend, f);
+	const auto f2 = reinterpret_cast<stable_sort_F>(func_link.f);
 
 	struct sort_functor_r {
 		bool operator() (const value_t &a, const value_t &b) {
@@ -1075,7 +1091,9 @@ static runtime_value_t stable_sort__hamt(
 	const auto& context = context_value;
 
 	const auto elements2 = from_runtime_value2(backend, elements, type0);
-	const auto f2 = reinterpret_cast<stable_sort_F>(f.function_ptr);
+
+	const auto& func_link = lookup_func_link(backend, f);
+	const auto f2 = reinterpret_cast<stable_sort_F>(func_link.f);
 
 	struct sort_functor_r {
 		bool operator() (const value_t &a, const value_t &b) {

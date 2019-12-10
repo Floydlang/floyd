@@ -243,24 +243,6 @@ bool bc_static_frame_t::check_invariant() const {
 //////////////////////////////////////////		bc_function_definition_t
 
 
-bc_function_definition_t::bc_function_definition_t(
-	const types_t& types,
-	const type_t& function_type,
-	const std::vector<member_t>& args,
-	const std::shared_ptr<bc_static_frame_t>& frame,
-	function_id_t function_id
-) :
-	_function_type(function_type),
-	_args(args),
-	_frame_ptr(frame),
-	_function_id(function_id),
-	_dyn_arg_count(-1),
-	_return_type(_function_type.get_function_return(types))
-{
-	const auto args2 = peek2(types, function_type).get_function_args(types);
-    _dyn_arg_count = (int)std::count_if(args2.begin(), args2.end(), [&](const auto& e){ return peek2(types, e).is_any(); });
-}
-
 #if DEBUG
 bool bc_function_definition_t::check_invariant() const {
 	return true;
@@ -394,13 +376,16 @@ json_t interpreter_stack_t::stack_to_json(value_backend_t& backend) const{
 //////////////////////////////////////////		GLOBAL FUNCTIONS
 
 
+/*
 static const bc_function_definition_t& get_function_def(const interpreter_t& vm, function_id_t function_id){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& function_def = vm._imm->_program._function_defs.at(function_id);
 	return function_def;
 }
+*/
 
+//??? use code from do_call() -- share code.
 bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_value_t args[], int arg_count){
 	const auto& backend = vm._stack._backend;
 	const auto& types = backend.types;
@@ -412,16 +397,14 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 	QUARK_ASSERT(peek2(types, f._type).is_function());
 #endif
 
-	const auto& function_def = get_function_def(vm, f.get_function_value());
-	if(function_def._frame_ptr == nullptr){
-		const auto function_id = function_def._function_id;
+	const auto& func_link = lookup_func_link(backend, f._pod);
 
-		const auto& native_function_ptr = vm._imm->_native_functions.at(function_id);
-
+	if(func_link.is_bc_function == false){
 		//	arity
-	//	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
-
-		const auto& result = (native_function_ptr)(vm, &args[0], arg_count);
+//		QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
+		QUARK_ASSERT(func_link.f != nullptr)
+		const auto f2 = (BC_NATIVE_FUNCTION_PTR)func_link.f;
+		const auto& result = (*f2)(vm, &args[0], arg_count);
 		return result;
 	}
 	else{
@@ -440,7 +423,6 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 
 		vm._stack.save_frame();
 
-		//??? use exts-info inside function_def.
 		//	We push the values to the stack = the stack will take RC ownership of the values.
 		std::vector<type_t> exts;
 		for(int i = 0 ; i < arg_count ; i++){
@@ -450,9 +432,11 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 			vm._stack.push_external_value(bc);
 		}
 
-		vm._stack.open_frame(*function_def._frame_ptr, arg_count);
-		const auto& result = execute_instructions(vm, function_def._frame_ptr->_instructions);
-		vm._stack.close_frame(*function_def._frame_ptr);
+		QUARK_ASSERT(func_link.f != nullptr);
+		auto frame_ptr = (const bc_static_frame_t*)func_link.f;
+		vm._stack.open_frame(*frame_ptr, arg_count);
+		const auto& result = execute_instructions(vm, frame_ptr->_instructions);
+		vm._stack.close_frame(*frame_ptr);
 		vm._stack.pop_batch(exts);
 		vm._stack.restore_frame();
 
@@ -536,7 +520,6 @@ std::vector<std::pair<type_t, struct_layout_t>> bc_make_struct_layouts(const typ
 	return result;
 }
 
-
 interpreter_t::interpreter_t(const bc_program_t& program, bc_runtime_handler_i& handler) :
 	_stack {
 		{ {}, bc_make_struct_layouts(types_t()), {}, {} },
@@ -547,20 +530,57 @@ interpreter_t::interpreter_t(const bc_program_t& program, bc_runtime_handler_i& 
 	QUARK_ASSERT(program.check_invariant());
 
 	auto temp_types = program._types;
-	const auto intrinsics = bc_get_intrinsics(temp_types);
+	const auto intrinsics = bc_get_intrinsics_internal(temp_types);
 	QUARK_ASSERT(temp_types.nodes.size() == program._types.nodes.size());
 
 	const auto corelib_calls = bc_get_corelib_calls();
-	auto host_functions = intrinsics;
-	host_functions.insert(corelib_calls.begin(), corelib_calls.end());
 
+	const auto intrinsics2 = mapf<func_link_t>(intrinsics, [&](const auto& e){ return func_link_t {
+		std::string() + "intrinsics:" + e.first.name,
+		link_name_t { e.first.name },
+		e.first._function_type,
+		count_dyn_args(temp_types, e.first._function_type),
+		false,
+		(void*)e.second
+	}; });
+
+
+	const auto intrinsic_signatures = make_intrinsic_signatures(temp_types);
+
+//?? only add those corelib calls were we can find a global symbol with its name. This lets us find the function_type, alternatively know to NOT link the corelib function.
+	const auto corelib_calls1 = mapf<func_link_t>(corelib_calls, [&](const auto& e){
+		const auto& s = intrinsic_signatures.vec;
+		const auto it = std::find_if(s.begin(), s.end(), [e](const auto& m){ return m.name == e.first.name; });
+		if(it == s.end()){
+			return func_link_t { "", {}, {}, 0, false, nullptr };
+		}
+		else{
+			const auto function_type = it->_function_type;
+
+			return func_link_t {
+				std::string() + "corelib:" + e.first.name,
+				link_name_t { e.first.name },
+				function_type,
+				count_dyn_args(temp_types, function_type),
+				true,
+				(void*)e.second
+			};
+		}
+	});
+
+	const auto corelib_calls2 = filterf<func_link_t>(corelib_calls1, [](const auto& e){ return e.link_name.s.empty() == false; });
+
+	const auto funcs = mapf<func_link_t>(program._function_defs, [](const auto& e){ return e.func_link; });
+
+	const auto func_lookup0 = concat(funcs, intrinsics2);
+	const auto func_lookup = concat(func_lookup0, corelib_calls2);
 
 	const auto start_time = std::chrono::high_resolution_clock::now();
-	_imm = std::make_shared<interpreter_imm_t>(interpreter_imm_t{start_time, program, host_functions });
+	_imm = std::make_shared<interpreter_imm_t>(interpreter_imm_t{ start_time, program });
 
 	interpreter_stack_t temp(
 		value_backend_t(
-			{},
+			func_lookup,
 			bc_make_struct_layouts(program._types),
 			program._types,
 			config_t { vector_backend::hamt, dict_backend::hamt, false }
@@ -773,38 +793,29 @@ static void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t targ
 	vm._stack.write_register__external_value(dest_reg, result);
 }
 
-
 /*
 	??? Make stub bc_static_frame_t for each host function to make call conventions same as Floyd functions.
 */
+
 //	??? Very slow
 //	Notice: host calls and floyd calls have the same type -- we cannot detect host calls until we have a callee value.
-static void call_native(interpreter_t& vm, const bc_instruction_t& i, const type_t& function_type){
+static void call_native(interpreter_t& vm, int target_reg, const func_link_t& func_link, int callee_arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(i.check_invariant());
-	QUARK_ASSERT(function_type.check_invariant());
 
 	const auto& backend = vm._stack._backend;
 	const auto& types = backend.types;
 
 	interpreter_stack_t& stack = vm._stack;
-	auto* regs = stack._current_frame_entry_ptr;
 
-	QUARK_ASSERT(stack.check_reg_function(i._b));
-
-	const auto function_id = get_function_id(regs[i._b]);
-	const int callee_arg_count = i._c;
-
-	const auto native_it = vm._imm->_native_functions.find(function_id);
-	if(native_it == vm._imm->_native_functions.end()){
+	if(func_link.f == nullptr){
 		quark::throw_runtime_error("Attempting to calling unimplemented function.");
 	}
-	const auto& host_function_ptr = native_it->second;
+	const auto f = (BC_NATIVE_FUNCTION_PTR)func_link.f;
 
-	const auto function_type_peek = peek2(types, function_type);
+	const auto function_type_peek = peek2(types, func_link.function_type);
 
 	const auto temp_args = function_type_peek.get_function_args(types);
-	const auto function_def_dynamic_arg_count = std::count_if(temp_args.begin(), temp_args.end(), [&](const auto& e){ return peek2(types, e).is_any(); } );
+	const auto function_def_dynamic_arg_count = func_link.dynamic_arg_count;
 
 	const int arg0_stack_pos = (int)(stack.size() - (function_def_dynamic_arg_count + callee_arg_count));
 	int stack_pos = arg0_stack_pos;
@@ -828,83 +839,58 @@ static void call_native(interpreter_t& vm, const bc_instruction_t& i, const type
 		}
 	}
 
-	const auto& result = (host_function_ptr)(vm, &arg_values[0], static_cast<int>(arg_values.size()));
+	const auto& result = (*f)(vm, &arg_values[0], static_cast<int>(arg_values.size()));
 	const auto bc_result = result;
 
 	const auto& function_return_type = function_type_peek.get_function_return(types);
 	const auto function_return_type_peek = peek2(types, function_return_type);
 	if(function_return_type_peek.is_void() == true){
 	}
-	else if(function_return_type_peek.is_any()){
-		stack.write_register(i._a, bc_result);
-	}
 	else{
-		stack.write_register(i._a, bc_result);
+		stack.write_register(target_reg, bc_result);
 	}
 }
 
+//??? Crazy implementation right now that searches for the function to call.
 //	We need to examine the callee, since we support magic argument lists of varying size.
-static void do_call(interpreter_t& vm, const bc_instruction_t& i){
+static void do_call(interpreter_t& vm, int target_reg, const runtime_value_t callee, int callee_arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(i.check_invariant());
 
 	interpreter_stack_t& stack = vm._stack;
-	auto* regs = stack._current_frame_entry_ptr;
 
 	const auto& backend = vm._stack._backend;
 	const auto& types = backend.types;
 
-	QUARK_ASSERT(stack.check_reg_function(i._b));
+	const auto& func_link = lookup_func_link(backend, callee);
 
-	const auto function_id = get_function_id(regs[i._b]);
-	const int callee_arg_count = i._c;
+	if(func_link.is_bc_function){
+		//	This is a floyd function, with a frame_ptr to execute.
+		QUARK_ASSERT(func_link.f != nullptr);
+		QUARK_ASSERT(func_link.function_type.get_function_args(types).size() == callee_arg_count);
 
-	const auto function_def_it = vm._imm->_program._function_defs.find(function_id);
+		const auto& function_return_type = peek2(types, func_link.function_type).get_function_return(types);
 
-	//	Can't find this functions -- it could be an intrinsic.
-	if(function_def_it != vm._imm->_program._function_defs.end() == false){
-		const auto& intrinsics = vm._imm->_program.intrinsic_signatures;
+		QUARK_ASSERT(func_link.dynamic_arg_count == 0);
 
-		//	Find function
-		const auto it = std::find_if(intrinsics.vec.begin(), intrinsics.vec.end(), [&](const intrinsic_signature_t& e) { return e.name == function_id.name; } );
-		QUARK_ASSERT(it != intrinsics.vec.end());
-		const auto& function_type = it->_function_type;
-		call_native(vm, i, function_type);
+		//	We need to remember the global pos where to store return value, since we're switching frame to call function.
+		int result_reg_pos = static_cast<int>(stack._current_frame_entry_ptr - &stack._entries[0]) + target_reg;
+
+		auto frame_ptr = (const bc_static_frame_t*)func_link.f;
+
+		stack.open_frame(*frame_ptr, callee_arg_count);
+		const auto& result = execute_instructions(vm, frame_ptr->_instructions);
+		stack.close_frame(*frame_ptr);
+
+		const auto function_return_type_peek = peek2(types, function_return_type);
+		if(function_return_type_peek.is_void() == false){
+			//	Cannot store via register, we store on absolute stacok pos (relative to start of
+			//	stack. We have not yet executed k_pop_frame_ptr that restores our frame.
+			stack.replace_external_value(result_reg_pos, result.second);
+		}
 	}
 	else{
-		const auto& function_def = function_def_it->second;
-
-		//	There is a function def but it has no frame_ptr => this is a native function.
-		if(function_def._frame_ptr == nullptr){
-			call_native(vm, i, function_def._function_type);
-		}
-
-		//	This is a floyd function, with a frame_ptr to execute.
-		else{
-			QUARK_ASSERT(function_def._args.size() == callee_arg_count);
-
-			const int function_def_dynamic_arg_count = function_def._dyn_arg_count;
-			const auto& function_return_type = peek2(types, function_def._function_type).get_function_return(types);
-
-			QUARK_ASSERT(function_def_dynamic_arg_count == 0);
-
-			//	We need to remember the global pos where to store return value, since we're switching frame to call function.
-			int result_reg_pos = static_cast<int>(stack._current_frame_entry_ptr - &stack._entries[0]) + i._a;
-
-			stack.open_frame(*function_def._frame_ptr, callee_arg_count);
-			const auto& result = execute_instructions(vm, function_def._frame_ptr->_instructions);
-			stack.close_frame(*function_def._frame_ptr);
-
-			//	Update our cached pointers.
-
-			const auto function_return_type_peek = peek2(types, function_return_type);
-
-			if(function_return_type_peek.is_void() == false){
-
-				//	Cannot store via register, we have not yet executed k_pop_frame_ptr that restores our frame.
-				stack.replace_external_value(result_reg_pos, result.second);
-			}
-		}
+		QUARK_ASSERT(func_link.f != nullptr);
+		call_native(vm, target_reg, func_link, callee_arg_count);
 	}
 }
 
@@ -912,7 +898,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(instructions.empty() == true || (instructions.back()._opcode == bc_opcode::k_return || instructions.back()._opcode == bc_opcode::k_stop));
 
-	const auto& backend = vm._stack._backend;
+	auto& backend = vm._stack._backend;
 	const auto& types = backend.types;
 
 	interpreter_stack_t& stack = vm._stack;
@@ -1089,7 +1075,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(vm.check_invariant());
 
 			const uint32_t n = i._a;
-			const uint32_t extbits = i._b;
+			//const uint32_t extbits = i._b;
 
 			QUARK_ASSERT(stack._stack_size >= n);
 			QUARK_ASSERT(n >= 0);
@@ -1465,7 +1451,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_function(i._b));
 
-			do_call(vm, i);
+			do_call(vm, i._a, regs[i._b], i._c);
 
 			frame_ptr = stack._current_frame_ptr;
 			regs = stack._current_frame_entry_ptr;
@@ -1690,22 +1676,24 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-/*
 		case bc_opcode::k_concat_strings: {
 			QUARK_ASSERT(stack.check_reg_string(i._a));
 			QUARK_ASSERT(stack.check_reg_string(i._b));
 			QUARK_ASSERT(stack.check_reg_string(i._c));
 
+			const auto type = type_t::make_string();
 			//	??? No need to create bc_value_t here.
-			const auto s = regs[i._b]._external->_string + regs[i._c]._external->_string;
-			const auto value = bc_value_t::make_string(s);
+//			const auto s = regs[i._b]._external->_string + regs[i._c]._external->_string;
+			const auto s = from_runtime_string2(backend, regs[i._b]) + from_runtime_string2(backend, regs[i._c]);
+			const auto value = bc_value_t::make_string(backend, s);
 			auto prev_copy = regs[i._a];
-			value._pod._external->_rc++;
+			retain_value(backend, value._pod, type);
 			regs[i._a] = value._pod;
-			release_pod_external(prev_copy);
+			release_value(backend, prev_copy, type);
 			break;
 		}
 
+			/*
 		case bc_opcode::k_concat_vectors_w_external_elements: {
 			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._a));
 			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
@@ -2021,10 +2009,8 @@ static json_t functiondef_to_json(value_backend_t& backend, const bc_function_de
 	QUARK_ASSERT(backend.check_invariant());
 
 	return json_t::make_array({
-		json_t(type_to_compact_string(backend.types, def._function_type)),
-		members_to_json(backend.types, def._args),
-		def._frame_ptr ? frame_to_json(backend, *def._frame_ptr) : json_t(),
-		json_t(def._function_id.name)
+		func_link_to_json(backend, def.func_link),
+		def._frame_ptr ? frame_to_json(backend, *def._frame_ptr) : json_t("no BC frame = native func")
 	});
 }
 
@@ -2034,10 +2020,8 @@ json_t bcprogram_to_json(const bc_program_t& program){
 	std::vector<json_t> callstack;
 	std::vector<json_t> function_defs;
 	for(const auto& e: program._function_defs){
-		const auto& function_def = e.second;
 		function_defs.push_back(json_t::make_array({
-			e.second._function_id.name,
-			functiondef_to_json(backend, function_def)
+			functiondef_to_json(backend, e)
 		}));
 	}
 

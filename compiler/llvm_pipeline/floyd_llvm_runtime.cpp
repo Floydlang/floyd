@@ -437,20 +437,31 @@ bool llvm_execution_engine_t::check_invariant() const {
 	return true;
 }
 
-static std::vector<std::pair<link_name_t, void*>> collection_native_func_ptrs(llvm::ExecutionEngine& ee, const std::vector<function_link_entry_t>& function_link_map){
-	std::vector<std::pair<link_name_t, void*>> result;
+static std::vector<func_link_t> make_func_links(const types_t& types, llvm::ExecutionEngine& ee, const std::vector<function_link_entry_t>& function_link_map){
+	QUARK_ASSERT(types.check_invariant());
+
+	std::vector<func_link_t> result;
 	for(const auto& e: function_link_map){
 		const auto f = (void*)ee.getFunctionAddress(e.link_name.s);
 //		auto f = get_function_ptr(runtime, e.link_name);
-		result.push_back({ e.link_name, f });
+		result.push_back(func_link_t{
+			"llvm func: " + e.link_name.s,
+			e.link_name,
+			e.function_type_or_undef,
+			e.function_type_or_undef.is_undefined() ? 0 : count_dyn_args(types, e.function_type_or_undef),
+			false,
+			f
+		});
 	}
 
+/*
 	if(false){
 		QUARK_SCOPED_TRACE("linked functions");
 		for(const auto& e: result){
 			QUARK_TRACE_SS(e.first.s << " = " << (e.second == nullptr ? "nullptr" : ptr_to_hexstring(e.second)));
 		}
 	}
+*/
 
 	return result;
 }
@@ -490,14 +501,14 @@ static std::vector<std::pair<type_t, struct_layout_t>> make_struct_layouts(const
 }
 
 #if QUARK_MAC
-std::string strip_link_name(const std::string& s){
+static std::string strip_link_name(const std::string& s){
 	QUARK_ASSERT(s.empty() == false);
 	QUARK_ASSERT(s[0] == '_');
 	const auto s2 = s.substr(1);
 	return s2;
 }
 #else
-std::string strip_link_name(const std::string& platform_link_name){
+static std::string strip_link_name(const std::string& platform_link_name){
 	QUARK_ASSERT(platform_link_name.empty() == false);
 	return platform_link_name;
 }
@@ -578,7 +589,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 		new llvm_execution_engine_t{
 			k_debug_magic,
 			value_backend_t(
-				collection_native_func_ptrs(*ee1, final_link_map),
+				make_func_links(program_breaks.type_lookup.state.types, *ee1, final_link_map),
 				make_struct_layouts(program_breaks.type_lookup, ee1->getDataLayout()),
 				program_breaks.type_lookup.state.types,
 				program_breaks.settings.config

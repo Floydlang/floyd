@@ -1878,7 +1878,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 
 	bcgen_globals(a, a._ast_imm->_tree._globals);
 
-	std::map<function_id_t, bc_function_definition_t> function_defs2;
+	std::vector<bc_function_definition_t> funcs;
 	for(auto function_id = 0 ; function_id < ast._tree._function_defs.size() ; function_id++){
 		const auto& function_def = ast._tree._function_defs[function_id];
 
@@ -1888,35 +1888,44 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 			const auto args2 = peek2(types, function_def._function_type).get_function_args(types);
 
 			const auto frame = make_frame(types, body2, args2);
-			const auto f = bc_function_definition_t{
-				types,
-				function_def._function_type,
-				function_def._named_args,
-				std::make_shared<bc_static_frame_t>(frame),
-				function_id_t { function_def._definition_name }
+			const auto frame2 = std::make_shared<bc_static_frame_t>(frame);
+			const auto f = bc_function_definition_t {
+				func_link_t {
+					"user floyd function: " + function_def._definition_name,
+					link_name_t { function_def._definition_name },
+					function_def._function_type,
+					count_dyn_args(types, function_def._function_type),
+					true,
+	//				function_def._named_args,
+					frame2.get()
+				},
+				frame2
 			};
-			function_defs2.insert({ f._function_id, f });
+			funcs.push_back(f);
 		}
 		else{
-			const auto f = bc_function_definition_t{
-				types,
-				function_def._function_type,
-				function_def._named_args,
-				nullptr,
-				function_id_t { function_def._definition_name }
+			const auto f = bc_function_definition_t {
+				func_link_t {
+					"user function: " + function_def._definition_name,
+					link_name_t { function_def._definition_name },
+					function_def._function_type,
+					count_dyn_args(types, function_def._function_type),
+					false,
+					nullptr
+				},
+				nullptr
 			};
-			function_defs2.insert({ f._function_id, f });
+			funcs.push_back(f);
 		}
 	}
 
 	const auto globals2 = make_frame(types, a._globals, std::vector<type_t>{});
 	const auto result = bc_program_t{
 		globals2,
-		function_defs2,
+		funcs,
 		types,
 		ast._tree._software_system,
-		ast._tree._container_def,
-		ast.intrinsic_signatures
+		ast._tree._container_def
 	};
 
 	if(trace_io_flag){

@@ -278,6 +278,8 @@ void dispose_alloc(heap_alloc_64_t& alloc);
 	Future: these can have different sizes. A vector can use SSO and embedd head + some body directly here.
 */
 
+struct abstract_func_t {};
+
 //	64 bits
 union runtime_value_t {
 	uint8_t bool_value;
@@ -296,8 +298,10 @@ union runtime_value_t {
 
 	JSON_T* json_ptr;
 	STRUCT_T* struct_ptr;
-	void* function_ptr;
-	char* function_id_str;
+
+	//	In the future a function should hold its context too = needs to alloc.
+	int64_t function_link_id;
+
 	void* frame_ptr;
 
 	bool check_invariant() const {
@@ -322,12 +326,13 @@ uint64_t get_vec_string_size(runtime_value_t str);
 
 void copy_elements(runtime_value_t dest[], runtime_value_t source[], uint64_t count);
 
+/*
 inline function_id_t get_function_id(const runtime_value_t& value){
 	QUARK_ASSERT(value.function_id_str != nullptr);
 	const auto s = std::string(value.function_id_str);
 	return function_id_t { s };
 }
-
+*/
 
 ////////////////////////////////		WIDE_RETURN_T
 
@@ -754,7 +759,7 @@ struct bc_value_t {
 
 	//////////////////////////////////////		function
 	public: static bc_value_t make_function_value(const type_t& function_type, const function_id_t& function_id);
-	public: function_id_t get_function_value() const;
+	public: int64_t get_function_value() const;
 	private: explicit bc_value_t(const type_t& function_type, const function_id_t& function_id, bool dummy);
 
 
@@ -813,6 +818,43 @@ struct struct_layout_t {
 };
 
 
+////////////////////////////////		func_entry_t
+
+
+//	Every function has a func_entry_t. It may not yet be linked to a function.
+struct func_link_t {
+	bool check_invariant() const {
+		QUARK_ASSERT(link_name.s.empty() == false);
+		QUARK_ASSERT(function_type.is_function());
+		QUARK_ASSERT(dynamic_arg_count >= 0 && dynamic_arg_count < 1000);
+		QUARK_ASSERT(f != nullptr);
+		return true;
+	}
+
+	//	"instrinsics", "corelib", "runtime", "user function" or whatever.
+	std::string debug_type;
+
+	link_name_t link_name;
+	type_t function_type;
+	int dynamic_arg_count;
+
+	bool is_bc_function;
+
+	//	Points to a native function or to a bc_static_frame_t.
+	void* f;
+};
+
+int count_dyn_args(const types_t& types, const type_t& function_type);
+json_t func_link_to_json(value_backend_t& backend, const func_link_t& def);
+
+/*
+trace_func_links(){
+	return json_t::make_array({
+		func_link_to_json(backend, def.func_link),
+		def._frame_ptr ? frame_to_json(backend, *def._frame_ptr) : json_t("no BC frame = native func")
+	});
+}
+*/
 
 ////////////////////////////////		value_backend_t
 
@@ -820,7 +862,7 @@ struct struct_layout_t {
 
 struct value_backend_t {
 	value_backend_t(
-		const std::vector<std::pair<link_name_t, void*>>& native_func_lookup,
+		const std::vector<func_link_t>& func_link_lookup,
 		const std::vector<std::pair<type_t, struct_layout_t>>& struct_layouts,
 		const types_t& types,
 		const config_t& config
@@ -844,8 +886,9 @@ struct value_backend_t {
 	types_t types;
 	std::vector<type_t> child_type;
 
+	//	Index is stored inside function values.
+	std::vector<func_link_t> func_link_lookup;
 
-	std::vector<std::pair<link_name_t, void*>> native_func_lookup;
 	std::vector<std::pair<type_t, struct_layout_t>> struct_layouts;
 
 	//	Temporary *global* constant that switches between array-based vector backened and HAMT-based vector.
@@ -854,6 +897,13 @@ struct value_backend_t {
 	config_t config;
 };
 
+
+inline const func_link_t& lookup_func_link(const value_backend_t& backend, runtime_value_t value){
+	auto func_id = value.function_link_id;
+	QUARK_ASSERT(func_id >= 0 && func_id < backend.func_link_lookup.size());
+	const auto& e = backend.func_link_lookup[func_id];
+	return e;
+}
 
 type_t lookup_type_ref(const value_backend_t& backend, runtime_type_t type);
 

@@ -526,28 +526,17 @@ struct bc_static_frame_t {
 	Represents a function, ready to execute.
 	The interpreter doesn't use a flat list of instructions for programs, rather a list of functions.
 */
-
 struct bc_function_definition_t {
-	bc_function_definition_t(
-		const types_t& types,
-		const type_t& function_type,
-		const std::vector<member_t>& args,
-		const std::shared_ptr<bc_static_frame_t>& frame,
-		function_id_t function_id
-	);
 #if DEBUG
 	public: bool check_invariant() const;
 #endif
 
 
 	//////////////////////////////////////		STATE
-	type_t _function_type;
-	std::vector<member_t> _args;
-	std::shared_ptr<bc_static_frame_t> _frame_ptr;
-	function_id_t _function_id;
+	func_link_t func_link;
 
-	int _dyn_arg_count;
-	type_t _return_type;
+	//	 null if this is a native function (rather than a BC function).
+	std::shared_ptr<bc_static_frame_t> _frame_ptr;
 };
 
 
@@ -568,11 +557,10 @@ struct bc_program_t {
 
 	//////////////////////////////////////		STATE
 	public: const bc_static_frame_t _globals;
-	public: std::map<function_id_t, bc_function_definition_t> _function_defs;
+	public: std::vector<bc_function_definition_t> _function_defs;
 	public: types_t _types;
 	public: software_system_t _software_system;
 	public: container_t _container_def;
-	public: intrinsic_signatures_t intrinsic_signatures;
 };
 
 
@@ -939,7 +927,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(_stack_size >= k_frame_overhead);
 
 		const auto frame_pos = _entries[_stack_size - k_frame_overhead + 0].int_value;
-		const auto frame_ptr = (const bc_static_frame_t*)_entries[_stack_size - k_frame_overhead + 1].function_ptr;
+		const auto frame_ptr = (const bc_static_frame_t*)_entries[_stack_size - k_frame_overhead + 1].frame_ptr;
 		_stack_size -= k_frame_overhead;
 		_pos_type.pop_back();
 		_pos_type.pop_back();
@@ -1084,7 +1072,6 @@ struct interpreter_stack_t {
 struct interpreter_imm_t {
 	public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
 	public: const bc_program_t _program;
-	public: const std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> _native_functions;
 };
 
 

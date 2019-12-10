@@ -332,14 +332,14 @@ runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value
 		const value_t& value;
 
 		runtime_value_t operator()(const undefined_t& e) const{
-			UNSUPPORTED();
+			return make_blank_runtime_value();
 		}
 		runtime_value_t operator()(const any_t& e) const{
-			UNSUPPORTED();
+			return make_blank_runtime_value();
 		}
 
 		runtime_value_t operator()(const void_t& e) const{
-			UNSUPPORTED();
+			return make_blank_runtime_value();
 		}
 		runtime_value_t operator()(const bool_t& e) const{
 			return make_runtime_bool(value.get_bool_value());
@@ -375,14 +375,18 @@ runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value
 			return to_runtime_dict(backend, e, value);
 		}
 		runtime_value_t operator()(const function_t& e) const{
-
-
-//			const auto link_name = native_func_ptr_to_link_name(backend, encoded_value.function_ptr);
-//			return value_t::make_function_value(backend.types, type, function_id_t { link_name.s });
-
-
-			NOT_IMPLEMENTED_YET();
-			QUARK_ASSERT(false);
+			const auto wanted_s = value.get_function_value().name;
+			const auto& v = backend.func_link_lookup;
+			const auto it = std::find_if(v.begin(), v.end(), [&] (auto& m) { return m.link_name.s == wanted_s; });
+			if(it != v.end()){
+				const auto id = (int64_t)(it - v.begin());
+				return runtime_value_t { .function_link_id = id };
+			}
+			else{
+				QUARK_ASSERT(false);
+				throw std::exception();
+//				return link_name_t { "" };
+			}
 		}
 		runtime_value_t operator()(const symbol_ref_t& e) const {
 			QUARK_ASSERT(false); throw std::exception();
@@ -396,34 +400,6 @@ runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value
 
 
 
-
-
-
-
-
-
-
-
-
-static link_name_t native_func_ptr_to_link_name(const value_backend_t& backend, void* f){
-	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(f != nullptr);
-
-	const auto& function_vec = backend.native_func_lookup;
-	const auto it = std::find_if(
-		function_vec.begin(),
-		function_vec.end(),
-		[&] (auto& e) {
-			return f == e.second;
-		}
-	);
-	if(it != function_vec.end()){
-		return it->first;
-	}
-	else{
-		return link_name_t { "" };
-	}
-}
 
 value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
@@ -483,8 +459,8 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 			return from_runtime_dict(backend, encoded_value, type);
 		}
 		value_t operator()(const function_t& e) const{
-			const auto link_name = native_func_ptr_to_link_name(backend, encoded_value.function_ptr);
-			return value_t::make_function_value(backend.types, type, function_id_t { link_name.s });
+			const auto& func_link = lookup_func_link(backend, encoded_value);
+			return value_t::make_function_value(backend.types, type, function_id_t { func_link.link_name.s });
 		}
 		value_t operator()(const symbol_ref_t& e) const {
 			QUARK_ASSERT(false); throw std::exception();

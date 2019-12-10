@@ -1025,7 +1025,7 @@ static bc_value_t bc_intrinsic__bw_shift_right_arithmetic(interpreter_t& vm, con
 
 
 
-static std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics_internal(types_t& types){
+std::vector<std::pair<intrinsic_signature_t, BC_NATIVE_FUNCTION_PTR>> bc_get_intrinsics_internal(types_t& types){
 	QUARK_ASSERT(types.check_invariant());
 
 	std::vector<std::pair<intrinsic_signature_t, BC_NATIVE_FUNCTION_PTR>> log;
@@ -1080,19 +1080,18 @@ static std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics_interna
 	log.push_back({ make_bw_shift_right_signature(types), bc_intrinsic__bw_shift_right });
 	log.push_back({ make_bw_shift_right_arithmetic_signature(types), bc_intrinsic__bw_shift_right_arithmetic });
 
-
-	std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> result;
-	for(const auto& e: log){
-		result.insert({ function_id_t { e.first.name }, e.second });
-	}
-	return result;
+	return log;
 }
 
 std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics(types_t& types){
 	QUARK_ASSERT(types.check_invariant());
 
-	static const auto f = bc_get_intrinsics_internal(types);
-	return f;
+	const auto a  = bc_get_intrinsics_internal(types);
+	std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> result;
+	for(const auto& e: a){
+		result.insert({ function_id_t { e.first.name }, e.second });
+	}
+	return result;
 }
 
 

@@ -1295,12 +1295,10 @@ bc_value_t::bc_value_t(value_backend_t& backend, const type_t& struct_type, cons
 bc_value_t bc_value_t::make_function_value(const type_t& function_type, const function_id_t& function_id){
 	return bc_value_t{ function_type, function_id, true };
 }
-function_id_t bc_value_t::get_function_value() const{
+int64_t bc_value_t::get_function_value() const{
 	QUARK_ASSERT(check_invariant());
 
-	QUARK_ASSERT(false);
-	throw std::exception();
-//	return _pod._external->_function_id;
+	return _pod.function_link_id;
 }
 bc_value_t::bc_value_t(const type_t& function_type, const function_id_t& function_id, bool dummy) :
 	_backend(nullptr),
@@ -1659,27 +1657,37 @@ json_t bcvalue_and_type_to_json(value_backend_t& backend, const bc_value_t& v){
 
 
 
-/*
-static std::map<type_t, type_t> make_type_lookup(const llvm_type_lookup& type_lookup){
-	QUARK_ASSERT(type_lookup.check_invariant());
 
-	std::map<type_t, type_t> result;
-	for(const auto& e: type_lookup.state.types){
-		result.insert( { e.itype, e.type } );
-	}
-	return result;
+int count_dyn_args(const types_t& types, const type_t& function_type){
+	QUARK_ASSERT(function_type.is_function());
+	const auto args2 = peek2(types, function_type).get_function_args(types);
+	int dyn_arg_count = (int)std::count_if(args2.begin(), args2.end(), [&](const auto& e){ return peek2(types, e).is_any(); });
+	return dyn_arg_count;
 }
-*/
+
+json_t func_link_to_json(value_backend_t& backend, const func_link_t& def){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(def.check_invariant());
+
+	return json_t::make_array({
+		json_t(def.link_name.s),
+		json_t(def.debug_type),
+		json_t(type_to_compact_string(backend.types, def.function_type)),
+		json_t(def.dynamic_arg_count),
+		json_t(def.is_bc_function),
+		json_t(ptr_to_hexstring(def.f)),
+	});
+}
 
 value_backend_t::value_backend_t(
-	const std::vector<std::pair<link_name_t, void*>>& native_func_lookup,
+	const std::vector<func_link_t>& func_link_lookup,
 	const std::vector<std::pair<type_t, struct_layout_t>>& struct_layouts,
 	const types_t& types,
 	const config_t& config
 ) :
 	heap(config.trace_allocs),
 	types(types),
-	native_func_lookup(native_func_lookup),
+	func_link_lookup(func_link_lookup),
 	struct_layouts(struct_layouts),
 	config(config)
 {
