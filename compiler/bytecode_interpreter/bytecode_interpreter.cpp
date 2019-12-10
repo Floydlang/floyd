@@ -1352,7 +1352,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
-
+*/
 
 		case bc_opcode::k_get_size_string: {
 			QUARK_ASSERT(vm.check_invariant());
@@ -1360,10 +1360,11 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_string(i._b));
 			QUARK_ASSERT(i._c == 0);
 
-			regs[i._a].int_value = regs[i._b]._external->_string.size();
+			regs[i._a].int_value = regs[i._b].vector_carray_ptr->get_element_count();
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
+/*
 		case bc_opcode::k_get_size_jsonvalue: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_int(i._a));
