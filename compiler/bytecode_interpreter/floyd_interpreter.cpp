@@ -13,7 +13,6 @@
 #include "bytecode_generator.h"
 #include "bytecode_interpreter.h"
 #include "os_process.h"
-#include "bytecode_helpers.h"
 #include "semantic_ast.h"
 #include "utils.h"
 

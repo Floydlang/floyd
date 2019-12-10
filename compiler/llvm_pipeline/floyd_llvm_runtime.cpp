@@ -442,17 +442,21 @@ static std::vector<func_link_t> make_func_links(const types_t& types, llvm::Exec
 
 	std::vector<func_link_t> result;
 	for(const auto& e: function_link_map){
-		const auto f = (void*)ee.getFunctionAddress(e.link_name.s);
-//		auto f = get_function_ptr(runtime, e.link_name);
-		result.push_back(func_link_t{
-			"llvm func: " + e.link_name.s,
-			e.link_name,
-			e.function_type_or_undef,
-			e.function_type_or_undef.is_undefined() ? 0 : count_dyn_args(types, e.function_type_or_undef),
-			false,
-			f
-		});
+		if(e.function_type_or_undef.is_function()){
+			const auto f = (void*)ee.getFunctionAddress(e.link_name.s);
+	//		auto f = get_function_ptr(runtime, e.link_name);
+			result.push_back(func_link_t{
+				"llvm func: " + e.link_name.s,
+				e.link_name,
+				e.function_type_or_undef,
+				count_dyn_args(types, e.function_type_or_undef),
+				false,
+				f
+			});
+		}
 	}
+
+	if(false) trace_func_link(types, result);
 
 /*
 	if(false){
@@ -462,7 +466,6 @@ static std::vector<func_link_t> make_func_links(const types_t& types, llvm::Exec
 		}
 	}
 */
-
 	return result;
 }
 

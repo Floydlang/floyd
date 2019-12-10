@@ -15,6 +15,8 @@
 namespace floyd {
 
 
+//////////////////////////////////////////		runtime_value_t
+
 
 runtime_value_t alloc_carray_8bit(value_backend_t& backend, const uint8_t data[], std::size_t count){
 	QUARK_ASSERT(backend.check_invariant());
@@ -40,7 +42,6 @@ runtime_value_t alloc_carray_8bit(value_backend_t& backend, const uint8_t data[]
 	}
 	return result;
 }
-
 
 runtime_value_t to_runtime_string2(value_backend_t& backend, const std::string& s){
 	QUARK_ASSERT(backend.check_invariant());
@@ -102,16 +103,6 @@ QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
 	const auto r = from_runtime_string2(backend, a);
 	QUARK_VERIFY(r == "hello, world!");
 }
-
-
-
-
-
-
-
-
-
-
 
 static runtime_value_t to_runtime_struct(value_backend_t& backend, const struct_t& exact_type, const value_t& value){
 	QUARK_ASSERT(backend.check_invariant());
@@ -481,7 +472,106 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 	QUARK_ASSERT(result.get_type() == type);
 	return result;
 #endif
+}
 
+
+//////////////////////////////////////////		value_t vs bc_value_t
+
+
+runtime_value_t make_runtime_non_rc(const value_t& value){
+	const auto& type = value.get_type();
+	QUARK_ASSERT(type.check_invariant());
+
+/*
+	if(bt == base_type::k_undefined){
+		return make_blank_runtime_value();
+	}
+	else if(bt == base_type::k_any){
+		return make_blank_runtime_value();
+	}
+	else if(bt == base_type::k_void){
+		return make_blank_runtime_value();
+	}
+	else if(bt == base_type::k_bool){
+		return bc_value_t::make_bool(value.get_bool_value());
+	}
+	else if(bt == base_type::k_bool){
+		return bc_value_t::make_bool(value.get_bool_value());
+	}
+	else if(bt == base_type::k_int){
+		return bc_value_t::make_int(value.get_int_value());
+	}
+	else if(bt == base_type::k_double){
+		return bc_value_t::make_double(value.get_double_value());
+	}
+
+	else if(bt == base_type::k_string){
+		return bc_value_t::make_string(value.get_string_value());
+	}
+	else if(bt == base_type::k_json){
+		return bc_value_t::make_json(value.get_json());
+	}
+	else if(bt == base_type::k_typeid){
+		return bc_value_t::make_typeid_value(value.get_typeid_value());
+	}
+	else if(bt == base_type::k_struct){
+		return bc_value_t::make_struct_value(logical_type, values_to_bcs(types, value.get_struct_value()->_member_values));
+	}
+*/
+
+	if(type.is_undefined()){
+		return make_blank_runtime_value();
+	}
+	else if(type.is_any()){
+		return make_blank_runtime_value();
+	}
+	else if(type.is_void()){
+		return make_blank_runtime_value();
+	}
+	else if(type.is_bool()){
+		return make_runtime_bool(value.get_bool_value());
+	}
+	else if(type.is_int()){
+		return make_runtime_int(value.get_int_value());
+	}
+	else if(type.is_double()){
+		return make_runtime_double(value.get_double_value());
+	}
+	else if(type.is_typeid()){
+		const auto t0 = value.get_typeid_value();
+		return make_runtime_typeid(t0);
+	}
+	else if(type.is_json() && value.get_json().is_null()){
+		return runtime_value_t { .json_ptr = nullptr };
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+bc_value_t make_non_rc(const value_t& value){
+	QUARK_ASSERT(value.check_invariant());
+
+	const auto r = make_runtime_non_rc(value);
+	return bc_value_t(value.get_type(), r);
+}
+
+
+value_t bc_to_value(const value_backend_t& backend, const bc_value_t& value){
+	return from_runtime_value2(backend, value._pod, value._type);
+}
+
+bc_value_t value_to_bc(value_backend_t& backend, const value_t& value){
+	const auto a = to_runtime_value2(backend, value);
+	return bc_value_t(backend, value.get_type(), a);
+}
+
+bc_value_t bc_from_runtime(value_backend_t& backend, runtime_value_t value, const type_t& type){
+	return bc_value_t(backend, type, value);
+}
+
+runtime_value_t runtime_from_bc(value_backend_t& backend, const bc_value_t& value){
+	return value._pod;
 }
 
 

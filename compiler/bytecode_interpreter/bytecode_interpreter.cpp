@@ -12,10 +12,8 @@
 #include "bytecode_corelib.h"
 #include "text_parser.h"
 #include "ast_value.h"
-#include "bytecode_helpers.h"
-#include "types.h"
-
 #include "value_thunking.h"
+#include "types.h"
 #include "value_features.h"
 
 #include <algorithm>
@@ -2009,7 +2007,7 @@ static json_t functiondef_to_json(value_backend_t& backend, const bc_function_de
 	QUARK_ASSERT(backend.check_invariant());
 
 	return json_t::make_array({
-		func_link_to_json(backend, def.func_link),
+		func_link_to_json(backend.types, def.func_link),
 		def._frame_ptr ? frame_to_json(backend, *def._frame_ptr) : json_t("no BC frame = native func")
 	});
 }

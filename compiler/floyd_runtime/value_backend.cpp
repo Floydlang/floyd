@@ -1209,12 +1209,6 @@ bc_value_t::bc_value_t(const type_t& type_id) :
 
 	QUARK_ASSERT(check_invariant());
 }
-
-
-//////////////////////////////////////		struct
-
-
-
 	static std::vector<bc_value_t> from_runtime_struct(value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
 		QUARK_ASSERT(backend.check_invariant());
 		QUARK_ASSERT(encoded_value.check_invariant());
@@ -1288,10 +1282,6 @@ bc_value_t::bc_value_t(value_backend_t& backend, const type_t& struct_type, cons
 	QUARK_ASSERT(check_invariant());
 }
 
-
-//////////////////////////////////////		function
-
-
 bc_value_t bc_value_t::make_function_value(const type_t& function_type, const function_id_t& function_id){
 	return bc_value_t{ function_type, function_id, true };
 }
@@ -1312,8 +1302,6 @@ bc_value_t::bc_value_t(const type_t& function_type, const function_id_t& functio
 
 	QUARK_ASSERT(check_invariant());
 }
-
-
 
 bc_value_t::bc_value_t(value_backend_t& backend, const type_t& type, const runtime_value_t& internals) :
 	_backend(&backend),
@@ -1337,12 +1325,13 @@ bc_value_t::bc_value_t(const type_t& type, const runtime_value_t& internals) :
 }
 
 
-
-
-
 #if DEBUG
 bool bc_value_t::check_invariant() const {
 	QUARK_ASSERT(_type.check_invariant());
+
+	if(_type.is_function()){
+		QUARK_ASSERT(_pod.function_link_id >= 0 && _pod.function_link_id < 10000);
+	}
 
 	return true;
 }
@@ -1652,7 +1641,6 @@ json_t bcvalue_and_type_to_json(value_backend_t& backend, const bc_value_t& v){
 
 
 
-////////////////////////////////		value_backend_t
 
 
 
@@ -1665,19 +1653,31 @@ int count_dyn_args(const types_t& types, const type_t& function_type){
 	return dyn_arg_count;
 }
 
-json_t func_link_to_json(value_backend_t& backend, const func_link_t& def){
-	QUARK_ASSERT(backend.check_invariant());
+json_t func_link_to_json(const types_t& types, const func_link_t& def){
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(def.check_invariant());
 
 	return json_t::make_array({
 		json_t(def.link_name.s),
 		json_t(def.debug_type),
-		json_t(type_to_compact_string(backend.types, def.function_type)),
+		json_t(type_to_compact_string(types, def.function_type)),
 		json_t(def.dynamic_arg_count),
 		json_t(def.is_bc_function),
 		json_t(ptr_to_hexstring(def.f)),
 	});
 }
+
+void trace_func_link(const types_t& types, const std::vector<func_link_t>& defs){
+	QUARK_ASSERT(types.check_invariant());
+
+	const auto vec = mapf<json_t>(defs, [&](const auto& e){ return func_link_to_json(types, e); });
+	const auto vec2 = json_t::make_array(vec);
+	QUARK_TRACE(json_to_pretty_string(vec2));
+}
+
+
+////////////////////////////////		value_backend_t
+
 
 value_backend_t::value_backend_t(
 	const std::vector<func_link_t>& func_link_lookup,

@@ -13,7 +13,7 @@
 
 #include "floyd_runtime.h"
 #include "floyd_corelib.h"
-#include "bytecode_helpers.h"
+#include "value_thunking.h"
 
 
 #include "floyd_sockets.h"

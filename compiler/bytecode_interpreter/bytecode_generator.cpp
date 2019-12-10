@@ -22,7 +22,7 @@
 
 #include "bytecode_generator.h"
 
-#include "bytecode_helpers.h"
+#include "value_thunking.h"
 #include "bytecode_interpreter.h"
 #include "floyd_runtime.h"
 #include "compiler_basics.h"

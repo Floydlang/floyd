@@ -10,7 +10,6 @@
 
 
 #include "floyd_interpreter.h"
-#include "bytecode_helpers.h"
 #include "bytecode_generator.h"
 
 #include "json_support.h"
@@ -36,7 +35,7 @@
 #include <iostream>
 
 
-static const bool k_run_bc = true;
+static const bool k_run_bc = false;
 static const bool k_run_llvm = true;
 
 namespace floyd {

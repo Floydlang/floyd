@@ -1112,7 +1112,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "func", "void function, no return statement
 	);
 }
 
-FLOYD_LANG_PROOF("Floyd test suite", "Function value", "", ""){
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "Function value", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1120,7 +1120,10 @@ FLOYD_LANG_PROOF("Floyd test suite", "Function value", "", ""){
 			func int a(string s){
 				return 2
 			}
-			print(a)
+			let b = a
+			let x = b("hi")
+			print(x)
+//			print(a)
 
 		)",
 		{

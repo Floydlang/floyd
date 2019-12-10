@@ -845,16 +845,10 @@ struct func_link_t {
 };
 
 int count_dyn_args(const types_t& types, const type_t& function_type);
-json_t func_link_to_json(value_backend_t& backend, const func_link_t& def);
+json_t func_link_to_json(const types_t& types, const func_link_t& def);
+void trace_func_link(const types_t& types, const std::vector<func_link_t>& defs);
 
-/*
-trace_func_links(){
-	return json_t::make_array({
-		func_link_to_json(backend, def.func_link),
-		def._frame_ptr ? frame_to_json(backend, *def._frame_ptr) : json_t("no BC frame = native func")
-	});
-}
-*/
+
 
 ////////////////////////////////		value_backend_t
 
