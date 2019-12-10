@@ -1442,7 +1442,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "impure", "call impure->impure", "Compiles 
 //??? make sure only pure functions can be called inside test-def.
 
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "test-def", "Simple test-def compiles, call to test()", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Simple test-def compiles, call to test()", ""){
 	ut_run_closed_nolib(
 		QUARK_POS,
 		R"___(

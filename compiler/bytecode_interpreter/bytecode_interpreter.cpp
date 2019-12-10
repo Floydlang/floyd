@@ -1163,25 +1163,27 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-/*
 		case bc_opcode::k_lookup_element_string: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_int(i._a));
 			QUARK_ASSERT(stack.check_reg_string(i._b));
 			QUARK_ASSERT(stack.check_reg_int(i._c));
 
-			const auto& s = regs[i._b]._external->_string;
+			//	??? faster to lookup via char* directly.
+			const auto s = from_runtime_string2(backend, regs[i._b]);
 			const auto lookup_index = regs[i._c].int_value;
 			if(lookup_index < 0 || lookup_index >= s.size()){
 				quark::throw_runtime_error("Lookup in string: out of bounds.");
 			}
 			else{
-				regs[i._a].int_value = s[lookup_index];
+				const char ch = s[lookup_index];
+				regs[i._a].int_value = ch;
 			}
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
 
+		/*
 		//	??? Simple JSON-values should not require ext. null, int, bool, empty object, empty array.
 		case bc_opcode::k_lookup_element_json: {
 			QUARK_ASSERT(vm.check_invariant());
