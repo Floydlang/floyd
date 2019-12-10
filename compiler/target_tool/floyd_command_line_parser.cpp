@@ -114,7 +114,7 @@ COMPILER
 */
 
 #if 0
-static void XXXXX_trace_function_link_map(const std::vector<function_link_entry_t>& defs){
+static void XXXXX_trace_function_link_map(const std::vector<llvm_function_link_entry_t>& defs){
 	std::vector<line_t> table = {
 		line_t( { "LINK-NAME", "MODULE", "LLVM_FUNCTION_TYPE", "LLVM_CODEGEN_F", "FUNCTION TYPE", "ARG NAMES", "NATIVE_F" }, ' ', '|'),
 		line_t( { "", "", "", "", "", "", "" }, '-', '|'),

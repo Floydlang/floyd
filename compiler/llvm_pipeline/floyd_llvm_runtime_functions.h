@@ -28,32 +28,32 @@ std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& conte
 
 
 struct runtime_functions_t {
-	runtime_functions_t(const std::vector<function_link_entry_t>& function_defs);
+	runtime_functions_t(const std::vector<llvm_function_link_entry_t>& function_defs);
 
 
 	////////////////////////////////		STATE
 
-	const function_link_entry_t floydrt_init;
-	const function_link_entry_t floydrt_deinit;
+	const llvm_function_link_entry_t floydrt_init;
+	const llvm_function_link_entry_t floydrt_deinit;
 
-	const function_link_entry_t floydrt_alloc_kstr;
-	const function_link_entry_t floydrt_allocate_vector_fill;
-	const function_link_entry_t floydrt_store_vector_element_hamt_mutable;
-	const function_link_entry_t floydrt_concatunate_vectors;
-	const function_link_entry_t floydrt_load_vector_element_hamt;
+	const llvm_function_link_entry_t floydrt_alloc_kstr;
+	const llvm_function_link_entry_t floydrt_allocate_vector_fill;
+	const llvm_function_link_entry_t floydrt_store_vector_element_hamt_mutable;
+	const llvm_function_link_entry_t floydrt_concatunate_vectors;
+	const llvm_function_link_entry_t floydrt_load_vector_element_hamt;
 	
-	const function_link_entry_t floydrt_allocate_dict;
+	const llvm_function_link_entry_t floydrt_allocate_dict;
 
-	const function_link_entry_t floydrt_allocate_json;
-	const function_link_entry_t floydrt_lookup_json;
-	const function_link_entry_t floydrt_json_to_string;
+	const llvm_function_link_entry_t floydrt_allocate_json;
+	const llvm_function_link_entry_t floydrt_lookup_json;
+	const llvm_function_link_entry_t floydrt_json_to_string;
 
-	const function_link_entry_t floydrt_allocate_struct;
+	const llvm_function_link_entry_t floydrt_allocate_struct;
 
-	const function_link_entry_t floydrt_compare_values;
+	const llvm_function_link_entry_t floydrt_compare_values;
 
-	const function_link_entry_t floydrt_get_profile_time;
-	const function_link_entry_t floydrt_analyse_benchmark_samples;
+	const llvm_function_link_entry_t floydrt_get_profile_time;
+	const llvm_function_link_entry_t floydrt_analyse_benchmark_samples;
 };
 
 

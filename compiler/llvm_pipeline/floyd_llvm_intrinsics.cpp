@@ -155,7 +155,7 @@ static bool matches_specialization(const config_t& config, const types_t& types,
 
 
 
-static const function_link_entry_t& lookup_link_map(const config_t& config, const types_t& types, const std::vector<function_link_entry_t>& link_map, const std::vector<specialization_t>& specialisations, const type_t& type){
+static const llvm_function_link_entry_t& lookup_link_map(const config_t& config, const types_t& types, const std::vector<llvm_function_link_entry_t>& link_map, const std::vector<specialization_t>& specialisations, const type_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto it = std::find_if(specialisations.begin(), specialisations.end(), [&](const specialization_t& s) { return matches_specialization(config, types, s.required_arg_type, type); });
@@ -1932,37 +1932,37 @@ static std::map<std::string, void*> get_intrinsic_binds(){
 }
 
 //	Skips duplicates.
-static std::vector<function_link_entry_t> make_entries(const intrinsic_signatures_t& intrinsic_signatures, const std::vector<function_bind_t>& binds){
-	std::vector<function_link_entry_t> result;
+static std::vector<llvm_function_link_entry_t> make_entries(const intrinsic_signatures_t& intrinsic_signatures, const std::vector<function_bind_t>& binds){
+	std::vector<llvm_function_link_entry_t> result;
 	for(const auto& bind: binds){
 		auto signature_it = std::find_if(intrinsic_signatures.vec.begin(), intrinsic_signatures.vec.end(), [&] (const intrinsic_signature_t& m) { return m.name == bind.name; } );
 		const auto function_type = signature_it != intrinsic_signatures.vec.end() ? signature_it->_function_type : make_undefined();
 
 		const auto link_name = encode_intrinsic_link_name(bind.name);
-		const auto exists_it = std::find_if(result.begin(), result.end(), [&](const function_link_entry_t& e){ return e.link_name == link_name; });
+		const auto exists_it = std::find_if(result.begin(), result.end(), [&](const llvm_function_link_entry_t& e){ return e.link_name == link_name; });
 
 		if(exists_it == result.end()){
 			QUARK_ASSERT(bind.llvm_function_type != nullptr);
-			const auto def = function_link_entry_t{ "intrinsic", link_name, bind.llvm_function_type, nullptr, function_type, {}, bind.native_f };
+			const auto def = llvm_function_link_entry_t{ "intrinsic", link_name, bind.llvm_function_type, nullptr, function_type, {}, bind.native_f };
 			result.push_back(def);
 		}
 	}
 	return result;
 }
 
-static std::vector<function_link_entry_t> make_entries2(const intrinsic_signatures_t& intrinsic_signatures, const std::vector<specialization_t>& specializations){
+static std::vector<llvm_function_link_entry_t> make_entries2(const intrinsic_signatures_t& intrinsic_signatures, const std::vector<specialization_t>& specializations){
 	const auto binds = mapf<function_bind_t>(specializations, [](auto& e){ return e.bind; });
 	return make_entries(intrinsic_signatures, binds);
 }
 
-std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const intrinsic_signatures_t& intrinsic_signatures){
+std::vector<llvm_function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const intrinsic_signatures_t& intrinsic_signatures){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	const auto& types = type_lookup.state.types;
 
 	const auto binds = get_intrinsic_binds();
 
-	std::vector<function_link_entry_t> result;
+	std::vector<llvm_function_link_entry_t> result;
 	for(const auto& bind: binds){
 		auto signature_it = std::find_if(intrinsic_signatures.vec.begin(), intrinsic_signatures.vec.end(), [&] (const intrinsic_signature_t& e) { return e.name == bind.first; } );
 		QUARK_ASSERT(signature_it != intrinsic_signatures.vec.end());
@@ -1971,7 +1971,7 @@ std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& c
 		const auto function_type = signature_it->_function_type;
 		llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
 		const auto function_byvalue_type = deref_ptr(function_ptr_type);
-		const auto def = function_link_entry_t{ "intrinsic", link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, {}, bind.second };
+		const auto def = llvm_function_link_entry_t{ "intrinsic", link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, {}, bind.second };
 		result.push_back(def);
 	}
 

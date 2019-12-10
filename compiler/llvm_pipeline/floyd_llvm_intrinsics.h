@@ -19,7 +19,11 @@ struct llvm_function_generator_t;
 
 
 //	Make link entries for all intrinsics functions, like assert() including optimized specialisations.
-std::vector<function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const intrinsic_signatures_t& intrinsic_signatures);
+std::vector<llvm_function_link_entry_t> make_intrinsics_link_map(
+	llvm::LLVMContext& context,
+	const llvm_type_lookup& type_lookup,
+	const intrinsic_signatures_t& intrinsic_signatures
+);
 
 
 llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, const type_t& resolved_call_type, llvm::Value& collection_reg, const type_t& collection_type, llvm::Value& value_reg);

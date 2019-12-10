@@ -58,12 +58,12 @@ struct function_bind_t {
 
 
 
-////////////////////////////////		function_link_entry_t
+////////////////////////////////		llvm_function_link_entry_t
 
 
 //??? use func_link_t as member?
 //??? fix function_type for *ALL* functions, including corelib and intrinsics
-struct function_link_entry_t {
+struct llvm_function_link_entry_t {
 	std::string module;
 
 	link_name_t link_name;
@@ -82,8 +82,8 @@ struct function_link_entry_t {
 	void* native_f;
 };
 
-std::string print_function_link_map(const types_t& types, const std::vector<function_link_entry_t>& defs);
-void trace_function_link_map(const types_t& types, const std::vector<function_link_entry_t>& defs);
+std::string print_function_link_map(const types_t& types, const std::vector<llvm_function_link_entry_t>& defs);
+void trace_function_link_map(const types_t& types, const std::vector<llvm_function_link_entry_t>& defs);
 
 
 
@@ -160,7 +160,7 @@ struct llvm_execution_engine_t {
 	llvm_instance_t* instance;
 	std::shared_ptr<llvm::ExecutionEngine> ee;
 	symbol_table_t global_symbols;
-	std::vector<function_link_entry_t> function_link_map;
+	std::vector<llvm_function_link_entry_t> function_link_map;
 
 	public: llvm_runtime_handler_i* _handler;
 
@@ -235,7 +235,7 @@ typedef void (*FLOYD_TEST_F)(floyd_runtime_t* frp);
 ////////////////////////////////	CLIENT ACCESS OF RUNNING PROGRAM
 
 
-const function_link_entry_t& find_function_def_from_link_name(const std::vector<function_link_entry_t>& function_link_map, const link_name_t& link_name);
+const llvm_function_link_entry_t& find_function_def_from_link_name(const std::vector<llvm_function_link_entry_t>& function_link_map, const link_name_t& link_name);
 
 void* get_global_ptr(const llvm_execution_engine_t& c, const std::string& name);
 
@@ -280,7 +280,7 @@ inline runtime_value_t to_runtime_string(llvm_context_t& c, const std::string& s
 
 
 //	Returns a complete list of all functions: programmed in floyd, runtime functions, init() deinit().
-std::vector<function_link_entry_t> make_function_link_map1(
+std::vector<llvm_function_link_entry_t> make_function_link_map1(
 	llvm::LLVMContext& context,
 	const llvm_type_lookup& type_lookup,
 	const std::vector<floyd::function_definition_t>& ast_function_defs,

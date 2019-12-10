@@ -25,7 +25,7 @@
 
 namespace floyd {
 	struct semantic_ast_t;
-	struct function_link_entry_t;
+	struct llvm_function_link_entry_t;
 	struct llvm_execution_engine_t;
 }
 namespace llvm {
@@ -42,7 +42,14 @@ struct llvm_ir_program_t {
 	llvm_ir_program_t(const llvm_ir_program_t& other) = delete;
 	llvm_ir_program_t& operator=(const llvm_ir_program_t& other) = delete;
 
-	explicit llvm_ir_program_t(llvm_instance_t* instance, std::unique_ptr<llvm::Module>& module2_swap, const llvm_type_lookup& type_lookup, const symbol_table_t& globals, const std::vector<function_link_entry_t>& function_link_map, const compiler_settings_t& settings);
+	explicit llvm_ir_program_t(
+		llvm_instance_t* instance,
+		std::unique_ptr<llvm::Module>& module2_swap,
+		const llvm_type_lookup& type_lookup,
+		const symbol_table_t& globals,
+		const std::vector<llvm_function_link_entry_t>& function_link_map,
+		const compiler_settings_t& settings
+	);
 
 	public: bool check_invariant() const;
 
@@ -56,7 +63,7 @@ struct llvm_ir_program_t {
 
 	llvm_type_lookup type_lookup;
 	symbol_table_t debug_globals;
-	std::vector<function_link_entry_t> function_link_map;
+	std::vector<llvm_function_link_entry_t> function_link_map;
 
 	container_t container_def;
 	software_system_t software_system;
