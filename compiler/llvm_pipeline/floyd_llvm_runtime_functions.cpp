@@ -211,27 +211,13 @@ static std::vector<function_bind_t> floydrt_store_vector_element_mutable__make(l
 
 
 
-//??? split into several functions
 static runtime_value_t floydrt_concatunate_vectors(floyd_runtime_t* frp, runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 	QUARK_ASSERT(lhs.check_invariant());
 	QUARK_ASSERT(rhs.check_invariant());
 
-	const auto type0 = type_t(type);
-	if(peek2(backend.types, type0).is_string()){
-		return concat_strings(backend, lhs, rhs);
-	}
-	else if(is_vector_carray(backend.types, backend.config, type_t(type))){
-		return concat_vector_carray(backend, type0, lhs, rhs);
-	}
-	else if(is_vector_hamt(backend.types, backend.config, type_t(type))){
-		return concat_vector_hamt(backend, type0, lhs, rhs);
-	}
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
+	return concatunate_vectors(backend, type_t(type), lhs, rhs);
 }
 
 static std::vector<function_bind_t> floydrt_concatunate_vectors__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){

@@ -1441,4 +1441,28 @@ runtime_value_t concat_vector_hamt(value_backend_t& backend, const type_t& type,
 	return result;
 }
 
+
+runtime_value_t concatunate_vectors(value_backend_t& backend, const type_t& type, runtime_value_t lhs, runtime_value_t rhs){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(lhs.check_invariant());
+	QUARK_ASSERT(rhs.check_invariant());
+
+	if(peek2(backend.types, type).is_string()){
+		return concat_strings(backend, lhs, rhs);
+	}
+	else if(is_vector_carray(backend.types, backend.config, type_t(type))){
+		return concat_vector_carray(backend, type, lhs, rhs);
+	}
+	else if(is_vector_hamt(backend.types, backend.config, type_t(type))){
+		return concat_vector_hamt(backend, type, lhs, rhs);
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+
+
 }	// floyd

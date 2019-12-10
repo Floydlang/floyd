@@ -3076,7 +3076,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [string] <", "different values", ""
 
 
 
-FLOYD_LANG_PROOF("Floyd test suite", "vector [string] [] lookup", "", ""){
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "vector [string] [] lookup", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(

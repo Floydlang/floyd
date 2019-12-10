@@ -1688,27 +1688,19 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-			/*
 		case bc_opcode::k_concat_vectors_w_external_elements: {
 			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._a));
 			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
 			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._c));
 
 			const auto& vector_type = frame_ptr->_symbols[i._a].second._value_type;
-			const auto peek = peek2(types, vector_type);
-			const auto& element_type = peek.get_vector_element_type(types);
-
-			//	Copy left into new vector.
-			immer::vector<bc_external_handle_t> elements2 = regs[i._b]._external->_vector_w_external_elements;
-
-			const auto& right_elements = regs[i._c]._external->_vector_w_external_elements;
-			for(const auto& e: right_elements){
-				elements2 = elements2.push_back(e);
-			}
-			const auto& value2 = make_vector(types, element_type, elements2);
-			stack.write_register__external_value(i._a, value2);
+			const auto r = concatunate_vectors(backend, vector_type, regs[i._b], regs[i._c]);
+			const auto& result = bc_value_t(backend, vector_type, r);
+			stack.write_register__external_value(i._a, result);
 			break;
 		}
+
+/*
 		case bc_opcode::k_concat_vectors_w_inplace_elements: {
 			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._a));
 			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._b));
