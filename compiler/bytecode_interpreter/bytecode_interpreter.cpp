@@ -1422,25 +1422,24 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
+ */
 
 		case bc_opcode::k_pushback_string: {
+			//??? optimize - bypass bc_value_t
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_string(i._a));
 			QUARK_ASSERT(stack.check_reg_string(i._b));
 			QUARK_ASSERT(stack.check_reg_int(i._c));
 
-			std::string str2 = regs[i._b]._external->_string;
+			std::string str2 = from_runtime_string2(backend, regs[i._b]);
 			const auto ch = regs[i._c].int_value;
 			str2.push_back(static_cast<char>(ch));
 
-			//??? optimize - bypass bc_value_t
-			//??? always allocates a new bc_external_value_t!
-			const auto str3 = bc_value_t::make_string(str2);
+			const auto str3 = bc_value_t::make_string(backend, str2);
 			vm._stack.write_register__external_value(i._a, str3);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
- */
 
 
 		case bc_opcode::k_call: {
