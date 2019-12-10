@@ -374,14 +374,6 @@ json_t interpreter_stack_t::stack_to_json(value_backend_t& backend) const{
 //////////////////////////////////////////		GLOBAL FUNCTIONS
 
 
-/*
-static const bc_function_definition_t& get_function_def(const interpreter_t& vm, function_id_t function_id){
-	QUARK_ASSERT(vm.check_invariant());
-
-	const auto& function_def = vm._imm->_program._function_defs.at(function_id);
-	return function_def;
-}
-*/
 
 //??? use code from do_call() -- share code.
 bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_value_t args[], int arg_count){

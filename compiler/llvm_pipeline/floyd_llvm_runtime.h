@@ -24,8 +24,6 @@ namespace llvm {
 	struct ExecutionEngine;
 }
 
-//??? make floyd_llvm-namespace. Reduces collisions with byte code interpreter.
-
 namespace floyd {
 
 struct llvm_ir_program_t;
@@ -63,7 +61,8 @@ struct function_bind_t {
 ////////////////////////////////		function_link_entry_t
 
 
-
+//??? use func_link_t as member?
+//??? fix function_type for *ALL* functions, including corelib and intrinsics
 struct function_link_entry_t {
 	std::string module;
 
