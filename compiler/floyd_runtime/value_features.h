@@ -113,7 +113,12 @@ runtime_value_t push_back2(value_backend_t& backend, runtime_value_t vec, const 
 
 
 
+runtime_value_t lookup_dict_cppmap(value_backend_t& backend, runtime_value_t dict, const type_t& dict_type, runtime_value_t key);
+runtime_value_t lookup_dict_hamt(value_backend_t& backend, runtime_value_t dict, const type_t& dict_type, runtime_value_t key);
+runtime_value_t lookup_dict(value_backend_t& backend, runtime_value_t dict, const type_t& dict_type, runtime_value_t key);
 
+
+uint64_t get_dict_size(value_backend_t& backend, const type_t& dict_type, runtime_value_t dict);
 
 
 /////////////////////////////////////////		INLINES

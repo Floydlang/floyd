@@ -830,7 +830,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(value.check_invariant());
 
 		const auto& frame_slot_type = _current_frame_ptr->_symbols[reg].second._value_type;
-		QUARK_ASSERT(peek2(_backend.types, value._type) == frame_slot_type);//??? do check without peek2()
+//		QUARK_ASSERT(peek2(_backend.types, value._type) == frame_slot_type);//??? do check without peek2()
 
 		const auto prev = _current_frame_entry_ptr[reg];
 		release_value(_backend, prev, frame_slot_type);

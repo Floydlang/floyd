@@ -1522,6 +1522,76 @@ runtime_value_t lookup_vector_element(value_backend_t& backend, const type_t& ve
 
 
 
+
+runtime_value_t lookup_dict_cppmap(value_backend_t& backend, runtime_value_t dict, const type_t& dict_type, runtime_value_t key){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(dict_type.check_invariant());
+	QUARK_ASSERT(is_dict_cppmap(backend.types, backend.config, dict_type));
+
+	const auto& m = dict.dict_cppmap_ptr->get_map();
+	const auto key_string = from_runtime_string2(backend, key);
+	const auto it = m.find(key_string);
+	if(it == m.end()){
+		throw std::exception();
+	}
+	else{
+		return it->second;
+	}
+}
+
+//??? make faster key without creating std::string.
+runtime_value_t lookup_dict_hamt(value_backend_t& backend, runtime_value_t dict, const type_t& dict_type, runtime_value_t key){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(dict_type.check_invariant());
+	QUARK_ASSERT(is_dict_hamt(backend.types, backend.config, dict_type));
+
+	const auto& m = dict.dict_hamt_ptr->get_map();
+	const auto key_string = from_runtime_string2(backend, key);
+	const auto it = m.find(key_string);
+	if(it == nullptr){
+		throw std::exception();
+	}
+	else{
+		return *it;
+	}
+}
+
+runtime_value_t lookup_dict(value_backend_t& backend, runtime_value_t dict, const type_t& dict_type, runtime_value_t key){
+	if(is_dict_hamt(backend.types, backend.config, dict_type)){
+		return lookup_dict_hamt(backend, dict, dict_type, key);
+	}
+	else if(is_dict_cppmap(backend.types, backend.config, dict_type)){
+		return lookup_dict_cppmap(backend, dict, dict_type, key);
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+
+
+uint64_t get_dict_size(value_backend_t& backend, const type_t& dict_type, runtime_value_t dict){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(dict_type.check_invariant());
+	QUARK_ASSERT(dict_type.is_dict());
+	QUARK_ASSERT(dict.check_invariant());
+
+	if(is_dict_hamt(backend.types, backend.config, dict_type)){
+		return dict.dict_hamt_ptr->size();
+	}
+	else if(is_dict_cppmap(backend.types, backend.config, dict_type)){
+		return dict.dict_cppmap_ptr->size();
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+
+
+
 // Could specialize further, for vector_hamt<string>, vector_hamt<vector<x>> etc. But it's probably better to inline push_back() instead.
 
 

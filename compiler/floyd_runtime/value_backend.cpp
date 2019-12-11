@@ -1761,40 +1761,21 @@ const std::pair<type_t, struct_layout_t>& find_struct_layout(const value_backend
 	}
 }
 
-
-runtime_value_t load_struct_member(const value_backend_t& backend, uint8_t* data_ptr, const type_t& struct_type, int member_index){
+//??? keep hash from struct-type-ID -> layout
+std::pair<runtime_value_t, type_t> load_struct_member(const value_backend_t& backend, uint8_t* data_ptr, const type_t& struct_type, int member_index){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(struct_type.check_invariant());
 
-/*
-	const autos& struct_layout = std::find_if(backend.struct_layouts.begin(), backend.struct_layouts().end(), [](){ return 0; });
+	const auto peek = peek2(backend.types, struct_type);
+	QUARK_ASSERT(peek.is_struct());
+	const auto& struct_layout_info = find_struct_layout(backend, peek);
 
-	const auto& types = gen_acc.gen.type_lookup.state.types;
+	QUARK_ASSERT(member_index >= 0 && member_index < struct_layout_info.second.members.size());
+	const auto& member = struct_layout_info.second.members[member_index];
+	void* member_ptr = data_ptr + member.offset;
+	const auto value = *(runtime_value_t*)member_ptr;
 
-	QUARK_ASSERT(peek2(types, struct_type).is_struct());
-
-
-	QUARK_ASSERT(member_index >= 0 && member_index < peek2(types, struct_type).get_struct(types)._members.size());
-
-	auto& builder = gen_acc.get_builder();
-	auto& struct_type_llvm = *get_exact_struct_type_byvalue(gen_acc.gen.type_lookup, struct_type);
-
-	auto base_ptr_reg = generate_get_struct_base_ptr(gen_acc, struct_ptr_reg, struct_type);
-
-	const auto gep = std::vector<llvm::Value*>{
-		//	Struct array index.
-		builder.getInt32(0),
-
-		//	Struct member index.
-		builder.getInt32(member_index)
-	};
-	llvm::Value* member_ptr_reg = builder.CreateGEP(&struct_type_llvm, base_ptr_reg, gep, "");
-	auto member_value_reg = builder.CreateLoad(member_ptr_reg);
-
-	return member_value_reg;
-*/
-	QUARK_ASSERT(false);
-	return make_blank_runtime_value();
+	return { value, member.type };
 
 }
 

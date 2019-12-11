@@ -910,7 +910,7 @@ inline type_t lookup_dict_value_type(const value_backend_t& backend, type_t type
 //??? Don't return pair, only struct_layout_t.
 const std::pair<type_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, type_t type);
 
-runtime_value_t load_struct_member(const value_backend_t& backend, uint8_t* data_ptr, const type_t& struct_type, int member_index);
+std::pair<runtime_value_t, type_t> load_struct_member(const value_backend_t& backend, uint8_t* data_ptr, const type_t& struct_type, int member_index);
 
 
 

@@ -322,40 +322,19 @@ static std::vector<function_bind_t> floydrt_allocate_dict__make(llvm::LLVMContex
 
 
 
-static runtime_value_t floydrt_lookup_dict_cppmap(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t s){
+static runtime_value_t floydrt_lookup_dict_cppmap(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t key){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 
-	QUARK_ASSERT(is_dict_cppmap(backend.types, backend.config, type_t(type)));
-
-	const auto& m = dict.dict_cppmap_ptr->get_map();
-	const auto key_string = from_runtime_string(r, s);
-	const auto it = m.find(key_string);
-	if(it == m.end()){
-		throw std::exception();
-	}
-	else{
-		return it->second;
-	}
+	return lookup_dict_cppmap(backend, dict, type_t(type), key);
 }
 
 //??? make faster key without creating std::string.
-static runtime_value_t floydrt_lookup_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t s){
+static runtime_value_t floydrt_lookup_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t key){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 
-//	const auto& type0 = lookup_type_ref(backend, type);
-	QUARK_ASSERT(is_dict_hamt(backend.types, backend.config, type_t(type)));
-
-	const auto& m = dict.dict_hamt_ptr->get_map();
-	const auto key_string = from_runtime_string(r, s);
-	const auto it = m.find(key_string);
-	if(it == nullptr){
-		throw std::exception();
-	}
-	else{
-		return *it;
-	}
+	return lookup_dict_hamt(backend, dict, type_t(type), key);
 }
 
 static std::vector<function_bind_t> floydrt_lookup_dict_cppmap__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -841,15 +820,11 @@ llvm::Value* generate_update_struct_member(llvm_function_generator_t& gen_acc, l
 	if(pod){
 		const auto res = resolve_func(gen_acc.gen.link_map, "copy_struct");
 
-
 		auto& exact_struct_type = *get_exact_struct_type_byvalue(gen_acc.gen.type_lookup, struct_type);
 
 		const llvm::DataLayout& data_layout = gen_acc.gen.module->getDataLayout();
 		const llvm::StructLayout* layout = data_layout.getStructLayout(&exact_struct_type);
 		const auto struct_bytes = layout->getSizeInBytes();
-
-
-
 
 		std::vector<llvm::Value*> args = {
 			gen_acc.get_callers_fcp(),

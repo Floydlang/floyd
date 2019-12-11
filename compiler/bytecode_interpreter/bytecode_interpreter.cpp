@@ -1138,14 +1138,15 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_any(i._a));
 			QUARK_ASSERT(stack.check_reg_struct(i._b));
 
-			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
+			const auto& struct_type = frame_ptr->_symbols[i._b].second._value_type;
 			const auto data_ptr = regs[i._b].struct_ptr->get_data_ptr();
 			const auto member_index = i._c;
-			const auto value = load_struct_member(backend, data_ptr, type, member_index);
+			const auto r = load_struct_member(backend, data_ptr, struct_type, member_index);
+			const auto& member_type = r.second;
 
-			release_value(backend, regs[i._a], type);
-			retain_value(backend, value, type);
-			regs[i._a] = value;
+			release_value(backend, regs[i._a], member_type);
+			retain_value(backend, r.first, member_type);
+			regs[i._a] = r.first;
 
 			QUARK_ASSERT(vm.check_invariant());
 			break;
@@ -1248,43 +1249,21 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-/*
-		case bc_opcode::k_lookup_element_dict_w_external_values: {
+		case bc_opcode::k_lookup_element_dict_w_external_values:
+		case bc_opcode::k_lookup_element_dict_w_inplace_values:
+		{
 			QUARK_ASSERT(stack.check_reg__external_value(i._a));
 			QUARK_ASSERT(stack.check_reg_dict_w_external_values(i._b));
 			QUARK_ASSERT(stack.check_reg_string(i._c));
 
-			const auto& entries = regs[i._b]._external->_dict_w_external_values;
-			const auto& lookup_key = regs[i._c]._external->_string;
-			const auto found_ptr = entries.find(lookup_key);
-			if(found_ptr == nullptr){
-				quark::throw_runtime_error("Lookup in dict: key not found.");
-			}
-			else{
-				const auto& handle = *found_ptr;
-				handle._external->_rc++;
-				release_pod_external(regs[i._a]);
-				regs[i._a]._external = handle._external;
-			}
+			const auto& dict_type = frame_ptr->_symbols[i._b].second._value_type;
+			const auto key = regs[i._c];
+//				quark::throw_runtime_error("Lookup in dict: key not found.");
+			const auto element_type = peek2(types, dict_type).get_dict_value_type(types);
+			const auto e = lookup_dict(backend, regs[i._b], dict_type, key);
+			write_reg_rc(backend, regs, i._a, element_type, e);
 			break;
 		}
-		case bc_opcode::k_lookup_element_dict_w_inplace_values: {
-			QUARK_ASSERT(stack.check_reg_any(i._a));
-			QUARK_ASSERT(stack.check_reg_dict_w_inplace_values(i._b));
-			QUARK_ASSERT(stack.check_reg_string(i._c));
-
-			const auto& entries = regs[i._b]._external->_dict_w_inplace_values;
-			const auto& lookup_key = regs[i._c]._external->_string;
-			const auto found_ptr = entries.find(lookup_key);
-			if(found_ptr == nullptr){
-				quark::throw_runtime_error("Lookup in dict: key not found.");
-			}
-			else{
-				regs[i._a]._inplace = *found_ptr;
-			}
-			break;
-		}
-*/
 
 		case bc_opcode::k_get_size_vector_w_external_elements: {
 			QUARK_ASSERT(vm.check_invariant());
@@ -1310,14 +1289,14 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-/*
 		case bc_opcode::k_get_size_dict_w_external_values: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_int(i._a));
 			QUARK_ASSERT(stack.check_reg_dict_w_external_values(i._b));
 			QUARK_ASSERT(i._c == 0);
 
-			regs[i._a].int_value = regs[i._b]._external->_dict_w_external_values.size();
+			const auto& type_b = frame_ptr->_symbols[i._b].second._value_type;
+			regs[i._a].int_value = get_dict_size(backend, type_b, regs[i._b]);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
@@ -1327,11 +1306,11 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_dict_w_inplace_values(i._b));
 			QUARK_ASSERT(i._c == 0);
 
-			regs[i._a].int_value = regs[i._b]._external->_dict_w_inplace_values.size();
+			const auto& type_b = frame_ptr->_symbols[i._b].second._value_type;
+			regs[i._a].int_value = get_dict_size(backend, type_b, regs[i._b]);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
-*/
 
 		case bc_opcode::k_get_size_string: {
 			QUARK_ASSERT(vm.check_invariant());
