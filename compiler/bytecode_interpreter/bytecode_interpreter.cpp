@@ -347,7 +347,7 @@ json_t interpreter_stack_t::stack_to_json(value_backend_t& backend) const{
 		}
 
 #if DEBUG
-		const auto debug_type = _pos_type[i];
+		const auto debug_type = _entry_types[i];
 //		const auto ext = encode_as_external(_types, debug_type);
 		const auto bc_pod = _entries[i];
 		const auto bc = bc_value_t(backend, debug_type, bc_pod);
@@ -682,7 +682,7 @@ static void execute_new_vector_obj(interpreter_t& vm, int16_t dest_reg, int16_t 
 	immer::vector<bc_value_t> elements2;
 	for(int i = 0 ; i < arg_count ; i++){
 		const auto pos = arg0_stack_pos + i;
-		QUARK_ASSERT(vm._stack._pos_type[pos] == type_t(peek2(types, element_type)));
+		QUARK_ASSERT(vm._stack._entry_types[pos] == type_t(peek2(types, element_type)));
 		const auto& e = vm._stack._entries[pos];
 		const auto e2 = bc_value_t(vm._stack._backend, element_type, e);
 		elements2 = elements2.push_back(e2);
@@ -1013,8 +1013,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			stack._entries[stack._stack_size + 0].int_value = static_cast<int64_t>(stack._current_frame_entry_ptr - &stack._entries[0]);
 			stack._entries[stack._stack_size + 1].frame_ptr = (void*)frame_ptr;
 			stack._stack_size += k_frame_overhead;
-			stack._pos_type.push_back(type_t::make_int());
-			stack._pos_type.push_back(type_t::make_void());
+			stack._entry_types.push_back(type_t::make_int());
+			stack._entry_types.push_back(type_t::make_void());
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
@@ -1027,8 +1027,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			frame_ptr = (bc_static_frame_t*)stack._entries[stack._stack_size - k_frame_overhead + 1].frame_ptr;
 			stack._stack_size -= k_frame_overhead;
 
-			stack._pos_type.pop_back();
-			stack._pos_type.pop_back();
+			stack._entry_types.pop_back();
+			stack._entry_types.pop_back();
 
 			regs = &stack._entries[frame_pos];
 
@@ -1044,23 +1044,23 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_push_inplace_value: {
 			QUARK_ASSERT(stack.check_reg__inplace_value(i._a));
-			const auto debug_type = stack._pos_type[stack.get_current_frame_start() + i._a];
+			const auto debug_type = stack._entry_types[stack.get_current_frame_start() + i._a];
 
 			stack._entries[stack._stack_size] = regs[i._a];
 			stack._stack_size++;
-			stack._pos_type.push_back(debug_type);
+			stack._entry_types.push_back(debug_type);
 			QUARK_ASSERT(stack.check_invariant());
 			break;
 		}
 		case bc_opcode::k_push_external_value: {
 			QUARK_ASSERT(stack.check_reg__external_value(i._a));
-			const auto debug_type = stack._pos_type[stack.get_current_frame_start() + i._a];
+			const auto debug_type = stack._entry_types[stack.get_current_frame_start() + i._a];
 
 			const auto& new_value_pod = regs[i._a];
 			retain_value(stack._backend, new_value_pod, frame_ptr->_exts[i._a]);
 			stack._entries[stack._stack_size] = new_value_pod;
 			stack._stack_size++;
-			stack._pos_type.push_back(debug_type);
+			stack._entry_types.push_back(debug_type);
 			break;
 		}
 
@@ -1076,10 +1076,10 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 			int pos = static_cast<int>(stack._stack_size) - 1;
 			for(int m = 0 ; m < n ; m++){
-				const auto type = stack._pos_type.back();
+				const auto type = stack._entry_types.back();
 				release_value(vm._stack._backend, stack._entries[pos], type);
 				pos--;
-				stack._pos_type.pop_back();
+				stack._entry_types.pop_back();
 			}
 			stack._stack_size -= n;
 

@@ -3154,7 +3154,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [string] update()", "", "valid vect
 	);
 }
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "vector [string] size()", "empty", "0"){
+FLOYD_LANG_PROOF("Floyd test suite", "vector [string] size()", "empty", "0"){
 	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let [string] a = []

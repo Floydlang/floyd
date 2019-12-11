@@ -45,7 +45,6 @@ struct runtime_handler_i;
 
 struct interpreter_t;
 struct bc_program_t;
-struct bc_static_frame_t;
 
 struct bc_value_t;
 
@@ -642,9 +641,9 @@ struct interpreter_stack_t {
 
 		QUARK_ASSERT(_current_frame_entry_ptr >= &_entries[0]);
 
-		QUARK_ASSERT(_pos_type.size() == _stack_size);
+		QUARK_ASSERT(_entry_types.size() == _stack_size);
 		for(int i = 0 ; i < _stack_size ; i++){
-			QUARK_ASSERT(_pos_type[i].check_invariant());
+			QUARK_ASSERT(_entry_types[i].check_invariant());
 		}
 		return true;
 	}
@@ -660,7 +659,7 @@ struct interpreter_stack_t {
 		std::swap(other._entries, _entries);
 		std::swap(other._allocated_count, _allocated_count);
 		std::swap(other._stack_size, _stack_size);
-		other._pos_type.swap(_pos_type);
+		other._entry_types.swap(_entry_types);
 		std::swap(_current_frame_ptr, other._current_frame_ptr);
 		std::swap(_current_frame_entry_ptr, other._current_frame_entry_ptr);
 
@@ -702,19 +701,21 @@ struct interpreter_stack_t {
 	public: bool check_stack_frame(const frame_pos_t& in_frame) const;
 #endif
 
-	//	??? This function should just allocate a block for frame, then have a list of writes.
+	
+	//	Function arguments MUST ALREADY have been pushed on the stack!!
+	//	??? Faster: This function should just allocate a block for frame, then have a list of writes.
 	//	???	ALTERNATIVELY: generate instructions to do this in the VM? Nah, that's always slower.
-	public: void open_frame(const bc_static_frame_t& frame, int values_already_on_stack){
+	public: void open_frame(const bc_static_frame_t& frame, int pushed_arg_count){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(frame.check_invariant());
-		QUARK_ASSERT(values_already_on_stack == frame._args.size());
+		QUARK_ASSERT(pushed_arg_count == frame._args.size());
 
-		const auto stack_end = size();
+		const auto pos_with_args_already_pushed = size();
 		const auto parameter_count = static_cast<int>(frame._args.size());
 
 		//	Carefully position the new stack frame so its includes the parameters that already sits in the stack.
 		//	The stack frame already has symbols/registers mapped for those parameters.
-		const auto new_frame_pos = stack_end - parameter_count;
+		const auto new_frame_start_pos = pos_with_args_already_pushed - parameter_count;
 
 		for(int i = 0 ; i < frame._locals.size() ; i++){
 			const auto type = frame._locals_exts[i];
@@ -733,7 +734,7 @@ struct interpreter_stack_t {
 			}
 		}
 		_current_frame_ptr = &frame;
-		_current_frame_entry_ptr = &_entries[new_frame_pos];
+		_current_frame_entry_ptr = &_entries[new_frame_start_pos];
 	}
 
 
@@ -757,7 +758,7 @@ struct interpreter_stack_t {
 		//	Makes sure debug types are in sync for this register.
 
 		const auto& a = _current_frame_ptr->_symbols[reg].second._value_type;
-		const auto& b = _pos_type[get_current_frame_start() + reg];
+		const auto& b = _entry_types[get_current_frame_start() + reg];
 		QUARK_ASSERT(peek2(_backend.types, a) == peek2(_backend.types, b) || b.is_undefined());
 		return true;
 	}
@@ -928,8 +929,8 @@ struct interpreter_stack_t {
 		const auto frame_pos = _entries[_stack_size - k_frame_overhead + 0].int_value;
 		const auto frame_ptr = (const bc_static_frame_t*)_entries[_stack_size - k_frame_overhead + 1].frame_ptr;
 		_stack_size -= k_frame_overhead;
-		_pos_type.pop_back();
-		_pos_type.pop_back();
+		_entry_types.pop_back();
+		_entry_types.pop_back();
 		_current_frame_ptr = frame_ptr;
 		_current_frame_entry_ptr = &_entries[frame_pos];
 	}
@@ -946,7 +947,7 @@ struct interpreter_stack_t {
 		retain_value(_backend, value._pod, value._type);
 		_entries[_stack_size] = value._pod;
 		_stack_size++;
-		_pos_type.push_back(value._type);
+		_entry_types.push_back(value._type);
 
 		QUARK_ASSERT(check_invariant());
 	}
@@ -957,7 +958,7 @@ struct interpreter_stack_t {
 
 		_entries[_stack_size] = value._pod;
 		_stack_size++;
-		_pos_type.push_back(value._type);
+		_entry_types.push_back(value._type);
 
 		QUARK_ASSERT(check_invariant());
 	}
@@ -968,7 +969,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 		QUARK_ASSERT(type.check_invariant());
-//		QUARK_ASSERT(peek2(_backend.types, type) == _pos_type[pos]);
+//		QUARK_ASSERT(peek2(_backend.types, type) == _entry_types[pos]);
 
 		const auto& e = _entries[pos];
 		const auto result = bc_value_t(_backend, type, e);
@@ -978,7 +979,7 @@ struct interpreter_stack_t {
 	public: inline int64_t load_intq(int pos) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
-		QUARK_ASSERT(peek2(_backend.types, _pos_type[pos]).is_int());
+		QUARK_ASSERT(peek2(_backend.types, _entry_types[pos]).is_int());
 
 		return _entries[pos].int_value;
 	}
@@ -987,7 +988,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
-		QUARK_ASSERT(_pos_type[pos] == value._type);
+		QUARK_ASSERT(_entry_types[pos] == value._type);
 
 		_entries[pos] = value._pod;
 
@@ -998,7 +999,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
-		QUARK_ASSERT(_pos_type[pos] == value._type);
+		QUARK_ASSERT(_entry_types[pos] == value._type);
 
 		auto prev_copy = _entries[pos];
 
@@ -1028,7 +1029,7 @@ struct interpreter_stack_t {
 
 		auto copy = _entries[_stack_size - 1];
 		_stack_size--;
-		_pos_type.pop_back();
+		_entry_types.pop_back();
 		release_value(_backend, copy, type);
 
 		QUARK_ASSERT(check_invariant());
@@ -1054,7 +1055,7 @@ struct interpreter_stack_t {
 	//	These are DEEP copies = do not share RC with non-debug values.
 	//	These are parallell with _entries, one elementfor each entry on the stack.
 	//??? Better to embedd these in struct stack_element_t { type_t debug_type,runtime_value_t };
-	public: std::vector<type_t> _pos_type;
+	public: std::vector<type_t> _entry_types;
 
 	public: const bc_static_frame_t* _current_frame_ptr;
 	public: runtime_value_t* _current_frame_entry_ptr;
