@@ -511,8 +511,7 @@ struct bc_static_frame_t {
 	//??? also redundant with _symbols._value_type
 	std::vector<type_t> _exts;
 
-	//	Is the local value external values?
-	//	This doesn't count arguments.
+	//	This doesn't include arguments.
 	std::vector<type_t> _local_types;
 	std::vector<value_t> _locals;
 };
@@ -702,7 +701,7 @@ struct interpreter_stack_t {
 #endif
 
 	
-	//	Function arguments MUST ALREADY have been pushed on the stack!!
+	//	Function arguments MUST ALREADY have been pushed on the stack!! Only handles locals.
 	//	??? Faster: This function should just allocate a block for frame, then have a list of writes.
 	//	???	ALTERNATIVELY: generate instructions to do this in the VM? Nah, that's always slower.
 	public: void open_frame_except_args(const bc_static_frame_t& frame, int pushed_arg_count){
@@ -737,15 +736,12 @@ struct interpreter_stack_t {
 		_current_frame_entry_ptr = &_entries[new_frame_start_pos];
 	}
 
-
 	//	Pops all locals, decrementing RC when needed.
-	//	Decrements all stack frame object RCs.
-	//	Caller handles RC for parameters, this function don't.
+	//	Only handles locals, not parameters.
 	public: void close_frame(const bc_static_frame_t& frame){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(frame.check_invariant());
 
-		//	Using symbol table to figure out which stack-frame values needs RC. Decrement them all.
 		pop_batch(frame._local_types);
 	}
 
