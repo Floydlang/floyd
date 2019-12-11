@@ -203,25 +203,19 @@ bc_static_frame_t::bc_static_frame_t(const types_t& types, const std::vector<bc_
 	//	Process the locals & temps. They go after any parameters, which already sits on stack.
 	for(std::vector<bc_value_t>::size_type i = parameter_count ; i < _symbols.size() ; i++){
 		const auto& symbol = _symbols[i];
-		const auto type = _symbols[i].second._value_type;
+		const auto type = symbol.second._value_type;
 
 		_local_types.push_back(type);
-
-		const bool is_rc = is_rc_value(types, type);
 
 		//	Variable slot.
 		//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
 		//	Problem is that IF this is an RC_object, it WILL be decremented when written to.
 		//	Use a placeholder object of correct type.
-		if(symbol.second._init.is_undefined()){
-			const auto value = make_default_value(symbol.second._value_type);
-			_locals.push_back(value);
-		}
 
-		//	Constant.
-		else{
-			_locals.push_back(symbol.second._init);
-		}
+		const auto init_value = symbol.second._init.is_undefined() ? make_default_value(type) : symbol.second._init;
+//		QUARK_ASSERT(type == init_value.get_type());
+
+		_locals.push_back(init_value);
 	}
 
 	QUARK_ASSERT(check_invariant());
