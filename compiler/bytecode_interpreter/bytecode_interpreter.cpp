@@ -203,13 +203,8 @@ bc_static_frame_t::bc_static_frame_t(const types_t& types, const std::vector<bc_
 		const auto& symbol = _symbols[i];
 		const auto type = symbol.second._value_type;
 
-		_local_types.push_back(type);
-
-		//	Variable slot.
 		//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
 		//	Problem is that IF this is an RC_object, it WILL be decremented when written to.
-		//	Use a placeholder object of correct type.
-
 		const auto init_value = symbol.second._init.is_undefined() ? make_default_value(type) : symbol.second._init;
 //		QUARK_ASSERT(type == init_value.get_type());
 
@@ -400,11 +395,11 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 		vm._stack.save_frame();
 
 		//	We push the values to the stack = the stack will take RC ownership of the values.
-		std::vector<type_t> exts;
+		std::vector<type_t> arg_types2;
 		for(int i = 0 ; i < arg_count ; i++){
 			const auto& bc = args[i];
 			const auto is_ext = args[i]._type;
-			exts.push_back(is_ext);
+			arg_types2.push_back(is_ext);
 			vm._stack.push_external_value(bc);
 		}
 
@@ -413,7 +408,7 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 		vm._stack.open_frame_except_args(*frame_ptr, arg_count);
 		const auto& result = execute_instructions(vm, frame_ptr->_instructions);
 		vm._stack.close_frame(*frame_ptr);
-		vm._stack.pop_batch(exts);
+		vm._stack.pop_batch(arg_types2);
 		vm._stack.restore_frame();
 
 		if(peek2(types, lookup_type_from_index(types, result.first)).is_void() == false){

@@ -35,6 +35,50 @@
 #include <atomic>
 #include <chrono>
 
+/*
+
+FRAME INFO
+stack + 0	prev frame (stack pos)
+stack + 1	prev static frame ptr
+
+GLOBAL-FRAME START
+stack + 2	arg 0		symbol 0
+stack + 3	arg 1		symbol 1
+stack + 4	arg 2		symbol 2
+stack + 5	local 0		symbol 3
+stack + 6	local 1		symbol 4
+stack + 7	local 2		symbol 5
+stack + 8	local 3		symbol 6
+
+Call to function x:
+
+FRAME INFO
+stack + 9	prev frame (stack pos)
+stack + 10	prev static frame ptr
+
+FUNCTION X FRAME START
+stack + 11	arg 0		symbol 0
+stack + 12	arg 1		symbol 1
+stack + 13	local 0		symbol 2
+stack + 14	local 1		symbol 3
+stack + 15	local 2		symbol 4
+
+Call to function Y:
+
+FRAME INFO
+stack + 16	prev frame (stack pos)
+stack + 17	prev static frame ptr
+
+FUNCTION Y FRAME START
+stack + 18	arg 0		symbol 0
+stack + 19	arg 1		symbol 1
+stack + 20	local 0		symbol 2
+stack + 21	local 1		symbol 3
+
+Notice: symbol table maps to parameters AND locals.
+Notice: because of symbol table, the type & symbol infois always available for all stack entries.
+Notice: a frame starts where symbol 0 is.
+*/
 
 
 namespace floyd {
@@ -506,10 +550,8 @@ struct bc_static_frame_t {
 	std::vector<std::pair<std::string, bc_symbol_t>> _symbols;
 
 	int _arg_count;
-//	std::vector<type_t> _args;
 
 	//	This doesn't include arguments.
-	std::vector<type_t> _local_types;
 	std::vector<value_t> _locals;
 };
 
@@ -702,6 +744,7 @@ struct interpreter_stack_t {
 	public: void open_frame_except_args(const bc_static_frame_t& frame, int pushed_arg_count){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(frame.check_invariant());
+		QUARK_ASSERT(frame._arg_count == pushed_arg_count);
 
 		const auto pos_with_args_already_pushed = size();
 
@@ -710,7 +753,7 @@ struct interpreter_stack_t {
 		const auto new_frame_start_pos = pos_with_args_already_pushed - pushed_arg_count;
 
 		for(int i = 0 ; i < frame._locals.size() ; i++){
-			const auto type = frame._local_types[i];
+			const auto type = frame._symbols[i + frame._arg_count].second._value_type;
 			const bool ext = is_rc_value(_backend.types, type);
 			const auto& local = frame._locals[i];
 			if(ext){
@@ -735,7 +778,14 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(frame.check_invariant());
 
-		pop_batch(frame._local_types);
+//		const auto type = frame._symbols[i + frame._arg_count].second._value_type;
+		const auto count = frame._symbols.size() - frame._arg_count;
+		for(auto i = count ; i > 0 ; i--){
+			const auto symbol_index = frame._arg_count + i - 1;
+			const auto& type = frame._symbols[symbol_index].second._value_type;
+			pop(type);
+		}
+		QUARK_ASSERT(check_invariant());
 	}
 
 	public: std::vector<std::pair<int, int>> get_stack_frames(int frame_pos) const;
