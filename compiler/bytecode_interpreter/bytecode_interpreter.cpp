@@ -194,14 +194,12 @@ bool bc_instruction_t::check_invariant() const {
 bc_static_frame_t::bc_static_frame_t(const types_t& types, const std::vector<bc_instruction_t>& instrs2, const std::vector<std::pair<std::string, bc_symbol_t>>& symbols, const std::vector<type_t>& args) :
 	_instructions(instrs2),
 	_symbols(symbols),
-	_args(args)
+	_arg_count((int)args.size())
 {
 	QUARK_ASSERT(types.check_invariant());
 
-	const auto parameter_count = static_cast<int>(_args.size());
-
 	//	Process the locals & temps. They go after any parameters, which already sits on stack.
-	for(std::vector<bc_value_t>::size_type i = parameter_count ; i < _symbols.size() ; i++){
+	for(std::vector<bc_value_t>::size_type i = _arg_count ; i < _symbols.size() ; i++){
 		const auto& symbol = _symbols[i];
 		const auto type = symbol.second._value_type;
 

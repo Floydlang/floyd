@@ -502,9 +502,11 @@ struct bc_static_frame_t {
 	//////////////////////////////////////		STATE
 	std::vector<bc_instruction_t> _instructions;
 
-	//??? Optimize how we store this data for quick access + compactness.
+	//	Symbols spans all args and locals: first args, then locals.
 	std::vector<std::pair<std::string, bc_symbol_t>> _symbols;
-	std::vector<type_t> _args;
+
+	int _arg_count;
+//	std::vector<type_t> _args;
 
 	//	This doesn't include arguments.
 	std::vector<type_t> _local_types;
@@ -700,14 +702,12 @@ struct interpreter_stack_t {
 	public: void open_frame_except_args(const bc_static_frame_t& frame, int pushed_arg_count){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(frame.check_invariant());
-		QUARK_ASSERT(pushed_arg_count == frame._args.size());
 
 		const auto pos_with_args_already_pushed = size();
-		const auto parameter_count = static_cast<int>(frame._args.size());
 
 		//	Carefully position the new stack frame so its includes the parameters that already sits in the stack.
 		//	The stack frame already has symbols/registers mapped for those parameters.
-		const auto new_frame_start_pos = pos_with_args_already_pushed - parameter_count;
+		const auto new_frame_start_pos = pos_with_args_already_pushed - pushed_arg_count;
 
 		for(int i = 0 ; i < frame._locals.size() ; i++){
 			const auto type = frame._local_types[i];
