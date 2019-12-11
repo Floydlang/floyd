@@ -200,15 +200,10 @@ bc_static_frame_t::bc_static_frame_t(const types_t& types, const std::vector<bc_
 
 	const auto parameter_count = static_cast<int>(_args.size());
 
-	for(int i = 0 ; i < _symbols.size() ; i++){
-		const auto type = _symbols[i].second._value_type;
-		_exts.push_back(type);
-	}
-
 	//	Process the locals & temps. They go after any parameters, which already sits on stack.
 	for(std::vector<bc_value_t>::size_type i = parameter_count ; i < _symbols.size() ; i++){
 		const auto& symbol = _symbols[i];
-		const auto type = _exts[i];
+		const auto type = _symbols[i].second._value_type;
 
 		_local_types.push_back(type);
 
@@ -233,7 +228,6 @@ bc_static_frame_t::bc_static_frame_t(const types_t& types, const std::vector<bc_
 }
 
 bool bc_static_frame_t::check_invariant() const {
-	QUARK_ASSERT(_symbols.size() == _exts.size());
 	return true;
 }
 
@@ -929,7 +923,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg__external_value(i._a));
 			QUARK_ASSERT(stack.check_global_access_obj(i._b));
 
-			const auto& type = frame_ptr->_exts[i._a];
+			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
 			release_value(stack._backend, regs[i._a], type);
 			const auto& new_value_pod = globals[i._b];
 			regs[i._a] = new_value_pod;
@@ -948,7 +942,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_global_access_obj(i._a));
 			QUARK_ASSERT(stack.check_reg__external_value(i._b));
 
-			const auto& type = frame_ptr->_exts[i._b];
+			const auto& type = frame_ptr->_symbols[i._b].second._value_type;
 			release_value(stack._backend, globals[i._a], type);
 			const auto& new_value_pod = regs[i._b];
 			globals[i._a] = new_value_pod;
@@ -978,7 +972,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg__external_value(i._a));
 			QUARK_ASSERT(stack.check_reg__external_value(i._b));
 
-			const auto& type = frame_ptr->_exts[i._a];
+			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
 			release_value(stack._backend, regs[i._a], type);
 			const auto& new_value_pod = regs[i._b];
 			regs[i._a] = new_value_pod;
@@ -991,7 +985,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 
 		case bc_opcode::k_return: {
-			const auto type = frame_ptr->_exts[i._a];
+			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
 /*
 			QUARK_ASSERT(
 				(is_ext && stack.check_reg__external_value(i._a))
@@ -1054,13 +1048,12 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 		case bc_opcode::k_push_external_value: {
 			QUARK_ASSERT(stack.check_reg__external_value(i._a));
-			const auto debug_type = stack._entry_types[stack.get_current_frame_start() + i._a];
-
+			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
 			const auto& new_value_pod = regs[i._a];
-			retain_value(stack._backend, new_value_pod, frame_ptr->_exts[i._a]);
+			retain_value(stack._backend, new_value_pod, type);
 			stack._entries[stack._stack_size] = new_value_pod;
 			stack._stack_size++;
-			stack._entry_types.push_back(debug_type);
+			stack._entry_types.push_back(type);
 			break;
 		}
 
@@ -1151,7 +1144,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_any(i._a));
 			QUARK_ASSERT(stack.check_reg_struct(i._b));
 
-			const auto type = frame_ptr->_exts[i._a];
+			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
 			const auto data_ptr = regs[i._b].struct_ptr->get_data_ptr();
 			const auto member_index = i._c;
 			const auto value = load_struct_member(vm._stack._backend, data_ptr, type, member_index);
@@ -1243,7 +1236,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
 			QUARK_ASSERT(stack.check_reg_int(i._c));
 
-			const auto vector_type = frame_ptr->_exts[i._b];
+			const auto& vector_type = frame_ptr->_symbols[i._b].second._value_type;
 			const auto lookup_index = regs[i._c].int_value;
 			const auto size = get_vector_size(backend, vector_type, regs[i._b]);
 			if(lookup_index < 0 || lookup_index >= size){
@@ -1321,7 +1314,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
 			QUARK_ASSERT(i._c == 0);
 
-			const auto vector_type = frame_ptr->_exts[i._b];
+			const auto& vector_type = frame_ptr->_symbols[i._b].second._value_type;
 			regs[i._a].int_value = get_vector_size(backend, vector_type, regs[i._b]);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
@@ -1955,15 +1948,6 @@ static std::vector<json_t> bc_symbols_to_json(value_backend_t& backend, const st
 static json_t frame_to_json(value_backend_t& backend, const bc_static_frame_t& frame){
 	QUARK_ASSERT(backend.check_invariant());
 
-	std::vector<json_t> exts;
-	for(int i = 0 ; i < frame._exts.size() ; i++){
-		const auto& e = frame._exts[i];
-		exts.push_back(json_t::make_array({
-			json_t(i),
-			type_to_json(backend.types, e)
-		}));
-	}
-
 	std::vector<json_t> instructions;
 	int pc = 0;
 	for(const auto& e: frame._instructions){
@@ -1980,8 +1964,7 @@ static json_t frame_to_json(value_backend_t& backend, const bc_static_frame_t& f
 
 	return json_t::make_object({
 		{ "symbols", json_t::make_array(bc_symbols_to_json(backend, frame._symbols)) },
-		{ "instructions", json_t::make_array(instructions) },
-		{ "exts", json_t::make_array(exts) }
+		{ "instructions", json_t::make_array(instructions) }
 	});
 }
 

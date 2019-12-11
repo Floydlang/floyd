@@ -506,11 +506,6 @@ struct bc_static_frame_t {
 	std::vector<std::pair<std::string, bc_symbol_t>> _symbols;
 	std::vector<type_t> _args;
 
-	//	True if equivalent symbol is an external value.
-	//??? unify with _local_types.
-	//??? also redundant with _symbols._value_type
-	std::vector<type_t> _exts;
-
 	//	This doesn't include arguments.
 	std::vector<type_t> _local_types;
 	std::vector<value_t> _locals;
@@ -681,13 +676,11 @@ struct interpreter_stack_t {
 	public: bool check_global_access_obj(const int global_index) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(global_index >= 0 && global_index < (k_frame_overhead + _global_frame->_symbols.size()));
-//		QUARK_ASSERT(_global_frame->_exts[global_index] == true);
 		return true;
 	}
 	public: bool check_global_access_intern(const int global_index) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(global_index >= 0 && global_index < (k_frame_overhead + _global_frame->_symbols.size()));
-//		QUARK_ASSERT(_global_frame->_exts[global_index] == false);
 		return true;
 	}
 
@@ -898,14 +891,12 @@ struct interpreter_stack_t {
 	public: bool check_reg__external_value(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-//		QUARK_ASSERT(_current_frame_ptr->_exts[reg] == true);
 		return true;
 	}
 
 	public: bool check_reg__inplace_value(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-//		QUARK_ASSERT(_current_frame_ptr->_exts[reg] == false);
 		return true;
 	}
 #endif
