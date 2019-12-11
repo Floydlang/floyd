@@ -210,7 +210,7 @@ bc_static_frame_t::bc_static_frame_t(const types_t& types, const std::vector<bc_
 		const auto& symbol = _symbols[i];
 		const auto type = _exts[i];
 
-		_locals_exts.push_back(type);
+		_local_types.push_back(type);
 
 		const bool is_rc = is_rc_value(types, type);
 
@@ -424,7 +424,7 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 
 		QUARK_ASSERT(func_link.f != nullptr);
 		auto frame_ptr = (const bc_static_frame_t*)func_link.f;
-		vm._stack.open_frame(*frame_ptr, arg_count);
+		vm._stack.open_frame_except_args(*frame_ptr, arg_count);
 		const auto& result = execute_instructions(vm, frame_ptr->_instructions);
 		vm._stack.close_frame(*frame_ptr);
 		vm._stack.pop_batch(exts);
@@ -584,7 +584,7 @@ interpreter_t::interpreter_t(const bc_program_t& program, bc_runtime_handler_i& 
 
 	{
 		_stack.save_frame();
-		_stack.open_frame(_imm->_program._globals, 0);
+		_stack.open_frame_except_args(_imm->_program._globals, 0);
 
 		QUARK_ASSERT(check_invariant());
 		if(false) trace_interpreter(*this);
@@ -865,7 +865,7 @@ static void do_call(interpreter_t& vm, int target_reg, const runtime_value_t cal
 
 		auto frame_ptr = (const bc_static_frame_t*)func_link.f;
 
-		stack.open_frame(*frame_ptr, callee_arg_count);
+		stack.open_frame_except_args(*frame_ptr, callee_arg_count);
 		const auto& result = execute_instructions(vm, frame_ptr->_instructions);
 		stack.close_frame(*frame_ptr);
 

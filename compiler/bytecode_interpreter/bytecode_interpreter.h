@@ -507,13 +507,13 @@ struct bc_static_frame_t {
 	std::vector<type_t> _args;
 
 	//	True if equivalent symbol is an external value.
-	//??? unify with _locals_exts.
+	//??? unify with _local_types.
 	//??? also redundant with _symbols._value_type
 	std::vector<type_t> _exts;
 
 	//	Is the local value external values?
 	//	This doesn't count arguments.
-	std::vector<type_t> _locals_exts;
+	std::vector<type_t> _local_types;
 	std::vector<value_t> _locals;
 };
 
@@ -705,7 +705,7 @@ struct interpreter_stack_t {
 	//	Function arguments MUST ALREADY have been pushed on the stack!!
 	//	??? Faster: This function should just allocate a block for frame, then have a list of writes.
 	//	???	ALTERNATIVELY: generate instructions to do this in the VM? Nah, that's always slower.
-	public: void open_frame(const bc_static_frame_t& frame, int pushed_arg_count){
+	public: void open_frame_except_args(const bc_static_frame_t& frame, int pushed_arg_count){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(frame.check_invariant());
 		QUARK_ASSERT(pushed_arg_count == frame._args.size());
@@ -718,7 +718,7 @@ struct interpreter_stack_t {
 		const auto new_frame_start_pos = pos_with_args_already_pushed - parameter_count;
 
 		for(int i = 0 ; i < frame._locals.size() ; i++){
-			const auto type = frame._locals_exts[i];
+			const auto type = frame._local_types[i];
 			const bool ext = is_rc_value(_backend.types, type);
 			const auto& local = frame._locals[i];
 			if(ext){
@@ -746,7 +746,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(frame.check_invariant());
 
 		//	Using symbol table to figure out which stack-frame values needs RC. Decrement them all.
-		pop_batch(frame._locals_exts);
+		pop_batch(frame._local_types);
 	}
 
 	public: std::vector<std::pair<int, int>> get_stack_frames(int frame_pos) const;
