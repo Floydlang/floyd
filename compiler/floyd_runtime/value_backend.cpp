@@ -576,7 +576,7 @@ void dispose_vector_hamt(const runtime_value_t& vec){
 	QUARK_ASSERT(heap->check_invariant());
 }
 
-runtime_value_t store_immutable(const runtime_value_t& vec0, const uint64_t index, runtime_value_t value){
+runtime_value_t store_immutable_hamt(const runtime_value_t& vec0, const uint64_t index, runtime_value_t value){
 	QUARK_ASSERT(vec0.check_invariant());
 	const auto& vec1 = *vec0.vector_hamt_ptr;
 	QUARK_ASSERT(index < vec1.get_element_count());
@@ -600,7 +600,7 @@ runtime_value_t store_immutable(const runtime_value_t& vec0, const uint64_t inde
 	return { .vector_hamt_ptr = vec };
 }
 
-runtime_value_t push_back_immutable(const runtime_value_t& vec0, runtime_value_t value){
+runtime_value_t push_back_immutable_hamt(const runtime_value_t& vec0, runtime_value_t value){
 	QUARK_ASSERT(vec0.check_invariant());
 	const auto& vec1 = *vec0.vector_hamt_ptr;
 	auto& heap = *vec1.alloc.heap;

@@ -78,6 +78,8 @@ stack + 21	local 1		symbol 3
 Notice: symbol table maps to parameters AND locals.
 Notice: because of symbol table, the type & symbol infois always available for all stack entries.
 Notice: a frame starts where symbol 0 is.
+
+Registers are integers into current frame's symbols / stack. Register 0 is always symbol 0.
 */
 
 

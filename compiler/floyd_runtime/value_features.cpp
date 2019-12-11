@@ -1521,4 +1521,100 @@ runtime_value_t lookup_vector_element(value_backend_t& backend, const type_t& ve
 
 
 
+
+// Could specialize further, for vector_hamt<string>, vector_hamt<vector<x>> etc. But it's probably better to inline push_back() instead.
+
+
+//??? Expensive to push_back since all elements in vector needs their RC bumped!
+// Could specialize further, for vector_hamt<string>, vector_hamt<vector<x>> etc. But it's probably better to inline push_back() instead.
+
+runtime_value_t push_back__string(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
+	QUARK_ASSERT(vec_type.is_string());
+
+	auto value = from_runtime_string2(backend, vec);
+	value.push_back((char)element.int_value);
+	const auto result2 = to_runtime_string2(backend, value);
+	return result2;
+}
+
+//??? use memcpy()
+runtime_value_t push_back_carray_pod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
+	const auto element_count = vec.vector_carray_ptr->get_element_count();
+	auto source_ptr = vec.vector_carray_ptr->get_element_ptr();
+
+	auto v2 = alloc_vector_carray(backend.heap, element_count + 1, element_count + 1, type_t(vec_type));
+	auto dest_ptr = v2.vector_carray_ptr->get_element_ptr();
+	for(int i = 0 ; i < element_count ; i++){
+		dest_ptr[i] = source_ptr[i];
+	}
+	dest_ptr[element_count] = element;
+	return v2;
+}
+
+runtime_value_t push_back_carray_nonpod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
+	type_t element_itype = lookup_vector_element_type(backend, type_t(vec_type));
+	const auto element_count = vec.vector_carray_ptr->get_element_count();
+	auto source_ptr = vec.vector_carray_ptr->get_element_ptr();
+
+	auto v2 = alloc_vector_carray(backend.heap, element_count + 1, element_count + 1, type_t(vec_type));
+	auto dest_ptr = v2.vector_carray_ptr->get_element_ptr();
+	for(int i = 0 ; i < element_count ; i++){
+		dest_ptr[i] = source_ptr[i];
+		retain_value(backend, dest_ptr[i], element_itype);
+	}
+	dest_ptr[element_count] = element;
+	retain_value(backend, dest_ptr[element_count], element_itype);
+
+	return v2;
+}
+
+runtime_value_t push_back_hamt_pod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
+	return push_back_immutable_hamt(vec, element);
+}
+
+runtime_value_t push_back_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
+	runtime_value_t vec2 = push_back_immutable_hamt(vec, element);
+	type_t element_itype = lookup_vector_element_type(backend, type_t(vec_type));
+
+	for(int i = 0 ; i < vec2.vector_hamt_ptr->get_element_count() ; i++){
+		const auto& value = vec2.vector_hamt_ptr->load_element(i);
+		retain_value(backend, value, element_itype);
+	}
+	return vec2;
+}
+
+runtime_value_t push_back2(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
+	if(vec_type.is_string()){
+		return push_back__string(backend, vec, vec_type, element);
+	}
+	else if(is_vector_carray(backend.types, backend.config, vec_type)){
+		const auto is_rc = is_rc_value(backend.types, vec_type.get_vector_element_type(backend.types));
+
+		if(is_rc){
+			return push_back_carray_nonpod(backend, vec, vec_type, element);
+		}
+		else{
+			return push_back_carray_pod(backend, vec, vec_type, element);
+		}
+	}
+	else if(is_vector_hamt(backend.types, backend.config, vec_type)){
+		const auto is_rc = is_rc_value(backend.types, vec_type.get_vector_element_type(backend.types));
+
+		if(is_rc){
+			return push_back_hamt_nonpod(backend, vec, vec_type, element);
+		}
+		else{
+			return push_back_hamt_pod(backend, vec, vec_type, element);
+		}
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+
+
+
+
 }	// floyd

@@ -104,6 +104,18 @@ runtime_value_t lookup_vector_element(value_backend_t& backend, const type_t& ve
 
 
 
+runtime_value_t push_back__string(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element);
+runtime_value_t push_back_carray_pod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element);
+runtime_value_t push_back_carray_nonpod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element);
+runtime_value_t push_back_hamt_pod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element);
+runtime_value_t push_back_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element);
+runtime_value_t push_back2(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element);
+
+
+
+
+
+
 /////////////////////////////////////////		INLINES
 
 
@@ -135,7 +147,7 @@ inline const runtime_value_t update__vector_hamt_pod(value_backend_t& backend, r
 	if(i < 0 || i >= vec->get_element_count()){
 		quark::throw_runtime_error("Position argument to update() is outside collection span.");
 	}
-	return store_immutable(coll_value, i, value);
+	return store_immutable_hamt(coll_value, i, value);
 }
 inline const runtime_value_t update__vector_hamt_nonpod(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value){
 	QUARK_ASSERT(backend.check_invariant());
@@ -149,7 +161,7 @@ inline const runtime_value_t update__vector_hamt_nonpod(value_backend_t& backend
 	//??? compile time. Provide as a constaint integer arg
 	const auto element_itype = lookup_vector_element_type(backend, type_t(coll_type));
 
-	const auto result = store_immutable(coll_value, i, value);
+	const auto result = store_immutable_hamt(coll_value, i, value);
 
 	for(int x = 0 ; x < result.vector_hamt_ptr->get_element_count() ; x++){
 		auto v = result.vector_hamt_ptr->load_element(x);

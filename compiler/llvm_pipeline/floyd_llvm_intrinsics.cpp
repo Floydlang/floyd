@@ -1156,7 +1156,7 @@ static runtime_value_t floyd_llvm_intrinsic__stable_sort(
 
 //??? optimize prio 2
 
-void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
+static void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto s = gen_to_string(r, value, value_type);
@@ -1174,80 +1174,40 @@ void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t value, ru
 
 
 
-//??? Expensive to push_back since all elements in vector needs their RC bumped!
-// Could specialize further, for vector_hamt<string>, vector_hamt<vector<x>> etc. But it's probably better to inline push_back() instead.
 
-static runtime_value_t push_back__string(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
+static runtime_value_t floydrt_push_back__string(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 
-#if DEBUG
-	const auto& type0 = lookup_type_ref(backend, vec_type);
-	QUARK_ASSERT(peek2(backend.types, type0).is_string());
-#endif
-
-	auto value = from_runtime_string(r, vec);
-	value.push_back((char)element.int_value);
-	const auto result2 = to_runtime_string(r, value);
-	return result2;
+	return push_back__string(backend, vec, type_t(vec_type), element);
 }
 
-//??? use memcpy()
 static runtime_value_t floydrt_push_back_carray_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 
-	const auto element_count = vec.vector_carray_ptr->get_element_count();
-	auto source_ptr = vec.vector_carray_ptr->get_element_ptr();
-
-	auto v2 = alloc_vector_carray(backend.heap, element_count + 1, element_count + 1, type_t(vec_type));
-	auto dest_ptr = v2.vector_carray_ptr->get_element_ptr();
-	for(int i = 0 ; i < element_count ; i++){
-		dest_ptr[i] = source_ptr[i];
-	}
-	dest_ptr[element_count] = element;
-	return v2;
+	return push_back_carray_pod(backend, vec, type_t(vec_type), element);
 }
 
 static runtime_value_t floydrt_push_back_carray_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 
-	type_t element_itype = lookup_vector_element_type(backend, type_t(vec_type));
-	const auto element_count = vec.vector_carray_ptr->get_element_count();
-	auto source_ptr = vec.vector_carray_ptr->get_element_ptr();
-
-	auto v2 = alloc_vector_carray(backend.heap, element_count + 1, element_count + 1, type_t(vec_type));
-	auto dest_ptr = v2.vector_carray_ptr->get_element_ptr();
-	for(int i = 0 ; i < element_count ; i++){
-		dest_ptr[i] = source_ptr[i];
-		retain_value(backend, dest_ptr[i], element_itype);
-	}
-	dest_ptr[element_count] = element;
-	retain_value(backend, dest_ptr[element_count], element_itype);
-
-	return v2;
+	return push_back_carray_nonpod(backend, vec, type_t(vec_type), element);
 }
 
 static runtime_value_t floydrt_push_back_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
-auto& r = get_floyd_runtime(frp);
-auto& backend = r.ee->backend;
+	auto& r = get_floyd_runtime(frp);
+	auto& backend = r.ee->backend;
 
-	return push_back_immutable(vec, element);
+	return push_back_hamt_pod(backend, vec, type_t(vec_type), element);
 }
 
 static runtime_value_t floydrt_push_back_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 
-	runtime_value_t vec2 = push_back_immutable(vec, element);
-	type_t element_itype = lookup_vector_element_type(backend, type_t(vec_type));
-
-	for(int i = 0 ; i < vec2.vector_hamt_ptr->get_element_count() ; i++){
-		const auto& value = vec2.vector_hamt_ptr->load_element(i);
-		retain_value(backend, value, element_itype);
-	}
-	return vec2;
+	return push_back_hamt_nonpod(backend, vec, type_t(vec_type), element);
 }
 
 
@@ -1264,7 +1224,7 @@ static std::vector<specialization_t> make_push_back_specializations(llvm::LLVMCo
 	);
 	return {
 //		specialization_t { { "push_back", make_intrinsic_llvm_function_type(type_lookup, make_push_back_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__push_back) }, xx),
-		specialization_t { eresolved_type::k_string,				{ "push_back__string", function_type, reinterpret_cast<void*>(push_back__string) } },
+		specialization_t { eresolved_type::k_string,				{ "push_back__string", function_type, reinterpret_cast<void*>(floydrt_push_back__string) } },
 		specialization_t { eresolved_type::k_vector_carray_pod,		{ "push_back_carray_pod", function_type, reinterpret_cast<void*>(floydrt_push_back_carray_pod) } },
 		specialization_t { eresolved_type::k_vector_carray_nonpod,	{ "push_back_carray_nonpod", function_type, reinterpret_cast<void*>(floydrt_push_back_carray_nonpod) } },
 		specialization_t { eresolved_type::k_vector_hamt_pod,		{ "push_back_hamt_pod", function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_pod) } },

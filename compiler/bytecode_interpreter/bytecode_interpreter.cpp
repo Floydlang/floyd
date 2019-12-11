@@ -597,6 +597,7 @@ bool interpreter_t::check_invariant() const {
 #endif
 
 
+
 //////////////////////////////////////////		INSTRUCTIONS
 
 
@@ -764,11 +765,8 @@ static void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t targ
 	vm._stack.write_register__external_value(dest_reg, result);
 }
 
-/*
-	??? Make stub bc_static_frame_t for each host function to make call conventions same as Floyd functions.
-*/
+//	??? Make stub bc_static_frame_t for each host function to make call conventions same as Floyd functions.
 
-//	??? Very slow
 //	Notice: host calls and floyd calls have the same type -- we cannot detect host calls until we have a callee value.
 static void call_native(interpreter_t& vm, int target_reg, const func_link_t& func_link, int callee_arg_count){
 	QUARK_ASSERT(vm.check_invariant());
@@ -820,7 +818,6 @@ static void call_native(interpreter_t& vm, int target_reg, const func_link_t& fu
 	}
 }
 
-//??? Crazy implementation right now that searches for the function to call.
 //	We need to examine the callee, since we support magic argument lists of varying size.
 static void do_call(interpreter_t& vm, int target_reg, const runtime_value_t callee, int callee_arg_count){
 	QUARK_ASSERT(vm.check_invariant());
@@ -867,6 +864,16 @@ static void do_call(interpreter_t& vm, int target_reg, const runtime_value_t cal
 		}
 	}
 }
+
+inline void write_reg_rc(value_backend_t& backend, runtime_value_t regs[], int dest_reg, const type_t& dest_type, runtime_value_t value){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(dest_type.check_invariant());
+
+	release_value(backend, regs[dest_reg], dest_type);
+	retain_value(backend, value, dest_type);
+	regs[dest_reg] = value;
+}
+
 
 std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions){
 	QUARK_ASSERT(vm.check_invariant());
@@ -1057,7 +1064,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			int pos = static_cast<int>(stack._stack_size) - 1;
 			for(int m = 0 ; m < n ; m++){
 				const auto type = stack._entry_types.back();
-				release_value(vm._stack._backend, stack._entries[pos], type);
+				release_value(backend, stack._entries[pos], type);
 				pos--;
 				stack._entry_types.pop_back();
 			}
@@ -1134,11 +1141,12 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
 			const auto data_ptr = regs[i._b].struct_ptr->get_data_ptr();
 			const auto member_index = i._c;
-			const auto value = load_struct_member(vm._stack._backend, data_ptr, type, member_index);
+			const auto value = load_struct_member(backend, data_ptr, type, member_index);
 
-			release_value(vm._stack._backend, regs[i._a], type);
-			retain_value(vm._stack._backend, value, type);
+			release_value(backend, regs[i._a], type);
+			retain_value(backend, value, type);
 			regs[i._a] = value;
+
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
@@ -1217,10 +1225,12 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 */
 
-		case bc_opcode::k_lookup_element_vector_w_external_elements: {
+		case bc_opcode::k_lookup_element_vector_w_external_elements:
+		case bc_opcode::k_lookup_element_vector_w_inplace_elements:
+		{
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg__external_value(i._a));
-			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
+//			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
 			QUARK_ASSERT(stack.check_reg_int(i._c));
 
 			const auto& vector_type = frame_ptr->_symbols[i._b].second._value_type;
@@ -1232,32 +1242,13 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			else{
 				const auto element_type = peek2(types, vector_type).get_vector_element_type(types);
 				const auto e = lookup_vector_element(backend, vector_type, regs[i._b], lookup_index);
-				retain_value(backend, e, element_type);
-				release_value(backend, regs[i._a], element_type);
-				regs[i._a] = e;
+				write_reg_rc(backend, regs, i._a, element_type, e);
 			}
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
+
 /*
-		case bc_opcode::k_lookup_element_vector_w_inplace_elements: {
-			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._b));
-			QUARK_ASSERT(stack.check_reg_int(i._c));
-
-			const auto& vec = regs[i._b]._external->_vector_w_inplace_elements;
-			const auto lookup_index = regs[i._c].int_value;
-			if(lookup_index < 0 || lookup_index >= vec.size()){
-				quark::throw_runtime_error("Lookup in vector: out of bounds.");
-			}
-			else{
-				regs[i._a]._inplace = vec[lookup_index];
-			}
-			QUARK_ASSERT(vm.check_invariant());
-			break;
-		}
-
 		case bc_opcode::k_lookup_element_dict_w_external_values: {
 			QUARK_ASSERT(stack.check_reg__external_value(i._a));
 			QUARK_ASSERT(stack.check_reg_dict_w_external_values(i._b));
@@ -1301,23 +1292,25 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
 			QUARK_ASSERT(i._c == 0);
 
-			const auto& vector_type = frame_ptr->_symbols[i._b].second._value_type;
-			regs[i._a].int_value = get_vector_size(backend, vector_type, regs[i._b]);
+			const auto& type_b = frame_ptr->_symbols[i._b].second._value_type;
+			regs[i._a].int_value = get_vector_size(backend, type_b, regs[i._b]);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
-/*
+
 		case bc_opcode::k_get_size_vector_w_inplace_elements: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_int(i._a));
 			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._b));
 			QUARK_ASSERT(i._c == 0);
 
-			regs[i._a].int_value = regs[i._b]._external->_vector_w_inplace_elements.size();
+			const auto& type_b = frame_ptr->_symbols[i._b].second._value_type;
+			regs[i._a].int_value = get_vector_size(backend, type_b, regs[i._b]);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
 
+/*
 		case bc_opcode::k_get_size_dict_w_external_values: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_int(i._a));
@@ -1346,8 +1339,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_string(i._b));
 			QUARK_ASSERT(i._c == 0);
 
-			const auto size = get_vector_size(backend, type_t::make_string(), regs[i._b]);
-			regs[i._a].int_value = size;
+			regs[i._a].int_value = get_vector_size(backend, type_t::make_string(), regs[i._b]);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
@@ -1374,7 +1366,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
-
+*/
 
 		case bc_opcode::k_pushback_vector_w_external_elements: {
 			QUARK_ASSERT(vm.check_invariant());
@@ -1382,48 +1374,35 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
 			QUARK_ASSERT(stack.check_reg__external_value(i._c));
 
-			const auto peek = peek2(types, frame_ptr->_symbols[i._a].second._value_type);
-			const auto& element_type = peek.get_vector_element_type(types);
+			const auto type_b = frame_ptr->_symbols[i._b].second._value_type;
+			write_reg_rc(backend, regs, i._a, type_b, push_back2(backend, regs[i._b], type_b, regs[i._c]));
 
-			auto elements2 = regs[i._b]._external->_vector_w_external_elements.push_back(bc_external_handle_t(regs[i._c]._external));
-			//??? always allocates a new bc_external_value_t!
-			const auto vec2 = make_vector(types, element_type, elements2);
-			vm._stack.write_register__external_value(i._a, vec2);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
+
 		case bc_opcode::k_pushback_vector_w_inplace_elements: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._a));
 			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._b));
 			QUARK_ASSERT(stack.check_reg(i._c));
 
-			const auto& peek = peek2(types, frame_ptr->_symbols[i._a].second._value_type);
-			const auto& element_type = peek.get_vector_element_type(types);
+			const auto type_b = frame_ptr->_symbols[i._b].second._value_type;
+			write_reg_rc(backend, regs, i._a, type_b, push_back2(backend, regs[i._b], type_b, regs[i._c]));
 
-			//??? optimize - bypass bc_value_t
-			//??? always allocates a new bc_external_value_t!
-			auto elements2 = regs[i._b]._external->_vector_w_inplace_elements.push_back(regs[i._c]._inplace);
-			const auto vec = make_vector(types, element_type, elements2);
-			vm._stack.write_register__external_value(i._a, vec);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
- */
 
 		case bc_opcode::k_pushback_string: {
-			//??? optimize - bypass bc_value_t
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_string(i._a));
 			QUARK_ASSERT(stack.check_reg_string(i._b));
 			QUARK_ASSERT(stack.check_reg_int(i._c));
 
-			std::string str2 = from_runtime_string2(backend, regs[i._b]);
-			const auto ch = regs[i._c].int_value;
-			str2.push_back(static_cast<char>(ch));
+			const auto type_b = frame_ptr->_symbols[i._b].second._value_type;
+			write_reg_rc(backend, regs, i._a, type_b, push_back2(backend, regs[i._b], type_b, regs[i._c]));
 
-			const auto str3 = bc_value_t::make_string(backend, str2);
-			vm._stack.write_register__external_value(i._a, str3);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
@@ -1481,22 +1460,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto dest_reg = i._a;
 			const auto target_itype = i._b;
 			const auto arg_count = i._c;
-
-/*
-			const int arg0_stack_pos = vm._stack.size() - arg_count;
-			immer::vector<bc_value_t> elements2;
-			for(int a = 0 ; a < arg_count ; a++){
-				const auto pos = arg0_stack_pos + a;
-				elements2 = elements2.push_back(stack._entries[pos]);
-			}
-
-			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
-			const auto peek = peek2(types, type);
-			const auto& element_type = peek.get_vector_element_type(types);
-
-			const auto result = make_vector(types, element_type, elements2);
-			vm._stack.write_register__external_value(dest_reg, result);
-*/
 			execute_new_vector_obj(vm, dest_reg, target_itype, arg_count);
 
 			QUARK_ASSERT(vm.check_invariant());
@@ -1546,7 +1509,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 			const auto left = stack.read_register(i._b);
 			const auto right = stack.read_register(i._c);
-			long diff = bc_compare_value_true_deep(vm._stack._backend, left, right, type);
+			long diff = bc_compare_value_true_deep(backend, left, right, type);
 
 			regs[i._a].bool_value = diff <= 0;
 			break;
@@ -1569,7 +1532,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(peek2(types, type).is_int() == false);
 			const auto left = stack.read_register(i._b);
 			const auto right = stack.read_register(i._c);
-			long diff = bc_compare_value_true_deep(vm._stack._backend, left, right, type);
+			long diff = bc_compare_value_true_deep(backend, left, right, type);
 
 			regs[i._a].bool_value = diff < 0;
 			break;
@@ -1591,7 +1554,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(peek2(types, type).is_int() == false);
 			const auto left = stack.read_register(i._b);
 			const auto right = stack.read_register(i._c);
-			long diff = bc_compare_value_true_deep(vm._stack._backend, left, right, type);
+			long diff = bc_compare_value_true_deep(backend, left, right, type);
 
 			regs[i._a].bool_value = diff == 0;
 			break;
@@ -1614,7 +1577,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(peek2(types, type).is_int() == false);
 			const auto left = stack.read_register(i._b);
 			const auto right = stack.read_register(i._c);
-			long diff = bc_compare_value_true_deep(vm._stack._backend, left, right, type);
+			long diff = bc_compare_value_true_deep(backend, left, right, type);
 
 			regs[i._a].bool_value = diff != 0;
 			break;
