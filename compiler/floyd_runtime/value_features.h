@@ -97,6 +97,12 @@ runtime_value_t concat_vector_hamt(value_backend_t& backend, const type_t& type,
 runtime_value_t concatunate_vectors(value_backend_t& backend, const type_t& type, runtime_value_t lhs, runtime_value_t rhs);
 
 
+uint64_t get_vector_size(value_backend_t& backend, const type_t& vector_type, runtime_value_t vec);
+runtime_value_t lookup_vector_element(value_backend_t& backend, const type_t& vector_type, runtime_value_t vec, uint64_t index);
+
+
+
+
 
 /////////////////////////////////////////		INLINES
 

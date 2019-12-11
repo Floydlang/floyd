@@ -1235,6 +1235,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
+*/
 
 		case bc_opcode::k_lookup_element_vector_w_external_elements: {
 			QUARK_ASSERT(vm.check_invariant());
@@ -1242,20 +1243,23 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
 			QUARK_ASSERT(stack.check_reg_int(i._c));
 
-			const auto& vec = regs[i._b]._external->_vector_w_external_elements;
+			const auto vector_type = frame_ptr->_exts[i._b];
 			const auto lookup_index = regs[i._c].int_value;
-			if(lookup_index < 0 || lookup_index >= vec.size()){
+			const auto size = get_vector_size(backend, vector_type, regs[i._b]);
+			if(lookup_index < 0 || lookup_index >= size){
 				quark::throw_runtime_error("Lookup in vector: out of bounds.");
 			}
 			else{
-				auto handle = vec[lookup_index];
-				handle._external->_rc++;
-				release_pod_external(regs[i._a]);
-				regs[i._a]._external = handle._external;
+				const auto element_type = peek2(types, vector_type).get_vector_element_type(types);
+				const auto e = lookup_vector_element(backend, vector_type, regs[i._b], lookup_index);
+				retain_value(backend, e, element_type);
+				release_value(backend, regs[i._a], element_type);
+				regs[i._a] = e;
 			}
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
+/*
 		case bc_opcode::k_lookup_element_vector_w_inplace_elements: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_int(i._a));
@@ -1309,7 +1313,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			}
 			break;
 		}
-
+*/
 
 		case bc_opcode::k_get_size_vector_w_external_elements: {
 			QUARK_ASSERT(vm.check_invariant());
@@ -1317,10 +1321,12 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
 			QUARK_ASSERT(i._c == 0);
 
-			regs[i._a].int_value = regs[i._b]._external->_vector_w_external_elements.size();
+			const auto vector_type = frame_ptr->_exts[i._b];
+			regs[i._a].int_value = get_vector_size(backend, vector_type, regs[i._b]);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
+/*
 		case bc_opcode::k_get_size_vector_w_inplace_elements: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_int(i._a));
@@ -1360,7 +1366,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_string(i._b));
 			QUARK_ASSERT(i._c == 0);
 
-			regs[i._a].int_value = regs[i._b].vector_carray_ptr->get_element_count();
+			const auto size = get_vector_size(backend, type_t::make_string(), regs[i._b]);
+			regs[i._a].int_value = size;
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}

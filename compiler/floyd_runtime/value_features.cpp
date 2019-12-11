@@ -1448,13 +1448,13 @@ runtime_value_t concatunate_vectors(value_backend_t& backend, const type_t& type
 	QUARK_ASSERT(lhs.check_invariant());
 	QUARK_ASSERT(rhs.check_invariant());
 
-	if(peek2(backend.types, type).is_string()){
+	if(type.is_string()){
 		return concat_strings(backend, lhs, rhs);
 	}
-	else if(is_vector_carray(backend.types, backend.config, type_t(type))){
+	else if(is_vector_carray(backend.types, backend.config, type)){
 		return concat_vector_carray(backend, type, lhs, rhs);
 	}
-	else if(is_vector_hamt(backend.types, backend.config, type_t(type))){
+	else if(is_vector_hamt(backend.types, backend.config, type)){
 		return concat_vector_hamt(backend, type, lhs, rhs);
 	}
 	else{
@@ -1462,6 +1462,62 @@ runtime_value_t concatunate_vectors(value_backend_t& backend, const type_t& type
 		throw std::exception();
 	}
 }
+
+
+uint64_t get_vector_size(value_backend_t& backend, const type_t& vector_type, runtime_value_t vec){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(vector_type.check_invariant());
+	QUARK_ASSERT(vec.check_invariant());
+
+	if(vector_type.is_string()){
+		return vec.vector_carray_ptr->get_element_count();
+	}
+	else if(is_vector_carray(backend.types, backend.config, vector_type)){
+		return vec.vector_carray_ptr->get_element_count();
+	}
+	else if(is_vector_hamt(backend.types, backend.config, vector_type)){
+		return vec.vector_hamt_ptr->get_element_count();
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+runtime_value_t lookup_vector_element(value_backend_t& backend, const type_t& vector_type, runtime_value_t vec, uint64_t index){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(vector_type.check_invariant());
+	QUARK_ASSERT(vec.check_invariant());
+	QUARK_ASSERT(index >= 0);
+
+	if(vector_type.is_string()){
+		//??? slow
+		const auto s = from_runtime_string2(backend, vec);
+		return runtime_value_t { .int_value = s[index] };
+	}
+	else if(is_vector_carray(backend.types, backend.config, vector_type)){
+#if DEBUG
+		const auto size = vec.vector_carray_ptr->get_element_count();
+		QUARK_ASSERT(index < size);
+#endif
+
+		return vec.vector_carray_ptr->get_element_ptr()[index];
+	}
+	else if(is_vector_hamt(backend.types, backend.config, vector_type)){
+#if DEBUG
+		const auto size = vec.vector_hamt_ptr->get_element_count();
+		QUARK_ASSERT(index < size);
+#endif
+
+		return vec.vector_hamt_ptr->load_element(index);
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+
 
 
 
