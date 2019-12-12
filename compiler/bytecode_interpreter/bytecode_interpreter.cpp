@@ -554,7 +554,7 @@ interpreter_t::interpreter_t(const bc_program_t& program, bc_runtime_handler_i& 
 			func_lookup,
 			bc_make_struct_layouts(program._types),
 			program._types,
-			config_t { vector_backend::hamt, dict_backend::hamt, false }
+			config_t { vector_backend::hamt, dict_backend::hamt, true }//??? let clients control config_t!
 		),
 		&_imm->_program._globals
 	);

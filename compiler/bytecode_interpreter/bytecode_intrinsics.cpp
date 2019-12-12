@@ -87,87 +87,6 @@ static bc_value_t bc_intrinsic__typeof(interpreter_t& vm, const bc_value_t args[
 //////////////////////////////////////////		UPDATE
 
 
-/*
-
-//??? The update mechanism uses strings == slow.
-static bc_value_t update_struct_member_shallow(interpreter_t& vm, const bc_value_t& obj, const std::string& member_name, const bc_value_t& new_value){
-	QUARK_ASSERT(obj.check_invariant());
-	const auto& types = vm._imm->_program._types;
-	QUARK_ASSERT(peek2(types, obj._type).is_struct());
-	QUARK_ASSERT(member_name.empty() == false);
-	QUARK_ASSERT(new_value.check_invariant());
-
-	const auto& values = obj.get_struct_value(vm._backend);
-	const auto& struct_def = peek2(types, obj._type).get_struct(types);
-
-	int member_index = find_struct_member_index(struct_def, member_name);
-	if(member_index == -1){
-		quark::throw_runtime_error("Unknown member.");
-	}
-
-#if DEBUG && 0
-	QUARK_TRACE(typeid_to_compact_string(new_value._type));
-	QUARK_TRACE(typeid_to_compact_string(struct_def._members[member_index]._type));
-
-	const auto dest_member_entry = struct_def._members[member_index];
-#endif
-
-	auto values2 = values;
-	values2[member_index] = new_value;
-
-	auto s2 = bc_value_t::make_struct_value(vm._backend, obj._type, values2);
-	return s2;
-}
-
-static bc_value_t update_struct_member_deep(interpreter_t& vm, const bc_value_t& obj, const std::vector<std::string>& path, const bc_value_t& new_value){
-	QUARK_ASSERT(obj.check_invariant());
-	QUARK_ASSERT(path.empty() == false);
-	QUARK_ASSERT(new_value.check_invariant());
-
-	if(path.size() == 1){
-		return update_struct_member_shallow(vm, obj, path[0], new_value);
-	}
-	else{
-		const auto& types = vm._imm->_program._types;
-
-		std::vector<std::string> subpath = path;
-		subpath.erase(subpath.begin());
-
-		const auto& values = obj.get_struct_value(vm._backend);
-		const auto& struct_def = peek2(types, obj._type).get_struct(types);
-		int member_index = find_struct_member_index(struct_def, path[0]);
-		if(member_index == -1){
-			quark::throw_runtime_error("Unknown member.");
-		}
-
-		const auto& child_value = values[member_index];
-		const auto& child_type = struct_def._members[member_index]._type;
-		if(peek2(types, child_type).is_struct() == false){
-			quark::throw_runtime_error("Value type not matching struct member type.");
-		}
-
-		const auto child2 = update_struct_member_deep(vm, child_value, subpath, new_value);
-		const auto obj2 = update_struct_member_shallow(vm, obj, path[0], child2);
-		return obj2;
-	}
-}
-
-bc_value_t update_struct_member(interpreter_t& vm, const bc_value_t str, const std::vector<std::string>& path, const bc_value_t& value){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(str.check_invariant());
-
-	const auto& types = vm._imm->_program._types;
-
-	QUARK_ASSERT(peek2(types, str._type).is_struct());
-	QUARK_ASSERT(path.empty() == false);
-	QUARK_ASSERT(value.check_invariant());
-//	QUARK_ASSERT(str._type.get_struct_ref()->_members[member_index]._type == value._type);
-
-//	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
-
-	return update_struct_member_deep(vm, str, path, value);
-}
-*/
 
 //??? move to value_features.h. Move to intrinsics for BC.
 static bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_value_t& lookup_key, const bc_value_t& new_value){
@@ -217,7 +136,7 @@ static bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, cons
 			quark::throw_runtime_error("Update element must match vector type.");
 		}
 		else{
-			return bc_value_t(backend, obj1._type, update_vector(backend, obj1._pod, obj1_peek.get_data(), lookup_key._pod, new_value._pod));
+			return bc_value_t(backend, obj1._type, update_element__vector(backend, obj1._pod, obj1_peek.get_data(), lookup_key._pod, new_value._pod));
 		}
 	}
 	else if(obj1_peek.is_dict()){
@@ -239,10 +158,21 @@ static bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, cons
 			quark::throw_runtime_error("You must specify structure member using string.");
 		}
 		else{
-//???			const auto nodes = split_on_chars(seq_t(lookup_key.get_string_value(backend)), ".");
-//			return update_struct_member(vm, obj1, nodes, new_value);
-			QUARK_ASSERT(false);
-			throw std::exception();
+			//??? Instruction should keep the member index, not the name of the member!
+			const auto& struct_def = obj1_peek.get_struct(types);
+			const auto key = from_runtime_string2(backend, lookup_key._pod);
+			int member_index = find_struct_member_index(struct_def, key);
+			if(member_index == -1){
+				quark::throw_runtime_error("Unknown member.");
+			}
+
+			trace_heap(backend.heap);
+
+			const auto result = bc_value_t(backend, obj1._type, update_struct_member(backend, obj1._pod, obj1._type, member_index, new_value._pod, new_value_peek));
+
+			trace_heap(backend.heap);
+
+			return result;
 		}
 	}
 	else {

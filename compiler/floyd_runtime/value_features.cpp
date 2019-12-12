@@ -602,7 +602,7 @@ int compare_values(value_backend_t& backend, int64_t op, const runtime_type_t ty
 	}
 }
 
-runtime_value_t update_vector(value_backend_t& backend, runtime_value_t obj1, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value){
+runtime_value_t update_element__vector(value_backend_t& backend, runtime_value_t obj1, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& types = backend.types;
@@ -614,14 +614,14 @@ runtime_value_t update_vector(value_backend_t& backend, runtime_value_t obj1, ru
 
 	const auto backend_mode = backend.config.vector_backend_mode;
 	if(backend_mode == vector_backend::carray){
-		return update__vector_carray(backend, obj1, coll_type, index, value);
+		return update_element__vector_carray(backend, obj1, coll_type, index, value);
 	}
 	else if(backend_mode == vector_backend::hamt){
 		if(element_is_rc){
-			return update__vector_hamt_nonpod(backend, obj1, coll_type, index, value);
+			return update_element__vector_hamt_nonpod(backend, obj1, coll_type, index, value);
 		}
 		else{
-			return update__vector_hamt_pod(backend, obj1, coll_type, index, value);
+			return update_element__vector_hamt_pod(backend, obj1, coll_type, index, value);
 		}
 	}
 	else{
@@ -648,7 +648,7 @@ runtime_value_t update_dict(value_backend_t& backend, runtime_value_t obj1, runt
 
 
 
-const runtime_value_t update__vector_carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value){
+const runtime_value_t update_element__vector_carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto vec = unpack_vector_carray_arg(backend, coll_value, coll_type);
@@ -738,6 +738,99 @@ const runtime_value_t update__dict_hamt(value_backend_t& backend, runtime_value_
 
 	return dict2;
 }
+
+
+
+
+
+/*
+//??? The update mechanism uses strings == slow.
+static bc_value_t update_struct_member_shallow(interpreter_t& vm, const bc_value_t& obj, const std::string& member_name, const bc_value_t& new_value){
+	QUARK_ASSERT(obj.check_invariant());
+	const auto& types = vm._imm->_program._types;
+	QUARK_ASSERT(peek2(types, obj._type).is_struct());
+	QUARK_ASSERT(member_name.empty() == false);
+	QUARK_ASSERT(new_value.check_invariant());
+
+	const auto& values = obj.get_struct_value(vm._backend);
+	const auto& struct_def = peek2(types, obj._type).get_struct(types);
+
+	int member_index = find_struct_member_index(struct_def, member_name);
+	if(member_index == -1){
+		quark::throw_runtime_error("Unknown member.");
+	}
+
+#if DEBUG && 0
+	QUARK_TRACE(typeid_to_compact_string(new_value._type));
+	QUARK_TRACE(typeid_to_compact_string(struct_def._members[member_index]._type));
+
+	const auto dest_member_entry = struct_def._members[member_index];
+#endif
+
+	auto values2 = values;
+	values2[member_index] = new_value;
+
+	auto s2 = bc_value_t::make_struct_value(vm._backend, obj._type, values2);
+	return s2;
+}
+
+static bc_value_t update_struct_member_deep(interpreter_t& vm, const bc_value_t& obj, const std::vector<std::string>& path, const bc_value_t& new_value){
+	QUARK_ASSERT(obj.check_invariant());
+	QUARK_ASSERT(path.empty() == false);
+	QUARK_ASSERT(new_value.check_invariant());
+
+	if(path.size() == 1){
+		return update_struct_member_shallow(vm, obj, path[0], new_value);
+	}
+	else{
+		const auto& types = vm._imm->_program._types;
+
+		std::vector<std::string> subpath = path;
+		subpath.erase(subpath.begin());
+
+		const auto& values = obj.get_struct_value(vm._backend);
+		const auto& struct_def = peek2(types, obj._type).get_struct(types);
+		int member_index = find_struct_member_index(struct_def, path[0]);
+		if(member_index == -1){
+			quark::throw_runtime_error("Unknown member.");
+		}
+
+		const auto& child_value = values[member_index];
+		const auto& child_type = struct_def._members[member_index]._type;
+		if(peek2(types, child_type).is_struct() == false){
+			quark::throw_runtime_error("Value type not matching struct member type.");
+		}
+
+		const auto child2 = update_struct_member_deep(vm, child_value, subpath, new_value);
+		const auto obj2 = update_struct_member_shallow(vm, obj, path[0], child2);
+		return obj2;
+	}
+}
+*/
+
+//??? Slow
+runtime_value_t update_struct_member(value_backend_t& backend, runtime_value_t struct_value, const type_t& struct_type0, int member_index, runtime_value_t value, const type_t& member_type){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(peek2(backend.types, struct_type0).is_struct());
+	QUARK_ASSERT(value.check_invariant());
+
+	QUARK_ASSERT(struct_value.struct_ptr->check_invariant());
+
+	const auto& struct_type_peek = peek2(backend.types, struct_type0);
+	const auto& value2 = bc_value_t(backend, peek2(backend.types, member_type), value);
+	const auto& values = from_runtime_struct(backend, struct_value, struct_type_peek);
+
+	auto values2 = values;
+	values2[member_index] = value2;
+
+	auto result = bc_value_t::make_struct_value(backend, struct_type0, values2);
+	retain_value(backend, result._pod, struct_type0);
+	return result._pod;
+}
+
+
+
 
 
 

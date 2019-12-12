@@ -55,7 +55,8 @@ namespace floyd {
 ////////////////////////////////	CONFIGURATION
 
 
-#define HEAP_MUTEX 0
+const bool k_heap_mutex = true;
+
 #define ATOMIC_RC 1
 
 
@@ -112,9 +113,9 @@ struct heap_t {
 		allocation_id_generator(1000000),
 		record_allocs_flag(record_allocs_flag)
 	{
-#if HEAP_MUTEX
-		alloc_records_mutex = std::make_shared<std::recursive_mutex>();
-#endif
+		if(k_heap_mutex){
+			alloc_records_mutex = std::make_shared<std::recursive_mutex>();
+		}
 	}
 	~heap_t();
 	public: bool check_invariant() const;
@@ -123,9 +124,7 @@ struct heap_t {
 
 	////////////////////////////////		STATE
 	uint64_t magic;
-#if HEAP_MUTEX
 	std::shared_ptr<std::recursive_mutex> alloc_records_mutex;
-#endif
 	std::vector<heap_rec_t> alloc_records;
 
 	uint64_t allocation_id_generator;
@@ -796,6 +795,8 @@ json_t bcvalue_and_type_to_json(value_backend_t& backend, const bc_value_t& v);
 int bc_compare_value_true_deep(value_backend_t& backend, const bc_value_t& left, const bc_value_t& right, const type_t& type);
 
 
+std::vector<bc_value_t> from_runtime_struct(value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type);
+runtime_value_t to_runtime_struct(value_backend_t& backend, const type_t& struct_type, const std::vector<bc_value_t>& values);
 
 
 ////////////////////////////////		bc_value_t JSON
@@ -816,6 +817,9 @@ struct struct_layout_t {
 	std::vector<member_info_t> members;
 	size_t size;
 };
+
+
+bool is_struct_pod(const types_t& types, const struct_type_desc_t& struct_def);
 
 
 ////////////////////////////////		func_entry_t

@@ -1591,7 +1591,7 @@ static const runtime_value_t update_vector_carray_pod(floyd_runtime_t* frp, runt
 	QUARK_ASSERT(peek2(backend.types, type1).is_int());
 #endif
 
-	return update__vector_carray(backend, coll_value, coll_type, key_value, value);
+	return update_element__vector_carray(backend, coll_value, coll_type, key_value, value);
 }
 static const runtime_value_t update_vector_carray_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
@@ -1608,7 +1608,7 @@ static const runtime_value_t update_vector_carray_nonpod(floyd_runtime_t* frp, r
 	QUARK_ASSERT(peek2(backend.types, type1).is_int());
 #endif
 
-	return update__vector_carray(backend, coll_value, coll_type, key_value, value);
+	return update_element__vector_carray(backend, coll_value, coll_type, key_value, value);
 }
 static const runtime_value_t update_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
@@ -1625,7 +1625,7 @@ static const runtime_value_t update_vector_hamt_pod(floyd_runtime_t* frp, runtim
 	QUARK_ASSERT(peek2(backend.types, type1).is_int());
 #endif
 
-	return update__vector_hamt_pod(backend, coll_value, coll_type, key_value, value);
+	return update_element__vector_hamt_pod(backend, coll_value, coll_type, key_value, value);
 }
 static const runtime_value_t update_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
@@ -1642,7 +1642,7 @@ static const runtime_value_t update_vector_hamt_nonpod(floyd_runtime_t* frp, run
 	QUARK_ASSERT(peek2(backend.types, type1).is_int());
 #endif
 
-	return update__vector_hamt_nonpod(backend, coll_value, coll_type, key_value, value);
+	return update_element__vector_hamt_nonpod(backend, coll_value, coll_type, key_value, value);
 }
 
 

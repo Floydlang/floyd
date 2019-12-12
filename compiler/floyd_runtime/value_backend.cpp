@@ -20,9 +20,6 @@
 namespace floyd {
 
 
-
-
-
 #if 0
 void save_page(const std::string &url){
     // simulate a long page fetch
@@ -40,29 +37,31 @@ void save_page(const std::string &url){
 
 
 
-void trace_alloc(const heap_rec_t& e){
+static void trace_alloc(const heap_rec_t& e){
 	QUARK_TRACE_SS(""
+
+
+		<< std::to_string(e.alloc_ptr->alloc_id)
 //		<< "used: " << e.in_use
-		<< " rc: " << e.alloc_ptr->rc
-		<< " debug_info: " << get_debug_info(*e.alloc_ptr)
-		<< " data[0]: " << e.alloc_ptr->data[0]
-		<< " data[1]: " << e.alloc_ptr->data[1]
-		<< " data[2]: " << e.alloc_ptr->data[2]
-		<< " data[3]: " << e.alloc_ptr->data[3]
+		<< "\t" << "rc: " << e.alloc_ptr->rc
+		<< "\t" << "debug_info: " << get_debug_info(*e.alloc_ptr)
+		<< "\t" << "debug_value_type: " << e.alloc_ptr->debug_value_type.get_data()
+		<< "\t" << "magic: " << value_to_hex_string(e.alloc_ptr->magic, 8)
+		<< "\t" << "data[0]: " << e.alloc_ptr->data[0]
+		<< "\t" << "data[1]: " << e.alloc_ptr->data[1]
+		<< "\t" << "data[2]: " << e.alloc_ptr->data[2]
+		<< "\t" << "data[3]: " << e.alloc_ptr->data[3]
 	);
 }
 
 void trace_heap(const heap_t& heap){
 	QUARK_ASSERT(heap.check_invariant());
 
-	if(false){
+	if(true){
 		QUARK_SCOPED_TRACE("HEAP");
 
-		if(heap.record_allocs_flag){
-#if HEAP_MUTEX
+		if(heap.record_allocs_flag && k_heap_mutex){
 			std::lock_guard<std::recursive_mutex> guard(*heap.alloc_records_mutex);
-#endif
-
 			for(int i = 0 ; i < heap.alloc_records.size() ; i++){
 				const auto& e = heap.alloc_records[i];
 				trace_alloc(e);
@@ -128,16 +127,13 @@ static inline void release_ref(heap_alloc_64_t& alloc){
 }
 
 
-heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, type_t debug_value_type, const char debug_string[]){
+
+static heap_alloc_64_t* alloc_64__internal(heap_t& heap, uint64_t allocation_word_count, type_t debug_value_type, const char debug_string[]){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(debug_string != nullptr);
 
 	const auto header_size = sizeof(heap_alloc_64_t);
 	QUARK_ASSERT((header_size % 8) == 0);
-
-#if HEAP_MUTEX
-	std::lock_guard<std::recursive_mutex> guard(*heap.alloc_records_mutex);
-#endif
 
 	const auto malloc_size = header_size + allocation_word_count * sizeof(uint64_t);
 	void* alloc0 = std::malloc(malloc_size);
@@ -155,6 +151,21 @@ heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, type_t d
 	QUARK_ASSERT(alloc->check_invariant());
 	QUARK_ASSERT(heap.check_invariant());
 	return alloc;
+}
+heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, type_t debug_value_type, const char debug_string[]){
+	QUARK_ASSERT(heap.check_invariant());
+	QUARK_ASSERT(debug_string != nullptr);
+
+	const auto header_size = sizeof(heap_alloc_64_t);
+	QUARK_ASSERT((header_size % 8) == 0);
+
+	if(k_heap_mutex){
+		std::lock_guard<std::recursive_mutex> guard(*heap.alloc_records_mutex);
+		return alloc_64__internal(heap, allocation_word_count, debug_value_type, debug_string);
+	}
+	else{
+		return alloc_64__internal(heap, allocation_word_count, debug_value_type, debug_string);
+	}
 }
 
 
@@ -236,12 +247,8 @@ bool heap_alloc_64_t::check_invariant() const{
 
 
 
-void dispose_alloc(heap_alloc_64_t& alloc){
+static void dispose_alloc__internal(heap_alloc_64_t& alloc){
 	QUARK_ASSERT(alloc.check_invariant());
-
-#if HEAP_MUTEX
-	std::lock_guard<std::recursive_mutex> guard(*alloc.heap->alloc_records_mutex);
-#endif
 
 	if(alloc.heap->record_allocs_flag){
 		auto it = std::find_if(alloc.heap->alloc_records.begin(), alloc.heap->alloc_records.end(), [&](heap_rec_t& e){ return e.alloc_ptr == &alloc; });
@@ -267,7 +274,17 @@ void dispose_alloc(heap_alloc_64_t& alloc){
 
 	std::free(&alloc);
 }
+void dispose_alloc(heap_alloc_64_t& alloc){
+	QUARK_ASSERT(alloc.check_invariant());
 
+	if(k_heap_mutex){
+		std::lock_guard<std::recursive_mutex> guard(*alloc.heap->alloc_records_mutex);
+		dispose_alloc__internal(alloc);
+	}
+	else{
+		dispose_alloc__internal(alloc);
+	}
+}
 
 
 bool heap_t::check_invariant() const{
@@ -295,15 +312,12 @@ bool heap_t::check_invariant() const{
 	return true;
 }
 
-int heap_t::count_used() const {
-	QUARK_ASSERT(check_invariant());
+static int count_used__internal(const heap_t& heap){
+	QUARK_ASSERT(heap.check_invariant());
 
 	int result = 0;
-#if HEAP_MUTEX
-	std::lock_guard<std::recursive_mutex> guard(*alloc_records_mutex);
-#endif
-	if(record_allocs_flag){
-		for(const auto& e: alloc_records){
+	if(heap.record_allocs_flag){
+		for(const auto& e: heap.alloc_records){
 			if(e.alloc_ptr->rc){
 				result = result + 1;
 			}
@@ -312,6 +326,17 @@ int heap_t::count_used() const {
 	}
 	else{
 		return 0;
+	}
+}
+int heap_t::count_used() const {
+	QUARK_ASSERT(check_invariant());
+
+	if(k_heap_mutex){
+		std::lock_guard<std::recursive_mutex> guard(*alloc_records_mutex);
+		return count_used__internal(*this);
+	}
+	else{
+		return count_used__internal(*this);
 	}
 }
 
@@ -1209,47 +1234,51 @@ bc_value_t::bc_value_t(const type_t& type_id) :
 
 	QUARK_ASSERT(check_invariant());
 }
-	static std::vector<bc_value_t> from_runtime_struct(value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
-		QUARK_ASSERT(backend.check_invariant());
-		QUARK_ASSERT(encoded_value.check_invariant());
-		QUARK_ASSERT(type.check_invariant());
 
-		const auto& type_peek = peek2(backend.types, type);
 
-		const auto& struct_layout = find_struct_layout(backend, type_peek);
-		const auto& struct_def = type_peek.get_struct(backend.types);
-		const auto struct_base_ptr = encoded_value.struct_ptr->get_data_ptr();
+std::vector<bc_value_t> from_runtime_struct(value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(encoded_value.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
 
-		std::vector<bc_value_t> members;
-		int member_index = 0;
-		for(const auto& e: struct_def._members){
-			const auto offset = struct_layout.second.members[member_index].offset;
-			const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
-			const auto member_value = bc_value_t(backend, e._type, *member_ptr);
-			members.push_back(member_value);
-			member_index++;
-		}
-		return members;
+	const auto& type_peek = peek2(backend.types, type);
+
+	const auto& struct_layout = find_struct_layout(backend, type_peek);
+	const auto& struct_def = type_peek.get_struct(backend.types);
+	const auto struct_base_ptr = encoded_value.struct_ptr->get_data_ptr();
+
+	std::vector<bc_value_t> members;
+	int member_index = 0;
+	for(const auto& e: struct_def._members){
+		const auto offset = struct_layout.second.members[member_index].offset;
+		const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
+		const auto member_value = bc_value_t(backend, e._type, *member_ptr);
+		members.push_back(member_value);
+		member_index++;
 	}
+	return members;
+}
 
-	static runtime_value_t to_runtime_struct(value_backend_t& backend, const type_t& struct_type, const std::vector<bc_value_t>& values){
-		QUARK_ASSERT(backend.check_invariant());
+runtime_value_t to_runtime_struct(value_backend_t& backend, const type_t& struct_type, const std::vector<bc_value_t>& values){
+	QUARK_ASSERT(backend.check_invariant());
 
-		const auto& struct_layout = find_struct_layout(backend, struct_type);
+	const auto& struct_layout = find_struct_layout(backend, struct_type);
 
-		auto s = alloc_struct(backend.heap, struct_layout.second.size, struct_type);
-		const auto struct_base_ptr = s->get_data_ptr();
+	auto s = alloc_struct(backend.heap, struct_layout.second.size, struct_type);
+	const auto struct_base_ptr = s->get_data_ptr();
 
-		int member_index = 0;
-		for(const auto& e: values){
-			const auto offset = struct_layout.second.members[member_index].offset;
-			const auto member_ptr = reinterpret_cast<void*>(struct_base_ptr + offset);
-			const auto member_type = e._type;
-			store_via_ptr2(backend.types, member_ptr, member_type, e._pod);
-			member_index++;
-		}
-		return make_runtime_struct(s);
+	int member_index = 0;
+	for(const auto& e: values){
+		const auto offset = struct_layout.second.members[member_index].offset;
+		const auto member_ptr = reinterpret_cast<void*>(struct_base_ptr + offset);
+		const auto member_type = e._type;
+		store_via_ptr2(backend.types, member_ptr, dereference_type(backend.types, member_type), e._pod);
+		member_index++;
 	}
+	return make_runtime_struct(s);
+}
+
+
 
 bc_value_t bc_value_t::make_struct_value(value_backend_t& backend, const type_t& struct_type, const std::vector<bc_value_t>& values){
 	QUARK_ASSERT(backend.check_invariant());
@@ -1646,6 +1675,18 @@ json_t bcvalue_and_type_to_json(value_backend_t& backend, const bc_value_t& v){
 
 
 
+bool is_struct_pod(const types_t& types, const struct_type_desc_t& struct_def){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(struct_def.check_invariant());
+
+	for(const auto& e: struct_def._members){
+		const auto& member_type = e._type;
+		if(is_rc_value(types, member_type)){
+			return false;
+		}
+	}
+	return true;
+}
 
 
 

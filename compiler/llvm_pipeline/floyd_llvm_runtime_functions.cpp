@@ -674,24 +674,8 @@ llvm::Value* generate_load_struct_member(llvm_function_generator_t& gen_acc, llv
 
 
 
-static bool is_struct_pod(const types_t& types, const struct_type_desc_t& struct_def){
-	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(struct_def.check_invariant());
-
-	for(const auto& e: struct_def._members){
-		const auto& member_type = e._type;
-		if(is_rc_value(types, member_type)){
-			return false;
-		}
-	}
-	return true;
-}
-
-
-
-//??? struct_type find_struct_layout() is SLOW right now.
-
 //??? optimize for speed. Most things can be precalculated.
+//??? struct_type find_struct_layout() is SLOW right now.
 //??? Generate an add_ref-function for each struct type.
 //??? Inline store of new member -- same as generate_resolve_member_expression().
 
@@ -818,7 +802,7 @@ llvm::Value* generate_update_struct_member(llvm_function_generator_t& gen_acc, l
 	const bool pod = is_struct_pod(types, struct_def);
 
 	if(pod){
-		const auto res = resolve_func(gen_acc.gen.link_map, "copy_struct");
+		const auto copy_struct_f = resolve_func(gen_acc.gen.link_map, "copy_struct");
 
 		auto& exact_struct_type = *get_exact_struct_type_byvalue(gen_acc.gen.type_lookup, struct_type);
 
@@ -833,7 +817,7 @@ llvm::Value* generate_update_struct_member(llvm_function_generator_t& gen_acc, l
 			llvm::ConstantInt::get(builder.getInt64Ty(), struct_bytes),
 			generate_itype_constant(gen_acc.gen, struct_type),
 		};
-		auto copy_reg = builder.CreateCall(res.llvm_codegen_f, args, "");
+		auto copy_reg = builder.CreateCall(copy_struct_f.llvm_codegen_f, args, "");
 		generate_store_struct_member_mutate(gen_acc, *copy_reg, struct_type, member_index, value_reg);
 		return copy_reg;
 	}
