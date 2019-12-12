@@ -39,7 +39,7 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vec
 
 bc_program_t compile_to_bytecode(const compilation_unit_t& cu);
 
-run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& main_args);
+run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& main_args, const config_t& config);
 
 std::vector<test_t> collect_tests(interpreter_t& vm);
 

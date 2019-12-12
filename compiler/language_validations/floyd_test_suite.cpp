@@ -5648,7 +5648,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "map()", "map over [int]", ""){
 	)");
 }
 
-FLOYD_LANG_PROOF("Floyd test suite", "map()", "map over [int]", ""){
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "map()", "map over [int]", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let a = [ 10, 11, 12 ]

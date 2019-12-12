@@ -398,7 +398,7 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 		};
 		handler_t handler { out };
 
-		auto interpreter = floyd::interpreter_t(program, handler);
+		auto interpreter = floyd::interpreter_t(program, command2.compiler_settings.config, handler);
 
 		//	Run tests before calling main()?
 		if(command2.run_tests){
@@ -415,7 +415,7 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 			}
 		}
 
-		const auto result = floyd::run_program_bc(interpreter, command2.floyd_main_args);
+		const auto result = floyd::run_program_bc(interpreter, command2.floyd_main_args, command2.compiler_settings.config);
 		if(result.process_results.size() == 0){
 			return static_cast<int>(result.main_result);
 		}

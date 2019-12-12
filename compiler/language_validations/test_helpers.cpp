@@ -119,14 +119,14 @@ struct bc_test_handler_t : public bc_runtime_handler_i {
 };
 
 
-static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std::vector<std::string>& main_args){
+static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std::vector<std::string>& main_args, const config_t& config){
 	try {
 		const auto exe = generate_bytecode(semast);
 
 		bc_test_handler_t handler;
 
 		//	Runs global code.
-		auto interpreter = interpreter_t(exe, handler);
+		auto interpreter = interpreter_t(exe, config, handler);
 
 		std::vector<test_t> all_tests = collect_tests(interpreter);
 		const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
@@ -137,7 +137,7 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 			return test_report_t{ {}, {}, {}, report };
 		}
 
-		auto run_output = run_program_bc(interpreter, main_args);
+		auto run_output = run_program_bc(interpreter, main_args, config);
 
 		const auto result_variable = find_global_symbol2(interpreter, "result");
 		value_t result_global;
@@ -241,7 +241,7 @@ void test_floyd(const quark::call_context_t& context, const compilation_unit_t& 
 
 
 	if(k_run_bc){
-		const auto bc_report = run_test_program_bc(semast, main_args);
+		const auto bc_report = run_test_program_bc(semast, main_args, settings.config);
 		if(compare(bc_report, expected, check_printout) == false){
 			QUARK_SCOPED_TRACE("BYTE CODE INTERPRETER FAILURE");
 			ut_verify_report(context, bc_report, expected);

@@ -241,7 +241,7 @@ static void process_process(bc_processes_runtime_t& runtime, int process_id){
 }
 
 //	NOTICE: Will not run the input VM, it makes new VMs for every thread run(!?)
-static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& vm, const std::vector<std::string>& args){
+static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& vm, const std::vector<std::string>& args, const config_t& config){
 	const auto& container_def = vm._imm->_program._container_def;
 
 	if(container_def._clock_busses.empty()){
@@ -268,7 +268,7 @@ static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& v
 			process->_message_type = t.second.msg_type;
 			process->_owning_runtime = &runtime;
 			process->_name_key = t.first;
-			process->_interpreter = std::make_shared<interpreter_t>(vm._imm->_program, *process.get());
+			process->_interpreter = std::make_shared<interpreter_t>(vm._imm->_program, config, *process.get());
 			process->_init_function = find_global_symbol2(*process->_interpreter, t.second.init_func_linkname);
 			process->_msg_function = find_global_symbol2(*process->_interpreter, t.second.msg_func_linkname);
 
@@ -351,7 +351,7 @@ static int64_t bc_call_main(interpreter_t& interpreter, const floyd::value_t& f,
 	}
 }
 
-run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& main_args){
+run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& main_args, const config_t& config){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& main_function = find_global_symbol2(vm, "main");
@@ -360,7 +360,7 @@ run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& m
 		return { main_result_int, {} };
 	}
 	else{
-		const auto output = run_floyd_processes(vm, main_args);
+		const auto output = run_floyd_processes(vm, main_args, config);
 		return run_output_t(0, output);
 	}
 }

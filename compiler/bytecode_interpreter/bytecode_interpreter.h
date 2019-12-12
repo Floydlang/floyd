@@ -1124,7 +1124,7 @@ struct interpreter_imm_t {
 */
 
 struct interpreter_t {
-	public: explicit interpreter_t(const bc_program_t& program, bc_runtime_handler_i& handler);
+	public: explicit interpreter_t(const bc_program_t& program, const config_t& config, bc_runtime_handler_i& handler);
 	public: interpreter_t(const interpreter_t& other) = delete;
 	public: const interpreter_t& operator=(const interpreter_t& other)= delete;
 #if DEBUG

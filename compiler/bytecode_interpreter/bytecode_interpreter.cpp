@@ -491,7 +491,7 @@ std::vector<std::pair<type_t, struct_layout_t>> bc_make_struct_layouts(const typ
 	return result;
 }
 
-interpreter_t::interpreter_t(const bc_program_t& program, bc_runtime_handler_i& handler) :
+interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config, bc_runtime_handler_i& handler) :
 	_stack {
 		{ {}, bc_make_struct_layouts(types_t()), {}, {} },
 		nullptr
@@ -518,7 +518,7 @@ interpreter_t::interpreter_t(const bc_program_t& program, bc_runtime_handler_i& 
 
 	const auto intrinsic_signatures = make_intrinsic_signatures(temp_types);
 
-//?? only add those corelib calls were we can find a global symbol with its name. This lets us find the function_type, alternatively know to NOT link the corelib function.
+	//?? only add those corelib calls were we can find a global symbol with its name. This lets us find the function_type, alternatively know to NOT link the corelib function.
 	const auto corelib_calls1 = mapf<func_link_t>(corelib_calls, [&](const auto& e){
 		const auto& s = intrinsic_signatures.vec;
 		const auto it = std::find_if(s.begin(), s.end(), [e](const auto& m){ return m.name == e.first.name; });
@@ -554,7 +554,7 @@ interpreter_t::interpreter_t(const bc_program_t& program, bc_runtime_handler_i& 
 			func_lookup,
 			bc_make_struct_layouts(program._types),
 			program._types,
-			config_t { vector_backend::hamt, dict_backend::hamt, true }//??? let clients control config_t!
+			config
 		),
 		&_imm->_program._globals
 	);
@@ -1172,7 +1172,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-		/*
 		//	??? Simple JSON-values should not require ext. null, int, bool, empty object, empty array.
 		case bc_opcode::k_lookup_element_json: {
 			QUARK_ASSERT(vm.check_invariant());
@@ -1182,39 +1181,39 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			// reg c points to different types depending on the runtime-type of the json.
 			QUARK_ASSERT(stack.check_reg_any(i._c));
 
-			const auto& parent_json = regs[i._b]._external->_json;
+			const auto& parent_json = regs[i._b].json_ptr->get_json();
 
-			if(parent_json->is_object()){
+			if(parent_json.is_object()){
 				QUARK_ASSERT(stack.check_reg_string(i._c));
 
-				const auto& lookup_key = regs[i._c]._external->_string;
+				const auto& lookup_key = from_runtime_string2(backend, regs[i._c]);
 
 				//	get_object_element() throws if key can't be found.
-				const auto& value = parent_json->get_object_element(lookup_key);
+				const auto& value = parent_json.get_object_element(lookup_key);
 
 				//??? no need to create full bc_value_t here! We only need pod.
-				const auto value2 = bc_value_t::make_json(value);
+				const auto value2 = bc_value_t::make_json(backend, value);
 
-				value2._pod._external->_rc++;
-				release_pod_external(regs[i._a]);
+				release_value(backend, regs[i._a], value2._type);
+				retain_value(backend, value2._pod, value2._type);
 				regs[i._a] = value2._pod;
 			}
-			else if(parent_json->is_array()){
+			else if(parent_json.is_array()){
 				QUARK_ASSERT(stack.check_reg_int(i._c));
 
 				const auto lookup_index = regs[i._c].int_value;
-				if(lookup_index < 0 || lookup_index >= parent_json->get_array_size()){
+				if(lookup_index < 0 || lookup_index >= parent_json.get_array_size()){
 					quark::throw_runtime_error("Lookup in json array: out of bounds.");
 				}
 				else{
-					const auto& value = parent_json->get_array_n(lookup_index);
+					const auto& value = parent_json.get_array_n(lookup_index);
 
 					//??? value2 will soon go out of scope - avoid creating bc_value_t all together.
 					//??? no need to create full bc_value_t here! We only need pod.
-					const auto value2 = bc_value_t::make_json(value);
+					const auto value2 = bc_value_t::make_json(backend, value);
 
-					value2._pod._external->_rc++;
-					release_pod_external(regs[i._a]);
+					release_value(backend, regs[i._a], value2._type);
+					retain_value(backend, value2._pod, value2._type);
 					regs[i._a] = value2._pod;
 				}
 			}
@@ -1224,7 +1223,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
-*/
 
 		case bc_opcode::k_lookup_element_vector_w_external_elements:
 		case bc_opcode::k_lookup_element_vector_w_inplace_elements:
@@ -1322,14 +1320,13 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
-/*
 		case bc_opcode::k_get_size_jsonvalue: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_int(i._a));
 			QUARK_ASSERT(stack.check_reg_json(i._b));
 			QUARK_ASSERT(i._c == 0);
 
-			const auto& json = *regs[i._b]._external->_json;
+			const auto& json = regs[i._b].json_ptr->get_json();
 			if(json.is_object()){
 				regs[i._a].int_value = json.get_object_size();
 			}
@@ -1345,7 +1342,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
-*/
 
 		case bc_opcode::k_pushback_vector_w_external_elements: {
 			QUARK_ASSERT(vm.check_invariant());
