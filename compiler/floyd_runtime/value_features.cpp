@@ -8,8 +8,6 @@
 
 #include "value_features.h"
 
-#include "value_thunking.h"
-
 #include "expression.h"
 
 

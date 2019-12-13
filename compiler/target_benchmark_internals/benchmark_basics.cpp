@@ -12,7 +12,6 @@
 #include "benchmark_basics.h"
 #include "compiler_helpers.h"
 #include "compiler_basics.h"
-#include "value_thunking.h"
 
 #include <string>
 #include <vector>

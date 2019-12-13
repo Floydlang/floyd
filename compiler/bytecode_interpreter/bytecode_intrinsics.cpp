@@ -16,7 +16,6 @@
 #include "ast_value.h"
 #include "floyd_interpreter.h"
 #include "floyd_runtime.h"
-#include "value_thunking.h"
 #include "value_features.h"
 
 

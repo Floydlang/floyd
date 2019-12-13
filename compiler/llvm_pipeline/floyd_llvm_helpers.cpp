@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "floyd_llvm_types.h"
-#include "value_thunking.h"
 
 #include "quark.h"
 

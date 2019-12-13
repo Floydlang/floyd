@@ -12,7 +12,6 @@
 #include "bytecode_corelib.h"
 #include "text_parser.h"
 #include "ast_value.h"
-#include "value_thunking.h"
 #include "types.h"
 #include "value_features.h"
 

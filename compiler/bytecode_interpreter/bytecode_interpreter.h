@@ -23,7 +23,6 @@
 #include "compiler_basics.h"
 #include "ast_value.h"
 #include "value_backend.h"
-#include "value_thunking.h"
 #include "quark.h"
 
 #include "immer/vector.hpp"

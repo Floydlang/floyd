@@ -10,7 +10,6 @@
 #define value_features_hpp
 
 #include "value_backend.h"
-#include "value_thunking.h"
 
 namespace floyd {
 

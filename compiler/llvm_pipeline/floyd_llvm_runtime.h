@@ -11,7 +11,6 @@
 
 #include "value_backend.h"
 #include "floyd_llvm_types.h"
-#include "value_thunking.h"
 #include <llvm/IR/IRBuilder.h>
 
 #include <string>

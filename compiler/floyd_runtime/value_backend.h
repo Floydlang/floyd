@@ -8,11 +8,11 @@
 
 /*
 	TERMS
-
 	- Alloc: one memory allocation. It contains a 64 byte header, then optional a number of 8 byte allocations
 	- Allocation word: an 8 byte section of data.
 	- Allocation word count: how many allocation words
-	- Element count: how many logical elements are stored? If an element is 1 byte big we can fit 8 elements in ONE allocation word
+	- Element count: how many logical elements are stored? If an element is 1 byte big we can fit 8 elements in
+		ONE allocation word
 
 
 	Why: we need out own memory heap handling for:
@@ -48,19 +48,12 @@ struct json_t;
 
 namespace floyd {
 
-
-
-
-
 ////////////////////////////////	CONFIGURATION
 
 
 const bool k_heap_mutex = true;
 const bool k_keep_deleted_allocs = true;
-
 #define ATOMIC_RC 1
-
-
 
 
 ////////////////////////////////	FORWARD DECL
@@ -76,8 +69,8 @@ struct DICT_CPPMAP_T;
 struct DICT_HAMT_T;
 struct JSON_T;
 struct STRUCT_T;
-
-
+struct bc_static_frame_t;
+struct value_backend_t;
 
 
 ////////////////////////////////	runtime_type_t
@@ -93,10 +86,7 @@ typedef int32_t runtime_type_t;
 runtime_type_t make_runtime_type(type_t type);
 
 
-
-
 ////////////////////////////////		heap_t
-
 
 
 struct heap_rec_t {
@@ -104,9 +94,7 @@ struct heap_rec_t {
 //	bool in_use;
 };
 
-
 static const uint64_t k_alloc_start_id = 1000000;
-
 static const uint64_t HEAP_MAGIC = 0xf00d1234;
 
 
@@ -135,10 +123,7 @@ struct heap_t {
 };
 
 
-
-
 ////////////////////////////////		heap_alloc_64_t
-
 
 
 /*
@@ -158,7 +143,6 @@ struct heap_t {
 [ ...								]
 */
 
-
 struct heap_t;
 
 static const uint64_t ALLOC_64_MAGIC = 0xa110a11c;
@@ -172,7 +156,6 @@ static const uint64_t ALLOC_64_MAGIC_DELETED = 0x11dead11;
 struct heap_alloc_64_t {
 	static const int k_data_elements = 4;
 	static const size_t k_data_bytes = sizeof(uint64_t) * k_data_elements;
-
 
 	heap_alloc_64_t(heap_t* heap0, uint64_t allocation_word_count, type_t debug_value_type, const char debug_string[]) :
 		rc(1),
@@ -233,7 +216,6 @@ struct heap_alloc_64_t {
 std::string get_debug_info(const heap_alloc_64_t& alloc);
 
 
-
 /*
 	Allocates a block of data using malloc().
 
@@ -269,10 +251,7 @@ inline int32_t inc_rc(const heap_alloc_64_t& alloc);
 void dispose_alloc(heap_alloc_64_t& alloc);
 
 
-
-
 ////////////////////////////////	runtime_value_t
-
 
 /*
 	Native, runtime value, as used by x86 code when running optimized program. Executing.
@@ -282,6 +261,7 @@ void dispose_alloc(heap_alloc_64_t& alloc);
 */
 
 struct abstract_func_t {};
+
 
 //	64 bits
 union runtime_value_t {
@@ -312,7 +292,6 @@ union runtime_value_t {
 	}
 };
 
-
 runtime_value_t make_blank_runtime_value();
 
 runtime_value_t make_runtime_bool(bool value);
@@ -336,6 +315,7 @@ inline function_id_t get_function_id(const runtime_value_t& value){
 	return function_id_t { s };
 }
 */
+
 
 ////////////////////////////////		WIDE_RETURN_T
 
@@ -378,10 +358,9 @@ enum class WIDE_RETURN_MEMBERS {
 WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
 
 
-
 ////////////////////////////////		VECTOR_CARRAY_T
 
-//?? rename to "C ARRAY"
+
 /*
 	A fixed-size immutable vector with RC. Deep copy everytime = expensive to mutate.
 
@@ -452,7 +431,6 @@ struct VECTOR_CARRAY_T {
 
 runtime_value_t alloc_vector_carray(heap_t& heap, uint64_t allocation_count, uint64_t element_count, type_t value_type);
 void dispose_vector_carray(const runtime_value_t& value);
-
 
 
 ////////////////////////////////		VECTOR_HAMT_T
@@ -627,7 +605,6 @@ JSON_T* alloc_json(heap_t& heap, const json_t& init);
 void dispose_json(JSON_T& vec);
 
 
-
 ////////////////////////////////		STRUCT_T
 
 
@@ -649,7 +626,6 @@ struct STRUCT_T {
 	}
 
 
-
 	////////////////////////////////		STATE
 	heap_alloc_64_t alloc;
 };
@@ -659,25 +635,11 @@ STRUCT_T* alloc_struct_copy(heap_t& heap, const uint64_t data[], std::size_t siz
 void dispose_struct(STRUCT_T& v);
 
 
-
-
-
-
 ////////////////////////////////		HELPERS
-
 
 
 runtime_value_t load_via_ptr2(const types_t& types, const void* value_ptr, const type_t& type);
 void store_via_ptr2(const types_t& types, void* value_ptr, const type_t& type, const runtime_value_t& value);
-
-
-
-
-
-
-
-struct bc_static_frame_t;
-struct value_backend_t;
 
 
 //////////////////////////////////////		bc_value_t
@@ -698,8 +660,15 @@ struct bc_value_t {
 	public: bc_value_t(const bc_value_t& other);
 	public: bc_value_t& operator=(const bc_value_t& other);
 	public: void swap(bc_value_t& other);
-	public: explicit bc_value_t(const bc_static_frame_t* frame_ptr);
 
+	//	Bumps RC if needed.
+	public: explicit bc_value_t(value_backend_t& backend, const type_t& type, const runtime_value_t& internals);
+
+	//	Only works for simple values.
+	public: explicit bc_value_t(const type_t& type, const runtime_value_t& internals);
+
+
+	//	Used for uninitialized local / global variables - before they are written to the first time. Kludge.
 	enum class mode {
 		k_unwritten_ext_value
 	};
@@ -721,58 +690,71 @@ struct bc_value_t {
 	//////////////////////////////////////		bool
 	public: static bc_value_t make_bool(bool v);
 	public: bool get_bool_value() const;
-	private: explicit bc_value_t(bool value);
 
 
 	//////////////////////////////////////		int
 	public: static bc_value_t make_int(int64_t v);
 	public: int64_t get_int_value() const;
-	private: explicit bc_value_t(int64_t value);
 
 
 	//////////////////////////////////////		double
 	public: static bc_value_t make_double(double v);
 	public: double get_double_value() const;
-	private: explicit bc_value_t(double value);
 
 
 	//////////////////////////////////////		string
 	public: static bc_value_t make_string(value_backend_t& backend, const std::string& v);
 	public: std::string get_string_value(const value_backend_t& backend) const;
-	private: explicit bc_value_t(value_backend_t& backend, const std::string& value);
 
 
 	//////////////////////////////////////		json
 	public: static bc_value_t make_json(value_backend_t& backend, const json_t& v);
 	public: json_t get_json() const;
-	private: explicit bc_value_t(value_backend_t& backend, const std::shared_ptr<json_t>& value);
 
 
 	//////////////////////////////////////		typeid
 	public: static bc_value_t make_typeid_value(const type_t& type_id);
 	public: type_t get_typeid_value() const;
-	private: explicit bc_value_t(const type_t& type_id);
 
 
 	//////////////////////////////////////		struct
-	public: static bc_value_t make_struct_value(value_backend_t& backend, const type_t& struct_type, const std::vector<bc_value_t>& values);
+	public: static bc_value_t make_struct_value(
+		value_backend_t& backend,
+		const type_t& struct_type,
+		const std::vector<bc_value_t>& values
+	);
 	public: const std::vector<bc_value_t> get_struct_value(value_backend_t& backend) const;
-	private: explicit bc_value_t(value_backend_t& backend, const type_t& struct_type, const std::vector<bc_value_t>& values, bool struct_tag);
 
 
 	//////////////////////////////////////		function
-	public: static bc_value_t make_function_value(value_backend_t& backend, const type_t& function_type, const function_id_t& function_id);
+	public: static bc_value_t make_function_value(
+		value_backend_t& backend,
+		const type_t& function_type,
+		const function_id_t& function_id
+	);
 	public: int64_t get_function_value() const;
+
+
+	//////////////////////////////////////		bc_static_frame_t
+
+	public: explicit bc_value_t(const bc_static_frame_t* frame_ptr);
+
+
+	//////////////////////////////////////		INTERNALS
+
+	private: explicit bc_value_t(bool value);
+	private: explicit bc_value_t(int64_t value);
+	private: explicit bc_value_t(double value);
+	private: explicit bc_value_t(value_backend_t& backend, const std::string& value);
+	private: explicit bc_value_t(value_backend_t& backend, const std::shared_ptr<json_t>& value);
+	private: explicit bc_value_t(const type_t& type_id);
+	private: explicit bc_value_t(
+		value_backend_t& backend,
+		const type_t& struct_type,
+		const std::vector<bc_value_t>& values,
+		bool struct_tag
+	);
 	private: explicit bc_value_t(value_backend_t& backend, const type_t& function_type, const function_id_t& function_id);
-
-
-	//	Bumps RC if needed.
-	public: explicit bc_value_t(value_backend_t& backend, const type_t& type, const runtime_value_t& internals);
-
-	//	Only works for simple values.
-	public: explicit bc_value_t(const type_t& type, const runtime_value_t& internals);
-
-
 
 	//////////////////////////////////////		STATE
 
@@ -798,15 +780,8 @@ json_t bcvalue_and_type_to_json(value_backend_t& backend, const bc_value_t& v);
 
 int bc_compare_value_true_deep(value_backend_t& backend, const bc_value_t& left, const bc_value_t& right, const type_t& type);
 
-
 std::vector<bc_value_t> from_runtime_struct(value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type);
 runtime_value_t to_runtime_struct(value_backend_t& backend, const type_t& struct_type, const std::vector<bc_value_t>& values);
-
-
-////////////////////////////////		bc_value_t JSON
-
-
-
 
 
 ////////////////////////////////		struct_layout_t
@@ -919,7 +894,12 @@ inline type_t lookup_dict_value_type(const value_backend_t& backend, type_t type
 //??? Don't return pair, only struct_layout_t.
 const std::pair<type_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, type_t type);
 
-std::pair<runtime_value_t, type_t> load_struct_member(const value_backend_t& backend, uint8_t* data_ptr, const type_t& struct_type, int member_index);
+std::pair<runtime_value_t, type_t> load_struct_member(
+	const value_backend_t& backend,
+	uint8_t* data_ptr,
+	const type_t& struct_type,
+	int member_index
+);
 
 
 
@@ -929,35 +909,22 @@ std::pair<runtime_value_t, type_t> load_struct_member(const value_backend_t& bac
 bool is_rc_value(const types_t& types, const type_t& type);
 
 
-
 void retain_value(value_backend_t& backend, runtime_value_t value, type_t type);
-
 void retain_vector_carray(value_backend_t& backend, runtime_value_t vec, type_t type);
 inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, type_t type);
-
 void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, type_t type);
 void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, type_t type);
-
 void retain_struct(value_backend_t& backend, runtime_value_t s, type_t type);
 
-
-
 void release_value(value_backend_t& backend, runtime_value_t value, type_t type);
-
 void release_vector_carray_pod(value_backend_t& backend, runtime_value_t vec, type_t type);
 void release_vector_carray_nonpod(value_backend_t& backend, runtime_value_t vec, type_t type);
-
 inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, type_t type);
 inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, type_t type);
-
 void release_vec(value_backend_t& backend, runtime_value_t vec, type_t type);
-
-
 void release_dict_cppmap(value_backend_t& backend, runtime_value_t dict0, type_t type);
 void release_dict_hamt(value_backend_t& backend, runtime_value_t dict0, type_t type);
 void release_dict(value_backend_t& backend, runtime_value_t dict0, type_t type);
-
-
 void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_value_t vec, type_t type);
 void release_struct(value_backend_t& backend, runtime_value_t s, type_t type);
 
@@ -999,11 +966,45 @@ inline bool is_dict_hamt(const types_t& types, const config_t& config, type_t t)
 
 
 
-
-
-
 value_backend_t make_test_value_backend();
 
+
+
+//////////////////////////////////////////		runtime_value_t
+
+
+runtime_value_t alloc_carray_8bit(value_backend_t& backend, const uint8_t data[], std::size_t count);
+
+runtime_value_t to_runtime_string2(value_backend_t& backend, const std::string& s);
+std::string from_runtime_string2(const value_backend_t& backend, runtime_value_t encoded_value);
+
+
+runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value);
+value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type);
+
+
+runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t& value);
+value_t from_runtime_vector(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type);
+
+runtime_value_t to_runtime_dict(value_backend_t& backend, const dict_t& exact_type, const value_t& value);
+value_t from_runtime_dict(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type);
+
+
+runtime_value_t to_runtime_struct(value_backend_t& backend, const struct_t& exact_type, const value_t& value);
+value_t from_runtime_struct(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type);
+
+
+//////////////////////////////////////////		value_t vs bc_value_t
+
+
+runtime_value_t make_runtime_non_rc(const value_t& value);
+bc_value_t make_non_rc(const value_t& value);
+
+value_t bc_to_value(const value_backend_t& backend, const bc_value_t& value);
+bc_value_t value_to_bc(value_backend_t& backend, const value_t& value);
+
+bc_value_t bc_from_runtime(value_backend_t& backend, runtime_value_t value, const type_t& type);
+runtime_value_t runtime_from_bc(value_backend_t& backend, const bc_value_t& value);
 
 
 
@@ -1044,7 +1045,6 @@ inline int32_t inc_rc(const heap_alloc_64_t& alloc){
 	const auto rc2 = prev_rc + 1;
 	return rc2;
 }
-
 
 
 inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, type_t type){
@@ -1089,7 +1089,6 @@ inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t
 }
 
 
-
 inline uint64_t size_to_allocation_blocks(std::size_t size){
 	const auto r = (size >> 3) + ((size & 7) > 0 ? 1 : 0);
 
@@ -1098,8 +1097,6 @@ inline uint64_t size_to_allocation_blocks(std::size_t size){
 
 	return r;
 }
-
-
 
 
 inline type_t lookup_vector_element_type(const value_backend_t& backend, type_t type){
