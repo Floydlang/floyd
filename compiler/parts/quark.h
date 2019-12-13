@@ -505,6 +505,9 @@ struct call_context_t {
 	};
 
 
+#define QUARK_TEST__OFF(class_under_test, function_under_test, scenario, expected_result) \
+	static void QUARK_UNIQUE_LABEL(quark_test_f_)()
+
 #if QUARK_UNIT_TESTS_ON
 
 
@@ -522,6 +525,8 @@ struct call_context_t {
 		static void QUARK_UNIQUE_LABEL(quark_test_f_)(); \
 		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(quark_test_f_), false); \
 		static void QUARK_UNIQUE_LABEL(quark_test_f_)()
+
+	#define QUARK_TEST_OFF QUARK_TEST__OFF
 
 	//	When one or more of these exists, no non_VIP tests are run. Let's you iterate on a broken test quickly and set breakpoints in etc.
 	#define QUARK_TEST_VIP(class_under_test, function_under_test, scenario, expected_result) \
@@ -618,8 +623,7 @@ inline void ut_verify_stringvec(const quark::call_context_t& context, const std:
 #else
 
 	//	The generated function is static and will be stripped in optimized builds (it will not be referenced).
-	#define QUARK_TEST(class_under_test, function_under_test, scenario, expected_result) \
-		static void QUARK_UNIQUE_LABEL(quark_test_f_)()
+	#define QUARK_TEST QUARK_TEST__OFF
 
 	#define QUARK_TESTQ(function_under_test, scenario) \
 		static void QUARK_UNIQUE_LABEL(quark_test_f_)()

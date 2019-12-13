@@ -513,7 +513,7 @@ struct value_t {
 		This technique lets us do most comparison operations *ontop* of compare_value_true_deep() with
 		only a single compare function.
 	*/
-	public: static int compare_value_true_deep(const value_t& left, const value_t& right);
+	public: static int compare_value_true_deep(const types_t& types, const value_t& left, const value_t& right);
 
 	public: void swap(value_t& other){
 		QUARK_ASSERT(other.check_invariant());

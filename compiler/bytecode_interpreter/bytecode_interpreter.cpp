@@ -504,48 +504,36 @@ interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config
 	auto temp_types = program._types;
 	const auto intrinsics = bc_get_intrinsics_internal(temp_types);
 	QUARK_ASSERT(temp_types.nodes.size() == program._types.nodes.size());
-
-	const auto corelib_calls = bc_get_corelib_calls();
-
-	const auto intrinsics2 = mapf<func_link_t>(intrinsics, [&](const auto& e){ return func_link_t {
-		std::string() + "intrinsics:" + e.first.name,
-		link_name_t { e.first.name },
-		e.first._function_type,
-		count_dyn_args(temp_types, e.first._function_type),
-		false,
-		(void*)e.second
-	}; });
-
-
-	const auto intrinsic_signatures = make_intrinsic_signatures(temp_types);
-
-	//?? only add those corelib calls were we can find a global symbol with its name. This lets us find the function_type, alternatively know to NOT link the corelib function.
-	const auto corelib_calls1 = mapf<func_link_t>(corelib_calls, [&](const auto& e){
-		const auto& s = intrinsic_signatures.vec;
-		const auto it = std::find_if(s.begin(), s.end(), [e](const auto& m){ return m.name == e.first.name; });
-		if(it == s.end()){
-			return func_link_t { "", {}, {}, 0, false, nullptr };
-		}
-		else{
-			const auto function_type = it->_function_type;
-
-			return func_link_t {
-				std::string() + "corelib:" + e.first.name,
-				link_name_t { e.first.name },
-				function_type,
-				count_dyn_args(temp_types, function_type),
-				true,
-				(void*)e.second
-			};
-		}
+	const auto intrinsics2 = mapf<func_link_t>(intrinsics, [&](const auto& e){
+		return func_link_t {
+			std::string() + "intrinsics:" + e.first.name,
+			link_name_t { e.first.name },
+			e.first._function_type,
+			count_dyn_args(temp_types, e.first._function_type),
+			false,
+			(void*)e.second
+		};
 	});
 
-	const auto corelib_calls2 = filterf<func_link_t>(corelib_calls1, [](const auto& e){ return e.link_name.s.empty() == false; });
+	//?? only add those corelib calls were we can find a global symbol with its name. This lets us find the function_type, alternatively know to NOT link the corelib function.
+	const auto corelib_native_funcs = bc_get_corelib_calls();
 
-	const auto funcs = mapf<func_link_t>(program._function_defs, [](const auto& e){ return e.func_link; });
+	const auto funcs = mapf<func_link_t>(program._function_defs, [&corelib_native_funcs](const auto& e){
+		const auto& function_name = e.func_link.link_name.s;
+		const auto it = corelib_native_funcs.find(function_id_t { function_name } );
+		void* f = it != corelib_native_funcs.end() ? (void*)it->second : (void*)e._frame_ptr.get();
+		return func_link_t {
+			e.func_link.debug_type,
+			e.func_link.link_name,
+			e.func_link.function_type,
+			e.func_link.dynamic_arg_count,
+			e.func_link.is_bc_function,
+			f
+		};
+	});
+	const auto funcs2 = filterf<func_link_t>(funcs, [](const auto& e){ return e.link_name.s.empty() == false; });
 
-	const auto func_lookup0 = concat(funcs, intrinsics2);
-	const auto func_lookup = concat(func_lookup0, corelib_calls2);
+	const auto func_lookup = concat(funcs2, intrinsics2);
 
 	const auto start_time = std::chrono::high_resolution_clock::now();
 	_imm = std::make_shared<interpreter_imm_t>(interpreter_imm_t{ start_time, program });
@@ -761,6 +749,7 @@ static void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t targ
 	}
 
 	const auto result = bc_value_t::make_struct_value(vm._stack._backend, target_type, elements2);
+	QUARK_ASSERT(result.check_invariant());
 //	QUARK_TRACE(to_compact_string2(instance));
 
 	vm._stack.write_register__external_value(dest_reg, result);

@@ -1296,6 +1296,8 @@ runtime_value_t to_runtime_struct(value_backend_t& backend, const type_t& struct
 		const auto offset = struct_layout.second.members[member_index].offset;
 		const auto member_ptr = reinterpret_cast<void*>(struct_base_ptr + offset);
 		const auto member_type = e._type;
+
+		retain_value(backend, e._pod, e._type);
 		store_via_ptr2(backend.types, member_ptr, dereference_type(backend.types, member_type), e._pod);
 		member_index++;
 	}
@@ -1505,7 +1507,7 @@ bc_value_t make_vector(value_backend_t& backend, const type_t& element_type, con
 		for(int i = 0 ; i < count ; i++){
 			const auto& e = v0[i];
 			QUARK_ASSERT(e.check_invariant());
-			QUARK_ASSERT(e._type == element_type);
+//			QUARK_ASSERT(e._type == element_type);
 
 			retain_value(backend, e._pod, element_type);
 			temp.push_back(e._pod);
@@ -1613,7 +1615,7 @@ int bc_compare_value_true_deep(value_backend_t& backend, const bc_value_t& left,
 //	trace_heap(backend.heap);
 	const auto left_value = from_runtime_value2(backend, left._pod, type0);
 	const auto right_value = from_runtime_value2(backend, right._pod, type0);
-	const int result = value_t::compare_value_true_deep(left_value, right_value);
+	const int result = value_t::compare_value_true_deep(backend.types, left_value, right_value);
 	return result;
 }
 
@@ -1982,7 +1984,7 @@ void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, type_t typ
 
 void retain_struct(value_backend_t& backend, runtime_value_t s, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(s.check_invariant());
+	QUARK_ASSERT(check_invariant(backend, s, type));
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(is_rc_value(backend.types, type));
 	QUARK_ASSERT(peek2(backend.types, type).is_struct());
@@ -2415,7 +2417,7 @@ value_t from_runtime_struct(const value_backend_t& backend, const runtime_value_
 runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t& value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
-	QUARK_ASSERT(value.get_type().is_struct());
+	QUARK_ASSERT(value.get_type().is_vector());
 
 	const auto& type = value.get_type();
 	const auto& type_peek = peek2(backend.types, type);

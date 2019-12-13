@@ -328,7 +328,8 @@ QUARK_TEST("", "compare_string()", "", ""){
 	ut_verify_auto(QUARK_POS, compare_string("b", "a"), 1);
 }
 
-static int compare_struct_true_deep(const struct_value_t& left, const struct_value_t& right){
+static int compare_struct_true_deep(const types_t& types, const struct_value_t& left, const struct_value_t& right){
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
 
@@ -336,7 +337,7 @@ static int compare_struct_true_deep(const struct_value_t& left, const struct_val
 	std::vector<value_t>::const_iterator b_it = right._member_values.begin();
 
 	while(a_it !=left._member_values.end()){
-		int diff = value_t::compare_value_true_deep(*a_it, *b_it);
+		int diff = value_t::compare_value_true_deep(types, *a_it, *b_it);
 		if(diff != 0){
 			return diff;
 		}
@@ -349,14 +350,17 @@ static int compare_struct_true_deep(const struct_value_t& left, const struct_val
 
 //	Compare vector element by element.
 //	### Think more of equality when vectors have different size and shared elements are equal.
-static int compare_vector_true_deep(const std::vector<value_t>& left, const std::vector<value_t>& right){
-//	QUARK_ASSERT(left.check_invariant());
-//	QUARK_ASSERT(right.check_invariant());
-//	QUARK_ASSERT(left._element_type == right._element_type);
+static int compare_vector_true_deep(const types_t& types, const std::vector<value_t>& left, const std::vector<value_t>& right){
+	QUARK_ASSERT(types.check_invariant());
 
 	const auto& shared_count = std::min(left.size(), right.size());
 	for(int i = 0 ; i < shared_count ; i++){
-		const auto element_result = value_t::compare_value_true_deep(left[i], right[i]);
+		const auto& left2 = left[i];
+		const auto& right2 = right[i];
+		QUARK_ASSERT(left2.check_invariant());
+		QUARK_ASSERT(right2.check_invariant());
+
+		const auto element_result = value_t::compare_value_true_deep(types, left2, right2);
 		if(element_result != 0){
 			return element_result;
 		}
@@ -380,7 +384,9 @@ bool map_compare (Map const &lhs, Map const &rhs) {
                       rhs.begin());
 }
 
-static int compare_dict_true_deep(const std::map<std::string, value_t>& left, const std::map<std::string, value_t>& right){
+static int compare_dict_true_deep(const types_t& types, const std::map<std::string, value_t>& left, const std::map<std::string, value_t>& right){
+	QUARK_ASSERT(types.check_invariant());
+
 	auto left_it = left.begin();
 	auto left_end_it = left.end();
 
@@ -388,6 +394,9 @@ static int compare_dict_true_deep(const std::map<std::string, value_t>& left, co
 	auto right_end_it = right.end();
 
 	while(left_it != left_end_it && right_it != right_end_it && *left_it == *right_it){
+		QUARK_ASSERT(left_it->second.check_invariant());
+		QUARK_ASSERT(right_it->second.check_invariant());
+
 		left_it++;
 		right_it++;
 	}
@@ -407,7 +416,7 @@ static int compare_dict_true_deep(const std::map<std::string, value_t>& left, co
 			return key_diff;
 		}
 		else {
-			return value_t::compare_value_true_deep(left_it->second, right_it->second);
+			return value_t::compare_value_true_deep(types, left_it->second, right_it->second);
 		}
 	}
 	else{
@@ -430,7 +439,8 @@ static int compare_jsons(const json_t& lhs, const json_t& rhs){
 //////////////////////////////////////////////////		value_t
 
 
-int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
+int value_t::compare_value_true_deep(const types_t& types, const value_t& left, const value_t& right){
+	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
 	QUARK_ASSERT(left.get_type() == right.get_type());
@@ -489,7 +499,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 				return 0;
 			}
 			else{
-				return compare_struct_true_deep(*left.get_struct_value(), *right.get_struct_value());
+				return compare_struct_true_deep(types, *left.get_struct_value(), *right.get_struct_value());
 			}
 		}
 	}
@@ -501,7 +511,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 		else{
 			const auto& left_vec = left.get_vector_value();
 			const auto& right_vec = right.get_vector_value();
-			return compare_vector_true_deep(left_vec, right_vec);
+			return compare_vector_true_deep(types, left_vec, right_vec);
 		}
 	}
 	else if(left.is_dict()){
@@ -512,12 +522,23 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 		else{
 			const auto& left2 = left.get_dict_value();
 			const auto& right2 = right.get_dict_value();
-			return compare_dict_true_deep(left2, right2);
+			return compare_dict_true_deep(types, left2, right2);
 		}
 	}
 	else if(left.is_function()){
 		QUARK_ASSERT(false);
 		return 0;
+	}
+	else if(left.get_type().is_named_type()){
+		//	Make sure the EXACT types are the same -- not only that they are both dicts.
+		if(left.get_type() != right.get_type()){
+			quark::throw_runtime_error("Cannot compare values of different type.");
+		}
+		else{
+			const auto left2 = value_t::replace_logical_type(left, peek2(types, left.get_type()));
+			const auto right2 = value_t::replace_logical_type(right, peek2(types, right.get_type()));
+			return compare_value_true_deep(types, left2, right2);
+		}
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -570,6 +591,7 @@ bool value_t::check_invariant() const{
 
 std::string value_t::get_string_value() const{
 	QUARK_ASSERT(check_invariant());
+
 	if(!is_string()){
 		quark::throw_runtime_error("Type mismatch!");
 	}
@@ -579,6 +601,7 @@ std::string value_t::get_string_value() const{
 
 json_t value_t::get_json() const{
 	QUARK_ASSERT(check_invariant());
+
 	if(!is_json()){
 		quark::throw_runtime_error("Type mismatch!");
 	}
@@ -588,6 +611,7 @@ json_t value_t::get_json() const{
 
 type_t value_t::get_typeid_value() const{
 	QUARK_ASSERT(check_invariant());
+
 	if(!is_typeid()){
 		quark::throw_runtime_error("Type mismatch!");
 	}
@@ -608,6 +632,7 @@ std::shared_ptr<struct_value_t> value_t::get_struct_value() const{
 
 const std::vector<value_t>& value_t::get_vector_value() const{
 	QUARK_ASSERT(check_invariant());
+
 	if(!is_vector()){
 		quark::throw_runtime_error("Type mismatch!");
 	}
@@ -618,6 +643,7 @@ const std::vector<value_t>& value_t::get_vector_value() const{
 
 const std::map<std::string, value_t>& value_t::get_dict_value() const{
 	QUARK_ASSERT(check_invariant());
+
 	if(!is_dict()){
 		quark::throw_runtime_error("Type mismatch!");
 	}
@@ -627,6 +653,7 @@ const std::map<std::string, value_t>& value_t::get_dict_value() const{
 
 function_id_t value_t::get_function_value() const{
 	QUARK_ASSERT(check_invariant());
+
 	if(!is_function()){
 		quark::throw_runtime_error("Type mismatch!");
 	}

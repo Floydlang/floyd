@@ -572,7 +572,7 @@ int compare_values(value_backend_t& backend, int64_t op, const runtime_type_t ty
 	const auto left_value = from_runtime_value2(backend, lhs, value_type);
 	const auto right_value = from_runtime_value2(backend, rhs, value_type);
 
-	const int result = value_t::compare_value_true_deep(left_value, right_value);
+	const int result = value_t::compare_value_true_deep(backend.types, left_value, right_value);
 //	int result = runtime_compare_value_true_deep((const uint64_t)lhs, (const uint64_t)rhs, vector_type);
 	const auto op2 = static_cast<expression_type>(op);
 	if(op2 == expression_type::k_comparison_smaller_or_equal){

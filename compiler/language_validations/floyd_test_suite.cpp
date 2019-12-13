@@ -6227,7 +6227,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Access benchmark registry
 		);
 	}
 
-	FLOYD_LANG_PROOF_VIP("Floyd test suite", "benchmark-def", "Test running more than one simple benchmark_def", ""){
+	FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running more than one simple benchmark_def", ""){
 		ut_verify_printout_nolib(
 			QUARK_POS,
 			R"(
@@ -6239,7 +6239,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Access benchmark registry
 
 			)",
 			{
-				R"___("3 monkeys")___"
+				R"___("12 monkeys")___"
 			}
 		);
 	}
