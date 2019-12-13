@@ -12,6 +12,7 @@
 namespace floyd {
 
 
+#define QUARK_TEST QUARK_TEST_OFF
 
 
 llvm::Constant* generate_itype_constant(const llvm_code_generator_t& gen_acc, const type_t& type){

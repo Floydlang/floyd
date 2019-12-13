@@ -37,9 +37,6 @@
 		2C085D0623140CA6009E6D24 /* value_features.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C9FC7C32310C25E00CF8F02 /* value_features.cpp */; };
 		2C085D0723140CA6009E6D24 /* floyd_test_suite.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C02667A2014CAF000A82AD6 /* floyd_test_suite.cpp */; };
 		2C085D0823140CA6009E6D24 /* issue_regression_tests.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC0B3DF22248E3E00C9D584 /* issue_regression_tests.cpp */; };
-		2C085D0923140CA6009E6D24 /* floyd_llvm_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C3DE25422665E7E00807701 /* floyd_llvm_helpers.cpp */; };
-		2C085D0A23140CA6009E6D24 /* floyd_llvm_runtime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CE1C35B2270C7AC007892B4 /* floyd_llvm_runtime.cpp */; };
-		2C085D0B23140CA6009E6D24 /* floyd_llvm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C674F9A230A100B00838CCF /* floyd_llvm.cpp */; };
 		2C085D0C23140CA6009E6D24 /* command_line_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C6CDA9622FD969B008F65C7 /* command_line_parser.cpp */; };
 		2C085D0D23140CA6009E6D24 /* file_handling.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7200B321E8FB750013003B /* file_handling.cpp */; };
 		2C085D0E23140CA6009E6D24 /* hardware_caps.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB460BC230ECADD00F664B9 /* hardware_caps.cpp */; };
@@ -64,6 +61,16 @@
 		2C1CEFCD23140F7D00DE9A77 /* software_system.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB30737214ACF09007D2732 /* software_system.cpp */; };
 		2C1CEFCE23140F7D00DE9A77 /* test_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC0B3E122248EBD00C9D584 /* test_helpers.cpp */; };
 		2C1CEFD4231415AE00DE9A77 /* benchmark_soundsystem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1CEFD2231415AE00DE9A77 /* benchmark_soundsystem.cpp */; };
+		2C2224E723A3ECA60052339E /* floyd_llvm_codegen_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E4246231AB9E6006570A2 /* floyd_llvm_codegen_basics.cpp */; };
+		2C2224E823A3ECA60052339E /* floyd_llvm_codegen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5F8320224644FB009870FC /* floyd_llvm_codegen.cpp */; };
+		2C2224E923A3ECA60052339E /* floyd_llvm_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5CC22EA1E1B005B002C /* floyd_llvm_corelib.cpp */; };
+		2C2224EA23A3ECA60052339E /* floyd_llvm_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C3DE25422665E7E00807701 /* floyd_llvm_helpers.cpp */; };
+		2C2224EB23A3ECA60052339E /* floyd_llvm_intrinsics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB9AFA62315E88300836EC3 /* floyd_llvm_intrinsics.cpp */; };
+		2C2224EC23A3ECA60052339E /* floyd_llvm_optimization.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C52AF7223253AC400506D60 /* floyd_llvm_optimization.cpp */; };
+		2C2224ED23A3ECA60052339E /* floyd_llvm_runtime_functions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB9AFA32315E2C400836EC3 /* floyd_llvm_runtime_functions.cpp */; };
+		2C2224EE23A3ECA60052339E /* floyd_llvm_runtime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CE1C35B2270C7AC007892B4 /* floyd_llvm_runtime.cpp */; };
+		2C2224EF23A3ECA60052339E /* floyd_llvm_types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA2D86322F347FC00B45098 /* floyd_llvm_types.cpp */; };
+		2C2224F023A3ECA60052339E /* floyd_llvm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C674F9A230A100B00838CCF /* floyd_llvm.cpp */; };
 		2C2B51CD233E348A001D59D9 /* types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C2B51CC233E348A001D59D9 /* types.cpp */; };
 		2C2FB296232A9F1B006105E4 /* process_test1.floyd in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2C2FB28D232A9CFF006105E4 /* process_test1.floyd */; };
 		2C2FB297232A9F1B006105E4 /* hello_world.floyd in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2C2FB28E232A9CFF006105E4 /* hello_world.floyd */; };
@@ -77,7 +84,6 @@
 		2C3174AC2262125F0004E086 /* parse_tree_to_ast_conv.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C3174AA2262125F0004E086 /* parse_tree_to_ast_conv.cpp */; };
 		2C3174AD2262125F0004E086 /* parse_tree_to_ast_conv.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C3174AA2262125F0004E086 /* parse_tree_to_ast_conv.cpp */; };
 		2C3D2D9722EF869B00B808AA /* ast_visitor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C3D2D9522EF869B00B808AA /* ast_visitor.cpp */; };
-		2C3DE25622665E7E00807701 /* floyd_llvm_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C3DE25422665E7E00807701 /* floyd_llvm_helpers.cpp */; };
 		2C40A71F1D76E179003245E3 /* immutable_ref_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C40A71D1D76E179003245E3 /* immutable_ref_value.cpp */; };
 		2C42609722F06B9400ECF817 /* ast_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C42609522F06B9400ECF817 /* ast_helpers.cpp */; };
 		2C42609822F06B9400ECF817 /* ast_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C42609522F06B9400ECF817 /* ast_helpers.cpp */; };
@@ -87,23 +93,18 @@
 		2C486C7F22EE4F8B00E44B3B /* collect_used_types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C486C7C22EE4F8B00E44B3B /* collect_used_types.cpp */; };
 		2C4DA09223035A0100190C37 /* format_table.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4DA09023035A0100190C37 /* format_table.cpp */; };
 		2C4F355F1D4794CD0061CA93 /* ast_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4F355D1D4794CD0061CA93 /* ast_value.cpp */; };
-		2C52AF7423253AC400506D60 /* floyd_llvm_optimization.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C52AF7223253AC400506D60 /* floyd_llvm_optimization.cpp */; };
 		2C530C3021EDF23F00F962FB /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C530C2E21EA1DBE00F962FB /* CoreFoundation.framework */; };
 		2C530C3121EE0D0300F962FB /* libncurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CBF330C202143BD0030AE98 /* libncurses.tbd */; };
 		2C5372B9207A9EBA00647AD1 /* bytecode_interpreter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5372B8207A9EBA00647AD1 /* bytecode_interpreter.cpp */; };
 		2C557C382040173E006F6818 /* bytecode_intrinsics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C557C362040173E006F6818 /* bytecode_intrinsics.cpp */; };
 		2C5E343C21527C6700B02262 /* hardware_caps_macos.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5E343B21527C6700B02262 /* hardware_caps_macos.cpp */; };
-		2C5F8322224644FB009870FC /* floyd_llvm_codegen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5F8320224644FB009870FC /* floyd_llvm_codegen.cpp */; };
-		2C5F8323224644FB009870FC /* floyd_llvm_codegen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5F8320224644FB009870FC /* floyd_llvm_codegen.cpp */; };
 		2C64578F2021E32E003625C8 /* libedit.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C64578E2021E32E003625C8 /* libedit.tbd */; };
 		2C674F99230A0CF800838CCF /* semantic_ast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C674F97230A0CF800838CCF /* semantic_ast.cpp */; };
-		2C674F9C230A100B00838CCF /* floyd_llvm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C674F9A230A100B00838CCF /* floyd_llvm.cpp */; };
 		2C6CDA9522FD92FD008F65C7 /* floyd_command_line_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C6CDA9322FD92FD008F65C7 /* floyd_command_line_parser.cpp */; };
 		2C6CDA9822FD969B008F65C7 /* command_line_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C6CDA9622FD969B008F65C7 /* command_line_parser.cpp */; };
 		2C7005D1238C4168005298C2 /* tests.floyd in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2C7005D0238C40EF005298C2 /* tests.floyd */; };
 		2C7005D4238FF3BD005298C2 /* floyd_sockets.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7005D2238FF3BD005298C2 /* floyd_sockets.cpp */; };
 		2C7200B421E8FB750013003B /* file_handling.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7200B321E8FB750013003B /* file_handling.cpp */; };
-		2C7E4248231AB9E6006570A2 /* floyd_llvm_codegen_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E4246231AB9E6006570A2 /* floyd_llvm_codegen_basics.cpp */; };
 		2C81894D1D47B62400030C96 /* floyd_interpreter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C81894B1D47B62400030C96 /* floyd_interpreter.cpp */; };
 		2C8C039B2221D90A0085EBBE /* gtest-all.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2C69C5722221D47800E9D03E /* gtest-all.cc */; };
 		2C8C039C2221D9120085EBBE /* gmock-all.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2C69C5D22221D47800E9D03E /* gmock-all.cc */; };
@@ -156,8 +157,6 @@
 		2C982D3620603FE2002002FF /* bytecode_generator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C982D3520603FE2002002FF /* bytecode_generator.cpp */; };
 		2C9FC7C52310C25E00CF8F02 /* value_features.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C9FC7C32310C25E00CF8F02 /* value_features.cpp */; };
 		2CA1F65E221F71AC008BDBD7 /* variable_length_quantity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA1F65C221F71AC008BDBD7 /* variable_length_quantity.cpp */; };
-		2CA2D86522F347FC00B45098 /* floyd_llvm_types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA2D86322F347FC00B45098 /* floyd_llvm_types.cpp */; };
-		2CA2D86622F347FC00B45098 /* floyd_llvm_types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA2D86322F347FC00B45098 /* floyd_llvm_types.cpp */; };
 		2CA673222393F6BA00623050 /* floyd_http.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA673202393F6BA00623050 /* floyd_http.cpp */; };
 		2CA673252393F88D00623050 /* unix_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA673232393F88D00623050 /* unix_helpers.cpp */; };
 		2CA673272395458700623050 /* http_test.floyd in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2CA673262395454400623050 /* http_test.floyd */; };
@@ -169,8 +168,6 @@
 		2CB460BD230ECADD00F664B9 /* hardware_caps.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB460BC230ECADD00F664B9 /* hardware_caps.cpp */; };
 		2CB7AA65220900190011DE4B /* floyd_syntax.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB7AA63220900190011DE4B /* floyd_syntax.cpp */; };
 		2CB7AA6B2209E51E0011DE4B /* compiler_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB7AA692209E51E0011DE4B /* compiler_basics.cpp */; };
-		2CB9AFA52315E2C400836EC3 /* floyd_llvm_runtime_functions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB9AFA32315E2C400836EC3 /* floyd_llvm_runtime_functions.cpp */; };
-		2CB9AFA82315E88300836EC3 /* floyd_llvm_intrinsics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB9AFA62315E88300836EC3 /* floyd_llvm_intrinsics.cpp */; };
 		2CBCA7DE1D569E04000FAE81 /* sha1_class.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DC1D569C6D000FAE81 /* sha1_class.cpp */; };
 		2CBCA7DF1D569E07000FAE81 /* sha1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DA1D569C6D000FAE81 /* sha1.cpp */; };
 		2CBD8932228C9B2900C10CDD /* os_process.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBD8930228C9B2900C10CDD /* os_process.cpp */; };
@@ -185,10 +182,7 @@
 		2CDA9AE52318933500231AA8 /* write_cache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDA9AE32318933500231AA8 /* write_cache.cpp */; };
 		2CDFD5C922EA1AD0005B002C /* bytecode_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5C822EA1AD0005B002C /* bytecode_corelib.cpp */; };
 		2CDFD5CA22EA1AD0005B002C /* bytecode_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5C822EA1AD0005B002C /* bytecode_corelib.cpp */; };
-		2CDFD5CD22EA1E1B005B002C /* floyd_llvm_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5CC22EA1E1B005B002C /* floyd_llvm_corelib.cpp */; };
-		2CDFD5CE22EA1E1B005B002C /* floyd_llvm_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5CC22EA1E1B005B002C /* floyd_llvm_corelib.cpp */; };
 		2CE0FE7822EE54B100018A96 /* desugar_pass.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CE0FE7622EE54B100018A96 /* desugar_pass.cpp */; };
-		2CE1C35D2270C7AC007892B4 /* floyd_llvm_runtime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CE1C35B2270C7AC007892B4 /* floyd_llvm_runtime.cpp */; };
 		2CEB57472071069B0005AC7A /* benchmark_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB57462071069B0005AC7A /* benchmark_basics.cpp */; };
 /* End PBXBuildFile section */
 
@@ -1779,25 +1773,25 @@
 				2C9FC7C52310C25E00CF8F02 /* value_features.cpp in Sources */,
 				2C8C039C2221D9120085EBBE /* gmock-all.cc in Sources */,
 				2C7005D4238FF3BD005298C2 /* floyd_sockets.cpp in Sources */,
-				2CE1C35D2270C7AC007892B4 /* floyd_llvm_runtime.cpp in Sources */,
 				2C40A71F1D76E179003245E3 /* immutable_ref_value.cpp in Sources */,
 				2C5372B9207A9EBA00647AD1 /* bytecode_interpreter.cpp in Sources */,
 				2CB30739214ACF09007D2732 /* software_system.cpp in Sources */,
-				2C674F9C230A100B00838CCF /* floyd_llvm.cpp in Sources */,
+				2C2224E923A3ECA60052339E /* floyd_llvm_corelib.cpp in Sources */,
 				2C085D0F23140CA6009E6D24 /* compressed_vector_benchmark.cpp in Sources */,
 				2C8C03A62221D95F0085EBBE /* csv_reporter.cc in Sources */,
+				2C2224EC23A3ECA60052339E /* floyd_llvm_optimization.cpp in Sources */,
 				2C180475208B939800F62480 /* floyd_parser.cpp in Sources */,
 				2C8C03AA2221D95F0085EBBE /* json_reporter.cc in Sources */,
 				2CA6732B23969B3000623050 /* floyd_network_component.cpp in Sources */,
 				2C42609722F06B9400ECF817 /* ast_helpers.cpp in Sources */,
+				2C2224F023A3ECA60052339E /* floyd_llvm.cpp in Sources */,
 				2C7200B421E8FB750013003B /* file_handling.cpp in Sources */,
-				2C3DE25622665E7E00807701 /* floyd_llvm_helpers.cpp in Sources */,
-				2CA2D86522F347FC00B45098 /* floyd_llvm_types.cpp in Sources */,
 				2C8C03AB2221D95F0085EBBE /* reporter.cc in Sources */,
 				2CA673222393F6BA00623050 /* floyd_http.cpp in Sources */,
 				2C8C03AC2221D95F0085EBBE /* colorprint.cc in Sources */,
 				2C8C03A12221D95F0085EBBE /* console_reporter.cc in Sources */,
 				2C180483208B939800F62480 /* parser_primitives.cpp in Sources */,
+				2C2224E823A3ECA60052339E /* floyd_llvm_codegen.cpp in Sources */,
 				2CC34CC121EF8882000F3CB6 /* floyd_repl.cpp in Sources */,
 				2CA1F65E221F71AC008BDBD7 /* variable_length_quantity.cpp in Sources */,
 				2CB2A516203D642B0001A19E /* semantic_analyser.cpp in Sources */,
@@ -1805,12 +1799,9 @@
 				2C18044D208B90E900F62480 /* text_parser.cpp in Sources */,
 				2CB7AA6B2209E51E0011DE4B /* compiler_basics.cpp in Sources */,
 				2CC0B3E322248EBD00C9D584 /* test_helpers.cpp in Sources */,
-				2C52AF7423253AC400506D60 /* floyd_llvm_optimization.cpp in Sources */,
 				2CE0FE7822EE54B100018A96 /* desugar_pass.cpp in Sources */,
 				2C18044B208B90E900F62480 /* utils.cpp in Sources */,
 				2C3D2D9722EF869B00B808AA /* ast_visitor.cpp in Sources */,
-				2CB9AFA82315E88300836EC3 /* floyd_llvm_intrinsics.cpp in Sources */,
-				2CDFD5CD22EA1E1B005B002C /* floyd_llvm_corelib.cpp in Sources */,
 				2CDA9AE52318933500231AA8 /* write_cache.cpp in Sources */,
 				2C02667C2014CAF000A82AD6 /* floyd_test_suite.cpp in Sources */,
 				2CBCA7DF1D569E07000FAE81 /* sha1.cpp in Sources */,
@@ -1819,6 +1810,7 @@
 				2C8C03A02221D95F0085EBBE /* benchmark_runner.cc in Sources */,
 				2C180494208B947C00F62480 /* statement.cpp in Sources */,
 				2C982D3620603FE2002002FF /* bytecode_generator.cpp in Sources */,
+				2C2224EA23A3ECA60052339E /* floyd_llvm_helpers.cpp in Sources */,
 				2C6CDA9822FD969B008F65C7 /* command_line_parser.cpp in Sources */,
 				2C180455208B911B00F62480 /* quark.cpp in Sources */,
 				2C18045F208B917500F62480 /* json_support.cpp in Sources */,
@@ -1827,7 +1819,7 @@
 				2C674F99230A0CF800838CCF /* semantic_ast.cpp in Sources */,
 				2C8C03A52221D95F0085EBBE /* sysinfo.cc in Sources */,
 				2C18048E208B947C00F62480 /* ast.cpp in Sources */,
-				2CB9AFA52315E2C400836EC3 /* floyd_llvm_runtime_functions.cpp in Sources */,
+				2C2224E723A3ECA60052339E /* floyd_llvm_codegen_basics.cpp in Sources */,
 				2CC9B79F2309FD1D00B195C8 /* value_backend.cpp in Sources */,
 				2C2B51CD233E348A001D59D9 /* types.cpp in Sources */,
 				2C4DA09223035A0100190C37 /* format_table.cpp in Sources */,
@@ -1835,6 +1827,7 @@
 				2C180477208B939800F62480 /* parse_expression.cpp in Sources */,
 				2CB460BD230ECADD00F664B9 /* hardware_caps.cpp in Sources */,
 				2C8C03A72221D95F0085EBBE /* benchmark_api_internal.cc in Sources */,
+				2C2224ED23A3ECA60052339E /* floyd_llvm_runtime_functions.cpp in Sources */,
 				2C557C382040173E006F6818 /* bytecode_intrinsics.cpp in Sources */,
 				2C180492208B947C00F62480 /* expression.cpp in Sources */,
 				2C18047D208B939800F62480 /* parse_statement.cpp in Sources */,
@@ -1843,15 +1836,14 @@
 				2C00DEC822198C6300DB322E /* floyd_runtime.cpp in Sources */,
 				2C8C039E2221D95F0085EBBE /* commandlineflags.cc in Sources */,
 				2CBCA7DE1D569E04000FAE81 /* sha1_class.cpp in Sources */,
-				2C5F8322224644FB009870FC /* floyd_llvm_codegen.cpp in Sources */,
 				2CBD8932228C9B2900C10CDD /* os_process.cpp in Sources */,
 				2C8C03A22221D95F0085EBBE /* benchmark_register.cc in Sources */,
 				2C3174AC2262125F0004E086 /* parse_tree_to_ast_conv.cpp in Sources */,
+				2C2224EB23A3ECA60052339E /* floyd_llvm_intrinsics.cpp in Sources */,
 				2C4F355F1D4794CD0061CA93 /* ast_value.cpp in Sources */,
 				2CAC5B90230FFC8800F89608 /* quadratic_probing_hash_table.cpp in Sources */,
 				2CDFD5C922EA1AD0005B002C /* bytecode_corelib.cpp in Sources */,
 				2C4574D522493DA2008A55B0 /* compiler_helpers.cpp in Sources */,
-				2C7E4248231AB9E6006570A2 /* floyd_llvm_codegen_basics.cpp in Sources */,
 				2C486C7E22EE4F8B00E44B3B /* collect_used_types.cpp in Sources */,
 				2C8C039B2221D90A0085EBBE /* gtest-all.cc in Sources */,
 				2C00BC421F2428FF0087B8BB /* cpp_experiments.cpp in Sources */,
@@ -1860,7 +1852,9 @@
 				2CB7AA65220900190011DE4B /* floyd_syntax.cpp in Sources */,
 				2C8C03AD2221D95F0085EBBE /* string_util.cc in Sources */,
 				2CA673252393F88D00623050 /* unix_helpers.cpp in Sources */,
+				2C2224EE23A3ECA60052339E /* floyd_llvm_runtime.cpp in Sources */,
 				2C8C039D2221D95F0085EBBE /* timers.cc in Sources */,
+				2C2224EF23A3ECA60052339E /* floyd_llvm_types.cpp in Sources */,
 				2CCA88F522B6B5F100976D8E /* floyd_corelib.cpp in Sources */,
 				2C8C03A92221D95F0085EBBE /* complexity.cc in Sources */,
 			);
@@ -1894,7 +1888,6 @@
 				2CC9B7A02309FD1D00B195C8 /* value_backend.cpp in Sources */,
 				2C8C03C52221DBD70085EBBE /* counter.cc in Sources */,
 				2C8C03C82221DBD70085EBBE /* utils.cpp in Sources */,
-				2C085D0B23140CA6009E6D24 /* floyd_llvm.cpp in Sources */,
 				2C8C03CA2221DBD70085EBBE /* sha1.cpp in Sources */,
 				2C8C03CD2221DBD70085EBBE /* benchmark_runner.cc in Sources */,
 				2C085CEF23140C5E009E6D24 /* expression.cpp in Sources */,
@@ -1907,7 +1900,6 @@
 				2C085D0423140CA6009E6D24 /* quadratic_probing_hash_table.cpp in Sources */,
 				2C085D0023140CA6009E6D24 /* parse_expression.cpp in Sources */,
 				2C8C03D02221DBD70085EBBE /* quark.cpp in Sources */,
-				2C085D0923140CA6009E6D24 /* floyd_llvm_helpers.cpp in Sources */,
 				2C1CEFC923140F7D00DE9A77 /* sha1_class.cpp in Sources */,
 				2C1CEFD4231415AE00DE9A77 /* benchmark_soundsystem.cpp in Sources */,
 				2C42609822F06B9400ECF817 /* ast_helpers.cpp in Sources */,
@@ -1919,11 +1911,9 @@
 				2C1CEFC823140F7D00DE9A77 /* json_support.cpp in Sources */,
 				2C8C03D62221DBD70085EBBE /* sysinfo.cc in Sources */,
 				2CDFD5CA22EA1AD0005B002C /* bytecode_corelib.cpp in Sources */,
-				2C5F8323224644FB009870FC /* floyd_llvm_codegen.cpp in Sources */,
 				2C085CFE23140CA6009E6D24 /* floyd_parser.cpp in Sources */,
 				2C4574D622493DA2008A55B0 /* compiler_helpers.cpp in Sources */,
 				2C085D0723140CA6009E6D24 /* floyd_test_suite.cpp in Sources */,
-				2C085D0A23140CA6009E6D24 /* floyd_llvm_runtime.cpp in Sources */,
 				2C8C03DA2221DBD70085EBBE /* benchmark_api_internal.cc in Sources */,
 				2C085CFA23140CA6009E6D24 /* desugar_pass.cpp in Sources */,
 				2C085D0223140CA6009E6D24 /* parser_primitives.cpp in Sources */,
@@ -1939,11 +1929,9 @@
 				2C1CEFCD23140F7D00DE9A77 /* software_system.cpp in Sources */,
 				2C8C03E92221DBD70085EBBE /* benchmark.cc in Sources */,
 				2C085D0D23140CA6009E6D24 /* file_handling.cpp in Sources */,
-				2CA2D86622F347FC00B45098 /* floyd_llvm_types.cpp in Sources */,
 				2C085CEB23140A4E009E6D24 /* floyd_benchmark_main.cpp in Sources */,
 				2C8C03EC2221DBD70085EBBE /* string_util.cc in Sources */,
 				2C8C03ED2221DBD70085EBBE /* timers.cc in Sources */,
-				2CDFD5CE22EA1E1B005B002C /* floyd_llvm_corelib.cpp in Sources */,
 				2C1CEFCC23140F7D00DE9A77 /* semantic_ast.cpp in Sources */,
 				2C8C03EE2221DBD70085EBBE /* complexity.cc in Sources */,
 				2C085D0123140CA6009E6D24 /* parse_statement.cpp in Sources */,

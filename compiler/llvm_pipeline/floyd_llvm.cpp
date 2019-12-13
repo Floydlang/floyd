@@ -19,6 +19,7 @@
 
 namespace floyd {
 
+#define QUARK_TEST QUARK_TEST_OFF
 
 
 

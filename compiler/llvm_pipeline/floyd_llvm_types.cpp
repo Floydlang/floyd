@@ -15,6 +15,9 @@
 
 namespace floyd {
 
+#define QUARK_TEST QUARK_TEST_OFF
+
+
 struct builder_t;
 
 
@@ -707,7 +710,7 @@ llvm::Type* make_frp_type(const llvm_type_lookup& type_lookup){
 */
 
 #if 0
-QUARK_TEST_VIP("Types", "update_named_type()", "", ""){
+QUARK_TEST("Types", "update_named_type()", "", ""){
 	types_t types;
 	const auto name = unpack_type_name("/a/b");
 	const auto a = make_named_type(types, name, make_undefined());
