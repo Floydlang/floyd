@@ -879,12 +879,9 @@ bool check_invariant(const value_backend_t& backend, runtime_value_t value, cons
 int64_t find_function_by_name(const value_backend_t& backend, const function_id_t& s);
 
 
-inline const func_link_t& lookup_func_link(const value_backend_t& backend, runtime_value_t value){
-	auto func_id = value.function_link_id;
-	QUARK_ASSERT(func_id >= 0 && func_id < backend.func_link_lookup.size());
-	const auto& e = backend.func_link_lookup[func_id];
-	return e;
-}
+const func_link_t& lookup_func_link(const value_backend_t& backend, runtime_value_t value);
+const func_link_t& lookup_func_link_from_id(const value_backend_t& backend, runtime_value_t value);
+const func_link_t& lookup_func_link_from_native(const value_backend_t& backend, runtime_value_t value);
 
 type_t lookup_type_ref(const value_backend_t& backend, runtime_type_t type);
 

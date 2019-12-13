@@ -15,7 +15,6 @@
 
 namespace floyd {
 
-#define QUARK_TEST QUARK_TEST_OFF
 
 
 struct builder_t;
@@ -806,8 +805,7 @@ QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""){
 	QUARK_VERIFY(r.args[1].map_type == llvm_arg_mapping_t::map_type::k_known_value_type);
 }
 
-QUARK_TEST
-("LLVM Codegen", "map_function_arguments()", "func void(int, DYN, bool)", ""){
+QUARK_TEST("LLVM Codegen", "map_function_arguments()", "func void(int, DYN, bool)", ""){
 	llvm::LLVMContext context;
 	const auto types = make_basic_types(context);
 	auto module = std::make_unique<llvm::Module>("test", context);

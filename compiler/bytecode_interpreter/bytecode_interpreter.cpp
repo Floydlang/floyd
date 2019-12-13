@@ -515,22 +515,49 @@ interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config
 		};
 	});
 
-	//?? only add those corelib calls were we can find a global symbol with its name. This lets us find the function_type, alternatively know to NOT link the corelib function.
 	const auto corelib_native_funcs = bc_get_corelib_calls();
 
 	const auto funcs = mapf<func_link_t>(program._function_defs, [&corelib_native_funcs](const auto& e){
 		const auto& function_name = e.func_link.link_name.s;
 		const auto it = corelib_native_funcs.find(function_id_t { function_name } );
-		void* f = it != corelib_native_funcs.end() ? (void*)it->second : (void*)e._frame_ptr.get();
-		return func_link_t {
-			e.func_link.debug_type,
-			e.func_link.link_name,
-			e.func_link.function_type,
-			e.func_link.dynamic_arg_count,
-			e.func_link.is_bc_function,
-			f
-		};
+
+		//	There us a native implementation of this function:
+		if(it != corelib_native_funcs.end()){
+//			const auto link_name = encode_floyd_func_link_name(function_name);
+			const auto link_name = link_name_t { function_name };
+
+			return func_link_t {
+				e.func_link.debug_type,
+				link_name,
+				e.func_link.function_type,
+				e.func_link.dynamic_arg_count,
+				e.func_link.is_bc_function,
+				(void*)it->second
+			};
+		}
+
+		//	There is a BC implementation.
+		else if(e._frame_ptr != nullptr){
+//			const auto link_name = encode_floyd_func_link_name(function_name);
+			const auto link_name = link_name_t { function_name };
+
+			return func_link_t {
+				e.func_link.debug_type,
+				link_name,
+				e.func_link.function_type,
+				e.func_link.dynamic_arg_count,
+				e.func_link.is_bc_function,
+				(void*)e._frame_ptr.get()
+			};
+		}
+
+		//	No implementation.
+		else{
+			return func_link_t { "", {}, {}, false, false, nullptr };
+		}
 	});
+
+	//	Remove functions that don't have an implementation.
 	const auto funcs2 = filterf<func_link_t>(funcs, [](const auto& e){ return e.link_name.s.empty() == false; });
 
 	const auto func_lookup = concat(funcs2, intrinsics2);

@@ -1797,6 +1797,45 @@ int64_t find_function_by_name(const value_backend_t& backend, const function_id_
 }
 
 
+const func_link_t& lookup_func_link_from_id(const value_backend_t& backend, runtime_value_t value){
+	auto func_id = value.function_link_id;
+	QUARK_ASSERT(func_id >= 0 && func_id < backend.func_link_lookup.size());
+	const auto& e = backend.func_link_lookup[func_id];
+	return e;
+}
+
+const func_link_t& lookup_func_link_from_native(const value_backend_t& backend, runtime_value_t value){
+	const void* f = (const void*)value.function_link_id;
+	const auto& v = backend.func_link_lookup;
+	const auto it = std::find_if(v.begin(), v.end(), [&] (auto& m) { return m.f == f; });
+	if(it == v.end()){
+		throw std::runtime_error("");
+	}
+	else{
+		return *it;
+	}
+}
+
+const func_link_t& lookup_func_link(const value_backend_t& backend, runtime_value_t value){
+	auto func_id = value.function_link_id;
+	if(func_id >= 0 && func_id < backend.func_link_lookup.size()){
+		const auto& e = backend.func_link_lookup[func_id];
+		return e;
+	}
+
+	const void* f = (const void*)value.function_link_id;
+	const auto& v = backend.func_link_lookup;
+	const auto it = std::find_if(v.begin(), v.end(), [&] (auto& m) { return m.f == f; });
+	if(it != v.end()){
+		return *it;
+	}
+
+	throw std::runtime_error("");
+}
+
+
+
+
 value_backend_t::value_backend_t(
 	const std::vector<func_link_t>& func_link_lookup,
 	const std::vector<std::pair<type_t, struct_layout_t>>& struct_layouts,

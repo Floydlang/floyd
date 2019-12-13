@@ -791,6 +791,7 @@ QUARK_TEST("", "main_internal()", "", ""){
 }
 
 #if 0
+
 QUARK_TEST("", "main_internal()", "", ""){
 	const auto files = std::map<std::string, std::string>{ { "test.floyd", k_tests_program } };
 	const auto result = main_test(files, "floyd run test.floyd");
