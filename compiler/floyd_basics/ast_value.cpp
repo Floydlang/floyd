@@ -134,7 +134,7 @@ bool value_ext_t::check_invariant() const{
 		QUARK_ASSERT(_struct == nullptr);
 		QUARK_ASSERT(_vector_elements.empty());
 		QUARK_ASSERT(_dict_entries.empty());
-		QUARK_ASSERT(_function_id == k_no_function_id);
+		QUARK_ASSERT(_function_id == k_no_module_symbol);
 	}
 	else if(physical_base_type == base_type::k_json){
 		QUARK_ASSERT(_string.empty());
@@ -143,7 +143,7 @@ bool value_ext_t::check_invariant() const{
 		QUARK_ASSERT(_struct == nullptr);
 		QUARK_ASSERT(_vector_elements.empty());
 		QUARK_ASSERT(_dict_entries.empty());
-		QUARK_ASSERT(_function_id == k_no_function_id);
+		QUARK_ASSERT(_function_id == k_no_module_symbol);
 
 		QUARK_ASSERT(_json->check_invariant());
 	}
@@ -155,7 +155,7 @@ bool value_ext_t::check_invariant() const{
 		QUARK_ASSERT(_struct == nullptr);
 		QUARK_ASSERT(_vector_elements.empty());
 		QUARK_ASSERT(_dict_entries.empty());
-		QUARK_ASSERT(_function_id == k_no_function_id);
+		QUARK_ASSERT(_function_id == k_no_module_symbol);
 
 		QUARK_ASSERT(_typeid_value.check_invariant());
 	}
@@ -166,7 +166,7 @@ bool value_ext_t::check_invariant() const{
 		QUARK_ASSERT(_struct != nullptr);
 		QUARK_ASSERT(_vector_elements.empty());
 		QUARK_ASSERT(_dict_entries.empty());
-		QUARK_ASSERT(_function_id == k_no_function_id);
+		QUARK_ASSERT(_function_id == k_no_module_symbol);
 
 		QUARK_ASSERT(_struct && _struct->check_invariant());
 	}
@@ -177,7 +177,7 @@ bool value_ext_t::check_invariant() const{
 		QUARK_ASSERT(_struct == nullptr);
 //		QUARK_ASSERT(_vector_elements.empty());
 		QUARK_ASSERT(_dict_entries.empty());
-		QUARK_ASSERT(_function_id == k_no_function_id);
+		QUARK_ASSERT(_function_id == k_no_module_symbol);
 	}
 	else if(physical_base_type == base_type::k_dict){
 		QUARK_ASSERT(_string.empty());
@@ -186,7 +186,7 @@ bool value_ext_t::check_invariant() const{
 		QUARK_ASSERT(_struct == nullptr);
 		QUARK_ASSERT(_vector_elements.empty());
 //		QUARK_ASSERT(_dict_entries.empty());
-		QUARK_ASSERT(_function_id == k_no_function_id);
+		QUARK_ASSERT(_function_id == k_no_module_symbol);
 	}
 	else if(physical_base_type == base_type::k_function){
 		QUARK_ASSERT(_string.empty());
@@ -195,7 +195,7 @@ bool value_ext_t::check_invariant() const{
 		QUARK_ASSERT(_struct == nullptr);
 		QUARK_ASSERT(_vector_elements.empty());
 		QUARK_ASSERT(_dict_entries.empty());
-//				QUARK_ASSERT(_function_id != k_no_function_id);
+//				QUARK_ASSERT(_function_id != k_no_module_symbol);
 	}
 	else if(physical_base_type == base_type::k_named_type){
 	}
@@ -255,7 +255,7 @@ value_ext_t::value_ext_t(const std::map<std::string, value_t>& s) :
 	QUARK_ASSERT(check_invariant());
 }
 
-value_ext_t::value_ext_t(function_id_t function_id) :
+value_ext_t::value_ext_t(module_symbol_t function_id) :
 	_rc(1),
 	_physical_base_type(base_type::k_function),
 	_function_id(function_id)
@@ -651,7 +651,7 @@ const std::map<std::string, value_t>& value_t::get_dict_value() const{
 	return _value_internals._ext->_dict_entries;
 }
 
-function_id_t value_t::get_function_value() const{
+module_symbol_t value_t::get_function_value() const{
 	QUARK_ASSERT(check_invariant());
 
 	if(!is_function()){
@@ -898,7 +898,7 @@ value_t value_t::make_dict_value(types_t& types, const type_t& value_type, const
 	return value_t(types, value_internals_t { ._ext = ext }, type);
 }
 
-value_t value_t::make_function_value(const types_t& types, const type_t& type, const function_id_t& function_id){
+value_t value_t::make_function_value(const types_t& types, const type_t& type, const module_symbol_t& function_id){
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(type.is_function());
 
@@ -906,7 +906,7 @@ value_t value_t::make_function_value(const types_t& types, const type_t& type, c
 	QUARK_ASSERT(ext->_rc == 1);
 	return value_t(types, value_internals_t { ._ext = ext }, type);
 }
-value_t value_t::make_function_value(types_t& types, const type_t& type, const function_id_t& function_id){
+value_t value_t::make_function_value(types_t& types, const type_t& type, const module_symbol_t& function_id){
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(type.is_function());
 
@@ -1103,7 +1103,8 @@ std::string to_compact_string2(const types_t& types, const value_t& value) {
 		return dict_instance_to_compact_string(types, value.get_dict_value());
 	}
 	else if(base_type == base_type::k_function){
-		return value.get_function_value().name;
+		const auto s = value.get_function_value();
+		return s.s.empty() ? "<unbound>" : s.s;
 	}
 	else if(base_type == base_type::k_named_type){
 		const auto temp = value_t::replace_logical_type(value, peek2(types, value.get_type()));
@@ -1216,7 +1217,7 @@ value_t json_to_value(types_t& types, const type_t& type, const json_t& v){
 	}
 	else if(type.is_function()){
 		const auto function_id0 = v.get_object_element("function_id").get_string();
-		const auto function_id = function_id_t { function_id0 };
+		const auto function_id = module_symbol_t(function_id0);
 		return value_t::make_function_value(types, type, function_id);
 	}
 	else if(type.is_named_type()){
@@ -1308,7 +1309,7 @@ json_t value_to_json(const types_t& types, const value_t& v){
 	else if(v.is_function()){
 		return json_t::make_object(
 			{
-				{ "function_id", v.get_function_value().name }
+				{ "function_id", v.get_function_value().s }
 			}
 		);
 	}

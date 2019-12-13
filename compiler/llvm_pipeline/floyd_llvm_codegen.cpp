@@ -367,9 +367,8 @@ static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const 
 			UNSUPPORTED();
 		}
 		llvm::Value* operator()(const function_t& e2) const{
-			const auto function_id = value.get_function_value();
+			const auto link_name = value.get_function_value();
 			for(const auto& e: gen_acc.gen.link_map){
-				const auto link_name = encode_floyd_func_link_name(function_id.name);
 				if(e.link_name == link_name){
 					return e.llvm_codegen_f;
 				}
@@ -1202,7 +1201,7 @@ static llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& ge
 	const auto resolved_call_function_type = calc_resolved_function_type(gen_acc.gen, e, callee_function_type, details.args);
 
 	const auto name = it->name;
-	const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map, encode_runtime_func_link_name(name));
+	const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map, module_symbol_t(name));
 	auto callee_reg = def.llvm_codegen_f;
 	QUARK_ASSERT(callee_reg != nullptr);
 
@@ -2361,7 +2360,7 @@ static void generate_floyd_function_body(llvm_code_generator_t& gen_acc0, const 
 	QUARK_ASSERT(body.check_invariant());
 
 	auto& types = gen_acc0.type_lookup.state.types;
-	const auto link_name = encode_floyd_func_link_name(function_def._definition_name);
+	const auto link_name = module_symbol_t(function_def._definition_name);
 
 	auto f = gen_acc0.module->getFunction(link_name.s);
 	QUARK_ASSERT(check_invariant__function(f));

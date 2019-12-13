@@ -709,45 +709,45 @@ static bc_value_t bc_corelib__execute_http_request(interpreter_t& vm, const bc_v
 
 
 
-std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_corelib_calls(){
+std::map<module_symbol_t, BC_NATIVE_FUNCTION_PTR> bc_get_corelib_calls(){
 
-	const auto result = std::map<function_id_t, BC_NATIVE_FUNCTION_PTR>{
-		{ { "make_benchmark_report" }, bc_corelib__make_benchmark_report },
+	const auto result = std::map<module_symbol_t, BC_NATIVE_FUNCTION_PTR>{
+		{ module_symbol_t("make_benchmark_report"), bc_corelib__make_benchmark_report },
 
-		{ { "detect_hardware_caps" }, bc_corelib__detect_hardware_caps },
-		{ { "make_hardware_caps_report" }, bc_corelib__make_hardware_caps_report },
-		{ { "make_hardware_caps_report_brief" }, bc_corelib__make_hardware_caps_report_brief },
-		{ { "get_current_date_and_time_string" }, bc_corelib__get_current_date_and_time_string },
+		{ module_symbol_t("detect_hardware_caps"), bc_corelib__detect_hardware_caps },
+		{ module_symbol_t("make_hardware_caps_report"), bc_corelib__make_hardware_caps_report },
+		{ module_symbol_t("make_hardware_caps_report_brief"), bc_corelib__make_hardware_caps_report_brief },
+		{ module_symbol_t("get_current_date_and_time_string"), bc_corelib__get_current_date_and_time_string },
 
-		{ { "calc_string_sha1" }, bc_corelib__calc_string_sha1 },
-		{ { "calc_binary_sha1" }, bc_corelib__calc_binary_sha1 },
+		{ module_symbol_t("calc_string_sha1"), bc_corelib__calc_string_sha1 },
+		{ module_symbol_t("calc_binary_sha1"), bc_corelib__calc_binary_sha1 },
 
-		{ { "get_time_of_day" }, bc_corelib__get_time_of_day },
+		{ module_symbol_t("get_time_of_day"), bc_corelib__get_time_of_day },
 
-		{ { "read_text_file" }, bc_corelib__read_text_file },
-		{ { "write_text_file" }, bc_corelib__write_text_file },
-		{ { "read_line_stdin" }, bc_corelib__read_line_stdin },
+		{ module_symbol_t("read_text_file"), bc_corelib__read_text_file },
+		{ module_symbol_t("write_text_file"), bc_corelib__write_text_file },
+		{ module_symbol_t("read_line_stdin"), bc_corelib__read_line_stdin },
 
-		{ { "get_fsentries_shallow" }, bc_corelib__get_fsentries_shallow },
-		{ { "get_fsentries_deep" }, bc_corelib__get_fsentries_deep },
-		{ { "get_fsentry_info" }, bc_corelib__get_fsentry_info },
-		{ { "get_fs_environment" }, bc_corelib__get_fs_environment },
-		{ { "does_fsentry_exist" }, bc_corelib__does_fsentry_exist },
-		{ { "create_directory_branch" }, bc_corelib__create_directory_branch },
-		{ { "delete_fsentry_deep" }, bc_corelib__delete_fsentry_deep },
-		{ { "rename_fsentry" }, bc_corelib__rename_fsentry },
+		{ module_symbol_t("get_fsentries_shallow"), bc_corelib__get_fsentries_shallow },
+		{ module_symbol_t("get_fsentries_deep"), bc_corelib__get_fsentries_deep },
+		{ module_symbol_t("get_fsentry_info"), bc_corelib__get_fsentry_info },
+		{ module_symbol_t("get_fs_environment"), bc_corelib__get_fs_environment },
+		{ module_symbol_t("does_fsentry_exist"), bc_corelib__does_fsentry_exist },
+		{ module_symbol_t("create_directory_branch"), bc_corelib__create_directory_branch },
+		{ module_symbol_t("delete_fsentry_deep"), bc_corelib__delete_fsentry_deep },
+		{ module_symbol_t("rename_fsentry"), bc_corelib__rename_fsentry },
 
-		{ { "read_socket" }, bc_corelib__read_socket },
-		{ { "write_socket" }, bc_corelib__write_socket },
-		{ { "lookup_host_from_ip" }, bc_corelib__lookup_host_from_ip },
-		{ { "lookup_host_from_name" }, bc_corelib__lookup_host_from_name },
-		{ { "to_ipv4_dotted_decimal_string" }, nullptr },
-		{ { "from_ipv4_dotted_decimal_string" }, nullptr },
-		{ { "pack_http_request" }, bc_corelib__pack_http_request },
-		{ { "unpack_http_request" }, bc_corelib__unpack_http_request },
-		{ { "pack_http_response" }, bc_corelib__pack_http_response },
-		{ { "unpack_http_response" }, bc_corelib__unpack_http_response },
-		{ { "execute_http_request" }, bc_corelib__execute_http_request }
+		{ module_symbol_t("read_socket"), bc_corelib__read_socket },
+		{ module_symbol_t("write_socket"), bc_corelib__write_socket },
+		{ module_symbol_t("lookup_host_from_ip"), bc_corelib__lookup_host_from_ip },
+		{ module_symbol_t("lookup_host_from_name"), bc_corelib__lookup_host_from_name },
+		{ module_symbol_t("to_ipv4_dotted_decimal_string"), nullptr },
+		{ module_symbol_t("from_ipv4_dotted_decimal_string"), nullptr },
+		{ module_symbol_t("pack_http_request"), bc_corelib__pack_http_request },
+		{ module_symbol_t("unpack_http_request"), bc_corelib__unpack_http_request },
+		{ module_symbol_t("pack_http_response"), bc_corelib__pack_http_response },
+		{ module_symbol_t("unpack_http_response"), bc_corelib__unpack_http_response },
+		{ module_symbol_t("execute_http_request"), bc_corelib__execute_http_request }
 	};
 	return result;
 }

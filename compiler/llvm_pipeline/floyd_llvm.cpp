@@ -10,6 +10,7 @@
 
 #include "floyd_llvm_runtime.h"
 #include "value_backend.h"
+#include "compiler_basics.h"
 #include "floyd_llvm_codegen.h"
 #include "semantic_ast.h"
 #include "compiler_helpers.h"
@@ -125,9 +126,9 @@ QUARK_TEST("", "collect_benchmarks_source()", "Return several results from one b
 	const auto result = collect_benchmarks_source(program_source, "mymodule", compilation_unit_mode::k_include_core_lib, make_default_compiler_settings());
 
 	QUARK_VERIFY(result.size() == 3);
-	QUARK_VERIFY(result[0] == (bench_t{ benchmark_id_t{ "", "abc" }, encode_floyd_func_link_name("benchmark__abc") }));
-	QUARK_VERIFY(result[1] == (bench_t{ benchmark_id_t{ "", "def" }, encode_floyd_func_link_name("benchmark__def") }));
-	QUARK_VERIFY(result[2] == (bench_t{ benchmark_id_t{ "", "g" }, encode_floyd_func_link_name("benchmark__g") }));
+	QUARK_VERIFY(result[0] == (bench_t{ benchmark_id_t{ "", "abc" }, module_symbol_t("benchmark__abc") }));
+	QUARK_VERIFY(result[1] == (bench_t{ benchmark_id_t{ "", "def" }, module_symbol_t("benchmark__def") }));
+	QUARK_VERIFY(result[2] == (bench_t{ benchmark_id_t{ "", "g" }, module_symbol_t("benchmark__g") }));
 }
 
 std::vector<benchmark_result2_t> run_benchmarks_source(
@@ -252,11 +253,11 @@ QUARK_TEST("", "collect_tests_source()", "", ""){
 	const auto result = collect_tests_source(program_source, "module1", compilation_unit_mode::k_include_core_lib, make_default_compiler_settings());
 
 	QUARK_VERIFY(result.size() == 2);
-	QUARK_VERIFY(result[0].f.s == "floydf_test__thx():print a message");
+	QUARK_VERIFY(result[0].f.s == "test__thx():print a message");
 	QUARK_VERIFY(result[0].test_id.module == "");
 	QUARK_VERIFY(result[0].test_id.function_name == "thx()");
 	QUARK_VERIFY(result[0].test_id.scenario == "print a message");
-	QUARK_VERIFY(result[1].f.s == "floydf_test__1138():movie");
+	QUARK_VERIFY(result[1].f.s == "test__1138():movie");
 	QUARK_VERIFY(result[1].test_id.module == "");
 	QUARK_VERIFY(result[1].test_id.function_name == "1138()");
 	QUARK_VERIFY(result[1].test_id.scenario == "movie");
@@ -441,7 +442,7 @@ QUARK_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'resu
 	auto ee = init_llvm_jit(*program, handler, false);
 	auto context = floyd::llvm_context_t { ee.get(), nullptr };
 
-	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(*context.ee, "result"));
+	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(*context.ee, floyd::module_symbol_t("result")));
 	QUARK_ASSERT(result == 6);
 
 //	QUARK_TRACE_SS("result = " << floyd::print_program(*program));

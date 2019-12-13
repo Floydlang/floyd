@@ -163,7 +163,7 @@ static const llvm_function_link_entry_t& lookup_link_map(const config_t& config,
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
-	const auto& res = find_function_def_from_link_name(link_map, encode_runtime_func_link_name(it->bind.name));
+	const auto& res = find_function_def_from_link_name(link_map, it->bind.name);
 	return res;
 }
 
@@ -337,7 +337,7 @@ static runtime_value_t map__carray(floyd_runtime_t* frp, runtime_value_t element
 	const auto f_arg_types = peek2(types, type1).get_function_args(types);
 #endif
 
-	const auto& func_link = lookup_func_link(backend, f_value);
+	const auto& func_link = lookup_func_link_required(backend, f_value);
 	const auto f = reinterpret_cast<MAP_F>(func_link.f);
 
 	const auto count = elements_vec.vector_carray_ptr->get_element_count();
@@ -368,7 +368,7 @@ static runtime_value_t map__hamt(floyd_runtime_t* frp, runtime_value_t elements_
 	const auto f_arg_types = peek2(types, type1).get_function_args(types);
 #endif
 
-	const auto& func_link = lookup_func_link(backend, f_value);
+	const auto& func_link = lookup_func_link_required(backend, f_value);
 	const auto f = reinterpret_cast<MAP_F>(func_link.f);
 
 	const auto count = elements_vec.vector_hamt_ptr->get_element_count();
@@ -402,10 +402,10 @@ static std::vector<specialization_t> make_map_specializations(llvm::LLVMContext&
 		false
 	);
 	return {
-		specialization_t { eresolved_type::k_vector_carray_pod,		{ "map_carray_pod", function_type, reinterpret_cast<void*>(map__carray) } },
-		specialization_t { eresolved_type::k_vector_carray_nonpod,	{ "map_carray_nonpod", function_type, reinterpret_cast<void*>(map__carray) } },
-		specialization_t { eresolved_type::k_vector_hamt_pod,		{ "map_hamt_pod", function_type, reinterpret_cast<void*>(map__hamt) } },
-		specialization_t { eresolved_type::k_vector_hamt_nonpod, 	{ "map_hamt_nonpod", function_type, reinterpret_cast<void*>(map__hamt) } }
+		specialization_t { eresolved_type::k_vector_carray_pod,		{ module_symbol_t("map_carray_pod"), function_type, reinterpret_cast<void*>(map__carray) } },
+		specialization_t { eresolved_type::k_vector_carray_nonpod,	{ module_symbol_t("map_carray_nonpod"), function_type, reinterpret_cast<void*>(map__carray) } },
+		specialization_t { eresolved_type::k_vector_hamt_pod,		{ module_symbol_t("map_hamt_pod"), function_type, reinterpret_cast<void*>(map__hamt) } },
+		specialization_t { eresolved_type::k_vector_hamt_nonpod, 	{ module_symbol_t("map_hamt_nonpod"), function_type, reinterpret_cast<void*>(map__hamt) } }
 	};
 }
 
@@ -472,7 +472,7 @@ static runtime_value_t floyd_llvm_intrinsic__map_string(floyd_runtime_t* frp, ru
 	));
 */
 
-	const auto& func_link = lookup_func_link(backend, func);
+	const auto& func_link = lookup_func_link_required(backend, func);
 	const auto f = reinterpret_cast<MAP_STRING_F>(func_link.f);
 
 	const auto input_string = from_runtime_string(r, input_string0);
@@ -536,7 +536,7 @@ static runtime_value_t map_dag__carray(
 
 	const auto return_type = make_vector(types, r_type);
 
-	const auto& func_link = lookup_func_link(backend, f);
+	const auto& func_link = lookup_func_link_required(backend, f);
 	const auto f2 = reinterpret_cast<map_dag_F>(func_link.f);
 
 	const auto elements2 = elements.vector_carray_ptr;
@@ -665,7 +665,7 @@ static runtime_value_t map_dag__hamt(
 
 	const auto return_type = make_vector(types, r_type);
 
-	const auto& func_link = lookup_func_link(backend, f);
+	const auto& func_link = lookup_func_link_required(backend, f);
 	const auto f2 = reinterpret_cast<map_dag_F>(func_link.f);
 
 	const auto elements2 = elements.vector_hamt_ptr;
@@ -811,7 +811,7 @@ static runtime_value_t filter__carray(floyd_runtime_t* frp, runtime_value_t elem
 
 	const auto& vec = *elements_vec.vector_carray_ptr;
 
-	const auto& func_link = lookup_func_link(backend, f_value);
+	const auto& func_link = lookup_func_link_required(backend, f_value);
 	const auto f = reinterpret_cast<FILTER_F>(func_link.f);
 
 	auto count = vec.get_element_count();
@@ -858,7 +858,7 @@ static runtime_value_t filter__hamt(floyd_runtime_t* frp, runtime_value_t elemen
 
 	const auto& vec = *elements_vec.vector_hamt_ptr;
 
-	const auto& func_link = lookup_func_link(backend, f_value);
+	const auto& func_link = lookup_func_link_required(backend, f_value);
 	const auto f = reinterpret_cast<FILTER_F>(func_link.f);
 
 	auto count = vec.get_element_count();
@@ -927,7 +927,7 @@ static runtime_value_t reduce__carray(floyd_runtime_t* frp, runtime_value_t elem
 	const auto& vec = *elements_vec.vector_carray_ptr;
 	const auto& init = init_value;
 
-	const auto& func_link = lookup_func_link(backend, f_value);
+	const auto& func_link = lookup_func_link_required(backend, f_value);
 	const auto f = reinterpret_cast<REDUCE_F>(func_link.f);
 
 	auto count = vec.get_element_count();
@@ -961,7 +961,7 @@ static runtime_value_t reduce__hamt(floyd_runtime_t* frp, runtime_value_t elemen
 	const auto& vec = *elements_vec.vector_hamt_ptr;
 	const auto& init = init_value;
 
-	const auto& func_link = lookup_func_link(backend, f_value);
+	const auto& func_link = lookup_func_link_required(backend, f_value);
 	const auto f = reinterpret_cast<REDUCE_F>(func_link.f);
 
 	auto count = vec.get_element_count();
@@ -1036,7 +1036,7 @@ static runtime_value_t stable_sort__carray(
 
 	const auto elements2 = from_runtime_value2(backend, elements, type0);
 
-	const auto& func_link = lookup_func_link(backend, f);
+	const auto& func_link = lookup_func_link_required(backend, f);
 	const auto f2 = reinterpret_cast<stable_sort_F>(func_link.f);
 
 	struct sort_functor_r {
@@ -1092,7 +1092,7 @@ static runtime_value_t stable_sort__hamt(
 
 	const auto elements2 = from_runtime_value2(backend, elements, type0);
 
-	const auto& func_link = lookup_func_link(backend, f);
+	const auto& func_link = lookup_func_link_required(backend, f);
 	const auto f2 = reinterpret_cast<stable_sort_F>(func_link.f);
 
 	struct sort_functor_r {
@@ -1224,11 +1224,11 @@ static std::vector<specialization_t> make_push_back_specializations(llvm::LLVMCo
 	);
 	return {
 //		specialization_t { { "push_back", make_intrinsic_llvm_function_type(type_lookup, make_push_back_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__push_back) }, xx),
-		specialization_t { eresolved_type::k_string,				{ "push_back__string", function_type, reinterpret_cast<void*>(floydrt_push_back__string) } },
-		specialization_t { eresolved_type::k_vector_carray_pod,		{ "push_back_carray_pod", function_type, reinterpret_cast<void*>(floydrt_push_back_carray_pod) } },
-		specialization_t { eresolved_type::k_vector_carray_nonpod,	{ "push_back_carray_nonpod", function_type, reinterpret_cast<void*>(floydrt_push_back_carray_nonpod) } },
-		specialization_t { eresolved_type::k_vector_hamt_pod,		{ "push_back_hamt_pod", function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_pod) } },
-		specialization_t { eresolved_type::k_vector_hamt_nonpod, 	{ "push_back_hamt_nonpod", function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_nonpod) } }
+		specialization_t { eresolved_type::k_string,				{ module_symbol_t("push_back__string"), function_type, reinterpret_cast<void*>(floydrt_push_back__string) } },
+		specialization_t { eresolved_type::k_vector_carray_pod,		{ module_symbol_t("push_back_carray_pod"), function_type, reinterpret_cast<void*>(floydrt_push_back_carray_pod) } },
+		specialization_t { eresolved_type::k_vector_carray_nonpod,	{ module_symbol_t("push_back_carray_nonpod"), function_type, reinterpret_cast<void*>(floydrt_push_back_carray_nonpod) } },
+		specialization_t { eresolved_type::k_vector_hamt_pod,		{ module_symbol_t("push_back_hamt_pod"), function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_pod) } },
+		specialization_t { eresolved_type::k_vector_hamt_nonpod, 	{ module_symbol_t("push_back_hamt_nonpod"), function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_nonpod) } }
 	};
 }
 
@@ -1443,19 +1443,19 @@ static std::vector<specialization_t> make_size_specializations(llvm::LLVMContext
 	);
 	return {
 //		specialization_t { eresolved_type::k_string,					{ "size", make_intrinsic_llvm_function_type(type_lookup, make_size_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__size) },
-		specialization_t { eresolved_type::k_string,					{ "size__string", function_type1, reinterpret_cast<void*>(size__string) } },
+		specialization_t { eresolved_type::k_string,					{ module_symbol_t("size__string"), function_type1, reinterpret_cast<void*>(size__string) } },
 
-		specialization_t { eresolved_type::k_vector_carray_pod,			{ "size_vector_carray", function_type1, reinterpret_cast<void*>(size_vector_carray) } },
-		specialization_t { eresolved_type::k_vector_carray_nonpod,		{ "size_vector_carray", function_type1, reinterpret_cast<void*>(size_vector_carray) } },
-		specialization_t { eresolved_type::k_vector_hamt_pod,			{ "size_vector_hamt", function_type1, reinterpret_cast<void*>(size_vector_hamt) } },
-		specialization_t { eresolved_type::k_vector_hamt_nonpod,		{ "size_vector_hamt", function_type1, reinterpret_cast<void*>(size_vector_hamt) } },
+		specialization_t { eresolved_type::k_vector_carray_pod,			{ module_symbol_t("size_vector_carray"), function_type1, reinterpret_cast<void*>(size_vector_carray) } },
+		specialization_t { eresolved_type::k_vector_carray_nonpod,		{ module_symbol_t("size_vector_carray"), function_type1, reinterpret_cast<void*>(size_vector_carray) } },
+		specialization_t { eresolved_type::k_vector_hamt_pod,			{ module_symbol_t("size_vector_hamt"), function_type1, reinterpret_cast<void*>(size_vector_hamt) } },
+		specialization_t { eresolved_type::k_vector_hamt_nonpod,		{ module_symbol_t("size_vector_hamt"), function_type1, reinterpret_cast<void*>(size_vector_hamt) } },
 
-		specialization_t { eresolved_type::k_dict_cppmap_pod,			{ "size_dict_cppmap", function_type2, reinterpret_cast<void*>(size_dict_cppmap) } },
-		specialization_t { eresolved_type::k_dict_cppmap_nonpod,		{ "size_dict_cppmap", function_type2, reinterpret_cast<void*>(size_dict_cppmap) } },
-		specialization_t { eresolved_type::k_dict_hamt_pod,				{ "size_dict_hamt", function_type2, reinterpret_cast<void*>(size_dict_hamt) } },
-		specialization_t { eresolved_type::k_dict_hamt_nonpod,			{ "size_dict_hamt", function_type2, reinterpret_cast<void*>(size_dict_hamt) } },
+		specialization_t { eresolved_type::k_dict_cppmap_pod,			{ module_symbol_t("size_dict_cppmap"), function_type2, reinterpret_cast<void*>(size_dict_cppmap) } },
+		specialization_t { eresolved_type::k_dict_cppmap_nonpod,		{ module_symbol_t("size_dict_cppmap"), function_type2, reinterpret_cast<void*>(size_dict_cppmap) } },
+		specialization_t { eresolved_type::k_dict_hamt_pod,				{ module_symbol_t("size_dict_hamt"), function_type2, reinterpret_cast<void*>(size_dict_hamt) } },
+		specialization_t { eresolved_type::k_dict_hamt_nonpod,			{ module_symbol_t("size_dict_hamt"), function_type2, reinterpret_cast<void*>(size_dict_hamt) } },
 
-		specialization_t { eresolved_type::k_json,						{ "size_json", function_type3, reinterpret_cast<void*>(size_json) } }
+		specialization_t { eresolved_type::k_json,						{ module_symbol_t("size_json"), function_type3, reinterpret_cast<void*>(size_json) } }
 	};
 }
 
@@ -1748,17 +1748,17 @@ static std::vector<specialization_t> make_update_specializations(llvm::LLVMConte
 	);
 	return {
 //		specialization_t{ eresolved_type::k_string, { "update", make_intrinsic_llvm_function_type(type_lookup, make_update_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__update) } }
-		specialization_t { eresolved_type::k_string,					{ "update__string", function_type1, reinterpret_cast<void*>(update_string) } },
+		specialization_t { eresolved_type::k_string,					{ module_symbol_t("update__string"), function_type1, reinterpret_cast<void*>(update_string) } },
 
-		specialization_t { eresolved_type::k_vector_carray_pod,			{ "update_vector_carray", function_type1, reinterpret_cast<void*>(update_vector_carray_pod) } },
-		specialization_t { eresolved_type::k_vector_carray_nonpod,		{ "update_vector_carray", function_type1, reinterpret_cast<void*>(update_vector_carray_nonpod) } },
-		specialization_t { eresolved_type::k_vector_hamt_pod,			{ "update_vector_hamt", function_type1, reinterpret_cast<void*>(update_vector_hamt_pod) } },
-		specialization_t { eresolved_type::k_vector_hamt_nonpod,		{ "update_vector_hamt", function_type1, reinterpret_cast<void*>(update_vector_hamt_nonpod) } },
+		specialization_t { eresolved_type::k_vector_carray_pod,			{ module_symbol_t("update_vector_carray"), function_type1, reinterpret_cast<void*>(update_vector_carray_pod) } },
+		specialization_t { eresolved_type::k_vector_carray_nonpod,		{ module_symbol_t("update_vector_carray"), function_type1, reinterpret_cast<void*>(update_vector_carray_nonpod) } },
+		specialization_t { eresolved_type::k_vector_hamt_pod,			{ module_symbol_t("update_vector_hamt"), function_type1, reinterpret_cast<void*>(update_vector_hamt_pod) } },
+		specialization_t { eresolved_type::k_vector_hamt_nonpod,		{ module_symbol_t("update_vector_hamt"), function_type1, reinterpret_cast<void*>(update_vector_hamt_nonpod) } },
 
-		specialization_t { eresolved_type::k_dict_cppmap_pod,			{ "update_dict_cppmap", function_type2, reinterpret_cast<void*>(update_dict_cppmap_pod) } },
-		specialization_t { eresolved_type::k_dict_cppmap_nonpod,		{ "update_dict_cppmap", function_type2, reinterpret_cast<void*>(update_dict_cppmap_nonpod) } },
-		specialization_t { eresolved_type::k_dict_hamt_pod,				{ "update_dict_hamt", function_type2, reinterpret_cast<void*>(update_dict_hamt_pod) } },
-		specialization_t { eresolved_type::k_dict_hamt_nonpod,			{ "update_dict_hamt", function_type2, reinterpret_cast<void*>(update_dict_hamt_nonpod) } },
+		specialization_t { eresolved_type::k_dict_cppmap_pod,			{ module_symbol_t("update_dict_cppmap"), function_type2, reinterpret_cast<void*>(update_dict_cppmap_pod) } },
+		specialization_t { eresolved_type::k_dict_cppmap_nonpod,		{ module_symbol_t("update_dict_cppmap"), function_type2, reinterpret_cast<void*>(update_dict_cppmap_nonpod) } },
+		specialization_t { eresolved_type::k_dict_hamt_pod,				{ module_symbol_t("update_dict_hamt"), function_type2, reinterpret_cast<void*>(update_dict_hamt_pod) } },
+		specialization_t { eresolved_type::k_dict_hamt_nonpod,			{ module_symbol_t("update_dict_hamt"), function_type2, reinterpret_cast<void*>(update_dict_hamt_nonpod) } },
 	};
 }
 
@@ -1895,10 +1895,10 @@ static std::map<std::string, void*> get_intrinsic_binds(){
 static std::vector<llvm_function_link_entry_t> make_entries(const intrinsic_signatures_t& intrinsic_signatures, const std::vector<function_bind_t>& binds){
 	std::vector<llvm_function_link_entry_t> result;
 	for(const auto& bind: binds){
-		auto signature_it = std::find_if(intrinsic_signatures.vec.begin(), intrinsic_signatures.vec.end(), [&] (const intrinsic_signature_t& m) { return m.name == bind.name; } );
+		auto signature_it = std::find_if(intrinsic_signatures.vec.begin(), intrinsic_signatures.vec.end(), [&] (const intrinsic_signature_t& m) { return module_symbol_t(m.name) == bind.name; } );
 		const auto function_type = signature_it != intrinsic_signatures.vec.end() ? signature_it->_function_type : make_undefined();
 
-		const auto link_name = encode_runtime_func_link_name(bind.name);
+		const auto link_name = bind.name;
 		const auto exists_it = std::find_if(result.begin(), result.end(), [&](const llvm_function_link_entry_t& e){ return e.link_name == link_name; });
 
 		if(exists_it == result.end()){
@@ -1927,7 +1927,7 @@ std::vector<llvm_function_link_entry_t> make_intrinsics_link_map(llvm::LLVMConte
 		auto signature_it = std::find_if(intrinsic_signatures.vec.begin(), intrinsic_signatures.vec.end(), [&] (const intrinsic_signature_t& e) { return e.name == bind.first; } );
 		QUARK_ASSERT(signature_it != intrinsic_signatures.vec.end());
 
-		const auto link_name = encode_runtime_func_link_name(bind.first);
+		const auto link_name = module_symbol_t(bind.first);
 		const auto function_type = signature_it->_function_type;
 		llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
 		const auto function_byvalue_type = deref_ptr(function_ptr_type);

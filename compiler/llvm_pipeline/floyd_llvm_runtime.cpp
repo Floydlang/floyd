@@ -62,7 +62,7 @@ ret i32 %2
 ////////////////////////////////	CLIENT ACCESS OF RUNNING PROGRAM
 
 
-const llvm_function_link_entry_t& find_function_def_from_link_name(const std::vector<llvm_function_link_entry_t>& function_link_map, const link_name_t& link_name){
+const llvm_function_link_entry_t& find_function_def_from_link_name(const std::vector<llvm_function_link_entry_t>& function_link_map, const module_symbol_t& link_name){
 	auto it = std::find_if(function_link_map.begin(), function_link_map.end(), [&] (const llvm_function_link_entry_t& e) { return e.link_name == link_name; } );
 	QUARK_ASSERT(it != function_link_map.end());
 
@@ -70,15 +70,15 @@ const llvm_function_link_entry_t& find_function_def_from_link_name(const std::ve
 	return *it;
 }
 
-void* get_global_ptr(const llvm_execution_engine_t& ee, const std::string& name){
+void* get_global_ptr(const llvm_execution_engine_t& ee, const module_symbol_t& name){
 	QUARK_ASSERT(ee.check_invariant());
-	QUARK_ASSERT(name.empty() == false);
+	QUARK_ASSERT(name.s.empty() == false);
 
-	const auto addr = ee.ee->getGlobalValueAddress(name);
+	const auto addr = ee.ee->getGlobalValueAddress(name.s);
 	return  (void*)addr;
 }
 
-static void* get_function_ptr(const llvm_execution_engine_t& ee, const link_name_t& name){
+static void* get_function_ptr(const llvm_execution_engine_t& ee, const module_symbol_t& name){
 	QUARK_ASSERT(ee.check_invariant());
 	QUARK_ASSERT(name.s.empty() == false);
 
@@ -87,13 +87,13 @@ static void* get_function_ptr(const llvm_execution_engine_t& ee, const link_name
 }
 
 
-std::pair<void*, type_t> bind_global(const llvm_execution_engine_t& ee, const std::string& name){
+std::pair<void*, type_t> bind_global(const llvm_execution_engine_t& ee, const module_symbol_t& name){
 	QUARK_ASSERT(ee.check_invariant());
-	QUARK_ASSERT(name.empty() == false);
+	QUARK_ASSERT(name.s.empty() == false);
 
 	const auto global_ptr = get_global_ptr(ee, name);
 	if(global_ptr != nullptr){
-		auto symbol = find_symbol(ee.global_symbols, name);
+		auto symbol = find_symbol(ee.global_symbols, name.s);
 		QUARK_ASSERT(symbol != nullptr);
 		return { global_ptr, symbol->get_value_type() };
 	}
@@ -131,7 +131,7 @@ void store_via_ptr(llvm_context_t& c, const type_t& member_type, void* value_ptr
 }
 
 
-llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name){
+llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const module_symbol_t& name){
 	QUARK_ASSERT(ee.check_invariant());
 	QUARK_ASSERT(name.s.empty() == false);
 
@@ -171,7 +171,7 @@ static std::vector<llvm_function_link_entry_t> make_runtime_function_link_map(ll
 
 	std::vector<llvm_function_link_entry_t> result;
 	for(const auto& e: runtime_function_binds){
-		const auto link_name = encode_runtime_func_link_name(e.name);
+		const auto link_name = module_symbol_t { e.name };
 		const auto def = llvm_function_link_entry_t{ "runtime", link_name, e.llvm_function_type, nullptr, make_undefined(), {}, e.native_f };
 		result.push_back(def);
 	}
@@ -191,7 +191,7 @@ static std::vector<llvm_function_link_entry_t> make_init_deinit_link_map(llvm::L
 
 	//	init()
 	{
-		const auto link_name = encode_runtime_func_link_name("init");
+		const auto link_name = module_symbol_t { "init" };
 		llvm::FunctionType* function_type = llvm::FunctionType::get(
 			llvm::Type::getInt64Ty(context),
 			{
@@ -205,7 +205,7 @@ static std::vector<llvm_function_link_entry_t> make_init_deinit_link_map(llvm::L
 
 	//	deinit()
 	{
-		const auto link_name = encode_runtime_func_link_name("deinit");
+		const auto link_name = module_symbol_t { "deinit" };
 		llvm::FunctionType* function_type = llvm::FunctionType::get(
 			llvm::Type::getInt64Ty(context),
 			{
@@ -229,13 +229,13 @@ static std::vector<llvm_function_link_entry_t> make_floyd_code_and_corelib_link_
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	std::vector<llvm_function_link_entry_t> result0;
-	std::map<link_name_t, void*> binds0;
+	std::map<module_symbol_t, void*> binds0;
 	const auto& types = type_lookup.state.types;
 
 	//	Make function def for all functions inside the floyd program (floyd source code).
 	{
 		for(const auto& function_def: ast_function_defs){
-			const auto link_name = encode_floyd_func_link_name(function_def._definition_name);
+			const auto link_name = module_symbol_t(function_def._definition_name);
 			const auto function_type = function_def._function_type;
 			llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
 			const auto function_byvalue_type = deref_ptr(function_ptr_type);
@@ -247,9 +247,9 @@ static std::vector<llvm_function_link_entry_t> make_floyd_code_and_corelib_link_
 	////////	Corelib
 	{
 		const auto corelib_function_map0 = get_corelib_binds();
-		std::map<link_name_t, void*> corelib_function_map;
+		std::map<module_symbol_t, void*> corelib_function_map;
 		for(const auto& e: corelib_function_map0){
-			corelib_function_map.insert({ encode_floyd_func_link_name(e.first), e.second });
+			corelib_function_map.insert({ module_symbol_t(e.first), e.second });
 		}
 		binds0.insert(corelib_function_map.begin(), corelib_function_map.end());
 	}
@@ -378,15 +378,19 @@ static void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p
 	for(const auto& e: p.debug_globals._symbols){
 		const auto t = e.second.get_value_type();
 		if(peek2(ee2.type_lookup.state.types, t).is_function()){
-			const auto global_var = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(ee2, e.first);
-			QUARK_ASSERT(global_var != nullptr);
+			const auto global_var = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(ee2, module_symbol_t(e.first));
+			if(global_var != nullptr){
+				QUARK_ASSERT(global_var != nullptr);
 
-			const auto f = *global_var;
-//				QUARK_ASSERT(f != nullptr);
+				const auto f = *global_var;
+	//				QUARK_ASSERT(f != nullptr);
 
-			const std::string suffix = f == nullptr ? " NULL POINTER" : "";
-//			const uint64_t addr = reinterpret_cast<uint64_t>(f);
-//			QUARK_TRACE_SS(index << " " << e.first << " " << addr << suffix);
+				const std::string suffix = f == nullptr ? " NULL POINTER" : "";
+	//			const uint64_t addr = reinterpret_cast<uint64_t>(f);
+	//			QUARK_TRACE_SS(index << " " << e.first << " " << addr << suffix);
+			}
+			else{
+			}
 		}
 		else{
 		}
@@ -414,7 +418,7 @@ llvm_execution_engine_t::~llvm_execution_engine_t(){
 	QUARK_ASSERT(check_invariant());
 
 	if(inited){
-		auto f = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_function_ptr(*this, encode_runtime_func_link_name("deinit")));
+		auto f = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_function_ptr(*this, module_symbol_t("deinit")));
 		QUARK_ASSERT(f != nullptr);
 
 		auto context = llvm_context_t { this, nullptr };
@@ -605,7 +609,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			final_link_map,
 			&handler,
 			start_time,
-			llvm_bind_t{ link_name_t {}, nullptr, make_undefined() },
+			llvm_bind_t{ k_no_module_symbol, nullptr, make_undefined() },
 			false,
 			program_breaks.settings.config,
 
@@ -644,7 +648,7 @@ std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& progra
 #if DEBUG
 	{
 		{
-			const auto print_global_ptr_ptr = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(*context.ee, encode_runtime_func_link_name("init").s);
+			const auto print_global_ptr_ptr = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(*context.ee, module_symbol_t("init"));
 			QUARK_ASSERT(print_global_ptr_ptr != nullptr);
 			const auto print_ptr = *print_global_ptr_ptr;
 			QUARK_ASSERT(print_ptr != nullptr);
@@ -652,9 +656,9 @@ std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& progra
 	}
 #endif
 
-	ee->main_function = bind_function2(*ee, encode_floyd_func_link_name("main"));
+	ee->main_function = bind_function2(*ee, module_symbol_t("main"));
 
-	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_function_ptr(*context.ee, encode_runtime_func_link_name("init")));
+	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_function_ptr(*context.ee, module_symbol_t("init")));
 	QUARK_ASSERT(a_func != nullptr);
 
 	auto runtime_ptr = make_runtime_ptr(&context);
@@ -863,17 +867,17 @@ static std::map<std::string, value_t> run_processes(llvm_execution_engine_t& ee)
 			process->_exiting_flag = false;
 			process->_process_def = t.second;
 			process->_init_function = std::make_shared<llvm_bind_t>(
-				bind_function2(ee, encode_floyd_func_link_name(t.second.init_func_linkname))
+				bind_function2(ee, t.second.init_func_linkname)
 			);
-			process->_msg_function = std::make_shared<llvm_bind_t>(
-				bind_function2(ee, encode_floyd_func_link_name(t.second.msg_func_linkname))
+			process->_msg_function = std::make_shared<llvm_bind_t>( 
+				bind_function2(ee, t.second.msg_func_linkname)
 			);
 
 			if(process->_init_function->address == nullptr){
-				throw std::runtime_error("Cannot link floyd init function: \"" + t.second.init_func_linkname + "\"");
+				throw std::runtime_error("Cannot link floyd init function: \"" + t.second.init_func_linkname.s + "\"");
 			}
 			if(process->_msg_function->address == nullptr){
-				throw std::runtime_error("Cannot link floyd message function: \"" + t.second.msg_func_linkname + "\"");
+				throw std::runtime_error("Cannot link floyd message function: \"" + t.second.msg_func_linkname.s + "\"");
 			}
 
 
@@ -932,7 +936,7 @@ run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::str
 std::vector<bench_t> collect_benchmarks(llvm_execution_engine_t& ee){
 	auto context = llvm_context_t { &ee, nullptr };
 
-	std::pair<void*, type_t> benchmark_registry_bind = bind_global(ee, k_global_benchmark_registry);
+	std::pair<void*, type_t> benchmark_registry_bind = bind_global(ee, module_symbol_t(k_global_benchmark_registry));
 	QUARK_ASSERT(benchmark_registry_bind.first != nullptr);
 
 	const value_t reg = load_global(context, benchmark_registry_bind);
@@ -942,8 +946,7 @@ std::vector<bench_t> collect_benchmarks(llvm_execution_engine_t& ee){
 	for(const auto& e: v){
 		const auto s = e.get_struct_value();
 		const auto name = s->_member_values[0].get_string_value();
-		const auto f_link_name_str = s->_member_values[1].get_function_value().name;
-		const auto f_link_name = link_name_t{ f_link_name_str };
+		const auto f_link_name = s->_member_values[1].get_function_value();
 		result.push_back(bench_t{ benchmark_id_t { "", name }, f_link_name });
 	}
 	return result;
@@ -999,7 +1002,7 @@ std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, con
 std::vector<test_t> collect_tests(llvm_execution_engine_t& ee){
 	auto context = llvm_context_t { &ee, nullptr };
 
-	std::pair<void*, type_t> test_registry_bind = bind_global(ee, k_global_test_registry);
+	std::pair<void*, type_t> test_registry_bind = bind_global(ee, module_symbol_t(k_global_test_registry));
 	QUARK_ASSERT(test_registry_bind.first != nullptr);
 
 	const value_t reg = load_global(context, test_registry_bind);

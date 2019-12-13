@@ -1012,13 +1012,13 @@ std::vector<std::pair<intrinsic_signature_t, BC_NATIVE_FUNCTION_PTR>> bc_get_int
 	return log;
 }
 
-std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics(types_t& types){
+std::map<module_symbol_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics(types_t& types){
 	QUARK_ASSERT(types.check_invariant());
 
 	const auto a  = bc_get_intrinsics_internal(types);
-	std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> result;
+	std::map<module_symbol_t, BC_NATIVE_FUNCTION_PTR> result;
 	for(const auto& e: a){
-		result.insert({ function_id_t { e.first.name }, e.second });
+		result.insert({ module_symbol_t(e.first.name), e.second });
 	}
 	return result;
 }

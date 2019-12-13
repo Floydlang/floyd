@@ -111,7 +111,7 @@ struct value_ext_t {
 	public: value_ext_t(std::shared_ptr<struct_value_t>& s);
 	public: value_ext_t(const std::vector<value_t>& s);
 	public: value_ext_t(const std::map<std::string, value_t>& s);
-	public: value_ext_t(function_id_t function_id);
+	public: value_ext_t(module_symbol_t function_id);
 
 
 	//	??? NOTICE: Use std::variant or subclasses.
@@ -125,7 +125,7 @@ struct value_ext_t {
 	public: std::shared_ptr<struct_value_t> _struct;
 	public: std::vector<value_t> _vector_elements;
 	public: std::map<std::string, value_t> _dict_entries;
-	public: function_id_t _function_id = k_no_function_id;
+	public: module_symbol_t _function_id = k_no_module_symbol;
 };
 
 
@@ -360,14 +360,14 @@ struct value_t {
 	//------------------------------------------------		function
 
 
-	public: static value_t make_function_value(const types_t& types, const type_t& type, const function_id_t& function_id);
-	public: static value_t make_function_value(types_t& types, const type_t& type, const function_id_t& function_id);
+	public: static value_t make_function_value(const types_t& types, const type_t& type, const module_symbol_t& function_id);
+	public: static value_t make_function_value(types_t& types, const type_t& type, const module_symbol_t& function_id);
 	public: bool is_function() const {
 		QUARK_ASSERT(check_invariant());
 
 		return _logical_type.is_function();
 	}
-	public: function_id_t get_function_value() const;
+	public: module_symbol_t get_function_value() const;
 
 
 	//------------------------------------------------		named type

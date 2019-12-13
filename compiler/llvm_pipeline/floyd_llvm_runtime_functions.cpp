@@ -21,8 +21,8 @@ namespace floyd {
 
 
 
-static const llvm_function_link_entry_t& resolve_func(const std::vector<llvm_function_link_entry_t>& function_defs, const std::string& name){
-	return find_function_def_from_link_name(function_defs, encode_runtime_func_link_name(name));
+static const llvm_function_link_entry_t& resolve_func(const std::vector<llvm_function_link_entry_t>& function_defs, const module_symbol_t& name){
+	return find_function_def_from_link_name(function_defs, name);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -63,7 +63,7 @@ static std::vector<function_bind_t> floydrt_alloc_kstr__make(llvm::LLVMContext& 
 		},
 		false
 	);
-	return {{ "alloc_kstr", function_type, reinterpret_cast<void*>(floydrt_alloc_kstr) }};
+	return {{ module_symbol_t("alloc_kstr"), function_type, reinterpret_cast<void*>(floydrt_alloc_kstr) }};
 }
 
 
@@ -97,8 +97,8 @@ static std::vector<function_bind_t> floydrt_allocate_vector__make(llvm::LLVMCont
 	);
 
 	return {
-		{ "allocate_vector_carray", function_type, reinterpret_cast<void*>(floydrt_allocate_vector_carray) },
-		{ "allocate_vector_hamt", function_type, reinterpret_cast<void*>(floydrt_allocate_vector_hamt) }
+		{ module_symbol_t("allocate_vector_carray"), function_type, reinterpret_cast<void*>(floydrt_allocate_vector_carray) },
+		{ module_symbol_t("allocate_vector_hamt"), function_type, reinterpret_cast<void*>(floydrt_allocate_vector_hamt) }
 		};
 }
 
@@ -125,7 +125,7 @@ llvm::Value* generate_allocate_vector(llvm_function_generator_t& gen_acc, const 
 		throw std::exception();
 	}
 
-	const auto res = resolve_func(gen_acc.gen.link_map, n);
+	const auto res = resolve_func(gen_acc.gen.link_map, module_symbol_t(n));
 	return builder.CreateCall(res.llvm_codegen_f, { &frp_reg, vector_itype_reg, element_count_reg }, "");
 }
 
@@ -170,7 +170,7 @@ static std::vector<function_bind_t> floydrt_allocate_vector_fill__make(llvm::LLV
 		},
 		false
 	);
-	return {{ "allocate_vector_fill", function_type, reinterpret_cast<void*>(floydrt_allocate_vector_fill) }};
+	return {{ module_symbol_t("allocate_vector_fill"), function_type, reinterpret_cast<void*>(floydrt_allocate_vector_fill) }};
 }
 
 
@@ -202,7 +202,7 @@ static std::vector<function_bind_t> floydrt_store_vector_element_mutable__make(l
 		},
 		false
 	);
-	return {{ "store_vector_element_hamt_mutable", function_type, reinterpret_cast<void*>(floydrt_store_vector_element_hamt_mutable) }};
+	return {{ module_symbol_t("store_vector_element_hamt_mutable"), function_type, reinterpret_cast<void*>(floydrt_store_vector_element_hamt_mutable) }};
 }
 
 
@@ -231,7 +231,7 @@ static std::vector<function_bind_t> floydrt_concatunate_vectors__make(llvm::LLVM
 		},
 		false
 	);
-	return {{ "concatunate_vectors", function_type, reinterpret_cast<void*>(floydrt_concatunate_vectors) }};
+	return {{ module_symbol_t("concatunate_vectors"), function_type, reinterpret_cast<void*>(floydrt_concatunate_vectors) }};
 }
 
 
@@ -266,7 +266,7 @@ static std::vector<function_bind_t> floydrt_load_vector_element__make(llvm::LLVM
 		},
 		false
 	);
-	return {{ "load_vector_element_hamt", function_type, reinterpret_cast<void*>(floydrt_load_vector_element_hamt) }};
+	return {{ module_symbol_t("load_vector_element_hamt"), function_type, reinterpret_cast<void*>(floydrt_load_vector_element_hamt) }};
 }
 
 
@@ -312,7 +312,7 @@ static std::vector<function_bind_t> floydrt_allocate_dict__make(llvm::LLVMContex
 		},
 		false
 	);
-	return {{ "allocate_dict", function_type, reinterpret_cast<void*>(floydrt_allocate_dict) }};
+	return {{ module_symbol_t("allocate_dict"), function_type, reinterpret_cast<void*>(floydrt_allocate_dict) }};
 }
 
 
@@ -348,7 +348,7 @@ static std::vector<function_bind_t> floydrt_lookup_dict_cppmap__make(llvm::LLVMC
 		},
 		false
 	);
-	return {{ "lookup_dict_cppmap", function_type, reinterpret_cast<void*>(floydrt_lookup_dict_cppmap) }};
+	return {{ module_symbol_t("lookup_dict_cppmap"), function_type, reinterpret_cast<void*>(floydrt_lookup_dict_cppmap) }};
 }
 static std::vector<function_bind_t> floydrt_lookup_dict_hamt__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
@@ -361,7 +361,7 @@ static std::vector<function_bind_t> floydrt_lookup_dict_hamt__make(llvm::LLVMCon
 		},
 		false
 	);
-	return {{ "lookup_dict_hamt", function_type, reinterpret_cast<void*>(floydrt_lookup_dict_hamt) }};
+	return {{ module_symbol_t("lookup_dict_hamt"), function_type, reinterpret_cast<void*>(floydrt_lookup_dict_hamt) }};
 }
 
 
@@ -372,7 +372,7 @@ llvm::Value* generate_lookup_dict(llvm_function_generator_t& gen_acc, llvm::Valu
 	const auto& types = gen_acc.gen.type_lookup.state.types;
 	QUARK_ASSERT(is_dict_cppmap(types, gen_acc.gen.settings.config, dict_type) || is_dict_hamt(types, gen_acc.gen.settings.config, dict_type));
 
-	const auto res = resolve_func(gen_acc.gen.link_map, dict_mode == dict_backend::hamt ? "lookup_dict_hamt" : "lookup_dict_cppmap");
+	const auto res = resolve_func(gen_acc.gen.link_map, dict_mode == dict_backend::hamt ? module_symbol_t("lookup_dict_hamt") : module_symbol_t("lookup_dict_cppmap"));
 
 	const auto dict_peek = peek2(types, dict_type);
 	const auto element_type0 = dict_peek.get_dict_value_type(types);
@@ -430,8 +430,8 @@ static std::vector<function_bind_t> floydrt_store_dict_mutable__make(llvm::LLVMC
 		false
 	);
 	return {
-		{ "store_dict_mutable_cppmap", function_type, reinterpret_cast<void*>(floydrt_store_dict_mutable_cppmap) },
-		{ "store_dict_mutable_hamt", function_type, reinterpret_cast<void*>(floydrt_store_dict_mutable_hamt) }
+		{ module_symbol_t("store_dict_mutable_cppmap"), function_type, reinterpret_cast<void*>(floydrt_store_dict_mutable_cppmap) },
+		{ module_symbol_t("store_dict_mutable_hamt"), function_type, reinterpret_cast<void*>(floydrt_store_dict_mutable_hamt) }
 	};
 }
 
@@ -442,7 +442,7 @@ void generate_store_dict_mutable(llvm_function_generator_t& gen_acc, llvm::Value
 	const auto& types = gen_acc.gen.type_lookup.state.types;
 	QUARK_ASSERT(is_dict_cppmap(types, gen_acc.gen.settings.config, dict_type) || is_dict_hamt(types, gen_acc.gen.settings.config, dict_type));
 
-	const auto res = resolve_func(gen_acc.gen.link_map, dict_mode == dict_backend::hamt ? "store_dict_mutable_hamt" : "store_dict_mutable_cppmap");
+	const auto res = resolve_func(gen_acc.gen.link_map, dict_mode == dict_backend::hamt ? module_symbol_t("store_dict_mutable_hamt") : module_symbol_t("store_dict_mutable_cppmap"));
 	const auto dict_peek = peek2(types, dict_type);
 
 	const auto& element_type0 = dict_peek.get_dict_value_type(types);
@@ -502,7 +502,7 @@ static std::vector<function_bind_t> floydrt_allocate_json__make(llvm::LLVMContex
 		},
 		false
 	);
-	return {{ "allocate_json", function_type, reinterpret_cast<void*>(floydrt_allocate_json) }};
+	return {{ module_symbol_t("allocate_json"), function_type, reinterpret_cast<void*>(floydrt_allocate_json) }};
 }
 
 
@@ -557,7 +557,7 @@ static std::vector<function_bind_t> floydrt_lookup_json__make(llvm::LLVMContext&
 		},
 		false
 	);
-	return {{ "lookup_json", function_type, reinterpret_cast<void*>(floydrt_lookup_json) }};
+	return {{ module_symbol_t("lookup_json"), function_type, reinterpret_cast<void*>(floydrt_lookup_json) }};
 }
 
 
@@ -588,7 +588,7 @@ static std::vector<function_bind_t> floydrt_json_to_string__make(llvm::LLVMConte
 		},
 		false
 	);
-	return {{ "json_to_string", function_type, reinterpret_cast<void*>(floydrt_json_to_string) }};
+	return {{ module_symbol_t("json_to_string"), function_type, reinterpret_cast<void*>(floydrt_json_to_string) }};
 }
 
 
@@ -630,7 +630,7 @@ static std::vector<function_bind_t> floydrt_allocate_struct__make(llvm::LLVMCont
 		},
 		false
 	);
-	return {{ "allocate_struct", function_type, reinterpret_cast<void*>(floydrt_allocate_struct) }};
+	return {{ module_symbol_t("allocate_struct"), function_type, reinterpret_cast<void*>(floydrt_allocate_struct) }};
 }
 
 
@@ -727,7 +727,7 @@ static const STRUCT_T* floydrt_copy_struct(floyd_runtime_t* frp, STRUCT_T* s, ui
 static std::vector<function_bind_t> floydrt_update_struct_member__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	return {
 		{
-			"update_struct_member_nonpod",
+			module_symbol_t("update_struct_member_nonpod"),
 			llvm::FunctionType::get(
 				get_generic_struct_type_byvalue(type_lookup)->getPointerTo(),
 				{
@@ -743,7 +743,7 @@ static std::vector<function_bind_t> floydrt_update_struct_member__make(llvm::LLV
 			reinterpret_cast<void*>(floydrt_update_struct_member_nonpod)
 		},
 		{
-			"copy_struct",
+			module_symbol_t("copy_struct"),
 			llvm::FunctionType::get(
 				get_generic_struct_type_byvalue(type_lookup)->getPointerTo(),
 				{
@@ -802,7 +802,7 @@ llvm::Value* generate_update_struct_member(llvm_function_generator_t& gen_acc, l
 	const bool pod = is_struct_pod(types, struct_def);
 
 	if(pod){
-		const auto copy_struct_f = resolve_func(gen_acc.gen.link_map, "copy_struct");
+		const auto copy_struct_f = resolve_func(gen_acc.gen.link_map, module_symbol_t("copy_struct"));
 
 		auto& exact_struct_type = *get_exact_struct_type_byvalue(gen_acc.gen.type_lookup, struct_type);
 
@@ -822,7 +822,7 @@ llvm::Value* generate_update_struct_member(llvm_function_generator_t& gen_acc, l
 		return copy_reg;
 	}
 	else{
-		const auto res = resolve_func(gen_acc.gen.link_map, "update_struct_member_nonpod");
+		const auto res = resolve_func(gen_acc.gen.link_map, module_symbol_t("update_struct_member_nonpod"));
 
 		std::vector<llvm::Value*> args = {
 			gen_acc.get_callers_fcp(),
@@ -875,7 +875,7 @@ static std::vector<function_bind_t> floydrt_compare_values__make(llvm::LLVMConte
 		},
 		false
 	);
-	return {{ "compare_values", function_type, reinterpret_cast<void*>(floydrt_compare_values) }};
+	return {{ module_symbol_t("compare_values"), function_type, reinterpret_cast<void*>(floydrt_compare_values) }};
 }
 
 
@@ -897,7 +897,7 @@ static std::vector<function_bind_t> floydrt_get_profile_time__make(llvm::LLVMCon
 		},
 		false
 	);
-	return {{ "get_profile_time", function_type, reinterpret_cast<void*>(floydrt_get_profile_time) }};
+	return {{ module_symbol_t("get_profile_time"), function_type, reinterpret_cast<void*>(floydrt_get_profile_time) }};
 }
 
 
@@ -929,7 +929,7 @@ static std::vector<function_bind_t> floydrt_analyse_benchmark_samples__make(llvm
 		},
 		false
 	);
-	return {{ "analyse_benchmark_samples", function_type, reinterpret_cast<void*>(floydrt_analyse_benchmark_samples) }};
+	return {{ module_symbol_t("analyse_benchmark_samples"), function_type, reinterpret_cast<void*>(floydrt_analyse_benchmark_samples) }};
 }
 
 
@@ -1051,16 +1051,16 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 
 	if(is_rc_value(types, type0)){
 		if(type_peek.is_string()){
-			const auto res = resolve_func(gen_acc.gen.link_map, "retain_vector_carray");
+			const auto res = resolve_func(gen_acc.gen.link_map, module_symbol_t("retain_vector_carray"));
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 		}
 		else if(type_peek.is_vector()){
 			if(is_vector_carray(types, gen_acc.gen.settings.config, type0)){
-				const auto res = resolve_func(gen_acc.gen.link_map, "retain_vector_carray");
+				const auto res = resolve_func(gen_acc.gen.link_map, module_symbol_t("retain_vector_carray"));
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
 			else if(is_vector_hamt(types, gen_acc.gen.settings.config, type0)){
-				const auto res = resolve_func(gen_acc.gen.link_map, "retain_vector_hamt");
+				const auto res = resolve_func(gen_acc.gen.link_map, module_symbol_t("retain_vector_hamt"));
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
 			else{
@@ -1069,11 +1069,11 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 		}
 		else if(type_peek.is_dict()){
 			if(is_dict_cppmap(types, gen_acc.gen.settings.config, type0)){
-				const auto res = resolve_func(gen_acc.gen.link_map, "retain_dict_cppmap");
+				const auto res = resolve_func(gen_acc.gen.link_map, module_symbol_t("retain_dict_cppmap"));
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
 			else if(is_dict_hamt(types, gen_acc.gen.settings.config, type0)){
-				const auto res = resolve_func(gen_acc.gen.link_map, "retain_dict_hamt");
+				const auto res = resolve_func(gen_acc.gen.link_map, module_symbol_t("retain_dict_hamt"));
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
 			else{
@@ -1081,12 +1081,12 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 			}
 		}
 		else if(type_peek.is_json()){
-			const auto res = resolve_func(gen_acc.gen.link_map, "retain_json");
+			const auto res = resolve_func(gen_acc.gen.link_map, module_symbol_t("retain_json"));
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 		}
 		else if(type_peek.is_struct()){
 			auto generic_vec_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value_reg, get_generic_struct_type_byvalue(gen_acc.gen.type_lookup)->getPointerTo(), "");
-			const auto res = resolve_func(gen_acc.gen.link_map, "retain_struct");
+			const auto res = resolve_func(gen_acc.gen.link_map, module_symbol_t("retain_struct"));
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, generic_vec_reg, &itype_reg }, "");
 		}
 		else{
@@ -1110,12 +1110,12 @@ static llvm::FunctionType* make_retain(llvm::LLVMContext& context, const llvm_ty
 }
 std::vector<function_bind_t> retain_funcs(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	return std::vector<function_bind_t> {
-		function_bind_t{ "retain_vector_carray", make_retain(context, type_lookup, *make_generic_vec_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_vector_carray) },
-		function_bind_t{ "retain_vector_hamt", make_retain(context, type_lookup, *make_generic_vec_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_vector_hamt) },
-		function_bind_t{ "retain_dict_cppmap", make_retain(context, type_lookup, *make_generic_dict_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_dict_cppmap) },
-		function_bind_t{ "retain_dict_hamt", make_retain(context, type_lookup, *make_generic_dict_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_dict_hamt) },
-		function_bind_t{ "retain_json", make_retain(context, type_lookup, *get_llvm_type_as_arg(type_lookup, type_t::make_json())), reinterpret_cast<void*>(floydrt_retain_json) },
-		function_bind_t{ "retain_struct", make_retain(context, type_lookup, *get_generic_struct_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_struct) }
+		function_bind_t{ module_symbol_t("retain_vector_carray"), make_retain(context, type_lookup, *make_generic_vec_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_vector_carray) },
+		function_bind_t{ module_symbol_t("retain_vector_hamt"), make_retain(context, type_lookup, *make_generic_vec_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_vector_hamt) },
+		function_bind_t{ module_symbol_t("retain_dict_cppmap"), make_retain(context, type_lookup, *make_generic_dict_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_dict_cppmap) },
+		function_bind_t{ module_symbol_t("retain_dict_hamt"), make_retain(context, type_lookup, *make_generic_dict_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_dict_hamt) },
+		function_bind_t{ module_symbol_t("retain_json"), make_retain(context, type_lookup, *get_llvm_type_as_arg(type_lookup, type_t::make_json())), reinterpret_cast<void*>(floydrt_retain_json) },
+		function_bind_t{ module_symbol_t("retain_struct"), make_retain(context, type_lookup, *get_generic_struct_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_struct) }
 	};
 }
 
@@ -1267,14 +1267,14 @@ static llvm::FunctionType* make_release(llvm::LLVMContext& context, const llvm_t
 
 std::vector<function_bind_t> release_funcs(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	return std::vector<function_bind_t> {
-		function_bind_t{ "release_vector_carray_pod", make_release(context, type_lookup, *make_generic_vec_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_vector_carray_pod) },
-		function_bind_t{ "release_vector_carray_nonpod", make_release(context, type_lookup, *make_generic_vec_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_vector_carray_nonpod) },
-		function_bind_t{ "release_vector_hamt_pod", make_release(context, type_lookup, *make_generic_vec_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_vector_hamt_pod) },
-		function_bind_t{ "release_vector_hamt_nonpod", make_release(context, type_lookup, *make_generic_vec_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_vector_hamt_nonpod) },
-		function_bind_t{ "release_dict_cppmap", make_release(context, type_lookup, *make_generic_dict_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_dict_cppmap) },
-		function_bind_t{ "release_dict_hamt", make_release(context, type_lookup, *make_generic_dict_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_dict_hamt) },
-		function_bind_t{ "release_json", make_release(context, type_lookup, *get_llvm_type_as_arg(type_lookup, type_t::make_json())), reinterpret_cast<void*>(floydrt_release_json) },
-		function_bind_t{ "release_struct", make_release(context, type_lookup, *get_generic_struct_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_struct) }
+		function_bind_t{ module_symbol_t("release_vector_carray_pod"), make_release(context, type_lookup, *make_generic_vec_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_vector_carray_pod) },
+		function_bind_t{ module_symbol_t("release_vector_carray_nonpod"), make_release(context, type_lookup, *make_generic_vec_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_vector_carray_nonpod) },
+		function_bind_t{ module_symbol_t("release_vector_hamt_pod"), make_release(context, type_lookup, *make_generic_vec_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_vector_hamt_pod) },
+		function_bind_t{ module_symbol_t("release_vector_hamt_nonpod"), make_release(context, type_lookup, *make_generic_vec_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_vector_hamt_nonpod) },
+		function_bind_t{ module_symbol_t("release_dict_cppmap"), make_release(context, type_lookup, *make_generic_dict_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_dict_cppmap) },
+		function_bind_t{ module_symbol_t("release_dict_hamt"), make_release(context, type_lookup, *make_generic_dict_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_dict_hamt) },
+		function_bind_t{ module_symbol_t("release_json"), make_release(context, type_lookup, *get_llvm_type_as_arg(type_lookup, type_t::make_json())), reinterpret_cast<void*>(floydrt_release_json) },
+		function_bind_t{ module_symbol_t("release_struct"), make_release(context, type_lookup, *get_generic_struct_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_struct) }
 	};
 }
 
@@ -1290,26 +1290,26 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 
 	if(is_rc_value(types, type)){
 		if(peek.is_string()){
-			const auto res = resolve_func(gen_acc.gen.link_map, "release_vector_carray_pod");
+			const auto res = resolve_func(gen_acc.gen.link_map, module_symbol_t("release_vector_carray_pod"));
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 		}
 		else if(peek.is_vector()){
 			const bool is_element_pod = is_rc_value(types, peek.get_vector_element_type(types)) ? false : true;
 
 			if(is_vector_carray(types, gen_acc.gen.settings.config, type) && is_element_pod == true){
-				const auto res = resolve_func(gen_acc.gen.link_map, "release_vector_carray_pod");
+				const auto res = resolve_func(gen_acc.gen.link_map, module_symbol_t("release_vector_carray_pod"));
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}
 			else if(is_vector_carray(types, gen_acc.gen.settings.config, type) && is_element_pod == false){
-				const auto res = resolve_func(gen_acc.gen.link_map, "release_vector_carray_nonpod");
+				const auto res = resolve_func(gen_acc.gen.link_map, module_symbol_t("release_vector_carray_nonpod"));
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}
 			else if(is_vector_hamt(types, gen_acc.gen.settings.config, type) && is_element_pod == true){
-				const auto res = resolve_func(gen_acc.gen.link_map, "release_vector_hamt_pod");
+				const auto res = resolve_func(gen_acc.gen.link_map, module_symbol_t("release_vector_hamt_pod"));
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}
 			else if(is_vector_hamt(types, gen_acc.gen.settings.config, type) && is_element_pod == false){
-				const auto res = resolve_func(gen_acc.gen.link_map, "release_vector_hamt_nonpod");
+				const auto res = resolve_func(gen_acc.gen.link_map, module_symbol_t("release_vector_hamt_nonpod"));
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}
 			else{
@@ -1318,11 +1318,11 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 		}
 		else if(peek.is_dict()){
 			if(is_dict_cppmap(types, gen_acc.gen.settings.config, type)){
-				const auto res = resolve_func(gen_acc.gen.link_map, "release_dict_cppmap");
+				const auto res = resolve_func(gen_acc.gen.link_map, module_symbol_t("release_dict_cppmap"));
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}
 			else if(is_dict_hamt(types, gen_acc.gen.settings.config, type)){
-				const auto res = resolve_func(gen_acc.gen.link_map, "release_dict_hamt");
+				const auto res = resolve_func(gen_acc.gen.link_map, module_symbol_t("release_dict_hamt"));
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}
 			else{
@@ -1330,11 +1330,11 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 			}
 		}
 		else if(peek.is_json()){
-			const auto res = resolve_func(gen_acc.gen.link_map, "release_json");
+			const auto res = resolve_func(gen_acc.gen.link_map, module_symbol_t("release_json"));
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 		}
 		else if(peek.is_struct()){
-			const auto res = resolve_func(gen_acc.gen.link_map, "release_struct");
+			const auto res = resolve_func(gen_acc.gen.link_map, module_symbol_t("release_struct"));
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 		}
 		else{
@@ -1398,33 +1398,33 @@ std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& conte
 
 
 runtime_functions_t::runtime_functions_t(const std::vector<llvm_function_link_entry_t>& function_defs) :
-	floydrt_init(resolve_func(function_defs, "init")),
-	floydrt_deinit(resolve_func(function_defs, "deinit")),
+	floydrt_init(resolve_func(function_defs, module_symbol_t("init"))),
+	floydrt_deinit(resolve_func(function_defs, module_symbol_t("deinit"))),
 
 
-	floydrt_alloc_kstr(resolve_func(function_defs, "alloc_kstr")),
-	floydrt_allocate_vector_fill(resolve_func(function_defs, "allocate_vector_fill")),
+	floydrt_alloc_kstr(resolve_func(function_defs, module_symbol_t("alloc_kstr"))),
+	floydrt_allocate_vector_fill(resolve_func(function_defs, module_symbol_t("allocate_vector_fill"))),
 
-	floydrt_store_vector_element_hamt_mutable(resolve_func(function_defs, "store_vector_element_hamt_mutable")),
-	floydrt_concatunate_vectors(resolve_func(function_defs, "concatunate_vectors")),
-	floydrt_load_vector_element_hamt(resolve_func(function_defs, "load_vector_element_hamt")),
-
-
-	floydrt_allocate_dict(resolve_func(function_defs, "allocate_dict")),
+	floydrt_store_vector_element_hamt_mutable(resolve_func(function_defs, module_symbol_t("store_vector_element_hamt_mutable"))),
+	floydrt_concatunate_vectors(resolve_func(function_defs, module_symbol_t("concatunate_vectors"))),
+	floydrt_load_vector_element_hamt(resolve_func(function_defs, module_symbol_t("load_vector_element_hamt"))),
 
 
-	floydrt_allocate_json(resolve_func(function_defs, "allocate_json")),
-	floydrt_lookup_json(resolve_func(function_defs, "lookup_json")),
-	floydrt_json_to_string(resolve_func(function_defs, "json_to_string")),
+	floydrt_allocate_dict(resolve_func(function_defs, module_symbol_t("allocate_dict"))),
 
 
-	floydrt_allocate_struct(resolve_func(function_defs, "allocate_struct")),
+	floydrt_allocate_json(resolve_func(function_defs, module_symbol_t("allocate_json"))),
+	floydrt_lookup_json(resolve_func(function_defs, module_symbol_t("lookup_json"))),
+	floydrt_json_to_string(resolve_func(function_defs, module_symbol_t("json_to_string"))),
 
-	floydrt_compare_values(resolve_func(function_defs, "compare_values")),
+
+	floydrt_allocate_struct(resolve_func(function_defs, module_symbol_t("allocate_struct"))),
+
+	floydrt_compare_values(resolve_func(function_defs, module_symbol_t("compare_values"))),
 
 
-	floydrt_get_profile_time(resolve_func(function_defs, "get_profile_time")),
-	floydrt_analyse_benchmark_samples(resolve_func(function_defs, "analyse_benchmark_samples"))
+	floydrt_get_profile_time(resolve_func(function_defs, module_symbol_t("get_profile_time"))),
+	floydrt_analyse_benchmark_samples(resolve_func(function_defs, module_symbol_t("analyse_benchmark_samples")))
 {
 }
 

@@ -38,7 +38,7 @@ static const bool k_trace_process_messaging = true;
 ////////////////////////////////		llvm_bind_t
 
 struct llvm_bind_t {
-	link_name_t link_name;
+	module_symbol_t link_name;
 	void* address;
 	type_t type;
 };
@@ -50,7 +50,7 @@ struct llvm_bind_t {
 
 
 struct function_bind_t {
-	std::string name;
+	module_symbol_t name;
 	llvm::FunctionType* llvm_function_type;
 	void* native_f;
 };
@@ -65,7 +65,7 @@ struct function_bind_t {
 struct llvm_function_link_entry_t {
 	std::string module;
 
-	link_name_t link_name;
+	module_symbol_t link_name;
 
 	llvm::FunctionType* llvm_function_type;
 
@@ -234,17 +234,17 @@ typedef void (*FLOYD_TEST_F)(floyd_runtime_t* frp);
 ////////////////////////////////	CLIENT ACCESS OF RUNNING PROGRAM
 
 
-const llvm_function_link_entry_t& find_function_def_from_link_name(const std::vector<llvm_function_link_entry_t>& function_link_map, const link_name_t& link_name);
+const llvm_function_link_entry_t& find_function_def_from_link_name(const std::vector<llvm_function_link_entry_t>& function_link_map, const module_symbol_t& link_name);
 
-void* get_global_ptr(const llvm_execution_engine_t& c, const std::string& name);
+void* get_global_ptr(const llvm_execution_engine_t& c, const module_symbol_t& name);
 
 
-std::pair<void*, type_t> bind_global(const llvm_execution_engine_t& ee, const std::string& name);
+std::pair<void*, type_t> bind_global(const llvm_execution_engine_t& ee, const module_symbol_t& name);
 value_t load_global(const llvm_context_t& c, const std::pair<void*, type_t>& v);
 
 void store_via_ptr(llvm_context_t& c, const type_t& member_type, void* value_ptr, const value_t& value);
 
-llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name);
+llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const module_symbol_t& name);
 
 
 

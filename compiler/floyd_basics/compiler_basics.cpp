@@ -65,8 +65,8 @@ std::vector<test_t> unpack_test_registry(const std::vector<value_t>& r){
 
 		const auto function_name = s->_member_values[0].get_string_value();
 		const auto scenario = s->_member_values[1].get_string_value();
-		const auto f_link_name_str = s->_member_values[2].get_function_value().name;
-		const auto test = test_t{ test_id_t { "", function_name, scenario }, link_name_t{ f_link_name_str } };
+		const auto f = s->_member_values[2].get_function_value();
+		const auto test = test_t{ test_id_t { "", function_name, scenario }, f };
 
 		result.push_back(test);
 	}
@@ -221,7 +221,7 @@ static process_def_t unpack_process_def(types_t& types, const json_t& j){
 	const auto init_func_linkname = j.get_object_element("init_func_linkname").get_string();
 	const auto msg_func_linkname = j.get_object_element("msg_func_linkname").get_string();
 
-	return process_def_t { name, state_type, msg_type, init_func_linkname, msg_func_linkname };
+	return process_def_t { name, state_type, msg_type, module_symbol_t(init_func_linkname), module_symbol_t(msg_func_linkname) };
 }
 
 static json_t pack_process_def(const types_t& types, const process_def_t& def){
@@ -229,8 +229,8 @@ static json_t pack_process_def(const types_t& types, const process_def_t& def){
 		{ "name", def.name_key },
 		{ "state_type", type_to_json(types, def.state_type) },
 		{ "msg_type", type_to_json(types, def.msg_type) },
-		{ "init_func_linkname", def.init_func_linkname },
-		{ "msg_func_linkname", def.msg_func_linkname }
+		{ "init_func_linkname", def.init_func_linkname.s },
+		{ "msg_func_linkname", def.msg_func_linkname.s }
 	});
 }
 
@@ -244,7 +244,7 @@ static clock_bus_t unpack_clock_bus(types_t& types, const json_t& clock_bus_obj)
 	for(const auto& process_pair: processes_map){
 		const auto name_key = process_pair.first;
 		if(process_pair.second.is_string()){
-			processes.insert({ name_key, process_def_t { process_pair.second.get_string(), make_undefined(), make_undefined(), "", "" } } );
+			processes.insert({ name_key, process_def_t { process_pair.second.get_string(), make_undefined(), make_undefined(), k_no_module_symbol, k_no_module_symbol } } );
 		}
 		else if(process_pair.second.is_object()){
 			const auto process_def = unpack_process_def(types, process_pair.second);
@@ -304,16 +304,16 @@ json_t container_to_json(const types_t& types, const container_t& v){
 
 
 static const process_def_t make_test_process1(){
-	return { "gui", type_t::make_double(), type_t::make_bool(), "link_gui_init", "link_gui_msg" };
+	return { "gui", type_t::make_double(), type_t::make_bool(), module_symbol_t("link_gui_init"), module_symbol_t("link_gui_msg") };
 };
 static const process_def_t make_test_process2(){
-	return { "mem", type_t::make_bool(), type_t::make_double(), "link_mem_init", "link_mem_msg" };
+	return { "mem", type_t::make_bool(), type_t::make_double(), module_symbol_t("link_mem_init"), module_symbol_t("link_mem_msg") };
 };
 static const process_def_t make_test_process3(){
-	return { "audio", type_t::make_string(), type_t::make_bool(), "link_audio_init", "link_audio_msg" };
+	return { "audio", type_t::make_string(), type_t::make_bool(), module_symbol_t("link_audio_init"), module_symbol_t("link_audio_msg") };
 };
 static const process_def_t make_test_process4(){
-	return { "audio_prefetch", type_t::make_double(), type_t::make_string(), "link_audio_prefetch_init", "link_audio_prefetch_msg" };
+	return { "audio_prefetch", type_t::make_double(), type_t::make_string(), module_symbol_t("link_audio_prefetch_init"), module_symbol_t("link_audio_prefetch_msg") };
 };
 
 
@@ -413,7 +413,7 @@ static std::vector<person_t> unpack_persons(const json_t& persons_obj){
 	return result;
 }
 
-json_t pack_persons(const std::vector<person_t>& persons){
+static json_t pack_persons(const std::vector<person_t>& persons){
 	std::map<std::string, json_t> result;
 	for(const auto& e: persons){
 		result.insert({ e._name_key, e._desc });
@@ -1123,7 +1123,7 @@ void UNSUPPORTED() {
 
 //	Return one entry per source line PLUS one extra end-marker. int tells byte offset of files that maps to this line-start.
 //	Never returns empty vector, at least 2 elements.
-std::vector<int> make_location_lookup(const std::string& source){
+static std::vector<int> make_location_lookup(const std::string& source){
 	if(source.empty()){
 		return { 0 };
 	}
@@ -1163,7 +1163,7 @@ QUARK_TEST("", "make_location_lookup()", "", ""){
 	QUARK_VERIFY((r == std::vector<int>{ 0, 4, 8 }));
 }
 
-const std::string cleanup_line_snippet(const std::string& s){
+static const std::string cleanup_line_snippet(const std::string& s){
 	const auto line1 = skip(seq_t(s), "\t ");
 	const auto split = split_on_chars(line1, "\n\r");
 	const auto line = split.size() > 0 ? split.front() : "";
@@ -1173,7 +1173,7 @@ QUARK_TEST("", "cleanup_line_snippet()", "", ""){
 	ut_verify_string(QUARK_POS, cleanup_line_snippet(" \tabc\n\a"), "abc");
 }
 
-location2_t make_loc2(const std::string& program, const std::vector<int>& lookup, const std::string& file, const location_t& loc, int line_index){
+static location2_t make_loc2(const std::string& program, const std::vector<int>& lookup, const std::string& file, const location_t& loc, int line_index){
 	const auto start = lookup[line_index];
 	const auto end = lookup[line_index + 1];
 	const auto line = cleanup_line_snippet(program.substr(start, end - start));
@@ -1182,7 +1182,7 @@ location2_t make_loc2(const std::string& program, const std::vector<int>& lookup
 }
 
 
-location2_t find_loc_info(const std::string& program, const std::vector<int>& lookup, const std::string& file, const location_t& loc){
+static location2_t find_loc_info(const std::string& program, const std::vector<int>& lookup, const std::string& file, const location_t& loc){
 	QUARK_ASSERT(lookup.size() >= 2);
 	QUARK_ASSERT(loc.offset <= lookup.back());
 
@@ -1219,7 +1219,7 @@ QUARK_TEST("", "make_location_lookup()", "", ""){
 	const auto r = find_loc_info(program, lookup, "path.txt", location_t(21));
 }
 
-location2_t find_source_line(const compilation_unit_t& cu, const location_t& loc){
+static location2_t find_source_line(const compilation_unit_t& cu, const location_t& loc){
 	const auto program_lookup = make_location_lookup(cu.program_text);
 
 	if(cu.prefix_source != ""){
@@ -1321,41 +1321,6 @@ QUARK_TEST("", "make_ast_node()", "", ""){
 	const auto r = make_ast_node(location_t(1234), "def-struct", std::vector<json_t>{});
 
 	ut_verify_json(QUARK_POS, r, json_t::make_array({ 1234.0, "def-struct" }));
-}
-
-
-
-
-////////////////////////////////		ENCODE / DECODE LINK NAMES
-
-
-
-static const std::string k_floyd_func_link_prefix = "floydf_";
-
-
-link_name_t encode_floyd_func_link_name(const std::string& name){
-	return link_name_t { k_floyd_func_link_prefix + name };
-}
-std::string decode_floyd_func_link_name(const link_name_t& name){
-	const auto left = name.s. substr(0, k_floyd_func_link_prefix.size());
-	const auto right = name.s.substr(k_floyd_func_link_prefix.size(), std::string::npos);
-	QUARK_ASSERT(left == k_floyd_func_link_prefix);
-	return right;
-}
-
-
-
-static const std::string k_runtime_func_link_prefix = "floyd_runtime_";
-
-link_name_t encode_runtime_func_link_name(const std::string& name){
-	return link_name_t { k_runtime_func_link_prefix + name };
-}
-
-std::string decode_runtime_func_link_name(const link_name_t& name){
-	const auto left = name.s.substr(0, k_runtime_func_link_prefix.size());
-	const auto right = name.s.substr(k_runtime_func_link_prefix.size(), std::string::npos);
-	QUARK_ASSERT(left == k_runtime_func_link_prefix);
-	return right;
 }
 
 

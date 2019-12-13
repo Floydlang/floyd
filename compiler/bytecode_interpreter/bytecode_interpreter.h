@@ -1157,18 +1157,18 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 struct value_entry_t {
 	bool check_invariant() const {
 		QUARK_ASSERT(_value.check_invariant());
-		QUARK_ASSERT(_symbol_name.empty() == false);
+		QUARK_ASSERT(_symbol_name.s.empty() == false);
 		QUARK_ASSERT(_symbol.check_invariant());
 		QUARK_ASSERT(_global_index >= 0);
 		return true;
 	}
 
 	bc_value_t _value;
-	std::string _symbol_name;
+	module_symbol_t _symbol_name;
 	bc_symbol_t _symbol;
 	int _global_index;
 };
-std::shared_ptr<value_entry_t> find_global_symbol2(interpreter_t& vm, const std::string& s);
+std::shared_ptr<value_entry_t> find_global_symbol2(interpreter_t& vm, const module_symbol_t& s);
 
 std::vector<std::pair<type_t, struct_layout_t>> bc_make_struct_layouts(const types_t& types);
 

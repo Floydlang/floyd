@@ -27,7 +27,7 @@ struct types_t;
 std::vector<std::pair<intrinsic_signature_t, BC_NATIVE_FUNCTION_PTR>> bc_get_intrinsics_internal(types_t& types);
 
 //	Create lookup from function id -> C function pointer.
-std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics(types_t& types);
+std::map<module_symbol_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics(types_t& types);
 
 
 }	//	floyd

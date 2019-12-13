@@ -1100,7 +1100,7 @@ static expression_gen_t generate_callee(bcgenerator_t& gen_acc, const expression
 		const auto name = intrinsic.name;
 
 		const auto function_type = get_expr_output(gen_acc, *details.callee);
-		const auto value = value_t::make_function_value(types, function_type, function_id_t { name });
+		const auto value = value_t::make_function_value(types, function_type, module_symbol_t(name));
 		const auto r = add_local_const(types, body_acc, value, "temp: intrinsics-" + name);
 		return expression_gen_t { body_acc, r, function_type };
 	}
@@ -1891,7 +1891,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 			const auto f = bc_function_definition_t {
 				func_link_t {
 					"user floyd function: " + function_def._definition_name,
-					link_name_t { function_def._definition_name },
+					module_symbol_t(function_def._definition_name),
 					function_def._function_type,
 					count_dyn_args(types, function_def._function_type),
 					true,
@@ -1906,7 +1906,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 			const auto f = bc_function_definition_t {
 				func_link_t {
 					"user function: " + function_def._definition_name,
-					link_name_t { function_def._definition_name },
+					module_symbol_t(function_def._definition_name),
 					function_def._function_type,
 					count_dyn_args(types, function_def._function_type),
 					false,

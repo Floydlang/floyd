@@ -139,7 +139,7 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 
 		auto run_output = run_program_bc(interpreter, main_args, config);
 
-		const auto result_variable = find_global_symbol2(interpreter, "result");
+		const auto result_variable = find_global_symbol2(interpreter, module_symbol_t("result"));
 		value_t result_global;
 		if(result_variable != nullptr){
 			result_global = bc_to_value(interpreter._stack._backend, result_variable->_value);
@@ -201,7 +201,7 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 
 		auto context = llvm_context_t { ee.get(), nullptr };
 
-		const auto result_global0 = bind_global(*ee, "result");
+		const auto result_global0 = bind_global(*ee, module_symbol_t("result"));
 		const auto result_global = result_global0.first != nullptr ? load_global(context, result_global0) : value_t();
 
 		QUARK_ASSERT(ee->check_invariant());

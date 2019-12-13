@@ -72,7 +72,7 @@ struct analyser_t {
 	public: std::vector<lexical_scope_t> _lexical_scope_stack;
 
 	//	These are output functions, that have been fixed.
-	public: std::map<function_id_t, function_definition_t> _function_defs;
+	public: std::map<module_symbol_t, function_definition_t> _function_defs;
 	public: types_t _types;
 
 	public: software_system_t _software_system;
@@ -777,7 +777,7 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 	const auto f_type = resolve_type_symbols(a_acc, k_no_location, make_benchmark_function_t(a_acc._types));
 
 
-	const auto function_id = function_id_t { function_link_name };
+	const auto function_id = module_symbol_t(function_link_name);
 
 	//	Make a function def expression for the new benchmark function.
 
@@ -832,7 +832,7 @@ static analyser_t analyse_test_def_statement(const analyser_t& a, const statemen
 	const auto f_itype = resolve_type_symbols(a_acc, k_no_location, make_test_function_t(a_acc._types));
 
 
-	const auto function_id = function_id_t { function_link_name };
+	const auto function_id = module_symbol_t(function_link_name);
 
 	//	Make a function def expression for the new test function.
 
@@ -2509,7 +2509,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	}
 
 	const auto definition_name = function_def._definition_name;
-	const auto function_id = function_id_t { definition_name };
+	const auto function_id = module_symbol_t(definition_name);
 
 	const auto function_def2 = function_definition_t::make_func(k_no_location, definition_name, function_type_peek, args2, body_result);
 	QUARK_ASSERT(check_types_resolved(a_acc._types, function_def2));
@@ -3001,8 +3001,8 @@ const body_t make_global_body(analyser_t& a){
 				const auto msg_type = msg_func_peek.get_function_args(a._types)[1];
 
 
-				process.second.init_func_linkname = init_func_symbol.first->_init.get_function_value().name;
-				process.second.msg_func_linkname = msg_func_symbol.first->_init.get_function_value().name;
+				process.second.init_func_linkname = init_func_symbol.first->_init.get_function_value();
+				process.second.msg_func_linkname = msg_func_symbol.first->_init.get_function_value();
 
 				process.second.state_type = state_type;
 				process.second.msg_type = msg_type;

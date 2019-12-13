@@ -1337,7 +1337,7 @@ bc_value_t::bc_value_t(value_backend_t& backend, const type_t& struct_type, cons
 	QUARK_ASSERT(check_invariant());
 }
 
-bc_value_t bc_value_t::make_function_value(value_backend_t& backend, const type_t& function_type, const function_id_t& function_id){
+bc_value_t bc_value_t::make_function_value(value_backend_t& backend, const type_t& function_type, const module_symbol_t& function_id){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(function_type.is_function());
 
@@ -1348,14 +1348,14 @@ int64_t bc_value_t::get_function_value() const{
 
 	return _pod.function_link_id;
 }
-bc_value_t::bc_value_t(value_backend_t& backend, const type_t& function_type, const function_id_t& function_id) :
+bc_value_t::bc_value_t(value_backend_t& backend, const type_t& function_type, const module_symbol_t& function_id) :
 	_backend(nullptr),
 	_type(function_type)
 {
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(function_type.is_function());
 
-	const auto id = find_function_by_name(backend, function_id);
+	const auto id = find_function_by_name0(backend, function_id);
 	_pod = runtime_value_t { .function_link_id = id };
 
 	QUARK_ASSERT(check_invariant());
@@ -1388,7 +1388,7 @@ bool bc_value_t::check_invariant() const {
 	QUARK_ASSERT(_type.check_invariant());
 
 	if(_type.is_function()){
-		QUARK_ASSERT(_pod.function_link_id >= 0 && _pod.function_link_id < 10000);
+		QUARK_ASSERT(_pod.function_link_id == -1 || (_pod.function_link_id >= 0 && _pod.function_link_id < 10000));
 	}
 
 	if(_backend != nullptr){
@@ -1761,7 +1761,7 @@ json_t func_link_to_json(const types_t& types, const func_link_t& def){
 	QUARK_ASSERT(def.check_invariant());
 
 	return json_t::make_array({
-		json_t(def.link_name.s),
+		json_t(def.module_symbol.s),
 		json_t(def.debug_type),
 		json_t(type_to_compact_string(types, def.function_type)),
 		json_t(def.dynamic_arg_count),
@@ -1782,23 +1782,34 @@ void trace_func_link(const types_t& types, const std::vector<func_link_t>& defs)
 ////////////////////////////////		value_backend_t
 
 
-int64_t find_function_by_name(const value_backend_t& backend, const function_id_t& s){
-	const auto wanted_s = s.name;
+const func_link_t* find_function_by_name2(const value_backend_t& backend, const module_symbol_t& s){
 	const auto& v = backend.func_link_lookup;
-	const auto it = std::find_if(v.begin(), v.end(), [&] (auto& m) { return m.link_name.s == wanted_s; });
+	const auto it = std::find_if(v.begin(), v.end(), [&] (auto& m) { return m.module_symbol == s; });
+	if(it != v.end()){
+		return &(*it);
+	}
+	else{
+		return nullptr;
+	}
+}
+int64_t find_function_by_name0(const value_backend_t& backend, const module_symbol_t& s){
+	const auto& v = backend.func_link_lookup;
+	const auto it = std::find_if(v.begin(), v.end(), [&] (auto& m) { return m.module_symbol == s; });
 	if(it != v.end()){
 		const auto result = (int64_t)(it - v.begin());
 		return result;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		return -1;
 	}
 }
 
 
 const func_link_t& lookup_func_link_from_id(const value_backend_t& backend, runtime_value_t value){
 	auto func_id = value.function_link_id;
+	if(func_id == -1){
+		throw std::runtime_error("");
+	}
 	QUARK_ASSERT(func_id >= 0 && func_id < backend.func_link_lookup.size());
 	const auto& e = backend.func_link_lookup[func_id];
 	return e;
@@ -1816,23 +1827,33 @@ const func_link_t& lookup_func_link_from_native(const value_backend_t& backend, 
 	}
 }
 
-const func_link_t& lookup_func_link(const value_backend_t& backend, runtime_value_t value){
+const func_link_t* lookup_func_link(const value_backend_t& backend, runtime_value_t value){
 	auto func_id = value.function_link_id;
-	if(func_id >= 0 && func_id < backend.func_link_lookup.size()){
+	if(func_id == -1){
+		return nullptr;
+	}
+	else if(func_id >= 0 && func_id < backend.func_link_lookup.size()){
 		const auto& e = backend.func_link_lookup[func_id];
-		return e;
+		return &e;
 	}
 
 	const void* f = (const void*)value.function_link_id;
 	const auto& v = backend.func_link_lookup;
 	const auto it = std::find_if(v.begin(), v.end(), [&] (auto& m) { return m.f == f; });
 	if(it != v.end()){
-		return *it;
+		return &(*it);
 	}
 
-	throw std::runtime_error("");
+	return nullptr;
 }
 
+const func_link_t& lookup_func_link_required(const value_backend_t& backend, runtime_value_t value){
+	const auto result = lookup_func_link(backend, value);
+	if(result == nullptr){
+		throw std::runtime_error("");
+	}
+	return *result;
+}
 
 
 
@@ -2678,14 +2699,16 @@ runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value
 			return to_runtime_dict(backend, e, value);
 		}
 		runtime_value_t operator()(const function_t& e) const{
-			const auto id = find_function_by_name(backend, value.get_function_value());
+			const auto id = find_function_by_name0(backend, value.get_function_value());
 			return runtime_value_t { .function_link_id = id };
 		}
 		runtime_value_t operator()(const symbol_ref_t& e) const {
 			QUARK_ASSERT(false); throw std::exception();
 		}
 		runtime_value_t operator()(const named_type_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			const auto temp = value_t::replace_logical_type(value, peek2(backend.types, value.get_type()));
+			const auto temp2 = to_runtime_value2(backend, temp);
+			return temp2;
 		}
 	};
 	const auto result = std::visit(visitor_t{ backend, value }, get_type_variant(backend.types, type));
@@ -2754,8 +2777,8 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 			return from_runtime_dict(backend, encoded_value, type);
 		}
 		value_t operator()(const function_t& e) const{
-			const auto& func_link = lookup_func_link(backend, encoded_value);
-			return value_t::make_function_value(backend.types, type, function_id_t { func_link.link_name.s });
+			const auto func_link_ptr = lookup_func_link(backend, encoded_value);
+			return value_t::make_function_value(backend.types, type, func_link_ptr ? func_link_ptr->module_symbol : k_no_module_symbol);
 		}
 		value_t operator()(const symbol_ref_t& e) const {
 			QUARK_ASSERT(false); throw std::exception();

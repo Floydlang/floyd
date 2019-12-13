@@ -33,59 +33,40 @@ struct value_t;
 
 
 
-////////////////////////////////////////		link_name_t
+////////////////////////////////////////		module_symbol_t
 
 
-struct link_name_t {
+struct module_symbol_t {
+	module_symbol_t() :
+		s("")
+	{
+	}
+
+	explicit module_symbol_t(const std::string& s) : s(s) {
+	}
 	std::string s;
 };
 
-inline bool operator==(const link_name_t& lhs, const link_name_t& rhs){
+inline bool operator==(const module_symbol_t& lhs, const module_symbol_t& rhs){
 	return lhs.s == rhs.s;
 }
-inline bool operator!=(const link_name_t& lhs, const link_name_t& rhs){
+inline bool operator!=(const module_symbol_t& lhs, const module_symbol_t& rhs){
 	return lhs.s != rhs.s;
 }
-inline bool operator<(const link_name_t& lhs, const link_name_t& rhs){
+inline bool operator<(const module_symbol_t& lhs, const module_symbol_t& rhs){
 	return lhs.s < rhs.s;
 }
 
-const link_name_t k_no_link_name = link_name_t { "" };
+const auto k_no_module_symbol = module_symbol_t { "" };
 
 
 
-////////////////////////////////////////		function_id_t
 
-
-struct function_id_t {
-	std::string name;
-};
-
-inline bool operator==(const function_id_t& lhs, const function_id_t& rhs){
-	return lhs.name == rhs.name;
-}
-inline bool operator!=(const function_id_t& lhs, const function_id_t& rhs){
-	return lhs.name != rhs.name;
-}
-inline bool operator<(const function_id_t& lhs, const function_id_t& rhs){
-	return lhs.name < rhs.name;
-}
-
-const function_id_t k_no_function_id = function_id_t { "" };
 
 
 ////////////////////////////////		ENCODE / DECODE LINK NAMES
 
 
-
-//	"hello" => "floydf_hello"
-link_name_t encode_floyd_func_link_name(const std::string& name);
-std::string decode_floyd_func_link_name(const link_name_t& name);
-
-
-//	"hello" => "floyd_runtime_hello"
-link_name_t encode_runtime_func_link_name(const std::string& name);
-std::string decode_runtime_func_link_name(const link_name_t& name);
 
 
 
@@ -213,7 +194,7 @@ inline type_t make_benchmark_id_t(types_t& types){
 
 struct bench_t {
 	benchmark_id_t benchmark_id;
-	link_name_t f;
+	module_symbol_t f;
 };
 inline bool operator==(const bench_t& lhs, const bench_t& rhs){ return lhs.benchmark_id == rhs.benchmark_id && lhs.f == rhs.f; }
 
@@ -305,7 +286,7 @@ inline type_t make_test_id_t(types_t& types){
 
 struct test_t {
 	test_id_t test_id;
-	link_name_t f;
+	module_symbol_t f;
 };
 inline bool operator==(const test_t& lhs, const test_t& rhs){ return lhs.test_id == rhs.test_id && lhs.f == rhs.f; }
 
@@ -362,8 +343,8 @@ struct process_def_t {
 	type_t state_type;
 	type_t msg_type;
 
-	std::string init_func_linkname;
-	std::string msg_func_linkname;
+	module_symbol_t init_func_linkname;
+	module_symbol_t msg_func_linkname;
 };
 inline bool operator==(const process_def_t& lhs, const process_def_t& rhs){
 	return

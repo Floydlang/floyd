@@ -31,18 +31,18 @@ static const bool k_trace_messaging = true;
 
 
 
-floyd::value_t find_global_symbol(interpreter_t& vm, const std::string& s){
+floyd::value_t find_global_symbol(interpreter_t& vm, const module_symbol_t& s){
 	QUARK_ASSERT(vm.check_invariant());
 
 	return get_global(vm, s);
 }
 
-value_t get_global(interpreter_t& vm, const std::string& name){
+value_t get_global(interpreter_t& vm, const module_symbol_t& name){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& result = find_global_symbol2(vm, name);
 	if(result == nullptr){
-		quark::throw_runtime_error(std::string() + "Cannot find global \"" + name + "\".");
+		quark::throw_runtime_error(std::string() + "Cannot find global \"" + name.s + "\".");
 	}
 	else{
 		return bc_to_value(vm._stack._backend, result->_value);
@@ -273,10 +273,10 @@ static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& v
 			process->_msg_function = find_global_symbol2(*process->_interpreter, t.second.msg_func_linkname);
 
 			if(process->_init_function == nullptr){
-				throw std::runtime_error("Cannot link floyd init function: \"" + t.second.init_func_linkname + "\"");
+				throw std::runtime_error("Cannot link floyd init function: \"" + t.second.init_func_linkname.s + "\"");
 			}
 			if(process->_msg_function == nullptr){
-				throw std::runtime_error("Cannot link floyd message function: \"" + t.second.msg_func_linkname + "\"");
+				throw std::runtime_error("Cannot link floyd message function: \"" + t.second.msg_func_linkname.s + "\"");
 			}
 
 			runtime._processes.push_back(process);
@@ -354,7 +354,7 @@ static int64_t bc_call_main(interpreter_t& interpreter, const floyd::value_t& f,
 run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& main_args, const config_t& config){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& main_function = find_global_symbol2(vm, "main");
+	const auto& main_function = find_global_symbol2(vm, module_symbol_t("main"));
 	if(main_function != nullptr){
 		const auto main_result_int = bc_call_main(vm, bc_to_value(vm._stack._backend, main_function->_value), main_args);
 		return { main_result_int, {} };
@@ -368,7 +368,7 @@ run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& m
 std::vector<test_t> collect_tests(interpreter_t& vm){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& test_registry_bind = find_global_symbol2(vm, k_global_test_registry);
+	const auto& test_registry_bind = find_global_symbol2(vm, module_symbol_t(k_global_test_registry));
 	QUARK_ASSERT(test_registry_bind != nullptr);
 
 	const auto vec = bc_to_value(vm._stack._backend, test_registry_bind->_value);
@@ -380,7 +380,7 @@ std::vector<test_t> collect_tests(interpreter_t& vm){
 static std::string run_test(interpreter_t& vm, const test_t& test){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto function_id = function_id_t { test.f.s };
+	const auto function_id = test.f;
 
 	const auto f_type = make_function(
 		vm._imm->_program._types,

@@ -367,7 +367,11 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 	QUARK_ASSERT(peek2(types, f._type).is_function());
 #endif
 
-	const auto& func_link = lookup_func_link(backend, f._pod);
+	const auto func_link_ptr = lookup_func_link(backend, f._pod);
+	if(func_link_ptr == nullptr){
+		quark::throw_runtime_error("Attempting to calling unimplemented function.");
+	}
+	const auto& func_link = *func_link_ptr;
 
 	if(func_link.is_bc_function == false){
 		//	arity
@@ -507,7 +511,7 @@ interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config
 	const auto intrinsics2 = mapf<func_link_t>(intrinsics, [&](const auto& e){
 		return func_link_t {
 			std::string() + "intrinsics:" + e.first.name,
-			link_name_t { e.first.name },
+			module_symbol_t(e.first.name),
 			e.first._function_type,
 			count_dyn_args(temp_types, e.first._function_type),
 			false,
@@ -518,17 +522,14 @@ interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config
 	const auto corelib_native_funcs = bc_get_corelib_calls();
 
 	const auto funcs = mapf<func_link_t>(program._function_defs, [&corelib_native_funcs](const auto& e){
-		const auto& function_name = e.func_link.link_name.s;
-		const auto it = corelib_native_funcs.find(function_id_t { function_name } );
+		const auto& function_name_symbol = e.func_link.module_symbol;
+		const auto it = corelib_native_funcs.find(function_name_symbol);
 
 		//	There us a native implementation of this function:
 		if(it != corelib_native_funcs.end()){
-//			const auto link_name = encode_floyd_func_link_name(function_name);
-			const auto link_name = link_name_t { function_name };
-
 			return func_link_t {
 				e.func_link.debug_type,
-				link_name,
+				function_name_symbol,
 				e.func_link.function_type,
 				e.func_link.dynamic_arg_count,
 				e.func_link.is_bc_function,
@@ -538,12 +539,9 @@ interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config
 
 		//	There is a BC implementation.
 		else if(e._frame_ptr != nullptr){
-//			const auto link_name = encode_floyd_func_link_name(function_name);
-			const auto link_name = link_name_t { function_name };
-
 			return func_link_t {
 				e.func_link.debug_type,
-				link_name,
+				function_name_symbol,
 				e.func_link.function_type,
 				e.func_link.dynamic_arg_count,
 				e.func_link.is_bc_function,
@@ -553,12 +551,12 @@ interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config
 
 		//	No implementation.
 		else{
-			return func_link_t { "", {}, {}, false, false, nullptr };
+			return func_link_t { "", k_no_module_symbol, {}, false, false, nullptr };
 		}
 	});
 
 	//	Remove functions that don't have an implementation.
-	const auto funcs2 = filterf<func_link_t>(funcs, [](const auto& e){ return e.link_name.s.empty() == false; });
+	const auto funcs2 = filterf<func_link_t>(funcs, [](const auto& e){ return e.module_symbol.s.empty() == false; });
 
 	const auto func_lookup = concat(funcs2, intrinsics2);
 
@@ -844,8 +842,12 @@ static void do_call(interpreter_t& vm, int target_reg, const runtime_value_t cal
 	const auto& backend = vm._stack._backend;
 	const auto& types = backend.types;
 
-	const auto& func_link = lookup_func_link(backend, callee);
+	const auto func_link_ptr = lookup_func_link(backend, callee);
+	if(func_link_ptr == nullptr){
+		quark::throw_runtime_error("Attempting to calling unimplemented function.");
+	}
 
+	const auto& func_link = *func_link_ptr;
 	if(func_link.is_bc_function){
 		//	This is a floyd function, with a frame_ptr to execute.
 		QUARK_ASSERT(func_link.f != nullptr);
@@ -1805,15 +1807,15 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 
 
-std::shared_ptr<value_entry_t> find_global_symbol2(interpreter_t& vm, const std::string& s){
+std::shared_ptr<value_entry_t> find_global_symbol2(interpreter_t& vm, const module_symbol_t& s){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(s.size() > 0);
+	QUARK_ASSERT(s.s.size() > 0);
 
 	const auto& symbols = vm._imm->_program._globals._symbols;
     const auto& it = std::find_if(
     	symbols.begin(),
     	symbols.end(),
-    	[&s](const std::pair<std::string, bc_symbol_t>& e) { return e.first == s; }
+    	[&s](const std::pair<std::string, bc_symbol_t>& e) { return e.first == s.s; }
 	);
 	if(it != symbols.end()){
 		const auto index = static_cast<int>(it - symbols.begin());
@@ -1822,7 +1824,7 @@ std::shared_ptr<value_entry_t> find_global_symbol2(interpreter_t& vm, const std:
 
 		const auto value_entry = value_entry_t{
 			vm._stack.load_value(pos, it->second._value_type),
-			it->first,
+			module_symbol_t(it->first),
 			it->second,
 			static_cast<int>(index)
 		};

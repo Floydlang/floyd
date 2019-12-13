@@ -308,13 +308,6 @@ uint64_t get_vec_string_size(runtime_value_t str);
 
 void copy_elements(runtime_value_t dest[], runtime_value_t source[], uint64_t count);
 
-/*
-inline function_id_t get_function_id(const runtime_value_t& value){
-	QUARK_ASSERT(value.function_id_str != nullptr);
-	const auto s = std::string(value.function_id_str);
-	return function_id_t { s };
-}
-*/
 
 
 ////////////////////////////////		WIDE_RETURN_T
@@ -730,7 +723,7 @@ struct bc_value_t {
 	public: static bc_value_t make_function_value(
 		value_backend_t& backend,
 		const type_t& function_type,
-		const function_id_t& function_id
+		const module_symbol_t& function_id
 	);
 	public: int64_t get_function_value() const;
 
@@ -754,7 +747,7 @@ struct bc_value_t {
 		const std::vector<bc_value_t>& values,
 		bool struct_tag
 	);
-	private: explicit bc_value_t(value_backend_t& backend, const type_t& function_type, const function_id_t& function_id);
+	private: explicit bc_value_t(value_backend_t& backend, const type_t& function_type, const module_symbol_t& function_id);
 
 	//////////////////////////////////////		STATE
 
@@ -807,7 +800,7 @@ bool is_struct_pod(const types_t& types, const struct_type_desc_t& struct_def);
 //	Every function has a func_entry_t. It may not yet be linked to a function.
 struct func_link_t {
 	bool check_invariant() const {
-		QUARK_ASSERT(link_name.s.empty() == false);
+		QUARK_ASSERT(module_symbol.s.empty() == false);
 		QUARK_ASSERT(function_type.is_function());
 		QUARK_ASSERT(dynamic_arg_count >= 0 && dynamic_arg_count < 1000);
 //		QUARK_ASSERT(f != nullptr);
@@ -817,7 +810,7 @@ struct func_link_t {
 	//	"instrinsics", "corelib", "runtime", "user function" or whatever.
 	std::string debug_type;
 
-	link_name_t link_name;
+	module_symbol_t module_symbol;
 	type_t function_type;
 	int dynamic_arg_count;
 
@@ -876,10 +869,14 @@ struct value_backend_t {
 
 bool check_invariant(const value_backend_t& backend, runtime_value_t value, const type_t& type);
 
-int64_t find_function_by_name(const value_backend_t& backend, const function_id_t& s);
+const func_link_t* find_function_by_name2(const value_backend_t& backend, const module_symbol_t& s);
+
+//	Returns index into func_link_t array of backend, or -1 of not found.
+int64_t find_function_by_name0(const value_backend_t& backend, const module_symbol_t& s);
 
 
-const func_link_t& lookup_func_link(const value_backend_t& backend, runtime_value_t value);
+const func_link_t* lookup_func_link(const value_backend_t& backend, runtime_value_t value);
+const func_link_t& lookup_func_link_required(const value_backend_t& backend, runtime_value_t value);
 const func_link_t& lookup_func_link_from_id(const value_backend_t& backend, runtime_value_t value);
 const func_link_t& lookup_func_link_from_native(const value_backend_t& backend, runtime_value_t value);
 
