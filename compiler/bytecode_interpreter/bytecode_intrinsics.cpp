@@ -389,16 +389,17 @@ static bc_value_t bc_intrinsic__map(interpreter_t& vm, const bc_value_t args[], 
 	for(const auto& e: input_vec){
 		const bc_value_t f_args[] = { e, context };
 		const auto result1 = call_function_bc(vm, f, f_args, 2);
+		QUARK_ASSERT(result1.check_invariant());
 		vec2 = vec2.push_back(result1);
 	}
 
 	const auto result = make_vector(backend, r_type, vec2);
 
-if(k_trace && false){
-	const auto debug = value_and_type_to_json(backend.types, bc_to_value(backend, result));
-	QUARK_TRACE(json_to_pretty_string(debug));
-}
-
+	if(k_trace && false){
+		const auto debug = value_and_type_to_json(backend.types, bc_to_value(backend, result));
+		QUARK_TRACE(json_to_pretty_string(debug));
+	}
+	QUARK_ASSERT(result.check_invariant());
 	return result;
 }
 

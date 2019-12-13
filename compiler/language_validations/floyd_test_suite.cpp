@@ -3625,7 +3625,22 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [func] constructor", "", ""){
 	);
 }
 
+	FLOYD_LANG_PROOF_VIP("Floyd test suite", "vector [struct] constructor", "", ""){
+		ut_verify_printout_nolib(
+			QUARK_POS,
+			R"(
 
+				struct person_t { int birth_year }
+
+				let d = person_t(1782)
+				print(d)
+
+			)",
+			{
+				R"___({birth_year=1782})___"
+			}
+		);
+	}
 FLOYD_LANG_PROOF("Floyd test suite", "vector [struct] constructor", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -4308,7 +4323,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [json] constructor", "", ""){
 
 
 
-
+//#define FLOYD_LANG_PROOF FLOYD_LANG_PROOF_VIP
 
 
 
@@ -5648,7 +5663,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "map()", "map over [int]", ""){
 	)");
 }
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "map()", "map over [int]", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "map()", "map over [int]", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let a = [ 10, 11, 12 ]

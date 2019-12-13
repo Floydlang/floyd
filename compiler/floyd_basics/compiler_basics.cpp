@@ -24,7 +24,7 @@ const location_t k_no_location(std::numeric_limits<std::size_t>::max());
 
 
 config_t make_default_config(){
-	return config_t { vector_backend::hamt, dict_backend::hamt, false } ;
+	return config_t { vector_backend::hamt, dict_backend::hamt, true } ;
 }
  
 compiler_settings_t make_default_compiler_settings(){

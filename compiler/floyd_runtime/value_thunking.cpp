@@ -40,6 +40,7 @@ runtime_value_t alloc_carray_8bit(value_backend_t& backend, const uint8_t data[]
 			acc = 0;
 		}
 	}
+
 	return result;
 }
 
@@ -47,7 +48,9 @@ runtime_value_t to_runtime_string2(value_backend_t& backend, const std::string& 
 	QUARK_ASSERT(backend.check_invariant());
 
 	const uint8_t* p = reinterpret_cast<const uint8_t*>(s.c_str());
-	return alloc_carray_8bit(backend, p, s.size());
+	const auto result = alloc_carray_8bit(backend, p, s.size());
+	QUARK_ASSERT(check_invariant(backend, result, type_t::make_string()));
+	return result;
 }
 
 
@@ -70,8 +73,7 @@ QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
 // backend not used???
 std::string from_runtime_string2(const value_backend_t& backend, runtime_value_t encoded_value){
 	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(encoded_value.check_invariant());
-	QUARK_ASSERT(encoded_value.vector_carray_ptr != nullptr);
+	QUARK_ASSERT(check_invariant(backend, encoded_value, type_t::make_string()));
 
 	const size_t size = get_vec_string_size(encoded_value);
 
@@ -107,6 +109,7 @@ QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
 static runtime_value_t to_runtime_struct(value_backend_t& backend, const struct_t& exact_type, const value_t& value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(value.get_type().is_struct());
 
 	const auto& struct_layout = find_struct_layout(backend, value.get_type());
 
@@ -128,8 +131,9 @@ static runtime_value_t to_runtime_struct(value_backend_t& backend, const struct_
 
 static value_t from_runtime_struct(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(encoded_value.check_invariant());
+	QUARK_ASSERT(check_invariant(backend, encoded_value, type));
 	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(type.is_struct());
 
 	const auto& type_peek = peek2(backend.types, type);
 
@@ -153,6 +157,7 @@ static value_t from_runtime_struct(const value_backend_t& backend, const runtime
 runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t& value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(value.get_type().is_struct());
 
 	const auto& type = value.get_type();
 	const auto& type_peek = peek2(backend.types, type);
@@ -172,6 +177,8 @@ runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t& value
 	//		retain_value(r, a, element_type);
 			p[i] = a;
 		}
+
+		QUARK_ASSERT(check_invariant(backend, result, type));
 		return result;
 	}
 	else if(is_vector_hamt(backend.types, backend.config, type)){
@@ -182,6 +189,7 @@ runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t& value
 			temp.push_back(a);
 		}
 		auto result = alloc_vector_hamt(backend.heap, &temp[0], temp.size(), type);
+		QUARK_ASSERT(check_invariant(backend, result, type));
 		return result;
 	}
 	else{
@@ -192,8 +200,9 @@ runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t& value
 
 value_t from_runtime_vector(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(encoded_value.check_invariant());
+	QUARK_ASSERT(check_invariant(backend, encoded_value, type));
 	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(type.is_vector());
 
 	const auto& type_peek = peek2(backend.types, type);
 	QUARK_ASSERT(type_peek.is_vector());
@@ -236,6 +245,7 @@ value_t from_runtime_vector(const value_backend_t& backend, const runtime_value_
 runtime_value_t to_runtime_dict(value_backend_t& backend, const dict_t& exact_type, const value_t& value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(value.get_type().is_dict());
 
 	const auto type = value.get_type();
 	const auto& type_peek = peek2(backend.types, type);
@@ -252,6 +262,7 @@ runtime_value_t to_runtime_dict(value_backend_t& backend, const dict_t& exact_ty
 			const auto a = to_runtime_value2(backend, e.second);
 			m.insert({ e.first, a });
 		}
+		QUARK_ASSERT(check_invariant(backend, result, type));
 		return result;
 	}
 	else if(is_dict_hamt(backend.types, backend.config, type)){
@@ -265,6 +276,7 @@ runtime_value_t to_runtime_dict(value_backend_t& backend, const dict_t& exact_ty
 			const auto a = to_runtime_value2(backend, e.second);
 			m = m.set(e.first, a);
 		}
+		QUARK_ASSERT(check_invariant(backend, result, type));
 		return result;
 	}
 	else{
@@ -275,8 +287,9 @@ runtime_value_t to_runtime_dict(value_backend_t& backend, const dict_t& exact_ty
 
 value_t from_runtime_dict(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(encoded_value.check_invariant());
+	QUARK_ASSERT(check_invariant(backend, encoded_value, type));
 	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(type.is_dict());
 
 	const auto& type_peek = peek2(backend.types, type);
 
@@ -376,7 +389,9 @@ runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value
 			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
-	return std::visit(visitor_t{ backend, value }, get_type_variant(backend.types, type));
+	const auto result = std::visit(visitor_t{ backend, value }, get_type_variant(backend.types, type));
+	QUARK_ASSERT(check_invariant(backend, result, type));
+	return result;
 }
 
 
@@ -384,7 +399,7 @@ runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value
 
 value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(encoded_value.check_invariant());
+	QUARK_ASSERT(check_invariant(backend, encoded_value, type));
 	QUARK_ASSERT(type.check_invariant());
 
 	struct visitor_t {
@@ -447,21 +462,13 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 			QUARK_ASSERT(false); throw std::exception();
 		}
 		value_t operator()(const named_type_t& e) const {
-#if 1
-			return from_runtime_value2(backend, encoded_value, peek2(backend.types, e.destination_type));
-#else
 			const auto result = from_runtime_value2(backend, encoded_value, e.destination_type);
 			return value_t::replace_logical_type(result, type);
-#endif
 		}
 	};
-#if 1
-	return std::visit(visitor_t{ backend, encoded_value, type }, get_type_variant(backend.types, type));
-#else
 	const auto result = std::visit(visitor_t{ backend, encoded_value, type }, get_type_variant(backend.types, type));
 	QUARK_ASSERT(result.get_type() == type);
 	return result;
-#endif
 }
 
 
@@ -469,6 +476,8 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 
 
 runtime_value_t make_runtime_non_rc(const value_t& value){
+	QUARK_ASSERT(value.check_invariant());
+
 	const auto& type = value.get_type();
 	QUARK_ASSERT(type.check_invariant());
 
@@ -548,19 +557,32 @@ bc_value_t make_non_rc(const value_t& value){
 
 
 value_t bc_to_value(const value_backend_t& backend, const bc_value_t& value){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(value.check_invariant());
+
 	return from_runtime_value2(backend, value._pod, value._type);
 }
 
 bc_value_t value_to_bc(value_backend_t& backend, const value_t& value){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(value.check_invariant());
+
 	const auto a = to_runtime_value2(backend, value);
 	return bc_value_t(backend, value.get_type(), a);
 }
 
 bc_value_t bc_from_runtime(value_backend_t& backend, runtime_value_t value, const type_t& type){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
 	return bc_value_t(backend, type, value);
 }
 
 runtime_value_t runtime_from_bc(value_backend_t& backend, const bc_value_t& value){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(value.check_invariant());
+
 	return value._pod;
 }
 

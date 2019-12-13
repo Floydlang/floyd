@@ -895,8 +895,9 @@ struct value_backend_t {
 	config_t config;
 };
 
-int64_t find_function_by_name(const value_backend_t& backend, const function_id_t& s);
+bool check_invariant(const value_backend_t& backend, runtime_value_t value, const type_t& type);
 
+int64_t find_function_by_name(const value_backend_t& backend, const function_id_t& s);
 
 
 inline const func_link_t& lookup_func_link(const value_backend_t& backend, runtime_value_t value){

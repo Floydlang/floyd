@@ -376,6 +376,7 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 		QUARK_ASSERT(func_link.f != nullptr)
 		const auto f2 = (BC_NATIVE_FUNCTION_PTR)func_link.f;
 		const auto& result = (*f2)(vm, &args[0], arg_count);
+		QUARK_ASSERT(result.check_invariant());
 		return result;
 	}
 	else{
@@ -412,6 +413,7 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 		vm._stack.restore_frame();
 
 		if(peek2(types, lookup_type_from_index(types, result.first)).is_void() == false){
+			QUARK_ASSERT(result.second.check_invariant());
 			return result.second;
 		}
 		else{
@@ -763,6 +765,8 @@ static void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t targ
 //	QUARK_TRACE(to_compact_string2(instance));
 
 	vm._stack.write_register__external_value(dest_reg, result);
+	
+	retain!
 }
 
 //	??? Make stub bc_static_frame_t for each host function to make call conventions same as Floyd functions.
@@ -1051,6 +1055,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
+		//??? popn with a = 0 is a NOP ==> never emit these!
 		case bc_opcode::k_popn: {
 			QUARK_ASSERT(vm.check_invariant());
 

@@ -376,6 +376,7 @@ QUARK_TEST("", "", "", ""){
 
 
 
+
 runtime_value_t make_blank_runtime_value(){
 	return make_runtime_int(0xdeadbee1);
 }
@@ -1365,6 +1366,10 @@ bool bc_value_t::check_invariant() const {
 		QUARK_ASSERT(_pod.function_link_id >= 0 && _pod.function_link_id < 10000);
 	}
 
+	if(_backend != nullptr){
+		QUARK_ASSERT(floyd::check_invariant(*_backend, _pod, _type));
+	}
+
 	return true;
 }
 #endif
@@ -1462,18 +1467,30 @@ bc_value_t make_vector(value_backend_t& backend, const type_t& element_type, con
 		auto p = result.vector_carray_ptr->get_element_ptr();
 		for(int i = 0 ; i < count ; i++){
 			const auto& e = v0[i];
+			QUARK_ASSERT(e.check_invariant());
+			QUARK_ASSERT(e._type == element_type);
+
 			p[i] = e._pod;
+			retain_value(backend, e._pod, element_type);
 		}
-		return bc_value_t{ backend, type, result };
+		const auto result2 = bc_value_t{ backend, type, result };
+		QUARK_ASSERT(result2.check_invariant());
+		return result2;
 	}
 	else if(is_vector_hamt(backend.types, backend.config, type)){
 		std::vector<runtime_value_t> temp;
 		for(int i = 0 ; i < count ; i++){
 			const auto& e = v0[i];
+			QUARK_ASSERT(e.check_invariant());
+			QUARK_ASSERT(e._type == element_type);
+
+			retain_value(backend, e._pod, element_type);
 			temp.push_back(e._pod);
 		}
 		auto result = alloc_vector_hamt(backend.heap, &temp[0], temp.size(), type);
-		return bc_value_t{ backend, type, result };
+		const auto result2 = bc_value_t{ backend, type, result };
+		QUARK_ASSERT(result2.check_invariant());
+		return result2;
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -1491,6 +1508,8 @@ const immer::map<std::string, bc_value_t> get_dict_values(value_backend_t& backe
 		immer::map<std::string, bc_value_t> values;
 		const auto& map2 = dict->get_map();
 		for(const auto& e: map2){
+			QUARK_ASSERT(e.second.check_invariant());
+
 			const auto value = bc_value_t(backend, value_type, e.second);
 			values = values.insert({ e.first, value} );
 		}
@@ -1501,6 +1520,8 @@ const immer::map<std::string, bc_value_t> get_dict_values(value_backend_t& backe
 		immer::map<std::string, bc_value_t> values;
 		const auto& map2 = dict->get_map();
 		for(const auto& e: map2){
+			QUARK_ASSERT(e.second.check_invariant());
+
 			const auto value = bc_value_t(backend, value_type, e.second);
 			values = values.insert({ e.first, value} );
 		}
@@ -1524,17 +1545,29 @@ bc_value_t make_dict(value_backend_t& backend, const type_t& value_type, const i
 		auto result = alloc_dict_cppmap(backend.heap, value_type);
 		auto& m = result.dict_cppmap_ptr->get_map_mut();
 		for(const auto& e: entries){
+			QUARK_ASSERT(e.second.check_invariant());
+			QUARK_ASSERT(e.second._type == value_type);
+
+			retain_value(backend, e.second._pod, value_type);
 			m.insert({ e.first, e.second._pod });
 		}
-		return bc_value_t(backend, dict_type, result);
+		const auto result2 = bc_value_t(backend, dict_type, result);
+		QUARK_ASSERT(result2.check_invariant());
+		return result2;
 	}
 	else if(is_dict_hamt(backend.types, backend.config, dict_type)){
 		auto result = alloc_dict_hamt(backend.heap, value_type);
 		auto& m = result.dict_hamt_ptr->get_map_mut();
 		for(const auto& e: entries){
+			QUARK_ASSERT(e.second.check_invariant());
+			QUARK_ASSERT(e.second._type == value_type);
+
+			retain_value(backend, e.second._pod, value_type);
 			m = m.set(e.first, e.second._pod);
 		}
-		return bc_value_t(backend, dict_type, result);
+		const auto result2 = bc_value_t(backend, dict_type, result);
+		QUARK_ASSERT(result2.check_invariant());
+		return result2;
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -1554,6 +1587,7 @@ int bc_compare_value_true_deep(value_backend_t& backend, const bc_value_t& left,
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
 
+//	trace_heap(backend.heap);
 	const auto left_value = from_runtime_value2(backend, left._pod, type0);
 	const auto right_value = from_runtime_value2(backend, right._pod, type0);
 	const int result = value_t::compare_value_true_deep(left_value, right_value);
@@ -1771,7 +1805,51 @@ value_backend_t::value_backend_t(
 	QUARK_ASSERT(check_invariant());
 }
 
+bool check_invariant(const value_backend_t& backend, runtime_value_t value, const type_t& type){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
 
+	const auto type_peek = peek2(backend.types, type);
+	if(is_rc_value(backend.types, type_peek) && value.int_value != 0x00000000deadbee1 && value.int_value != 0){
+		if(type_peek.is_string()){
+			QUARK_ASSERT(value.vector_carray_ptr != nullptr);
+			QUARK_ASSERT(value.vector_carray_ptr->check_invariant());
+		}
+		else if(is_vector_carray(backend.types, backend.config, type)){
+			QUARK_ASSERT(value.vector_carray_ptr != nullptr);
+			QUARK_ASSERT(value.vector_carray_ptr->check_invariant());
+		}
+		else if(is_vector_hamt(backend.types, backend.config, type)){
+			QUARK_ASSERT(value.vector_hamt_ptr != nullptr);
+			QUARK_ASSERT(value.vector_hamt_ptr->check_invariant());
+		}
+		else if(is_dict_cppmap(backend.types, backend.config, type)){
+			QUARK_ASSERT(value.dict_cppmap_ptr != nullptr);
+			QUARK_ASSERT(value.dict_cppmap_ptr->check_invariant());
+		}
+		else if(is_dict_hamt(backend.types, backend.config, type)){
+			QUARK_ASSERT(value.dict_cppmap_ptr != nullptr);
+			QUARK_ASSERT(value.dict_cppmap_ptr->check_invariant());
+		}
+		else if(type_peek.is_json()){
+			if(value.json_ptr != nullptr){
+				QUARK_ASSERT(value.json_ptr->check_invariant());
+			}
+		}
+		else if(type_peek.is_struct()){
+			QUARK_ASSERT(value.struct_ptr != nullptr);
+			QUARK_ASSERT(value.struct_ptr->check_invariant());
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+	else{
+	}
+	return true;
+}
+
+//??? kill this function
 type_t lookup_type_ref(const value_backend_t& backend, runtime_type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 
