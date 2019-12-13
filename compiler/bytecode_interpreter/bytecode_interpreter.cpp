@@ -847,6 +847,7 @@ static void do_call(interpreter_t& vm, int target_reg, const runtime_value_t cal
 
 		stack.open_frame_except_args(*frame_ptr, callee_arg_count);
 		const auto& result = execute_instructions(vm, frame_ptr->_instructions);
+		QUARK_ASSERT(result.second.check_invariant());
 		stack.close_frame(*frame_ptr);
 
 		const auto function_return_type_peek = peek2(types, function_return_type);

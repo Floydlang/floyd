@@ -42,11 +42,12 @@ static void trace_alloc(const heap_rec_t& e){
 
 
 		<< std::to_string(e.alloc_ptr->alloc_id)
+		<< "\t" << "magic: " << value_to_hex_string(e.alloc_ptr->magic, 8)
 //		<< "used: " << e.in_use
 		<< "\t" << "rc: " << e.alloc_ptr->rc
+
 		<< "\t" << "debug_info: " << get_debug_info(*e.alloc_ptr)
 		<< "\t" << "debug_value_type: " << e.alloc_ptr->debug_value_type.get_data()
-		<< "\t" << "magic: " << value_to_hex_string(e.alloc_ptr->magic, 8)
 		<< "\t" << "data[0]: " << e.alloc_ptr->data[0]
 		<< "\t" << "data[1]: " << e.alloc_ptr->data[1]
 		<< "\t" << "data[2]: " << e.alloc_ptr->data[2]
@@ -64,6 +65,7 @@ void trace_heap(const heap_t& heap){
 			std::lock_guard<std::recursive_mutex> guard(*heap.alloc_records_mutex);
 			for(int i = 0 ; i < heap.alloc_records.size() ; i++){
 				const auto& e = heap.alloc_records[i];
+				QUARK_ASSERT(e.alloc_ptr->check_invariant());
 				trace_alloc(e);
 			}
 		}
@@ -99,7 +101,6 @@ heap_t::~heap_t(){
 		trace_heap(*this);
 	}
 #endif
-
 }
 
 #if DEBUG
@@ -131,6 +132,7 @@ static inline void release_ref(heap_alloc_64_t& alloc){
 static heap_alloc_64_t* alloc_64__internal(heap_t& heap, uint64_t allocation_word_count, type_t debug_value_type, const char debug_string[]){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(debug_string != nullptr);
+	QUARK_ASSERT(debug_value_type.check_invariant());
 
 	const auto header_size = sizeof(heap_alloc_64_t);
 	QUARK_ASSERT((header_size % 8) == 0);
@@ -145,6 +147,7 @@ static heap_alloc_64_t* alloc_64__internal(heap_t& heap, uint64_t allocation_wor
 	QUARK_ASSERT(alloc->rc == 1);
 	QUARK_ASSERT(alloc->check_invariant());
 	if(heap.record_allocs_flag){
+		std::lock_guard<std::recursive_mutex> guard(*heap.alloc_records_mutex);
 		heap.alloc_records.push_back({ alloc });
 	}
 
@@ -234,14 +237,31 @@ const void* get_alloc_ptr(const heap_alloc_64_t& alloc){
 
 
 bool heap_alloc_64_t::check_invariant() const{
-	QUARK_ASSERT(magic == ALLOC_64_MAGIC);
-	QUARK_ASSERT(heap != nullptr);
-	assert(heap != nullptr);
-	QUARK_ASSERT(heap->magic == HEAP_MAGIC);
+	if(magic == ALLOC_64_MAGIC){
+		QUARK_ASSERT(magic == ALLOC_64_MAGIC);
+		QUARK_ASSERT(heap != nullptr);
+		assert(heap != nullptr);
+		QUARK_ASSERT(heap->magic == HEAP_MAGIC);
+		QUARK_ASSERT(this->alloc_id >= k_alloc_start_id && this->alloc_id < heap->allocation_id_generator);
 
-//	auto it = std::find_if(heap->alloc_records.begin(), heap->alloc_records.end(), [&](heap_rec_t& e){ return e.alloc_ptr == this; });
-//	QUARK_ASSERT(it != heap->alloc_records.end());
+	//	auto it = std::find_if(heap->alloc_records.begin(), heap->alloc_records.end(), [&](heap_rec_t& e){ return e.alloc_ptr == this; });
+	//	QUARK_ASSERT(it != heap->alloc_records.end());
+	}
+	else{
+		if(k_keep_deleted_allocs){
+			QUARK_ASSERT(magic == ALLOC_64_MAGIC_DELETED);
+			QUARK_ASSERT(heap != nullptr);
+			assert(heap != nullptr);
+			QUARK_ASSERT(heap->magic == HEAP_MAGIC);
+			QUARK_ASSERT(this->alloc_id >= k_alloc_start_id && this->alloc_id < heap->allocation_id_generator);
 
+		//	auto it = std::find_if(heap->alloc_records.begin(), heap->alloc_records.end(), [&](heap_rec_t& e){ return e.alloc_ptr == this; });
+		//	QUARK_ASSERT(it != heap->alloc_records.end());
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
 	return true;
 }
 
@@ -257,22 +277,26 @@ static void dispose_alloc__internal(heap_alloc_64_t& alloc){
 //		QUARK_ASSERT(it->in_use);
 //		it->in_use = false;
 	}
-	
-	//??? we don't delete the malloc() block in debug version.
+
+	if(k_keep_deleted_allocs){
+		alloc.magic = ALLOC_64_MAGIC_DELETED;
+	}
+	else{
+		//??? we don't delete the malloc() block in debug version.
 #if DEBUG
-	alloc.magic = 0xdeadbeef;
-	alloc.data[0] = 0xdeadbeef'00000001;
-	alloc.data[1] = 0xdeadbeef'00000002;
-	alloc.data[2] = 0xdeadbeef'00000003;
-	alloc.data[3] = 0xdeadbeef'00000004;
+		alloc.magic = ALLOC_64_MAGIC;
+		alloc.data[0] = 0xdeadbeef'00000001;
+		alloc.data[1] = 0xdeadbeef'00000002;
+		alloc.data[2] = 0xdeadbeef'00000003;
+		alloc.data[3] = 0xdeadbeef'00000004;
 
-	alloc.allocation_word_count = 0xdeadbeef'00000005;
+		alloc.allocation_word_count = 0xdeadbeef'00000005;
 
-	alloc.heap = reinterpret_cast<heap_t*>(0xdeadbeef'00000005);
-	alloc.debug_info = "disposed alloc";
+		alloc.heap = reinterpret_cast<heap_t*>(0xdeadbeef'00000005);
+		alloc.debug_info = "disposed alloc";
 #endif
-
-	std::free(&alloc);
+		std::free(&alloc);
+	}
 }
 void dispose_alloc(heap_alloc_64_t& alloc){
 	QUARK_ASSERT(alloc.check_invariant());
@@ -288,10 +312,6 @@ void dispose_alloc(heap_alloc_64_t& alloc){
 
 
 bool heap_t::check_invariant() const{
-#if HEAP_MUTEX
-	std::lock_guard<std::recursive_mutex> guard(*alloc_records_mutex);
-#endif
-
 #if 0
 	for(const auto& e: alloc_records){
 		QUARK_ASSERT(e.alloc_ptr != nullptr);
@@ -1839,6 +1859,8 @@ bool check_invariant(const value_backend_t& backend, runtime_value_t value, cons
 		else if(type_peek.is_struct()){
 			QUARK_ASSERT(value.struct_ptr != nullptr);
 			QUARK_ASSERT(value.struct_ptr->check_invariant());
+			const auto a = from_runtime_struct(backend, value, type);
+			QUARK_ASSERT(a.check_invariant());
 		}
 		else{
 			QUARK_ASSERT(false);

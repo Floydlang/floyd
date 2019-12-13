@@ -106,7 +106,7 @@ QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
 	QUARK_VERIFY(r == "hello, world!");
 }
 
-static runtime_value_t to_runtime_struct(value_backend_t& backend, const struct_t& exact_type, const value_t& value){
+runtime_value_t to_runtime_struct(value_backend_t& backend, const struct_t& exact_type, const value_t& value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(value.get_type().is_struct());
@@ -129,13 +129,13 @@ static runtime_value_t to_runtime_struct(value_backend_t& backend, const struct_
 	return make_runtime_struct(s);
 }
 
-static value_t from_runtime_struct(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
+value_t from_runtime_struct(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(check_invariant(backend, encoded_value, type));
+//	QUARK_ASSERT(check_invariant(backend, encoded_value, type));
 	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(type.is_struct());
 
 	const auto& type_peek = peek2(backend.types, type);
+	QUARK_ASSERT(type_peek.is_struct());
 
 	const auto& struct_layout = find_struct_layout(backend, type_peek);
 	const auto& struct_def = type_peek.get_struct(backend.types);

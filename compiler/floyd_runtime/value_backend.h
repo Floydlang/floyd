@@ -56,6 +56,7 @@ namespace floyd {
 
 
 const bool k_heap_mutex = true;
+const bool k_keep_deleted_allocs = true;
 
 #define ATOMIC_RC 1
 
@@ -104,13 +105,15 @@ struct heap_rec_t {
 };
 
 
+static const uint64_t k_alloc_start_id = 1000000;
 
 static const uint64_t HEAP_MAGIC = 0xf00d1234;
 
+
 struct heap_t {
 	heap_t(bool record_allocs_flag) :
-		magic(0xf00d1234),
-		allocation_id_generator(1000000),
+		magic(HEAP_MAGIC),
+		allocation_id_generator(k_alloc_start_id),
 		record_allocs_flag(record_allocs_flag)
 	{
 		if(k_heap_mutex){
@@ -159,6 +162,7 @@ struct heap_t {
 struct heap_t;
 
 static const uint64_t ALLOC_64_MAGIC = 0xa110a11c;
+static const uint64_t ALLOC_64_MAGIC_DELETED = 0x11dead11;
 
 //	This header is followed by a number of uint64_t elements in the same heap block.
 //	This header represents a sharepoint of many clients and holds an RC to count clients.
