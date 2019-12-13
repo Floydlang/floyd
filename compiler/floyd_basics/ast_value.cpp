@@ -1285,6 +1285,10 @@ json_t value_to_json(const types_t& types, const value_t& v){
 			}
 		);
 	}
+	else if(v.get_type().is_named_type()){
+		const auto temp = value_t::replace_logical_type(v, peek2(types, v.get_type()));
+		return value_to_json(types, temp);
+	}
 	else{
 		quark::throw_exception();
 	}

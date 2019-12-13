@@ -1124,7 +1124,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "Function value", "", ""){
 
 		)",
 		{
-			"func int(string) pure"
+			"a"
 		 }
 	);
 }
@@ -1151,7 +1151,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "func", "Declaration only, get its type", "
 			print(f)
 
 		)",
-		{ "func int() pure" }
+		{ "f" }
 	);
 }
 
@@ -3593,7 +3593,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [func] constructor", "", ""){
 
 		)",
 		{
-			"[func int(string) pure]"
+			"[a]"
 		 }
 	);
 }
@@ -3620,7 +3620,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [func] constructor", "", ""){
 
 		)",
 		{
-			"[func int(string) pure, func int(string) pure, func int(string) pure]"
+			"[a, b, c]"
 		 }
 	);
 }
@@ -4241,7 +4241,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [func] constructor", "", ""){
 
 		)",
 		{
-			R"___({"one": func int(string) pure, "three": func int(string) pure, "two": func int(string) pure})___"
+			R"___({"one": a, "three": c, "two": b})___"
 		 }
 	);
 }
@@ -6082,7 +6082,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Access benchmark registry
 
 		)",
 		{
-			R"___([{name="ABC", f=func [benchmark_result_t]() pure}])___"
+			R"___([{name="ABC", f=benchmark__ABC}])___"
 		}
 	);
 }
@@ -6101,6 +6101,149 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Access benchmark registry
 			);
 		}
 
+
+
+	FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running more than one simple benchmark_def", ""){
+		ut_verify_printout_nolib(
+			QUARK_POS,
+			R"(
+
+				struct test_t { json more }
+				let b = test_t(json("3 monkeys"))
+				print(b.more)
+
+			)",
+			{
+				R"___("3 monkeys")___"
+			}
+		);
+	}
+	FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running more than one simple benchmark_def", ""){
+		ut_verify_printout_nolib(
+			QUARK_POS,
+			R"(
+
+				let vec = [ benchmark_result_t(200, json("0 eleements")), benchmark_result_t(300, json("3 monkeys")) ]
+
+				for(v in 0 ..< size(vec)){
+					print(to_string(v) + ": dur: " + to_string(vec[v].dur) + ", more: " + to_pretty_string(vec[v].more) + "\n")
+				}
+
+			)",
+			{
+				R"___(0: dur: 200, more: "0 eleements")___",
+				R"___(1: dur: 300, more: "3 monkeys")___"
+			}
+		);
+	}
+	FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running more than one simple benchmark_def", ""){
+		ut_verify_printout_nolib(
+			QUARK_POS,
+			R"(
+
+				benchmark-def "AAA" {
+					return [ benchmark_result_t(200, json("0 eleements")) ]
+				}
+				benchmark-def "BBB" {
+					return [ benchmark_result_t(300, json("3 monkeys")) ]
+				}
+
+				for(i in 0 ..< size(benchmark_registry)){
+					print(benchmark_registry[i])
+				}
+
+			)",
+			{
+				R"___({name="AAA", f=benchmark__AAA})___",
+				R"___({name="BBB", f=benchmark__BBB})___"
+			}
+		);
+	}
+
+
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running more than one simple benchmark_def", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			struct test_t { string s }
+			func test_t f(){ return test_t("cats")) }
+			let a = f()
+			print(a.s)
+
+		)",
+		{
+			R"___(cats)___"
+		}
+	);
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running more than one simple benchmark_def", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func json f(){ return json("12 monkeys") }
+			let a = f()
+			print(a)
+
+		)",
+		{
+			R"___("12 monkeys")___"
+		}
+	);
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running more than one simple benchmark_def", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			struct test_t { string more }
+			func test_t f(){ return test_t(string("4 monkeys")) }
+			let a = f()
+			print(a.more)
+
+		)",
+		{
+			R"___(4 monkeys)___"
+		}
+	);
+}
+
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "benchmark-def", "Test running more than one simple benchmark_def", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func json f(){ return json("12 monkeys") }
+			let a = f()
+			print(a)
+
+		)",
+		{
+			R"___("12 monkeys")___"
+		}
+	);
+}
+
+
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running more than one simple benchmark_def", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			struct test_t { json more }
+			func test_t f(){ return test_t(json("12 monkeys")) }
+			let a = f()
+			print(a.more)
+
+		)",
+		{
+			R"___("3 monkeys")___"
+		}
+	);
+}
 
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running more than one simple benchmark_def", ""){
 	ut_verify_printout_nolib(

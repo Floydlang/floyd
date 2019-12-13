@@ -1828,8 +1828,8 @@ bool check_invariant(const value_backend_t& backend, runtime_value_t value, cons
 			QUARK_ASSERT(value.dict_cppmap_ptr->check_invariant());
 		}
 		else if(is_dict_hamt(backend.types, backend.config, type)){
-			QUARK_ASSERT(value.dict_cppmap_ptr != nullptr);
-			QUARK_ASSERT(value.dict_cppmap_ptr->check_invariant());
+			QUARK_ASSERT(value.dict_hamt_ptr != nullptr);
+			QUARK_ASSERT(value.dict_hamt_ptr->check_invariant());
 		}
 		else if(type_peek.is_json()){
 			if(value.json_ptr != nullptr){
