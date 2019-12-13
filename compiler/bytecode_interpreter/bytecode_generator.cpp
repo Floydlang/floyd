@@ -33,7 +33,7 @@
 #include <algorithm>
 #include <cstdint>
 
-const auto trace_io_flag = true;
+const auto trace_io_flag = false;
 
 namespace floyd {
 struct semantic_ast_t;

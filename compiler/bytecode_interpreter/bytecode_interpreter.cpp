@@ -765,8 +765,6 @@ static void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t targ
 //	QUARK_TRACE(to_compact_string2(instance));
 
 	vm._stack.write_register__external_value(dest_reg, result);
-	
-	retain!
 }
 
 //	??? Make stub bc_static_frame_t for each host function to make call conventions same as Floyd functions.

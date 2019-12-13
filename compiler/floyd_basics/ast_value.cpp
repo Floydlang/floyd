@@ -1076,8 +1076,11 @@ std::string to_compact_string2(const types_t& types, const value_t& value) {
 		return dict_instance_to_compact_string(types, value.get_dict_value());
 	}
 	else if(base_type == base_type::k_function){
-		//??? include link name.
-		return type_to_compact_string(types, value.get_type());
+		return value.get_function_value().name;
+	}
+	else if(base_type == base_type::k_named_type){
+		const auto temp = value_t::replace_logical_type(value, peek2(types, value.get_type()));
+		return to_compact_string2(types, temp);
 	}
 
 	else{
