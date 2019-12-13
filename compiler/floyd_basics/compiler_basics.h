@@ -13,11 +13,15 @@
 	Infrastructure primitives under the compiler.
 */
 #include "types.h"
-#include "ast_value.h"
+#include "json_support.h"
 
 #include "quark.h"
 
 #include <optional>
+#include <vector>
+#include <string>
+#include <map>
+
 
 struct seq_t;
 struct json_t;
@@ -25,6 +29,63 @@ struct json_t;
 
 namespace floyd {
 
+struct value_t;
+
+
+
+////////////////////////////////////////		link_name_t
+
+
+struct link_name_t {
+	std::string s;
+};
+
+inline bool operator==(const link_name_t& lhs, const link_name_t& rhs){
+	return lhs.s == rhs.s;
+}
+inline bool operator!=(const link_name_t& lhs, const link_name_t& rhs){
+	return lhs.s != rhs.s;
+}
+inline bool operator<(const link_name_t& lhs, const link_name_t& rhs){
+	return lhs.s < rhs.s;
+}
+
+const link_name_t k_no_link_name = link_name_t { "" };
+
+
+
+////////////////////////////////////////		function_id_t
+
+
+struct function_id_t {
+	std::string name;
+};
+
+inline bool operator==(const function_id_t& lhs, const function_id_t& rhs){
+	return lhs.name == rhs.name;
+}
+inline bool operator!=(const function_id_t& lhs, const function_id_t& rhs){
+	return lhs.name != rhs.name;
+}
+inline bool operator<(const function_id_t& lhs, const function_id_t& rhs){
+	return lhs.name < rhs.name;
+}
+
+const function_id_t k_no_function_id = function_id_t { "" };
+
+
+////////////////////////////////		ENCODE / DECODE LINK NAMES
+
+
+
+//	"hello" => "floydf_hello"
+link_name_t encode_floyd_func_link_name(const std::string& name);
+std::string decode_floyd_func_link_name(const link_name_t& name);
+
+
+//	"hello" => "floyd_runtime_hello"
+link_name_t encode_runtime_func_link_name(const std::string& name);
+std::string decode_runtime_func_link_name(const link_name_t& name);
 
 
 
@@ -786,30 +847,6 @@ void ut_verify_string_seq(const quark::call_context_t& context, const std::pair<
 //	Creates json values for different AST constructs like expressions and statements.
 
 json_t make_ast_node(const location_t& location, const std::string& opcode, const std::vector<json_t>& params);
-
-
-
-
-////////////////////////////////		ENCODE / DECODE LINK NAMES
-
-
-
-//	"hello" => "floydf_hello"
-link_name_t encode_floyd_func_link_name(const std::string& name);
-std::string decode_floyd_func_link_name(const link_name_t& name);
-
-
-//	"hello" => "floyd_runtime_hello"
-link_name_t encode_runtime_func_link_name(const std::string& name);
-std::string decode_runtime_func_link_name(const link_name_t& name);
-
-
-//	"hello" => "floyd_intrinsic_hello"
-link_name_t encode_intrinsic_link_name(const std::string& name);
-std::string decode_intrinsic_link_name(const link_name_t& name);
-
-
-
 
 
 }	// floyd

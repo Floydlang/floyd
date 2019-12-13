@@ -48,6 +48,7 @@
 
 #include "types.h"
 #include "json_support.h"
+#include "compiler_basics.h"
 
 #include <vector>
 #include <string>
@@ -65,47 +66,6 @@ struct value_ext_t;
 std::string make_value_debug_str(const value_t& v);
 #endif
 
-
-
-////////////////////////////////////////		link_name_t
-
-
-struct link_name_t {
-	std::string s;
-};
-
-inline bool operator==(const link_name_t& lhs, const link_name_t& rhs){
-	return lhs.s == rhs.s;
-}
-inline bool operator!=(const link_name_t& lhs, const link_name_t& rhs){
-	return lhs.s != rhs.s;
-}
-inline bool operator<(const link_name_t& lhs, const link_name_t& rhs){
-	return lhs.s < rhs.s;
-}
-
-const link_name_t k_no_link_name = link_name_t { "" };
-
-
-
-////////////////////////////////////////		function_id_t
-
-
-struct function_id_t {
-	std::string name;
-};
-
-inline bool operator==(const function_id_t& lhs, const function_id_t& rhs){
-	return lhs.name == rhs.name;
-}
-inline bool operator!=(const function_id_t& lhs, const function_id_t& rhs){
-	return lhs.name != rhs.name;
-}
-inline bool operator<(const function_id_t& lhs, const function_id_t& rhs){
-	return lhs.name < rhs.name;
-}
-
-const function_id_t k_no_function_id = function_id_t { "" };
 
 
 

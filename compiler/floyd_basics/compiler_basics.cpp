@@ -11,7 +11,7 @@
 #include "text_parser.h"
 #include "parser_primitives.h"
 #include "format_table.h"
-#include "types.h"
+#include "ast_value.h"
 
 
 namespace floyd {
@@ -1358,19 +1358,6 @@ std::string decode_runtime_func_link_name(const link_name_t& name){
 	return right;
 }
 
-
-
-static const std::string k_intrinsic_link_prefix = "floyd_intrinsic_";
-
-link_name_t encode_intrinsic_link_name(const std::string& name){
-	return link_name_t { k_intrinsic_link_prefix + name };
-}
-std::string decode_intrinsic_link_name(const link_name_t& name){
-	const auto left = name.s. substr(0, k_intrinsic_link_prefix.size());
-	const auto right = name.s.substr(k_intrinsic_link_prefix.size(), std::string::npos);
-	QUARK_ASSERT(left == k_intrinsic_link_prefix);
-	return right;
-}
 
 
 }	// floyd

@@ -1181,7 +1181,7 @@ static llvm::Value* generate_call_expression(llvm_function_generator_t& gen_acc,
 }
 
 //	Generates a call to the global function that implements the intrinsic.
-llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
+static llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -1202,7 +1202,7 @@ llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& gen_acc, 
 	const auto resolved_call_function_type = calc_resolved_function_type(gen_acc.gen, e, callee_function_type, details.args);
 
 	const auto name = it->name;
-	const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map, encode_intrinsic_link_name(name));
+	const auto& def = find_function_def_from_link_name(gen_acc.gen.link_map, encode_runtime_func_link_name(name));
 	auto callee_reg = def.llvm_codegen_f;
 	QUARK_ASSERT(callee_reg != nullptr);
 
