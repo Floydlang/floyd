@@ -496,13 +496,7 @@ std::vector<std::pair<type_t, struct_layout_t>> bc_make_struct_layouts(const typ
 	return result;
 }
 
-interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config, bc_runtime_handler_i& handler) :
-	_stack {
-		{ {}, bc_make_struct_layouts(types_t()), {}, {} },
-		nullptr
-	},
-	_handler(&handler)
-{
+static std::vector<func_link_t> make_functions(const bc_program_t& program){
 	QUARK_ASSERT(program.check_invariant());
 
 	auto temp_types = program._types;
@@ -559,22 +553,16 @@ interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config
 	const auto funcs2 = filterf<func_link_t>(funcs, [](const auto& e){ return e.module_symbol.s.empty() == false; });
 
 	const auto func_lookup = concat(funcs2, intrinsics2);
+	return func_lookup;
+}
 
-	const auto start_time = std::chrono::high_resolution_clock::now();
-	_imm = std::make_shared<interpreter_imm_t>(interpreter_imm_t{ start_time, program });
-
-	interpreter_stack_t temp(
-		value_backend_t(
-			func_lookup,
-			bc_make_struct_layouts(program._types),
-			program._types,
-			config
-		),
-		&_imm->_program._globals
-	);
-	temp.swap(_stack);
-
-
+interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config, bc_runtime_handler_i& handler) :
+	_imm(std::make_shared<interpreter_imm_t>(interpreter_imm_t{ std::chrono::high_resolution_clock::now(), program })),
+	_handler(&handler),
+	_backend{ make_functions(program), bc_make_struct_layouts(program._types), program._types, config },
+	_stack { _backend, &_imm->_program._globals }
+{
+	QUARK_ASSERT(program.check_invariant());
 	QUARK_ASSERT(check_invariant());
 
 	{

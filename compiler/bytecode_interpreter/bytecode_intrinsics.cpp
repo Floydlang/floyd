@@ -165,11 +165,11 @@ static bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, cons
 				quark::throw_runtime_error("Unknown member.");
 			}
 
-			trace_heap(backend.heap);
+//			trace_heap(backend.heap);
 
 			const auto result = bc_value_t(backend, obj1._type, update_struct_member(backend, obj1._pod, obj1._type, member_index, new_value._pod, new_value_peek));
 
-			trace_heap(backend.heap);
+//			trace_heap(backend.heap);
 
 			return result;
 		}

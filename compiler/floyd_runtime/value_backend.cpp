@@ -89,6 +89,16 @@ void detect_leaks(const heap_t& heap){
 	}
 }
 
+heap_t::heap_t(bool record_allocs_flag) :
+	magic(HEAP_MAGIC),
+	allocation_id_generator(k_alloc_start_id),
+	record_allocs_flag(record_allocs_flag)
+{
+	if(k_heap_mutex){
+		alloc_records_mutex = std::make_shared<std::recursive_mutex>();
+	}
+	QUARK_ASSERT(check_invariant());
+}
 
 heap_t::~heap_t(){
 	QUARK_ASSERT(check_invariant());

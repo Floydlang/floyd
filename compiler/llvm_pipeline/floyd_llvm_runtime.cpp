@@ -642,7 +642,7 @@ std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& progra
 	auto ee = make_engine_no_init(*program_breaks.instance, program_breaks, handler, trace_processes);
 	auto context = llvm_context_t{ ee.get(), nullptr };
 
-	trace_heap(ee->backend.heap);
+//	trace_heap(ee->backend.heap);
 
 	//	Make sure linking went well - test that by trying to resolve a function we know exists.
 #if DEBUG
@@ -671,7 +671,7 @@ std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& progra
 	QUARK_ASSERT(init_result == 667);
 	ee->inited = true;
 
-	trace_heap(ee->backend.heap);
+//	trace_heap(ee->backend.heap);
 //	const auto leaks = ee->heap.count_used();
 //	QUARK_ASSERT(leaks == 0);
 

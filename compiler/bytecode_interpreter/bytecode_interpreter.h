@@ -650,7 +650,7 @@ enum {
 */
 
 struct interpreter_stack_t {
-	public: interpreter_stack_t(const value_backend_t& backend, const bc_static_frame_t* global_frame) :
+	public: interpreter_stack_t(value_backend_t& backend, const bc_static_frame_t* global_frame) :
 		_backend(backend),
 		_current_frame_ptr(nullptr),
 		_current_frame_entry_ptr(nullptr),
@@ -659,6 +659,8 @@ struct interpreter_stack_t {
 		_allocated_count(0),
 		_stack_size(0)
 	{
+		QUARK_ASSERT(backend.check_invariant());
+
 		_entries = new runtime_value_t[8192];
 		_allocated_count = 8192;
 		_current_frame_entry_ptr = &_entries[0];
@@ -674,7 +676,7 @@ struct interpreter_stack_t {
 	}
 
 	public: bool check_invariant() const {
-		QUARK_ASSERT(_backend.types.check_invariant());
+		QUARK_ASSERT(_backend.check_invariant());
 		QUARK_ASSERT(_entries != nullptr);
 		QUARK_ASSERT(_stack_size >= 0 && _stack_size <= _allocated_count);
 
@@ -1085,7 +1087,7 @@ struct interpreter_stack_t {
 
 	////////////////////////		STATE
 
-	public: value_backend_t _backend;
+	public: value_backend_t& _backend;
 	public: runtime_value_t* _entries;
 	public: size_t _allocated_count;
 	public: size_t _stack_size;
@@ -1135,6 +1137,8 @@ struct interpreter_t {
 	////////////////////////		STATE
 	public: std::shared_ptr<interpreter_imm_t> _imm;
 	public: bc_runtime_handler_i* _handler;
+
+	public: value_backend_t _backend;
 
 	//	Holds all values for all environments.
 	//	Notice: stack holds refs to RC-counted objects!

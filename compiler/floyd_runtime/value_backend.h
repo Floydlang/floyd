@@ -99,15 +99,7 @@ static const uint64_t HEAP_MAGIC = 0xf00d1234;
 
 
 struct heap_t {
-	heap_t(bool record_allocs_flag) :
-		magic(HEAP_MAGIC),
-		allocation_id_generator(k_alloc_start_id),
-		record_allocs_flag(record_allocs_flag)
-	{
-		if(k_heap_mutex){
-			alloc_records_mutex = std::make_shared<std::recursive_mutex>();
-		}
-	}
+	heap_t(bool record_allocs_flag);
 	~heap_t();
 	public: bool check_invariant() const;
 	public: int count_used() const;
