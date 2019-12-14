@@ -1946,6 +1946,14 @@ bool check_invariant(const value_backend_t& backend, runtime_value_t value, cons
 	return true;
 }
 
+
+void trace_value_backend(const value_backend_t& backend){
+}
+
+void trace_value_backend_dyn(const value_backend_t& backend){
+}
+
+
 //??? kill this function
 type_t lookup_type_ref(const value_backend_t& backend, runtime_type_t type){
 	QUARK_ASSERT(backend.check_invariant());

@@ -845,21 +845,27 @@ struct value_backend_t {
 	//	??? Also go from type -> struct_layout
 	// 	??? also go from type -> collection element-type without using type_t.
 
+	//	Should be const!
 	types_t types;
+
+	//	Should be const!
 	std::vector<type_t> child_type;
 
 	//	Index is stored inside function values.
-	std::vector<func_link_t> func_link_lookup;
+	const std::vector<func_link_t> func_link_lookup;
 
-	std::vector<std::pair<type_t, struct_layout_t>> struct_layouts;
+	const std::vector<std::pair<type_t, struct_layout_t>> struct_layouts;
 
 	//	Temporary *global* constant that switches between array-based vector backened and HAMT-based vector.
 	//	The string always uses array-based vector.
 	//	Future: make this flag a per-vector setting.
-	config_t config;
+	const config_t config;
 };
 
 bool check_invariant(const value_backend_t& backend, runtime_value_t value, const type_t& type);
+
+void trace_value_backend(const value_backend_t& backend);
+void trace_value_backend_dyn(const value_backend_t& backend);
 
 const func_link_t* find_function_by_name2(const value_backend_t& backend, const module_symbol_t& s);
 
