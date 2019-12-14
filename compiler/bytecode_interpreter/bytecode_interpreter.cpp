@@ -24,6 +24,10 @@ namespace floyd {
 static const bool k_trace_stepping = true;
 
 
+static std::string opcode_to_string(bc_opcode opcode);
+static std::vector<json_t> bc_symbols_to_json(value_backend_t& backend, const std::vector<std::pair<std::string, bc_symbol_t>>& symbols);
+
+
 static type_t lookup_full_type(const interpreter_t& vm, const bc_typeid_t& type){
 	const auto& backend = vm._backend;
 	const auto& types = backend.types;
@@ -572,7 +576,7 @@ interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config
 		_stack.open_frame_except_args(_imm->_program._globals, 0);
 
 		QUARK_ASSERT(check_invariant());
-		if(false) trace_interpreter(*this);
+		if(false) trace_interpreter(*this, 0);
 
 		//	Run static intialization (basically run global instructions before calling main()).
 		/*const auto& r =*/ execute_instructions(*this, _imm->_program._globals._instructions);
@@ -580,7 +584,7 @@ interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config
 	QUARK_ASSERT(check_invariant());
 }
 
-void trace_interpreter(interpreter_t& vm){
+void trace_interpreter(interpreter_t& vm, int pc){
 	QUARK_SCOPED_TRACE("INTERPRETER STATE");
 
 	auto& backend = vm._backend;
@@ -660,7 +664,35 @@ void trace_interpreter(interpreter_t& vm){
 			QUARK_TRACE(result);
 		}
 	}
-	trace_value_backend_dynamic(vm._backend);
+
+	trace_value_backend_dynamic(backend);
+
+	const auto& frame = *vm._stack._current_static_frame;
+	{
+		std::vector<json_t> instructions;
+		int pos = 0;
+		for(const auto& e: frame._instructions){
+			const auto cursor = pos == pc ? "===>" : "    ";
+
+			const auto i = json_t::make_array({
+				cursor,
+				pos,
+				opcode_to_string(e._opcode),
+				json_t(e._a),
+				json_t(e._b),
+				json_t(e._c)
+			});
+			instructions.push_back(i);
+			pos++;
+		}
+
+		const auto t = json_t::make_object({
+			{ "symbols", json_t::make_array(bc_symbols_to_json(backend, frame._symbols)) },
+			{ "instructions", json_t::make_array(instructions) }
+		});
+		QUARK_SCOPED_TRACE("INSTRUCTIONS");
+		QUARK_TRACE(json_to_pretty_string(t));
+	}
 }
 
 void interpreter_t::swap(interpreter_t& other) throw(){
@@ -976,11 +1008,12 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 //	QUARK_TRACE_SS("STACK:  " << json_to_pretty_string(stack.stack_to_json()));
 
+	int pc = 0;
+
 	if(k_trace_stepping){
-		trace_interpreter(vm);
+		trace_interpreter(vm, pc);
 	}
 
-	int pc = 0;
 	while(true){
 		QUARK_ASSERT(pc >= 0);
 		QUARK_ASSERT(pc < instructions.size());
@@ -1871,7 +1904,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		pc++;
 
 		if(k_trace_stepping){
-			trace_interpreter(vm);
+			trace_interpreter(vm, pc);
 		}
 	}
 	return { false, bc_value_t::make_undefined() };
@@ -1938,29 +1971,16 @@ static std::vector<json_t> bc_symbols_to_json(value_backend_t& backend, const st
 	for(const auto& e: symbols){
 		const auto& symbol = e.second;
 		const auto symbol_type_str = symbol._symbol_type == bc_symbol_t::type::immutable ? "immutable" : "mutable";
-
-		if(symbol._init.is_undefined() == false){
-			const auto e2 = json_t::make_array({
-				symbol_index,
-				e.first,
-				"CONST",
-				value_and_type_to_json(backend.types, symbol._init)
-			});
-			r.push_back(e2);
-		}
-		else{
-			const auto e2 = json_t::make_array({
-				symbol_index,
-				e.first,
-				"LOCAL",
-				json_t::make_object({
-					{ "value_type", type_to_json(backend.types, symbol._value_type) },
-					{ "type", symbol_type_str }
-				})
-			});
-			r.push_back(e2);
-		}
-
+		const auto e2 = json_t::make_array({
+			symbol_index,
+			e.first,
+			symbol_type_str,
+			json_t::make_object({
+				{ "value_type", type_to_json(backend.types, symbol._value_type) },
+			}),
+			value_and_type_to_json(backend.types, symbol._init)
+		});
+		r.push_back(e2);
 		symbol_index++;
 	}
 	return r;

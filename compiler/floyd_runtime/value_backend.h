@@ -100,7 +100,7 @@ static const uint64_t HEAP_MAGIC = 0xf00d1234;
 
 
 //static const uint64_t UNINITIALIZED_RUNTIME_VALUE = 0x00000000deadbee1;
-  static const uint64_t UNINITIALIZED_RUNTIME_VALUE = 0x4444deadbeef8888;
+  static const uint64_t UNINITIALIZED_RUNTIME_VALUE = 0x4444deadbeef3333;
 
 
 struct heap_t {

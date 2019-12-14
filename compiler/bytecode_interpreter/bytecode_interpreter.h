@@ -1145,7 +1145,7 @@ struct interpreter_t {
 	public: interpreter_stack_t _stack;
 };
 
-void trace_interpreter(interpreter_t& vm);
+void trace_interpreter(interpreter_t& vm, int pc);
 
 
 //////////////////////////////////////		Free functions

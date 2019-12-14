@@ -1524,6 +1524,7 @@ bc_value_t make_vector(value_backend_t& backend, const type_t& element_type, con
 		}
 		auto result = alloc_vector_hamt(backend.heap, &temp[0], temp.size(), type);
 		const auto result2 = bc_value_t{ backend, type, result };
+		release_value(backend, result, type);
 		QUARK_ASSERT(result2.check_invariant());
 		return result2;
 	}
