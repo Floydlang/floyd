@@ -1083,7 +1083,6 @@ struct interpreter_stack_t {
 		return static_cast<int>(frame_pos);
 	}
 
-	public: json_t stack_to_json(value_backend_t& backend) const;
 
 
 	////////////////////////		STATE
@@ -1104,6 +1103,7 @@ struct interpreter_stack_t {
 	public: const bc_static_frame_t* _global_frame;
 };
 
+json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend);
 
 
 //////////////////////////////////////		interpreter_imm_t

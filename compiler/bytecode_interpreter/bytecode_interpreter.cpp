@@ -295,12 +295,12 @@ std::vector<std::pair<int, int>> interpreter_stack_t::get_stack_frames(int frame
 	return result;
 }
 
-json_t interpreter_stack_t::stack_to_json(value_backend_t& backend) const{
+json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const int size = static_cast<int>(_stack_size);
+	const int size = static_cast<int>(stack._stack_size);
 
-	const auto stack_frames = get_stack_frames(get_current_frame_start());
+	const auto stack_frames = stack.get_stack_frames(stack.get_current_frame_start());
 
 	std::vector<json_t> frames;
 	for(int64_t i = 0 ; i < stack_frames.size() ; i++){
@@ -327,9 +327,9 @@ json_t interpreter_stack_t::stack_to_json(value_backend_t& backend) const{
 		}
 
 #if DEBUG
-		const auto debug_type = _entry_types[i];
+		const auto debug_type = stack._entry_types[i];
 //		const auto ext = encode_as_external(_types, debug_type);
-		const auto bc_pod = _entries[i];
+		const auto bc_pod = stack._entries[i];
 		const auto bc = bc_value_t(backend, debug_type, bc_pod);
 
 //???		bool unwritten = ext && bc._pod._external->_debug__is_unwritten_external_value;
@@ -1835,7 +1835,7 @@ json_t interpreter_to_json(interpreter_t& vm){
 	std::vector<json_t> callstack;
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto stack = vm._stack.stack_to_json(vm._backend);
+	const auto stack = stack_to_json(vm._stack, vm._backend);
 
 	return json_t::make_object({
 		{ "ast", bcprogram_to_json(vm._imm->_program) },
