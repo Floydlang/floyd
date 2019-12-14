@@ -48,31 +48,33 @@ stack + 5	local 0		symbol 3
 stack + 6	local 1		symbol 4
 stack + 7	local 2		symbol 5
 stack + 8	local 3		symbol 6
+stack + 9	temporary
+stack + 10	temporary
 
 Call to function x:
 
 FRAME INFO
-stack + 9	prev frame (stack pos)
-stack + 10	prev static frame ptr
+stack + 11	prev frame = 2 (stack pos)
+stack + 12	prev static frame ptr
 
 FUNCTION X FRAME START
-stack + 11	arg 0		symbol 0
-stack + 12	arg 1		symbol 1
-stack + 13	local 0		symbol 2
-stack + 14	local 1		symbol 3
-stack + 15	local 2		symbol 4
+stack + 13	arg 0		symbol 0
+stack + 14	arg 1		symbol 1
+stack + 15	local 0		symbol 2
+stack + 16	local 1		symbol 3
+stack + 17	temporary
 
 Call to function Y:
 
 FRAME INFO
-stack + 16	prev frame (stack pos)
-stack + 17	prev static frame ptr
+stack + 18	prev frame = 13 (stack pos)
+stack + 19	prev static frame ptr
 
 FUNCTION Y FRAME START
-stack + 18	arg 0		symbol 0
-stack + 19	arg 1		symbol 1
-stack + 20	local 0		symbol 2
-stack + 21	local 1		symbol 3
+stack + 20	arg 0		symbol 0
+stack + 21	arg 1		symbol 1
+stack + 22	local 0		symbol 2
+stack + 23	local 1		symbol 3
 
 Notice: symbol table maps to parameters AND locals.
 Notice: because of symbol table, the type & symbol infois always available for all stack entries.
@@ -610,7 +612,7 @@ json_t bcprogram_to_json(const bc_program_t& program);
 
 //	Keeps track where in the interpreter's stack we're executing code right now.
 struct frame_pos_t {
-	int _frame_pos;
+	size_t _frame_pos;
 	const bc_static_frame_t* _frame_ptr;
 };
 
@@ -735,8 +737,7 @@ struct interpreter_stack_t {
 
 	//////////////////////////////////////		FRAMES & REGISTERS
 
-
-	private: frame_pos_t read_prev_frame(int frame_pos) const;
+	private: frame_pos_t read_frame_info(size_t pos) const;
 #if DEBUG
 	public: bool check_stack_frame(const frame_pos_t& in_frame) const;
 #endif
@@ -793,9 +794,10 @@ struct interpreter_stack_t {
 	}
 
 	struct active_frame_t {
-		int start_pos;
-		int end_pos;
+		size_t start_pos;
+		size_t end_pos;
 		const bc_static_frame_t* static_frame;
+		size_t temp_count;
 	};
 	public: std::vector<active_frame_t> get_stack_frames() const;
 
@@ -821,7 +823,8 @@ struct interpreter_stack_t {
 		const auto result = bc_value_t(
 			*_backend,
 			_current_static_frame->_symbols[reg].second._value_type,
-			_current_frame_start_ptr[reg]
+			_current_frame_start_ptr[reg],
+			bc_value_t::rc_mode::bump
 		);
 #else
 //			const auto result = bc_value_t(_current_frame_start_ptr[reg], is_ext);
@@ -1018,7 +1021,7 @@ struct interpreter_stack_t {
 //		QUARK_ASSERT(peek2(_backend->types, type) == _entry_types[pos]);
 
 		const auto& e = _entries[pos];
-		const auto result = bc_value_t(*_backend, type, e);
+		const auto result = bc_value_t(*_backend, type, e, bc_value_t::rc_mode::bump);
 		return result;
 	}
 
@@ -1081,11 +1084,11 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: int get_current_frame_start() const {
+	public: size_t get_current_frame_start() const {
 		QUARK_ASSERT(check_invariant());
 
 		const auto frame_pos = _current_frame_start_ptr - &_entries[0];
-		return static_cast<int>(frame_pos);
+		return frame_pos;
 	}
 
 
@@ -1132,6 +1135,7 @@ struct interpreter_imm_t {
 struct interpreter_t {
 	public: explicit interpreter_t(const bc_program_t& program, const config_t& config, bc_runtime_handler_i& handler);
 	public: interpreter_t(const interpreter_t& other) = delete;
+	public: ~interpreter_t();
 	public: const interpreter_t& operator=(const interpreter_t& other)= delete;
 #if DEBUG
 	public: bool check_invariant() const;

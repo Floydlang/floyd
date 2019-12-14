@@ -816,7 +816,7 @@ runtime_value_t update_struct_member(value_backend_t& backend, runtime_value_t s
 	QUARK_ASSERT(struct_value.struct_ptr->check_invariant());
 
 	const auto& struct_type_peek = peek2(backend.types, struct_type0);
-	const auto& value2 = bc_value_t(backend, peek2(backend.types, member_type), value);
+	const auto& value2 = bc_value_t(backend, peek2(backend.types, member_type), value, bc_value_t::rc_mode::bump);
 	const auto& values = from_runtime_struct(backend, struct_value, struct_type_peek);
 
 	auto values2 = values;

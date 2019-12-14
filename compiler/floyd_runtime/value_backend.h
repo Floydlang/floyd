@@ -652,8 +652,10 @@ struct bc_value_t {
 	public: bc_value_t& operator=(const bc_value_t& other);
 	public: void swap(bc_value_t& other);
 
+
 	//	Bumps RC if needed.
-	public: explicit bc_value_t(value_backend_t& backend, const type_t& type, const runtime_value_t& internals);
+	enum class rc_mode { adopt, bump };
+	public: explicit bc_value_t(value_backend_t& backend, const type_t& type, const runtime_value_t& internals, rc_mode mode);
 
 	//	Only works for simple values.
 	public: explicit bc_value_t(const type_t& type, const runtime_value_t& internals);
@@ -836,6 +838,8 @@ struct value_backend_t {
 		const config_t& config
 	);
 
+	~value_backend_t();
+
 	bool check_invariant() const {
 		QUARK_ASSERT(heap.check_invariant());
 		QUARK_ASSERT(child_type.size() == types.nodes.size());
@@ -1003,7 +1007,7 @@ bc_value_t make_non_rc(const value_t& value);
 value_t bc_to_value(const value_backend_t& backend, const bc_value_t& value);
 bc_value_t value_to_bc(value_backend_t& backend, const value_t& value);
 
-bc_value_t bc_from_runtime(value_backend_t& backend, runtime_value_t value, const type_t& type);
+bc_value_t bc_from_runtime(value_backend_t& backend, runtime_value_t value, const type_t& type, bc_value_t::rc_mode mode);
 runtime_value_t runtime_from_bc(value_backend_t& backend, const bc_value_t& value);
 
 

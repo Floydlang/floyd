@@ -352,7 +352,7 @@ static int count_used__internal(const heap_t& heap){
 	int result = 0;
 	if(heap.record_allocs_flag){
 		for(const auto& e: heap.alloc_records){
-			if(e.alloc_ptr->rc){
+			if(e.alloc_ptr->rc > 0){
 				result = result + 1;
 			}
 		}
@@ -1287,7 +1287,7 @@ std::vector<bc_value_t> from_runtime_struct(value_backend_t& backend, const runt
 	for(const auto& e: struct_def._members){
 		const auto offset = struct_layout.second.members[member_index].offset;
 		const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
-		const auto member_value = bc_value_t(backend, e._type, *member_ptr);
+		const auto member_value = bc_value_t(backend, e._type, *member_ptr, bc_value_t::rc_mode::bump);
 		members.push_back(member_value);
 		member_index++;
 	}
@@ -1372,7 +1372,7 @@ bc_value_t::bc_value_t(value_backend_t& backend, const type_t& function_type, co
 	QUARK_ASSERT(check_invariant());
 }
 
-bc_value_t::bc_value_t(value_backend_t& backend, const type_t& type, const runtime_value_t& internals) :
+bc_value_t::bc_value_t(value_backend_t& backend, const type_t& type, const runtime_value_t& internals, rc_mode mode) :
 	_backend(&backend),
 	_type(type),
 	_pod(internals)
@@ -1380,7 +1380,14 @@ bc_value_t::bc_value_t(value_backend_t& backend, const type_t& type, const runti
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	retain_value(backend, internals, type);
+	if(mode == rc_mode::adopt){
+	}
+	else if(mode == rc_mode::bump){
+		retain_value(backend, internals, type);
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
 
 	QUARK_ASSERT(check_invariant());
 }
@@ -1458,7 +1465,7 @@ const immer::vector<bc_value_t> get_vector(value_backend_t& backend, const bc_va
 		auto p = vec->get_element_ptr();
 		for(int i = 0 ; i < count ; i++){
 			const auto value_encoded = p[i];
-			const auto value = bc_value_t(backend, element_type, value_encoded);
+			const auto value = bc_value_t(backend, element_type, value_encoded, bc_value_t::rc_mode::bump);
 			elements = elements.push_back(value);
 		}
 		return elements;
@@ -1471,7 +1478,7 @@ const immer::vector<bc_value_t> get_vector(value_backend_t& backend, const bc_va
 		const auto count = vec->get_element_count();
 		for(int i = 0 ; i < count ; i++){
 			const auto& value_encoded = vec->load_element(i);
-			const auto value = bc_value_t(backend, element_type, value_encoded);
+			const auto value = bc_value_t(backend, element_type, value_encoded, bc_value_t::rc_mode::bump);
 			elements = elements.push_back(value);
 		}
 		return elements;
@@ -1509,7 +1516,7 @@ bc_value_t make_vector(value_backend_t& backend, const type_t& element_type, con
 			p[i] = e._pod;
 			retain_value(backend, e._pod, element_type);
 		}
-		const auto result2 = bc_value_t{ backend, type, result };
+		const auto result2 = bc_value_t(backend, type, result, bc_value_t::rc_mode::adopt);
 		QUARK_ASSERT(result2.check_invariant());
 		return result2;
 	}
@@ -1524,7 +1531,7 @@ bc_value_t make_vector(value_backend_t& backend, const type_t& element_type, con
 			temp.push_back(e._pod);
 		}
 		auto result = alloc_vector_hamt(backend.heap, &temp[0], temp.size(), type);
-		const auto result2 = bc_value_t{ backend, type, result };
+		const auto result2 = bc_value_t(backend, type, result, bc_value_t::rc_mode::bump);
 		release_value(backend, result, type);
 		QUARK_ASSERT(result2.check_invariant());
 		return result2;
@@ -1547,7 +1554,7 @@ const immer::map<std::string, bc_value_t> get_dict_values(value_backend_t& backe
 		for(const auto& e: map2){
 			QUARK_ASSERT(e.second.check_invariant());
 
-			const auto value = bc_value_t(backend, value_type, e.second);
+			const auto value = bc_value_t(backend, value_type, e.second, bc_value_t::rc_mode::bump);
 			values = values.insert({ e.first, value} );
 		}
 		return values;
@@ -1559,7 +1566,7 @@ const immer::map<std::string, bc_value_t> get_dict_values(value_backend_t& backe
 		for(const auto& e: map2){
 			QUARK_ASSERT(e.second.check_invariant());
 
-			const auto value = bc_value_t(backend, value_type, e.second);
+			const auto value = bc_value_t(backend, value_type, e.second, bc_value_t::rc_mode::bump);
 			values = values.insert({ e.first, value} );
 		}
 		return values;
@@ -1588,7 +1595,7 @@ bc_value_t make_dict(value_backend_t& backend, const type_t& value_type, const i
 			retain_value(backend, e.second._pod, value_type);
 			m.insert({ e.first, e.second._pod });
 		}
-		const auto result2 = bc_value_t(backend, dict_type, result);
+		const auto result2 = bc_value_t(backend, dict_type, result, bc_value_t::rc_mode::adopt);
 		QUARK_ASSERT(result2.check_invariant());
 		return result2;
 	}
@@ -1602,7 +1609,7 @@ bc_value_t make_dict(value_backend_t& backend, const type_t& value_type, const i
 			retain_value(backend, e.second._pod, value_type);
 			m = m.set(e.first, e.second._pod);
 		}
-		const auto result2 = bc_value_t(backend, dict_type, result);
+		const auto result2 = bc_value_t(backend, dict_type, result, bc_value_t::rc_mode::adopt);
 		QUARK_ASSERT(result2.check_invariant());
 		return result2;
 	}
@@ -1901,6 +1908,11 @@ value_backend_t::value_backend_t(
 
 	QUARK_ASSERT(check_invariant());
 }
+
+value_backend_t::~value_backend_t(){
+	QUARK_ASSERT(check_invariant());
+}
+
 
 bool check_invariant(const value_backend_t& backend, runtime_value_t value, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
@@ -3094,15 +3106,15 @@ bc_value_t value_to_bc(value_backend_t& backend, const value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 
 	const auto a = to_runtime_value2(backend, value);
-	return bc_value_t(backend, value.get_type(), a);
+	return bc_value_t(backend, value.get_type(), a, bc_value_t::rc_mode::adopt);
 }
 
-bc_value_t bc_from_runtime(value_backend_t& backend, runtime_value_t value, const type_t& type){
+bc_value_t bc_from_runtime(value_backend_t& backend, runtime_value_t value, const type_t& type, bc_value_t::rc_mode mode){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	return bc_value_t(backend, type, value);
+	return bc_value_t(backend, type, value, mode);
 }
 
 runtime_value_t runtime_from_bc(value_backend_t& backend, const bc_value_t& value){

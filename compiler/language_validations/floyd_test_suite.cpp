@@ -158,7 +158,7 @@ FLOYD_LANG_PROOF("NOP", "See if we leak memory", "", ""){
 //######################################################################################################################
 
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "Define variable", "int", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "Define variable", "int", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let int result = 123", make_expected_int(123));
 }
 
@@ -1467,7 +1467,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Simple test-def compiles, call
 }
 
 
-FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Simple test-def compiles", ""){
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "test-def", "Simple test-def compiles", ""){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"___(

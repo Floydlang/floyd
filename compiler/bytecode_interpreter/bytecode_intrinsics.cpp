@@ -108,7 +108,7 @@ static bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, cons
 				quark::throw_runtime_error("Update element must be a character in an int.");
 			}
 			else{
-				return bc_value_t(backend, obj1._type, update__string(backend, obj1._pod, lookup_key._pod, new_value._pod));
+				return bc_value_t(backend, obj1._type, update__string(backend, obj1._pod, lookup_key._pod, new_value._pod), bc_value_t::rc_mode::adopt);
 			}
 		}
 	}
@@ -135,7 +135,7 @@ static bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, cons
 			quark::throw_runtime_error("Update element must match vector type.");
 		}
 		else{
-			return bc_value_t(backend, obj1._type, update_element__vector(backend, obj1._pod, obj1_peek.get_data(), lookup_key._pod, new_value._pod));
+			return bc_value_t(backend, obj1._type, update_element__vector(backend, obj1._pod, obj1_peek.get_data(), lookup_key._pod, new_value._pod), bc_value_t::rc_mode::adopt);
 		}
 	}
 	else if(obj1_peek.is_dict()){
@@ -148,7 +148,7 @@ static bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, cons
 				quark::throw_runtime_error("Update element must match dict value type.");
 			}
 			else{
-				return bc_value_t(backend, obj1._type, update_dict(backend, obj1._pod, obj1_peek.get_data(), lookup_key._pod, new_value._pod));
+				return bc_value_t(backend, obj1._type, update_dict(backend, obj1._pod, obj1_peek.get_data(), lookup_key._pod, new_value._pod), bc_value_t::rc_mode::adopt);
 			}
 		}
 	}
@@ -167,7 +167,7 @@ static bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, cons
 
 //			trace_heap(backend.heap);
 
-			const auto result = bc_value_t(backend, obj1._type, update_struct_member(backend, obj1._pod, obj1._type, member_index, new_value._pod, new_value_peek));
+			const auto result = bc_value_t(backend, obj1._type, update_struct_member(backend, obj1._pod, obj1._type, member_index, new_value._pod, new_value_peek), bc_value_t::rc_mode::adopt);
 
 //			trace_heap(backend.heap);
 
@@ -199,7 +199,7 @@ static bc_value_t bc_intrinsic__find(interpreter_t& vm, const bc_value_t args[],
 	const auto obj = args[0];
 	const auto wanted = args[1];
 	const auto index = find2(backend, obj._pod, obj._type.get_data(), wanted._pod, wanted._type.get_data());
-	return bc_value_t(backend, type_t::make_int(), make_runtime_int(index));
+	return bc_value_t(backend, type_t::make_int(), make_runtime_int(index), bc_value_t::rc_mode::adopt);
 }
 
 //??? user function type overloading and create several different functions, depending on the DYN argument.
@@ -232,7 +232,7 @@ static bc_value_t bc_intrinsic__erase(interpreter_t& vm, const bc_value_t args[]
 	QUARK_ASSERT(peek2(backend.types, key._type).is_string());
 
 	const auto result = erase(backend, obj._pod, obj._type.get_data(), key._pod, key._type.get_data());
-	return bc_value_t(backend, obj._type, result);
+	return bc_value_t(backend, obj._type, result, bc_value_t::rc_mode::adopt);
 }
 
 static bc_value_t bc_intrinsic__get_keys(interpreter_t& vm, const bc_value_t args[], int arg_count){
@@ -245,7 +245,7 @@ static bc_value_t bc_intrinsic__get_keys(interpreter_t& vm, const bc_value_t arg
 	QUARK_ASSERT(obj_type_peek.is_dict());
 
 	const auto result = get_keys(backend, obj._pod, obj._type.get_data());
-	return bc_value_t(backend, make_vector(backend.types, type_t::make_string()), result);
+	return bc_value_t(backend, make_vector(backend.types, type_t::make_string()), result, bc_value_t::rc_mode::adopt);
 }
 
 /*
@@ -268,7 +268,7 @@ static bc_value_t bc_intrinsic__subset(interpreter_t& vm, const bc_value_t args[
 	const auto end = args[2].get_int_value();
 
 	const auto result = subset(backend, obj._pod, obj._type.get_data(), start, end);
-	return bc_value_t(backend, obj._type, result);
+	return bc_value_t(backend, obj._type, result, bc_value_t::rc_mode::adopt);
 }
 
 
@@ -287,7 +287,7 @@ static bc_value_t bc_intrinsic__replace(interpreter_t& vm, const bc_value_t args
 	const auto end = args[2].get_int_value();
 	const auto replacement = args[3];
 	const auto result = replace(backend, obj._pod, obj._type.get_data(), start, end, replacement._pod, replacement._type.get_data());
-	return bc_value_t(backend, obj._type, result);
+	return bc_value_t(backend, obj._type, result, bc_value_t::rc_mode::adopt);
 }
 
 /*
