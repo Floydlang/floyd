@@ -792,7 +792,12 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: std::vector<std::pair<int, int>> get_stack_frames(int frame_pos) const;
+	struct active_frame_t {
+		int start_pos;
+		int end_pos;
+		const bc_static_frame_t* static_frame;
+	};
+	public: std::vector<active_frame_t> get_stack_frames() const;
 
 	public: bool check_reg(int reg) const{
 		//	Makes sure register is within current stack frame bounds.

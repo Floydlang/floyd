@@ -15,6 +15,7 @@
 #include "json_support.h"
 #include "compiler_basics.h"
 #include "quark.h"
+#include "format_table.h"
 
 namespace floyd {
 
@@ -1949,13 +1950,190 @@ bool check_invariant(const value_backend_t& backend, runtime_value_t value, cons
 	return true;
 }
 
+struct structure_t {
+	base_type bt;
+	int32_t rc;
+	int64_t alloc_id;
+	std::vector<structure_t> children;
+};
+
+static structure_t get_value_structure(const value_backend_t& backend, runtime_value_t value, const type_t& type0);
+
+//??? make GP traversal function for values.
+static std::vector<structure_t> get_value_structure_children(const value_backend_t& backend, runtime_value_t value, const type_t& type0){
+	const auto& type = peek2(backend.types, type0);
+
+	if(type.is_struct()){
+		std::vector<structure_t> children;
+		const auto& struct_layout = find_struct_layout(backend, type);
+		const auto& struct_def = type.get_struct(backend.types);
+		const auto struct_base_ptr = value.struct_ptr->get_data_ptr();
+
+		int member_index = 0;
+
+		for(const auto& e: struct_def._members){
+			const auto& member_peek = peek2(backend.types, e._type);
+			if(is_rc_value(backend.types, member_peek)){
+				const auto offset = struct_layout.second.members[member_index].offset;
+				const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
+				const auto m = get_value_structure(backend, *member_ptr, member_peek);
+				children.push_back(m);
+			}
+			member_index++;
+		}
+		return children;
+	}
+	else if(is_vector_hamt(backend.types, backend.config, type)){
+		std::vector<structure_t> children;
+		const auto element_peek = type.get_vector_element_type(backend.types);
+		if(is_rc_value(backend.types, element_peek)){
+			const auto& obj = *value.vector_hamt_ptr;
+			for(int i = 0 ; i < obj.get_element_count() ; i++){
+				const auto& e = obj.load_element(i);
+				const auto m = get_value_structure(backend, e, element_peek);
+				children.push_back(m);
+			}
+		}
+		return children;
+	}
+	else if(is_vector_carray(backend.types, backend.config, type)){
+		std::vector<structure_t> children;
+		const auto element_peek = type.get_vector_element_type(backend.types);
+		if(is_rc_value(backend.types, element_peek)){
+			const auto& obj = *value.vector_carray_ptr;
+			for(int i = 0 ; i < obj.get_element_count() ; i++){
+				const auto& e = obj.load_element(i);
+				const auto m = get_value_structure(backend, e, element_peek);
+				children.push_back(m);
+			}
+		}
+		return children;
+	}
+	else if(is_dict_hamt(backend.types, backend.config, type)){
+		std::vector<structure_t> children;
+		const auto element_peek = type.get_dict_value_type(backend.types);
+		if(is_rc_value(backend.types, element_peek)){
+			const auto& obj = value.dict_hamt_ptr->get_map();
+			for(const auto& kv: obj){
+				const auto m = get_value_structure(backend, kv.second, element_peek);
+				children.push_back(m);
+			}
+		}
+		return children;
+	}
+	else if(is_dict_cppmap(backend.types, backend.config, type)){
+		std::vector<structure_t> children;
+		const auto element_peek = type.get_dict_value_type(backend.types);
+		if(is_rc_value(backend.types, element_peek)){
+			const auto& obj = value.dict_cppmap_ptr->get_map();
+			for(const auto& kv: obj){
+				const auto m = get_value_structure(backend, kv.second, element_peek);
+				children.push_back(m);
+			}
+		}
+		return children;
+	}
+	else if(type.is_json()){
+		//	Notice: JSON stores its contents in the C++ world, not using value_backend_t.
+		return {};
+	}
+	else{
+		return {};
+	}
+}
+static structure_t get_value_structure(const value_backend_t& backend, runtime_value_t value, const type_t& type0){
+	const auto& type = peek2(backend.types, type0);
+
+	const auto is_rc = is_rc_value(backend.types, type);
+	QUARK_ASSERT(is_rc);
+
+	const auto alloc_id = value.gp_ptr->alloc_id;
+	const int32_t rc = value.gp_ptr->rc;
+	const auto children = get_value_structure_children(backend, value, type);
+	return { type.get_base_type(), rc, alloc_id, children };
+}
+
+static std::string get_value_structure_str(const value_backend_t& backend, const structure_t& str){
+	std::stringstream s;
+
+	const auto bt = base_type_to_opcode(str.bt);
+	s << bt << " [" << str.alloc_id << " " << str.rc << "]" << "{";
+
+	for(const auto& e: str.children){
+		const auto a = get_value_structure_str(backend, e);
+		s << a << " ";
+	}
+	s << "}";
+	return s.str();
+}
+
+
 
 void trace_value_backend(const value_backend_t& backend){
 }
 
+static void trace_value_backend_dynamic__internal(const value_backend_t& backend){
+	QUARK_ASSERT(backend.check_invariant());
+	const auto& heap = backend.heap;
+
+	std::vector<std::vector<std::string>> matrix;
+	for(int i = 0 ; i < heap.alloc_records.size() ; i++){
+		const auto& e = heap.alloc_records[i];
+		QUARK_ASSERT(e.alloc_ptr->check_invariant());
+
+		const auto alloc_id_str =std::to_string(e.alloc_ptr->alloc_id);
+		const auto magic = value_to_hex_string(e.alloc_ptr->magic, 8);
+
+		//		<< "used: " << e.in_use
+
+		const auto rc_str = std::to_string(e.alloc_ptr->rc);
+
+		const auto debug_info_str = get_debug_info(*e.alloc_ptr);
+
+
+		const auto debug_value_type = e.alloc_ptr->debug_value_type;
+		const auto debug_value_type_str = type_to_compact_string(backend.types, debug_value_type);
+
+		const uint64_t data0 = e.alloc_ptr->data[0];
+		const uint64_t data1 = e.alloc_ptr->data[1];
+		const uint64_t data2 = e.alloc_ptr->data[2];
+		const uint64_t data3 = e.alloc_ptr->data[3];
+
+		const auto value = runtime_value_t{ .gp_ptr = e.alloc_ptr };
+		std::string value_summary_str = get_value_structure_str(backend, get_value_structure(backend, value, debug_value_type));
+
+		const auto is_rc = is_rc_value(backend.types, debug_value_type);
+		QUARK_ASSERT(is_rc);
+
+		const auto line = std::vector<std::string> {
+			std::to_string(i),
+			alloc_id_str,
+			rc_str,
+			magic,
+			debug_value_type_str,
+			value_summary_str
+		};
+
+		matrix.push_back(line);
+	}
+
+	const auto result = generate_table_type1({ "#", "alloc ID", "RC", "magic", "type", "value summary" }, matrix);
+	QUARK_TRACE(result);
+}
+
+
 void trace_value_backend_dynamic(const value_backend_t& backend){
+	QUARK_ASSERT(backend.check_invariant());
+
 	QUARK_SCOPED_TRACE("BACKEND");
-	trace_heap(backend.heap);
+
+	if(backend.heap.record_allocs_flag && k_heap_mutex){
+		std::lock_guard<std::recursive_mutex> guard(*backend.heap.alloc_records_mutex);
+		trace_value_backend_dynamic__internal(backend);
+	}
+	else{
+		trace_value_backend_dynamic__internal(backend);
+	}
 }
 
 

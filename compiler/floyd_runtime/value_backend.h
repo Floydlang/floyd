@@ -268,7 +268,6 @@ union runtime_value_t {
 	double double_value;
 
 	//	Strings are encoded as vector.
-//	VECTOR_CARRAY_T* string_carray_ptr;
 
 	VECTOR_CARRAY_T* vector_carray_ptr;
 	VECTOR_HAMT_T* vector_hamt_ptr;
@@ -283,6 +282,8 @@ union runtime_value_t {
 	int64_t function_link_id;
 
 	void* frame_ptr;
+
+	heap_alloc_64_t* gp_ptr;
 
 	bool check_invariant() const {
 		return true;

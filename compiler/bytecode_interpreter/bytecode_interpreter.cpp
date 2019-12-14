@@ -284,17 +284,20 @@ bool interpreter_stack_t::check_stack_frame(const frame_pos_t& in_frame) const{
 }
 #endif
 
-std::vector<std::pair<int, int>> interpreter_stack_t::get_stack_frames(int frame_pos) const{
+std::vector<interpreter_stack_t::active_frame_t> interpreter_stack_t::get_stack_frames() const{
 	QUARK_ASSERT(check_invariant());
+
+	auto frame_pos = get_current_frame_start();
 
 	//	We use the entire current stack to calc top frame's size. This can be wrong, if
 	//	someone pushed more stuff there. Same goes with the previous stack frames too..
-	std::vector<std::pair<int, int>> result{ { frame_pos, static_cast<int>(size()) - frame_pos }};
+	std::vector<active_frame_t> result { active_frame_t{ frame_pos, static_cast<int>(size()) - frame_pos, _current_static_frame }};
 
 	while(frame_pos > k_frame_overhead){
 		const auto prev_frame = read_prev_frame(frame_pos);
 		const auto prev_size = (frame_pos - k_frame_overhead) - prev_frame._frame_pos;
-		result.push_back(std::pair<int, int>{ frame_pos, prev_size });
+		const auto frame = active_frame_t { frame_pos, prev_size, nullptr };
+		result.push_back(frame);
 
 		frame_pos = prev_frame._frame_pos;
 	}
@@ -306,14 +309,14 @@ json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend)
 
 	const int size = static_cast<int>(stack._stack_size);
 
-	const auto stack_frames = stack.get_stack_frames(stack.get_current_frame_start());
+	const auto stack_frames = stack.get_stack_frames();
 
 	std::vector<json_t> frames;
 	for(int64_t i = 0 ; i < stack_frames.size() ; i++){
 		auto a = json_t::make_array({
 			json_t(i),
-			json_t(stack_frames[i].first),
-			json_t(stack_frames[i].second)
+			json_t(stack_frames[i].start_pos),
+			json_t(stack_frames[i].end_pos)
 		});
 		frames.push_back(a);
 	}
@@ -323,7 +326,7 @@ json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend)
 		const auto& frame_it = std::find_if(
 			stack_frames.begin(),
 			stack_frames.end(),
-			[&i](const std::pair<int, int>& e) { return e.first == i; }
+			[&i](const interpreter_stack_t::active_frame_t& e) { return e.start_pos == i; }
 		);
 
 		bool frame_start_flag = frame_it != stack_frames.end();
@@ -595,14 +598,14 @@ void trace_interpreter(interpreter_t& vm, int pc){
 
 		const int size = static_cast<int>(stack._stack_size);
 
-		const auto stack_frames = stack.get_stack_frames(stack.get_current_frame_start());
+		const auto stack_frames = stack.get_stack_frames();
 
 		std::vector<json_t> frames;
 		for(int64_t i = 0 ; i < stack_frames.size() ; i++){
 			auto a = json_t::make_array({
 				json_t(i),
-				json_t(stack_frames[i].first),
-				json_t(stack_frames[i].second)
+				json_t(stack_frames[i].start_pos),
+				json_t(stack_frames[i].end_pos)
 			});
 			frames.push_back(a);
 		}
@@ -619,7 +622,7 @@ void trace_interpreter(interpreter_t& vm, int pc){
 				const auto& frame_it = std::find_if(
 					stack_frames.begin(),
 					stack_frames.end(),
-					[&i](const std::pair<int, int>& e) { return e.first == i; }
+					[&i](const active_frame_t& e) { return e.first == i; }
 				);
 
 				bool frame_start_flag = frame_it != stack_frames.end();
@@ -628,6 +631,10 @@ void trace_interpreter(interpreter_t& vm, int pc){
 					elements.push_back(json_t("--- frame ---"));
 				}
 	*/
+
+
+
+
 				const auto debug_type = stack._entry_types[i];
 				const bool is_rc = is_rc_value(backend.types, debug_type);
 				const auto bc_pod = stack._entries[i];
