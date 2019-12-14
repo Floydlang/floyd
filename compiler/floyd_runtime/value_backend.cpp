@@ -411,7 +411,7 @@ QUARK_TEST("", "", "", ""){
 
 
 runtime_value_t make_blank_runtime_value(){
-	return make_runtime_int(0xdeadbee1);
+	return make_runtime_int(UNINITIALIZED_RUNTIME_VALUE);
 }
 
 runtime_value_t make_runtime_bool(bool value){
@@ -1905,7 +1905,9 @@ bool check_invariant(const value_backend_t& backend, runtime_value_t value, cons
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto type_peek = peek2(backend.types, type);
-	if(is_rc_value(backend.types, type_peek) && value.int_value != 0x00000000deadbee1 && value.int_value != 0){
+
+	//??? BOth the check for UNINITIALIZED_RUNTIME_VALUE and int_value == 0 are temporary kludges
+	if(is_rc_value(backend.types, type_peek) && value.int_value != UNINITIALIZED_RUNTIME_VALUE && value.int_value != 0){
 		if(type_peek.is_string()){
 			QUARK_ASSERT(value.vector_carray_ptr != nullptr);
 			QUARK_ASSERT(value.vector_carray_ptr->check_invariant());
@@ -1950,7 +1952,9 @@ bool check_invariant(const value_backend_t& backend, runtime_value_t value, cons
 void trace_value_backend(const value_backend_t& backend){
 }
 
-void trace_value_backend_dyn(const value_backend_t& backend){
+void trace_value_backend_dynamic(const value_backend_t& backend){
+	QUARK_SCOPED_TRACE("BACKEND");
+	trace_heap(backend.heap);
 }
 
 
@@ -2078,7 +2082,9 @@ void retain_value(value_backend_t& backend, runtime_value_t value, type_t type){
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto type_peek = peek2(backend.types, type);
-	if(is_rc_value(backend.types, type_peek) && value.int_value != 0x00000000deadbee1 && value.int_value != 0){
+
+	//??? BOth the check for UNINITIALIZED_RUNTIME_VALUE and int_value == 0 are temporary kludges
+	if(is_rc_value(backend.types, type_peek) && value.int_value != UNINITIALIZED_RUNTIME_VALUE && value.int_value != 0){
 		if(type_peek.is_string()){
 			retain_vector_carray(backend, value, type);
 		}
@@ -2314,7 +2320,8 @@ void release_value(value_backend_t& backend, runtime_value_t value, type_t type)
 
 	const auto& peek = peek2(backend.types, type);
 
-	if(is_rc_value(backend.types, peek) && value.int_value != 0x00000000deadbee1 && value.int_value != 0){
+	//??? BOth the check for UNINITIALIZED_RUNTIME_VALUE and int_value == 0 are temporary kludges
+	if(is_rc_value(backend.types, peek) && value.int_value != UNINITIALIZED_RUNTIME_VALUE && value.int_value != 0){
 		if(peek.is_string()){
 			release_vec(backend, value, type);
 		}

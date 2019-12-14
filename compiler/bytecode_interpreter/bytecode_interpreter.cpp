@@ -14,12 +14,14 @@
 #include "ast_value.h"
 #include "types.h"
 #include "value_features.h"
+#include "format_table.h"
 
 #include <algorithm>
 
 
 namespace floyd {
 
+static const bool k_trace_stepping = true;
 
 
 static type_t lookup_full_type(const interpreter_t& vm, const bc_typeid_t& type){
@@ -28,7 +30,7 @@ static type_t lookup_full_type(const interpreter_t& vm, const bc_typeid_t& type)
 	return lookup_type_from_index(types, type);
 }
 
-int get_global_n_pos(int n){
+static int get_global_n_pos(int n){
 	return k_frame_overhead + n;
 }
 static int get_local_n_pos(int frame_pos, int n){
@@ -579,8 +581,86 @@ interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config
 }
 
 void trace_interpreter(interpreter_t& vm){
-	const auto j = interpreter_to_json(vm);
-	QUARK_TRACE(json_to_pretty_string(j));
+	QUARK_SCOPED_TRACE("INTERPRETER STATE");
+
+	auto& backend = vm._backend;
+	const auto& stack = vm._stack;
+
+	{
+		QUARK_SCOPED_TRACE("STACK");
+
+		const int size = static_cast<int>(stack._stack_size);
+
+		const auto stack_frames = stack.get_stack_frames(stack.get_current_frame_start());
+
+		std::vector<json_t> frames;
+		for(int64_t i = 0 ; i < stack_frames.size() ; i++){
+			auto a = json_t::make_array({
+				json_t(i),
+				json_t(stack_frames[i].first),
+				json_t(stack_frames[i].second)
+			});
+			frames.push_back(a);
+		}
+		{
+			QUARK_SCOPED_TRACE("FRAMES");
+			QUARK_TRACE(json_to_pretty_string(json_t(frames)));
+		}
+
+		{
+			std::vector<std::vector<std::string>> matrix;
+
+			for(int64_t i = 0 ; i < size ; i++){
+				/*
+				const auto& frame_it = std::find_if(
+					stack_frames.begin(),
+					stack_frames.end(),
+					[&i](const std::pair<int, int>& e) { return e.first == i; }
+				);
+
+				bool frame_start_flag = frame_it != stack_frames.end();
+
+				if(frame_start_flag){
+					elements.push_back(json_t("--- frame ---"));
+				}
+	*/
+				const auto debug_type = stack._entry_types[i];
+				const bool is_rc = is_rc_value(backend.types, debug_type);
+				const auto bc_pod = stack._entries[i];
+				const auto bc_that_owns_rc = bc_value_t(backend, debug_type, bc_pod);
+				const bool uninitialized_local = bc_pod.int_value == UNINITIALIZED_RUNTIME_VALUE || (is_rc && bc_pod.int_value == 0x00000000);
+				const auto value_str = uninitialized_local ? "UNWRITTEN" : json_to_compact_string(bcvalue_to_json(backend, bc_that_owns_rc));
+
+				std::string rc_str = "";
+				std::string alloc_id_str = "";
+				if(is_rc && uninitialized_local == false){
+					//	Cludge for now, gets the alloc struct for any type of RC-value.
+					const auto& alloc = bc_pod.struct_ptr->alloc;
+					const auto alloc_id = alloc.alloc_id;
+
+					//	 We have our own reference to the RC via "bc_that_owns_rc", we take that out of trace.
+					const int32_t rc = alloc.rc - 1;
+					rc_str = std::to_string(rc);
+					alloc_id_str = std::to_string(alloc_id);
+				}
+
+				const auto line = std::vector<std::string> {
+					std::to_string(i),
+					type_to_compact_string(backend.types, debug_type),
+					value_str,
+					rc_str,
+					alloc_id_str
+				};
+
+				matrix.push_back(line);
+			}
+			
+			QUARK_SCOPED_TRACE("STACK ENTRIES");
+			const auto result = generate_table_type1({ "#", "type", "value", "RC", "alloc ID" }, matrix);
+			QUARK_TRACE(result);
+		}
+	}
+	trace_value_backend_dynamic(vm._backend);
 }
 
 void interpreter_t::swap(interpreter_t& other) throw(){
@@ -846,7 +926,7 @@ static void do_call(interpreter_t& vm, int target_reg, const runtime_value_t cal
 		QUARK_ASSERT(func_link.dynamic_arg_count == 0);
 
 		//	We need to remember the global pos where to store return value, since we're switching frame to call function.
-		int result_reg_pos = static_cast<int>(stack._current_frame_entry_ptr - &stack._entries[0]) + target_reg;
+		int result_reg_pos = static_cast<int>(stack._current_frame_start_ptr - &stack._entries[0]) + target_reg;
 
 		auto frame_ptr = (const bc_static_frame_t*)func_link.f;
 
@@ -882,7 +962,6 @@ inline void write_reg_rc(value_backend_t& backend, runtime_value_t regs[], int d
 	regs[dest_reg] = value;
 }
 
-
 std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(instructions.empty() == true || (instructions.back()._opcode == bc_opcode::k_return || instructions.back()._opcode == bc_opcode::k_stop));
@@ -891,11 +970,15 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 	const auto& types = backend.types;
 
 	interpreter_stack_t& stack = vm._stack;
-	const bc_static_frame_t* frame_ptr = stack._current_frame_ptr;
-	auto* regs = stack._current_frame_entry_ptr;
+	const bc_static_frame_t* frame_ptr = stack._current_static_frame;
+	auto* regs = stack._current_frame_start_ptr;
 	auto* globals = &stack._entries[k_frame_overhead];
 
 //	QUARK_TRACE_SS("STACK:  " << json_to_pretty_string(stack.stack_to_json()));
+
+	if(k_trace_stepping){
+		trace_interpreter(vm);
+	}
 
 	int pc = 0;
 	while(true){
@@ -906,11 +989,12 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		QUARK_ASSERT(vm.check_invariant());
 		QUARK_ASSERT(i.check_invariant());
 
-		QUARK_ASSERT(frame_ptr == stack._current_frame_ptr);
-		QUARK_ASSERT(regs == stack._current_frame_entry_ptr);
+		QUARK_ASSERT(frame_ptr == stack._current_static_frame);
+		QUARK_ASSERT(regs == stack._current_frame_start_ptr);
 
 
 		const auto opcode = i._opcode;
+
 		switch(opcode){
 
 		case bc_opcode::k_nop:
@@ -1006,7 +1090,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT((stack._stack_size + k_frame_overhead) < stack._allocated_count)
 
-			stack._entries[stack._stack_size + 0].int_value = static_cast<int64_t>(stack._current_frame_entry_ptr - &stack._entries[0]);
+			stack._entries[stack._stack_size + 0].int_value = static_cast<int64_t>(stack._current_frame_start_ptr - &stack._entries[0]);
 			stack._entries[stack._stack_size + 1].frame_ptr = (void*)frame_ptr;
 			stack._stack_size += k_frame_overhead;
 			stack._entry_types.push_back(type_t::make_int());
@@ -1028,12 +1112,12 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 			regs = &stack._entries[frame_pos];
 
-			//??? do we need stack._current_frame_ptr, stack._current_frame_pos? Only use local variables to track these?
-			stack._current_frame_ptr = frame_ptr;
-			stack._current_frame_entry_ptr = regs;
+			//??? do we need stack._current_static_frame, stack._current_frame_pos? Only use local variables to track these?
+			stack._current_static_frame = frame_ptr;
+			stack._current_frame_start_ptr = regs;
 
-			QUARK_ASSERT(frame_ptr == stack._current_frame_ptr);
-			QUARK_ASSERT(regs == stack._current_frame_entry_ptr);
+			QUARK_ASSERT(frame_ptr == stack._current_static_frame);
+			QUARK_ASSERT(regs == stack._current_frame_start_ptr);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
@@ -1398,11 +1482,11 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 			do_call(vm, i._a, regs[i._b], i._c);
 
-			frame_ptr = stack._current_frame_ptr;
-			regs = stack._current_frame_entry_ptr;
+			frame_ptr = stack._current_static_frame;
+			regs = stack._current_frame_start_ptr;
 
-			QUARK_ASSERT(frame_ptr == stack._current_frame_ptr);
-			QUARK_ASSERT(regs == stack._current_frame_entry_ptr);
+			QUARK_ASSERT(frame_ptr == stack._current_static_frame);
+			QUARK_ASSERT(regs == stack._current_frame_start_ptr);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
@@ -1420,7 +1504,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 		case bc_opcode::k_new_vector_w_external_elements: {
-			//trace_interpreter(vm);
 			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._a));
 			QUARK_ASSERT(i._b >= 0);
 			QUARK_ASSERT(i._c >= 0);
@@ -1786,6 +1869,10 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			quark::throw_exception();
 		}
 		pc++;
+
+		if(k_trace_stepping){
+			trace_interpreter(vm);
+		}
 	}
 	return { false, bc_value_t::make_undefined() };
 }

@@ -98,6 +98,11 @@ static const uint64_t k_alloc_start_id = 1000000;
 static const uint64_t HEAP_MAGIC = 0xf00d1234;
 
 
+
+//static const uint64_t UNINITIALIZED_RUNTIME_VALUE = 0x00000000deadbee1;
+  static const uint64_t UNINITIALIZED_RUNTIME_VALUE = 0x4444deadbeef8888;
+
+
 struct heap_t {
 	heap_t(bool record_allocs_flag);
 	~heap_t();
@@ -865,7 +870,9 @@ struct value_backend_t {
 bool check_invariant(const value_backend_t& backend, runtime_value_t value, const type_t& type);
 
 void trace_value_backend(const value_backend_t& backend);
-void trace_value_backend_dyn(const value_backend_t& backend);
+
+//	Traces only the non-const data of the backend.
+void trace_value_backend_dynamic(const value_backend_t& backend);
 
 const func_link_t* find_function_by_name2(const value_backend_t& backend, const module_symbol_t& s);
 
