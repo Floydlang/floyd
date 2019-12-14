@@ -30,7 +30,7 @@ static bc_value_t bc_corelib__make_benchmark_report(interpreter_t& vm, const bc_
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 	auto temp_types = types;
 
@@ -55,7 +55,7 @@ static bc_value_t bc_corelib__detect_hardware_caps(interpreter_t& vm, const bc_v
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 	const std::vector<std::pair<std::string, json_t>> caps = corelib_detect_hardware_caps();
 
@@ -74,7 +74,7 @@ static bc_value_t bc_corelib__make_hardware_caps_report(interpreter_t& vm, const
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 	auto temp_types = types;
 	QUARK_ASSERT(args[0]._type == make_dict(temp_types, type_t::make_json()));
@@ -92,7 +92,7 @@ static bc_value_t bc_corelib__make_hardware_caps_report_brief(interpreter_t& vm,
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 	auto temp_types = types;
 	QUARK_ASSERT(args[0]._type == make_dict(temp_types, type_t::make_json()));
@@ -110,7 +110,7 @@ static bc_value_t bc_corelib__get_current_date_and_time_string(interpreter_t& vm
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 	const auto s = get_current_date_and_time_string();
 	return value_to_bc(backend, value_t::make_string(s));
@@ -130,7 +130,7 @@ static bc_value_t bc_corelib__calc_string_sha1(interpreter_t& vm, const bc_value
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
@@ -164,7 +164,7 @@ static bc_value_t bc_corelib__calc_binary_sha1(interpreter_t& vm, const bc_value
 	QUARK_ASSERT(arg_count == 1);
 //	QUARK_ASSERT(args[0]._type == make__binary_t__type());
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	auto temp_types = types;
@@ -215,7 +215,7 @@ static bc_value_t bc_corelib__read_text_file(interpreter_t& vm, const bc_value_t
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
@@ -230,7 +230,7 @@ static bc_value_t bc_corelib__write_text_file(interpreter_t& vm, const bc_value_
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
@@ -248,7 +248,7 @@ static bc_value_t bc_corelib__read_line_stdin(interpreter_t& vm, const bc_value_
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	std::string file_contents = corelib_read_line_stdin();
@@ -263,7 +263,7 @@ static bc_value_t bc_corelib__get_fsentries_shallow(interpreter_t& vm, const bc_
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
@@ -291,7 +291,7 @@ static bc_value_t bc_corelib__get_fsentries_deep(interpreter_t& vm, const bc_val
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
@@ -319,7 +319,7 @@ static bc_value_t bc_corelib__get_fsentry_info(interpreter_t& vm, const bc_value
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
@@ -339,7 +339,7 @@ static bc_value_t bc_corelib__get_fs_environment(interpreter_t& vm, const bc_val
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	auto temp_types = vm._imm->_program._types;
@@ -355,7 +355,7 @@ static bc_value_t bc_corelib__does_fsentry_exist(interpreter_t& vm, const bc_val
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
@@ -380,7 +380,7 @@ static bc_value_t bc_corelib__create_directory_branch(interpreter_t& vm, const b
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
@@ -396,7 +396,7 @@ static bc_value_t bc_corelib__delete_fsentry_deep(interpreter_t& vm, const bc_va
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
@@ -413,7 +413,7 @@ static bc_value_t bc_corelib__rename_fsentry(interpreter_t& vm, const bc_value_t
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
@@ -437,7 +437,7 @@ static bc_value_t bc_corelib__read_socket(interpreter_t& vm, const bc_value_t ar
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	QUARK_ASSERT(peek2(types, args[0]._type).is_int());
@@ -451,7 +451,7 @@ static bc_value_t bc_corelib__write_socket(interpreter_t& vm, const bc_value_t a
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(arg_count == 2);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	QUARK_ASSERT(peek2(types, args[0]._type).is_int());
@@ -496,7 +496,7 @@ static bc_value_t bc_corelib__lookup_host_from_ip(interpreter_t& vm, const bc_va
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	QUARK_ASSERT(args[0]._type == make__ip_address_t__type(types));
@@ -511,7 +511,7 @@ static bc_value_t bc_corelib__lookup_host_from_name(interpreter_t& vm, const bc_
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
@@ -528,7 +528,7 @@ static bc_value_t bc_corelib__pack_http_request(interpreter_t& vm, const bc_valu
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	const auto http_request_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_request_t" }});
@@ -561,7 +561,7 @@ static bc_value_t bc_corelib__unpack_http_request(interpreter_t& vm, const bc_va
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
@@ -609,7 +609,7 @@ static bc_value_t bc_corelib__pack_http_response(interpreter_t& vm, const bc_val
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	const auto http_response_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_response_t" }});
@@ -639,7 +639,7 @@ static bc_value_t bc_corelib__unpack_http_response(interpreter_t& vm, const bc_v
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
@@ -684,7 +684,7 @@ static bc_value_t bc_corelib__unpack_http_response(interpreter_t& vm, const bc_v
 static bc_value_t bc_corelib__execute_http_request(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	QUARK_ASSERT(arg_count == 3);

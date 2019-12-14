@@ -45,7 +45,7 @@ value_t get_global(interpreter_t& vm, const module_symbol_t& name){
 		quark::throw_runtime_error(std::string() + "Cannot find global \"" + name.s + "\".");
 	}
 	else{
-		return bc_to_value(vm._stack._backend, result->_value);
+		return bc_to_value(vm._backend, result->_value);
 	}
 }
 
@@ -57,14 +57,14 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vec
 	QUARK_ASSERT(f.is_function());
 #endif
 
-	const auto f2 = value_to_bc(vm._stack._backend, f);
+	const auto f2 = value_to_bc(vm._backend, f);
 	std::vector<bc_value_t> args2;
 	for(const auto& e: args){
-		args2.push_back(value_to_bc(vm._stack._backend, e));
+		args2.push_back(value_to_bc(vm._backend, e));
 	}
 
 	const auto result = call_function_bc(vm, f2, &args2[0], static_cast<int>(args2.size()));
-	return bc_to_value(vm._stack._backend, result);
+	return bc_to_value(vm._backend, result);
 }
 
 
@@ -115,8 +115,9 @@ struct bc_process_t : public bc_runtime_handler_i {
 
 
 	void on_send(const std::string& dest_process_id, const runtime_value_t& message0, const type_t& type) override {
-		const auto& types = _interpreter->_imm->_program._types;
-		const auto message = bc_from_runtime(_interpreter->_stack._backend, message0, type);
+		auto& backend = _interpreter->_backend;
+		const auto& types = backend.types;
+		const auto message = bc_from_runtime(backend, message0, type);
 
 		const auto it = std::find_if(
 			_owning_runtime->_processes.begin(),
@@ -201,7 +202,7 @@ static void process_process(bc_processes_runtime_t& runtime, int process_id){
 
 	QUARK_ASSERT(process.check_invariant());
 
-	auto& backend = process._interpreter->_stack._backend;
+	auto& backend = process._interpreter->_backend;
 	const auto& types = backend.types;
 	const auto trace_header = make_trace_process_header(process);
 
@@ -356,7 +357,7 @@ run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& m
 
 	const auto& main_function = find_global_symbol2(vm, module_symbol_t("main"));
 	if(main_function != nullptr){
-		const auto main_result_int = bc_call_main(vm, bc_to_value(vm._stack._backend, main_function->_value), main_args);
+		const auto main_result_int = bc_call_main(vm, bc_to_value(vm._backend, main_function->_value), main_args);
 		return { main_result_int, {} };
 	}
 	else{
@@ -371,7 +372,7 @@ std::vector<test_t> collect_tests(interpreter_t& vm){
 	const auto& test_registry_bind = find_global_symbol2(vm, module_symbol_t(k_global_test_registry));
 	QUARK_ASSERT(test_registry_bind != nullptr);
 
-	const auto vec = bc_to_value(vm._stack._backend, test_registry_bind->_value);
+	const auto vec = bc_to_value(vm._backend, test_registry_bind->_value);
 	const auto vec2 = vec.get_vector_value();
 	std::vector<test_t> a = unpack_test_registry(vec2);
 	return a;
@@ -389,7 +390,7 @@ static std::string run_test(interpreter_t& vm, const test_t& test){
 		epure::pure
 	);
 
-	const auto f_value = bc_value_t::make_function_value(vm._stack._backend, f_type, function_id);
+	const auto f_value = bc_value_t::make_function_value(vm._backend, f_type, function_id);
 
 	try {
 		const std::vector<bc_value_t> args2;

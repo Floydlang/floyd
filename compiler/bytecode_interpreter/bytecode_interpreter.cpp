@@ -23,7 +23,7 @@ namespace floyd {
 
 
 static type_t lookup_full_type(const interpreter_t& vm, const bc_typeid_t& type){
-	const auto& backend = vm._stack._backend;
+	const auto& backend = vm._backend;
 	const auto& types = backend.types;
 	return lookup_type_from_index(types, type);
 }
@@ -357,7 +357,7 @@ json_t interpreter_stack_t::stack_to_json(value_backend_t& backend) const{
 
 //??? use code from do_call() -- share code.
 bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_value_t args[], int arg_count){
-	const auto& backend = vm._stack._backend;
+	const auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 #if DEBUG
@@ -560,7 +560,7 @@ interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config
 	_imm(std::make_shared<interpreter_imm_t>(interpreter_imm_t{ std::chrono::high_resolution_clock::now(), program })),
 	_handler(&handler),
 	_backend{ make_functions(program), bc_make_struct_layouts(program._types), program._types, config },
-	_stack { _backend, &_imm->_program._globals }
+	_stack { &_backend, &_imm->_program._globals }
 {
 	QUARK_ASSERT(program.check_invariant());
 	QUARK_ASSERT(check_invariant());
@@ -608,7 +608,7 @@ bool interpreter_t::check_invariant() const {
 static void execute_new_1(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t source_itype){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	const auto& target_type = lookup_full_type(vm, target_itype);
@@ -627,15 +627,15 @@ static void execute_new_1(interpreter_t& vm, int16_t dest_reg, int16_t target_it
 		//	Automatically transform a json::string => string at runtime?
 		else if(target_peek.is_string() && peek2(types, source_itype2).is_json()){
 			if(input_value.get_json().is_string()){
-				return bc_value_t::make_string(vm._stack._backend, input_value.get_json().get_string());
+				return bc_value_t::make_string(backend, input_value.get_json().get_string());
 			}
 			else{
 				quark::throw_runtime_error("Attempting to assign a non-string JSON to a string.");
 			}
 		}
 		else if(target_peek.is_json()){
-			const auto arg = bcvalue_to_json(vm._stack._backend, input_value);
-			return bc_value_t::make_json(vm._stack._backend, arg);
+			const auto arg = bcvalue_to_json(backend, input_value);
+			return bc_value_t::make_json(backend, arg);
 		}
 		else{
 			return input_value;
@@ -649,7 +649,7 @@ static void execute_new_1(interpreter_t& vm, int16_t dest_reg, int16_t target_it
 static void execute_new_vector_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 	if(false) trace_types(types);
 
@@ -668,18 +668,18 @@ static void execute_new_vector_obj(interpreter_t& vm, int16_t dest_reg, int16_t 
 		const auto pos = arg0_stack_pos + i;
 		QUARK_ASSERT(vm._stack._entry_types[pos] == type_t(peek2(types, element_type)));
 		const auto& e = vm._stack._entries[pos];
-		const auto e2 = bc_value_t(vm._stack._backend, element_type, e);
+		const auto e2 = bc_value_t(backend, element_type, e);
 		elements2 = elements2.push_back(e2);
 	}
 
-	const auto result = make_vector(vm._stack._backend, element_type, elements2);
+	const auto result = make_vector(backend, element_type, elements2);
 	vm._stack.write_register__external_value(dest_reg, result);
 }
 
 static void execute_new_dict_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	const auto& target_type = lookup_full_type(vm, target_itype);
@@ -699,11 +699,11 @@ static void execute_new_dict_obj(interpreter_t& vm, int16_t dest_reg, int16_t ta
 	for(auto i = 0 ; i < dict_element_count ; i++){
 		const auto key = vm._stack.load_value(arg0_stack_pos + i * 2 + 0, string_type);
 		const auto value = vm._stack.load_value(arg0_stack_pos + i * 2 + 1, element_type);
-		const auto key2 = key.get_string_value(vm._stack._backend);
+		const auto key2 = key.get_string_value(backend);
 		elements2 = elements2.insert({ key2, value });
 	}
 
-	const auto result = make_dict(vm._stack._backend, element_type, elements2);
+	const auto result = make_dict(backend, element_type, elements2);
 	vm._stack.write_register__external_value(dest_reg, result);
 }
 
@@ -743,7 +743,7 @@ static void execute_new_dict_pod64(interpreter_t& vm, int16_t dest_reg, int16_t 
 static void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	const auto& target_type = lookup_full_type(vm, target_itype);
@@ -761,7 +761,7 @@ static void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t targ
 		elements2.push_back(value);
 	}
 
-	const auto result = bc_value_t::make_struct_value(vm._stack._backend, target_type, elements2);
+	const auto result = bc_value_t::make_struct_value(backend, target_type, elements2);
 	QUARK_ASSERT(result.check_invariant());
 //	QUARK_TRACE(to_compact_string2(instance));
 
@@ -774,7 +774,7 @@ static void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t targ
 static void call_native(interpreter_t& vm, int target_reg, const func_link_t& func_link, int callee_arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& backend = vm._stack._backend;
+	const auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	interpreter_stack_t& stack = vm._stack;
@@ -827,7 +827,7 @@ static void do_call(interpreter_t& vm, int target_reg, const runtime_value_t cal
 
 	interpreter_stack_t& stack = vm._stack;
 
-	const auto& backend = vm._stack._backend;
+	const auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	const auto func_link_ptr = lookup_func_link(backend, callee);
@@ -887,7 +887,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(instructions.empty() == true || (instructions.back()._opcode == bc_opcode::k_return || instructions.back()._opcode == bc_opcode::k_stop));
 
-	auto& backend = vm._stack._backend;
+	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 	interpreter_stack_t& stack = vm._stack;
@@ -926,10 +926,10 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_global_access_obj(i._b));
 
 			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
-			release_value(stack._backend, regs[i._a], type);
+			release_value(backend, regs[i._a], type);
 			const auto& new_value_pod = globals[i._b];
 			regs[i._a] = new_value_pod;
-			retain_value(stack._backend, new_value_pod, type);
+			retain_value(backend, new_value_pod, type);
 			break;
 		}
 		case bc_opcode::k_load_global_inplace_value: {
@@ -945,10 +945,10 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg__external_value(i._b));
 
 			const auto& type = frame_ptr->_symbols[i._b].second._value_type;
-			release_value(stack._backend, globals[i._a], type);
+			release_value(backend, globals[i._a], type);
 			const auto& new_value_pod = regs[i._b];
 			globals[i._a] = new_value_pod;
-			retain_value(stack._backend, new_value_pod, type);
+			retain_value(backend, new_value_pod, type);
 			break;
 		}
 		case bc_opcode::k_store_global_inplace_value: {
@@ -975,10 +975,10 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg__external_value(i._b));
 
 			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
-			release_value(stack._backend, regs[i._a], type);
+			release_value(backend, regs[i._a], type);
 			const auto& new_value_pod = regs[i._b];
 			regs[i._a] = new_value_pod;
-			retain_value(stack._backend, new_value_pod, type);
+			retain_value(backend, new_value_pod, type);
 			break;
 		}
 
@@ -995,7 +995,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			);
 */
 
-			return { true, bc_value_t(stack._backend, type, regs[i._a]) };
+			return { true, bc_value_t(backend, type, regs[i._a]) };
 		}
 
 		case bc_opcode::k_stop: {
@@ -1052,7 +1052,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg__external_value(i._a));
 			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
 			const auto& new_value_pod = regs[i._a];
-			retain_value(stack._backend, new_value_pod, type);
+			retain_value(backend, new_value_pod, type);
 			stack._entries[stack._stack_size] = new_value_pod;
 			stack._stack_size++;
 			stack._entry_types.push_back(type);
@@ -1835,7 +1835,7 @@ json_t interpreter_to_json(interpreter_t& vm){
 	std::vector<json_t> callstack;
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto stack = vm._stack.stack_to_json(vm._stack._backend);
+	const auto stack = vm._stack.stack_to_json(vm._backend);
 
 	return json_t::make_object({
 		{ "ast", bcprogram_to_json(vm._imm->_program) },

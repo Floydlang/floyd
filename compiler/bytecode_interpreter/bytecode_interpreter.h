@@ -650,7 +650,7 @@ enum {
 */
 
 struct interpreter_stack_t {
-	public: interpreter_stack_t(value_backend_t& backend, const bc_static_frame_t* global_frame) :
+	public: interpreter_stack_t(value_backend_t* backend, const bc_static_frame_t* global_frame) :
 		_backend(backend),
 		_current_frame_ptr(nullptr),
 		_current_frame_entry_ptr(nullptr),
@@ -659,7 +659,8 @@ struct interpreter_stack_t {
 		_allocated_count(0),
 		_stack_size(0)
 	{
-		QUARK_ASSERT(backend.check_invariant());
+		QUARK_ASSERT(backend != nullptr);
+		QUARK_ASSERT(backend->check_invariant());
 
 		_entries = new runtime_value_t[8192];
 		_allocated_count = 8192;
@@ -676,7 +677,7 @@ struct interpreter_stack_t {
 	}
 
 	public: bool check_invariant() const {
-		QUARK_ASSERT(_backend.check_invariant());
+		QUARK_ASSERT(_backend->check_invariant());
 		QUARK_ASSERT(_entries != nullptr);
 		QUARK_ASSERT(_stack_size >= 0 && _stack_size <= _allocated_count);
 
@@ -757,18 +758,18 @@ struct interpreter_stack_t {
 
 		for(int i = 0 ; i < frame._locals.size() ; i++){
 			const auto type = frame._symbols[i + frame._arg_count].second._value_type;
-			const bool ext = is_rc_value(_backend.types, type);
+			const bool ext = is_rc_value(_backend->types, type);
 			const auto& local = frame._locals[i];
 			if(ext){
 				if(local.is_undefined()){
 					push_external_value(bc_value_t(type, bc_value_t::mode::k_unwritten_ext_value));
 				}
 				else{
-					push_external_value(value_to_bc(_backend, local));
+					push_external_value(value_to_bc(*_backend, local));
 				}
 			}
 			else{
-				push_inplace_value(value_to_bc(_backend, local));
+				push_inplace_value(value_to_bc(*_backend, local));
 			}
 		}
 		_current_frame_ptr = &frame;
@@ -801,7 +802,7 @@ struct interpreter_stack_t {
 
 		const auto& a = _current_frame_ptr->_symbols[reg].second._value_type;
 		const auto& b = _entry_types[get_current_frame_start() + reg];
-		QUARK_ASSERT(peek2(_backend.types, a) == peek2(_backend.types, b) || b.is_undefined());
+		QUARK_ASSERT(peek2(_backend->types, a) == peek2(_backend->types, b) || b.is_undefined());
 		return true;
 	}
 
@@ -813,7 +814,7 @@ struct interpreter_stack_t {
 
 #if DEBUG
 		const auto result = bc_value_t(
-			_backend,
+			*_backend,
 			_current_frame_ptr->_symbols[reg].second._value_type,
 			_current_frame_entry_ptr[reg]
 		);
@@ -831,11 +832,11 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(value.check_invariant());
 
 		const auto& frame_slot_type = _current_frame_ptr->_symbols[reg].second._value_type;
-//		QUARK_ASSERT(peek2(_backend.types, value._type) == frame_slot_type);//??? do check without peek2()
+//		QUARK_ASSERT(peek2(_backend->types, value._type) == frame_slot_type);//??? do check without peek2()
 
 		const auto prev = _current_frame_entry_ptr[reg];
-		release_value(_backend, prev, frame_slot_type);
-		retain_value(_backend, value._pod, frame_slot_type);
+		release_value(*_backend, prev, frame_slot_type);
+		retain_value(*_backend, value._pod, frame_slot_type);
 		_current_frame_entry_ptr[reg] = value._pod;
 
 		QUARK_ASSERT(check_invariant());
@@ -845,7 +846,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg__external_value(reg));
 		QUARK_ASSERT(value.check_invariant());
-		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type == peek2(_backend.types, value._type));
+		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type == peek2(_backend->types, value._type));
 
 		write_register(reg, value);
 /*
@@ -868,62 +869,62 @@ struct interpreter_stack_t {
 	public: bool check_reg_bool(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(peek2(_backend.types, _current_frame_ptr->_symbols[reg].second._value_type).is_bool());
+		QUARK_ASSERT(peek2(_backend->types, _current_frame_ptr->_symbols[reg].second._value_type).is_bool());
 		return true;
 	}
 
 	public: bool check_reg_int(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(peek2(_backend.types, _current_frame_ptr->_symbols[reg].second._value_type).is_int());
+		QUARK_ASSERT(peek2(_backend->types, _current_frame_ptr->_symbols[reg].second._value_type).is_int());
 		return true;
 	}
 
 	public: bool check_reg_double(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(peek2(_backend.types, _current_frame_ptr->_symbols[reg].second._value_type).is_double());
+		QUARK_ASSERT(peek2(_backend->types, _current_frame_ptr->_symbols[reg].second._value_type).is_double());
 		return true;
 	}
 
 	public: bool check_reg_string(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(peek2(_backend.types, _current_frame_ptr->_symbols[reg].second._value_type).is_string());
+		QUARK_ASSERT(peek2(_backend->types, _current_frame_ptr->_symbols[reg].second._value_type).is_string());
 		return true;
 	}
 
 	public: bool check_reg_json(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(peek2(_backend.types, _current_frame_ptr->_symbols[reg].second._value_type).is_json());
+		QUARK_ASSERT(peek2(_backend->types, _current_frame_ptr->_symbols[reg].second._value_type).is_json());
 		return true;
 	}
 
 	public: bool check_reg_vector_w_external_elements(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(peek2(_backend.types, _current_frame_ptr->_symbols[reg].second._value_type).is_vector());
+		QUARK_ASSERT(peek2(_backend->types, _current_frame_ptr->_symbols[reg].second._value_type).is_vector());
 		return true;
 	}
 
 	public: bool check_reg_vector_w_inplace_elements(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(peek2(_backend.types, _current_frame_ptr->_symbols[reg].second._value_type).is_vector());
+		QUARK_ASSERT(peek2(_backend->types, _current_frame_ptr->_symbols[reg].second._value_type).is_vector());
 		return true;
 	}
 
 	public: bool check_reg_dict_w_external_values(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(peek2(_backend.types, _current_frame_ptr->_symbols[reg].second._value_type).is_dict());
+		QUARK_ASSERT(peek2(_backend->types, _current_frame_ptr->_symbols[reg].second._value_type).is_dict());
 		return true;
 	}
 	public: bool check_reg_dict_w_inplace_values(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(peek2(_backend.types, _current_frame_ptr->_symbols[reg].second._value_type).is_dict());
+		QUARK_ASSERT(peek2(_backend->types, _current_frame_ptr->_symbols[reg].second._value_type).is_dict());
 		return true;
 	}
 
@@ -984,7 +985,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
 
-		retain_value(_backend, value._pod, value._type);
+		retain_value(*_backend, value._pod, value._type);
 		_entries[_stack_size] = value._pod;
 		_stack_size++;
 		_entry_types.push_back(value._type);
@@ -1009,17 +1010,17 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 		QUARK_ASSERT(type.check_invariant());
-//		QUARK_ASSERT(peek2(_backend.types, type) == _entry_types[pos]);
+//		QUARK_ASSERT(peek2(_backend->types, type) == _entry_types[pos]);
 
 		const auto& e = _entries[pos];
-		const auto result = bc_value_t(_backend, type, e);
+		const auto result = bc_value_t(*_backend, type, e);
 		return result;
 	}
 
 	public: inline int64_t load_intq(int pos) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
-		QUARK_ASSERT(peek2(_backend.types, _entry_types[pos]).is_int());
+		QUARK_ASSERT(peek2(_backend->types, _entry_types[pos]).is_int());
 
 		return _entries[pos].int_value;
 	}
@@ -1043,9 +1044,9 @@ struct interpreter_stack_t {
 
 		auto prev_copy = _entries[pos];
 
-		retain_value(_backend, value._pod, value._type);
+		retain_value(*_backend, value._pod, value._type);
 		_entries[pos] = value._pod;
-		release_value(_backend, prev_copy, value._type);
+		release_value(*_backend, prev_copy, value._type);
 
 		QUARK_ASSERT(check_invariant());
 	}
@@ -1070,7 +1071,7 @@ struct interpreter_stack_t {
 		auto copy = _entries[_stack_size - 1];
 		_stack_size--;
 		_entry_types.pop_back();
-		release_value(_backend, copy, type);
+		release_value(*_backend, copy, type);
 
 		QUARK_ASSERT(check_invariant());
 	}
@@ -1087,7 +1088,7 @@ struct interpreter_stack_t {
 
 	////////////////////////		STATE
 
-	public: value_backend_t& _backend;
+	public: value_backend_t* _backend;
 	public: runtime_value_t* _entries;
 	public: size_t _allocated_count;
 	public: size_t _stack_size;
