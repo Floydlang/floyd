@@ -202,7 +202,7 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 	const auto& type1 = lookup_type_ref(backend, key_type);
 	QUARK_ASSERT(peek2(types, type0).is_dict());
 	QUARK_ASSERT(peek2(types, type1).is_string());
-	return erase(backend, coll_value, coll_type, key_value, key_type);
+	return erase_dict_value(backend, coll_value, coll_type, key_value, key_type);
 }
 
 
@@ -1137,35 +1137,35 @@ static runtime_value_t floydrt_push_back__string(floyd_runtime_t* frp, runtime_v
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 
-	return push_back__string(backend, vec, type_t(vec_type), element);
+	return push_back_vector_element__string(backend, vec, type_t(vec_type), element);
 }
 
 static runtime_value_t floydrt_push_back_carray_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 
-	return push_back_carray_pod(backend, vec, type_t(vec_type), element);
+	return push_back_vector_element__carray_pod(backend, vec, type_t(vec_type), element);
 }
 
 static runtime_value_t floydrt_push_back_carray_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 
-	return push_back_carray_nonpod(backend, vec, type_t(vec_type), element);
+	return push_back_vector_element__carray_nonpod(backend, vec, type_t(vec_type), element);
 }
 
 static runtime_value_t floydrt_push_back_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 
-	return push_back_hamt_pod(backend, vec, type_t(vec_type), element);
+	return push_back_vector_element__hamt_pod(backend, vec, type_t(vec_type), element);
 }
 
 static runtime_value_t floydrt_push_back_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 
-	return push_back_hamt_nonpod(backend, vec, type_t(vec_type), element);
+	return push_back_vector_element__hamt_nonpod(backend, vec, type_t(vec_type), element);
 }
 
 

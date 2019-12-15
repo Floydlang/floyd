@@ -1558,7 +1558,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg__external_value(i._c));
 
 			const auto type_b = frame_ptr->_symbols[i._b].second._value_type;
-			write_reg_rc(backend, regs, i._a, type_b, push_back2(backend, regs[i._b], type_b, regs[i._c]));
+			write_reg_rc(backend, regs, i._a, type_b, push_back_vector_element(backend, regs[i._b], type_b, regs[i._c]));
 
 			QUARK_ASSERT(vm.check_invariant());
 			break;
@@ -1571,7 +1571,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg(i._c));
 
 			const auto type_b = frame_ptr->_symbols[i._b].second._value_type;
-			write_reg_rc(backend, regs, i._a, type_b, push_back2(backend, regs[i._b], type_b, regs[i._c]));
+			write_reg_rc(backend, regs, i._a, type_b, push_back_vector_element(backend, regs[i._b], type_b, regs[i._c]));
 
 			QUARK_ASSERT(vm.check_invariant());
 			break;
@@ -1584,7 +1584,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_int(i._c));
 
 			const auto type_b = frame_ptr->_symbols[i._b].second._value_type;
-			write_reg_rc(backend, regs, i._a, type_b, push_back2(backend, regs[i._b], type_b, regs[i._c]));
+			write_reg_rc(backend, regs, i._a, type_b, push_back_vector_element(backend, regs[i._b], type_b, regs[i._c]));
 
 			QUARK_ASSERT(vm.check_invariant());
 			break;

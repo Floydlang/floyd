@@ -2197,10 +2197,18 @@ std::pair<runtime_value_t, type_t> load_struct_member(
 
 
 value_backend_t make_test_value_backend(){
+	types_t types;
+	type_t::make_vector(types, type_t::make_double());
+	type_t::make_vector(types, type_t::make_string());
+	type_t::make_vector(types, type_t::make_bool());
+
+	make_test_struct1(types);
+	make_test_struct2(types);
+
 	return value_backend_t(
 		{},
 		{},
-		types_t(),
+		types,
 		make_default_config()
 	);
 }
@@ -4344,7 +4352,7 @@ bool exists_dict_value(value_backend_t& backend, runtime_value_t coll_value, run
 	}
 }
 
-runtime_value_t erase(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type){
+runtime_value_t erase_dict_value(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type){
 	const auto& types = backend.types;
 	const auto& type0 = lookup_type_ref(backend, coll_type);
 	const auto& type1 = lookup_type_ref(backend, key_type);
@@ -4794,7 +4802,7 @@ uint64_t get_dict_size(value_backend_t& backend, const type_t& dict_type, runtim
 //??? Expensive to push_back since all elements in vector needs their RC bumped!
 // Could specialize further, for vector_hamt<string>, vector_hamt<vector<x>> etc. But it's probably better to inline push_back() instead.
 
-runtime_value_t push_back__string(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
+runtime_value_t push_back_vector_element__string(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
 	QUARK_ASSERT(vec_type.is_string());
 
 	auto value = from_runtime_string2(backend, vec);
@@ -4804,7 +4812,7 @@ runtime_value_t push_back__string(value_backend_t& backend, runtime_value_t vec,
 }
 
 //??? use memcpy()
-runtime_value_t push_back_carray_pod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
+runtime_value_t push_back_vector_element__carray_pod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
 	const auto element_count = vec.vector_carray_ptr->get_element_count();
 	auto source_ptr = vec.vector_carray_ptr->get_element_ptr();
 
@@ -4817,7 +4825,7 @@ runtime_value_t push_back_carray_pod(value_backend_t& backend, runtime_value_t v
 	return v2;
 }
 
-runtime_value_t push_back_carray_nonpod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
+runtime_value_t push_back_vector_element__carray_nonpod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
 	type_t element_itype = lookup_vector_element_type(backend, type_t(vec_type));
 	const auto element_count = vec.vector_carray_ptr->get_element_count();
 	auto source_ptr = vec.vector_carray_ptr->get_element_ptr();
@@ -4834,11 +4842,11 @@ runtime_value_t push_back_carray_nonpod(value_backend_t& backend, runtime_value_
 	return v2;
 }
 
-runtime_value_t push_back_hamt_pod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
+runtime_value_t push_back_vector_element__hamt_pod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
 	return push_back_immutable_hamt(vec, element);
 }
 
-runtime_value_t push_back_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
+runtime_value_t push_back_vector_element__hamt_nonpod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
 	runtime_value_t vec2 = push_back_immutable_hamt(vec, element);
 	type_t element_itype = lookup_vector_element_type(backend, type_t(vec_type));
 
@@ -4849,28 +4857,28 @@ runtime_value_t push_back_hamt_nonpod(value_backend_t& backend, runtime_value_t 
 	return vec2;
 }
 
-runtime_value_t push_back2(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
+runtime_value_t push_back_vector_element(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
 	if(vec_type.is_string()){
-		return push_back__string(backend, vec, vec_type, element);
+		return push_back_vector_element__string(backend, vec, vec_type, element);
 	}
 	else if(is_vector_carray(backend.types, backend.config, vec_type)){
 		const auto is_rc = is_rc_value(backend.types, vec_type.get_vector_element_type(backend.types));
 
 		if(is_rc){
-			return push_back_carray_nonpod(backend, vec, vec_type, element);
+			return push_back_vector_element__carray_nonpod(backend, vec, vec_type, element);
 		}
 		else{
-			return push_back_carray_pod(backend, vec, vec_type, element);
+			return push_back_vector_element__carray_pod(backend, vec, vec_type, element);
 		}
 	}
 	else if(is_vector_hamt(backend.types, backend.config, vec_type)){
 		const auto is_rc = is_rc_value(backend.types, vec_type.get_vector_element_type(backend.types));
 
 		if(is_rc){
-			return push_back_hamt_nonpod(backend, vec, vec_type, element);
+			return push_back_vector_element__hamt_nonpod(backend, vec, vec_type, element);
 		}
 		else{
-			return push_back_hamt_pod(backend, vec, vec_type, element);
+			return push_back_vector_element__hamt_pod(backend, vec, vec_type, element);
 		}
 	}
 	else{
@@ -4881,7 +4889,12 @@ runtime_value_t push_back2(value_backend_t& backend, runtime_value_t vec, const 
 
 
 
-
+QUARK_TEST("value_backend", "get_vector_size()", "", ""){
+	auto b = make_test_value_backend();
+	const auto r = make_vector_value(b, type_t::make_double(), immer::vector<rt_value_t>{ rt_value_t::make_double(1.0), rt_value_t::make_double(2.0) });
+	QUARK_VERIFY(r.check_invariant());
+	QUARK_VERIFY(get_vector_size(b, type_t::make_vector(b.types, type_t::make_double()), r._pod) == 2);
+}
 
 
 

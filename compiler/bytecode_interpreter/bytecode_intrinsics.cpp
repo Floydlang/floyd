@@ -231,7 +231,7 @@ static rt_value_t bc_intrinsic__erase(interpreter_t& vm, const rt_value_t args[]
 	QUARK_ASSERT(peek2(backend.types, obj._type).is_dict());
 	QUARK_ASSERT(peek2(backend.types, key._type).is_string());
 
-	const auto result = erase(backend, obj._pod, obj._type.get_data(), key._pod, key._type.get_data());
+	const auto result = erase_dict_value(backend, obj._pod, obj._type.get_data(), key._pod, key._type.get_data());
 	return rt_value_t(backend, obj._type, result, rt_value_t::rc_mode::adopt);
 }
 

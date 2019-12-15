@@ -1071,9 +1071,6 @@ static void register_basic_type__mutate(types_t& types, const base_type& bt){
 
 
 
-
-
-
 types_t::types_t(){
 	//	Order is designed to match up the nodes[] with base_type indexes.
 	register_basic_type__mutate(*this, base_type::k_undefined);
@@ -1230,9 +1227,6 @@ type_t peek2(const types_t& types, const type_t& type){
 	return type2;
 }
 
-
-
-
 type_t refresh_type(const types_t& types, const type_t& type){
 	const auto lookup_index = type.get_lookup_index();
 	QUARK_ASSERT(lookup_index >= 0);
@@ -1240,7 +1234,6 @@ type_t refresh_type(const types_t& types, const type_t& type){
 
 	return lookup_type_from_index(types, type.get_lookup_index());
 }
-
 
 //??? remove bt1 and bt2 from index!? Makes things complicated.
 
@@ -1283,8 +1276,6 @@ static type_t lookup_type_from_index_it(const types_t& types, size_t type_index)
 
 	return lookup_type_from_index(types, static_cast<type_lookup_index_t>(type_index));
 }
-
-
 
 void trace_types(const types_t& types){
 	QUARK_ASSERT(types.check_invariant());
@@ -1329,19 +1320,7 @@ void trace_types(const types_t& types){
 
 
 
-
-
-
-
-
-
-
-//////////////////////////////////////////////////		member_t
-
-
-
 //////////////////////////////////////////////////		struct_type_desc_t
-
 
 
 
@@ -2110,6 +2089,13 @@ QUARK_TEST("Types", "update_named_type()", "", ""){
 
 	if(false) trace_types(types);
 	QUARK_VERIFY(is_fully_defined(types, b));
+}
+
+type_t make_test_struct1(types_t& types){
+	return type_t::make_struct(types, struct_type_desc_t( { member_t(type_t::make_double(), "f") } ));
+}
+type_t make_test_struct2(types_t& types){
+	return type_t::make_struct(types, struct_type_desc_t( { member_t(type_t::make_double(), "f"), member_t(type_t::make_string(), "g") } ));
 }
 
 type_t make_recursive_type_test(types_t& types){

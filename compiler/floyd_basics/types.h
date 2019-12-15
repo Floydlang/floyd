@@ -725,14 +725,12 @@ void trace_types(const types_t& types);
 type_t get_physical_type(const types_t& types, const type_t& type);
 bool is_fully_defined(const types_t& types, const type_t& type);
 
-
-
-
 type_t refresh_type(const types_t& types, const type_t& type);
 
 
-
 type_t make_recursive_type_test(types_t& types);
+type_t make_test_struct1(types_t& types);
+type_t make_test_struct2(types_t& types);
 
 
 //////////////////////////////////////////////////		NAMED TYPES
