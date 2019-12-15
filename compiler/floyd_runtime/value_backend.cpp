@@ -839,7 +839,7 @@ JSON_T* alloc_json(heap_t& heap, const json_t& init){
 	return json;
 }
 
-void dispose_json(JSON_T& json){
+static void dispose_json(JSON_T& json){
 	QUARK_ASSERT(sizeof(JSON_T) == sizeof(heap_alloc_64_t));
 	QUARK_ASSERT(json.check_invariant());
 
@@ -899,7 +899,7 @@ STRUCT_T* alloc_struct_copy(heap_t& heap, const uint64_t data[], std::size_t siz
 	return vec;
 }
 
-void dispose_struct(STRUCT_T& s){
+static void dispose_struct(STRUCT_T& s){
 	QUARK_ASSERT(sizeof(STRUCT_T) == sizeof(heap_alloc_64_t));
 	QUARK_ASSERT(s.check_invariant());
 
@@ -2253,6 +2253,15 @@ void retain_struct(value_backend_t& backend, runtime_value_t s, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 }
 
+void retain_json(value_backend_t& backend, runtime_value_t s){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(check_invariant(backend, s, type_t::make_json()));
+
+	inc_rc(s.json_ptr->alloc);
+
+	QUARK_ASSERT(backend.check_invariant());
+}
+
 void retain_value(value_backend_t& backend, runtime_value_t value, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
@@ -2490,6 +2499,24 @@ void release_struct(value_backend_t& backend, runtime_value_t str, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 }
 
+void release_json(value_backend_t& backend, runtime_value_t s){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(s.check_invariant());
+	QUARK_ASSERT(check_invariant(backend, s, type_t::make_json()));
+
+	auto json = s.json_ptr;
+	//	NOTICE: Floyd runtime() init will destruct globals, including json::null.
+	if(json == nullptr){
+	}
+	else{
+		QUARK_ASSERT(json != nullptr);
+		if(dec_rc(json->alloc) == 0){
+			dispose_json(*json);
+		}
+	}
+}
+
+
 void release_value(value_backend_t& backend, runtime_value_t value, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
@@ -2509,11 +2536,7 @@ void release_value(value_backend_t& backend, runtime_value_t value, type_t type)
 			release_dict(backend, value, type);
 		}
 		else if(peek.is_json()){
-			if(value.json_ptr != nullptr){
-				if(dec_rc(value.json_ptr->alloc) == 0){
-					dispose_json(*value.json_ptr);
-				}
-			}
+			release_json(backend, value);
 		}
 		else if(peek2(backend.types, type).is_struct()){
 			release_struct(backend, value, type);

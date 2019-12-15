@@ -544,7 +544,6 @@ struct JSON_T {
 };
 
 JSON_T* alloc_json(heap_t& heap, const json_t& init);
-void dispose_json(JSON_T& vec);
 
 
 ////////////////////////////////		STRUCT_T
@@ -574,7 +573,6 @@ struct STRUCT_T {
 
 STRUCT_T* alloc_struct(heap_t& heap, std::size_t size, type_t value_type);
 STRUCT_T* alloc_struct_copy(heap_t& heap, const uint64_t data[], std::size_t size, type_t value_type);
-void dispose_struct(STRUCT_T& v);
 
 
 ////////////////////////////////		HELPERS
@@ -874,6 +872,7 @@ inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, ty
 void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, type_t type);
 void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, type_t type);
 void retain_struct(value_backend_t& backend, runtime_value_t s, type_t type);
+void retain_json(value_backend_t& backend, runtime_value_t s);
 
 void release_value(value_backend_t& backend, runtime_value_t value, type_t type);
 void release_vector_carray_pod(value_backend_t& backend, runtime_value_t vec, type_t type);
@@ -886,6 +885,7 @@ void release_dict_hamt(value_backend_t& backend, runtime_value_t dict0, type_t t
 void release_dict(value_backend_t& backend, runtime_value_t dict0, type_t type);
 void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_value_t vec, type_t type);
 void release_struct(value_backend_t& backend, runtime_value_t s, type_t type);
+void release_json(value_backend_t& backend, runtime_value_t s);
 
 
 
