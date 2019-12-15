@@ -99,7 +99,7 @@ static std::vector<function_bind_t> floydrt_allocate_vector__make(llvm::LLVMCont
 	return {
 		{ module_symbol_t("allocate_vector_carray"), function_type, reinterpret_cast<void*>(floydrt_allocate_vector_carray) },
 		{ module_symbol_t("allocate_vector_hamt"), function_type, reinterpret_cast<void*>(floydrt_allocate_vector_hamt) }
-		};
+	};
 }
 
 llvm::Value* generate_allocate_vector(llvm_function_generator_t& gen_acc, const type_t& vector_type, int64_t element_count, vector_backend vector_backend){

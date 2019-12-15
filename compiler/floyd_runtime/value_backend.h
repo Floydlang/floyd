@@ -236,8 +236,8 @@ void trace_heap(const heap_t& heap);
 
 //	Returns updated RC, no need to atomically read it yourself.
 //	If returned RC is 0, there is no way for any other client to bump it up again.
-inline int32_t dec_rc(const heap_alloc_64_t& alloc);
-inline int32_t inc_rc(const heap_alloc_64_t& alloc);
+int32_t dec_rc(const heap_alloc_64_t& alloc);
+int32_t inc_rc(const heap_alloc_64_t& alloc);
 
 
 
@@ -317,40 +317,40 @@ struct VECTOR_CARRAY_T {
 	~VECTOR_CARRAY_T();
 	bool check_invariant() const;
 
-	inline uint64_t get_element_count() const{
+	uint64_t get_element_count() const{
 		QUARK_ASSERT(check_invariant());
 
 		return alloc.data[0];
 	}
 
-	inline uint64_t get_allocation_count() const{
+	uint64_t get_allocation_count() const{
 		QUARK_ASSERT(check_invariant());
 
 		return alloc.allocation_word_count;
 	}
 
-	inline const runtime_value_t* begin() const {
+	const runtime_value_t* begin() const {
 		return static_cast<const runtime_value_t*>(get_alloc_ptr(alloc));
 	}
-	inline const runtime_value_t* end() const {
+	const runtime_value_t* end() const {
 		return static_cast<const runtime_value_t*>(get_alloc_ptr(alloc)) + get_allocation_count();
 	}
 
 
-	inline const runtime_value_t* get_element_ptr() const{
+	const runtime_value_t* get_element_ptr() const{
 		QUARK_ASSERT(check_invariant());
 
 		auto p = static_cast<const runtime_value_t*>(get_alloc_ptr(alloc));
 		return p;
 	}
-	inline runtime_value_t* get_element_ptr(){
+	runtime_value_t* get_element_ptr(){
 		QUARK_ASSERT(check_invariant());
 
 		auto p = static_cast<runtime_value_t*>(get_alloc_ptr(alloc));
 		return p;
 	}
 
-	inline runtime_value_t load_element(const uint64_t index) const {
+	runtime_value_t load_element(const uint64_t index) const {
 		QUARK_ASSERT(check_invariant());
 
 		auto p = static_cast<const runtime_value_t*>(get_alloc_ptr(alloc));
@@ -358,7 +358,7 @@ struct VECTOR_CARRAY_T {
 		return temp;
 	}
 
-	inline void store(const uint64_t index, runtime_value_t value){
+	void store(const uint64_t index, runtime_value_t value){
 		QUARK_ASSERT(check_invariant());
 
 		auto p = static_cast<runtime_value_t*>(get_alloc_ptr(alloc));
@@ -400,13 +400,13 @@ struct VECTOR_HAMT_T {
 		return *reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc.data[0]);
 	}
 
-	inline uint64_t get_allocation_count() const{
+	uint64_t get_allocation_count() const{
 		QUARK_ASSERT(check_invariant());
 
 		return alloc.allocation_word_count;
 	}
 
-	inline uint64_t get_element_count() const{
+	uint64_t get_element_count() const{
 		QUARK_ASSERT(check_invariant());
 
 		const auto& vecref = get_vecref();
@@ -414,20 +414,20 @@ struct VECTOR_HAMT_T {
 	}
 
 
-	inline immer::vector<runtime_value_t>::const_iterator begin() const {
+	immer::vector<runtime_value_t>::const_iterator begin() const {
 		QUARK_ASSERT(check_invariant());
 
 		const auto& vecref = get_vecref();
 		return vecref.begin();
 	}
-	inline immer::vector<runtime_value_t>::const_iterator end() const {
+	immer::vector<runtime_value_t>::const_iterator end() const {
 		QUARK_ASSERT(check_invariant());
 
 		const auto& vecref = get_vecref();
 		return vecref.end();
 	}
 
-	inline runtime_value_t load_element(const uint64_t index) const {
+	runtime_value_t load_element(const uint64_t index) const {
 		QUARK_ASSERT(check_invariant());
 		const auto& vecref = get_vecref();
 		QUARK_ASSERT(index < vecref.size())
@@ -437,7 +437,7 @@ struct VECTOR_HAMT_T {
 	}
 
 	//	Mutates the VECTOR_HAMT_T implace -- only OK while constructing it when no other observers exists.
-	inline void store_mutate(const uint64_t index, runtime_value_t value){
+	void store_mutate(const uint64_t index, runtime_value_t value){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(index < get_vecref().size());
 
@@ -550,13 +550,13 @@ struct STRUCT_T {
 	~STRUCT_T();
 	bool check_invariant() const;
 
-	inline const uint8_t* get_data_ptr() const{
+	const uint8_t* get_data_ptr() const{
 		QUARK_ASSERT(check_invariant());
 
 		auto p = static_cast<const uint8_t*>(get_alloc_ptr(alloc));
 		return p;
 	}
-	inline uint8_t* get_data_ptr(){
+	uint8_t* get_data_ptr(){
 		QUARK_ASSERT(check_invariant());
 
 		auto p = static_cast<uint8_t*>(get_alloc_ptr(alloc));
@@ -844,8 +844,8 @@ inline type_t lookup_type_ref(const value_backend_t& backend, runtime_type_t typ
 	return type_t(type);
 }
 
-inline type_t lookup_vector_element_type(const value_backend_t& backend, type_t type);
-inline type_t lookup_dict_value_type(const value_backend_t& backend, type_t type);
+type_t lookup_vector_element_type(const value_backend_t& backend, type_t type);
+type_t lookup_dict_value_type(const value_backend_t& backend, type_t type);
 
 //??? Don't return pair, only struct_layout_t.
 const std::pair<type_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, type_t type);
@@ -867,7 +867,7 @@ bool is_rc_value(const types_t& types, const type_t& type);
 
 void retain_value(value_backend_t& backend, runtime_value_t value, type_t type);
 void retain_vector_carray(value_backend_t& backend, runtime_value_t vec, type_t type);
-inline void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, type_t type);
+void retain_vector_hamt(value_backend_t& backend, runtime_value_t vec, type_t type);
 void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, type_t type);
 void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, type_t type);
 void retain_struct(value_backend_t& backend, runtime_value_t s, type_t type);
@@ -876,8 +876,8 @@ void retain_json(value_backend_t& backend, runtime_value_t s);
 void release_value(value_backend_t& backend, runtime_value_t value, type_t type);
 void release_vector_carray_pod(value_backend_t& backend, runtime_value_t vec, type_t type);
 void release_vector_carray_nonpod(value_backend_t& backend, runtime_value_t vec, type_t type);
-inline void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, type_t type);
-inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, type_t type);
+void release_vector_hamt_pod(value_backend_t& backend, runtime_value_t vec, type_t type);
+void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, type_t type);
 void release_vec(value_backend_t& backend, runtime_value_t vec, type_t type);
 void release_dict_cppmap(value_backend_t& backend, runtime_value_t dict0, type_t type);
 void release_dict_hamt(value_backend_t& backend, runtime_value_t dict0, type_t type);
@@ -890,10 +890,10 @@ void release_json(value_backend_t& backend, runtime_value_t s);
 
 ////////////////////////////////		DETECT TYPES
 
-inline bool is_vector_carray(const types_t& types, const config_t& config, type_t t);
-inline bool is_vector_hamt(const types_t& types, const config_t& config, type_t t);
-inline bool is_dict_cppmap(const types_t& types, const config_t& config, type_t t);
-inline bool is_dict_hamt(const types_t& types, const config_t& config, type_t t);
+bool is_vector_carray(const types_t& types, const config_t& config, type_t t);
+bool is_vector_hamt(const types_t& types, const config_t& config, type_t t);
+bool is_dict_cppmap(const types_t& types, const config_t& config, type_t t);
+bool is_dict_hamt(const types_t& types, const config_t& config, type_t t);
 
 
 value_backend_t make_test_value_backend();
@@ -941,10 +941,10 @@ int compare_values(value_backend_t& backend, int64_t op, const runtime_type_t ty
 
 
 
-inline runtime_value_t update__string(value_backend_t& backend, runtime_value_t s, runtime_value_t key_value, runtime_value_t value);
+runtime_value_t update__string(value_backend_t& backend, runtime_value_t s, runtime_value_t key_value, runtime_value_t value);
 runtime_value_t update_element__vector_carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value);
-inline runtime_value_t update_element__vector_hamt_pod(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value, runtime_type_t value_type);
-inline runtime_value_t update_element__vector_hamt_nonpod(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value, runtime_type_t value_type);
+runtime_value_t update_element__vector_hamt_pod(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value, runtime_type_t value_type);
+runtime_value_t update_element__vector_hamt_nonpod(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value, runtime_type_t value_type);
 runtime_value_t update_element__vector(value_backend_t& backend, runtime_value_t obj1, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value);
 
 

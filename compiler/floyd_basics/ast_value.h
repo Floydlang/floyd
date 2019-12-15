@@ -271,7 +271,7 @@ struct value_t {
 		QUARK_ASSERT(ext->_rc == 1);
 		return value_t(value_internals_t { ._ext = ext }, type_t::make_string());
 	}
-	public: static inline value_t make_string(const char value[]){
+	public: static value_t make_string(const char value[]){
 		return make_string(std::string(value));
 	}
 	public: bool is_string() const {

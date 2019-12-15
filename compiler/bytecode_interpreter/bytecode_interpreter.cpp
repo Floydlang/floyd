@@ -1809,14 +1809,10 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_string(i._c));
 
 			const auto type = type_t::make_string();
-			//	??? No need to create rt_value_t here.
-//			const auto s = regs[i._b]._external->_string + regs[i._c]._external->_string;
-			const auto s = from_runtime_string2(backend, regs[i._b]) + from_runtime_string2(backend, regs[i._c]);
-			const auto value = rt_value_t::make_string(backend, s);
-			auto prev_copy = regs[i._a];
-			retain_value(backend, value._pod, type);
-			regs[i._a] = value._pod;
-			release_value(backend, prev_copy, type);
+
+			const auto s2 = concat_strings(backend, regs[i._b], regs[i._c]);
+			release_value(backend, regs[i._a], type);
+			regs[i._a] = s2;
 			break;
 		}
 

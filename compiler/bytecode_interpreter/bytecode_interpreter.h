@@ -717,7 +717,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(other.check_invariant());
 	}
 
-	public: inline int size() const {
+	public: int size() const {
 		QUARK_ASSERT(check_invariant());
 
 		return static_cast<int>(_stack_size);
@@ -995,7 +995,7 @@ struct interpreter_stack_t {
 	//////////////////////////////////////		STACK
 
 
-	public: inline void push_external_value(const rt_value_t& value){
+	public: void push_external_value(const rt_value_t& value){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
 
@@ -1007,7 +1007,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: inline void push_inplace_value(const rt_value_t& value){
+	public: void push_inplace_value(const rt_value_t& value){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
 
@@ -1020,7 +1020,7 @@ struct interpreter_stack_t {
 
 	//	returned value will have ownership of obj, if it's an obj.
 	//??? should be const function
-	public: inline rt_value_t load_value(int pos, const type_t& type){
+	public: rt_value_t load_value(int pos, const type_t& type){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 		QUARK_ASSERT(type.check_invariant());
@@ -1031,7 +1031,7 @@ struct interpreter_stack_t {
 		return result;
 	}
 
-	public: inline int64_t load_intq(int pos) const{
+	public: int64_t load_intq(int pos) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 		QUARK_ASSERT(peek2(_backend->types, _entry_types[pos]).is_int());
@@ -1039,7 +1039,7 @@ struct interpreter_stack_t {
 		return _entries[pos].int_value;
 	}
 
-	public: inline void replace_inplace_value(int pos, const rt_value_t& value){
+	public: void replace_inplace_value(int pos, const rt_value_t& value){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
@@ -1050,7 +1050,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: inline void replace_external_value(int pos, const rt_value_t& value){
+	public: void replace_external_value(int pos, const rt_value_t& value){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
@@ -1066,7 +1066,7 @@ struct interpreter_stack_t {
 	}
 
 	//	exts[exts.size() - 1] maps to the closed value on stack, the next to be popped.
-	public: inline void pop_batch(const std::vector<type_t>& exts){
+	public: void pop_batch(const std::vector<type_t>& exts){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(_stack_size >= exts.size());
 
@@ -1078,7 +1078,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	private: inline void pop(const type_t& type){
+	private: void pop(const type_t& type){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(_stack_size > 0);
 

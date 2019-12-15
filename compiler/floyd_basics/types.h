@@ -488,7 +488,7 @@ struct type_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	inline type_lookup_index_t get_lookup_index() const {
+	type_lookup_index_t get_lookup_index() const {
 		QUARK_ASSERT(check_invariant());
 
 		return get_index(data);
@@ -510,10 +510,10 @@ struct type_t {
 	}
 
 	///??? bump to large number
-	private: inline static type_lookup_index_t get_index(type_data_t data) {
+	private: static type_lookup_index_t get_index(type_data_t data) {
 		return data % (100 * 10000);
 	}
-	private: inline static base_type get_bt0(type_data_t data){
+	private: static base_type get_bt0(type_data_t data){
 		const type_data_t result = data / (100 * 10000);
 		return static_cast<base_type>(result);
 	}

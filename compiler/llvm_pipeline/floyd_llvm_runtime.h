@@ -249,8 +249,8 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const module_symbol_t& n
 
 
 
-inline floyd_runtime_t* make_runtime_ptr(llvm_context_t* p);
-inline llvm_context_t& get_floyd_runtime(floyd_runtime_t* frp);
+floyd_runtime_t* make_runtime_ptr(llvm_context_t* p);
+llvm_context_t& get_floyd_runtime(floyd_runtime_t* frp);
 
 
 
@@ -318,8 +318,10 @@ std::vector<test_t> collect_tests(llvm_execution_engine_t& ee);
 
 
 
-//	Inlines
-////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////		INLINES
+
+
 
 
 inline floyd_runtime_t* make_runtime_ptr(llvm_context_t* p){
