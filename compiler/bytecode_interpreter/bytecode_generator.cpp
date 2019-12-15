@@ -1807,15 +1807,15 @@ static bc_instruction_t squeeze_instruction(const bcgen_instruction_t& instructi
 	return result;
 }
 
-static bc_value_t make_constant(const value_t& value){
+static rt_value_t make_constant(const value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 
 	//	Special handling from string constants -- we stuff them into a separate string in the symbol table.
 	if(value.get_type().is_string()){
-		return bc_value_t(value.get_type(), runtime_value_t { .vector_carray_ptr = nullptr } );
+		return rt_value_t(value.get_type(), runtime_value_t { .vector_carray_ptr = nullptr } );
 	}
 	else{
-		bc_value_t r = make_non_rc(value);
+		rt_value_t r = make_non_rc(value);
 		return r;
 	}
 }

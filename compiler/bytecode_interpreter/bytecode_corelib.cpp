@@ -26,7 +26,7 @@ namespace floyd {
 static const bool k_trace = false;
 
 
-static bc_value_t bc_corelib__make_benchmark_report(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__make_benchmark_report(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -51,7 +51,7 @@ static bc_value_t bc_corelib__make_benchmark_report(interpreter_t& vm, const bc_
 
 
 
-static bc_value_t bc_corelib__detect_hardware_caps(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__detect_hardware_caps(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
 
@@ -70,7 +70,7 @@ static bc_value_t bc_corelib__detect_hardware_caps(interpreter_t& vm, const bc_v
 
 
 
-static bc_value_t bc_corelib__make_hardware_caps_report(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__make_hardware_caps_report(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -88,7 +88,7 @@ static bc_value_t bc_corelib__make_hardware_caps_report(interpreter_t& vm, const
 	const auto s = corelib_make_hardware_caps_report(caps);
 	return value_to_bc(backend, value_t::make_string(s));
 }
-static bc_value_t bc_corelib__make_hardware_caps_report_brief(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__make_hardware_caps_report_brief(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -106,7 +106,7 @@ static bc_value_t bc_corelib__make_hardware_caps_report_brief(interpreter_t& vm,
 	const auto s = corelib_make_hardware_caps_report_brief(caps);
 	return value_to_bc(backend, value_t::make_string(s));
 }
-static bc_value_t bc_corelib__get_current_date_and_time_string(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__get_current_date_and_time_string(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
 
@@ -126,7 +126,7 @@ static bc_value_t bc_corelib__get_current_date_and_time_string(interpreter_t& vm
 
 
 
-static bc_value_t bc_corelib__calc_string_sha1(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__calc_string_sha1(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -159,7 +159,7 @@ static bc_value_t bc_corelib__calc_string_sha1(interpreter_t& vm, const bc_value
 
 
 
-static bc_value_t bc_corelib__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__calc_binary_sha1(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 //	QUARK_ASSERT(args[0]._type == make__binary_t__type());
@@ -194,12 +194,12 @@ static bc_value_t bc_corelib__calc_binary_sha1(interpreter_t& vm, const bc_value
 
 
 
-static bc_value_t bc_corelib__get_time_of_day(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__get_time_of_day(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
 
 	const auto result = corelib__get_time_of_day();
-	const auto result2 = bc_value_t::make_int(result);
+	const auto result2 = rt_value_t::make_int(result);
 	return result2;
 }
 
@@ -211,7 +211,7 @@ static bc_value_t bc_corelib__get_time_of_day(interpreter_t& vm, const bc_value_
 
 
 
-static bc_value_t bc_corelib__read_text_file(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__read_text_file(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -222,11 +222,11 @@ static bc_value_t bc_corelib__read_text_file(interpreter_t& vm, const bc_value_t
 
 	const std::string source_path = args[0].get_string_value(backend);
 	std::string file_contents = corelib_read_text_file(source_path);
-	const auto v = bc_value_t::make_string(backend, file_contents);
+	const auto v = rt_value_t::make_string(backend, file_contents);
 	return v;
 }
 
-static bc_value_t bc_corelib__write_text_file(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__write_text_file(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
@@ -241,10 +241,10 @@ static bc_value_t bc_corelib__write_text_file(interpreter_t& vm, const bc_value_
 
 	corelib_write_text_file(path, file_contents);
 
-	return bc_value_t();
+	return rt_value_t();
 }
 
-static bc_value_t bc_corelib__read_line_stdin(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__read_line_stdin(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
 
@@ -252,14 +252,14 @@ static bc_value_t bc_corelib__read_line_stdin(interpreter_t& vm, const bc_value_
 	const auto& types = backend.types;
 
 	std::string file_contents = corelib_read_line_stdin();
-	const auto v = bc_value_t::make_string(backend, file_contents);
+	const auto v = rt_value_t::make_string(backend, file_contents);
 	return v;
 }
 
 
 
 
-static bc_value_t bc_corelib__get_fsentries_shallow(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__get_fsentries_shallow(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -287,7 +287,7 @@ static bc_value_t bc_corelib__get_fsentries_shallow(interpreter_t& vm, const bc_
 	return v;
 }
 
-static bc_value_t bc_corelib__get_fsentries_deep(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__get_fsentries_deep(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -315,7 +315,7 @@ static bc_value_t bc_corelib__get_fsentries_deep(interpreter_t& vm, const bc_val
 	return v;
 }
 
-static bc_value_t bc_corelib__get_fsentry_info(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__get_fsentry_info(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -335,7 +335,7 @@ static bc_value_t bc_corelib__get_fsentry_info(interpreter_t& vm, const bc_value
 }
 
 
-static bc_value_t bc_corelib__get_fs_environment(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__get_fs_environment(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
 
@@ -351,7 +351,7 @@ static bc_value_t bc_corelib__get_fs_environment(interpreter_t& vm, const bc_val
 }
 
 
-static bc_value_t bc_corelib__does_fsentry_exist(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__does_fsentry_exist(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -376,7 +376,7 @@ static bc_value_t bc_corelib__does_fsentry_exist(interpreter_t& vm, const bc_val
 }
 
 
-static bc_value_t bc_corelib__create_directory_branch(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__create_directory_branch(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -389,10 +389,10 @@ static bc_value_t bc_corelib__create_directory_branch(interpreter_t& vm, const b
 
 	corelib_create_directory_branch(path);
 
-	return bc_value_t::make_void();
+	return rt_value_t::make_void();
 }
 
-static bc_value_t bc_corelib__delete_fsentry_deep(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__delete_fsentry_deep(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -405,11 +405,11 @@ static bc_value_t bc_corelib__delete_fsentry_deep(interpreter_t& vm, const bc_va
 
 	corelib_delete_fsentry_deep(path);
 
-	return bc_value_t::make_void();
+	return rt_value_t::make_void();
 }
 
 
-static bc_value_t bc_corelib__rename_fsentry(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__rename_fsentry(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
@@ -424,7 +424,7 @@ static bc_value_t bc_corelib__rename_fsentry(interpreter_t& vm, const bc_value_t
 
 	corelib_rename_fsentry(path, n);
 
-	return bc_value_t::make_void();
+	return rt_value_t::make_void();
 }
 
 
@@ -433,7 +433,7 @@ static bc_value_t bc_corelib__rename_fsentry(interpreter_t& vm, const bc_value_t
 //######################################################################################################################
 
 
-static bc_value_t bc_corelib__read_socket(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__read_socket(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -444,9 +444,9 @@ static bc_value_t bc_corelib__read_socket(interpreter_t& vm, const bc_value_t ar
 
 	const auto socket_id = args[0].get_int_value();
 	const auto r = read_socket_string((int)socket_id);
-	return bc_value_t::make_string(backend, r);
+	return rt_value_t::make_string(backend, r);
 }
-static bc_value_t bc_corelib__write_socket(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__write_socket(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(arg_count == 2);
@@ -460,39 +460,39 @@ static bc_value_t bc_corelib__write_socket(interpreter_t& vm, const bc_value_t a
 	const auto socket_id = args[0].get_int_value();
 	const auto& data = args[1].get_string_value(backend);
 	write_socket_string((int)socket_id, data);
-	return bc_value_t::make_void();
+	return rt_value_t::make_void();
 }
 
-static bc_value_t make__ip_address_t(value_backend_t& backend, const ip_address_t& value){
+static rt_value_t make__ip_address_t(value_backend_t& backend, const ip_address_t& value){
 	const auto ip_address_t__type = lookup_type_from_name(backend.types, type_name_t{{ "global_scope", "ip_address_t" }});
 
-	return bc_value_t::make_struct_value(
+	return rt_value_t::make_struct_value(
 		backend,
 		ip_address_t__type,
 		{
-			bc_value_t::make_string(backend, unmake_ipv4(value))
+			rt_value_t::make_string(backend, unmake_ipv4(value))
 		}
 	);
 }
 
-static bc_value_t make__host_info_t(value_backend_t& backend, const hostent_t& value){
-	const auto name_aliases = mapf<bc_value_t>(value.name_aliases, [&](const auto& e){ return bc_value_t::make_string(backend, e); });
-	const auto addresses_IPv4 = mapf<bc_value_t>(value.addresses_IPv4, [&](const auto& e){ return make__ip_address_t(backend, e); });
+static rt_value_t make__host_info_t(value_backend_t& backend, const hostent_t& value){
+	const auto name_aliases = mapf<rt_value_t>(value.name_aliases, [&](const auto& e){ return rt_value_t::make_string(backend, e); });
+	const auto addresses_IPv4 = mapf<rt_value_t>(value.addresses_IPv4, [&](const auto& e){ return make__ip_address_t(backend, e); });
 
 	const auto host_info_t__type = lookup_type_from_name(backend.types, type_name_t{{ "global_scope", "host_info_t" }});
 	const auto ip_address_t__type = lookup_type_from_name(backend.types, type_name_t{{ "global_scope", "ip_address_t" }});
-	return bc_value_t::make_struct_value(
+	return rt_value_t::make_struct_value(
 		backend,
 		host_info_t__type,
 		{
-			bc_value_t::make_string(backend, value.official_host_name),
-			make_vector_value(backend, type_t::make_string(), immer::vector<bc_value_t>(name_aliases.begin(), name_aliases.end())),
-			make_vector_value(backend, ip_address_t__type, immer::vector<bc_value_t>(addresses_IPv4.begin(), addresses_IPv4.end())),
+			rt_value_t::make_string(backend, value.official_host_name),
+			make_vector_value(backend, type_t::make_string(), immer::vector<rt_value_t>(name_aliases.begin(), name_aliases.end())),
+			make_vector_value(backend, ip_address_t__type, immer::vector<rt_value_t>(addresses_IPv4.begin(), addresses_IPv4.end())),
 		}
 	);
 }
 
-static bc_value_t bc_corelib__lookup_host_from_ip(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__lookup_host_from_ip(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -507,7 +507,7 @@ static bc_value_t bc_corelib__lookup_host_from_ip(interpreter_t& vm, const bc_va
 	return make__host_info_t(backend, r);
 }
 
-static bc_value_t bc_corelib__lookup_host_from_name(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__lookup_host_from_name(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -524,7 +524,7 @@ static bc_value_t bc_corelib__lookup_host_from_name(interpreter_t& vm, const bc_
 
 
 
-static bc_value_t bc_corelib__pack_http_request(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__pack_http_request(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -554,10 +554,10 @@ static bc_value_t bc_corelib__pack_http_request(interpreter_t& vm, const bc_valu
 		optional_body
 	};
 	const auto r = pack_http_request(req);
-	return bc_value_t::make_string(backend, r);
+	return rt_value_t::make_string(backend, r);
 }
 
-static bc_value_t bc_corelib__unpack_http_request(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__unpack_http_request(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -573,39 +573,39 @@ static bc_value_t bc_corelib__unpack_http_request(interpreter_t& vm, const bc_va
 	const auto s = args[0].get_string_value(backend);
 	const http_request_t req = unpack_http_request(s);
 
-	const auto headers2 = mapf<bc_value_t>(req.headers, [&](const auto& e){
-		return bc_value_t::make_struct_value(
+	const auto headers2 = mapf<rt_value_t>(req.headers, [&](const auto& e){
+		return rt_value_t::make_struct_value(
 			backend,
 			http_header_t__type,
 			{
-				bc_value_t::make_string(backend, e.key),
-				bc_value_t::make_string(backend, e.value)
+				rt_value_t::make_string(backend, e.key),
+				rt_value_t::make_string(backend, e.value)
 			}
 		);
 	});
 
-	return bc_value_t::make_struct_value(
+	return rt_value_t::make_struct_value(
 		backend,
 		http_request_t__type,
 		{
-			bc_value_t::make_struct_value(
+			rt_value_t::make_struct_value(
 				backend,
 				http_request_line_t___type,
 				{
-					bc_value_t::make_string(backend, req.request_line.method),
-					bc_value_t::make_string(backend, req.request_line.uri),
-					bc_value_t::make_string(backend, req.request_line.http_version)
+					rt_value_t::make_string(backend, req.request_line.method),
+					rt_value_t::make_string(backend, req.request_line.uri),
+					rt_value_t::make_string(backend, req.request_line.http_version)
 				}
 			),
-			make_vector_value(backend, http_header_t__type, immer::vector<bc_value_t>(headers2.begin(), headers2.end())),
-			bc_value_t::make_string(backend, req.optional_body)
+			make_vector_value(backend, http_header_t__type, immer::vector<rt_value_t>(headers2.begin(), headers2.end())),
+			rt_value_t::make_string(backend, req.optional_body)
 		}
 	);
 }
 
 
 
-static bc_value_t bc_corelib__pack_http_response(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__pack_http_response(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -632,10 +632,10 @@ static bc_value_t bc_corelib__pack_http_response(interpreter_t& vm, const bc_val
 		optional_body
 	};
 	const auto r = pack_http_response(req);
-	return bc_value_t::make_string(backend, r);
+	return rt_value_t::make_string(backend, r);
 }
 
-static bc_value_t bc_corelib__unpack_http_response(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__unpack_http_response(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -651,37 +651,37 @@ static bc_value_t bc_corelib__unpack_http_response(interpreter_t& vm, const bc_v
 	const auto http_response_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_response_t" }});
 	const auto http_response_status_line_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_response_status_line_t" }});
 
-	const auto headers2 = mapf<bc_value_t>(response.headers, [&](const auto& e){
-		return bc_value_t::make_struct_value(
+	const auto headers2 = mapf<rt_value_t>(response.headers, [&](const auto& e){
+		return rt_value_t::make_struct_value(
 			backend,
 			http_header_t__type,
 			{
-				bc_value_t::make_string(backend, e.key),
-				bc_value_t::make_string(backend, e.value)
+				rt_value_t::make_string(backend, e.key),
+				rt_value_t::make_string(backend, e.value)
 			}
 		);
 	});
 
-	return bc_value_t::make_struct_value(
+	return rt_value_t::make_struct_value(
 		backend,
 		http_response_t__type,
 		{
-			bc_value_t::make_struct_value(
+			rt_value_t::make_struct_value(
 				backend,
 				http_response_status_line_t__type,
 				{
-					bc_value_t::make_string(backend, response.status_line.http_version),
-					bc_value_t::make_string(backend, response.status_line.status_code),
+					rt_value_t::make_string(backend, response.status_line.http_version),
+					rt_value_t::make_string(backend, response.status_line.status_code),
 				}
 			),
-			make_vector_value(backend, http_header_t__type, immer::vector<bc_value_t>(headers2.begin(), headers2.end())),
-			bc_value_t::make_string(backend, response.optional_body)
+			make_vector_value(backend, http_header_t__type, immer::vector<rt_value_t>(headers2.begin(), headers2.end())),
+			rt_value_t::make_string(backend, response.optional_body)
 		}
 	);
 }
 
 
-static bc_value_t bc_corelib__execute_http_request(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_corelib__execute_http_request(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto& backend = vm._backend;
@@ -700,7 +700,7 @@ static bc_value_t bc_corelib__execute_http_request(interpreter_t& vm, const bc_v
 	const auto request = args[2].get_string_value(backend);
 	const auto addr2 = ip_address_t { make_ipv4(addr[0].get_struct_value(backend)[0].get_string_value(backend)) };
 	const auto response = execute_http_request(ip_address_and_port_t { addr2, (int)addr[1].get_int_value() }, request);
-	return bc_value_t::make_string(backend, response);
+	return rt_value_t::make_string(backend, response);
 }
 
 

@@ -30,7 +30,7 @@ static const bool k_trace = false;
 
 
 
-static bc_value_t bc_intrinsic__assert(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__assert(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_bool());
@@ -42,20 +42,20 @@ static bc_value_t bc_intrinsic__assert(interpreter_t& vm, const bc_value_t args[
 		throw assert_failed_exception();
 //		quark::throw_runtime_error("Assertion failed.");
 	}
-	return bc_value_t::make_undefined();
+	return rt_value_t::make_undefined();
 }
 
 //	string to_string(value_t)
-static bc_value_t bc_intrinsic__to_string(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__to_string(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
 	auto& backend = vm._backend;
 	const auto& value = args[0];
 	const auto a = to_compact_string2(backend.types, bc_to_value(backend, value));
-	return bc_value_t::make_string(backend, a);
+	return rt_value_t::make_string(backend, a);
 }
-static bc_value_t bc_intrinsic__to_pretty_string(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__to_pretty_string(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -63,10 +63,10 @@ static bc_value_t bc_intrinsic__to_pretty_string(interpreter_t& vm, const bc_val
 	const auto& value = args[0];
 	const auto json = bcvalue_to_json(backend, value);
 	const auto s = json_to_pretty_string(json, 0, pretty_t{ 80, 4 });
-	return bc_value_t::make_string(backend, s);
+	return rt_value_t::make_string(backend, s);
 }
 
-static bc_value_t bc_intrinsic__typeof(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__typeof(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -88,7 +88,7 @@ static bc_value_t bc_intrinsic__typeof(interpreter_t& vm, const bc_value_t args[
 
 
 //??? move to value_features.h. Move to intrinsics for BC.
-static bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_value_t& lookup_key, const bc_value_t& new_value){
+static rt_value_t update_element(interpreter_t& vm, const rt_value_t& obj1, const rt_value_t& lookup_key, const rt_value_t& new_value){
 	QUARK_ASSERT(vm.check_invariant());
 
 //	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
@@ -108,7 +108,7 @@ static bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, cons
 				quark::throw_runtime_error("Update element must be a character in an int.");
 			}
 			else{
-				return bc_value_t(backend, obj1._type, update__string(backend, obj1._pod, lookup_key._pod, new_value._pod), bc_value_t::rc_mode::adopt);
+				return rt_value_t(backend, obj1._type, update__string(backend, obj1._pod, lookup_key._pod, new_value._pod), rt_value_t::rc_mode::adopt);
 			}
 		}
 	}
@@ -135,7 +135,7 @@ static bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, cons
 			quark::throw_runtime_error("Update element must match vector type.");
 		}
 		else{
-			return bc_value_t(backend, obj1._type, update_element__vector(backend, obj1._pod, obj1_peek.get_data(), lookup_key._pod, new_value._pod), bc_value_t::rc_mode::adopt);
+			return rt_value_t(backend, obj1._type, update_element__vector(backend, obj1._pod, obj1_peek.get_data(), lookup_key._pod, new_value._pod), rt_value_t::rc_mode::adopt);
 		}
 	}
 	else if(obj1_peek.is_dict()){
@@ -148,7 +148,7 @@ static bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, cons
 				quark::throw_runtime_error("Update element must match dict value type.");
 			}
 			else{
-				return bc_value_t(backend, obj1._type, update_dict(backend, obj1._pod, obj1_peek.get_data(), lookup_key._pod, new_value._pod), bc_value_t::rc_mode::adopt);
+				return rt_value_t(backend, obj1._type, update_dict(backend, obj1._pod, obj1_peek.get_data(), lookup_key._pod, new_value._pod), rt_value_t::rc_mode::adopt);
 			}
 		}
 	}
@@ -167,7 +167,7 @@ static bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, cons
 
 //			trace_heap(backend.heap);
 
-			const auto result = bc_value_t(backend, obj1._type, update_struct_member(backend, obj1._pod, obj1._type, member_index, new_value._pod, new_value_peek), bc_value_t::rc_mode::adopt);
+			const auto result = rt_value_t(backend, obj1._type, update_struct_member(backend, obj1._pod, obj1._type, member_index, new_value._pod, new_value_peek), rt_value_t::rc_mode::adopt);
 
 //			trace_heap(backend.heap);
 
@@ -180,7 +180,7 @@ static bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, cons
 	}
 }
 
-static bc_value_t bc_intrinsic__update(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__update(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
 //	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
@@ -191,7 +191,7 @@ static bc_value_t bc_intrinsic__update(interpreter_t& vm, const bc_value_t args[
 	return update_element(vm, obj1, lookup_key, new_value);
 }
 
-static bc_value_t bc_intrinsic__find(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__find(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
@@ -199,13 +199,13 @@ static bc_value_t bc_intrinsic__find(interpreter_t& vm, const bc_value_t args[],
 	const auto obj = args[0];
 	const auto wanted = args[1];
 	const auto index = find2(backend, obj._pod, obj._type.get_data(), wanted._pod, wanted._type.get_data());
-	return bc_value_t(backend, type_t::make_int(), make_runtime_int(index), bc_value_t::rc_mode::adopt);
+	return rt_value_t(backend, type_t::make_int(), make_runtime_int(index), rt_value_t::rc_mode::adopt);
 }
 
 //??? user function type overloading and create several different functions, depending on the DYN argument.
 
 
-static bc_value_t bc_intrinsic__exists(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__exists(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
@@ -217,10 +217,10 @@ static bc_value_t bc_intrinsic__exists(interpreter_t& vm, const bc_value_t args[
 	QUARK_ASSERT(peek2(backend.types, key._type).is_string());
 
 	const bool result = exists(backend, obj._pod, obj._type.get_data(), key._pod, key._type.get_data());
-	return bc_value_t::make_bool(result);
+	return rt_value_t::make_bool(result);
 }
 
-static bc_value_t bc_intrinsic__erase(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__erase(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
@@ -232,10 +232,10 @@ static bc_value_t bc_intrinsic__erase(interpreter_t& vm, const bc_value_t args[]
 	QUARK_ASSERT(peek2(backend.types, key._type).is_string());
 
 	const auto result = erase(backend, obj._pod, obj._type.get_data(), key._pod, key._type.get_data());
-	return bc_value_t(backend, obj._type, result, bc_value_t::rc_mode::adopt);
+	return rt_value_t(backend, obj._type, result, rt_value_t::rc_mode::adopt);
 }
 
-static bc_value_t bc_intrinsic__get_keys(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__get_keys(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -245,16 +245,16 @@ static bc_value_t bc_intrinsic__get_keys(interpreter_t& vm, const bc_value_t arg
 	QUARK_ASSERT(obj_type_peek.is_dict());
 
 	const auto result = get_keys(backend, obj._pod, obj._type.get_data());
-	return bc_value_t(backend, type_t::make_vector(backend.types, type_t::make_string()), result, bc_value_t::rc_mode::adopt);
+	return rt_value_t(backend, type_t::make_vector(backend.types, type_t::make_string()), result, rt_value_t::rc_mode::adopt);
 }
 
 /*
-bc_value_t bc_intrinsic__push_back(interpreter_t& vm, const bc_value_t args[], int arg_count){
+rt_value_t bc_intrinsic__push_back(interpreter_t& vm, const rt_value_t args[], int arg_count){
 }
 */
 
 //	assert(subset("abc", 1, 3) == "bc");
-static bc_value_t bc_intrinsic__subset(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__subset(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
 
@@ -268,12 +268,12 @@ static bc_value_t bc_intrinsic__subset(interpreter_t& vm, const bc_value_t args[
 	const auto end = args[2].get_int_value();
 
 	const auto result = subset(backend, obj._pod, obj._type.get_data(), start, end);
-	return bc_value_t(backend, obj._type, result, bc_value_t::rc_mode::adopt);
+	return rt_value_t(backend, obj._type, result, rt_value_t::rc_mode::adopt);
 }
 
 
 //	assert(replace("One ring to rule them all", 4, 7, "rabbit") == "One rabbit to rule them all");
-static bc_value_t bc_intrinsic__replace(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__replace(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 4);
 
@@ -287,13 +287,13 @@ static bc_value_t bc_intrinsic__replace(interpreter_t& vm, const bc_value_t args
 	const auto end = args[2].get_int_value();
 	const auto replacement = args[3];
 	const auto result = replace(backend, obj._pod, obj._type.get_data(), start, end, replacement._pod, replacement._type.get_data());
-	return bc_value_t(backend, obj._type, result, bc_value_t::rc_mode::adopt);
+	return rt_value_t(backend, obj._type, result, rt_value_t::rc_mode::adopt);
 }
 
 /*
 	Reads json from a text string, returning an unpacked json.
 */
-static bc_value_t bc_intrinsic__parse_json_script(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__parse_json_script(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -302,11 +302,11 @@ static bc_value_t bc_intrinsic__parse_json_script(interpreter_t& vm, const bc_va
 
 	const auto s = args[0].get_string_value(backend);
 	std::pair<json_t, seq_t> result = parse_json(seq_t(s));
-	const auto json = bc_value_t::make_json(backend, result.first);
+	const auto json = rt_value_t::make_json(backend, result.first);
 	return json;
 }
 
-static bc_value_t bc_intrinsic__generate_json_script(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__generate_json_script(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -315,11 +315,11 @@ static bc_value_t bc_intrinsic__generate_json_script(interpreter_t& vm, const bc
 
 	const auto value0 = args[0].get_json();
 	const auto s = json_to_compact_string(value0);
-	return bc_value_t::make_string(backend, s);
+	return rt_value_t::make_string(backend, s);
 }
 
 
-static bc_value_t bc_intrinsic__to_json(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__to_json(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -333,7 +333,7 @@ static bc_value_t bc_intrinsic__to_json(interpreter_t& vm, const bc_value_t args
 	return value_to_bc(backend, result);
 }
 
-static bc_value_t bc_intrinsic__from_json(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__from_json(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
@@ -350,7 +350,7 @@ static bc_value_t bc_intrinsic__from_json(interpreter_t& vm, const bc_value_t ar
 }
 
 
-static bc_value_t bc_intrinsic__get_json_type(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__get_json_type(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -358,7 +358,7 @@ static bc_value_t bc_intrinsic__get_json_type(interpreter_t& vm, const bc_value_
 	QUARK_ASSERT(peek2(backend.types, args[0]._type).is_json());
 
 	const auto json = args[0].get_json();
-	return bc_value_t::make_int(get_json_type(json));
+	return rt_value_t::make_int(get_json_type(json));
 }
 
 
@@ -368,7 +368,7 @@ static bc_value_t bc_intrinsic__get_json_type(interpreter_t& vm, const bc_value_
 
 
 //	[R] map([E] elements, func R (E e, C context) f, C context)
-static bc_value_t bc_intrinsic__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__map(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
 //	QUARK_ASSERT(check_map_func_type(args[0]._type, args[1]._type, args[2]._type));
@@ -384,9 +384,9 @@ static bc_value_t bc_intrinsic__map(interpreter_t& vm, const bc_value_t args[], 
 	const auto& context = args[2];
 
 	const auto input_vec = get_vector_elements(backend, args[0]);
-	immer::vector<bc_value_t> vec2;
+	immer::vector<rt_value_t> vec2;
 	for(const auto& e: input_vec){
-		const bc_value_t f_args[] = { e, context };
+		const rt_value_t f_args[] = { e, context };
 		const auto result1 = call_function_bc(vm, f, f_args, 2);
 		QUARK_ASSERT(result1.check_invariant());
 		vec2 = vec2.push_back(result1);
@@ -407,7 +407,7 @@ static bc_value_t bc_intrinsic__map(interpreter_t& vm, const bc_value_t args[], 
 
 
 //	string map_string(string s, func string(string e, C context) f, C context)
-static bc_value_t bc_intrinsic__map_string(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__map_string(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
 //	QUARK_ASSERT(check_map_string_func_type(args[0]._type, args[1]._type, args[2]._type));
@@ -422,14 +422,14 @@ static bc_value_t bc_intrinsic__map_string(interpreter_t& vm, const bc_value_t a
 	const auto input_vec = args[0].get_string_value(backend);
 	std::string vec2;
 	for(const auto& e: input_vec){
-		const bc_value_t f_args[] = { bc_value_t::make_int(e), context };
+		const rt_value_t f_args[] = { rt_value_t::make_int(e), context };
 		const auto result1 = call_function_bc(vm, f, f_args, 2);
 		QUARK_ASSERT(peek2(backend.types, result1._type).is_int());
 		const int64_t ch = result1.get_int_value();
 		vec2.push_back(static_cast<char>(ch));
 	}
 
-	const auto result = bc_value_t::make_string(backend, vec2);
+	const auto result = rt_value_t::make_string(backend, vec2);
 
 if(k_trace && false){
 	const auto debug = value_and_type_to_json(backend.types, bc_to_value(backend, result));
@@ -446,7 +446,7 @@ if(k_trace && false){
 
 
 //	[R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
-static bc_value_t bc_intrinsic__map_dag(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__map_dag(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 4);
 //	QUARK_ASSERT(check_map_dag_func_type(args[0]._type, args[1]._type, args[2]._type, args[3]._type));
@@ -470,7 +470,7 @@ static bc_value_t bc_intrinsic__map_dag(interpreter_t& vm, const bc_value_t args
 	auto elements_todo = elements2.size();
 	std::vector<int> rcs(elements2.size(), 0);
 
-	immer::vector<bc_value_t> complete(elements2.size(), bc_value_t());
+	immer::vector<rt_value_t> complete(elements2.size(), rt_value_t());
 
 	for(const auto& e: parents2){
 		const auto parent_index = e.get_int_value();
@@ -502,7 +502,7 @@ static bc_value_t bc_intrinsic__map_dag(interpreter_t& vm, const bc_value_t args
 			const auto& e = elements2[element_index];
 
 			//	Make list of the element's inputs -- the must all be complete now.
-			immer::vector<bc_value_t> solved_deps;
+			immer::vector<rt_value_t> solved_deps;
 			for(int element_index2 = 0 ; element_index2 < parents2.size() ; element_index2++){
 				const auto& p = parents2[element_index2];
 				const auto parent_index = p.get_int_value();
@@ -516,7 +516,7 @@ static bc_value_t bc_intrinsic__map_dag(interpreter_t& vm, const bc_value_t args
 				}
 			}
 
-			const bc_value_t f_args[] = { e, make_vector_value(backend, r_type, solved_deps), context };
+			const rt_value_t f_args[] = { e, make_vector_value(backend, r_type, solved_deps), context };
 			const auto result1 = call_function_bc(vm, f, f_args, 3);
 
 			const auto parent_index = parents2[element_index].get_int_value();
@@ -554,7 +554,7 @@ struct dep_t {
 };
 
 
-static bc_value_t bc_intrinsic__map_dag2(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__map_dag2(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 4);
 //	QUARK_ASSERT(check_map_dag_func_type(args[0]._type, args[1]._type, args[2]._type, args[3]._type));
@@ -582,7 +582,7 @@ static bc_value_t bc_intrinsic__map_dag2(interpreter_t& vm, const bc_value_t arg
 	const auto dependencies2 = get_vector_elements(backend, dependencies);
 
 
-	immer::vector<bc_value_t> complete(elements2.size(), bc_value_t());
+	immer::vector<rt_value_t> complete(elements2.size(), rt_value_t());
 
 	std::vector<dep_t> element_dependencies(elements2.size(), dep_t{ 0, {} });
 	{
@@ -630,13 +630,13 @@ static bc_value_t bc_intrinsic__map_dag2(interpreter_t& vm, const bc_value_t arg
 		for(const auto element_index: pass_ids){
 			const auto& e = elements2[element_index];
 
-			immer::vector<bc_value_t> ready_elements;
+			immer::vector<rt_value_t> ready_elements;
 			for(const auto& dep_e: element_dependencies[element_index].depends_in_element_index){
 				const auto& ready = complete[dep_e];
 				ready_elements = ready_elements.push_back(ready);
 			}
 			const auto ready_elements2 = make_vector_value(backend, r_type, ready_elements);
-			const bc_value_t f_args[] = { e, ready_elements2, context };
+			const rt_value_t f_args[] = { e, ready_elements2, context };
 
 			const auto result1 = call_function_bc(vm, f, f_args, 3);
 
@@ -672,7 +672,7 @@ static bc_value_t bc_intrinsic__map_dag2(interpreter_t& vm, const bc_value_t arg
 
 
 //	[E] filter([E] elements, func bool (E e, C context) f, C context)
-static bc_value_t bc_intrinsic__filter(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__filter(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
 //	QUARK_ASSERT(check_filter_func_type(args[0]._type, args[1]._type, args[2]._type));
@@ -684,10 +684,10 @@ static bc_value_t bc_intrinsic__filter(interpreter_t& vm, const bc_value_t args[
 	const auto& context = args[2];
 
 	const auto input_vec = get_vector_elements(backend, elements);
-	immer::vector<bc_value_t> vec2;
+	immer::vector<rt_value_t> vec2;
 
 	for(const auto& e: input_vec){
-		const bc_value_t f_args[] = { e, context };
+		const rt_value_t f_args[] = { e, context };
 		const auto result1 = call_function_bc(vm, f, f_args, 2);
 		QUARK_ASSERT(peek2(backend.types, result1._type).is_bool());
 
@@ -713,7 +713,7 @@ static bc_value_t bc_intrinsic__filter(interpreter_t& vm, const bc_value_t args[
 
 
 //	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
-static bc_value_t bc_intrinsic__reduce(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__reduce(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 4);
 //	QUARK_ASSERT(check_reduce_func_type(args[0]._type, args[1]._type, args[2]._type, args[3]._type));
@@ -725,9 +725,9 @@ static bc_value_t bc_intrinsic__reduce(interpreter_t& vm, const bc_value_t args[
 	const auto& context = args[3];
 	const auto input_vec = get_vector_elements(backend, elements);
 
-	bc_value_t acc = init;
+	rt_value_t acc = init;
 	for(const auto& e: input_vec){
-		const bc_value_t f_args[] = { acc, e, context };
+		const rt_value_t f_args[] = { acc, e, context };
 		const auto result1 = call_function_bc(vm, f, f_args, 3);
 		acc = result1;
 	}
@@ -749,7 +749,7 @@ if(k_trace && false){
 
 
 //	[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
-static bc_value_t bc_intrinsic__stable_sort(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__stable_sort(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
 //	QUARK_ASSERT(check_stable_sort_func_type(args[0]._type, args[1]._type, args[2]._type));
@@ -761,26 +761,26 @@ static bc_value_t bc_intrinsic__stable_sort(interpreter_t& vm, const bc_value_t 
 	const auto& context = args[2];
 
 	const auto input_vec = get_vector_elements(backend, elements);
-	std::vector<bc_value_t> mutate_inplace_elements(input_vec.begin(), input_vec.end());
+	std::vector<rt_value_t> mutate_inplace_elements(input_vec.begin(), input_vec.end());
 
 	struct sort_functor_r {
-		bool operator() (const bc_value_t &a, const bc_value_t &b) {
-			const bc_value_t f_args[] = { a, b, context };
+		bool operator() (const rt_value_t &a, const rt_value_t &b) {
+			const rt_value_t f_args[] = { a, b, context };
 			const auto result1 = call_function_bc(vm, f, f_args, 3);
 			QUARK_ASSERT(peek2(backend.types, result1._type).is_bool());
 			return result1.get_bool_value();
 		}
 
 		interpreter_t& vm;
-		bc_value_t context;
-		bc_value_t f;
+		rt_value_t context;
+		rt_value_t f;
 		const value_backend_t& backend;
 	};
 
 	const sort_functor_r sort_functor { vm, context, f, backend };
 	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
 
-	const auto mutate_inplace_elements2 = immer::vector<bc_value_t>(mutate_inplace_elements.begin(), mutate_inplace_elements.end());
+	const auto mutate_inplace_elements2 = immer::vector<rt_value_t>(mutate_inplace_elements.begin(), mutate_inplace_elements.end());
 	const auto result = make_vector_value(backend, e_type, mutate_inplace_elements2);
 
 if(k_trace && false){
@@ -801,7 +801,7 @@ if(k_trace && false){
 
 //	print = impure!
 //	Records all output to interpreter
-static bc_value_t bc_intrinsic__print(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__print(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 //	QUARK_ASSERT(args[0]._type.is_string());
@@ -817,10 +817,10 @@ static bc_value_t bc_intrinsic__print(interpreter_t& vm, const bc_value_t args[]
 //	const auto lines = split_on_chars(seq_t(s), "\n");
 //	vm._print_output = concat(vm._print_output, lines);
 
-	return bc_value_t::make_undefined();
+	return rt_value_t::make_undefined();
 }
 
-static bc_value_t bc_intrinsic__send(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__send(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
@@ -834,10 +834,10 @@ static bc_value_t bc_intrinsic__send(interpreter_t& vm, const bc_value_t args[],
 
 	vm._handler->on_send(dest_process_id, runtime_from_bc(backend, message), message._type);
 
-	return bc_value_t::make_undefined();
+	return rt_value_t::make_undefined();
 }
 
-static bc_value_t bc_intrinsic__exit(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__exit(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
 
@@ -845,7 +845,7 @@ static bc_value_t bc_intrinsic__exit(interpreter_t& vm, const bc_value_t args[],
 
 	vm._handler->on_exit();
 
-	return bc_value_t::make_undefined();
+	return rt_value_t::make_undefined();
 }
 
 
@@ -854,7 +854,7 @@ static bc_value_t bc_intrinsic__exit(interpreter_t& vm, const bc_value_t args[],
 
 
 
-static bc_value_t bc_intrinsic__bw_not(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__bw_not(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -863,9 +863,9 @@ static bc_value_t bc_intrinsic__bw_not(interpreter_t& vm, const bc_value_t args[
 
 	const auto a = args[0].get_int_value();
 	const auto result = ~a;
-	return bc_value_t::make_int(result);
+	return rt_value_t::make_int(result);
 }
-static bc_value_t bc_intrinsic__bw_and(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__bw_and(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
@@ -876,9 +876,9 @@ static bc_value_t bc_intrinsic__bw_and(interpreter_t& vm, const bc_value_t args[
 	const auto a = args[0].get_int_value();
 	const auto b = args[1].get_int_value();
 	const auto result = a & b;
-	return bc_value_t::make_int(result);
+	return rt_value_t::make_int(result);
 }
-static bc_value_t bc_intrinsic__bw_or(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__bw_or(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
@@ -889,9 +889,9 @@ static bc_value_t bc_intrinsic__bw_or(interpreter_t& vm, const bc_value_t args[]
 	const auto a = args[0].get_int_value();
 	const auto b = args[1].get_int_value();
 	const auto result = a | b;
-	return bc_value_t::make_int(result);
+	return rt_value_t::make_int(result);
 }
-static bc_value_t bc_intrinsic__bw_xor(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__bw_xor(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
@@ -902,9 +902,9 @@ static bc_value_t bc_intrinsic__bw_xor(interpreter_t& vm, const bc_value_t args[
 	const auto a = args[0].get_int_value();
 	const auto b = args[1].get_int_value();
 	const auto result = a ^ b;
-	return bc_value_t::make_int(result);
+	return rt_value_t::make_int(result);
 }
-static bc_value_t bc_intrinsic__bw_shift_left(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__bw_shift_left(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
@@ -915,9 +915,9 @@ static bc_value_t bc_intrinsic__bw_shift_left(interpreter_t& vm, const bc_value_
 	const auto a = args[0].get_int_value();
 	const auto count = args[1].get_int_value();
 	const auto result = a << count;
-	return bc_value_t::make_int(result);
+	return rt_value_t::make_int(result);
 }
-static bc_value_t bc_intrinsic__bw_shift_right(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__bw_shift_right(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
@@ -928,9 +928,9 @@ static bc_value_t bc_intrinsic__bw_shift_right(interpreter_t& vm, const bc_value
 	const uint64_t a = args[0].get_int_value();
 	const uint64_t count = args[1].get_int_value();
 	const auto result = a >> count;
-	return bc_value_t::make_int(result);
+	return rt_value_t::make_int(result);
 }
-static bc_value_t bc_intrinsic__bw_shift_right_arithmetic(interpreter_t& vm, const bc_value_t args[], int arg_count){
+static rt_value_t bc_intrinsic__bw_shift_right_arithmetic(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
@@ -941,7 +941,7 @@ static bc_value_t bc_intrinsic__bw_shift_right_arithmetic(interpreter_t& vm, con
 	const auto a = args[0].get_int_value();
 	const auto count = args[1].get_int_value();
 	const auto result = a >> count;
-	return bc_value_t::make_int(result);
+	return rt_value_t::make_int(result);
 }
 
 

@@ -172,7 +172,7 @@ struct bc_frame_t {
 	std::vector<type_t> _args;
 	std::vector<bool> _exts;
 	std::vector<bool> _locals_exts;
-	std::vector<bc_value_t> _locals;
+	std::vector<rt_value_t> _locals;
 };
 ```
 

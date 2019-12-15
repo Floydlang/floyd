@@ -58,7 +58,7 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vec
 #endif
 
 	const auto f2 = value_to_bc(vm._backend, f);
-	std::vector<bc_value_t> args2;
+	std::vector<rt_value_t> args2;
 	for(const auto& e: args){
 		args2.push_back(value_to_bc(vm._backend, e));
 	}
@@ -117,7 +117,7 @@ struct bc_process_t : public bc_runtime_handler_i {
 	void on_send(const std::string& dest_process_id, const runtime_value_t& message0, const type_t& type) override {
 		auto& backend = _interpreter->_backend;
 		const auto& types = backend.types;
-		const auto message = bc_from_runtime(backend, message0, type, bc_value_t::rc_mode::bump);
+		const auto message = bc_from_runtime(backend, message0, type, rt_value_t::rc_mode::bump);
 
 		const auto it = std::find_if(
 			_owning_runtime->_processes.begin(),
@@ -173,7 +173,7 @@ struct bc_process_t : public bc_runtime_handler_i {
 	bc_processes_runtime_t* _owning_runtime;
 	std::condition_variable _inbox_condition_variable;
 	std::mutex _inbox_mutex;
-	std::deque<bc_value_t> _inbox;
+	std::deque<rt_value_t> _inbox;
 
 	std::string _name_key;
 	std::thread::id _thread_id;
@@ -212,7 +212,7 @@ static void process_process(bc_processes_runtime_t& runtime, int process_id){
 	}
 
 	while(process._exiting_flag == false){
-		bc_value_t message;
+		rt_value_t message;
 		{
 			std::unique_lock<std::mutex> lk(process._inbox_mutex);
 
@@ -390,10 +390,10 @@ static std::string run_test(interpreter_t& vm, const test_t& test){
 		epure::pure
 	);
 
-	const auto f_value = bc_value_t::make_function_value(vm._backend, f_type, function_id);
+	const auto f_value = rt_value_t::make_function_value(vm._backend, f_type, function_id);
 
 	try {
-		const std::vector<bc_value_t> args2;
+		const std::vector<rt_value_t> args2;
 		call_function_bc(vm, f_value, &args2[0], static_cast<int>(args2.size()));
 
 		return "";

@@ -95,10 +95,10 @@ struct runtime_handler_i;
 struct interpreter_t;
 struct bc_program_t;
 
-struct bc_value_t;
+struct rt_value_t;
 
 
-typedef bc_value_t (*BC_NATIVE_FUNCTION_PTR)(interpreter_t& vm, const bc_value_t args[], int arg_count);
+typedef rt_value_t (*BC_NATIVE_FUNCTION_PTR)(interpreter_t& vm, const rt_value_t args[], int arg_count);
 typedef int16_t bc_typeid_t;
 
 
@@ -760,7 +760,7 @@ struct interpreter_stack_t {
 			const auto& local = frame._locals[i];
 			if(ext){
 				if(local.is_undefined()){
-					push_external_value(bc_value_t(type, bc_value_t::mode::k_unwritten_ext_value));
+					push_external_value(rt_value_t(type, rt_value_t::mode::k_unwritten_ext_value));
 				}
 				else{
 					push_external_value(value_to_bc(*_backend, local));
@@ -819,26 +819,26 @@ struct interpreter_stack_t {
 
 	//	Slow since it looks up the type of the register at runtime.
 	//??? Notice: this function should be const in the future!
-	public: bc_value_t read_register(const int reg){
+	public: rt_value_t read_register(const int reg){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
 
 #if DEBUG
-		const auto result = bc_value_t(
+		const auto result = rt_value_t(
 			*_backend,
 			_current_static_frame->_symbols[reg].second._value_type,
 			_current_frame_start_ptr[reg],
-			bc_value_t::rc_mode::bump
+			rt_value_t::rc_mode::bump
 		);
 #else
-//			const auto result = bc_value_t(_current_frame_start_ptr[reg], is_ext);
-		const auto result = bc_value_t(_current_static_frame->_symbols[reg].second._value_type, _current_frame_start_ptr[reg], is_ext);
+//			const auto result = rt_value_t(_current_frame_start_ptr[reg], is_ext);
+		const auto result = rt_value_t(_current_static_frame->_symbols[reg].second._value_type, _current_frame_start_ptr[reg], is_ext);
 #endif
 		QUARK_ASSERT(result.check_invariant());
 		return result;
 	}
 
-	public: void write_register(const int reg, const bc_value_t& value){
+	public: void write_register(const int reg, const rt_value_t& value){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
 		QUARK_ASSERT(value.check_invariant());
@@ -854,7 +854,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: void write_register__external_value(const int reg, const bc_value_t& value){
+	public: void write_register__external_value(const int reg, const rt_value_t& value){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg__external_value(reg));
 		QUARK_ASSERT(value.check_invariant());
@@ -968,10 +968,10 @@ struct interpreter_stack_t {
 #endif
 
 	public: void save_frame(){
-		const auto frame_pos = bc_value_t::make_int(get_current_frame_start());
+		const auto frame_pos = rt_value_t::make_int(get_current_frame_start());
 		push_inplace_value(frame_pos);
 
-		const auto frame_ptr = bc_value_t(_current_static_frame);
+		const auto frame_ptr = rt_value_t(_current_static_frame);
 		push_inplace_value(frame_ptr);
 	}
 
@@ -993,7 +993,7 @@ struct interpreter_stack_t {
 	//////////////////////////////////////		STACK
 
 
-	public: inline void push_external_value(const bc_value_t& value){
+	public: inline void push_external_value(const rt_value_t& value){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
 
@@ -1005,7 +1005,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: inline void push_inplace_value(const bc_value_t& value){
+	public: inline void push_inplace_value(const rt_value_t& value){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
 
@@ -1018,14 +1018,14 @@ struct interpreter_stack_t {
 
 	//	returned value will have ownership of obj, if it's an obj.
 	//??? should be const function
-	public: inline bc_value_t load_value(int pos, const type_t& type){
+	public: inline rt_value_t load_value(int pos, const type_t& type){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 		QUARK_ASSERT(type.check_invariant());
 //		QUARK_ASSERT(peek2(_backend->types, type) == _entry_types[pos]);
 
 		const auto& e = _entries[pos];
-		const auto result = bc_value_t(*_backend, type, e, bc_value_t::rc_mode::bump);
+		const auto result = rt_value_t(*_backend, type, e, rt_value_t::rc_mode::bump);
 		return result;
 	}
 
@@ -1037,7 +1037,7 @@ struct interpreter_stack_t {
 		return _entries[pos].int_value;
 	}
 
-	public: inline void replace_inplace_value(int pos, const bc_value_t& value){
+	public: inline void replace_inplace_value(int pos, const rt_value_t& value){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
@@ -1048,7 +1048,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: inline void replace_external_value(int pos, const bc_value_t& value){
+	public: inline void replace_external_value(int pos, const rt_value_t& value){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
@@ -1168,9 +1168,9 @@ void trace_interpreter(interpreter_t& vm, int pc);
 
 
 
-bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_value_t args[], int arg_count);
+rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_value_t args[], int arg_count);
 json_t interpreter_to_json(interpreter_t& vm);
-std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions);
+std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions);
 
 
 struct value_entry_t {
@@ -1182,7 +1182,7 @@ struct value_entry_t {
 		return true;
 	}
 
-	bc_value_t _value;
+	rt_value_t _value;
 	module_symbol_t _symbol_name;
 	bc_symbol_t _symbol;
 	int _global_index;

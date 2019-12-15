@@ -87,7 +87,7 @@ QUARK_TEST("bc_compare_string()", "", "", ""){
 }
 
 
-static int bc_compare_struct_true_deep(const types_t& types, const std::vector<bc_value_t>& left, const std::vector<bc_value_t>& right, const type_t& type){
+static int bc_compare_struct_true_deep(const types_t& types, const std::vector<rt_value_t>& left, const std::vector<rt_value_t>& right, const type_t& type){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -115,8 +115,8 @@ static int bc_compare_vectors_obj(const types_t& types, const immer::vector<bc_e
 	for(int i = 0 ; i < shared_count ; i++){
 		const auto element_result = bc_compare_value_true_deep(
 			types,
-			bc_value_t(element_type, left[i]),
-			bc_value_t(element_type, right[i]),
+			rt_value_t(element_type, left[i]),
+			rt_value_t(element_type, right[i]),
 			element_type
 		);
 		if(element_result != 0){
@@ -257,8 +257,8 @@ static int bc_compare_dicts_obj(const types_t& types, const immer::map<std::stri
 
 		const auto element_result = bc_compare_value_true_deep(
 			types,
-			bc_value_t(element_type, (*left_it).second),
-			bc_value_t(element_type, (*right_it).second),
+			rt_value_t(element_type, (*left_it).second),
+			rt_value_t(element_type, (*right_it).second),
 			element_type
 		);
 		if(element_result != 0){
@@ -451,10 +451,10 @@ static int bc_compare_value_exts(const types_t& types, const bc_external_handle_
 	QUARK_ASSERT(right.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	return bc_compare_value_true_deep(types, bc_value_t(type, left), bc_value_t(type, right), type);
+	return bc_compare_value_true_deep(types, rt_value_t(type, left), rt_value_t(type, right), type);
 }
 
-int bc_compare_value_true_deep(value_backend_t& backend, const bc_value_t& left, const bc_value_t& right, const type_t& type0){
+int bc_compare_value_true_deep(value_backend_t& backend, const rt_value_t& left, const rt_value_t& right, const type_t& type0){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(left._type == right._type);
 	QUARK_ASSERT(left.check_invariant());
@@ -743,7 +743,7 @@ const runtime_value_t update__dict_hamt(value_backend_t& backend, runtime_value_
 
 /*
 //??? The update mechanism uses strings == slow.
-static bc_value_t update_struct_member_shallow(interpreter_t& vm, const bc_value_t& obj, const std::string& member_name, const bc_value_t& new_value){
+static rt_value_t update_struct_member_shallow(interpreter_t& vm, const rt_value_t& obj, const std::string& member_name, const rt_value_t& new_value){
 	QUARK_ASSERT(obj.check_invariant());
 	const auto& types = vm._imm->_program._types;
 	QUARK_ASSERT(peek2(types, obj._type).is_struct());
@@ -768,11 +768,11 @@ static bc_value_t update_struct_member_shallow(interpreter_t& vm, const bc_value
 	auto values2 = values;
 	values2[member_index] = new_value;
 
-	auto s2 = bc_value_t::make_struct_value(vm._backend, obj._type, values2);
+	auto s2 = rt_value_t::make_struct_value(vm._backend, obj._type, values2);
 	return s2;
 }
 
-static bc_value_t update_struct_member_deep(interpreter_t& vm, const bc_value_t& obj, const std::vector<std::string>& path, const bc_value_t& new_value){
+static rt_value_t update_struct_member_deep(interpreter_t& vm, const rt_value_t& obj, const std::vector<std::string>& path, const rt_value_t& new_value){
 	QUARK_ASSERT(obj.check_invariant());
 	QUARK_ASSERT(path.empty() == false);
 	QUARK_ASSERT(new_value.check_invariant());
@@ -816,13 +816,13 @@ runtime_value_t update_struct_member(value_backend_t& backend, runtime_value_t s
 	QUARK_ASSERT(struct_value.struct_ptr->check_invariant());
 
 	const auto& struct_type_peek = peek2(backend.types, struct_type0);
-	const auto& value2 = bc_value_t(backend, peek2(backend.types, member_type), value, bc_value_t::rc_mode::bump);
+	const auto& value2 = rt_value_t(backend, peek2(backend.types, member_type), value, rt_value_t::rc_mode::bump);
 	const auto& values = from_runtime_struct(backend, struct_value, struct_type_peek);
 
 	auto values2 = values;
 	values2[member_index] = value2;
 
-	auto result = bc_value_t::make_struct_value(backend, struct_type0, values2);
+	auto result = rt_value_t::make_struct_value(backend, struct_type0, values2);
 	retain_value(backend, result._pod, struct_type0);
 	return result._pod;
 }
@@ -1188,7 +1188,7 @@ int64_t find2(value_backend_t& backend, runtime_value_t coll_value, runtime_type
 	}
 }
 
-//??? use bc_value_t as primitive for all features.
+//??? use rt_value_t as primitive for all features.
 
 bool exists(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t value, runtime_type_t value_type){
 	const auto& types = backend.types;

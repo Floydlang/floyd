@@ -584,94 +584,93 @@ runtime_value_t load_via_ptr2(const types_t& types, const void* value_ptr, const
 void store_via_ptr2(const types_t& types, void* value_ptr, const type_t& type, const runtime_value_t& value);
 
 
-//////////////////////////////////////		bc_value_t
+//////////////////////////////////////		rt_value_t
 
 /*
 	Efficent representation of any value supported by the interpreter.
 	It's immutable and uses value-semantics.
 	Holds either an inplace value or an external value. Handles reference counting automatically when required.
-	??? replace with variant<>
 */
 
-struct bc_value_t {
+struct rt_value_t {
 #if DEBUG
 	public: bool check_invariant() const;
 #endif
-	public: bc_value_t();
-	public: ~bc_value_t();
-	public: bc_value_t(const bc_value_t& other);
-	public: bc_value_t& operator=(const bc_value_t& other);
-	public: void swap(bc_value_t& other);
+	public: rt_value_t();
+	public: ~rt_value_t();
+	public: rt_value_t(const rt_value_t& other);
+	public: rt_value_t& operator=(const rt_value_t& other);
+	public: void swap(rt_value_t& other);
 
 
 	//	Bumps RC if needed.
 	enum class rc_mode { adopt, bump };
-	public: explicit bc_value_t(value_backend_t& backend, const type_t& type, const runtime_value_t& internals, rc_mode mode);
+	public: explicit rt_value_t(value_backend_t& backend, const type_t& type, const runtime_value_t& internals, rc_mode mode);
 
 	//	Only works for simple values.
-	public: explicit bc_value_t(const type_t& type, const runtime_value_t& internals);
+	public: explicit rt_value_t(const type_t& type, const runtime_value_t& internals);
 
 
 	//	Used for uninitialized local / global variables - before they are written to the first time. Kludge.
 	enum class mode {
 		k_unwritten_ext_value
 	};
-	public: explicit bc_value_t(const type_t& type, mode mode);
+	public: explicit rt_value_t(const type_t& type, mode mode);
 
 
 	//////////////////////////////////////		internal-undefined type
-	public: static bc_value_t make_undefined();
+	public: static rt_value_t make_undefined();
 
 
 	//////////////////////////////////////		internal-dynamic type
-	public: static bc_value_t make_any();
+	public: static rt_value_t make_any();
 
 
 	//////////////////////////////////////		void
-	public: static bc_value_t make_void();
+	public: static rt_value_t make_void();
 
 
 	//////////////////////////////////////		bool
-	public: static bc_value_t make_bool(bool v);
+	public: static rt_value_t make_bool(bool v);
 	public: bool get_bool_value() const;
 
 
 	//////////////////////////////////////		int
-	public: static bc_value_t make_int(int64_t v);
+	public: static rt_value_t make_int(int64_t v);
 	public: int64_t get_int_value() const;
 
 
 	//////////////////////////////////////		double
-	public: static bc_value_t make_double(double v);
+	public: static rt_value_t make_double(double v);
 	public: double get_double_value() const;
 
 
 	//////////////////////////////////////		string
-	public: static bc_value_t make_string(value_backend_t& backend, const std::string& v);
+	public: static rt_value_t make_string(value_backend_t& backend, const std::string& v);
 	public: std::string get_string_value(const value_backend_t& backend) const;
 
 
 	//////////////////////////////////////		json
-	public: static bc_value_t make_json(value_backend_t& backend, const json_t& v);
+	public: static rt_value_t make_json(value_backend_t& backend, const json_t& v);
 	public: json_t get_json() const;
 
 
 	//////////////////////////////////////		typeid
-	public: static bc_value_t make_typeid_value(const type_t& type_id);
+	public: static rt_value_t make_typeid_value(const type_t& type_id);
 	public: type_t get_typeid_value() const;
 
 
 	//////////////////////////////////////		struct
-	public: static bc_value_t make_struct_value(
+	public: static rt_value_t make_struct_value(
 		value_backend_t& backend,
 		const type_t& struct_type,
-		const std::vector<bc_value_t>& values
+		const std::vector<rt_value_t>& values
 	);
-	public: const std::vector<bc_value_t> get_struct_value(value_backend_t& backend) const;
+	public: const std::vector<rt_value_t> get_struct_value(value_backend_t& backend) const;
 
 
 	//////////////////////////////////////		function
-	public: static bc_value_t make_function_value(
+	public: static rt_value_t make_function_value(
 		value_backend_t& backend,
 		const type_t& function_type,
 		const module_symbol_t& function_id
@@ -681,28 +680,28 @@ struct bc_value_t {
 
 	//////////////////////////////////////		bc_static_frame_t
 
-	public: explicit bc_value_t(const bc_static_frame_t* frame_ptr);
+	public: explicit rt_value_t(const bc_static_frame_t* frame_ptr);
 
 
 	//////////////////////////////////////		INTERNALS
 
-	private: explicit bc_value_t(bool value);
-	private: explicit bc_value_t(int64_t value);
-	private: explicit bc_value_t(double value);
-	private: explicit bc_value_t(value_backend_t& backend, const std::string& value);
-	private: explicit bc_value_t(value_backend_t& backend, const std::shared_ptr<json_t>& value);
-	private: explicit bc_value_t(const type_t& type_id);
-	private: explicit bc_value_t(
+	private: explicit rt_value_t(bool value);
+	private: explicit rt_value_t(int64_t value);
+	private: explicit rt_value_t(double value);
+	private: explicit rt_value_t(value_backend_t& backend, const std::string& value);
+	private: explicit rt_value_t(value_backend_t& backend, const std::shared_ptr<json_t>& value);
+	private: explicit rt_value_t(const type_t& type_id);
+	private: explicit rt_value_t(
 		value_backend_t& backend,
 		const type_t& struct_type,
-		const std::vector<bc_value_t>& values,
+		const std::vector<rt_value_t>& values,
 		bool struct_tag
 	);
-	private: explicit bc_value_t(value_backend_t& backend, const type_t& function_type, const module_symbol_t& function_id);
+	private: explicit rt_value_t(value_backend_t& backend, const type_t& function_type, const module_symbol_t& function_id);
 
 	//////////////////////////////////////		STATE
 
-	//	IDEA: have two types: bc_value_t and bc_pod_t. bc_pod_t has type + value but does no RC.
+	//	IDEA: have two types: rt_value_t and bc_pod_t. bc_pod_t has type + value but does no RC.
 	public: value_backend_t* _backend;
 	public: type_t _type;
 	public: runtime_value_t _pod;
@@ -712,20 +711,20 @@ struct bc_value_t {
 ////////////////////////////////////////////			FREE
 
 
-const immer::vector<bc_value_t> get_vector_elements(value_backend_t& backend, const bc_value_t& value);
-bc_value_t make_vector_value(value_backend_t& backend, const type_t& element_type, const immer::vector<bc_value_t>& elements);
+const immer::vector<rt_value_t> get_vector_elements(value_backend_t& backend, const rt_value_t& value);
+rt_value_t make_vector_value(value_backend_t& backend, const type_t& element_type, const immer::vector<rt_value_t>& elements);
 
-const immer::map<std::string, bc_value_t> get_dict_values(value_backend_t& backend, const bc_value_t& value);
-bc_value_t make_dict_value(value_backend_t& backend, const type_t& value_type, const immer::map<std::string, bc_value_t>& entries);
+const immer::map<std::string, rt_value_t> get_dict_values(value_backend_t& backend, const rt_value_t& value);
+rt_value_t make_dict_value(value_backend_t& backend, const type_t& value_type, const immer::map<std::string, rt_value_t>& entries);
 
 
-json_t bcvalue_to_json(value_backend_t& backend, const bc_value_t& v);
-json_t bcvalue_and_type_to_json(value_backend_t& backend, const bc_value_t& v);
+json_t bcvalue_to_json(value_backend_t& backend, const rt_value_t& v);
+json_t bcvalue_and_type_to_json(value_backend_t& backend, const rt_value_t& v);
 
-int bc_compare_value_true_deep(value_backend_t& backend, const bc_value_t& left, const bc_value_t& right, const type_t& type);
+int bc_compare_value_true_deep(value_backend_t& backend, const rt_value_t& left, const rt_value_t& right, const type_t& type);
 
-std::vector<bc_value_t> from_runtime_struct(value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type);
-runtime_value_t to_runtime_struct(value_backend_t& backend, const type_t& struct_type, const std::vector<bc_value_t>& values);
+std::vector<rt_value_t> from_runtime_struct(value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type);
+runtime_value_t to_runtime_struct(value_backend_t& backend, const type_t& struct_type, const std::vector<rt_value_t>& values);
 
 
 ////////////////////////////////		struct_layout_t
@@ -925,16 +924,16 @@ runtime_value_t to_runtime_struct(value_backend_t& backend, const struct_t& exac
 value_t from_runtime_struct(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type);
 
 
-//////////////////////////////////////////		value_t vs bc_value_t
+//////////////////////////////////////////		value_t vs rt_value_t
 
 
-bc_value_t make_non_rc(const value_t& value);
+rt_value_t make_non_rc(const value_t& value);
 
-value_t bc_to_value(const value_backend_t& backend, const bc_value_t& value);
-bc_value_t value_to_bc(value_backend_t& backend, const value_t& value);
+value_t bc_to_value(const value_backend_t& backend, const rt_value_t& value);
+rt_value_t value_to_bc(value_backend_t& backend, const value_t& value);
 
-bc_value_t bc_from_runtime(value_backend_t& backend, runtime_value_t value, const type_t& type, bc_value_t::rc_mode mode);
-runtime_value_t runtime_from_bc(value_backend_t& backend, const bc_value_t& value);
+rt_value_t bc_from_runtime(value_backend_t& backend, runtime_value_t value, const type_t& type, rt_value_t::rc_mode mode);
+runtime_value_t runtime_from_bc(value_backend_t& backend, const rt_value_t& value);
 
 
 
