@@ -95,8 +95,6 @@ void generate_array_element_store(llvm::IRBuilder<>& builder, llvm::Value& array
 ////////////////////////////////		VALUES
 
 
-VECTOR_CARRAY_T* unpack_vector_carray_arg(const value_backend_t& backend, runtime_value_t arg_value, runtime_type_t arg_type);
-DICT_CPPMAP_T* unpack_dict_cppmap_arg(const value_backend_t& backend, runtime_value_t arg_value, runtime_type_t arg_type);
 
 //	Converts the LLVM value into a uint64_t for storing vector, pass as DYN value.
 llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& value, const type_t& floyd_type);
