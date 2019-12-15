@@ -450,49 +450,6 @@ llvm::Value* generate_instrinsic_map(
 
 
 
-
-/////////////////////////////////////////		map_string()
-
-
-
-
-//??? Can mutate the acc string internally.
-
-typedef runtime_value_t (*MAP_STRING_F)(floyd_runtime_t* frp, runtime_value_t s, runtime_value_t context);
-
-static runtime_value_t floyd_llvm_intrinsic__map_string(floyd_runtime_t* frp, runtime_value_t input_string0, runtime_value_t func, runtime_type_t func_type, runtime_value_t context, runtime_type_t context_type){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
-
-/*
-	QUARK_ASSERT(check_map_string_func_type(
-		type_t::make_string(),
-		lookup_type_ref(r.backend, func_type),
-		lookup_type_ref(r.backend, context_type)
-	));
-*/
-
-	const auto& func_link = lookup_func_link_required(backend, func);
-	const auto f = reinterpret_cast<MAP_STRING_F>(func_link.f);
-
-	const auto input_string = from_runtime_string(r, input_string0);
-
-	auto count = input_string.size();
-
-	std::string acc;
-	for(int i = 0 ; i < count ; i++){
-		const int64_t ch = input_string[i];
-		const auto ch2 = make_runtime_int(ch);
-		const auto temp = (*f)(frp, ch2, context);
-
-		const auto temp2 = temp.int_value;
-		acc.push_back(static_cast<char>(temp2));
-	}
-	return to_runtime_string(r, acc);
-}
-
-
-
 /////////////////////////////////////////		map_dag()
 
 
