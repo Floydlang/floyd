@@ -21,22 +21,18 @@ namespace floyd {
 
 //#define QUARK_TEST QUARK_TEST_VIP
 
-#if 0
-void save_page(const std::string &url){
-    // simulate a long page fetch
-//    std::this_thread::sleep_for(std::chrono::seconds(2));
-    std::string result = "fake content";
-	
-    std::lock_guard<std::recursive_mutex> guard(g_pages_mutex);
-    g_pages[url] = result;
-}
-#endif
-
-
 
 ////////////////////////////////		heap_t
 
 
+static uint64_t size_to_allocation_blocks(std::size_t size){
+	const auto r = (size >> 3) + ((size & 7) > 0 ? 1 : 0);
+
+	QUARK_ASSERT((r * sizeof(uint64_t) - size) >= 0);
+	QUARK_ASSERT((r * sizeof(uint64_t) - size) < sizeof(uint64_t));
+
+	return r;
+}
 
 static void trace_alloc(const heap_rec_t& e){
 	QUARK_TRACE_SS(""
@@ -73,24 +69,6 @@ void trace_heap(const heap_t& heap){
 	}
 }
 
-void detect_leaks(const heap_t& heap){
-	QUARK_ASSERT(heap.check_invariant());
-
-	const auto leaks = heap.count_used();
-	if(leaks > 0){
-		QUARK_SCOPED_TRACE("LEAKS");
-
-		trace_heap(heap);
-
-#if 1
-		if(leaks > 0){
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-#endif
-	}
-}
-
 heap_t::heap_t(bool record_allocs_flag) :
 	magic(HEAP_MAGIC),
 	allocation_id_generator(k_alloc_start_id),
@@ -105,7 +83,7 @@ heap_t::heap_t(bool record_allocs_flag) :
 heap_t::~heap_t(){
 	QUARK_ASSERT(check_invariant());
 
-#if DEBUG
+#if DEBUG && 0
 	const auto leaks = count_used();
 	if(leaks > 0){
 		QUARK_SCOPED_TRACE("LEAKS");
@@ -227,6 +205,7 @@ QUARK_TEST("heap_t", "release_ref()", "", ""){
 */
 
 
+//	Returns pointer to the allocated words that sits after the
 void* get_alloc_ptr(heap_alloc_64_t& alloc){
 	QUARK_ASSERT(alloc.check_invariant());
 
@@ -476,17 +455,6 @@ void copy_elements(runtime_value_t dest[], runtime_value_t source[], uint64_t co
 
 
 
-////////////////////////////////		WIDE_RETURN_T
-
-
-
-
-WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b){
-	return WIDE_RETURN_T{ a, b };
-}
-
-
-
 
 ////////////////////////////////		VECTOR_CARRAY_T
 
@@ -497,10 +465,6 @@ QUARK_TEST("", "", "", ""){
 	QUARK_VERIFY(vec_struct_size == 24);
 }
 
-QUARK_TEST("", "", "", ""){
-	const auto wr_struct_size = sizeof(WIDE_RETURN_T);
-	QUARK_VERIFY(wr_struct_size == 16);
-}
 
 
 VECTOR_CARRAY_T::~VECTOR_CARRAY_T(){
@@ -2132,14 +2096,15 @@ static void trace_value_backend_dynamic__internal(const value_backend_t& backend
 
 		const auto debug_info_str = get_debug_info(*e.alloc_ptr);
 
-
 		const auto debug_value_type = e.alloc_ptr->debug_value_type;
 		const auto debug_value_type_str = type_to_compact_string(backend.types, debug_value_type);
 
+/*
 		const uint64_t data0 = e.alloc_ptr->data[0];
 		const uint64_t data1 = e.alloc_ptr->data[1];
 		const uint64_t data2 = e.alloc_ptr->data[2];
 		const uint64_t data3 = e.alloc_ptr->data[3];
+*/
 
 		const auto value = runtime_value_t{ .gp_ptr = e.alloc_ptr };
 		std::string value_summary_str = get_value_structure_str(backend, get_value_structure(backend, value, debug_value_type));
@@ -2726,7 +2691,7 @@ runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t& value
 	if(is_vector_carray(backend.types, backend.config, type)){
 		auto result = alloc_vector_carray(backend.heap, count, count, type);
 
-		const auto element_type = type_peek.get_vector_element_type(backend.types);
+//		const auto element_type = type_peek.get_vector_element_type(backend.types);
 		auto p = result.vector_carray_ptr->get_element_ptr();
 		for(int i = 0 ; i < count ; i++){
 			const auto& e = v0[i];
@@ -2813,7 +2778,7 @@ runtime_value_t to_runtime_dict(value_backend_t& backend, const dict_t& exact_ty
 
 		auto result = alloc_dict_cppmap(backend.heap, type);
 
-		const auto element_type = type_peek.get_dict_value_type(backend.types);
+//		const auto element_type = type_peek.get_dict_value_type(backend.types);
 		auto& m = result.dict_cppmap_ptr->get_map_mut();
 		for(const auto& e: v0){
 			const auto a = to_runtime_value2(backend, e.second);
@@ -2827,7 +2792,7 @@ runtime_value_t to_runtime_dict(value_backend_t& backend, const dict_t& exact_ty
 
 		auto result = alloc_dict_hamt(backend.heap, type);
 
-		const auto element_type = type_peek.get_dict_value_type(backend.types);
+//		const auto element_type = type_peek.get_dict_value_type(backend.types);
 		auto& m = result.dict_hamt_ptr->get_map_mut();
 		for(const auto& e: v0){
 			const auto a = to_runtime_value2(backend, e.second);
@@ -3034,7 +2999,7 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 //////////////////////////////////////////		value_t vs bc_value_t
 
 
-runtime_value_t make_runtime_non_rc(const value_t& value){
+static runtime_value_t make_runtime_non_rc(const value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 
 	const auto& type = value.get_type();

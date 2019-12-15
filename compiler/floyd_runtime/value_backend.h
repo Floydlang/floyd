@@ -50,7 +50,6 @@ namespace floyd {
 
 ////////////////////////////////	CONFIGURATION
 
-
 const bool k_heap_mutex = true;
 const bool k_keep_deleted_allocs = true;
 #define ATOMIC_RC 1
@@ -61,7 +60,6 @@ const bool k_keep_deleted_allocs = true;
 
 struct type_t;
 struct heap_alloc_64_t;
-
 
 struct VECTOR_CARRAY_T;
 struct VECTOR_HAMT_T;
@@ -91,7 +89,6 @@ runtime_type_t make_runtime_type(type_t type);
 
 struct heap_rec_t {
 	heap_alloc_64_t* alloc_ptr;
-//	bool in_use;
 };
 
 static const uint64_t k_alloc_start_id = 1000000;
@@ -99,8 +96,7 @@ static const uint64_t HEAP_MAGIC = 0xf00d1234;
 
 
 
-//static const uint64_t UNINITIALIZED_RUNTIME_VALUE = 0x00000000deadbee1;
-  static const uint64_t UNINITIALIZED_RUNTIME_VALUE = 0x4444deadbeef3333;
+static const uint64_t UNINITIALIZED_RUNTIME_VALUE = 0x4444deadbeef3333;
 
 
 struct heap_t {
@@ -236,9 +232,7 @@ void* get_alloc_ptr(heap_alloc_64_t& alloc);
 const void* get_alloc_ptr(const heap_alloc_64_t& alloc);
 
 void trace_heap(const heap_t& heap);
-void detect_leaks(const heap_t& heap);
 
-inline uint64_t size_to_allocation_blocks(std::size_t size);
 
 //	Returns updated RC, no need to atomically read it yourself.
 //	If returned RC is 0, there is no way for any other client to bump it up again.
@@ -256,8 +250,6 @@ void dispose_alloc(heap_alloc_64_t& alloc);
 
 	Future: these can have different sizes. A vector can use SSO and embedd head + some body directly here.
 */
-
-struct abstract_func_t {};
 
 
 //	64 bits
@@ -306,47 +298,6 @@ uint64_t get_vec_string_size(runtime_value_t str);
 
 void copy_elements(runtime_value_t dest[], runtime_value_t source[], uint64_t count);
 
-
-
-////////////////////////////////		WIDE_RETURN_T
-
-
-/*
-First-class values
-
-LLVM has a distinction between first class values and other types of values.
-First class values can be returned by instructions, passed to functions,
-loaded, stored, PHI'd etc.  Currently the first class value types are:
-
-  1. Integer
-  2. Floating point
-  3. Pointer
-  4. Vector
-  5. Opaque (which is assumed to eventually resolve to 1-4)
-
-The non-first-class types are:
-
-  5. Array
-  6. Structure/Packed Structure
-  7. Function
-  8. Void
-  9. Label
-*/
-//	LLVM has a limitation on return values. It can only be two members in LLVM struct, each a word wide.
-
-
-//	### Also use for arguments, not only return.
-struct WIDE_RETURN_T {
-	runtime_value_t a;
-	runtime_value_t b;
-};
-
-enum class WIDE_RETURN_MEMBERS {
-	a = 0,
-	b = 1
-};
-
-WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
 
 
 ////////////////////////////////		VECTOR_CARRAY_T
@@ -941,42 +892,13 @@ void release_struct(value_backend_t& backend, runtime_value_t s, type_t type);
 
 ////////////////////////////////		DETECT TYPES
 
-
-
-inline bool is_vector_carray(const types_t& types, const config_t& config, type_t t){
-	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(config.check_invariant());
-	QUARK_ASSERT(t.check_invariant());
-
-	return peek2(types, t).is_vector() && config.vector_backend_mode == vector_backend::carray;
-}
-inline bool is_vector_hamt(const types_t& types, const config_t& config, type_t t){
-	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(config.check_invariant());
-	QUARK_ASSERT(t.check_invariant());
-
-	return peek2(types, t).is_vector() && config.vector_backend_mode == vector_backend::hamt;
-}
-
-inline bool is_dict_cppmap(const types_t& types, const config_t& config, type_t t){
-	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(config.check_invariant());
-	QUARK_ASSERT(t.check_invariant());
-
-	return peek2(types, t).is_dict() && config.dict_backend_mode == dict_backend::cppmap;
-}
-inline bool is_dict_hamt(const types_t& types, const config_t& config, type_t t){
-	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(config.check_invariant());
-	QUARK_ASSERT(t.check_invariant());
-
-	return peek2(types, t).is_dict() && config.dict_backend_mode == dict_backend::hamt;
-}
-
+inline bool is_vector_carray(const types_t& types, const config_t& config, type_t t);
+inline bool is_vector_hamt(const types_t& types, const config_t& config, type_t t);
+inline bool is_dict_cppmap(const types_t& types, const config_t& config, type_t t);
+inline bool is_dict_hamt(const types_t& types, const config_t& config, type_t t);
 
 
 value_backend_t make_test_value_backend();
-
 
 
 //////////////////////////////////////////		runtime_value_t
@@ -1006,7 +928,6 @@ value_t from_runtime_struct(const value_backend_t& backend, const runtime_value_
 //////////////////////////////////////////		value_t vs bc_value_t
 
 
-runtime_value_t make_runtime_non_rc(const value_t& value);
 bc_value_t make_non_rc(const value_t& value);
 
 value_t bc_to_value(const value_backend_t& backend, const bc_value_t& value);
@@ -1098,16 +1019,6 @@ inline void release_vector_hamt_nonpod(value_backend_t& backend, runtime_value_t
 }
 
 
-inline uint64_t size_to_allocation_blocks(std::size_t size){
-	const auto r = (size >> 3) + ((size & 7) > 0 ? 1 : 0);
-
-	QUARK_ASSERT((r * sizeof(uint64_t) - size) >= 0);
-	QUARK_ASSERT((r * sizeof(uint64_t) - size) < sizeof(uint64_t));
-
-	return r;
-}
-
-
 inline type_t lookup_vector_element_type(const value_backend_t& backend, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -1128,6 +1039,36 @@ inline type_t lookup_dict_value_type(const value_backend_t& backend, type_t type
 
 	QUARK_ASSERT(backend.check_invariant());
 	return backend.child_type[type.get_lookup_index()];
+}
+
+inline bool is_vector_carray(const types_t& types, const config_t& config, type_t t){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(config.check_invariant());
+	QUARK_ASSERT(t.check_invariant());
+
+	return peek2(types, t).is_vector() && config.vector_backend_mode == vector_backend::carray;
+}
+inline bool is_vector_hamt(const types_t& types, const config_t& config, type_t t){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(config.check_invariant());
+	QUARK_ASSERT(t.check_invariant());
+
+	return peek2(types, t).is_vector() && config.vector_backend_mode == vector_backend::hamt;
+}
+
+inline bool is_dict_cppmap(const types_t& types, const config_t& config, type_t t){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(config.check_invariant());
+	QUARK_ASSERT(t.check_invariant());
+
+	return peek2(types, t).is_dict() && config.dict_backend_mode == dict_backend::cppmap;
+}
+inline bool is_dict_hamt(const types_t& types, const config_t& config, type_t t){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(config.check_invariant());
+	QUARK_ASSERT(t.check_invariant());
+
+	return peek2(types, t).is_dict() && config.dict_backend_mode == dict_backend::hamt;
 }
 
 }	// floyd

@@ -110,6 +110,61 @@ llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<
 
 
 
+
+////////////////////////////////		WIDE_RETURN_T
+
+
+/*
+First-class values
+
+LLVM has a distinction between first class values and other types of values.
+First class values can be returned by instructions, passed to functions,
+loaded, stored, PHI'd etc.  Currently the first class value types are:
+
+  1. Integer
+  2. Floating point
+  3. Pointer
+  4. Vector
+  5. Opaque (which is assumed to eventually resolve to 1-4)
+
+The non-first-class types are:
+
+  5. Array
+  6. Structure/Packed Structure
+  7. Function
+  8. Void
+  9. Label
+*/
+//	LLVM has a limitation on return values. It can only be two members in LLVM struct, each a word wide.
+
+
+//	### Also use for arguments, not only return.
+struct WIDE_RETURN_T {
+	runtime_value_t a;
+	runtime_value_t b;
+};
+
+enum class WIDE_RETURN_MEMBERS {
+	a = 0,
+	b = 1
+};
+
+WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
+
+
+
+WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b){
+	return WIDE_RETURN_T{ a, b };
+}
+
+QUARK_TEST("", "", "", ""){
+	const auto wr_struct_size = sizeof(WIDE_RETURN_T);
+	QUARK_VERIFY(wr_struct_size == 16);
+}
+
+
+
+
 /*
 static llvm::StructType* make_wide_return_type_internal(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
