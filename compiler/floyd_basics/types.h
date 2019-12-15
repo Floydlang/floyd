@@ -538,16 +538,6 @@ typedef type_t type_desc_t;
 /////////////////////////////////////////////////		FREE FUNCTIONS
 
 
-inline type_t make_undefined(){
-	return type_t::assemble2(
-		(type_lookup_index_t)base_type::k_undefined,
-		base_type::k_undefined
-	);
-}
-
-inline type_t make_json_type(){
-	return type_t::make_json();
-}
 
 type_t make_struct(types_t& types, const struct_type_desc_t& desc);
 type_t make_struct(const types_t& types, const struct_type_desc_t& desc);

@@ -121,7 +121,7 @@ struct value_ext_t {
 
 	public: std::string _string;
 	public: std::shared_ptr<json_t> _json;
-	public: type_t _typeid_value = make_undefined();
+	public: type_t _typeid_value = type_t::make_undefined();
 	public: std::shared_ptr<struct_value_t> _struct;
 	public: std::vector<value_t> _vector_elements;
 	public: std::map<std::string, value_t> _dict_entries;

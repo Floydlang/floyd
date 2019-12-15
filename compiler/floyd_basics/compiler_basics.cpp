@@ -244,7 +244,7 @@ static clock_bus_t unpack_clock_bus(types_t& types, const json_t& clock_bus_obj)
 	for(const auto& process_pair: processes_map){
 		const auto name_key = process_pair.first;
 		if(process_pair.second.is_string()){
-			processes.insert({ name_key, process_def_t { process_pair.second.get_string(), make_undefined(), make_undefined(), k_no_module_symbol, k_no_module_symbol } } );
+			processes.insert({ name_key, process_def_t { process_pair.second.get_string(), type_t::make_undefined(), type_t::make_undefined(), k_no_module_symbol, k_no_module_symbol } } );
 		}
 		else if(process_pair.second.is_object()){
 			const auto process_def = unpack_process_def(types, process_pair.second);

@@ -180,10 +180,10 @@ static a_result_t parse_a(types_t& types, const seq_t& p, const location_t& loc)
 	}
 	else if(!optional_type_pos.first && identifier_pos.first != ""){
 		QUARK_ASSERT(false);
-		return a_result_t{ make_undefined(), optional_type_pos.first->get_symbol_ref(types), identifier_pos.second };
+		return a_result_t{ type_t::make_undefined(), optional_type_pos.first->get_symbol_ref(types), identifier_pos.second };
 	}
 	else if(optional_type_pos.first && optional_type_pos.first->is_symbol_ref() && identifier_pos.first == ""){
-		return a_result_t{ make_undefined(), optional_type_pos.first->get_symbol_ref(types), identifier_pos.second };
+		return a_result_t{ type_t::make_undefined(), optional_type_pos.first->get_symbol_ref(types), identifier_pos.second };
 	}
 	else{
 		throw_compiler_error(loc, "Require a value for new bind.");

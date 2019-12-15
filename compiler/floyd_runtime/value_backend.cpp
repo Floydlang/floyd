@@ -864,7 +864,7 @@ JSON_T* alloc_json(heap_t& heap, const json_t& init){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(init.check_invariant());
 
-	heap_alloc_64_t* alloc = alloc_64(heap, 0, make_json_type(), "JSON");
+	heap_alloc_64_t* alloc = alloc_64(heap, 0, type_t::make_json(), "JSON");
 
 	auto json = reinterpret_cast<JSON_T*>(alloc);
 	auto copy = new json_t(init);
@@ -1092,7 +1092,7 @@ void store_via_ptr2(const types_t& types, void* value_ptr, const type_t& type, c
 
 bc_value_t::bc_value_t() :
 	_backend(nullptr),
-	_type(floyd::make_undefined()),
+	_type(type_t::make_undefined()),
 	_pod(make_blank_runtime_value())
 {
 	QUARK_ASSERT(check_invariant());
@@ -1919,7 +1919,7 @@ value_backend_t::value_backend_t(
 			child_type.push_back(type);
 		}
 		else{
-			child_type.push_back(make_undefined());
+			child_type.push_back(type_t::make_undefined());
 		}
 	}
 

@@ -387,7 +387,7 @@ std::pair<std::shared_ptr<type_t>, seq_t> read_basic_type(types_t& types, const 
 		return { nullptr, pos1.second };
 	}
 	else if(pos1.first == keyword_t::k_undefined){
-		return { std::make_shared<type_t>(make_undefined()), pos1.second };
+		return { std::make_shared<type_t>(type_t::make_undefined()), pos1.second };
 	}
 	else if(pos1.first == keyword_t::k_any){
 		return { std::make_shared<type_t>(type_t::make_any()), pos1.second };
@@ -562,7 +562,7 @@ QUARK_TEST("", "read_type()", "", ""){
 }
 QUARK_TEST("", "read_type()", "", ""){
 	types_t i;
-	QUARK_VERIFY(*read_type(i, seq_t("undef")).first == make_undefined());
+	QUARK_VERIFY(*read_type(i, seq_t("undef")).first == type_t::make_undefined());
 }
 QUARK_TEST("", "read_type()", "", ""){
 	types_t i;

@@ -1826,18 +1826,18 @@ type_t type_from_json(types_t& types, const json_t& t){
 		//	Tagged type.
 		else if(is_type_name(s)){
 			//??? also store child_types[0]
-			return make_named_type(types, unpack_type_name(s), make_undefined());
+			return make_named_type(types, unpack_type_name(s), type_t::make_undefined());
 		}
 
 		//	Other types.
 		else {
 			if(s == ""){
-				return make_undefined();
+				return type_t::make_undefined();
 			}
 			const auto b = opcode_to_base_type(s);
 
 			if(b == base_type::k_undefined){
-				return make_undefined();
+				return type_t::make_undefined();
 			}
 			else if(b == base_type::k_any){
 				return type_t::make_any();
@@ -1926,7 +1926,7 @@ type_t type_from_json(types_t& types, const json_t& t){
 	else{
 		quark::throw_runtime_error("Invalid typeid-json.");
 	}
-	return make_undefined();
+	return type_t::make_undefined();
 }
 
 type_t type_from_json_shallow(const json_t& j){
@@ -2104,7 +2104,7 @@ QUARK_TEST("Types", "types_t()", "", ""){
 QUARK_TEST("Types", "update_named_type()", "", ""){
 	types_t types;
 	const auto name = unpack_type_name("/a/b");
-	const auto a = make_named_type(types, name, make_undefined());
+	const auto a = make_named_type(types, name, type_t::make_undefined());
 	const auto s = make_struct(types, struct_type_desc_t( { member_t(a, "f") } ));
 	const auto b = update_named_type(types, a, s);
 
@@ -2115,7 +2115,7 @@ QUARK_TEST("Types", "update_named_type()", "", ""){
 type_t make_recursive_type_test(types_t& types){
 	const auto trace = true;
 
-	const auto a = make_named_type(types, type_name_t{{ "glob", "object_t" }}, make_undefined());
+	const auto a = make_named_type(types, type_name_t{{ "glob", "object_t" }}, type_t::make_undefined());
 	if(trace) trace_types(types);
 	const auto v = make_vector(types, a);
 	if(trace) trace_types(types);

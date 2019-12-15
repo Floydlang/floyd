@@ -1896,7 +1896,7 @@ static std::vector<llvm_function_link_entry_t> make_entries(const intrinsic_sign
 	std::vector<llvm_function_link_entry_t> result;
 	for(const auto& bind: binds){
 		auto signature_it = std::find_if(intrinsic_signatures.vec.begin(), intrinsic_signatures.vec.end(), [&] (const intrinsic_signature_t& m) { return module_symbol_t(m.name) == bind.name; } );
-		const auto function_type = signature_it != intrinsic_signatures.vec.end() ? signature_it->_function_type : make_undefined();
+		const auto function_type = signature_it != intrinsic_signatures.vec.end() ? signature_it->_function_type : type_t::make_undefined();
 
 		const auto link_name = bind.name;
 		const auto exists_it = std::find_if(result.begin(), result.end(), [&](const llvm_function_link_entry_t& e){ return e.link_name == link_name; });

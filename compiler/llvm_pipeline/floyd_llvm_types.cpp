@@ -217,7 +217,7 @@ static llvm_function_def_t map_function_arguments_internal(
 	arg_results.push_back({
 		frp_type,
 		"floyd_runtime_ptr",
-		make_undefined(),
+		type_t::make_undefined(),
 		-1,
 		llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr
 	});
@@ -239,7 +239,7 @@ static llvm_function_def_t map_function_arguments_internal(
 			arg_results.push_back({
 				builder.acc.runtime_type_type,
 				std::to_string(index),
-				make_undefined(),
+				type_t::make_undefined(),
 				index,
 				llvm_arg_mapping_t::map_type::k_dyn_type
 			});

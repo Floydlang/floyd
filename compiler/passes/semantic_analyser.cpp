@@ -2428,7 +2428,7 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 		}
 
 		const auto name = generate_type_name(a_acc, identifier);
-		const auto named_type = make_named_type(a_acc._types, name, make_undefined());
+		const auto named_type = make_named_type(a_acc._types, name, type_t::make_undefined());
 
 		const auto type_name_symbol = symbol_t::make_named_type(named_type);
 		a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ identifier, type_name_symbol });
@@ -2770,7 +2770,7 @@ QUARK_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
 			expression_type::k_arithmetic_add,
 			expression_t::make_literal_int(1),
 			expression_t::make_literal_int(2),
-			make_undefined()
+			type_t::make_undefined()
 		)
 	);
 

@@ -98,7 +98,7 @@ std::pair<void*, type_t> bind_global(const llvm_execution_engine_t& ee, const mo
 		return { global_ptr, symbol->get_value_type() };
 	}
 	else{
-		return { nullptr, make_undefined() };
+		return { nullptr, type_t::make_undefined() };
 	}
 }
 
@@ -149,7 +149,7 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const module_symbol_t& n
 		return llvm_bind_t {
 			name,
 			nullptr,
-			make_undefined()
+			type_t::make_undefined()
 		};
 	}
 }
@@ -172,7 +172,7 @@ static std::vector<llvm_function_link_entry_t> make_runtime_function_link_map(ll
 	std::vector<llvm_function_link_entry_t> result;
 	for(const auto& e: runtime_function_binds){
 		const auto link_name = module_symbol_t { e.name };
-		const auto def = llvm_function_link_entry_t{ "runtime", link_name, e.llvm_function_type, nullptr, make_undefined(), {}, e.native_f };
+		const auto def = llvm_function_link_entry_t{ "runtime", link_name, e.llvm_function_type, nullptr, type_t::make_undefined(), {}, e.native_f };
 		result.push_back(def);
 	}
 
@@ -199,7 +199,7 @@ static std::vector<llvm_function_link_entry_t> make_init_deinit_link_map(llvm::L
 			},
 			false
 		);
-		const auto def = llvm_function_link_entry_t{ "runtime", link_name, function_type, nullptr, make_undefined(), {}, nullptr };
+		const auto def = llvm_function_link_entry_t{ "runtime", link_name, function_type, nullptr, type_t::make_undefined(), {}, nullptr };
 		result.push_back(def);
 	}
 
@@ -213,7 +213,7 @@ static std::vector<llvm_function_link_entry_t> make_init_deinit_link_map(llvm::L
 			},
 			false
 		);
-		const auto def = llvm_function_link_entry_t{ "runtime", link_name, function_type, nullptr, make_undefined(), {}, nullptr };
+		const auto def = llvm_function_link_entry_t{ "runtime", link_name, function_type, nullptr, type_t::make_undefined(), {}, nullptr };
 		result.push_back(def);
 	}
 
@@ -609,7 +609,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			final_link_map,
 			&handler,
 			start_time,
-			llvm_bind_t{ k_no_module_symbol, nullptr, make_undefined() },
+			llvm_bind_t{ k_no_module_symbol, nullptr, type_t::make_undefined() },
 			false,
 			program_breaks.settings.config,
 
