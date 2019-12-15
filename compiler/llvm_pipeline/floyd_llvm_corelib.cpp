@@ -80,7 +80,7 @@ static DICT_CPPMAP_T* llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
 	return result.dict_cppmap_ptr;
 }
 
-runtime_value_t llvm_corelib__make_hardware_caps_report(floyd_runtime_t* frp, runtime_value_t caps0){
+static runtime_value_t llvm_corelib__make_hardware_caps_report(floyd_runtime_t* frp, runtime_value_t caps0){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 	auto& types = backend.types;
@@ -95,7 +95,7 @@ runtime_value_t llvm_corelib__make_hardware_caps_report(floyd_runtime_t* frp, ru
 	const auto s = corelib_make_hardware_caps_report(caps);
 	return to_runtime_string(r, s);
 }
-runtime_value_t llvm_corelib__make_hardware_caps_report_brief(floyd_runtime_t* frp, runtime_value_t caps0){
+static runtime_value_t llvm_corelib__make_hardware_caps_report_brief(floyd_runtime_t* frp, runtime_value_t caps0){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 	auto& types = backend.types;
@@ -109,7 +109,7 @@ runtime_value_t llvm_corelib__make_hardware_caps_report_brief(floyd_runtime_t* f
 	const auto s = corelib_make_hardware_caps_report_brief(caps);
 	return to_runtime_string(r, s);
 }
-runtime_value_t llvm_corelib__get_current_date_and_time_string(floyd_runtime_t* frp){
+static runtime_value_t llvm_corelib__get_current_date_and_time_string(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto s = get_current_date_and_time_string();

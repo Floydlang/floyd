@@ -111,7 +111,6 @@ static rt_value_t bc_corelib__get_current_date_and_time_string(interpreter_t& vm
 	QUARK_ASSERT(arg_count == 0);
 
 	auto& backend = vm._backend;
-	const auto& types = backend.types;
 	const auto s = get_current_date_and_time_string();
 	return value_to_rt(backend, value_t::make_string(s));
 }
@@ -249,7 +248,6 @@ static rt_value_t bc_corelib__read_line_stdin(interpreter_t& vm, const rt_value_
 	QUARK_ASSERT(arg_count == 0);
 
 	auto& backend = vm._backend;
-	const auto& types = backend.types;
 
 	std::string file_contents = corelib_read_line_stdin();
 	const auto v = rt_value_t::make_string(backend, file_contents);
@@ -342,7 +340,7 @@ static rt_value_t bc_corelib__get_fs_environment(interpreter_t& vm, const rt_val
 	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
-	auto temp_types = vm._imm->_program._types;
+	auto temp_types = types;
 	const auto env = corelib_get_fs_environment();
 
 	const auto result = pack_fs_environment_t(temp_types, env);
@@ -360,14 +358,14 @@ static rt_value_t bc_corelib__does_fsentry_exist(interpreter_t& vm, const rt_val
 
 	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
 
-	auto temp_types = vm._imm->_program._types;
+	auto temp_types = types;
 	const std::string path = args[0].get_string_value(backend);
 
 	bool exists = corelib_does_fsentry_exist(path);
 
 	const auto result = value_t::make_bool(exists);
 	if(k_trace && false){
-		const auto debug = value_and_type_to_json(vm._imm->_program._types, result);
+		const auto debug = value_and_type_to_json(types, result);
 		QUARK_TRACE(json_to_pretty_string(debug));
 	}
 

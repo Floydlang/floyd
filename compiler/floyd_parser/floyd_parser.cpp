@@ -30,7 +30,7 @@ namespace parser {
 std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s);
 
 
-std::pair<json_t, seq_t> parse_statement(const seq_t& s){
+static std::pair<json_t, seq_t> parse_statement(const seq_t& s){
 	const auto pos = skip_whitespace(s);
 	try {
 		if(is_first(pos, "{")){
@@ -214,7 +214,7 @@ QUARK_TEST("", "parse_statements_bracketted()", "", ""){
 	);
 }
 
-void check_illegal_chars(const seq_t& p){
+static void check_illegal_chars(const seq_t& p){
 	const auto illegal_char = read_while(p, k_valid_expression_chars);
 	const auto pos = illegal_char.first.size();
 	if(pos < p.size()){

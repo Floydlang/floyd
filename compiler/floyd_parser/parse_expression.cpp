@@ -50,7 +50,7 @@ std::pair<json_t, seq_t> parse_expression_deep(const seq_t& p, const eoperator_p
 
 
 
-std::string expr_to_string(const json_t& e){
+static std::string expr_to_string(const json_t& e){
 	return json_to_compact_string(e);
 }
 
@@ -68,7 +68,7 @@ struct collection_element_t {
 	json_t _value;
 };
 
-bool operator==(const collection_element_t& lhs, const collection_element_t& rhs){
+static bool operator==(const collection_element_t& lhs, const collection_element_t& rhs){
 	return compare_shared_values(lhs._key, rhs._key)
 	&& lhs._value == rhs._value;
 }
@@ -79,12 +79,12 @@ struct collection_def_t {
 	std::vector<collection_element_t> _elements;
 };
 
-bool operator==(const collection_def_t& lhs, const collection_def_t& rhs){
+static bool operator==(const collection_def_t& lhs, const collection_def_t& rhs){
 	return
 		lhs._has_keys == rhs._has_keys
 		&& lhs._elements == rhs._elements;
 }
-std::vector<json_t> get_values(const collection_def_t& c){
+static std::vector<json_t> get_values(const collection_def_t& c){
 	std::vector<json_t> result;
 	for(const auto& e: c._elements){
 		result.push_back(e._value);
@@ -92,7 +92,7 @@ std::vector<json_t> get_values(const collection_def_t& c){
 	return result;
 }
 
-void ut_verify_collection(const quark::call_context_t& context, const std::pair<collection_def_t, seq_t> result, const std::pair<collection_def_t, seq_t> expected){
+static void ut_verify_collection(const quark::call_context_t& context, const std::pair<collection_def_t, seq_t> result, const std::pair<collection_def_t, seq_t> expected){
 	if(result == expected){
 	}
 	else{

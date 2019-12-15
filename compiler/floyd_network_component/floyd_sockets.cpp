@@ -75,7 +75,7 @@ static void setsockopt__int_safe(int sockfd, int level, int optname, int new_val
 }
 
 //	int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen);
-int getsockopt__int_safe(int sockfd, int level, int optname){
+static int getsockopt__int_safe(int sockfd, int level, int optname){
 	int temp_value = 0;
 	socklen_t temp_size = sizeof(temp_value);
 	int err = ::getsockopt(sockfd, level, optname, &temp_value, &temp_size);
@@ -149,7 +149,7 @@ bool SetSocketBlockingEnabled(int fd, bool blocking){
 
 #if QUARK_MAC || QUARK_LINUX
 
-bool SetSocketBlockingEnabled(int fd, bool blocking){
+static bool SetSocketBlockingEnabled(int fd, bool blocking){
 	QUARK_ASSERT(fd >= 0);
 
 	int flags = ::fcntl(fd, F_GETFL, 0);

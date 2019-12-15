@@ -375,7 +375,7 @@ static rt_value_t bc_intrinsic__map(interpreter_t& vm, const rt_value_t args[], 
 
 	auto& backend = vm._backend;
 
-	const auto e_type = peek2(backend.types, args[0]._type).get_vector_element_type(backend.types);
+//	const auto e_type = peek2(backend.types, args[0]._type).get_vector_element_type(backend.types);
 	const auto f = args[1];
 	const auto f_type_peek = peek2(backend.types, f._type);
 	const auto f_arg_types = f_type_peek.get_function_args(backend.types);
@@ -416,7 +416,7 @@ static rt_value_t bc_intrinsic__map_string(interpreter_t& vm, const rt_value_t a
 	const auto f = args[1];
 	const auto f_type_peek = peek2(backend.types, f._type);
 	const auto f_arg_types = f_type_peek.get_function_args(backend.types);
-	const auto r_type = f_type_peek.get_function_return(backend.types);
+//	const auto r_type = f_type_peek.get_function_return(backend.types);
 	const auto& context = args[2];
 
 	const auto input_vec = args[0].get_string_value(backend);

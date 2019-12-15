@@ -260,10 +260,10 @@ bool interpreter_stack_t::check_stack_frame(const frame_pos_t& in_frame) const{
 	}
 	else{
 		for(int i = 0 ; i < in_frame._frame_ptr->_symbols.size() ; i++){
-			const auto& symbol = in_frame._frame_ptr->_symbols[i];
+//			const auto& symbol = in_frame._frame_ptr->_symbols[i];
 
 //			bool symbol_ext = encode_as_external(_types, symbol.second._value_type);
-			int local_pos = get_local_n_pos(in_frame._frame_pos, i);
+//			int local_pos = get_local_n_pos(in_frame._frame_pos, i);
 
 //			bool stack_ext = debug_is_ext(local_pos);
 //			QUARK_ASSERT(symbol_ext == stack_ext);

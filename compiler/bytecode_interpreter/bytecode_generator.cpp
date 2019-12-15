@@ -1170,7 +1170,7 @@ static expression_gen_t bcgen_intrinsic_expression(bcgenerator_t& gen_acc, const
 	QUARK_ASSERT(call_output_type.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-	const auto& types = gen_acc._ast_imm->_tree._types;
+//	const auto& types = gen_acc._ast_imm->_tree._types;
 	const auto& signs = gen_acc._ast_imm->intrinsic_signatures;
 
 	if(details.call_name == get_intrinsic_opcode(signs.assert)){

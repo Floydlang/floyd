@@ -24,7 +24,7 @@ struct visit_ast_t {
 	general_purpose_ast_t tree;
 };
 
-value_t visit_ast_value(visit_ast_t& acc, const value_t& value){
+static value_t visit_ast_value(visit_ast_t& acc, const value_t& value){
 	return value;
 }
 
@@ -242,7 +242,7 @@ static body_t visit_ast_body(visit_ast_t& acc, const body_t& body){
 	return result;
 }
 
-general_purpose_ast_t visit_ast(visit_ast_t& acc, const general_purpose_ast_t& ast){
+static general_purpose_ast_t visit_ast(visit_ast_t& acc, const general_purpose_ast_t& ast){
 	general_purpose_ast_t result;
 
 	result._globals = visit_ast_body(acc, ast._globals);
