@@ -386,7 +386,7 @@ int heap_t::count_used() const {
 
 
 runtime_type_t make_runtime_type(type_t type){
-	return runtime_type_t{ type.get_data() };
+	return type.get_data();
 }
 
 
@@ -2177,15 +2177,6 @@ void trace_value_backend_dynamic(const value_backend_t& backend){
 		trace_value_backend_dynamic__internal(backend);
 	}
 }
-
-
-//??? kill this function
-type_t lookup_type_ref(const value_backend_t& backend, runtime_type_t type){
-	QUARK_ASSERT(backend.check_invariant());
-
-	return type_t(type);
-}
-
 
 
 

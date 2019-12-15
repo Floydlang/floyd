@@ -81,7 +81,7 @@ struct value_backend_t;
 	It is 1:1 compatible with type_t. Use type_t except in binary situations.
 */
 
-typedef int32_t runtime_type_t;
+typedef uint32_t runtime_type_t;
 
 runtime_type_t make_runtime_type(type_t type);
 
@@ -890,7 +890,12 @@ const func_link_t& lookup_func_link_required(const value_backend_t& backend, run
 const func_link_t& lookup_func_link_from_id(const value_backend_t& backend, runtime_value_t value);
 const func_link_t& lookup_func_link_from_native(const value_backend_t& backend, runtime_value_t value);
 
-type_t lookup_type_ref(const value_backend_t& backend, runtime_type_t type);
+//??? kill this function
+inline type_t lookup_type_ref(const value_backend_t& backend, runtime_type_t type){
+	QUARK_ASSERT(backend.check_invariant());
+
+	return type_t(type);
+}
 
 inline type_t lookup_vector_element_type(const value_backend_t& backend, type_t type);
 inline type_t lookup_dict_value_type(const value_backend_t& backend, type_t type);

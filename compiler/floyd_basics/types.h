@@ -269,6 +269,7 @@ inline bool is_empty_type_name(const type_name_t& n){
 
 
 typedef int32_t type_lookup_index_t;
+typedef uint32_t type_data_t;
 
 //	IMPORTANT: Collect all used types in a vector so we can use type_t as an index into it for O(1)
 struct type_t {
@@ -447,7 +448,7 @@ struct type_t {
 	//////////////////////////////////////////////////		INTERNALS
 
 
-	explicit type_t(int32_t data) :
+	explicit type_t(type_data_t data) :
 		data(data)
 	{
 #if DEBUG
@@ -464,7 +465,7 @@ struct type_t {
 		return get_index(data);
 	}
 
-	int32_t get_data() const {
+	type_data_t get_data() const {
 		QUARK_ASSERT(check_invariant());
 
 		return data;
@@ -478,17 +479,17 @@ struct type_t {
 	//////////////////////////////////////////////////		BIT MANGLING
 
 
-	public: static uint32_t assemble(type_lookup_index_t lookup_index, base_type bt1){
-		const auto a = static_cast<uint32_t>(bt1);
+	public: static type_data_t assemble(type_lookup_index_t lookup_index, base_type bt1){
+		const auto a = static_cast<type_data_t>(bt1);
 		return a * 100 * 10000 + lookup_index;
 	}
 
 	///??? bump to large number
-	private: inline static type_lookup_index_t get_index(uint32_t data) {
+	private: inline static type_lookup_index_t get_index(type_data_t data) {
 		return data % (100 * 10000);
 	}
-	private: inline static base_type get_bt0(uint32_t data){
-		const uint32_t result = data / (100 * 10000);
+	private: inline static base_type get_bt0(type_data_t data){
+		const type_data_t result = data / (100 * 10000);
 		return static_cast<base_type>(result);
 	}
 
@@ -511,7 +512,7 @@ struct type_t {
 		(bt0 * 100 + bt1) * 10.000.000
 	*/
 
-	private: uint32_t data;
+	private: type_data_t data;
 #if DEBUG
 	private: base_type debug_bt0;
 	private: type_lookup_index_t debug_lookup_index;
