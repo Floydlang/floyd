@@ -487,7 +487,6 @@ struct DICT_CPPMAP_T {
 };
 
 runtime_value_t alloc_dict_cppmap(heap_t& heap, type_t value_type);
-void dispose_dict_cppmap(runtime_value_t& vec);
 
 
 
@@ -936,104 +935,68 @@ runtime_value_t get_rt_value(value_backend_t& backend, const rt_value_t& value);
 
 
 
-
-
-
-
-
-
-
-
-
-
 int compare_values(value_backend_t& backend, int64_t op, const runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs);
 
+inline runtime_value_t update__string(value_backend_t& backend, runtime_value_t s, runtime_value_t key_value, runtime_value_t value);
 
-
-
-
-inline const runtime_value_t update__string(value_backend_t& backend, runtime_value_t s, runtime_value_t key_value, runtime_value_t value);
-
-const runtime_value_t update_element__vector_carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value);
-inline const runtime_value_t update_element__vector_hamt_pod(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value, runtime_type_t value_type);
-inline const runtime_value_t update_element__vector_hamt_nonpod(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value, runtime_type_t value_type);
+runtime_value_t update_element__vector_carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value);
+inline runtime_value_t update_element__vector_hamt_pod(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value, runtime_type_t value_type);
+inline runtime_value_t update_element__vector_hamt_nonpod(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value, runtime_type_t value_type);
 
 runtime_value_t update_element__vector(value_backend_t& backend, runtime_value_t obj1, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value);
+
 
 const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_value_t value);
 const runtime_value_t update__dict_hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_value_t value);
 runtime_value_t update_dict(value_backend_t& backend, runtime_value_t obj1, runtime_type_t coll_type, runtime_value_t key_value, runtime_value_t value);
 
+
 runtime_value_t update_struct_member(value_backend_t& backend, runtime_value_t struct_value, const type_t& struct_type, int member_index, runtime_value_t value, const type_t& member_type);
 
 
+runtime_value_t subset_vector_range(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, int64_t start, int64_t end);
+runtime_value_t subset_vector_range__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end);
+runtime_value_t subset_vector_range__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end);
+runtime_value_t subset_vector_range__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end);
 
-const runtime_value_t subset__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end);
-const runtime_value_t subset__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end);
-const runtime_value_t subset__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end);
-runtime_value_t subset(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, int64_t start, int64_t end);
+runtime_value_t replace_vector_range(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, int64_t start, int64_t end, runtime_value_t value, runtime_type_t replacement_type);
+runtime_value_t replace_vector_range__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t value, runtime_type_t replacement_type);
+runtime_value_t replace_vector_range__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t value, runtime_type_t replacement_type);
+runtime_value_t replace_vector_range__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t value, runtime_type_t replacement_type);
 
-
-
-runtime_value_t replace__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t replacement_value, runtime_type_t replacement_type);
-runtime_value_t replace__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t replacement_value, runtime_type_t replacement_type);
-runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t replacement_value, runtime_type_t replacement_type);
-
-runtime_value_t replace(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, int64_t start, int64_t end, runtime_value_t replacement_value, runtime_type_t replacement_type);
-
-
-
-
+int64_t find_vector_element(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type);
 int64_t find__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type);
 int64_t find__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type);
 int64_t find__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type);
 
-int64_t find2(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type);
-
-
-
-bool exists(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t value, runtime_type_t value_type);
+bool exists_dict_value(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t value, runtime_type_t value_type);
 
 runtime_value_t erase(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type);
+
 runtime_value_t get_keys(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type);
-
-
-
-///??? Split into two passes so we don't get 2 x 2. Generate code mixup? Have one function with two checks?
 runtime_value_t get_keys__cppmap_carray(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type);
 runtime_value_t get_keys__cppmap_hamt(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type);
-
 runtime_value_t get_keys__hamtmap_carray(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type);
 runtime_value_t get_keys__hamtmap_hamt(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type);
 
-
-
+runtime_value_t concatunate_vectors(value_backend_t& backend, const type_t& type, runtime_value_t lhs, runtime_value_t rhs);
 runtime_value_t concat_strings(value_backend_t& backend, const runtime_value_t& lhs, const runtime_value_t& rhs);
 runtime_value_t concat_vector_carray(value_backend_t& backend, const type_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs);
 runtime_value_t concat_vector_hamt(value_backend_t& backend, const type_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs);
-runtime_value_t concatunate_vectors(value_backend_t& backend, const type_t& type, runtime_value_t lhs, runtime_value_t rhs);
-
 
 uint64_t get_vector_size(value_backend_t& backend, const type_t& vector_type, runtime_value_t vec);
 runtime_value_t lookup_vector_element(value_backend_t& backend, const type_t& vector_type, runtime_value_t vec, uint64_t index);
 
-
-
-
-
+runtime_value_t push_back2(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element);
 runtime_value_t push_back__string(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element);
 runtime_value_t push_back_carray_pod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element);
 runtime_value_t push_back_carray_nonpod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element);
 runtime_value_t push_back_hamt_pod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element);
 runtime_value_t push_back_hamt_nonpod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element);
-runtime_value_t push_back2(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element);
 
-
-
+runtime_value_t lookup_dict(value_backend_t& backend, runtime_value_t dict, const type_t& dict_type, runtime_value_t key);
 runtime_value_t lookup_dict_cppmap(value_backend_t& backend, runtime_value_t dict, const type_t& dict_type, runtime_value_t key);
 runtime_value_t lookup_dict_hamt(value_backend_t& backend, runtime_value_t dict, const type_t& dict_type, runtime_value_t key);
-runtime_value_t lookup_dict(value_backend_t& backend, runtime_value_t dict, const type_t& dict_type, runtime_value_t key);
-
 
 uint64_t get_dict_size(value_backend_t& backend, const type_t& dict_type, runtime_value_t dict);
 
@@ -1185,7 +1148,7 @@ inline bool is_dict_hamt(const types_t& types, const config_t& config, type_t t)
 
 
 //??? optimize by copying alloc64_t directly, then overwrite 1 character.
-inline const runtime_value_t update__string(value_backend_t& backend, runtime_value_t s, runtime_value_t key_value, runtime_value_t value){
+inline runtime_value_t update__string(value_backend_t& backend, runtime_value_t s, runtime_value_t key_value, runtime_value_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto str = from_runtime_string2(backend, s);
@@ -1204,21 +1167,25 @@ inline const runtime_value_t update__string(value_backend_t& backend, runtime_va
 	return result2;
 }
 
-inline const runtime_value_t update_element__vector_hamt_pod(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value){
+inline runtime_value_t update_element__vector_hamt_pod(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto vec = coll_value.vector_hamt_ptr;
 	const auto i = index.int_value;
+
+	//??? Move runtime checkes like this to the client. Assert here.
 	if(i < 0 || i >= vec->get_element_count()){
 		quark::throw_runtime_error("Position argument to update() is outside collection span.");
 	}
 	return store_immutable_hamt(coll_value, i, value);
 }
-inline const runtime_value_t update_element__vector_hamt_nonpod(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value){
+inline runtime_value_t update_element__vector_hamt_nonpod(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto vec = coll_value.vector_hamt_ptr;
 	const auto i = index.int_value;
+
+	//??? Move runtime checkes like this to the client. Assert here.
 	if(i < 0 || i >= vec->get_element_count()){
 		quark::throw_runtime_error("Position argument to update() is outside collection span.");
 	}

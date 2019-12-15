@@ -734,7 +734,7 @@ runtime_value_t alloc_dict_cppmap(heap_t& heap, type_t value_type){
 	return runtime_value_t { .dict_cppmap_ptr = dict };
 }
 
-void dispose_dict_cppmap(runtime_value_t& d){
+static void dispose_dict_cppmap(runtime_value_t& d){
 	QUARK_ASSERT(sizeof(DICT_CPPMAP_T) == sizeof(heap_alloc_64_t));
 	QUARK_ASSERT(d.dict_cppmap_ptr != nullptr);
 	auto& dict = *d.dict_cppmap_ptr;
@@ -3772,7 +3772,7 @@ runtime_value_t update_dict(value_backend_t& backend, runtime_value_t obj1, runt
 
 
 
-const runtime_value_t update_element__vector_carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value){
+runtime_value_t update_element__vector_carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto vec = unpack_vector_carray_arg(backend, coll_value, coll_type);
@@ -3961,7 +3961,7 @@ runtime_value_t update_struct_member(value_backend_t& backend, runtime_value_t s
 
 
 
-const runtime_value_t subset__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end){
+runtime_value_t subset_vector_range__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end){
 	QUARK_ASSERT(backend.check_invariant());
 
 	if(start < 0 || end < 0){
@@ -3979,7 +3979,7 @@ const runtime_value_t subset__string(value_backend_t& backend, runtime_value_t c
 	return result;
 }
 
-const runtime_value_t subset__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end){
+runtime_value_t subset_vector_range__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end){
 	QUARK_ASSERT(backend.check_invariant());
 
 	if(start < 0 || end < 0){
@@ -4014,7 +4014,7 @@ const runtime_value_t subset__carray(value_backend_t& backend, runtime_value_t c
 	return vec2;
 }
 
-const runtime_value_t subset__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end){
+runtime_value_t subset_vector_range__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end){
 	QUARK_ASSERT(backend.check_invariant());
 
 	if(start < 0 || end < 0){
@@ -4050,23 +4050,23 @@ const runtime_value_t subset__hamt(value_backend_t& backend, runtime_value_t col
 
 
 //	assert(subset("abc", 1, 3) == "bc");
-runtime_value_t subset(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, int64_t start, int64_t end){
+runtime_value_t subset_vector_range(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, int64_t start, int64_t end){
 	QUARK_ASSERT(backend.check_invariant());
 
-
+	//??? Move runtime checks like this to the client. Assert here.
 	if(start < 0 || end < 0){
 		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
 	}
 
 	const auto obj_type = type_t(coll_type);
 	if(obj_type.is_string()){
-		return subset__string(backend, coll_value, coll_type, start, end);
+		return subset_vector_range__string(backend, coll_value, coll_type, start, end);
 	}
 	else if(is_vector_carray(backend.types, backend.config, obj_type)){
-		return subset__carray(backend, coll_value, coll_type, start, end);
+		return subset_vector_range__carray(backend, coll_value, coll_type, start, end);
 	}
 	else if(is_vector_hamt(backend.types, backend.config, obj_type)){
-		return subset__hamt(backend, coll_value, coll_type, start, end);
+		return subset_vector_range__hamt(backend, coll_value, coll_type, start, end);
 	}
 	else{
 		quark::throw_runtime_error("Calling push_back() on unsupported type of value.");
@@ -4089,7 +4089,7 @@ static void check_replace_indexes(std::size_t start, std::size_t end){
 	}
 }
 
-runtime_value_t replace__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t replacement_value, runtime_type_t replacement_type){
+runtime_value_t replace_vector_range__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t value0, runtime_type_t replacement_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	check_replace_indexes(start, end);
@@ -4099,7 +4099,7 @@ runtime_value_t replace__string(value_backend_t& backend, runtime_value_t coll_v
 	QUARK_ASSERT(type3 == type0);
 
 	const auto s = from_runtime_string2(backend, coll_value);
-	const auto replace = from_runtime_string2(backend, replacement_value);
+	const auto replace = from_runtime_string2(backend, value0);
 
 	auto s_len = s.size();
 	auto replace_len = replace.size();
@@ -4118,7 +4118,7 @@ runtime_value_t replace__string(value_backend_t& backend, runtime_value_t coll_v
 	return result2;
 }
 
-runtime_value_t replace__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t replacement_value, runtime_type_t replacement_type){
+runtime_value_t replace_vector_range__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t value0, runtime_type_t replacement_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	check_replace_indexes(start, end);
@@ -4129,7 +4129,7 @@ runtime_value_t replace__carray(value_backend_t& backend, runtime_value_t coll_v
 	const auto element_itype = lookup_vector_element_type(backend, type_t(coll_type));
 
 	const auto vec = unpack_vector_carray_arg(backend, coll_value, coll_type);
-	const auto replace_vec = unpack_vector_carray_arg(backend, replacement_value, replacement_type);
+	const auto replace_vec = unpack_vector_carray_arg(backend, value0, replacement_type);
 
 	auto end2 = std::min(end, (size_t)vec->get_element_count());
 	auto start2 = std::min(start, end2);
@@ -4152,7 +4152,7 @@ runtime_value_t replace__carray(value_backend_t& backend, runtime_value_t coll_v
 
 	return vec2;
 }
-runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t replacement_value, runtime_type_t replacement_type){
+runtime_value_t replace_vector_range__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t value0, runtime_type_t replacement_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	check_replace_indexes(start, end);
@@ -4163,7 +4163,7 @@ runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t coll_val
 	const auto element_itype = lookup_vector_element_type(backend, type_t(coll_type));
 
 	const auto& vec = *coll_value.vector_hamt_ptr;
-	const auto& replace_vec = *replacement_value.vector_hamt_ptr;
+	const auto& replace_vec = *value0.vector_hamt_ptr;
 
 	auto end2 = std::min(end, (size_t)vec.get_element_count());
 	auto start2 = std::min(start, end2);
@@ -4201,7 +4201,7 @@ runtime_value_t replace__hamt(value_backend_t& backend, runtime_value_t coll_val
 
 
 //	assert(replace("One ring to rule them all", 4, 7, "rabbit") == "One rabbit to rule them all");
-runtime_value_t replace(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, int64_t start, int64_t end, runtime_value_t replacement_value, runtime_type_t replacement_type){
+runtime_value_t replace_vector_range(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, int64_t start, int64_t end, runtime_value_t value0, runtime_type_t replacement_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	if(start < 0 || end < 0){
@@ -4214,13 +4214,13 @@ runtime_value_t replace(value_backend_t& backend, runtime_value_t coll_value, ru
 
 	const auto obj_type = type_t(coll_type);
 	if(obj_type.is_string()){
-		return replace__string(backend, coll_value, coll_type, start, end, replacement_value, replacement_type);
+		return replace_vector_range__string(backend, coll_value, coll_type, start, end, value0, replacement_type);
 	}
 	else if(is_vector_carray(backend.types, backend.config, obj_type)){
-		return replace__carray(backend, coll_value, coll_type, start, end, replacement_value, replacement_type);
+		return replace_vector_range__carray(backend, coll_value, coll_type, start, end, value0, replacement_type);
 	}
 	else if(is_vector_hamt(backend.types, backend.config, obj_type)){
-		return replace__hamt(backend, coll_value, coll_type, start, end, replacement_value, replacement_type);
+		return replace_vector_range__hamt(backend, coll_value, coll_type, start, end, value0, replacement_type);
 	}
 	else{
 		quark::throw_runtime_error("Calling push_back() on unsupported type of value.");
@@ -4297,7 +4297,7 @@ int64_t find__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime
 }
 
 
-int64_t find2(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type){
+int64_t find_vector_element(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type){
 	const auto& type0 = lookup_type_ref(backend, coll_type);
 	if(peek2(backend.types, type0).is_string()){
 		return find__string(backend, coll_value, coll_type, value, value_type);
@@ -4316,7 +4316,7 @@ int64_t find2(value_backend_t& backend, runtime_value_t coll_value, runtime_type
 
 //??? use rt_value_t as primitive for all features.
 
-bool exists(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t value, runtime_type_t value_type){
+bool exists_dict_value(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t value, runtime_type_t value_type){
 	const auto& types = backend.types;
 	const auto& type0 = lookup_type_ref(backend, coll_type);
 //	const auto& type1 = lookup_type_ref(backend, value_type);
@@ -4438,7 +4438,7 @@ runtime_value_t get_keys(value_backend_t& backend, runtime_value_t coll_value, r
 
 
 
-
+///??? Split into two passes so we don't get 2 x 2. Generate code mixup? Have one function with two checks?
 runtime_value_t get_keys__cppmap_carray(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type){
 	QUARK_ASSERT(backend.check_invariant());
 

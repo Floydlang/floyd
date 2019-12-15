@@ -239,7 +239,7 @@ static uint32_t floyd_llvm_intrinsic__exists(floyd_runtime_t* frp, runtime_value
 //	const auto& type1 = lookup_type_ref(backend, value_type);
 	QUARK_ASSERT(peek2(types, type0).is_dict());
 
-	const bool result = exists(backend, coll_value, coll_type, value, value_type);
+	const bool result = exists_dict_value(backend, coll_value, coll_type, value, value_type);
 	return result ? 1 : 0;
 }
 
@@ -253,7 +253,7 @@ static uint32_t floyd_llvm_intrinsic__exists(floyd_runtime_t* frp, runtime_value
 static int64_t floyd_llvm_intrinsic__find(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
-	return find2(backend, coll_value, coll_type, value, value_type);
+	return find_vector_element(backend, coll_value, coll_type, value, value_type);
 }
 
 
@@ -560,6 +560,7 @@ static runtime_value_t map_dag__carray(
 
 			const auto result1 = (*f2)(frp, e, solved_deps3, context);
 
+			//	Warning: optimization trick.
 			//	Release just the vec, **not the elements**. The elements are aliases for complete-vector.
 			if(dec_rc(solved_deps2.vector_carray_ptr->alloc) == 0){
 				dispose_vector_carray(solved_deps2);
@@ -690,6 +691,7 @@ static runtime_value_t map_dag__hamt(
 
 			const auto result1 = (*f2)(frp, e, solved_deps3, context);
 
+			//	Warning: optimization trick.
 			//	Release just the vec, **not the elements**. The elements are aliases for complete-vector.
 			if(dec_rc(solved_deps2.vector_hamt_ptr->alloc) == 0){
 				dispose_vector_hamt(solved_deps2);
@@ -1244,13 +1246,13 @@ static const runtime_value_t floyd_llvm_intrinsic__replace(floyd_runtime_t* frp,
 	QUARK_ASSERT(type3 == type0);
 
 	if(peek2(backend.types, type0).is_string()){
-		return replace__string(backend, elements_vec, elements_vec_type, start, end, arg3_value, arg3_type);
+		return replace_vector_range__string(backend, elements_vec, elements_vec_type, start, end, arg3_value, arg3_type);
 	}
 	else if(is_vector_carray(backend.types, backend.config, type_t(elements_vec_type))){
-		return replace__carray(backend, elements_vec, elements_vec_type, start, end, arg3_value, arg3_type);
+		return replace_vector_range__carray(backend, elements_vec, elements_vec_type, start, end, arg3_value, arg3_type);
 	}
 	else if(is_vector_hamt(backend.types, backend.config, type_t(elements_vec_type))){
-		return replace__hamt(backend, elements_vec, elements_vec_type, start, end, arg3_value, arg3_type);
+		return replace_vector_range__hamt(backend, elements_vec, elements_vec_type, start, end, arg3_value, arg3_type);
 	}
 	else{
 		//	No other types allowed.
@@ -1446,13 +1448,13 @@ static const runtime_value_t floyd_llvm_intrinsic__subset(floyd_runtime_t* frp, 
 
 	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
 	if(peek2(backend.types, type0).is_string()){
-		return subset__string(backend, elements_vec, elements_vec_type, start, end);
+		return subset_vector_range__string(backend, elements_vec, elements_vec_type, start, end);
 	}
 	else if(is_vector_carray(backend.types, backend.config, type_t(elements_vec_type))){
-		return subset__carray(backend, elements_vec, elements_vec_type, start, end);
+		return subset_vector_range__carray(backend, elements_vec, elements_vec_type, start, end);
 	}
 	else if(is_vector_hamt(backend.types, backend.config, type_t(elements_vec_type))){
-		return subset__hamt(backend, elements_vec, elements_vec_type, start, end);
+		return subset_vector_range__hamt(backend, elements_vec, elements_vec_type, start, end);
 	}
 	else{
 		//	No other types allowed.

@@ -198,7 +198,7 @@ static rt_value_t bc_intrinsic__find(interpreter_t& vm, const rt_value_t args[],
 	auto& backend = vm._backend;
 	const auto obj = args[0];
 	const auto wanted = args[1];
-	const auto index = find2(backend, obj._pod, obj._type.get_data(), wanted._pod, wanted._type.get_data());
+	const auto index = find_vector_element(backend, obj._pod, obj._type.get_data(), wanted._pod, wanted._type.get_data());
 	return rt_value_t(backend, type_t::make_int(), make_runtime_int(index), rt_value_t::rc_mode::adopt);
 }
 
@@ -216,7 +216,7 @@ static rt_value_t bc_intrinsic__exists(interpreter_t& vm, const rt_value_t args[
 	QUARK_ASSERT(peek2(backend.types, obj._type).is_dict());
 	QUARK_ASSERT(peek2(backend.types, key._type).is_string());
 
-	const bool result = exists(backend, obj._pod, obj._type.get_data(), key._pod, key._type.get_data());
+	const bool result = exists_dict_value(backend, obj._pod, obj._type.get_data(), key._pod, key._type.get_data());
 	return rt_value_t::make_bool(result);
 }
 
@@ -267,7 +267,7 @@ static rt_value_t bc_intrinsic__subset(interpreter_t& vm, const rt_value_t args[
 	const auto start = args[1].get_int_value();
 	const auto end = args[2].get_int_value();
 
-	const auto result = subset(backend, obj._pod, obj._type.get_data(), start, end);
+	const auto result = subset_vector_range(backend, obj._pod, obj._type.get_data(), start, end);
 	return rt_value_t(backend, obj._type, result, rt_value_t::rc_mode::adopt);
 }
 
@@ -286,7 +286,7 @@ static rt_value_t bc_intrinsic__replace(interpreter_t& vm, const rt_value_t args
 	const auto start = args[1].get_int_value();
 	const auto end = args[2].get_int_value();
 	const auto replacement = args[3];
-	const auto result = replace(backend, obj._pod, obj._type.get_data(), start, end, replacement._pod, replacement._type.get_data());
+	const auto result = replace_vector_range(backend, obj._pod, obj._type.get_data(), start, end, replacement._pod, replacement._type.get_data());
 	return rt_value_t(backend, obj._type, result, rt_value_t::rc_mode::adopt);
 }
 

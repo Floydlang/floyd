@@ -1004,7 +1004,7 @@ static void floydrt_retain_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict,
 
 
 
-static void floydrt_retain_json(floyd_runtime_t* frp, JSON_T* json, runtime_type_t type0){
+static void floydrt_retain_json(floyd_runtime_t* frp, runtime_value_t json, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 
@@ -1012,12 +1012,11 @@ static void floydrt_retain_json(floyd_runtime_t* frp, JSON_T* json, runtime_type
 	QUARK_ASSERT(is_rc_value(backend.types, type));
 
 	//	NOTICE: Floyd runtime() init will destruct globals, including json::null.
-	if(json == nullptr){
+	if(json.json_ptr == nullptr){
 	}
 	else{
 		QUARK_ASSERT(peek2(backend.types, type).is_json());
-
-		inc_rc(json->alloc);
+		retain_json(backend, json);
 	}
 }
 
