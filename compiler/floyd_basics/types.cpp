@@ -1445,18 +1445,18 @@ std::string type_to_compact_string(const types_t& types, const type_t& type, ena
 }
 
 
-type_t make_struct(types_t& types, const struct_type_desc_t& desc){
+type_t type_t::make_struct(types_t& types, const struct_type_desc_t& desc){
 	const auto def = make_struct0(types, desc);
 	return intern_node__mutate(types, def);
 }
 
-type_t make_struct(const types_t& types, const struct_type_desc_t& desc){
+type_t type_t::make_struct(const types_t& types, const struct_type_desc_t& desc){
 	const auto def = make_struct0(types, desc);
 	return lookup_node(types, def);
 }
 
 
-type_t make_vector(types_t& types, const type_t& element_type){
+type_t type_t::make_vector(types_t& types, const type_t& element_type){
 	const auto def = make_vector0(element_type);
 	return intern_node__mutate(types, def);
 }
@@ -1464,50 +1464,50 @@ type_t make_vector(types_t& types, const type_t& element_type){
 
 //??? Refact-out make_vector_def() for all types.
 
-type_t make_vector(const types_t& types, const type_t& element_type){
+type_t type_t::make_vector(const types_t& types, const type_t& element_type){
 	const auto def = make_vector0(element_type);
 	return lookup_node(types, def);
 }
 
-type_t make_dict(types_t& types, const type_t& value_type){
+type_t type_t::make_dict(types_t& types, const type_t& value_type){
 	const auto def = make_dict0(value_type);
 	return intern_node__mutate(types, def);
 }
 
-type_t make_dict(const types_t& types, const type_t& value_type){
+type_t type_t::make_dict(const types_t& types, const type_t& value_type){
 	const auto def = make_dict0(value_type);
 	return lookup_node(types, def);
 }
 
-type_t make_function3(types_t& types, const type_t& ret, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return){
+type_t type_t::make_function3(types_t& types, const type_t& ret, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return){
 	const auto def = make_function0(ret, args, pure, dyn_return);
 	return intern_node__mutate(types, def);
 }
 
 
-type_t make_function3(const types_t& types, const type_t& ret, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return){
+type_t type_t::make_function3(const types_t& types, const type_t& ret, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return){
 	const auto def = make_function0(ret, args, pure, dyn_return);
 	return lookup_node(types, def);
 }
 
-type_t make_function_dyn_return(types_t& types, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return){
+type_t type_t::make_function_dyn_return(types_t& types, const std::vector<type_t>& args, epure pure, return_dyn_type dyn_return){
 	return make_function3(types, type_t::make_any(), args, pure, dyn_return);
 }
 
-type_t make_function(types_t& types, const type_t& ret, const std::vector<type_t>& args, epure pure){
+type_t type_t::make_function(types_t& types, const type_t& ret, const std::vector<type_t>& args, epure pure){
 	QUARK_ASSERT(peek2(types, ret).is_any() == false);
 
 	return make_function3(types, ret, args, pure, return_dyn_type::none);
 }
 
-type_t make_function(const types_t& types, const type_t& ret, const std::vector<type_t>& args, epure pure){
+type_t type_t::make_function(const types_t& types, const type_t& ret, const std::vector<type_t>& args, epure pure){
 	QUARK_ASSERT(peek2(types, ret).is_any() == false);
 
 	return make_function3(types, ret, args, pure, return_dyn_type::none);
 }
 
 
-type_t make_symbol_ref(types_t& types, const std::string& s){
+type_t type_t::make_symbol_ref(types_t& types, const std::string& s){
 	const auto def = make_symbol_ref0(s);
 	return intern_node__mutate(types, def);
 }
@@ -1820,7 +1820,7 @@ type_t type_from_json(types_t& types, const json_t& t){
 
 		//	Identifier.
 		if(s.front() == '%'){
-			return make_symbol_ref(types, s.substr(1));
+			return type_t::make_symbol_ref(types, s.substr(1));
 		}
 
 		//	Tagged type.
@@ -1881,15 +1881,15 @@ type_t type_from_json(types_t& types, const json_t& t){
 			const auto member_array = struct_def_array[0].get_array();
 
 			const std::vector<member_t> struct_members = members_from_json(types, member_array);
-			return make_struct(types, struct_members);
+			return type_t::make_struct(types, struct_members);
 		}
 		else if(s == "vector"){
 			const auto element_type = type_from_json(types, a[1]);
-			return make_vector(types, element_type);
+			return type_t::make_vector(types, element_type);
 		}
 		else if(s == "dict"){
 			const auto value_type = type_from_json(types, a[1]);
-			return make_dict(types, value_type);
+			return type_t::make_dict(types, value_type);
 		}
 		else if(s == "func"){
 			const auto ret_type = type_from_json(types, a[1]);
@@ -1904,14 +1904,14 @@ type_t type_from_json(types_t& types, const json_t& t){
 			if(a.size() > 4){
 				const auto dyn = static_cast<return_dyn_type>(a[4].get_number());
 				if(dyn == return_dyn_type::none){
-					return make_function(types, ret_type, arg_types, pure ? epure::pure : epure::impure);
+					return type_t::make_function(types, ret_type, arg_types, pure ? epure::pure : epure::impure);
 				}
 				else{
-					return make_function_dyn_return(types, arg_types, pure ? epure::pure : epure::impure, dyn);
+					return type_t::make_function_dyn_return(types, arg_types, pure ? epure::pure : epure::impure, dyn);
 				}
 			}
 			else{
-				return make_function(types, ret_type, arg_types, pure ? epure::pure : epure::impure);
+				return type_t::make_function(types, ret_type, arg_types, pure ? epure::pure : epure::impure);
 			}
 		}
 		else if(s == "unknown-identifier"){
@@ -2089,7 +2089,7 @@ QUARK_TEST("Types", "types_t()", "", ""){
 QUARK_TEST("Types", "types_t()", "", ""){
 	types_t types;
 
-	const auto t = make_function(types, type_t::make_void(), { type_t::make_bool() }, epure::pure);
+	const auto t = type_t::make_function(types, type_t::make_void(), { type_t::make_bool() }, epure::pure);
 
 	trace_types(types);
 
@@ -2105,7 +2105,7 @@ QUARK_TEST("Types", "update_named_type()", "", ""){
 	types_t types;
 	const auto name = unpack_type_name("/a/b");
 	const auto a = make_named_type(types, name, type_t::make_undefined());
-	const auto s = make_struct(types, struct_type_desc_t( { member_t(a, "f") } ));
+	const auto s = type_t::make_struct(types, struct_type_desc_t( { member_t(a, "f") } ));
 	const auto b = update_named_type(types, a, s);
 
 	if(false) trace_types(types);
@@ -2117,9 +2117,9 @@ type_t make_recursive_type_test(types_t& types){
 
 	const auto a = make_named_type(types, type_name_t{{ "glob", "object_t" }}, type_t::make_undefined());
 	if(trace) trace_types(types);
-	const auto v = make_vector(types, a);
+	const auto v = type_t::make_vector(types, a);
 	if(trace) trace_types(types);
-	const auto s = make_struct(types, struct_type_desc_t( { member_t(v, "inside") } ));
+	const auto s = type_t::make_struct(types, struct_type_desc_t( { member_t(v, "inside") } ));
 	if(trace) trace_types(types);
 	const auto b = update_named_type(types, a, s);
 	if(trace) trace_types(types);

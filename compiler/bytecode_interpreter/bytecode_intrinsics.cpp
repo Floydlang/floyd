@@ -245,7 +245,7 @@ static bc_value_t bc_intrinsic__get_keys(interpreter_t& vm, const bc_value_t arg
 	QUARK_ASSERT(obj_type_peek.is_dict());
 
 	const auto result = get_keys(backend, obj._pod, obj._type.get_data());
-	return bc_value_t(backend, make_vector(backend.types, type_t::make_string()), result, bc_value_t::rc_mode::adopt);
+	return bc_value_t(backend, type_t::make_vector(backend.types, type_t::make_string()), result, bc_value_t::rc_mode::adopt);
 }
 
 /*

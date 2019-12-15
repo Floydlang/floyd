@@ -401,7 +401,7 @@ struct expression_t {
 	};
 
 	public: static expression_t make_struct_definition(types_t& types, const std::string& name, const std::shared_ptr<const struct_type_desc_t>& def){
-		return expression_t({ struct_definition_expr_t{ name, def } }, make_struct(types, *def));
+		return expression_t({ struct_definition_expr_t{ name, def } }, type_t::make_struct(types, *def));
 	}
 
 

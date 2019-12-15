@@ -97,20 +97,20 @@ enum class epod_type {
 
 
 inline type_t get_main_signature_arg_impure(types_t& types){
-	return make_function(types, type_t::make_int(), { make_vector(types, type_t::make_string()) }, epure::impure);
+	return type_t::make_function(types, type_t::make_int(), { type_t::make_vector(types, type_t::make_string()) }, epure::impure);
 }
 
 inline type_t get_main_signature_no_arg_impure(types_t& types){
- 	return make_function(types, type_t::make_int(), { }, epure::impure);
+ 	return type_t::make_function(types, type_t::make_int(), { }, epure::impure);
 }
 
 
 inline type_t get_main_signature_arg_pure(types_t& types){
-	return make_function(types, type_t::make_int(), { make_vector(types, type_t::make_string()) }, epure::pure);
+	return type_t::make_function(types, type_t::make_int(), { type_t::make_vector(types, type_t::make_string()) }, epure::pure);
 }
 
 inline type_t get_main_signature_no_arg_pure(types_t& types){
-	return make_function(types, type_t::make_int(), { }, epure::pure);
+	return type_t::make_function(types, type_t::make_int(), { }, epure::pure);
 }
 
 //	T x_init() impure
@@ -135,7 +135,7 @@ inline bool operator==(const benchmark_result_t& lhs, const benchmark_result_t& 
 }
 
 inline type_t make_benchmark_result_t(types_t& types){
-	const auto x = make_struct(
+	const auto x = type_t::make_struct(
 		types,
 		struct_type_desc_t({
 			member_t{ type_t::make_int(), "dur" },
@@ -151,11 +151,11 @@ inline type_t make_benchmark_result_t(types_t& types){
 
 inline type_t make_benchmark_function_t(types_t& types){
 //	return make_function(make_vector(make_benchmark_result_t()), {}, epure::pure);
-	return make_function(types, make_vector(types, make_symbol_ref(types, "benchmark_result_t")), {}, epure::pure);
+	return type_t::make_function(types, type_t::make_vector(types, type_t::make_symbol_ref(types, "benchmark_result_t")), {}, epure::pure);
 }
 
 inline type_t make_benchmark_def_t(types_t& types){
-	const auto x = make_struct(
+	const auto x = type_t::make_struct(
 		types,
 		struct_type_desc_t({
 			member_t{ type_t::make_string(), "name" },
@@ -179,7 +179,7 @@ inline bool operator==(const benchmark_id_t& lhs, const benchmark_id_t& rhs){
 	return lhs.module == rhs.module && lhs.test == rhs.test;
 }
 inline type_t make_benchmark_id_t(types_t& types){
-	const auto x = make_struct(
+	const auto x = type_t::make_struct(
 		types,
 		struct_type_desc_t({
 			member_t{ type_t::make_string(), "module" },
@@ -213,11 +213,11 @@ inline bool operator==(const benchmark_result2_t& lhs, const benchmark_result2_t
 }
 
 inline type_t make_benchmark_result2_t(types_t& types){
-	const auto x = make_struct(
+	const auto x = type_t::make_struct(
 		types,
 		struct_type_desc_t({
 			member_t{ make_benchmark_id_t(types), "test_id" },
-			member_t{ make_symbol_ref(types, "benchmark_result_t"), "result" }
+			member_t{ type_t::make_symbol_ref(types, "benchmark_result_t"), "result" }
 			})
 	);
 	return x;
@@ -242,11 +242,11 @@ const std::string k_global_benchmark_registry = "benchmark_registry";
 
 
 inline type_t make_test_function_t(types_t& types){
-	return make_function(types, type_t::make_void(), {}, epure::pure);
+	return type_t::make_function(types, type_t::make_void(), {}, epure::pure);
 }
 
 inline type_t make_test_def_t(types_t& types){
-	const auto x = make_struct(
+	const auto x = type_t::make_struct(
 		types,
 		struct_type_desc_t({
 			member_t{ type_t::make_string(), "function_name" },
@@ -269,7 +269,7 @@ inline bool operator==(const test_id_t& lhs, const test_id_t& rhs){
 	return lhs.module == rhs.module && lhs.function_name == rhs.function_name && lhs.scenario == rhs.scenario;
 }
 inline type_t make_test_id_t(types_t& types){
-	const auto x = make_struct(
+	const auto x = type_t::make_struct(
 		types,
 		struct_type_desc_t({
 			member_t{ type_t::make_string(), "module" },

@@ -264,7 +264,7 @@ QUARK_TEST("", "", "", ""){
 	const auto a = function_definition_t::make_func(
 		k_no_location,
 		"definition_name",
-		peek2(types, make_function(types, type_t::make_string(), {}, epure::pure)),
+		peek2(types, type_t::make_function(types, type_t::make_string(), {}, epure::pure)),
 		{},
 		std::make_shared<body_t>()
 	);

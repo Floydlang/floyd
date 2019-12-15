@@ -353,7 +353,7 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 		const auto main_args4 = to_runtime_value(context, main_args3);
 		const auto main_result_int = (*f2)(runtime_ptr, main_args4);
 
-		const auto return_itype = make_vector(types, type_t::make_string());
+		const auto return_itype = type_t::make_vector(types, type_t::make_string());
 		if(is_rc_value(types, return_itype)){
 			release_value(context.ee->backend, main_args4, return_itype);
 		}
@@ -959,7 +959,7 @@ std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, con
 	auto context = llvm_context_t { &ee, nullptr };
 
 	const auto benchmark_result_type = find_symbol_required(ee.global_symbols, "benchmark_result_t")._value_type;
-	const auto benchmark_result_vec_type = make_vector(types, benchmark_result_type);
+	const auto benchmark_result_vec_type = type_t::make_vector(types, benchmark_result_type);
 
 	std::vector<benchmark_result2_t> result;
 	for(const auto& b: tests){

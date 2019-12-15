@@ -871,7 +871,7 @@ value_t value_t::make_struct_value(const types_t& types, const type_t& struct_ty
 }
 
 value_t value_t::make_vector_value(const types_t& types, const type_t& element_type, const std::vector<value_t>& elements){
-	const auto type = make_vector(types, element_type);
+	const auto type = type_t::make_vector(types, element_type);
 	auto ext = new value_ext_t{ elements };
 	QUARK_ASSERT(ext->_rc == 1);
 	return value_t(types, value_internals_t { ._ext = ext }, type);
@@ -879,20 +879,20 @@ value_t value_t::make_vector_value(const types_t& types, const type_t& element_t
 
 }
 value_t value_t::make_vector_value(types_t& types, const type_t& element_type, const std::vector<value_t>& elements){
-	const auto type = make_vector(types, element_type);
+	const auto type = type_t::make_vector(types, element_type);
 	auto ext = new value_ext_t{ elements };
 	QUARK_ASSERT(ext->_rc == 1);
 	return value_t(types, value_internals_t { ._ext = ext }, type);
 }
 
 value_t value_t::make_dict_value(const types_t& types, const type_t& value_type, const std::map<std::string, value_t>& entries){
-	const auto type = make_dict(types, value_type);
+	const auto type = type_t::make_dict(types, value_type);
 	auto ext = new value_ext_t{ entries };
 	QUARK_ASSERT(ext->_rc == 1);
 	return value_t(types, value_internals_t { ._ext = ext }, type);
 }
 value_t value_t::make_dict_value(types_t& types, const type_t& value_type, const std::map<std::string, value_t>& entries){
-	const auto type = make_dict(types, value_type);
+	const auto type = type_t::make_dict(types, value_type);
 	auto ext = new value_ext_t{ entries };
 	QUARK_ASSERT(ext->_rc == 1);
 	return value_t(types, value_internals_t { ._ext = ext }, type);
@@ -925,7 +925,7 @@ QUARK_TEST("value_t", "", "", ""){
 
 QUARK_TEST("value_t", "", "", ""){
 	types_t types;
-	const auto t = make_struct(types, struct_type_desc_t({ member_t(type_t::make_int(), "x") }));
+	const auto t = type_t::make_struct(types, struct_type_desc_t({ member_t(type_t::make_int(), "x") }));
 	const auto n = make_named_type(types, type_name_t{{ "glob", "my_struct" }}, t);
 	QUARK_VERIFY(n.is_named_type());
 	trace_types(types);

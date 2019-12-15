@@ -77,7 +77,7 @@ static bc_value_t bc_corelib__make_hardware_caps_report(interpreter_t& vm, const
 	auto& backend = vm._backend;
 	const auto& types = backend.types;
 	auto temp_types = types;
-	QUARK_ASSERT(args[0]._type == make_dict(temp_types, type_t::make_json()));
+	QUARK_ASSERT(args[0]._type == type_t::make_dict(temp_types, type_t::make_json()));
 
 	const auto b2 = bc_to_value(backend, args[0]);
 	const auto m = b2.get_dict_value();
@@ -95,7 +95,7 @@ static bc_value_t bc_corelib__make_hardware_caps_report_brief(interpreter_t& vm,
 	auto& backend = vm._backend;
 	const auto& types = backend.types;
 	auto temp_types = types;
-	QUARK_ASSERT(args[0]._type == make_dict(temp_types, type_t::make_json()));
+	QUARK_ASSERT(args[0]._type == type_t::make_dict(temp_types, type_t::make_json()));
 
 	const auto b2 = bc_to_value(backend, args[0]);
 	const auto m = b2.get_dict_value();

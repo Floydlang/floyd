@@ -534,7 +534,7 @@ static runtime_value_t map_dag__carray(
 //	QUARK_ASSERT(is_vector_carray(make_vector(e_type)));
 //	QUARK_ASSERT(is_vector_carray(make_vector(r_type)));
 
-	const auto return_type = make_vector(types, r_type);
+	const auto return_type = type_t::make_vector(types, r_type);
 
 	const auto& func_link = lookup_func_link_required(backend, f);
 	const auto f2 = reinterpret_cast<map_dag_F>(func_link.f);
@@ -663,7 +663,7 @@ static runtime_value_t map_dag__hamt(
 //	QUARK_ASSERT(is_vector_hamt(make_vector(e_type)));
 //	QUARK_ASSERT(is_vector_hamt(make_vector(r_type)));
 
-	const auto return_type = make_vector(types, r_type);
+	const auto return_type = type_t::make_vector(types, r_type);
 
 	const auto& func_link = lookup_func_link_required(backend, f);
 	const auto f2 = reinterpret_cast<map_dag_F>(func_link.f);

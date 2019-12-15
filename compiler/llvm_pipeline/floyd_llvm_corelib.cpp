@@ -47,7 +47,7 @@ static runtime_value_t llvm_corelib__make_benchmark_report(floyd_runtime_t* frp,
 	const auto& types = backend.types;
 
 	const auto s = find_symbol_required(r.ee->global_symbols, "benchmark_result2_t");
-	const auto benchmark_result2_vec_type = make_vector(types, s._value_type);
+	const auto benchmark_result2_vec_type = type_t::make_vector(types, s._value_type);
 
 	const auto b2 = from_runtime_value(r, b, benchmark_result2_vec_type);
 
@@ -85,7 +85,7 @@ runtime_value_t llvm_corelib__make_hardware_caps_report(floyd_runtime_t* frp, ru
 	auto& backend = r.ee->backend;
 	auto& types = backend.types;
 
-	const auto type = make_dict(types, type_t::make_json());
+	const auto type = type_t::make_dict(types, type_t::make_json());
 	const auto b2 = from_runtime_value(r, caps0, type);
 	const auto m = b2.get_dict_value();
 	std::vector<std::pair<std::string, json_t>> caps;
@@ -100,7 +100,7 @@ runtime_value_t llvm_corelib__make_hardware_caps_report_brief(floyd_runtime_t* f
 	auto& backend = r.ee->backend;
 	auto& types = backend.types;
 
-	const auto b2 = from_runtime_value(r, caps0, make_dict(types, type_t::make_json()));
+	const auto b2 = from_runtime_value(r, caps0, type_t::make_dict(types, type_t::make_json()));
 	const auto m = b2.get_dict_value();
 	std::vector<std::pair<std::string, json_t>> caps;
 	for(const auto& e: m){
@@ -133,7 +133,7 @@ static STRUCT_T* llvm_corelib__calc_string_sha1(floyd_runtime_t* frp, runtime_va
 
 	const auto a = value_t::make_struct_value(
 		types,
-		make_struct(types, struct_type_desc_t({ member_t{ type_t::make_string(), "ascii40" } }) ),
+		type_t::make_struct(types, struct_type_desc_t({ member_t{ type_t::make_string(), "ascii40" } }) ),
 		{ value_t::make_string(ascii40) }
 	);
 
@@ -154,7 +154,7 @@ static STRUCT_T* llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* 
 
 	const auto a = value_t::make_struct_value(
 		types,
-		make_struct(types, struct_type_desc_t({ member_t{ type_t::make_string(), "ascii40" } })),
+		type_t::make_struct(types, struct_type_desc_t({ member_t{ type_t::make_string(), "ascii40" } })),
 		{ value_t::make_string(ascii40) }
 	);
 

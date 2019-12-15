@@ -383,7 +383,7 @@ static std::string run_test(interpreter_t& vm, const test_t& test){
 
 	const auto function_id = test.f;
 
-	const auto f_type = make_function(
+	const auto f_type = type_t::make_function(
 		vm._imm->_program._types,
 		type_t::make_void(),
 		{},

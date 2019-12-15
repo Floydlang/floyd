@@ -135,7 +135,7 @@ extern const std::string k_network_component_header = R"(
 
 
 type_t make__network_component_t__type(types_t& types){
-	return make_struct(
+	return type_t::make_struct(
 		types,
 		struct_type_desc_t({
 			{ type_t::make_int(), "internal" }
@@ -144,7 +144,7 @@ type_t make__network_component_t__type(types_t& types){
 }
 
 type_t make__ip_address_and_port_t__type(types_t& types){
-	return make_struct(
+	return type_t::make_struct(
 		types,
 		struct_type_desc_t({
 			{ make__ip_address_t__type(types), "addr" },
@@ -154,18 +154,18 @@ type_t make__ip_address_and_port_t__type(types_t& types){
 }
 
 type_t make__host_info_t__type(types_t& types){
-	return make_struct(
+	return type_t::make_struct(
 		types,
 		struct_type_desc_t({
 			{ type_t::make_string(), "official_host_name" },
-			{ make_vector(types, type_t::make_string()), "name_aliases" },
-			{ make_vector(types, make__ip_address_t__type(types)), "addresses_IPv4" }
+			{ type_t::make_vector(types, type_t::make_string()), "name_aliases" },
+			{ type_t::make_vector(types, make__ip_address_t__type(types)), "addresses_IPv4" }
 		})
 	);
 }
 
 type_t make__http_header_t__type(types_t& types){
-	return make_struct(
+	return type_t::make_struct(
 		types,
 		struct_type_desc_t({
 			{ type_t::make_string(), "key" },
@@ -175,7 +175,7 @@ type_t make__http_header_t__type(types_t& types){
 }
 
 type_t make__http_request_line_t__type(types_t& types){
-	return make_struct(
+	return type_t::make_struct(
 		types,
 		struct_type_desc_t({
 			{ type_t::make_string(), "method" },
@@ -186,18 +186,18 @@ type_t make__http_request_line_t__type(types_t& types){
 }
 
 type_t make__http_request_t__type(types_t& types){
-	return make_struct(
+	return type_t::make_struct(
 		types,
 		struct_type_desc_t({
 			{ make__http_request_line_t__type(types), "request_line" },
-			{ make_vector(types, make__http_header_t__type(types)), "headers" },
+			{ type_t::make_vector(types, make__http_header_t__type(types)), "headers" },
 			{ type_t::make_string(), "optional_body" }
 		})
 	);
 }
 
 type_t make__http_response_status_line_t__type(types_t& types){
-	return make_struct(
+	return type_t::make_struct(
 		types,
 		struct_type_desc_t({
 			{ type_t::make_string(), "http_version" },
@@ -208,11 +208,11 @@ type_t make__http_response_status_line_t__type(types_t& types){
 
 
 type_t make__http_response_t__type(types_t& types){
-	return make_struct(
+	return type_t::make_struct(
 		types,
 		struct_type_desc_t({
 			{ make__http_response_status_line_t__type(types), "status_line" },
-			{ make_vector(types, make__http_header_t__type(types)), "headers" },
+			{ type_t::make_vector(types, make__http_header_t__type(types)), "headers" },
 			{ type_t::make_string(), "optional_body" }
 		})
 	);

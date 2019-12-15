@@ -279,11 +279,15 @@ struct type_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
+	base_type get_base_type() const {
+		return get_bt0(data);
+	}
 
 	bool check_invariant() const {
 //		QUARK_ASSERT(get_base_type() != base_type::k_identifier);
 		return true;
 	}
+
 
 	static type_t make_undefined(){
 		return type_t(assemble((type_lookup_index_t)base_type::k_undefined, base_type::k_undefined));
@@ -376,6 +380,8 @@ struct type_t {
 	}
 
 
+	static type_t make_struct(types_t& types, const struct_type_desc_t& desc);
+	static type_t make_struct(const types_t& types, const struct_type_desc_t& desc);
 	bool is_struct() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -383,6 +389,9 @@ struct type_t {
 	}
 	struct_type_desc_t get_struct(const types_t& types) const;
 
+
+	static type_t make_vector(types_t& types, const type_t& element_type);
+	static type_t make_vector(const types_t& types, const type_t& element_type);
 	bool is_vector() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -391,8 +400,8 @@ struct type_t {
 	type_t get_vector_element_type(const types_t& types) const;
 
 
-
-
+	static type_t make_dict(types_t& types, const type_t& value_type);
+	static type_t make_dict(const types_t& types, const type_t& value_type);
 	bool is_dict() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -407,15 +416,41 @@ struct type_t {
 	}
 
 
+	static type_t make_function3(
+		types_t& types,
+		const type_t& ret,
+		const std::vector<type_t>& args,
+		epure pure,
+		return_dyn_type dyn_return
+	);
+
+	static type_t make_function3(
+		const types_t& types,
+		const type_t& ret,
+		const std::vector<type_t>& args,
+		epure pure,
+		return_dyn_type dyn_return
+	);
+	static type_t make_function_dyn_return(
+		types_t& types,
+		const std::vector<type_t>& args,
+		epure pure,
+		return_dyn_type dyn_return
+	);
+	static type_t make_function(types_t& types, const type_t& ret, const std::vector<type_t>& args, epure pure);
+	static type_t make_function(
+		const types_t& types,
+		const type_t& ret,
+		const std::vector<type_t>& args,
+		epure pure
+	);
 	public: type_t get_function_return(const types_t& types) const;
 	public: std::vector<type_t> get_function_args(const types_t& types) const;
 	public: return_dyn_type get_function_dyn_return_type(const types_t& types) const;
 	public: epure get_function_pure(const types_t& types) const;
 
 
-
-
-
+	static type_t make_symbol_ref(types_t& types, const std::string& s);
 	public: bool is_symbol_ref() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -437,12 +472,6 @@ struct type_t {
 	type_name_t get_named_type(const types_t& types) const;
 
 
-	//////////////////////////////////////////////////		BASETYPE
-
-
-	base_type get_base_type() const {
-		return get_bt0(data);
-	}
 
 
 	//////////////////////////////////////////////////		INTERNALS
@@ -474,10 +503,6 @@ struct type_t {
 	public: static type_t assemble2(type_lookup_index_t lookup_index, base_type bt1){
 		return type_t(assemble(lookup_index, bt1));
 	}
-
-
-	//////////////////////////////////////////////////		BIT MANGLING
-
 
 	public: static type_data_t assemble(type_lookup_index_t lookup_index, base_type bt1){
 		const auto a = static_cast<type_data_t>(bt1);
@@ -536,51 +561,6 @@ typedef type_t type_desc_t;
 
 
 /////////////////////////////////////////////////		FREE FUNCTIONS
-
-
-
-type_t make_struct(types_t& types, const struct_type_desc_t& desc);
-type_t make_struct(const types_t& types, const struct_type_desc_t& desc);
-type_t make_vector(types_t& types, const type_t& element_type);
-type_t make_vector(const types_t& types, const type_t& element_type);
-type_t make_dict(types_t& types, const type_t& value_type);
-type_t make_dict(const types_t& types, const type_t& value_type);
-
-type_t make_function3(
-	types_t& types,
-	const type_t& ret,
-	const std::vector<type_t>& args,
-	epure pure,
-	return_dyn_type dyn_return
-);
-
-type_t make_function3(
-	const types_t& types,
-	const type_t& ret,
-	const std::vector<type_t>& args,
-	epure pure,
-	return_dyn_type dyn_return
-);
-type_t make_function_dyn_return(
-	types_t& types,
-	const std::vector<type_t>& args,
-	epure pure,
-	return_dyn_type dyn_return
-);
-type_t make_function(
-	types_t& types,
-	const type_t& ret,
-	const std::vector<type_t>& args,
-	epure pure
-);
-type_t make_function(
-	const types_t& types,
-	const type_t& ret,
-	const std::vector<type_t>& args,
-	epure pure
-);
-
-type_t make_symbol_ref(types_t& types, const std::string& s);
 
 
 

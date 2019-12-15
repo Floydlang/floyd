@@ -1516,7 +1516,7 @@ bc_value_t make_vector_value(value_backend_t& backend, const type_t& element_typ
 	}
 #endif
 
-	const auto type = make_vector(backend.types, element_type);
+	const auto type = type_t::make_vector(backend.types, element_type);
 	const auto& type_peek = peek2(backend.types, type);
 	QUARK_ASSERT(type_peek.is_vector());
 
@@ -1598,7 +1598,7 @@ bc_value_t make_dict_value(value_backend_t& backend, const type_t& value_type, c
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value_type.check_invariant());
 
-	const auto dict_type = make_dict(backend.types, value_type);
+	const auto dict_type = type_t::make_dict(backend.types, value_type);
 	const auto& type_peek = peek2(backend.types, dict_type);
 	QUARK_ASSERT(type_peek.is_dict());
 

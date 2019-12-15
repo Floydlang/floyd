@@ -5420,7 +5420,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(		let result = typeof([1,2,3])		)",
-		make_expected_typeid(temp, make_vector(temp, type_t::make_int()))
+		make_expected_typeid(temp, type_t::make_vector(temp, type_t::make_int()))
 	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
@@ -6598,8 +6598,8 @@ FLOYD_LANG_PROOF("Floyd test suite", "cmath_pi", "", ""){
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
 	types_t temp;
-	const auto a = make_vector(temp, type_t::make_string());
-	const auto b = make_vector(temp, make__fsentry_t__type(temp));
+	const auto a = type_t::make_vector(temp, type_t::make_string());
+	const auto b = type_t::make_vector(temp, make__fsentry_t__type(temp));
 	ut_verify_auto(QUARK_POS, a != b, true);
 }
 
