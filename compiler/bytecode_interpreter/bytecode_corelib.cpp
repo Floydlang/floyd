@@ -42,10 +42,10 @@ static rt_value_t bc_corelib__make_benchmark_report(interpreter_t& vm, const rt_
 
 //	QUARK_ASSERT(args[0]._type == benchmark_result2_t__type);
 
-	const auto b2 = bc_to_value(backend, args[0]);
+	const auto b2 = rt_to_value(backend, args[0]);
 	const auto test_results = unpack_vec_benchmark_result2_t(temp_types, b2);
 	const auto report = make_benchmark_report(test_results);
-	return value_to_bc(backend, value_t::make_string(report));
+	return value_to_rt(backend, value_t::make_string(report));
 }
 
 
@@ -65,7 +65,7 @@ static rt_value_t bc_corelib__detect_hardware_caps(interpreter_t& vm, const rt_v
 	}
 
 	const auto a = value_t::make_dict_value(types, type_t::make_json(), caps_map);
-	return value_to_bc(backend, a);
+	return value_to_rt(backend, a);
 }
 
 
@@ -79,14 +79,14 @@ static rt_value_t bc_corelib__make_hardware_caps_report(interpreter_t& vm, const
 	auto temp_types = types;
 	QUARK_ASSERT(args[0]._type == type_t::make_dict(temp_types, type_t::make_json()));
 
-	const auto b2 = bc_to_value(backend, args[0]);
+	const auto b2 = rt_to_value(backend, args[0]);
 	const auto m = b2.get_dict_value();
 	std::vector<std::pair<std::string, json_t>> caps;
 	for(const auto& e: m){
 		caps.push_back({ e.first, e.second.get_json() });
 	}
 	const auto s = corelib_make_hardware_caps_report(caps);
-	return value_to_bc(backend, value_t::make_string(s));
+	return value_to_rt(backend, value_t::make_string(s));
 }
 static rt_value_t bc_corelib__make_hardware_caps_report_brief(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
@@ -97,14 +97,14 @@ static rt_value_t bc_corelib__make_hardware_caps_report_brief(interpreter_t& vm,
 	auto temp_types = types;
 	QUARK_ASSERT(args[0]._type == type_t::make_dict(temp_types, type_t::make_json()));
 
-	const auto b2 = bc_to_value(backend, args[0]);
+	const auto b2 = rt_to_value(backend, args[0]);
 	const auto m = b2.get_dict_value();
 	std::vector<std::pair<std::string, json_t>> caps;
 	for(const auto& e: m){
 		caps.push_back({ e.first, e.second.get_json() });
 	}
 	const auto s = corelib_make_hardware_caps_report_brief(caps);
-	return value_to_bc(backend, value_t::make_string(s));
+	return value_to_rt(backend, value_t::make_string(s));
 }
 static rt_value_t bc_corelib__get_current_date_and_time_string(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
@@ -113,7 +113,7 @@ static rt_value_t bc_corelib__get_current_date_and_time_string(interpreter_t& vm
 	auto& backend = vm._backend;
 	const auto& types = backend.types;
 	const auto s = get_current_date_and_time_string();
-	return value_to_bc(backend, value_t::make_string(s));
+	return value_to_rt(backend, value_t::make_string(s));
 }
 
 
@@ -153,7 +153,7 @@ static rt_value_t bc_corelib__calc_string_sha1(interpreter_t& vm, const rt_value
 		QUARK_TRACE(json_to_pretty_string(debug));
 	}
 
-	const auto v = value_to_bc(backend, result);
+	const auto v = value_to_rt(backend, result);
 	return v;
 }
 
@@ -188,7 +188,7 @@ static rt_value_t bc_corelib__calc_binary_sha1(interpreter_t& vm, const rt_value
 		QUARK_TRACE(json_to_pretty_string(debug));
 	}
 
-	const auto v = value_to_bc(backend, result);
+	const auto v = value_to_rt(backend, result);
 	return v;
 }
 
@@ -282,7 +282,7 @@ static rt_value_t bc_corelib__get_fsentries_shallow(interpreter_t& vm, const rt_
 		QUARK_TRACE(json_to_pretty_string(debug));
 	}
 
-	const auto v = value_to_bc(backend, vec2);
+	const auto v = value_to_rt(backend, vec2);
 
 	return v;
 }
@@ -310,7 +310,7 @@ static rt_value_t bc_corelib__get_fsentries_deep(interpreter_t& vm, const rt_val
 		QUARK_TRACE(json_to_pretty_string(debug));
 	}
 
-	const auto v = value_to_bc(backend, vec2);
+	const auto v = value_to_rt(backend, vec2);
 
 	return v;
 }
@@ -330,7 +330,7 @@ static rt_value_t bc_corelib__get_fsentry_info(interpreter_t& vm, const rt_value
 	const auto info = corelib_get_fsentry_info(path);
 
 	const auto info2 = pack_fsentry_info(temp_types, info);
-	const auto v = value_to_bc(backend, info2);
+	const auto v = value_to_rt(backend, info2);
 	return v;
 }
 
@@ -346,7 +346,7 @@ static rt_value_t bc_corelib__get_fs_environment(interpreter_t& vm, const rt_val
 	const auto env = corelib_get_fs_environment();
 
 	const auto result = pack_fs_environment_t(temp_types, env);
-	const auto v = value_to_bc(backend, result);
+	const auto v = value_to_rt(backend, result);
 	return v;
 }
 
@@ -371,7 +371,7 @@ static rt_value_t bc_corelib__does_fsentry_exist(interpreter_t& vm, const rt_val
 		QUARK_TRACE(json_to_pretty_string(debug));
 	}
 
-	const auto v = value_to_bc(backend, result);
+	const auto v = value_to_rt(backend, result);
 	return v;
 }
 

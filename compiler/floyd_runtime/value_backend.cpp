@@ -1606,7 +1606,7 @@ QUARK_TEST("", "", "", ""){
 //	QUARK_VERIFY(s == 16);
 }
 
-int bc_compare_value_true_deep(value_backend_t& backend, const rt_value_t& left, const rt_value_t& right, const type_t& type0){
+int compare_value_true_deep(value_backend_t& backend, const rt_value_t& left, const rt_value_t& right, const type_t& type0){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(left._type == right._type);
 	QUARK_ASSERT(left.check_invariant());
@@ -3080,14 +3080,14 @@ rt_value_t make_non_rc(const value_t& value){
 }
 
 
-value_t bc_to_value(const value_backend_t& backend, const rt_value_t& value){
+value_t rt_to_value(const value_backend_t& backend, const rt_value_t& value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 
 	return from_runtime_value2(backend, value._pod, value._type);
 }
 
-rt_value_t value_to_bc(value_backend_t& backend, const value_t& value){
+rt_value_t value_to_rt(value_backend_t& backend, const value_t& value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 
@@ -3095,7 +3095,7 @@ rt_value_t value_to_bc(value_backend_t& backend, const value_t& value){
 	return rt_value_t(backend, value.get_type(), a, rt_value_t::rc_mode::adopt);
 }
 
-rt_value_t bc_from_runtime(value_backend_t& backend, runtime_value_t value, const type_t& type, rt_value_t::rc_mode mode){
+rt_value_t make_rt_value(value_backend_t& backend, runtime_value_t value, const type_t& type, rt_value_t::rc_mode mode){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -3103,7 +3103,7 @@ rt_value_t bc_from_runtime(value_backend_t& backend, runtime_value_t value, cons
 	return rt_value_t(backend, type, value, mode);
 }
 
-runtime_value_t runtime_from_bc(value_backend_t& backend, const rt_value_t& value){
+runtime_value_t get_rt_value(value_backend_t& backend, const rt_value_t& value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 

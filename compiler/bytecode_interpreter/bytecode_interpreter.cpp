@@ -1691,7 +1691,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 			const auto left = stack.read_register(i._b);
 			const auto right = stack.read_register(i._c);
-			long diff = bc_compare_value_true_deep(backend, left, right, type);
+			long diff = compare_value_true_deep(backend, left, right, type);
 
 			regs[i._a].bool_value = diff <= 0;
 			break;
@@ -1714,7 +1714,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(peek2(types, type).is_int() == false);
 			const auto left = stack.read_register(i._b);
 			const auto right = stack.read_register(i._c);
-			long diff = bc_compare_value_true_deep(backend, left, right, type);
+			long diff = compare_value_true_deep(backend, left, right, type);
 
 			regs[i._a].bool_value = diff < 0;
 			break;
@@ -1736,7 +1736,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(peek2(types, type).is_int() == false);
 			const auto left = stack.read_register(i._b);
 			const auto right = stack.read_register(i._c);
-			long diff = bc_compare_value_true_deep(backend, left, right, type);
+			long diff = compare_value_true_deep(backend, left, right, type);
 
 			regs[i._a].bool_value = diff == 0;
 			break;
@@ -1759,7 +1759,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(peek2(types, type).is_int() == false);
 			const auto left = stack.read_register(i._b);
 			const auto right = stack.read_register(i._c);
-			long diff = bc_compare_value_true_deep(backend, left, right, type);
+			long diff = compare_value_true_deep(backend, left, right, type);
 
 			regs[i._a].bool_value = diff != 0;
 			break;

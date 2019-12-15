@@ -142,7 +142,7 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 		const auto result_variable = find_global_symbol2(interpreter, module_symbol_t("result"));
 		value_t result_global;
 		if(result_variable != nullptr){
-			result_global = bc_to_value(*interpreter._stack._backend, result_variable->_value);
+			result_global = rt_to_value(*interpreter._stack._backend, result_variable->_value);
 		}
 
 		interpreter.unwind_stack();

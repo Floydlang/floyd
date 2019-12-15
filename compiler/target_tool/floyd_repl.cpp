@@ -211,7 +211,7 @@ int handle_repl_input(int print_pos, std::shared_ptr<floyd::interpreter_t>& vm_m
 	}
 	const auto return_value_type = vm_mut->_imm->_program._types[b.first];
 	if(return_value_type.is_void() == false){
-		const auto result_value = floyd::bc_to_value(b.second, return_value_type);
+		const auto result_value = floyd::rt_to_value(b.second, return_value_type);
 		std::cout << to_compact_string2(result_value) << std::endl;
 	}
 	return print_pos;

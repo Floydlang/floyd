@@ -699,9 +699,9 @@ struct rt_value_t {
 	);
 	private: explicit rt_value_t(value_backend_t& backend, const type_t& function_type, const module_symbol_t& function_id);
 
+
 	//////////////////////////////////////		STATE
 
-	//	IDEA: have two types: rt_value_t and bc_pod_t. bc_pod_t has type + value but does no RC.
 	public: value_backend_t* _backend;
 	public: type_t _type;
 	public: runtime_value_t _pod;
@@ -721,7 +721,7 @@ rt_value_t make_dict_value(value_backend_t& backend, const type_t& value_type, c
 json_t bcvalue_to_json(value_backend_t& backend, const rt_value_t& v);
 json_t bcvalue_and_type_to_json(value_backend_t& backend, const rt_value_t& v);
 
-int bc_compare_value_true_deep(value_backend_t& backend, const rt_value_t& left, const rt_value_t& right, const type_t& type);
+int compare_value_true_deep(value_backend_t& backend, const rt_value_t& left, const rt_value_t& right, const type_t& type);
 
 std::vector<rt_value_t> from_runtime_struct(value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type);
 runtime_value_t to_runtime_struct(value_backend_t& backend, const type_t& struct_type, const std::vector<rt_value_t>& values);
@@ -929,11 +929,11 @@ value_t from_runtime_struct(const value_backend_t& backend, const runtime_value_
 
 rt_value_t make_non_rc(const value_t& value);
 
-value_t bc_to_value(const value_backend_t& backend, const rt_value_t& value);
-rt_value_t value_to_bc(value_backend_t& backend, const value_t& value);
+value_t rt_to_value(const value_backend_t& backend, const rt_value_t& value);
+rt_value_t value_to_rt(value_backend_t& backend, const value_t& value);
 
-rt_value_t bc_from_runtime(value_backend_t& backend, runtime_value_t value, const type_t& type, rt_value_t::rc_mode mode);
-runtime_value_t runtime_from_bc(value_backend_t& backend, const rt_value_t& value);
+rt_value_t make_rt_value(value_backend_t& backend, runtime_value_t value, const type_t& type, rt_value_t::rc_mode mode);
+runtime_value_t get_rt_value(value_backend_t& backend, const rt_value_t& value);
 
 
 

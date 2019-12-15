@@ -95,7 +95,7 @@ static int bc_compare_struct_true_deep(const types_t& types, const std::vector<r
 
 	for(int i = 0 ; i < struct_def._members.size() ; i++){
 		const auto& member_type = struct_def._members[i]._type;
-		int diff = bc_compare_value_true_deep(types, left[i], right[i], member_type);
+		int diff = compare_value_true_deep(types, left[i], right[i], member_type);
 		if(diff != 0){
 			return diff;
 		}
@@ -113,7 +113,7 @@ static int bc_compare_vectors_obj(const types_t& types, const immer::vector<bc_e
 	const auto& shared_count = std::min(left.size(), right.size());
 	const auto& element_type = peek.get_vector_element_type(types);
 	for(int i = 0 ; i < shared_count ; i++){
-		const auto element_result = bc_compare_value_true_deep(
+		const auto element_result = compare_value_true_deep(
 			types,
 			rt_value_t(element_type, left[i]),
 			rt_value_t(element_type, right[i]),
@@ -255,7 +255,7 @@ static int bc_compare_dicts_obj(const types_t& types, const immer::map<std::stri
 			return key_result;
 		}
 
-		const auto element_result = bc_compare_value_true_deep(
+		const auto element_result = compare_value_true_deep(
 			types,
 			rt_value_t(element_type, (*left_it).second),
 			rt_value_t(element_type, (*right_it).second),
@@ -451,10 +451,10 @@ static int bc_compare_value_exts(const types_t& types, const bc_external_handle_
 	QUARK_ASSERT(right.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	return bc_compare_value_true_deep(types, rt_value_t(type, left), rt_value_t(type, right), type);
+	return compare_value_true_deep(types, rt_value_t(type, left), rt_value_t(type, right), type);
 }
 
-int bc_compare_value_true_deep(value_backend_t& backend, const rt_value_t& left, const rt_value_t& right, const type_t& type0){
+int compare_value_true_deep(value_backend_t& backend, const rt_value_t& left, const rt_value_t& right, const type_t& type0){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(left._type == right._type);
 	QUARK_ASSERT(left.check_invariant());

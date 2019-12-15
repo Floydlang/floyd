@@ -81,7 +81,7 @@ int64_t measure_floyd_function_f(const std::string& floyd_program, int count){
 
 	const auto floyd_ns = measure_execution_time_ns(
 		[&] {
-			const auto result = call_function(vm, bc_to_value(vm._imm->_program._types, f->_value), {});
+			const auto result = call_function(vm, rt_to_value(vm._imm->_program._types, f->_value), {});
 		},
 		count
 	);

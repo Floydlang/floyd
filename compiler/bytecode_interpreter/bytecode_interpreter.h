@@ -99,6 +99,8 @@ struct rt_value_t;
 
 
 typedef rt_value_t (*BC_NATIVE_FUNCTION_PTR)(interpreter_t& vm, const rt_value_t args[], int arg_count);
+
+//??? runtime_type_t is 32 bits, we need to bump bc_typeid_t to match. This requires changes to opcode encoding
 typedef int16_t bc_typeid_t;
 
 
@@ -763,11 +765,11 @@ struct interpreter_stack_t {
 					push_external_value(rt_value_t(type, rt_value_t::mode::k_unwritten_ext_value));
 				}
 				else{
-					push_external_value(value_to_bc(*_backend, local));
+					push_external_value(value_to_rt(*_backend, local));
 				}
 			}
 			else{
-				push_inplace_value(value_to_bc(*_backend, local));
+				push_inplace_value(value_to_rt(*_backend, local));
 			}
 		}
 		_current_static_frame = &frame;
