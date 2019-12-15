@@ -486,8 +486,8 @@ static bc_value_t make__host_info_t(value_backend_t& backend, const hostent_t& v
 		host_info_t__type,
 		{
 			bc_value_t::make_string(backend, value.official_host_name),
-			make_vector(backend, type_t::make_string(), immer::vector<bc_value_t>(name_aliases.begin(), name_aliases.end())),
-			make_vector(backend, ip_address_t__type, immer::vector<bc_value_t>(addresses_IPv4.begin(), addresses_IPv4.end())),
+			make_vector_value(backend, type_t::make_string(), immer::vector<bc_value_t>(name_aliases.begin(), name_aliases.end())),
+			make_vector_value(backend, ip_address_t__type, immer::vector<bc_value_t>(addresses_IPv4.begin(), addresses_IPv4.end())),
 		}
 	);
 }
@@ -537,7 +537,7 @@ static bc_value_t bc_corelib__pack_http_request(interpreter_t& vm, const bc_valu
 	const auto request = args[0].get_struct_value(backend);
 
 	const auto request_line = request[0].get_struct_value(backend);
-	const auto headers = get_vector(backend, request[1]);
+	const auto headers = get_vector_elements(backend, request[1]);
 	const auto optional_body = request[2].get_string_value(backend);
 
 	const auto headers2 = mapf<http_header_t>(headers, [&](const auto& e){
@@ -597,7 +597,7 @@ static bc_value_t bc_corelib__unpack_http_request(interpreter_t& vm, const bc_va
 					bc_value_t::make_string(backend, req.request_line.http_version)
 				}
 			),
-			make_vector(backend, http_header_t__type, immer::vector<bc_value_t>(headers2.begin(), headers2.end())),
+			make_vector_value(backend, http_header_t__type, immer::vector<bc_value_t>(headers2.begin(), headers2.end())),
 			bc_value_t::make_string(backend, req.optional_body)
 		}
 	);
@@ -616,7 +616,7 @@ static bc_value_t bc_corelib__pack_http_response(interpreter_t& vm, const bc_val
 	QUARK_ASSERT(args[0]._type == http_response_t__type);
 
 	const auto status_line = args[0].get_struct_value(backend);
-	const auto headers = get_vector(backend, args[1]);
+	const auto headers = get_vector_elements(backend, args[1]);
 	const auto optional_body = args[2].get_string_value(backend);
 
 	const auto headers2 = mapf<http_header_t>(headers, [&](const auto& e){
@@ -674,7 +674,7 @@ static bc_value_t bc_corelib__unpack_http_response(interpreter_t& vm, const bc_v
 					bc_value_t::make_string(backend, response.status_line.status_code),
 				}
 			),
-			make_vector(backend, http_header_t__type, immer::vector<bc_value_t>(headers2.begin(), headers2.end())),
+			make_vector_value(backend, http_header_t__type, immer::vector<bc_value_t>(headers2.begin(), headers2.end())),
 			bc_value_t::make_string(backend, response.optional_body)
 		}
 	);

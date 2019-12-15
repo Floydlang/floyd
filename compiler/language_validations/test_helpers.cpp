@@ -145,6 +145,8 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 			result_global = bc_to_value(*interpreter._stack._backend, result_variable->_value);
 		}
 
+		interpreter.unwind_stack();
+
 		return test_report_t{
 			result_global.is_undefined() ? json_t() : value_and_type_to_json(exe._types, result_global),
 			run_output,

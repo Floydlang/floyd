@@ -689,7 +689,7 @@ static const STRUCT_T* floydrt_update_struct_member_nonpod(floyd_runtime_t* frp,
 	const std::pair<type_t, struct_layout_t>& struct_layout_info = find_struct_layout(backend, type_t(struct_type));
 
 	const auto struct_bytes = struct_layout_info.second.size;
-	auto struct_ptr = alloc_struct_copy(backend.heap, reinterpret_cast<const uint64_t*>(s->get_data_ptr()), struct_bytes, type_t(struct_type));
+	auto struct_ptr = alloc_struct_copy(backend.heap, reinterpret_cast<const uint64_t*>(s->get_data_ptr()), struct_bytes, peek2(backend.types, type_t(struct_type)));
 	auto struct_base_ptr = struct_ptr->get_data_ptr();
 
 	const auto member_offset = struct_layout_info.second.members[member_index].offset;
@@ -720,7 +720,7 @@ static const STRUCT_T* floydrt_copy_struct(floyd_runtime_t* frp, STRUCT_T* s, ui
 	const auto struct_size2 = struct_layout_info.second.size;
 	QUARK_ASSERT(struct_size == struct_size2);
 #endif
-	auto struct_ptr = alloc_struct_copy(backend.heap, reinterpret_cast<const uint64_t*>(s->get_data_ptr()), struct_size, type_t(struct_type));
+	auto struct_ptr = alloc_struct_copy(backend.heap, reinterpret_cast<const uint64_t*>(s->get_data_ptr()), struct_size, peek2(backend.types, type_t(struct_type)));
 	return struct_ptr;
 }
 

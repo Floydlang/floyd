@@ -383,7 +383,7 @@ static bc_value_t bc_intrinsic__map(interpreter_t& vm, const bc_value_t args[], 
 
 	const auto& context = args[2];
 
-	const auto input_vec = get_vector(backend, args[0]);
+	const auto input_vec = get_vector_elements(backend, args[0]);
 	immer::vector<bc_value_t> vec2;
 	for(const auto& e: input_vec){
 		const bc_value_t f_args[] = { e, context };
@@ -392,7 +392,7 @@ static bc_value_t bc_intrinsic__map(interpreter_t& vm, const bc_value_t args[], 
 		vec2 = vec2.push_back(result1);
 	}
 
-	const auto result = make_vector(backend, r_type, vec2);
+	const auto result = make_vector_value(backend, r_type, vec2);
 
 	if(k_trace && false){
 		const auto debug = value_and_type_to_json(backend.types, bc_to_value(backend, result));
@@ -460,8 +460,8 @@ static bc_value_t bc_intrinsic__map_dag(interpreter_t& vm, const bc_value_t args
 	const auto& r_type = f_type_peek.get_function_return(backend.types);
 	const auto& context = args[3];
 
-	const auto elements2 = get_vector(backend, elements);
-	const auto parents2 = get_vector(backend, parents);
+	const auto elements2 = get_vector_elements(backend, elements);
+	const auto parents2 = get_vector_elements(backend, parents);
 
 	if(elements2.size() != parents2.size()) {
 		quark::throw_runtime_error("map_dag() requires elements and parents be the same count.");
@@ -516,7 +516,7 @@ static bc_value_t bc_intrinsic__map_dag(interpreter_t& vm, const bc_value_t args
 				}
 			}
 
-			const bc_value_t f_args[] = { e, make_vector(backend, r_type, solved_deps), context };
+			const bc_value_t f_args[] = { e, make_vector_value(backend, r_type, solved_deps), context };
 			const auto result1 = call_function_bc(vm, f, f_args, 3);
 
 			const auto parent_index = parents2[element_index].get_int_value();
@@ -528,7 +528,7 @@ static bc_value_t bc_intrinsic__map_dag(interpreter_t& vm, const bc_value_t args
 		}
 	}
 
-	const auto result = make_vector(backend, r_type, complete);
+	const auto result = make_vector_value(backend, r_type, complete);
 
 	if(k_trace && false){
 		const auto debug = value_and_type_to_json(backend.types, bc_to_value(backend, result));
@@ -578,8 +578,8 @@ static bc_value_t bc_intrinsic__map_dag2(interpreter_t& vm, const bc_value_t arg
 		quark::throw_runtime_error("R map_dag([E] elements, R init_value, R (R acc, E element) f");
 	}
 
-	const auto elements2 = get_vector(backend, elements);
-	const auto dependencies2 = get_vector(backend, dependencies);
+	const auto elements2 = get_vector_elements(backend, elements);
+	const auto dependencies2 = get_vector_elements(backend, dependencies);
 
 
 	immer::vector<bc_value_t> complete(elements2.size(), bc_value_t());
@@ -635,7 +635,7 @@ static bc_value_t bc_intrinsic__map_dag2(interpreter_t& vm, const bc_value_t arg
 				const auto& ready = complete[dep_e];
 				ready_elements = ready_elements.push_back(ready);
 			}
-			const auto ready_elements2 = make_vector(backend, r_type, ready_elements);
+			const auto ready_elements2 = make_vector_value(backend, r_type, ready_elements);
 			const bc_value_t f_args[] = { e, ready_elements2, context };
 
 			const auto result1 = call_function_bc(vm, f, f_args, 3);
@@ -654,7 +654,7 @@ static bc_value_t bc_intrinsic__map_dag2(interpreter_t& vm, const bc_value_t arg
 		}
 	}
 
-	const auto result = make_vector(backend, r_type, complete);
+	const auto result = make_vector_value(backend, r_type, complete);
 
 	if(k_trace && false){
 		const auto debug = value_and_type_to_json(backend.types, bc_to_value(backend, result));
@@ -683,7 +683,7 @@ static bc_value_t bc_intrinsic__filter(interpreter_t& vm, const bc_value_t args[
 	const auto& e_type = peek2(backend.types, elements._type).get_vector_element_type(backend.types);
 	const auto& context = args[2];
 
-	const auto input_vec = get_vector(backend, elements);
+	const auto input_vec = get_vector_elements(backend, elements);
 	immer::vector<bc_value_t> vec2;
 
 	for(const auto& e: input_vec){
@@ -696,7 +696,7 @@ static bc_value_t bc_intrinsic__filter(interpreter_t& vm, const bc_value_t args[
 		}
 	}
 
-	const auto result = make_vector(backend, e_type, vec2);
+	const auto result = make_vector_value(backend, e_type, vec2);
 
 	if(k_trace && false){
 		const auto debug = value_and_type_to_json(backend.types, bc_to_value(backend, result));
@@ -723,7 +723,7 @@ static bc_value_t bc_intrinsic__reduce(interpreter_t& vm, const bc_value_t args[
 	const auto& init = args[1];
 	const auto& f = args[2];
 	const auto& context = args[3];
-	const auto input_vec = get_vector(backend, elements);
+	const auto input_vec = get_vector_elements(backend, elements);
 
 	bc_value_t acc = init;
 	for(const auto& e: input_vec){
@@ -760,7 +760,7 @@ static bc_value_t bc_intrinsic__stable_sort(interpreter_t& vm, const bc_value_t 
 	const auto& e_type = peek2(backend.types, elements._type).get_vector_element_type(backend.types);
 	const auto& context = args[2];
 
-	const auto input_vec = get_vector(backend, elements);
+	const auto input_vec = get_vector_elements(backend, elements);
 	std::vector<bc_value_t> mutate_inplace_elements(input_vec.begin(), input_vec.end());
 
 	struct sort_functor_r {
@@ -781,7 +781,7 @@ static bc_value_t bc_intrinsic__stable_sort(interpreter_t& vm, const bc_value_t 
 	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
 
 	const auto mutate_inplace_elements2 = immer::vector<bc_value_t>(mutate_inplace_elements.begin(), mutate_inplace_elements.end());
-	const auto result = make_vector(backend, e_type, mutate_inplace_elements2);
+	const auto result = make_vector_value(backend, e_type, mutate_inplace_elements2);
 
 if(k_trace && false){
 	const auto debug = value_and_type_to_json(backend.types, bc_to_value(backend, result));

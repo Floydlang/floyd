@@ -64,6 +64,8 @@ stack + 15	local 0		symbol 2
 stack + 16	local 1		symbol 3
 stack + 17	temporary
 
+
+
 Call to function Y:
 
 FRAME INFO
@@ -737,11 +739,6 @@ struct interpreter_stack_t {
 
 	//////////////////////////////////////		FRAMES & REGISTERS
 
-	private: frame_pos_t read_frame_info(size_t pos) const;
-#if DEBUG
-	public: bool check_stack_frame(const frame_pos_t& in_frame) const;
-#endif
-
 	
 	//	Function arguments MUST ALREADY have been pushed on the stack!! Only handles locals.
 	//	??? Faster: This function should just allocate a block for frame, then have a list of writes.
@@ -793,6 +790,11 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
+	private: frame_pos_t read_frame_info(size_t pos) const;
+#if DEBUG
+	public: bool check_stack_frame(const frame_pos_t& in_frame) const;
+#endif
+
 	struct active_frame_t {
 		size_t start_pos;
 		size_t end_pos;
@@ -800,6 +802,8 @@ struct interpreter_stack_t {
 		size_t temp_count;
 	};
 	public: std::vector<active_frame_t> get_stack_frames() const;
+
+
 
 	public: bool check_reg(int reg) const{
 		//	Makes sure register is within current stack frame bounds.
@@ -1136,6 +1140,9 @@ struct interpreter_t {
 	public: explicit interpreter_t(const bc_program_t& program, const config_t& config, bc_runtime_handler_i& handler);
 	public: interpreter_t(const interpreter_t& other) = delete;
 	public: ~interpreter_t();
+
+	public: void unwind_stack();
+
 	public: const interpreter_t& operator=(const interpreter_t& other)= delete;
 #if DEBUG
 	public: bool check_invariant() const;

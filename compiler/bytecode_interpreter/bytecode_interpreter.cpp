@@ -21,7 +21,7 @@
 
 namespace floyd {
 
-static const bool k_trace_stepping = true;
+static const bool k_trace_stepping = false;
 
 
 static std::string opcode_to_string(bc_opcode opcode);
@@ -246,8 +246,7 @@ frame_pos_t interpreter_stack_t::read_frame_info(size_t pos) const{
 	QUARK_ASSERT(v >= 0);
 
 	const auto ptr = (const bc_static_frame_t*)_entries[pos + 1].frame_ptr;
-	QUARK_ASSERT(ptr != nullptr);
-	QUARK_ASSERT(ptr->check_invariant());
+	QUARK_ASSERT(ptr == nullptr || ptr->check_invariant());
 
 	return frame_pos_t{ (size_t)v, ptr };
 }
@@ -283,32 +282,37 @@ bool interpreter_stack_t::check_stack_frame(const frame_pos_t& in_frame) const{
 #endif
 
 //	Returned elements are sorted with smaller stack positions first.
+//	Walks the stack from the active frame towards the start of the stack, the globals frame.
 std::vector<interpreter_stack_t::active_frame_t> interpreter_stack_t::get_stack_frames() const{
 	QUARK_ASSERT(check_invariant());
 
 	const auto stack_size = static_cast<int>(size());
 
+	std::vector<active_frame_t> result;
 	const auto frame_start0 = get_current_frame_start();
-	const auto frame_size0 = _current_static_frame->_symbols.size();
+	{
+		const auto frame_size0 = _current_static_frame->_symbols.size();
+		const auto frame_end0 = frame_start0 + frame_size0;
 
-	const auto frame_end0 = frame_start0 + frame_size0;
-	const auto temp_count0 = stack_size - frame_end0;
-	std::vector<active_frame_t> result { active_frame_t { frame_start0, frame_end0, _current_static_frame, temp_count0 }};
+		//??? Notice: during a call sequence: push_frame_ptr, push arguments, call, popn, pop_frame_ptr -- the stack size vs frames is slighly out of sync and gives us negative temporary stack entries.
+		const auto temp_count0 = stack_size >= frame_end0 ? stack_size - frame_end0 : 0;
+		const auto e = active_frame_t { frame_start0, frame_end0, _current_static_frame, temp_count0 };
+		result.push_back(e);
+	}
 
-	auto frame_pos = frame_start0;
-	while(frame_pos > k_frame_overhead){
-		const auto info_pos = frame_pos - k_frame_overhead;
-		const auto frame = read_frame_info(info_pos);
-
+	auto info_pos = frame_start0 - k_frame_overhead;
+	auto frame = read_frame_info(info_pos);
+	while(frame._frame_ptr != nullptr){
 		const auto frame_start = frame._frame_pos;
 		const auto frame_size = frame._frame_ptr->_symbols.size();
 		const auto frame_end = frame_start + frame_size;
-		const auto temp_count = info_pos - frame_end;
+		const auto temp_count = info_pos >= frame_end ? info_pos - frame_end : 0;
 
 		const auto e = active_frame_t { frame_start, frame_end, frame._frame_ptr, temp_count };
 		result.push_back(e);
 
-		frame_pos = frame._frame_pos;
+		info_pos = frame_start - k_frame_overhead;
+		frame = read_frame_info(info_pos);
 	}
 
 	std::reverse(result.begin(), result.end());
@@ -603,8 +607,76 @@ interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config
 
 interpreter_t::~interpreter_t(){
 	QUARK_ASSERT(check_invariant());
+}
 
+void interpreter_t::unwind_stack(){
+	QUARK_ASSERT(check_invariant());
+
+	//??? Could also
+	QUARK_ASSERT(_stack._current_static_frame == &_imm->_program._globals);
 	_stack.close_frame(_imm->_program._globals);
+
+	QUARK_ASSERT(check_invariant());
+}
+
+
+static std::vector<std::string> make(value_backend_t& backend, size_t i, runtime_value_t value, const type_t& type, const interpreter_stack_t::active_frame_t& frame, int frame_index, int symbol_index, bool is_symbol){
+	const auto debug_type = type;
+	const bool is_rc = is_rc_value(backend.types, debug_type);
+	const auto bc_pod = value;
+	const auto bc_that_owns_rc = bc_value_t(backend, debug_type, bc_pod, bc_value_t::rc_mode::bump);
+	const bool uninitialized_local = bc_pod.int_value == UNINITIALIZED_RUNTIME_VALUE || (is_rc && bc_pod.int_value == 0x00000000);
+	const auto value_str = uninitialized_local ? "UNWRITTEN" : json_to_compact_string(bcvalue_to_json(backend, bc_that_owns_rc));
+
+	std::string rc_str = "";
+	std::string alloc_id_str = "";
+	if(is_rc && uninitialized_local == false){
+		//	Cludge for now, gets the alloc struct for any type of RC-value.
+		const auto& alloc = bc_pod.struct_ptr->alloc;
+		const auto alloc_id = alloc.alloc_id;
+
+		//	 We have our own reference to the RC via "bc_that_owns_rc", we take that out of trace.
+		const int32_t rc = alloc.rc - 1;
+		rc_str = std::to_string(rc);
+		alloc_id_str = std::to_string(alloc_id);
+	}
+
+	const std::string frame_str = std::to_string(frame_index) + (frame_index == 0 ? " GLOBAL" : "");
+	if(is_symbol){
+		const auto& symbol = frame.static_frame->_symbols[symbol_index];
+		const std::string symname = symbol.first;
+		const std::string symtype = type_to_compact_string(backend.types, symbol.second._value_type);
+
+		const auto line = std::vector<std::string> {
+			std::to_string(i) + ":" + std::to_string(symbol_index),
+			type_to_compact_string(backend.types, debug_type),
+			value_str,
+			rc_str,
+			alloc_id_str,
+
+			frame_str,
+			symname,
+			symtype
+		};
+		return line;
+	}
+	else{
+		const std::string symname = std::string() + "stack-temp" + std::to_string(symbol_index);
+		const std::string symtype = "";
+
+		const auto line = std::vector<std::string> {
+			std::to_string(i) + ":" + std::to_string(symbol_index),
+			type_to_compact_string(backend.types, debug_type),
+			value_str,
+			rc_str,
+			alloc_id_str,
+
+			frame_str,
+			symname,
+			symtype
+		};
+		return line;
+	}
 }
 
 void trace_interpreter(interpreter_t& vm, int pc){
@@ -616,86 +688,58 @@ void trace_interpreter(interpreter_t& vm, int pc){
 	{
 		QUARK_SCOPED_TRACE("STACK");
 
-		const int size = static_cast<int>(stack._stack_size);
 		const auto stack_frames = stack.get_stack_frames();
-
-		size_t next_frame_start_pos = stack_frames[0].start_pos;
-		int current_frame_index = -1;
 
 		std::vector<std::vector<std::string>> matrix;
 
-		for(int64_t i = 0 ; i < size ; i++){
-			if(i == next_frame_start_pos){
-				current_frame_index++;
-				next_frame_start_pos = (current_frame_index + 1) < stack_frames.size() ? stack_frames[current_frame_index + 1].start_pos : SIZE_MAX;
-			}
+		size_t stack_pos = 0;
+		for(int frame_index = 0 ; frame_index < stack_frames.size() ; frame_index++){
+			const auto line0 = std::vector<std::string> {
+				std::to_string(stack_pos),
+				"",
+				std::to_string(stack._entries[stack_pos].int_value),
+				"",
+				"",
 
-			const auto frame_ptr = current_frame_index >= 0 && current_frame_index < stack_frames.size() ? &stack_frames[current_frame_index] : nullptr;
-
-			const auto debug_type = stack._entry_types[i];
-			const bool is_rc = is_rc_value(backend.types, debug_type);
-			const auto bc_pod = stack._entries[i];
-			const auto bc_that_owns_rc = bc_value_t(backend, debug_type, bc_pod, bc_value_t::rc_mode::bump);
-			const bool uninitialized_local = bc_pod.int_value == UNINITIALIZED_RUNTIME_VALUE || (is_rc && bc_pod.int_value == 0x00000000);
-			const auto value_str = uninitialized_local ? "UNWRITTEN" : json_to_compact_string(bcvalue_to_json(backend, bc_that_owns_rc));
-
-			std::string rc_str = "";
-			std::string alloc_id_str = "";
-			if(is_rc && uninitialized_local == false){
-				//	Cludge for now, gets the alloc struct for any type of RC-value.
-				const auto& alloc = bc_pod.struct_ptr->alloc;
-				const auto alloc_id = alloc.alloc_id;
-
-				//	 We have our own reference to the RC via "bc_that_owns_rc", we take that out of trace.
-				const int32_t rc = alloc.rc - 1;
-				rc_str = std::to_string(rc);
-				alloc_id_str = std::to_string(alloc_id);
-			}
-
-			std::string frame;
-			std::string symname;
-			std::string symtype;
-			if(frame_ptr != nullptr){
-				const bool is_inside_frame = i >= frame_ptr->start_pos && i < frame_ptr->end_pos;
-				const bool is_temporary = i >= frame_ptr->end_pos && i < (frame_ptr->end_pos + frame_ptr->temp_count);
-
-				frame = std::to_string(current_frame_index) + (current_frame_index == 0 ? " GLOBAL" : "");
-
-				if(is_inside_frame){
-					const auto& symbol = frame_ptr->static_frame->_symbols[i - frame_ptr->start_pos];
-
-					symname = symbol.first;
-					symtype = type_to_compact_string(backend.types, symbol.second._value_type);
-				}
-				else if(is_temporary){
-					symname = "temp (after symbols)" + std::to_string(i - frame_ptr->end_pos);
-					symtype = "";
-				}
-				else{
-					symname = "<frame info>";
-					symtype = "<frame info>";
-				}
-			}
-			else {
-				symname = "<frame info>";
-				symtype = "<frame info>";
-			}
-
-			const auto line = std::vector<std::string> {
-				std::to_string(i),
-				type_to_compact_string(backend.types, debug_type),
-				value_str,
-				rc_str,
-				alloc_id_str,
-
-				frame,
-				symname,
-				symtype
+				"",
+				"prev frame pos",
+				""
 			};
+			matrix.push_back(line0);
+			stack_pos++;
 
-			matrix.push_back(line);
+			const auto line1 = std::vector<std::string> {
+				std::to_string(stack_pos),
+				"",
+				ptr_to_hexstring(stack._entries[stack_pos].frame_ptr),
+				"",
+				"",
+
+				"",
+				"prev frame ptr",
+				""
+			};
+			matrix.push_back(line1);
+			stack_pos++;
+
+			const auto& frame = stack_frames[frame_index];
+
+			for(int symbol_index = 0 ; symbol_index < (frame.end_pos - frame.start_pos) ; symbol_index++){
+				const auto bc_pod = stack._entries[stack_pos];
+				const auto debug_type = stack._entry_types[stack_pos];
+				const auto line = make(backend, stack_pos, bc_pod, debug_type, frame, frame_index, symbol_index, true);
+				matrix.push_back(line);
+				stack_pos++;
+			}
+			for(int temp_index = 0 ; temp_index < frame.temp_count ; temp_index++){
+				const auto bc_pod = stack._entries[stack_pos];
+				const auto debug_type = stack._entry_types[stack_pos];
+				const auto line = make(backend, stack_pos, bc_pod, debug_type, frame, frame_index, temp_index, false);
+				matrix.push_back(line);
+				stack_pos++;
+			}
 		}
-		
+
 		QUARK_SCOPED_TRACE("STACK ENTRIES");
 		const auto result = generate_table_type1({ "#", "type", "value", "RC", "alloc ID", "frame", "symname", "symtype" }, matrix);
 		QUARK_TRACE(result);
@@ -722,12 +766,14 @@ void trace_interpreter(interpreter_t& vm, int pc){
 			pos++;
 		}
 
+/*
 		const auto t = json_t::make_object({
 			{ "symbols", json_t::make_array(bc_symbols_to_json(backend, frame._symbols)) },
 			{ "instructions", json_t::make_array(instructions) }
 		});
+*/
 		QUARK_SCOPED_TRACE("INSTRUCTIONS");
-		QUARK_TRACE(json_to_pretty_string(t));
+		QUARK_TRACE(json_to_pretty_string(json_t::make_array(instructions)));
 	}
 }
 
@@ -820,7 +866,7 @@ static void execute_new_vector_obj(interpreter_t& vm, int16_t dest_reg, int16_t 
 		elements2 = elements2.push_back(e2);
 	}
 
-	const auto result = make_vector(backend, element_type, elements2);
+	const auto result = make_vector_value(backend, element_type, elements2);
 	vm._stack.write_register__external_value(dest_reg, result);
 }
 
@@ -851,7 +897,7 @@ static void execute_new_dict_obj(interpreter_t& vm, int16_t dest_reg, int16_t ta
 		elements2 = elements2.insert({ key2, value });
 	}
 
-	const auto result = make_dict(backend, element_type, elements2);
+	const auto result = make_dict_value(backend, element_type, elements2);
 	vm._stack.write_register__external_value(dest_reg, result);
 }
 

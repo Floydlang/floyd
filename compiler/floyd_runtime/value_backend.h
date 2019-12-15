@@ -761,11 +761,11 @@ struct bc_value_t {
 ////////////////////////////////////////////			FREE
 
 
-const immer::vector<bc_value_t> get_vector(value_backend_t& backend, const bc_value_t& value);
-bc_value_t make_vector(value_backend_t& backend, const type_t& element_type, const immer::vector<bc_value_t>& elements);
+const immer::vector<bc_value_t> get_vector_elements(value_backend_t& backend, const bc_value_t& value);
+bc_value_t make_vector_value(value_backend_t& backend, const type_t& element_type, const immer::vector<bc_value_t>& elements);
 
 const immer::map<std::string, bc_value_t> get_dict_values(value_backend_t& backend, const bc_value_t& value);
-bc_value_t make_dict(value_backend_t& backend, const type_t& value_type, const immer::map<std::string, bc_value_t>& entries);
+bc_value_t make_dict_value(value_backend_t& backend, const type_t& value_type, const immer::map<std::string, bc_value_t>& entries);
 
 
 json_t bcvalue_to_json(value_backend_t& backend, const bc_value_t& v);

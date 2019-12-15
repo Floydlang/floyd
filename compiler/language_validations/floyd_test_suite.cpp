@@ -1467,7 +1467,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Simple test-def compiles, call
 }
 
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "test-def", "Simple test-def compiles", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Simple test-def compiles", ""){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"___(
