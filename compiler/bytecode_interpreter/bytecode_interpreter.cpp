@@ -1258,6 +1258,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
+		//??? Idea: popn specifies *where* we can find a list with the types to pop.
 		//??? popn with a = 0 is a NOP ==> never emit these!
 		case bc_opcode::k_popn: {
 			QUARK_ASSERT(vm.check_invariant());

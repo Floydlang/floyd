@@ -1106,7 +1106,7 @@ struct interpreter_stack_t {
 	public: size_t _allocated_count;
 	public: size_t _stack_size;
 
-	//	These are parallell with _entries, one elementfor each entry on the stack.
+	//	These are parallell with _entries, one element for each entry on the stack.
 	//??? Kill these - we should have the types in the static frames already.
 	public: std::vector<type_t> _entry_types;
 
