@@ -22,6 +22,9 @@ namespace floyd {
 //#define QUARK_TEST QUARK_TEST_VIP
 
 
+static void dispose_alloc(heap_alloc_64_t& alloc);
+
+
 ////////////////////////////////		heap_t
 
 
@@ -295,7 +298,7 @@ static void dispose_alloc__internal(heap_alloc_64_t& alloc){
 		std::free(&alloc);
 	}
 }
-void dispose_alloc(heap_alloc_64_t& alloc){
+static void dispose_alloc(heap_alloc_64_t& alloc){
 	QUARK_ASSERT(alloc.check_invariant());
 
 	if(k_heap_mutex){
@@ -790,7 +793,7 @@ runtime_value_t alloc_dict_hamt(heap_t& heap, type_t value_type){
 	return runtime_value_t { .dict_hamt_ptr = dict };
 }
 
-void dispose_dict_hamt(runtime_value_t& d){
+static void dispose_dict_hamt(runtime_value_t& d){
 	QUARK_ASSERT(sizeof(DICT_HAMT_T) == sizeof(heap_alloc_64_t));
 	QUARK_ASSERT(d.dict_hamt_ptr != nullptr);
 	auto& dict = *d.dict_hamt_ptr;

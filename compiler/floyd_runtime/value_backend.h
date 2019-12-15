@@ -239,7 +239,6 @@ void trace_heap(const heap_t& heap);
 inline int32_t dec_rc(const heap_alloc_64_t& alloc);
 inline int32_t inc_rc(const heap_alloc_64_t& alloc);
 
-void dispose_alloc(heap_alloc_64_t& alloc);
 
 
 ////////////////////////////////	runtime_value_t
@@ -518,7 +517,6 @@ struct DICT_HAMT_T {
 };
 
 runtime_value_t alloc_dict_hamt(heap_t& heap, type_t value_type);
-void dispose_dict_hamt(runtime_value_t& vec);
 
 
 
