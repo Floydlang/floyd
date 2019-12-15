@@ -31,7 +31,7 @@ std::vector<std::string> args_to_vector(int argc, const char * argv[]){
 }
 
 #if QUARK_MAC
-std::pair<std::string, std::vector<std::string> > extract_key(const std::vector<std::string>& args, const std::string& key){
+static std::pair<std::string, std::vector<std::string> > extract_key(const std::vector<std::string>& args, const std::string& key){
 	const auto it = std::find(args.begin(), args.end(), key);
 	if(it != args.end()){
 		auto copy = args;
@@ -174,7 +174,7 @@ command_line_args_t parse_command_line_args_subcommand(const std::vector<std::st
 }
 
 
-void trace_command_line_args(const command_line_args_t& v){
+static void trace_command_line_args(const command_line_args_t& v){
 	QUARK_SCOPED_TRACE("trace_command_line_args");
 
 	{

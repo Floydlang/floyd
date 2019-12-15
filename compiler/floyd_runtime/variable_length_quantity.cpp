@@ -15,7 +15,7 @@
 ////////////////////////////////	REFERENCE IMPLEMENTATION
 
 
-std::vector<uint8_t> WriteVarLen(unsigned long value)
+static std::vector<uint8_t> WriteVarLen(unsigned long value)
 {
    std::vector<uint8_t> result;
    unsigned long buffer;
@@ -39,13 +39,13 @@ std::vector<uint8_t> WriteVarLen(unsigned long value)
    return result;
 }
 
-uint8_t getc2(const uint8_t data[], std::size_t& io_pos){
+static uint8_t getc2(const uint8_t data[], std::size_t& io_pos){
 	const auto result = data[io_pos];
 	io_pos++;
 	return result;
 }
 
-std::pair<unsigned long, std::size_t> ReadVarLen(const uint8_t data[], std::size_t pos)
+static std::pair<unsigned long, std::size_t> ReadVarLen(const uint8_t data[], std::size_t pos)
 {
     unsigned long value;
     unsigned char c;
@@ -134,13 +134,13 @@ std::vector<uint8_t> pack_vlq(uint32_t v){
 }
 
 //	Can be done without std::vector, like this:
-std::pair<size_t, uint8_t[5]> pack_vlq2(uint32_t v){
+static std::pair<size_t, uint8_t[5]> pack_vlq2(uint32_t v){
 	return {};
 }
 
 
 //	Wrapper that controls every result against reference implementation.
-std::vector<uint8_t> pack_vlq__verified(uint32_t v){
+static std::vector<uint8_t> pack_vlq__verified(uint32_t v){
 	const auto a = pack_vlq(v);
 	const auto b = WriteVarLen(v);
 
@@ -174,7 +174,7 @@ QUARK_TEST("variable_length_quantity", "pack_vlq()", "", ""){
 
 
 //	Wrapper that controls every result against reference implementation.
-uint32_t unpack_vlq__verified(const uint8_t data[]){
+static uint32_t unpack_vlq__verified(const uint8_t data[]){
 	const auto a = unpack_vlq(data);
 	const auto b = ReadVarLen(data, 0);
 

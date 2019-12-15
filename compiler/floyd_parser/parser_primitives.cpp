@@ -47,7 +47,7 @@ seq_t skip_whitespace(const seq_t& s){
 	/*xyz*/int my_global7 = 3;
 
 
-std::pair<std::string, seq_t> while_multicomment(const seq_t& s){
+static std::pair<std::string, seq_t> while_multicomment(const seq_t& s){
 	QUARK_ASSERT(s.first(2) == "/*");
 
 	auto p = s.rest(2);
@@ -379,7 +379,7 @@ std::pair<struct_def_t, seq_t> parse_struct_def(types_t& types, const seq_t& p, 
 //////////////////////////////////////		TYPES
 
 
-std::pair<std::shared_ptr<type_t>, seq_t> read_basic_type(types_t& types, const seq_t& s){
+static std::pair<std::shared_ptr<type_t>, seq_t> read_basic_type(types_t& types, const seq_t& s){
 	const auto pos0 = skip_whitespace(s);
 
 	const auto pos1 = read_while(pos0, k_identifier_chars + "*");

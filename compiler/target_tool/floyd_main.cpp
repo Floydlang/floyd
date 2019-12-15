@@ -66,7 +66,7 @@ using namespace floyd;
 
 bool g_trace_on = true;
 
-void run_tests(){
+static void run_tests(){
 
 #if QUARK_UNIT_TESTS_ON
 	//	Cherry-picked list of files who's tests we run first.
@@ -209,7 +209,7 @@ struct tool_i {
 
 
 //	If dest_path is empty, print to stdout
-void output_result(tool_i& tool, std::ostream& out, const std::string& dest_path, const std::string& s){
+static void output_result(tool_i& tool, std::ostream& out, const std::string& dest_path, const std::string& s){
 	if(dest_path == ""){
 		out << s << std::endl;
 	}
@@ -672,7 +672,8 @@ struct main_result_t {
 	std::string output;
 	std::map<std::string, std::string> files;
 };
-bool operator==(const main_result_t& lhs, const main_result_t& rhs){
+
+static bool operator==(const main_result_t& lhs, const main_result_t& rhs){
 	return lhs.error == rhs.error && lhs.output == rhs.output && lhs.files == rhs.files;
 }
 

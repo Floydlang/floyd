@@ -156,7 +156,7 @@ const bool DisableSLPVectorization = false;
 const bool DisableSimplifyLibCalls = false;
 
 
-const bool EnableDebugify = false;
+static const bool EnableDebugify = false;
 const bool DebugifyEach = false;
 
 
@@ -184,7 +184,7 @@ public:
 		// Apply -debugify/-check-debugify before/after each pass and collect
 		// debug info loss statistics.
 		PassKind Kind = P->getPassKind();
-		StringRef Name = P->getPassName();
+//		StringRef Name = P->getPassName();
 
 		// TODO: Implement Debugify for BasicBlockPass, LoopPass.
 		switch (Kind) {

@@ -130,7 +130,7 @@ void default_runtime::runtime_i__on_unit_test_failed(const source_code_location&
 /*
 	This function uses all macros so we know they compile.
 */
-void test_macros(){
+static void test_macros(){
 	QUARK_ASSERT(true);
 
 	QUARK_TRACE("hello");

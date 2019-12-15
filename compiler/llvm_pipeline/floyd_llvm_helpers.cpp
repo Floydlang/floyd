@@ -204,7 +204,7 @@ static void replaceAll(std::string& str, const std::string& from, const std::str
 }
 
 //	We don't fix up the first occurence of declare since that would move it in contact with what's before it.
-std::string reformat_llvm_module_print(const std::string& s0){
+static std::string reformat_llvm_module_print(const std::string& s0){
 	auto temp = s0;
 	const auto from = std::string("\n\ndeclare ");
 	const auto to = std::string("\ndeclare ");
@@ -296,7 +296,7 @@ std::string print_function(const llvm::Function* f){
 	}
 }
 
-std::string print_value0(llvm::Value* value){
+static std::string print_value0(llvm::Value* value){
 	if(value == nullptr){
 		return "nullptr";
 	}

@@ -101,7 +101,7 @@ static void ut_verify_collection(const quark::call_context_t& context, const std
 }
 
 //	???	Return json_t directly, no need for collection_def_t-type.
-std::pair<collection_def_t, seq_t> parse_bounded_list(const seq_t& s, const std::string& start_char, const std::string& end_char){
+static std::pair<collection_def_t, seq_t> parse_bounded_list(const seq_t& s, const std::string& start_char, const std::string& end_char){
 	QUARK_ASSERT(s.check_invariant());
 	QUARK_ASSERT(s.first() == start_char);
 	QUARK_ASSERT(start_char.size() == 1);
@@ -241,7 +241,7 @@ Escape sequence	Hex value in ASCII	Character represented
 \uhhhhnote 4	none	Unicode code point below 10000 hexadecimal
 */
 //??? add tests for this.
-int64_t expand_one_char_escape(const char ch2){
+static int64_t expand_one_char_escape(const char ch2){
 	switch(ch2){
 		case '0':
 			return 0x00;
@@ -272,7 +272,7 @@ int64_t expand_one_char_escape(const char ch2){
 	}
 }
 
-std::pair<std::string, seq_t> parse_string_literal_internal(const seq_t& s, const char delimiter){
+static std::pair<std::string, seq_t> parse_string_literal_internal(const seq_t& s, const char delimiter){
 	QUARK_ASSERT(!s.empty());
 	QUARK_ASSERT(s.first1_char() == delimiter);
 
@@ -363,7 +363,7 @@ QUARK_TEST("parser", "parse_string_literal()", "Escape \'", ""){
 
 
 
-std::pair<int64_t, seq_t> parse_character_literal(const seq_t& s){
+static std::pair<int64_t, seq_t> parse_character_literal(const seq_t& s){
 	QUARK_ASSERT(!s.empty());
 	QUARK_ASSERT(s.first1_char() == '\'');
 
@@ -401,7 +401,7 @@ QUARK_TEST("parser", "parse_character_literal()", "", ""){
 
 // [0-9] and "."  => numeric constant.
 //	Only works with positive numbers. Any sign is parsed first.
-std::pair<value_t, seq_t> parse_decimal_literal(const seq_t& p) {
+static std::pair<value_t, seq_t> parse_decimal_literal(const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
 	QUARK_ASSERT(k_c99_number_chars.find(p.first()) != std::string::npos);
 
@@ -508,7 +508,7 @@ QUARK_TEST("parser", "parse_decimal_literal()", "", ""){
 	None at the end.
 	First span can be shorted but not zero characters
 */
-std::string strip_optional_dividers(const std::string& s){
+static std::string strip_optional_dividers(const std::string& s){
 	std::vector<std::string> spans;
 	spans.push_back("");
 	for(auto pos = 0 ; pos < s.size() ; pos++){
@@ -625,7 +625,7 @@ QUARK_TEST("parser", "strip_optional_dividers()", "", ""){
 	0b0'11111111
 */
 
-std::pair<value_t, seq_t> parse_binary_literal(const seq_t& p) {
+static std::pair<value_t, seq_t> parse_binary_literal(const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
 
 	const auto pos = read_required(p, "0b");
@@ -772,7 +772,7 @@ QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 
 
 
-std::pair<value_t, seq_t> parse_hexadecimal_literal(const seq_t& p) {
+static std::pair<value_t, seq_t> parse_hexadecimal_literal(const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
 
 	const auto pos = read_required(p, "0x");
@@ -889,7 +889,7 @@ QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 		hello2
 		x
 */
-std::pair<json_t, seq_t> parse_terminal(const seq_t& p0) {
+static std::pair<json_t, seq_t> parse_terminal(const seq_t& p0) {
 	QUARK_ASSERT(p0.check_invariant());
 
 	const auto p = skip_whitespace(p0);
@@ -947,7 +947,7 @@ std::pair<json_t, seq_t> parse_terminal(const seq_t& p0) {
 	throw_compiler_error_nopos("Expected constant or identifier.");
 }
 
-void ut_verify_terminal(const std::string& expression, const std::string& expected_value, const std::string& expected_seq){
+static void ut_verify_terminal(const std::string& expression, const std::string& expected_value, const std::string& expected_seq){
 	const auto result = parse_terminal(seq_t(expression));
 	const std::string json_s = expr_to_string(result.first);
 	if(json_s == expected_value && result.second.get_s() == expected_seq){
@@ -1030,7 +1030,7 @@ QUARK_TEST("parser", "parse_terminal()", "identifier", ""){
 	lhs operation EXPR +++
 	lhs OPERATION EXPRESSION ...
 */
-std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, const json_t& lhs, const eoperator_precedence precedence){
+static std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, const json_t& lhs, const eoperator_precedence precedence){
 	QUARK_ASSERT(p0.check_invariant());
 
 	const auto p = skip_whitespace(p0);
@@ -1249,7 +1249,7 @@ static std::pair<json_t, seq_t> parse_unnamed_struct_type_def(types_t& types, co
 		(123 + 123 * x + f(y*3))
 		[ 1, 2, calc_exp(3) ]
 */
-std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
+static std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 	QUARK_ASSERT(p.check_invariant());
 
 	types_t temp;
@@ -1365,7 +1365,7 @@ QUARK_TEST("parser", "parse_lhs_atom()", "", ""){
 
 
 
-void ut_verify__parse_expression(const quark::call_context_t& context, const std::string& input, const std::string& expected_json_s, const std::string& expected_rest){
+static void ut_verify__parse_expression(const quark::call_context_t& context, const std::string& input, const std::string& expected_json_s, const std::string& expected_rest){
 	const auto result = parse_expression(seq_t(input));
 	const std::string result_json_s = expr_to_string(result.first);
 
@@ -1987,7 +1987,7 @@ QUARK_TEST("parser", "parse_expression()", "combo arithmetics", ""){
 //////////////////////////////////			EXPRESSION ERRORS
 
 
-void test__parse_expression__throw(const std::string& expression, const std::string& exception_message){
+static void test__parse_expression__throw(const std::string& expression, const std::string& exception_message){
 	try{
 		const auto result = parse_expression(seq_t(expression));
 		fail_test(QUARK_POS);

@@ -286,7 +286,7 @@ QUARK_TEST("json_t", "json_t()", "", ""){
 
 
 
-long long double_to_int(const double value){
+static long long double_to_int(const double value){
 	return std::llround(value);
 }
 
@@ -341,7 +341,7 @@ json_t make_array_skip_nulls(const std::vector<json_t>& elements){
 }
 
 
-json_t make_test_tree(){
+static json_t make_test_tree(){
 	const auto obj1 = json_t::make_object({
 		{ "name", json_t("James Bond") },
 		{ "height", json_t(178.0) }
@@ -375,7 +375,7 @@ json_t make_test_tree(){
 	]
 */
 
-json_t make_mixed_test_tree(){
+static json_t make_mixed_test_tree(){
 	const auto obj1 = json_t::make_object({
 		{ "name", json_t("James Bond") },
 		{ "height", json_t(178.0) },
@@ -841,7 +841,7 @@ using std::pair;
 
 static const std::string k_json_whitespace_chars = " \n\t";
 
-seq_t skip_whitespace(const seq_t& s){
+static seq_t skip_whitespace(const seq_t& s){
 	return read_while(s, k_json_whitespace_chars).second;
 }
 
@@ -1024,7 +1024,7 @@ std::string json_to_compact_string2(const json_t& v, bool quote_fields);
 ////////////////////////////////////////////////		C++11 raw string literals tests
 
 
-string erase_linefeed(const std::string& s){
+static string erase_linefeed(const std::string& s){
 /*
 	string r = s;
 //	str.erase(std::remove(str.begin(), str.end(), 'a'), str.end());
@@ -1116,7 +1116,7 @@ QUARK_TESTQ("C++11 raw string literals", ""){
 }
 
 
-std::string object_to_compact_string(const std::map<std::string, json_t>& object, bool quote_fields){
+static std::string object_to_compact_string(const std::map<std::string, json_t>& object, bool quote_fields){
 	if(object.empty()){
 		return "{}";
 	}
@@ -1152,7 +1152,7 @@ QUARK_TESTQ("object_to_compact_string()", ""){
 }
 
 
-std::string array_to_compact_string(const std::vector<json_t>& array, bool quote_fields){
+static std::string array_to_compact_string(const std::vector<json_t>& array, bool quote_fields){
 	if(array.empty()){
 		return "[]";
 	}
@@ -1280,20 +1280,20 @@ std::string json_to_pretty_string(const json_t& v){
 }
 
 
-bool is_collection(const json_t& type){
+static bool is_collection(const json_t& type){
 	return type.is_object() || type.is_array();
 }
-bool is_subtree(const json_t& type){
+static bool is_subtree(const json_t& type){
 	return (type.is_object() && type.get_object_size() > 0) || (type.is_array() && type.get_array_size() > 0);
 }
 
-string make_key_str(const std::string& key){
+static string make_key_str(const std::string& key){
 	return key.empty() ? "" : (key + ": ");
 }
 
 
 //	Returns the width in character-columns of the widest line in s.
-size_t count_char_positions(const std::string& s, size_t tab_chars){
+static size_t count_char_positions(const std::string& s, size_t tab_chars){
 	size_t widest_line_chars = 0;
 	size_t count = 0;
 	for(const auto ch: s){
@@ -1332,7 +1332,7 @@ QUARK_TESTQ("count_char_positions()", ""){
 /*
 	key == name of this value inside a parent object if any. If this is an entry in an array, key == "". Else key == "".
 */
-std::string json_to_pretty_string_internal(const string& key, const json_t& value, int indent, const pretty_t& pretty){
+static std::string json_to_pretty_string_internal(const string& key, const json_t& value, int indent, const pretty_t& pretty){
 	const auto key_str = make_key_str(key);
 	if(value.is_object()){
 		const auto& object = value.get_object();
@@ -1531,7 +1531,7 @@ QUARK_TESTQ("json_to_pretty_string()", ""){
 }
 
 
-string get_test2(){
+static string get_test2(){
 return R"(
 {
 	"main": [
@@ -1577,7 +1577,7 @@ return R"(
 )";
 }
 
-string get_test2_pretty(){
+static string get_test2_pretty(){
 return R"(
 {
 	"main":
@@ -1657,7 +1657,7 @@ Escape sequence		Hex value in ASCII	Character represented
 \?	3F	Question mark (used to avoid trigraphs)
 */
 
-std::string escape_json_string(const std::string& s){
+static std::string escape_json_string(const std::string& s){
 	std::string result;
 	result.reserve(s.size());
 
@@ -1713,7 +1713,7 @@ QUARK_TEST("", "escape_json_string()", "", "") {
 
 
 
-std::string unescape_json_string(const std::string& s){
+static std::string unescape_json_string(const std::string& s){
 	return s;
 }
 

@@ -38,10 +38,10 @@
 
 
 
-void init_terminal(){
+static void init_terminal(){
 }
 
-std::string get_command(){
+static std::string get_command(){
 	std::string result;
 	while(result.empty()){
 		char* line_read = readline (">>>");

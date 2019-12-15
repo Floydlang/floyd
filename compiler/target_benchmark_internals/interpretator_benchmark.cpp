@@ -17,7 +17,6 @@ using std::string;
 using namespace floyd;
 
 
-static int k_repeats = 10;
 
 
 //??unused

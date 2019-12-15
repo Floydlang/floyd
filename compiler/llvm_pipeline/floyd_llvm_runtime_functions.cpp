@@ -768,7 +768,7 @@ static void generate_store_struct_member_mutate(llvm_function_generator_t& gen_a
 
 	auto& builder = gen_acc.get_builder();
 
-	const auto& struct_def = peek2(types, struct_type).get_struct(types);
+//	const auto& struct_def = peek2(types, struct_type).get_struct(types);
 //	const auto member_type = struct_def._members[member_index]._type;
 
 	auto& struct_type_llvm = *get_exact_struct_type_byvalue(gen_acc.gen.type_lookup, struct_type);
@@ -1108,7 +1108,8 @@ static llvm::FunctionType* make_retain(llvm::LLVMContext& context, const llvm_ty
 		false
 	);
 }
-std::vector<function_bind_t> retain_funcs(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+
+static std::vector<function_bind_t> retain_funcs(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	return std::vector<function_bind_t> {
 		function_bind_t{ module_symbol_t("retain_vector_carray"), make_retain(context, type_lookup, *make_generic_vec_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_vector_carray) },
 		function_bind_t{ module_symbol_t("retain_vector_hamt"), make_retain(context, type_lookup, *make_generic_vec_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_retain_vector_hamt) },
@@ -1265,7 +1266,7 @@ static llvm::FunctionType* make_release(llvm::LLVMContext& context, const llvm_t
 	);
 }
 
-std::vector<function_bind_t> release_funcs(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+static std::vector<function_bind_t> release_funcs(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	return std::vector<function_bind_t> {
 		function_bind_t{ module_symbol_t("release_vector_carray_pod"), make_release(context, type_lookup, *make_generic_vec_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_vector_carray_pod) },
 		function_bind_t{ module_symbol_t("release_vector_carray_nonpod"), make_release(context, type_lookup, *make_generic_vec_type_byvalue(type_lookup)->getPointerTo()), reinterpret_cast<void*>(floydrt_release_vector_carray_nonpod) },

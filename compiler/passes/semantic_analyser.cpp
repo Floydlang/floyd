@@ -484,7 +484,7 @@ static std::pair<analyser_t, std::vector<statement_t>> analyse_statements(const 
 	return { a_acc, statements2 };
 }
 
-std::pair<analyser_t, body_t> analyse_body(const analyser_t& a, const body_t& body, epure pure, const type_t& return_type){
+static std::pair<analyser_t, body_t> analyse_body(const analyser_t& a, const body_t& body, epure pure, const type_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -505,7 +505,7 @@ std::pair<analyser_t, body_t> analyse_body(const analyser_t& a, const body_t& bo
 /*
 	Can update an existing local (if local is mutable).
 */
-std::pair<analyser_t, statement_t> analyse_assign_statement(const analyser_t& a, const statement_t& s){
+static std::pair<analyser_t, statement_t> analyse_assign_statement(const analyser_t& a, const statement_t& s){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -555,7 +555,7 @@ Ex:
 	mutable a = 10
 	mutable = 10
 */
-std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement(const analyser_t& a, const statement_t& s){
+static std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement(const analyser_t& a, const statement_t& s){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -641,7 +641,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 	}
 }
 
-std::pair<analyser_t, statement_t> analyse_block_statement(const analyser_t& a, const statement_t& s, const type_t& return_type){
+static std::pair<analyser_t, statement_t> analyse_block_statement(const analyser_t& a, const statement_t& s, const type_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	const auto statement = std::get<statement_t::block_statement_t>(s._contents);
@@ -649,7 +649,7 @@ std::pair<analyser_t, statement_t> analyse_block_statement(const analyser_t& a, 
 	return {e.first, statement_t::make__block_statement(s.location, e.second)};
 }
 
-std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& a, const statement_t& s, const type_t& return_type){
+static std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& a, const statement_t& s, const type_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -672,7 +672,7 @@ std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& a,
 	return { a_acc, statement_t::make__return_statement(s.location, result.second) };
 }
 
-std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a, const statement_t& s, const type_t& return_type){
+static std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a, const statement_t& s, const type_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -697,7 +697,7 @@ std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a,
 	return { a_acc, statement_t::make__ifelse_statement(s.location, condition2.second, then2.second, else2.second) };
 }
 
-std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, const statement_t& s, const type_t& return_type){
+static std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, const statement_t& s, const type_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -736,7 +736,7 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, co
 	return { a_acc, statement_t::make__for_statement(s.location, statement._iterator_name, start_expr2.second, end_expr2.second, result.second, statement._range_type) };
 }
 
-std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& a, const statement_t& s, const type_t& return_type){
+static std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& a, const statement_t& s, const type_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -751,7 +751,7 @@ std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& a, 
 	return { a_acc, statement_t::make__while_statement(s.location, condition2_expr.second, result.second) };
 }
 
-std::pair<analyser_t, statement_t> analyse_expression_statement(const analyser_t& a, const statement_t& s){
+static std::pair<analyser_t, statement_t> analyse_expression_statement(const analyser_t& a, const statement_t& s){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -984,7 +984,7 @@ static std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(con
 
 
 
-std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::resolve_member_t& details){
+static std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::resolve_member_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -1013,7 +1013,7 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const std::vector<expression_t>& call_args){
+static std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const std::vector<expression_t>& call_args){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -1171,7 +1171,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const an
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_intrinsic_push_back_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+static std::pair<analyser_t, expression_t> analyse_intrinsic_push_back_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -1211,7 +1211,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_push_back_expression(const
 	};
 }
 
-std::pair<analyser_t, expression_t> analyse_intrinsic_size_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+static std::pair<analyser_t, expression_t> analyse_intrinsic_size_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1237,7 +1237,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_size_expression(const anal
 	};
 }
 
-std::pair<analyser_t, expression_t> analyse_intrinsic_find_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+static std::pair<analyser_t, expression_t> analyse_intrinsic_find_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1273,7 +1273,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_find_expression(const anal
 	};
 }
 
-std::pair<analyser_t, expression_t> analyse_intrinsic_exists_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+static std::pair<analyser_t, expression_t> analyse_intrinsic_exists_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1300,7 +1300,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_exists_expression(const an
 	};
 }
 
-std::pair<analyser_t, expression_t> analyse_intrinsic_erase_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+static std::pair<analyser_t, expression_t> analyse_intrinsic_erase_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1329,7 +1329,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_erase_expression(const ana
 
 //??? const statement_t& parent == very confusing. Rename parent => statement!
 
-std::pair<analyser_t, expression_t> analyse_intrinsic_get_keys_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+static std::pair<analyser_t, expression_t> analyse_intrinsic_get_keys_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1351,7 +1351,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_get_keys_expression(const 
 	};
 }
 
-std::pair<analyser_t, expression_t> analyse_intrinsic_subset_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+static std::pair<analyser_t, expression_t> analyse_intrinsic_subset_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1375,7 +1375,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_subset_expression(const an
 	};
 }
 
-std::pair<analyser_t, expression_t> analyse_intrinsic_replace_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+static std::pair<analyser_t, expression_t> analyse_intrinsic_replace_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1408,7 +1408,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_replace_expression(const a
 
 
 //	[R] map([E] elements, func R (E e, C context) f, C context)
-std::pair<analyser_t, expression_t> analyse_intrinsic_map_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+static std::pair<analyser_t, expression_t> analyse_intrinsic_map_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1432,7 +1432,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_expression(const analy
 }
 
 //	string map_string(string s, func string(string e, C context) f, C context)
-std::pair<analyser_t, expression_t> analyse_intrinsic_map_string_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+static std::pair<analyser_t, expression_t> analyse_intrinsic_map_string_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1456,7 +1456,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_string_expression(cons
 }
 
 //	[R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
-std::pair<analyser_t, expression_t> analyse_intrinsic_map_dag_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+static std::pair<analyser_t, expression_t> analyse_intrinsic_map_dag_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1479,7 +1479,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_map_dag_expression(const a
 	};
 }
 
-std::pair<analyser_t, expression_t> analyse_intrinsic_filter_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+static std::pair<analyser_t, expression_t> analyse_intrinsic_filter_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1503,7 +1503,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_filter_expression(const an
 }
 
 //	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
-std::pair<analyser_t, expression_t> analyse_intrinsic_reduce_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+static std::pair<analyser_t, expression_t> analyse_intrinsic_reduce_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1527,7 +1527,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_reduce_expression(const an
 }
 
 //	[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
-std::pair<analyser_t, expression_t> analyse_intrinsic_stable_sort_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+static std::pair<analyser_t, expression_t> analyse_intrinsic_stable_sort_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1556,7 +1556,7 @@ std::pair<analyser_t, expression_t> analyse_intrinsic_stable_sort_expression(con
 	
 
 
-std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::lookup_t& details){
+static std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::lookup_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -1618,7 +1618,7 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_load(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::load_t& details){
+static std::pair<analyser_t, expression_t> analyse_load(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::load_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -1666,7 +1666,7 @@ std::pair<analyser_t, expression_t> analyse_load(const analyser_t& a, const stat
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_load2(const analyser_t& a, const expression_t& e){
+static std::pair<analyser_t, expression_t> analyse_load2(const analyser_t& a, const expression_t& e){
 	QUARK_ASSERT(a.check_invariant());
 
 	return { a, e };
@@ -1702,7 +1702,7 @@ static type_t select_inferred_type(const types_t& types, const type_t& target_ty
 
 	rhs is an invalid dict construction -- you can't mix string/int values in a floyd dict. BUT: it's a valid JSON!
 */
-std::pair<analyser_t, expression_t> analyse_construct_value_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::value_constructor_t& details, const type_t& target_type0){
+static std::pair<analyser_t, expression_t> analyse_construct_value_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::value_constructor_t& details, const type_t& target_type0){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -1866,7 +1866,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_benchmark_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::benchmark_expr_t& details, const type_t& target_type){
+static std::pair<analyser_t, expression_t> analyse_benchmark_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::benchmark_expr_t& details, const type_t& target_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto acc = a;
@@ -1878,7 +1878,7 @@ std::pair<analyser_t, expression_t> analyse_benchmark_expression(const analyser_
 }
 
 
-std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::unary_minus_t& details){
+static std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::unary_minus_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -1898,7 +1898,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(co
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(const analyser_t& analyser, const statement_t& parent, const expression_t& e, const expression_t::conditional_t& details){
+static std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(const analyser_t& analyser, const statement_t& parent, const expression_t& e, const expression_t::conditional_t& details){
 	QUARK_ASSERT(analyser.check_invariant());
 
 	auto a_acc = analyser;
@@ -1944,7 +1944,7 @@ std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(cons
 }
 
 
-std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser_t& a, const statement_t& parent, expression_type op, const expression_t& e, const expression_t::comparison_t& details){
+static std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser_t& a, const statement_t& parent, expression_type op, const expression_t& e, const expression_t::comparison_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -1999,7 +1999,7 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 //??? What is difference between literal_exp_t and value_constructor_t?
 // Literals: Only a few built-in types can be initialized as immediates in the code and via code segment, the rest needs to be reserved and explicitly initialised at runtime.
 
-std::pair<analyser_t, expression_t> analyse_literal_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::literal_exp_t& details){
+static std::pair<analyser_t, expression_t> analyse_literal_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::literal_exp_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -2011,7 +2011,7 @@ std::pair<analyser_t, expression_t> analyse_literal_expression(const analyser_t&
 
 
 
-std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser_t& a, const statement_t& parent, expression_type op, const expression_t& e, const expression_t::arithmetic_t& details){
+static std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser_t& a, const statement_t& parent, expression_type op, const expression_t& e, const expression_t::arithmetic_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -2187,7 +2187,7 @@ static std::pair<analyser_t, expression_t> analyse_intrinsic_fallthrough_express
 
 	3. Callee is a type: Example: my_color_t(0, 0, 255). This call is converted to a construct-value expression.
 */
-std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0, const statement_t& parent, const expression_t& e, const expression_t::call_t& details){
+static std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0, const statement_t& parent, const expression_t& e, const expression_t::call_t& details){
 	QUARK_ASSERT(a0.check_invariant());
 
 	auto a_acc = a0;
@@ -2472,7 +2472,7 @@ static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(
 
 
 // ??? Check that function returns always returns a value, if it has a return-type.
-std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& analyser, const statement_t& parent, const expression_t& e, const expression_t::function_definition_expr_t& details){
+static std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& analyser, const statement_t& parent, const expression_t& e, const expression_t::function_definition_expr_t& details){
 	QUARK_ASSERT(analyser.check_invariant());
 
 	auto a_acc = analyser;
@@ -2557,7 +2557,7 @@ static std::pair<analyser_t, expression_t> analyse_function_definition_expressio
 }
 */
 
-std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const analyser_t& a, const statement_t& parent, const expression_t& e, const type_t& target_type){
+static std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const analyser_t& a, const statement_t& parent, const expression_t& e, const type_t& target_type){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -2640,7 +2640,7 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 /*
 	- Insert automatic type-conversions from string -> json etc.
 */
-expression_t auto_cast_expression_type(analyser_t& a, const expression_t& e, const type_t& wanted_type){
+static expression_t auto_cast_expression_type(analyser_t& a, const expression_t& e, const type_t& wanted_type){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(wanted_type.check_invariant());
@@ -2741,7 +2741,7 @@ static std::pair<analyser_t, expression_t> analyse_expression_no_target(const an
 	return analyse_expression_to_target(a, parent, e, type_t::make_any());
 }
 
-void test__analyse_expression(const statement_t& parent, const expression_t& e, const expression_t& expected){
+static void test__analyse_expression(const statement_t& parent, const expression_t& e, const expression_t& expected){
 	const unchecked_ast_t ast;
 	const analyser_t interpreter(ast);
 	const auto e3 = analyse_expression_no_target(interpreter, parent, e);
@@ -2793,7 +2793,7 @@ static std::pair<std::string, symbol_t> make_builtin_type(types_t& types, const 
 	return { opcode, symbol_t::make_named_type(type) };
 }
 
-void register_named_type(analyser_t& a, std::vector<std::pair<std::string, symbol_t>>& symbol_map, const std::string& name, const type_t& type){
+static void register_named_type(analyser_t& a, std::vector<std::pair<std::string, symbol_t>>& symbol_map, const std::string& name, const type_t& type){
 	const auto type0 = resolve_type_symbols(a, k_no_location, type);
 	const auto type2 = make_named_type(a._types, generate_type_name(a, name), type0);
 	symbol_map.push_back( { name, symbol_t::make_named_type(type2) } );
@@ -2862,7 +2862,7 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtin_symbols(an
 
 //	Create built-in global symbol map: built in data types and intrinsics.
 //	Analyze global namespace, including all Floyd functions defined there.
-const body_t make_global_body(analyser_t& a){
+static const body_t make_global_body(analyser_t& a){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto global_body = body_t(a._imm->_ast._tree._globals._statements, symbol_table_t{ });

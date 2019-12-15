@@ -227,7 +227,7 @@ QUARK_TESTQ("double_to_string_always_decimals()", ""){
 ///////////////////////////////		seq_t
 
 
-std::string make_debug_str(const std::string& internal_string, size_t pos){
+static std::string make_debug_str(const std::string& internal_string, size_t pos){
 	const auto pre_count = std::min(pos, (size_t)30);
 
 	const auto pre_str = internal_string.substr(pos - pre_count, pre_count);

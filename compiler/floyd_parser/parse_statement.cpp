@@ -144,7 +144,7 @@ QUARK_TEST("", "parse_block()", "Block with two binds", ""){
 
 //	Finds identifier-string at RIGHT side of string. Stops at whitespace.
 //	"1234()=<whatever> IDENTIFIER": "1234()=<whatever>", "IDENTIFIER"
-std::size_t split_at_tail_identifier(const std::string& s){
+static std::size_t split_at_tail_identifier(const std::string& s){
 	auto i = s.size();
 	while(i > 0 && k_whitespace_chars.find(s[i - 1]) != std::string::npos){
 		i--;
@@ -190,7 +190,7 @@ static a_result_t parse_a(types_t& types, const seq_t& p, const location_t& loc)
 	}
 }
 
-std::pair<json_t, seq_t> parse_let(const seq_t& pos, const location_t& loc){
+static std::pair<json_t, seq_t> parse_let(const seq_t& pos, const location_t& loc){
 	types_t types;
 
 	const auto a_result = parse_a(types, pos, loc);
@@ -209,7 +209,7 @@ std::pair<json_t, seq_t> parse_let(const seq_t& pos, const location_t& loc){
 	return { statement, expression_pos.second };
 }
 
-std::pair<json_t, seq_t> parse_mutable(const seq_t& pos, const location_t& loc){
+static std::pair<json_t, seq_t> parse_mutable(const seq_t& pos, const location_t& loc){
 	types_t types;
 	const auto a_result = parse_a(types, pos, loc);
 	if(a_result.rest.empty()){
@@ -417,7 +417,7 @@ QUARK_TEST("", "parse_expression_statement()", "", ""){
 
 
 
-parse_result_t parse_optional_statement_body(const seq_t& s){
+static parse_result_t parse_optional_statement_body(const seq_t& s){
 	const auto bracket_pos = read_optional_char(skip_whitespace(s), '{');
 	if(bracket_pos.first){
 		const auto body = parse_statement_body(s);
@@ -659,7 +659,7 @@ QUARK_TEST("parser", "parse_struct_definition_statement", "", ""){
 		a
 	}
 */
-std::pair<json_t, seq_t> parse_if(const seq_t& pos){
+static std::pair<json_t, seq_t> parse_if(const seq_t& pos){
 	const auto start = skip_whitespace(pos);
 	const auto a = if_first(start, keyword_t::k_if);
 	QUARK_ASSERT(a.first);
@@ -838,7 +838,7 @@ struct range_def_t {
 //	Closed range == "1 ... 5 ".
 //	Open range == "1 ..< 5 ".
 //	left_and_right == "1 ", " 5 ".
-range_def_t parse_range(const seq_t& pos){
+static range_def_t parse_range(const seq_t& pos){
 	const auto start_end = split_at(pos, "...");
 	if(start_end.first != ""){
 		return { start_end.first, "...", start_end.second };

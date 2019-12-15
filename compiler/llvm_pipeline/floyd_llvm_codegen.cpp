@@ -172,7 +172,7 @@ static llvm::Value* generate_expression(llvm_function_generator_t& gen_acc, cons
 
 
 
-std::string print_resolved_symbols(const std::vector<resolved_symbol_t>& globals){
+static std::string print_resolved_symbols(const std::vector<resolved_symbol_t>& globals){
 	std::stringstream out;
 
 	out << "{" << std::endl;
@@ -184,7 +184,7 @@ std::string print_resolved_symbols(const std::vector<resolved_symbol_t>& globals
 }
 
 //	Print all symbols in scope_path
-std::string print_gen(const llvm_code_generator_t& gen){
+static std::string print_gen(const llvm_code_generator_t& gen){
 //	QUARK_ASSERT(gen.check_invariant());
 
 	std::stringstream out;
@@ -227,13 +227,13 @@ static std::string print_program(const llvm_ir_program_t& program){
 
 
 
-resolved_symbol_t make_resolved_symbol(llvm::Value* value_ptr, std::string debug_str, resolved_symbol_t::esymtype t, const std::string& symbol_name, const symbol_t& symbol){
+static resolved_symbol_t make_resolved_symbol(llvm::Value* value_ptr, std::string debug_str, resolved_symbol_t::esymtype t, const std::string& symbol_name, const symbol_t& symbol){
 	QUARK_ASSERT(value_ptr != nullptr);
 
 	return { value_ptr, debug_str, t, symbol_name, symbol};
 }
 
-resolved_symbol_t find_symbol(llvm_code_generator_t& gen_acc, const symbol_pos_t& reg){
+static resolved_symbol_t find_symbol(llvm_code_generator_t& gen_acc, const symbol_pos_t& reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(gen_acc.scope_path.size() >= 1);
 	QUARK_ASSERT(reg._parent_steps == symbol_pos_t::k_global_scope || (reg._parent_steps >= 0 && reg._parent_steps < gen_acc.scope_path.size()));
@@ -278,7 +278,7 @@ resolved_symbol_t find_symbol(llvm_code_generator_t& gen_acc, const symbol_pos_t
 	FUTURE: point directly to code segment chars, don't free() on VEC_t destruct.
 	FUTURE: Here we construct a new VEC_T instance everytime. We could do it *once* instead and make a global const out of it.
 */
-llvm::Value* generate_constant_string(llvm_function_generator_t& gen_acc, const std::string& s){
+static llvm::Value* generate_constant_string(llvm_function_generator_t& gen_acc, const std::string& s){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
 	auto& builder = gen_acc.get_builder();
@@ -399,7 +399,7 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_genera
 	for(const auto& symbol_kv: symbol_table._symbols){
 		const auto& symbol = symbol_kv.second;
 		const auto type = symbol.get_value_type();
-		const auto type_peek = peek2(types, type);
+//		const auto type_peek = peek2(types, type);
 		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type);
 
 		const auto entry = [&]() -> resolved_symbol_t {
@@ -2251,7 +2251,7 @@ static function_return_mode generate_statements(llvm_function_generator_t& gen_a
 }
 
 //	Generates local symbols for arguments and local variables. Only toplevel of function, not nested scopes.
-std::vector<resolved_symbol_t> generate_function_symbol_slots(llvm_function_generator_t& gen_acc, const function_definition_t& function_def){
+static std::vector<resolved_symbol_t> generate_function_symbol_slots(llvm_function_generator_t& gen_acc, const function_definition_t& function_def){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(function_def.check_invariant());
 

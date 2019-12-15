@@ -63,7 +63,7 @@ std::string read_text_file(const std::string& abs_path){
 
 
 
-std::string get_env(const std::string& s){
+static std::string get_env(const std::string& s){
 	const char* value = getenv(s.c_str());
 	QUARK_ASSERT(value != nullptr);
 	if(value == nullptr){
@@ -100,7 +100,7 @@ QUARK_TEST("", "GetDirectories()", "", ""){
 
 #if QUARK_MAC
 
-std::string get_process_path (int process_id){
+static std::string get_process_path (int process_id){
 	pid_t pid; int ret;
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
 
@@ -776,7 +776,7 @@ static void TestGetFileInfo(const std::string& testInputDir, const std::string& 
 
 
 //	Includes "." and ".."
-std::vector<dirent> read_dir_elements(const std::string& inDir){
+static std::vector<dirent> read_dir_elements(const std::string& inDir){
 	std::vector<dirent> result;
 
 	::DIR* dir = ::opendir(inDir.c_str());

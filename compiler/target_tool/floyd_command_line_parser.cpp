@@ -254,7 +254,7 @@ static command_line_args_t parse_test_cmd_line(const std::string& s){
 }
 
 
-eoutput_type get_output_type(const command_line_args_t& args){
+static eoutput_type get_output_type(const command_line_args_t& args){
 	if(args.flags.count("p") == 1){
 	 	return eoutput_type::parse_tree;
 	}
@@ -345,7 +345,7 @@ static compiler_settings_t get_compiler_settings(const std::map<std::string, fla
 	return compiler_settings_t { { vector_backend, dict_backend, false }, optimization_level }; 
 }
 
-compile_more_t parse_floyd_compile_command_more(const command_line_args_t& command_line_args){
+static compile_more_t parse_floyd_compile_command_more(const command_line_args_t& command_line_args){
 	if(command_line_args.extra_arguments.size() == 0){
 		throw std::runtime_error("Command requires source file name.");
 	}
@@ -396,7 +396,7 @@ compile_more_t parse_floyd_compile_command_more(const command_line_args_t& comma
 
 
 
-command_t parse_help(const command_line_args_t& args){
+static command_t parse_help(const command_line_args_t& args){
 	QUARK_ASSERT(args.subcommand == "help");
 
 	return command_t { command_t::help_t { } };
@@ -410,7 +410,7 @@ QUARK_TEST("", "parse_help()", "floyd help", ""){
 
 
 
-command_t parse_run(const command_line_args_t& args){
+static command_t parse_run(const command_line_args_t& args){
 	QUARK_ASSERT(args.subcommand == "run");
 
 	const auto& flags = args.flags;
@@ -473,7 +473,7 @@ QUARK_TEST("", "parse_run()", "floyd run", ""){
 
 
 
-command_t parse_compile(const command_line_args_t& args){
+static command_t parse_compile(const command_line_args_t& args){
 	QUARK_ASSERT(args.subcommand == "compile");
 
 	const auto& flags = args.flags;
@@ -646,7 +646,7 @@ QUARK_TEST("", "parse_compile()", "floyd compile", ""){
 
 
 
-command_t parse_bench(const command_line_args_t& args){
+static command_t parse_bench(const command_line_args_t& args){
 	QUARK_ASSERT(args.subcommand == "bench");
 
 	const auto& flags = args.flags;
@@ -741,7 +741,7 @@ QUARK_TEST("", "parse_bench()", "floyd bench -tl mygame.floyd", ""){
  |test     | floyd test game.floyd one two      | Returns tests called "one" and "two" before running main() / starting processes
  |test     | floyd test -l game.floyd           | Returns list of unit tests
 */
-command_t parse_test(const command_line_args_t& args){
+static command_t parse_test(const command_line_args_t& args){
 	QUARK_ASSERT(args.subcommand == "test");
 
 	const bool trace_on = args.flags.count("t") == 1;
@@ -808,14 +808,14 @@ QUARK_TEST("", "parse_test()", "floyd test -tl mygame.floyd", ""){
 
 
 
-command_t parse_hwcaps(const command_line_args_t& args){
+static command_t parse_hwcaps(const command_line_args_t& args){
 	QUARK_ASSERT(args.subcommand == "hwcaps");
 
 	const bool trace_on = args.flags.count("t") == 1;
 	return command_t { command_t::hwcaps_t { } };
 }
 
-command_t parse_runtests(const command_line_args_t& args){
+static command_t parse_runtests(const command_line_args_t& args){
 	QUARK_ASSERT(args.subcommand == "runtests");
 
 	const bool trace_on = args.flags.count("t") == 1;

@@ -1193,7 +1193,7 @@ int64_t find2(value_backend_t& backend, runtime_value_t coll_value, runtime_type
 bool exists(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t value, runtime_type_t value_type){
 	const auto& types = backend.types;
 	const auto& type0 = lookup_type_ref(backend, coll_type);
-	const auto& type1 = lookup_type_ref(backend, value_type);
+//	const auto& type1 = lookup_type_ref(backend, value_type);
 	QUARK_ASSERT(peek2(types, type0).is_dict());
 
 	if(is_dict_cppmap(types, backend.config, type0)){

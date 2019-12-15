@@ -6820,7 +6820,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "does_fsentry_exist()", "", ""){
 	);
 }
 
-void remove_test_dir(const std::string& dir_name1, const std::string& dir_name2){
+static void remove_test_dir(const std::string& dir_name1, const std::string& dir_name2){
 	const auto path1 = GetDirectories().desktop_dir + "/" + dir_name1;
 	const auto path2 = path1 + "/" + dir_name2;
 

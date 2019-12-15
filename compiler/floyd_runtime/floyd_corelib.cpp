@@ -542,7 +542,7 @@ std::vector<std::pair<std::string, json_t>> corelib_detect_hardware_caps(){
 }
 */
 
-std::string simplify_mem_size(int64_t value){
+static std::string simplify_mem_size(int64_t value){
 	const int64_t k = 1024;
 
 	if((value % (k * k * k)) == 0){
@@ -567,7 +567,7 @@ QUARK_TEST("", "corelib_make_hardware_caps_report()", "", ""){
 
 
 
-std::string simplify_freq(int64_t freq){
+static std::string simplify_freq(int64_t freq){
 	if((freq % 1000000000) == 0){
 		return std::to_string(freq / 1000000000) + " GHz";
 	}
@@ -908,7 +908,7 @@ type_t make__fs_environment_t__type(types_t& types){
 	return temp;
 }
 
-type_t make__date_t__type(types_t& types){
+static type_t make__date_t__type(types_t& types){
 	const auto temp = type_t::make_struct(
 		types,
 		struct_type_desc_t({
@@ -938,7 +938,7 @@ type_t make__binary_t__type(types_t& types){
 	return temp;
 }
 
-type_t make__absolute_path_t__type(types_t& types){
+static type_t make__absolute_path_t__type(types_t& types){
 	const auto temp = type_t::make_struct(
 		types,
 		struct_type_desc_t({
@@ -948,7 +948,7 @@ type_t make__absolute_path_t__type(types_t& types){
 	return temp;
 }
 
-type_t make__file_pos_t__type(types_t& types){
+static type_t make__file_pos_t__type(types_t& types){
 	const auto temp = type_t::make_struct(
 		types,
 		struct_type_desc_t({
@@ -1055,7 +1055,7 @@ std::vector<TDirEntry> corelib_get_fsentries_deep(const std::string& abs_path){
 
 
 //??? implement
-std::string posix_timespec__to__utc(const time_t& t){
+static std::string posix_timespec__to__utc(const time_t& t){
 	return std::to_string(t);
 }
 
