@@ -481,15 +481,14 @@ void generate_store_dict_mutable(llvm_function_generator_t& gen_acc, llvm::Value
 
 
 //??? Use better storage of JSON!?
-static JSON_T* floydrt_allocate_json(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+static runtime_value_t floydrt_allocate_json(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 
 	const auto& type0 = lookup_type_ref(backend, arg0_type);
 	const auto value = from_runtime_value(r, arg0_value, type0);
 	const auto a = value_to_json(backend.types, value);
-	auto result = alloc_json(backend.heap, a);
-	return result;
+	return alloc_json(backend.heap, a);
 }
 
 static std::vector<function_bind_t> floydrt_allocate_json__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -515,11 +514,11 @@ static std::vector<function_bind_t> floydrt_allocate_json__make(llvm::LLVMContex
 
 
 //??? optimize
-static JSON_T* floydrt_lookup_json(floyd_runtime_t* frp, JSON_T* json_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
+static runtime_value_t floydrt_lookup_json(floyd_runtime_t* frp, runtime_value_t json0, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 
-	const auto& json = json_ptr->get_json();
+	const auto& json = json0.json_ptr->get_json();
 	const auto& type0 = lookup_type_ref(backend, arg0_type);
 	const auto type0_peek = peek2(backend.types, type0);
 	const auto value = from_runtime_value(r, arg0_value, type0);
@@ -566,10 +565,10 @@ static std::vector<function_bind_t> floydrt_lookup_json__make(llvm::LLVMContext&
 
 
 
-static runtime_value_t floydrt_json_to_string(floyd_runtime_t* frp, JSON_T* json_ptr){
+static runtime_value_t floydrt_json_to_string(floyd_runtime_t* frp, runtime_value_t json0){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto& json = json_ptr->get_json();
+	const auto& json = json0.json_ptr->get_json();
 
 	if(json.is_string()){
 		return to_runtime_string(r, json.get_string());
@@ -608,7 +607,7 @@ static std::vector<function_bind_t> floydrt_json_to_string__make(llvm::LLVMConte
 
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-static STRUCT_T* floydrt_allocate_struct(floyd_runtime_t* frp, const runtime_type_t type, uint64_t size){
+static runtime_value_t floydrt_allocate_struct(floyd_runtime_t* frp, const runtime_type_t type, uint64_t size){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 
@@ -616,8 +615,7 @@ static STRUCT_T* floydrt_allocate_struct(floyd_runtime_t* frp, const runtime_typ
 	const auto& type0 = lookup_type_ref(backend, type);
 	QUARK_ASSERT(type0.check_invariant());
 #endif
-	auto v = alloc_struct(backend.heap, size, type_t(type));
-	return v;
+	return alloc_struct(backend.heap, size, type_t(type));
 }
 
 static std::vector<function_bind_t> floydrt_allocate_struct__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -680,17 +678,17 @@ llvm::Value* generate_load_struct_member(llvm_function_generator_t& gen_acc, llv
 //??? Inline store of new member -- same as generate_resolve_member_expression().
 
 //	Make copy of struct, overwrite member in copy.
-static const STRUCT_T* floydrt_update_struct_member_nonpod(floyd_runtime_t* frp, STRUCT_T* s, runtime_type_t struct_type, int64_t member_index, runtime_value_t new_value, runtime_type_t new_value_type){
+static const runtime_value_t floydrt_update_struct_member_nonpod(floyd_runtime_t* frp, runtime_value_t s0, runtime_type_t struct_type, int64_t member_index, runtime_value_t new_value, runtime_type_t new_value_type){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
-	QUARK_ASSERT(s != nullptr);
+	QUARK_ASSERT(s0.struct_ptr != nullptr);
 	QUARK_ASSERT(member_index != -1);
 
 	const std::pair<type_t, struct_layout_t>& struct_layout_info = find_struct_layout(backend, type_t(struct_type));
 
 	const auto struct_bytes = struct_layout_info.second.size;
-	auto struct_ptr = alloc_struct_copy(backend.heap, reinterpret_cast<const uint64_t*>(s->get_data_ptr()), struct_bytes, peek2(backend.types, type_t(struct_type)));
-	auto struct_base_ptr = struct_ptr->get_data_ptr();
+	auto struct_ptr = alloc_struct_copy(backend.heap, reinterpret_cast<const uint64_t*>(s0.struct_ptr->get_data_ptr()), struct_bytes, peek2(backend.types, type_t(struct_type)));
+	auto struct_base_ptr = struct_ptr.struct_ptr->get_data_ptr();
 
 	const auto member_offset = struct_layout_info.second.members[member_index].offset;
 	const auto member_ptr0 = reinterpret_cast<runtime_value_t*>(struct_base_ptr + member_offset);
@@ -710,18 +708,17 @@ static const STRUCT_T* floydrt_update_struct_member_nonpod(floyd_runtime_t* frp,
 	return struct_ptr;
 }
 
-static const STRUCT_T* floydrt_copy_struct(floyd_runtime_t* frp, STRUCT_T* s, uint64_t struct_size, runtime_type_t struct_type){
+static const runtime_value_t floydrt_copy_struct(floyd_runtime_t* frp, runtime_value_t s0, uint64_t struct_size, runtime_type_t struct_type){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
-	QUARK_ASSERT(s != nullptr);
+	QUARK_ASSERT(s0.struct_ptr != nullptr);
 	QUARK_ASSERT(struct_size > 0);
 #if DEBUG
 	const std::pair<type_t, struct_layout_t>& struct_layout_info = find_struct_layout(backend, type_t(struct_type));
 	const auto struct_size2 = struct_layout_info.second.size;
 	QUARK_ASSERT(struct_size == struct_size2);
 #endif
-	auto struct_ptr = alloc_struct_copy(backend.heap, reinterpret_cast<const uint64_t*>(s->get_data_ptr()), struct_size, peek2(backend.types, type_t(struct_type)));
-	return struct_ptr;
+	return alloc_struct_copy(backend.heap, reinterpret_cast<const uint64_t*>(s0.struct_ptr->get_data_ptr()), struct_size, peek2(backend.types, type_t(struct_type)));
 }
 
 static std::vector<function_bind_t> floydrt_update_struct_member__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -1021,10 +1018,10 @@ static void floydrt_retain_json(floyd_runtime_t* frp, runtime_value_t json, runt
 }
 
 
-static void floydrt_retain_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_type_t type0){
+static void floydrt_retain_struct(floyd_runtime_t* frp, runtime_value_t v0, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
-	QUARK_ASSERT(v != nullptr);
+	QUARK_ASSERT(v0.struct_ptr != nullptr);
 
 const auto& type = lookup_type_ref(backend, type0);
 #if DEBUG
@@ -1032,7 +1029,7 @@ const auto& type = lookup_type_ref(backend, type0);
 	QUARK_ASSERT(peek2(backend.types, type).is_struct());
 #endif
 
-	retain_struct(backend, make_runtime_struct(v), type);
+	retain_struct(backend, make_runtime_struct(v0.struct_ptr), type);
 }
 
 
@@ -1235,7 +1232,7 @@ static void floydrt_release_json(floyd_runtime_t* frp, runtime_value_t json, run
 	}
 }
 
-static void floydrt_release_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_type_t type0){
+static void floydrt_release_struct(floyd_runtime_t* frp, runtime_value_t v0, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 	const auto& type = lookup_type_ref(backend, type0);
@@ -1244,8 +1241,8 @@ static void floydrt_release_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_ty
 #endif
 
 	//	Check really only required when unwinding locals.
-	if(v != nullptr){
-		release_struct(backend, make_runtime_struct(v), type);
+	if(v0.struct_ptr != nullptr){
+		release_struct(backend, make_runtime_struct(v0.struct_ptr), type);
 	}
 }
 

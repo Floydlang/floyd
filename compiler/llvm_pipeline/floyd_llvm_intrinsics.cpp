@@ -262,12 +262,12 @@ static int64_t floyd_llvm_intrinsic__find(floyd_runtime_t* frp, runtime_value_t 
 
 
 
-static int64_t floyd_llvm_intrinsic__get_json_type(floyd_runtime_t* frp, JSON_T* json_ptr){
+static int64_t floyd_llvm_intrinsic__get_json_type(floyd_runtime_t* frp, runtime_value_t json0){
 	auto& r = get_floyd_runtime(frp);
 	(void)r;
-	QUARK_ASSERT(json_ptr != nullptr);
+	QUARK_ASSERT(json0.json_ptr != nullptr);
 
-	const auto& json = json_ptr->get_json();
+	const auto& json = json0.json_ptr->get_json();
 	const auto result = get_json_type(json);
 	return result;
 }
@@ -278,12 +278,11 @@ static int64_t floyd_llvm_intrinsic__get_json_type(floyd_runtime_t* frp, JSON_T*
 
 
 
-static runtime_value_t floyd_llvm_intrinsic__generate_json_script(floyd_runtime_t* frp, JSON_T* json_ptr){
+static runtime_value_t floyd_llvm_intrinsic__generate_json_script(floyd_runtime_t* frp, runtime_value_t json0){
 	auto& r = get_floyd_runtime(frp);
-	QUARK_ASSERT(json_ptr != nullptr);
+	QUARK_ASSERT(json0.json_ptr != nullptr);
 
-	const auto& json = json_ptr->get_json();
-
+	const auto& json = json0.json_ptr->get_json();
 	const std::string s = json_to_compact_string(json);
 	return to_runtime_string(r, s);
 }
@@ -294,12 +293,12 @@ static runtime_value_t floyd_llvm_intrinsic__generate_json_script(floyd_runtime_
 
 
 
-static runtime_value_t floyd_llvm_intrinsic__from_json(floyd_runtime_t* frp, JSON_T* json_ptr, runtime_type_t target_type){
+static runtime_value_t floyd_llvm_intrinsic__from_json(floyd_runtime_t* frp, runtime_value_t json0, runtime_type_t target_type){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
-	QUARK_ASSERT(json_ptr != nullptr);
+	QUARK_ASSERT(json0.json_ptr != nullptr);
 
-	const auto& json = json_ptr->get_json();
+	const auto& json = json0.json_ptr->get_json();
 	const auto& target_type2 = lookup_type_ref(backend, target_type);
 
 	const auto result = unflatten_json_to_specific_type(backend.types, json, target_type2);
@@ -1268,15 +1267,14 @@ static const runtime_value_t floyd_llvm_intrinsic__replace(floyd_runtime_t* frp,
 
 
 
-static JSON_T* floyd_llvm_intrinsic__parse_json_script(floyd_runtime_t* frp, runtime_value_t string_s0){
+static runtime_value_t floyd_llvm_intrinsic__parse_json_script(floyd_runtime_t* frp, runtime_value_t string_s0){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 
 	const auto string_s = from_runtime_string(r, string_s0);
 
 	std::pair<json_t, seq_t> result0 = parse_json(seq_t(string_s));
-	auto result = alloc_json(backend.heap, result0.first);
-	return result;
+	return alloc_json(backend.heap, result0.first);
 }
 
 
@@ -1780,15 +1778,14 @@ llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, cons
 
 
 
-static JSON_T* floyd_llvm_intrinsic__to_json(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
+static runtime_value_t floyd_llvm_intrinsic__to_json(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 
 	const auto& type0 = lookup_type_ref(backend, value_type);
 	const auto value0 = from_runtime_value(r, value, type0);
 	const auto j = value_to_json(backend.types, value0);
-	auto result = alloc_json(backend.heap, j);
-	return result;
+	return alloc_json(backend.heap, j);
 }
 
 

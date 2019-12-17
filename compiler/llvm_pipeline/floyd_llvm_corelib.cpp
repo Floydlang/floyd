@@ -31,11 +31,11 @@ namespace floyd {
 
 
 struct native_binary_t {
-	VECTOR_CARRAY_T* ascii40;
+	runtime_value_t ascii40;
 };
 
 struct native_sha1_t {
-	VECTOR_CARRAY_T* ascii40;
+	runtime_value_t ascii40;
 };
 
 
@@ -63,7 +63,7 @@ static runtime_value_t llvm_corelib__make_benchmark_report(floyd_runtime_t* frp,
 
 
 
-static DICT_CPPMAP_T* llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
+static runtime_value_t llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 
@@ -77,7 +77,7 @@ static DICT_CPPMAP_T* llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
 
 	const auto a = value_t::make_dict_value(types, type_t::make_json(), caps_map);
 	auto result = to_runtime_value(r, a);
-	return result.dict_cppmap_ptr;
+	return result;
 }
 
 static runtime_value_t llvm_corelib__make_hardware_caps_report(floyd_runtime_t* frp, runtime_value_t caps0){
@@ -123,7 +123,7 @@ static runtime_value_t llvm_corelib__get_current_date_and_time_string(floyd_runt
 
 
 
-static STRUCT_T* llvm_corelib__calc_string_sha1(floyd_runtime_t* frp, runtime_value_t s0){
+static runtime_value_t llvm_corelib__calc_string_sha1(floyd_runtime_t* frp, runtime_value_t s0){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 	auto& types = backend.types;
@@ -138,18 +138,18 @@ static STRUCT_T* llvm_corelib__calc_string_sha1(floyd_runtime_t* frp, runtime_va
 	);
 
 	auto result = to_runtime_value(r, a);
-	return result.struct_ptr;
+	return result;
 }
 
-static STRUCT_T* llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* binary_ptr){
+static runtime_value_t llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, runtime_value_t binary_ptr0){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
-	QUARK_ASSERT(binary_ptr != nullptr);
+	QUARK_ASSERT(binary_ptr0.struct_ptr != nullptr);
 	auto& types = backend.types;
 
-	const auto& binary = *reinterpret_cast<const native_binary_t*>(binary_ptr->get_data_ptr());
+	const auto& binary = *reinterpret_cast<const native_binary_t*>(binary_ptr0.struct_ptr->get_data_ptr());
 
-	const auto& s = from_runtime_string(r, make_runtime_vector_carray(binary.ascii40));
+	const auto& s = from_runtime_string(r, make_runtime_vector_carray(binary.ascii40.vector_carray_ptr));
 	const auto ascii40 = corelib_calc_string_sha1(s);
 
 	const auto a = value_t::make_struct_value(
@@ -159,7 +159,7 @@ static STRUCT_T* llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* 
 	);
 
 	auto result = to_runtime_value(r, a);
-	return result.struct_ptr;
+	return result;
 }
 
 
@@ -197,7 +197,7 @@ static runtime_value_t llvm_corelib__read_line_stdin(floyd_runtime_t* frp){
 
 
 
-static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
+static runtime_value_t llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 	auto& types = backend.types;
@@ -215,11 +215,10 @@ static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
-	const auto v = to_runtime_value(r, vec2);
-	return v.vector_carray_ptr;
+	return to_runtime_value(r, vec2);
 }
 
-static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
+static runtime_value_t llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 	auto& types = backend.types;
@@ -237,11 +236,10 @@ static VECTOR_CARRAY_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, r
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
-	const auto v = to_runtime_value(r, vec2);
-	return v.vector_carray_ptr;
+	return to_runtime_value(r, vec2);
 }
 
-static STRUCT_T* llvm_corelib__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t path0){
+static runtime_value_t llvm_corelib__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 	auto& types = backend.types;
@@ -251,8 +249,7 @@ static STRUCT_T* llvm_corelib__get_fsentry_info(floyd_runtime_t* frp, runtime_va
 
 	const auto info2 = pack_fsentry_info(types, info);
 
-	const auto v = to_runtime_value(r, info2);
-	return v.struct_ptr;
+	return to_runtime_value(r, info2);
 }
 
 static runtime_value_t llvm_corelib__get_fs_environment(floyd_runtime_t* frp){
@@ -421,7 +418,7 @@ static runtime_value_t llvm_corelib__execute_http_request(floyd_runtime_t* frp, 
 	auto& backend = r.ee->backend;
 	auto& types = backend.types;
 
-	const auto network_component_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "network_component_t" }});
+//	const auto network_component_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "network_component_t" }});
 	const auto ip_address_and_port_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "ip_address_and_port_t" }});
 
 	const auto addr1 = from_runtime_value2(backend, addr, ip_address_and_port_t__type).get_struct_value();

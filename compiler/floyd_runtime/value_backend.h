@@ -540,7 +540,7 @@ struct JSON_T {
 	heap_alloc_64_t alloc;
 };
 
-JSON_T* alloc_json(heap_t& heap, const json_t& init);
+runtime_value_t alloc_json(heap_t& heap, const json_t& init);
 
 
 ////////////////////////////////		STRUCT_T
@@ -568,8 +568,8 @@ struct STRUCT_T {
 	heap_alloc_64_t alloc;
 };
 
-STRUCT_T* alloc_struct(heap_t& heap, std::size_t size, type_t value_type);
-STRUCT_T* alloc_struct_copy(heap_t& heap, const uint64_t data[], std::size_t size, type_t value_type);
+runtime_value_t alloc_struct(heap_t& heap, std::size_t size, type_t value_type);
+runtime_value_t alloc_struct_copy(heap_t& heap, const uint64_t data[], std::size_t size, type_t value_type);
 
 
 ////////////////////////////////		HELPERS

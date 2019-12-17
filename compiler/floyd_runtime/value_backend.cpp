@@ -827,7 +827,7 @@ bool JSON_T::check_invariant() const{
 	return true;
 }
 
-JSON_T* alloc_json(heap_t& heap, const json_t& init){
+runtime_value_t alloc_json(heap_t& heap, const json_t& init){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(init.check_invariant());
 
@@ -839,7 +839,7 @@ JSON_T* alloc_json(heap_t& heap, const json_t& init){
 
 	QUARK_ASSERT(json->check_invariant());
 	QUARK_ASSERT(heap.check_invariant());
-	return json;
+	return runtime_value_t { .json_ptr = json };
 }
 
 static void dispose_json(JSON_T& json){
@@ -875,7 +875,7 @@ bool STRUCT_T::check_invariant() const {
 	return true;
 }
 
-STRUCT_T* alloc_struct(heap_t& heap, std::size_t size, type_t value_type){
+runtime_value_t alloc_struct(heap_t& heap, std::size_t size, type_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(value_type.check_invariant());
 	QUARK_ASSERT(value_type.is_struct());
@@ -885,10 +885,10 @@ STRUCT_T* alloc_struct(heap_t& heap, std::size_t size, type_t value_type){
 	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count, value_type, "struct");
 
 	auto vec = reinterpret_cast<STRUCT_T*>(alloc);
-	return vec;
+	return runtime_value_t { .struct_ptr = vec };
 }
 
-STRUCT_T* alloc_struct_copy(heap_t& heap, const uint64_t data[], std::size_t size, type_t value_type){
+runtime_value_t alloc_struct_copy(heap_t& heap, const uint64_t data[], std::size_t size, type_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(data != nullptr);
 	QUARK_ASSERT(value_type.check_invariant());
@@ -899,7 +899,7 @@ STRUCT_T* alloc_struct_copy(heap_t& heap, const uint64_t data[], std::size_t siz
 
 	auto vec = reinterpret_cast<STRUCT_T*>(alloc);
 	std::memcpy(vec->get_data_ptr(), data, size);
-	return vec;
+	return runtime_value_t { .struct_ptr = vec };
 }
 
 static void dispose_struct(STRUCT_T& s){
@@ -1231,7 +1231,7 @@ rt_value_t::rt_value_t(value_backend_t& backend, const std::shared_ptr<json_t>& 
 	QUARK_ASSERT(value);
 	QUARK_ASSERT(value->check_invariant());
 
-	_pod.json_ptr = alloc_json(backend.heap, *value);
+	_pod = alloc_json(backend.heap, *value);
 
 	QUARK_ASSERT(check_invariant());
 }
@@ -1285,7 +1285,7 @@ runtime_value_t to_runtime_struct(value_backend_t& backend, const type_t& struct
 	const auto& struct_layout = find_struct_layout(backend, struct_type);
 
 	auto s = alloc_struct(backend.heap, struct_layout.second.size, peek2(backend.types, struct_type));
-	const auto struct_base_ptr = s->get_data_ptr();
+	const auto struct_base_ptr = s.struct_ptr->get_data_ptr();
 
 	int member_index = 0;
 	for(const auto& e: values){
@@ -1297,7 +1297,7 @@ runtime_value_t to_runtime_struct(value_backend_t& backend, const type_t& struct
 		store_via_ptr2(backend.types, member_ptr, dereference_type(backend.types, member_type), e._pod);
 		member_index++;
 	}
-	return make_runtime_struct(s);
+	return s;
 }
 
 
@@ -2670,7 +2670,7 @@ runtime_value_t to_runtime_struct(value_backend_t& backend, const struct_t& exac
 	const auto& struct_layout = find_struct_layout(backend, value.get_type());
 
 	auto s = alloc_struct(backend.heap, struct_layout.second.size, value.get_type());
-	const auto struct_base_ptr = s->get_data_ptr();
+	const auto struct_base_ptr = s.struct_ptr->get_data_ptr();
 
 	int member_index = 0;
 	const auto& struct_data = value.get_struct_value();
@@ -2682,7 +2682,7 @@ runtime_value_t to_runtime_struct(value_backend_t& backend, const struct_t& exac
 		store_via_ptr2(backend.types, member_ptr, member_type, to_runtime_value2(backend, e));
 		member_index++;
 	}
-	return make_runtime_struct(s);
+	return s;
 }
 
 value_t from_runtime_struct(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
@@ -2915,10 +2915,7 @@ runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value
 		}
 
 		runtime_value_t operator()(const json_type_t& e) const{
-//			auto result = new json_t(value.get_json());
-//			return runtime_value_t { .json_ptr = result };
-			auto result = alloc_json(backend.heap, value.get_json());
-			return runtime_value_t { .json_ptr = result };
+			return alloc_json(backend.heap, value.get_json());
 		}
 		runtime_value_t operator()(const typeid_type_t& e) const{
 			const auto t0 = value.get_typeid_value();
