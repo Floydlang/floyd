@@ -43,7 +43,6 @@ static void trace_alloc(const heap_rec_t& e){
 
 		<< std::to_string(e.alloc_ptr->alloc_id)
 		<< "\t" << "magic: " << value_to_hex_string(e.alloc_ptr->magic, 8)
-//		<< "used: " << e.in_use
 		<< "\t" << "rc: " << e.alloc_ptr->rc
 
 		<< "\t" << "debug_info: " << get_debug_info(*e.alloc_ptr)
@@ -61,7 +60,7 @@ void trace_heap(const heap_t& heap){
 	if(true){
 		QUARK_SCOPED_TRACE("HEAP");
 
-		if(heap.record_allocs_flag && k_heap_mutex){
+		if(heap.record_allocs_flag){
 			std::lock_guard<std::recursive_mutex> guard(*heap.alloc_records_mutex);
 			for(int i = 0 ; i < heap.alloc_records.size() ; i++){
 				const auto& e = heap.alloc_records[i];
@@ -77,9 +76,8 @@ heap_t::heap_t(bool record_allocs_flag) :
 	allocation_id_generator(k_alloc_start_id),
 	record_allocs_flag(record_allocs_flag)
 {
-	if(k_heap_mutex){
-		alloc_records_mutex = std::make_shared<std::recursive_mutex>();
-	}
+	alloc_records_mutex = std::make_shared<std::recursive_mutex>();
+
 	QUARK_ASSERT(check_invariant());
 }
 
@@ -154,13 +152,8 @@ heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, type_t d
 	const auto header_size = sizeof(heap_alloc_64_t);
 	QUARK_ASSERT((header_size % 8) == 0);
 
-	if(k_heap_mutex){
-		std::lock_guard<std::recursive_mutex> guard(*heap.alloc_records_mutex);
-		return alloc_64__internal(heap, allocation_word_count, debug_value_type, debug_string);
-	}
-	else{
-		return alloc_64__internal(heap, allocation_word_count, debug_value_type, debug_string);
-	}
+	std::lock_guard<std::recursive_mutex> guard(*heap.alloc_records_mutex);
+	return alloc_64__internal(heap, allocation_word_count, debug_value_type, debug_string);
 }
 
 
@@ -250,9 +243,6 @@ bool heap_alloc_64_t::check_invariant() const{
 			assert(heap != nullptr);
 			QUARK_ASSERT(heap->magic == HEAP_MAGIC);
 			QUARK_ASSERT(this->alloc_id >= k_alloc_start_id && this->alloc_id < heap->allocation_id_generator);
-
-		//	auto it = std::find_if(heap->alloc_records.begin(), heap->alloc_records.end(), [&](heap_rec_t& e){ return e.alloc_ptr == this; });
-		//	QUARK_ASSERT(it != heap->alloc_records.end());
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -265,18 +255,6 @@ bool heap_alloc_64_t::check_invariant() const{
 
 static void dispose_alloc__internal(heap_alloc_64_t& alloc){
 	QUARK_ASSERT(alloc.check_invariant());
-
-	if(alloc.heap->record_allocs_flag){
-		auto it = std::find_if(
-			alloc.heap->alloc_records.begin(),
-			alloc.heap->alloc_records.end(),
-			[&](heap_rec_t& e){ return e.alloc_ptr == &alloc; }
-		);
-		QUARK_ASSERT(it != alloc.heap->alloc_records.end());
-
-//		QUARK_ASSERT(it->in_use);
-//		it->in_use = false;
-	}
 
 	if(k_keep_deleted_allocs){
 		alloc.magic = ALLOC_64_MAGIC_DELETED;
@@ -301,13 +279,8 @@ static void dispose_alloc__internal(heap_alloc_64_t& alloc){
 static void dispose_alloc(heap_alloc_64_t& alloc){
 	QUARK_ASSERT(alloc.check_invariant());
 
-	if(k_heap_mutex){
-		std::lock_guard<std::recursive_mutex> guard(*alloc.heap->alloc_records_mutex);
-		dispose_alloc__internal(alloc);
-	}
-	else{
-		dispose_alloc__internal(alloc);
-	}
+	std::lock_guard<std::recursive_mutex> guard(*alloc.heap->alloc_records_mutex);
+	dispose_alloc__internal(alloc);
 }
 
 
@@ -317,16 +290,6 @@ bool heap_t::check_invariant() const{
 		QUARK_ASSERT(e.alloc_ptr != nullptr);
 		QUARK_ASSERT(e.alloc_ptr->heap == this);
 		QUARK_ASSERT(e.alloc_ptr->check_invariant());
-
-/*
-		if(e.in_use){
-			QUARK_ASSERT(e.alloc_ptr->rc > 0);
-		}
-		else{
-			QUARK_ASSERT(e.alloc_ptr->rc == 0);
-		}
-*/
-
 	}
 #endif
 	return true;
@@ -351,13 +314,8 @@ static int count_used__internal(const heap_t& heap){
 int heap_t::count_used() const {
 	QUARK_ASSERT(check_invariant());
 
-	if(k_heap_mutex){
-		std::lock_guard<std::recursive_mutex> guard(*alloc_records_mutex);
-		return count_used__internal(*this);
-	}
-	else{
-		return count_used__internal(*this);
-	}
+	std::lock_guard<std::recursive_mutex> guard(*alloc_records_mutex);
+	return count_used__internal(*this);
 }
 
 
@@ -2093,8 +2051,6 @@ static void trace_value_backend_dynamic__internal(const value_backend_t& backend
 		const auto alloc_id_str =std::to_string(e.alloc_ptr->alloc_id);
 		const auto magic = value_to_hex_string(e.alloc_ptr->magic, 8);
 
-		//		<< "used: " << e.in_use
-
 		const auto rc_str = std::to_string(e.alloc_ptr->rc);
 
 		const auto debug_info_str = get_debug_info(*e.alloc_ptr);
@@ -2137,11 +2093,8 @@ void trace_value_backend_dynamic(const value_backend_t& backend){
 
 	QUARK_SCOPED_TRACE("BACKEND");
 
-	if(backend.heap.record_allocs_flag && k_heap_mutex){
+	if(backend.heap.record_allocs_flag){
 		std::lock_guard<std::recursive_mutex> guard(*backend.heap.alloc_records_mutex);
-		trace_value_backend_dynamic__internal(backend);
-	}
-	else{
 		trace_value_backend_dynamic__internal(backend);
 	}
 }

@@ -50,7 +50,6 @@ namespace floyd {
 
 ////////////////////////////////	CONFIGURATION
 
-const bool k_heap_mutex = true;
 const bool k_keep_deleted_allocs = true;
 #define ATOMIC_RC 1
 
