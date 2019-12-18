@@ -1708,13 +1708,13 @@ static std::vector<specialization_t> make_update_specializations(llvm::LLVMConte
 
 		specialization_t { eresolved_type::k_vector_carray_pod,			{ module_symbol_t("update_vector_carray"), function_type1, reinterpret_cast<void*>(update_vector_carray_pod) } },
 		specialization_t { eresolved_type::k_vector_carray_nonpod,		{ module_symbol_t("update_vector_carray"), function_type1, reinterpret_cast<void*>(update_vector_carray_nonpod) } },
-		specialization_t { eresolved_type::k_vector_hamt_pod,			{ module_symbol_t("update_vector_hamt"), function_type1, reinterpret_cast<void*>(update_vector_hamt_pod) } },
-		specialization_t { eresolved_type::k_vector_hamt_nonpod,		{ module_symbol_t("update_vector_hamt"), function_type1, reinterpret_cast<void*>(update_vector_hamt_nonpod) } },
+		specialization_t { eresolved_type::k_vector_hamt_pod,			{ module_symbol_t("update_vector_hamt_pod"), function_type1, reinterpret_cast<void*>(update_vector_hamt_pod) } },
+		specialization_t { eresolved_type::k_vector_hamt_nonpod,		{ module_symbol_t("update_vector_hamt_nonpod"), function_type1, reinterpret_cast<void*>(update_vector_hamt_nonpod) } },
 
-		specialization_t { eresolved_type::k_dict_cppmap_pod,			{ module_symbol_t("update_dict_cppmap"), function_type2, reinterpret_cast<void*>(update_dict_cppmap_pod) } },
-		specialization_t { eresolved_type::k_dict_cppmap_nonpod,		{ module_symbol_t("update_dict_cppmap"), function_type2, reinterpret_cast<void*>(update_dict_cppmap_nonpod) } },
-		specialization_t { eresolved_type::k_dict_hamt_pod,				{ module_symbol_t("update_dict_hamt"), function_type2, reinterpret_cast<void*>(update_dict_hamt_pod) } },
-		specialization_t { eresolved_type::k_dict_hamt_nonpod,			{ module_symbol_t("update_dict_hamt"), function_type2, reinterpret_cast<void*>(update_dict_hamt_nonpod) } },
+		specialization_t { eresolved_type::k_dict_cppmap_pod,			{ module_symbol_t("update_dict_cppmap_pod"), function_type2, reinterpret_cast<void*>(update_dict_cppmap_pod) } },
+		specialization_t { eresolved_type::k_dict_cppmap_nonpod,		{ module_symbol_t("update_dict_cppmap_nonpod"), function_type2, reinterpret_cast<void*>(update_dict_cppmap_nonpod) } },
+		specialization_t { eresolved_type::k_dict_hamt_pod,				{ module_symbol_t("update_dict_hamt_pod"), function_type2, reinterpret_cast<void*>(update_dict_hamt_pod) } },
+		specialization_t { eresolved_type::k_dict_hamt_nonpod,			{ module_symbol_t("update_dict_hamt_nonpod"), function_type2, reinterpret_cast<void*>(update_dict_hamt_nonpod) } },
 	};
 }
 

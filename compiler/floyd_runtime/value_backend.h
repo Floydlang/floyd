@@ -1168,7 +1168,13 @@ inline runtime_value_t update__string(value_backend_t& backend, runtime_value_t 
 }
 
 inline runtime_value_t update_element__vector_hamt_pod(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value){
+#if DEBUG
 	QUARK_ASSERT(backend.check_invariant());
+	const auto coll_type2 = type_t(coll_type);
+	QUARK_ASSERT(coll_type2.is_vector());
+	const auto element_type = coll_type2.get_vector_element_type(backend.types);
+	QUARK_ASSERT(is_rc_value(backend.types, element_type) == false);
+#endif
 
 	const auto vec = coll_value.vector_hamt_ptr;
 	const auto i = index.int_value;
@@ -1180,7 +1186,13 @@ inline runtime_value_t update_element__vector_hamt_pod(value_backend_t& backend,
 	return store_immutable_hamt(coll_value, i, value);
 }
 inline runtime_value_t update_element__vector_hamt_nonpod(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value){
+#if DEBUG
 	QUARK_ASSERT(backend.check_invariant());
+	const auto coll_type2 = type_t(coll_type);
+	QUARK_ASSERT(coll_type2.is_vector());
+	const auto element_type = coll_type2.get_vector_element_type(backend.types);
+	QUARK_ASSERT(is_rc_value(backend.types, element_type) == true);
+#endif
 
 	const auto vec = coll_value.vector_hamt_ptr;
 	const auto i = index.int_value;

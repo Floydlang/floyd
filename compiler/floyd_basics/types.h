@@ -687,7 +687,7 @@ struct type_node_t {
 
 	typedef_t def;
 
-	type_t physical_type;
+	type_t physical_type666;
 };
 
 inline bool operator==(const type_node_t& lhs, const type_node_t& rhs){

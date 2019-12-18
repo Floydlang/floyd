@@ -2778,8 +2778,14 @@ push_back()
 subset()
 replace()
 */
-	FLOYD_LANG_PROOF_VIP("Floyd test suite", "string size()", "", ""){
-		ut_run_closed_nolib(QUARK_POS, R"(		size("")		)");
+	FLOYD_LANG_PROOF("Floyd test suite", "string size()", "", ""){
+		ut_run_closed_nolib(QUARK_POS, R"(		let x = ""		)");
+	}
+	FLOYD_LANG_PROOF("Floyd test suite", "string size()", "", ""){
+		ut_run_closed_nolib(QUARK_POS, R"(		"xyz"		)");
+	}
+	FLOYD_LANG_PROOF("Floyd test suite", "string size()", "", ""){
+		ut_run_closed_nolib(QUARK_POS, R"(			func int f(string x){ return 3 };	f("xyz")		)");
 	}
 
 FLOYD_LANG_PROOF("Floyd test suite", "string update()", "", ""){
@@ -5612,7 +5618,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "string", ""){
 
 
 
-
 //////////////////////////////////////////		HIGHER-ORDER INTRINSICS - map()
 
 
@@ -5915,7 +5920,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "stable_sort()", "Test context argument", "
 	);
 }
 
-FLOYD_LANG_PROOF("Floyd test suite", "stable_sort()", "[string]", ""){
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "stable_sort()", "[string]", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(

@@ -1227,7 +1227,13 @@ static llvm::Value* generate_push_back_expression(llvm_function_generator_t& gen
 	const auto collection_type = get_expr_output_type(gen_acc.gen, details.args[0]);
 	auto vector_reg = generate_expression(gen_acc, details.args[0]);
 	auto element_reg = generate_expression(gen_acc, details.args[1]);
-	return generate_instrinsic_push_back(gen_acc, resolved_call_type, *vector_reg, collection_type, *element_reg);
+	const auto element_type = details.args[1].get_output_type();
+	const auto result = generate_instrinsic_push_back(gen_acc, resolved_call_type, *vector_reg, collection_type, *element_reg);
+
+	generate_release(gen_acc, *element_reg, element_type);
+	generate_release(gen_acc, *vector_reg, collection_type);
+
+	return result;
 }
 
 static llvm::Value* generate_size_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
@@ -1243,7 +1249,9 @@ static llvm::Value* generate_size_expression(llvm_function_generator_t& gen_acc,
 
 	const auto resolved_call_type = calc_resolved_function_type(gen_acc.gen, e, it->_function_type, details.args);
 	auto collection_reg = generate_expression(gen_acc, details.args[0]);
-	return generate_instrinsic_size(gen_acc, resolved_call_type, *collection_reg, collection_type);
+	const auto result = generate_instrinsic_size(gen_acc, resolved_call_type, *collection_reg, collection_type);
+	generate_release(gen_acc, *collection_reg, collection_type);
+	return result;
 }
 
 static llvm::Value* generate_update_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
@@ -1257,10 +1265,19 @@ static llvm::Value* generate_update_expression(llvm_function_generator_t& gen_ac
 
 	const auto resolved_call_type = calc_resolved_function_type(gen_acc.gen, e, it->_function_type, details.args);
 	const auto collection_type = get_expr_output_type(gen_acc.gen, details.args[0]);
-	auto vector_reg = generate_expression(gen_acc, details.args[0]);
+
+	auto collection_reg = generate_expression(gen_acc, details.args[0]);
 	auto index_reg = generate_expression(gen_acc, details.args[1]);
 	auto element_reg = generate_expression(gen_acc, details.args[2]);
-	return generate_instrinsic_update(gen_acc, resolved_call_type, *vector_reg, collection_type, *index_reg, *element_reg);
+
+	const auto index_type = details.args[1].get_output_type();
+	const auto element_type = details.args[2].get_output_type();
+
+	const auto result = generate_instrinsic_update(gen_acc, resolved_call_type, *collection_reg, collection_type, *index_reg, *element_reg);
+	generate_release(gen_acc, *element_reg, element_type);
+	generate_release(gen_acc, *index_reg, index_type);
+	generate_release(gen_acc, *collection_reg, collection_type);
+	return result;
 }
 
 static llvm::Value* generate_map_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
@@ -1283,7 +1300,10 @@ static llvm::Value* generate_map_expression(llvm_function_generator_t& gen_acc, 
 	auto context_reg = generate_expression(gen_acc, details.args[2]);
 	auto context_type = get_expr_output_type(gen_acc.gen, details.args[2]);
 
-	return generate_instrinsic_map(gen_acc, resolved_call_type, *vector_reg, collection_type, *f_reg, f_type, *context_reg, context_type);
+	const auto result = generate_instrinsic_map(gen_acc, resolved_call_type, *vector_reg, collection_type, *f_reg, f_type, *context_reg, context_type);
+	generate_release(gen_acc, *context_reg, context_type);
+	generate_release(gen_acc, *vector_reg, collection_type);
+	return result;
 }
 
 
@@ -2598,6 +2618,7 @@ static module_output_t generate_module(llvm_instance_t& instance, const std::str
 	//	Generate bodies of functions.
 	{
 		generate_all_floyd_function_bodies(gen_acc, semantic_ast);
+
 		generate_floyd_runtime_init(gen_acc, semantic_ast._tree._globals);
 		generate_floyd_runtime_deinit(gen_acc, semantic_ast._tree._globals);
 	}

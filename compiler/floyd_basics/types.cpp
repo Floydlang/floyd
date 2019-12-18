@@ -920,7 +920,7 @@ static typedef_t calc_physical_type(const types_t& types, const typedef_t& def){
 
 	const auto physical_child_types = mapf<type_t>(def.child_types, [&](const auto& e){
 		const auto& node = lookup_typeinfo_from_type(types, e);
-		return node.physical_type;
+		return node.physical_type666;
 	});
 
 	const auto it = std::find_if(
@@ -1014,7 +1014,7 @@ static type_t make_named_type_internal__mutate(types_t& types, const type_name_t
 	const auto existing_node = lookup_typeinfo_from_type(types, destination_type);
 
 	//	Can't use intern_node__mutate() since we have a tag.
-	const auto node = type_node_t { n, def, existing_node.physical_type };
+	const auto node = type_node_t { n, def, existing_node.physical_type666 };
 	types.nodes.push_back(node);
 	QUARK_ASSERT(types.check_invariant());
 
@@ -1033,7 +1033,7 @@ static type_t update_named_type_internal__mutate(types_t& types, const type_t& n
 	//	NOTICE: Mutate the type INPLACE! This requires updating the physical type too.
 #if 1
 	node.def = make_named_type(destination_type);
-	node.physical_type = get_physical_type(types, destination_type);
+	node.physical_type666 = get_physical_type(types, destination_type);
 #else
 	const auto def = make_named_type(destination_type);
 
@@ -1290,10 +1290,10 @@ void trace_types(const types_t& types){
 
 			const type_node_t& node = lookup_typeinfo_from_type(types, type);
 
-			const auto physical_id = std::to_string(node.physical_type.get_lookup_index());
+			const auto physical_id = std::to_string(node.physical_type666.get_lookup_index());
 			const auto physical = type_to_compact_string(
 				types,
-				node.physical_type,
+				node.physical_type666,
 				enamed_type_mode::full_names
 			);
 
@@ -1642,8 +1642,10 @@ type_t get_physical_type(const types_t& types, const type_t& type){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto lookup_index = type.get_lookup_index();
-	return types.nodes[lookup_index].physical_type;
+	//??? Warning, only ONE level named-indirection.
+	return peek2(types, type);
+//	const auto lookup_index = type.get_lookup_index();
+//	return types.nodes[lookup_index].physical_type;
 }
 
 typedef_t get_type_desc(const types_t& types, const type_t& type){
@@ -2021,47 +2023,47 @@ QUARK_TEST("Types", "types_t()", "", ""){
 	const auto undefined0 = lookup_typeinfo_from_type(types, type_t::make_undefined());
 	QUARK_VERIFY(undefined0.optional_name == make_empty_type_name());
 	QUARK_VERIFY(undefined0.def.bt == base_type::k_undefined);
-	QUARK_VERIFY(undefined0.physical_type.is_undefined());
+	QUARK_VERIFY(undefined0.physical_type666.is_undefined());
 
 	const auto any0 = lookup_typeinfo_from_type(types, type_t::make_any());
 	QUARK_VERIFY(any0.optional_name == make_empty_type_name());
 	QUARK_VERIFY(any0.def.bt == base_type::k_any);
-	QUARK_VERIFY(any0.physical_type.is_undefined());
+	QUARK_VERIFY(any0.physical_type666.is_undefined());
 
 	const auto void0 = lookup_typeinfo_from_type(types, type_t::make_void());
 	QUARK_VERIFY(void0.optional_name == make_empty_type_name());
 	QUARK_VERIFY(void0.def.bt == base_type::k_void);
-	QUARK_VERIFY(void0.physical_type.is_void());
+	QUARK_VERIFY(void0.physical_type666.is_void());
 
 	const auto bool0 = lookup_typeinfo_from_type(types, type_t::make_bool());
 	QUARK_VERIFY(bool0.optional_name == make_empty_type_name());
 	QUARK_VERIFY(bool0.def.bt == base_type::k_bool);
-	QUARK_VERIFY(bool0.physical_type.is_bool());
+	QUARK_VERIFY(bool0.physical_type666.is_bool());
 
 	const auto int0 = lookup_typeinfo_from_type(types, type_t::make_int());
 	QUARK_VERIFY(int0.optional_name == make_empty_type_name());
 	QUARK_VERIFY(int0.def.bt == base_type::k_int);
-	QUARK_VERIFY(int0.physical_type.is_int());
+	QUARK_VERIFY(int0.physical_type666.is_int());
 
 	const auto double0 = lookup_typeinfo_from_type(types, type_t::make_double());
 	QUARK_VERIFY(double0.optional_name == make_empty_type_name());
 	QUARK_VERIFY(double0.def.bt == base_type::k_double);
-	QUARK_VERIFY(double0.physical_type.is_double());
+	QUARK_VERIFY(double0.physical_type666.is_double());
 
 	const auto string0 = lookup_typeinfo_from_type(types, type_t::make_string());
 	QUARK_VERIFY(string0.optional_name == make_empty_type_name());
 	QUARK_VERIFY(string0.def.bt == base_type::k_string);
-	QUARK_VERIFY(string0.physical_type.is_string());
+	QUARK_VERIFY(string0.physical_type666.is_string());
 
 	const auto json0 = lookup_typeinfo_from_type(types, type_t::make_json());
 	QUARK_VERIFY(json0.optional_name == make_empty_type_name());
 	QUARK_VERIFY(json0.def.bt == base_type::k_json);
-	QUARK_VERIFY(json0.physical_type.is_json());
+	QUARK_VERIFY(json0.physical_type666.is_json());
 
 	const auto typeid0 = lookup_typeinfo_from_type(types, type_t::make_typeid());
 	QUARK_VERIFY(typeid0.optional_name == make_empty_type_name());
 	QUARK_VERIFY(typeid0.def.bt == base_type::k_typeid);
-	QUARK_VERIFY(typeid0.physical_type.is_typeid());
+	QUARK_VERIFY(typeid0.physical_type666.is_typeid());
 
 }
 
