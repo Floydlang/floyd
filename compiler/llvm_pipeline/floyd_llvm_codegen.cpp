@@ -7,7 +7,7 @@
 //
 
 
-static const bool k_trace_pass_io = false;
+static const bool k_trace_pass_io = true;
 
 
 #include "floyd_llvm_codegen.h"
@@ -2458,7 +2458,6 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const bo
 
 	llvm::Function* f = gen_acc.runtime_functions.floydrt_init.llvm_codegen_f;
 	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(context, "entry", f);
-	llvm::BasicBlock* destructBB = llvm::BasicBlock::Create(context, "destruct", f);
 
 	{
 		llvm_function_generator_t function_gen_acc(gen_acc, *f);
@@ -2470,13 +2469,6 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const bo
 			//	Global statements, using the global symbol scope.
 			//	This includes init2-statements to initialise global variables.
 			generate_statements(function_gen_acc, globals._statements);
-
-			builder.CreateBr(destructBB);
-		}
-
-		//	destructBB
-		{
-			builder.SetInsertPoint(destructBB);
 
 			llvm::Value* dummy_result = llvm::ConstantInt::get(builder.getInt64Ty(), 667);
 			builder.CreateRet(dummy_result);

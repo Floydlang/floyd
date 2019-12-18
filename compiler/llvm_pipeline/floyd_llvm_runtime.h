@@ -32,7 +32,6 @@ struct floyd_runtime_t;
 struct llvm_instance_t;
 
 
-static const bool k_trace_process_messaging = true;
 
 
 ////////////////////////////////		llvm_bind_t

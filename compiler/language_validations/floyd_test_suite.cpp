@@ -144,12 +144,6 @@ static json_t make_double_vec(const std::vector<double>& elements){
 
 
 
-#if 0
-FLOYD_LANG_PROOF("NOP", "See if we leak memory", "", ""){
-    usleep(11 * 1000000);
-}
-#endif
-
 
 #if RUN_LANG_BASIC_TESTS1
 
@@ -2784,18 +2778,9 @@ push_back()
 subset()
 replace()
 */
-
-#if 1
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "string update()", "", ""){
-	ut_run_closed_nolib(QUARK_POS, R"(
-
-		let x = "hello"
-		let a = update(x, 1, 98)
-//		assert(a == "hbllo")
-
-	)");
-}
-#endif
+	FLOYD_LANG_PROOF("Floyd test suite", "string size()", "", ""){
+		ut_run_closed_nolib(QUARK_POS, R"(		size("")		)");
+	}
 
 FLOYD_LANG_PROOF("Floyd test suite", "string update()", "", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(
@@ -2817,9 +2802,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "string update()", "error: pos > len", "exc
 	);
 }
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "string size()", "", ""){
-	ut_run_closed_nolib(QUARK_POS, R"(		size("")		)");
-}
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "string size()", "", ""){
@@ -4472,7 +4454,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Unnamed struct", ""){
 
 
 #if 0
-//??? more advanced infererence -- very concenient.
+//??? more advanced infererence -- very convenient.
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "Unnamed struct", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -5623,33 +5605,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "string", ""){
 FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "string", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = from_json(to_json("cola"), string)		)", make_expected_string("cola"));
 }
-
-#if 0
-//??? requires unnamed structs
-FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "point_t", ""){
-	types_t temp;
-	const auto point_t_def = std::vector<member_t>{
-		member_t(type_t::make_double(), "x"),
-		member_t(type_t::make_double(), "y")
-	};
-	const auto expected = value_t::make_struct_value(
-		temp,
-		make_struct(temp, struct_type_desc_t(point_t_def)),
-		{ value_t::make_double(1), value_t::make_double(3) }
-	);
-
-	ut_verify_global_result_nolib(
-		QUARK_POS,
-		R"(
-
-			struct point_t { double x double y }
-			let result = from_json(to_json(point_t(1.0, 3.0)), point_t)
-
-		)",
-		value_and_type_to_json(temp, expected)
-	);
-}
-#endif
 
 
 
@@ -7083,8 +7038,7 @@ FLOYD_LANG_PROOF("container-def", "Minimal floyd process demo", "", ""){
 	ut_run_closed_nolib(QUARK_POS, program);
 }
 
-#if 0
-FLOYD_LANG_PROOF_VIP("container-def", "Test named type for message", "", ""){
+FLOYD_LANG_PROOF("container-def", "Test named type for message", "", ""){
 	const auto program = R"(
 
 		container-def {
@@ -7114,7 +7068,6 @@ FLOYD_LANG_PROOF_VIP("container-def", "Test named type for message", "", ""){
 
 	ut_run_closed_nolib(QUARK_POS, program);
 }
-#endif
 
 
 FLOYD_LANG_PROOF("container-def", "Mismatch of message type: send() vs __msg()", "", ""){
@@ -7197,8 +7150,7 @@ FLOYD_LANG_PROOF("container-def", "run one process", "", ""){
 	ut_run_closed_nolib(QUARK_POS, program);
 }
 
-#if 0
-FLOYD_LANG_PROOF_VIP("container-def", "Test use struct as message", "", ""){
+FLOYD_LANG_PROOF("container-def", "Test use struct as message", "", ""){
 	const auto program = R"(
 
 		container-def {
@@ -7247,7 +7199,6 @@ FLOYD_LANG_PROOF_VIP("container-def", "Test use struct as message", "", ""){
 
 	ut_run_closed_nolib(QUARK_POS, program);
 }
-#endif
 
 FLOYD_LANG_PROOF("container-def", "run two unconnected processs", "", ""){
 	const auto program = R"(
@@ -8012,8 +7963,8 @@ FLOYD_LANG_PROOF("generics", "", "", ""){
 
 
 
-#if 0
-FLOYD_LANG_PROOF_VIP("network component", "", "", ""){
+FLOYD_LANG_PROOF("network component", "", "", ""){
+
 	ut_run_closed_lib(
 		QUARK_POS,
 		R"(
@@ -8029,7 +7980,5 @@ FLOYD_LANG_PROOF_VIP("network component", "", "", ""){
 		)"
 	);
 }
-#endif
-
 
 
