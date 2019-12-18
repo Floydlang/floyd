@@ -2778,7 +2778,7 @@ push_back()
 subset()
 replace()
 */
-	FLOYD_LANG_PROOF("Floyd test suite", "string size()", "", ""){
+	FLOYD_LANG_PROOF_VIP("Floyd test suite", "string size()", "", ""){
 		ut_run_closed_nolib(QUARK_POS, R"(		size("")		)");
 	}
 
