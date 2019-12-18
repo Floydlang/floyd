@@ -153,6 +153,7 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 			handler._print_output,
 			""
 		};
+		detect_leaks(interpreter._backend);
 	}
 	catch(const std::runtime_error& e){
 		return test_report_t{ {}, {}, {}, e.what() };
@@ -161,7 +162,6 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 		throw std::exception();
 	}
 }
-
 
 struct llvm_test_handler_t : public llvm_runtime_handler_i {
 	void on_print(const std::string& s) override {
@@ -207,6 +207,8 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 		const auto result_global = result_global0.first != nullptr ? load_global(context, result_global0) : value_t();
 
 		QUARK_ASSERT(ee->check_invariant());
+
+		detect_leaks(ee->backend);
 
 		return test_report_t{
 			result_global.is_undefined() ? json_t() : value_and_type_to_json(exe->type_lookup.state.types, result_global),

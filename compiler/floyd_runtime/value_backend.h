@@ -50,7 +50,6 @@ namespace floyd {
 
 ////////////////////////////////	CONFIGURATION
 
-const bool k_keep_deleted_allocs = true;
 #define ATOMIC_RC 1
 
 
@@ -817,6 +816,8 @@ struct value_backend_t {
 	//	Future: make this flag a per-vector setting.
 	const config_t config;
 };
+
+bool detect_leaks(const value_backend_t& backend);
 
 bool check_invariant(const value_backend_t& backend, runtime_value_t value, const type_t& type);
 

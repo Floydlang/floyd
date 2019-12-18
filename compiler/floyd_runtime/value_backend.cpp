@@ -19,7 +19,15 @@
 
 namespace floyd {
 
+
+
 //#define QUARK_TEST QUARK_TEST_VIP
+
+const bool k_keep_deleted_allocs = true;
+
+
+
+
 
 
 static void dispose_alloc(heap_alloc_64_t& alloc);
@@ -1856,6 +1864,21 @@ value_backend_t::~value_backend_t(){
 }
 
 
+//??? get_leaks().
+bool detect_leaks(const value_backend_t& backend){
+	const auto leaks = backend.heap.count_used();
+	if(leaks > 0){
+		QUARK_SCOPED_TRACE("LEAKS");
+		trace_heap(backend.heap);
+		trace_value_backend(backend);
+		return true;
+	}
+	else{
+		return false;
+	}
+}
+
+
 bool check_invariant(const value_backend_t& backend, runtime_value_t value, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -2037,6 +2060,8 @@ static std::string get_value_structure_str(const value_backend_t& backend, const
 
 
 void trace_value_backend(const value_backend_t& backend){
+	trace_types(backend.types);
+	trace_value_backend_dynamic(backend);
 }
 
 static void trace_value_backend_dynamic__internal(const value_backend_t& backend){
