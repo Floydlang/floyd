@@ -289,6 +289,7 @@ std::vector<llvm_function_link_entry_t> make_function_link_map1(
 
 int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const std::vector<std::string>& main_args);
 
+void deinit_program(llvm_execution_engine_t& ee);
 
 
 

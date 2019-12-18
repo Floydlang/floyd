@@ -158,7 +158,7 @@ FLOYD_LANG_PROOF("NOP", "See if we leak memory", "", ""){
 //######################################################################################################################
 
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "Define variable", "int", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "Define variable", "int", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let int result = 123", make_expected_int(123));
 }
 
@@ -2785,6 +2785,18 @@ subset()
 replace()
 */
 
+#if 1
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "string update()", "", ""){
+	ut_run_closed_nolib(QUARK_POS, R"(
+
+		let x = "hello"
+		let a = update(x, 1, 98)
+//		assert(a == "hbllo")
+
+	)");
+}
+#endif
+
 FLOYD_LANG_PROOF("Floyd test suite", "string update()", "", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(
 
@@ -2805,6 +2817,9 @@ FLOYD_LANG_PROOF("Floyd test suite", "string update()", "error: pos > len", "exc
 	);
 }
 
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "string size()", "", ""){
+	ut_run_closed_nolib(QUARK_POS, R"(		size("")		)");
+}
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "string size()", "", ""){

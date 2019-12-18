@@ -208,6 +208,7 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 
 		QUARK_ASSERT(ee->check_invariant());
 
+		deinit_program(*ee);
 		detect_leaks(ee->backend);
 
 		return test_report_t{

@@ -416,21 +416,6 @@ static int64_t floyd_llvm_intrinsic__dummy(floyd_runtime_t* frp){
 
 llvm_execution_engine_t::~llvm_execution_engine_t(){
 	QUARK_ASSERT(check_invariant());
-
-	if(inited){
-		auto f = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_function_ptr(*this, module_symbol_t("deinit")));
-		QUARK_ASSERT(f != nullptr);
-
-		auto context = llvm_context_t { this, nullptr };
-		int64_t result = (*f)(make_runtime_ptr(&context));
-		QUARK_ASSERT(result == 668);
-		inited = false;
-	};
-
-//	const auto leaks = heap.count_used();
-//	QUARK_ASSERT(leaks == 0);
-
-//	detect_leaks(heap);
 }
 
 bool llvm_execution_engine_t::check_invariant() const {
@@ -662,7 +647,6 @@ std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& progra
 	QUARK_ASSERT(a_func != nullptr);
 
 	auto runtime_ptr = make_runtime_ptr(&context);
-
 
 	int64_t init_result = (*a_func)(runtime_ptr);
 	QUARK_ASSERT(init_result == 667);
@@ -926,6 +910,33 @@ run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::str
 	}
 }
 
+
+void deinit_program(llvm_execution_engine_t& ee){
+	/*
+	QUARK_ASSERT(ee.deinit_function.address != nullptr);
+	QUARK_ASSERT(ee.inited == true);
+	auto a_func = reinterpret_cast<FLOYD_RUNTIME_DEINIT>(ee.deinit_function.address);
+	QUARK_ASSERT(a_func != nullptr);
+
+	auto context = llvm_context_t{ &ee, nullptr };
+	auto runtime_ptr = make_runtime_ptr(&context);
+
+	int64_t result = (*a_func)(runtime_ptr);
+	QUARK_ASSERT(result == 668);
+
+	ee.inited = false;
+*/
+
+	if(ee.inited){
+		auto f = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_function_ptr(ee, module_symbol_t("deinit")));
+		QUARK_ASSERT(f != nullptr);
+
+		auto context = llvm_context_t { &ee, nullptr };
+		int64_t result = (*f)(make_runtime_ptr(&context));
+		QUARK_ASSERT(result == 668);
+		ee.inited = false;
+	};
+}
 
 
 ////////////////////////////////		BENCHMARKS

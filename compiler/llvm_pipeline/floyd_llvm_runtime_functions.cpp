@@ -364,7 +364,7 @@ static std::vector<function_bind_t> floydrt_lookup_dict_hamt__make(llvm::LLVMCon
 	return {{ module_symbol_t("lookup_dict_hamt"), function_type, reinterpret_cast<void*>(floydrt_lookup_dict_hamt) }};
 }
 
-
+//??? Rewrite all code that generates calls to use a floyd-function-type and use a shared LLVM-generator for runtime functions & other llvm calls.
 llvm::Value* generate_lookup_dict(llvm_function_generator_t& gen_acc, llvm::Value& dict_reg, const type_t& dict_type, llvm::Value& key_reg, dict_backend dict_mode){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(dict_type.check_invariant());

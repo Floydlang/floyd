@@ -89,7 +89,7 @@ struct heap_rec_t {
 	heap_alloc_64_t* alloc_ptr;
 };
 
-static const uint64_t k_alloc_start_id = 1000000;
+static const uint64_t k_alloc_start_id = 2000000;
 static const uint64_t HEAP_MAGIC = 0xf00d1234;
 
 
