@@ -656,6 +656,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Type mismatch", ""
 }
 
 #if 0
+//??? Not implemented yet. No policy for DBZ decided = platform dependant result.
 FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "Division by zero", "") {
 	ut_verify_exception_nolib(QUARK_POS, "let int result = 2/0", "EEE_DIVIDE_BY_ZERO");
 }
@@ -1476,40 +1477,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Simple test-def compiles", "")
 		"|-------|---------|---------------------|------------------|\n"
 	);
 }
-
-
-#if 0
-FLOYD_LANG_PROOF("Floyd test suite", "test-def", "Test running more than one simple benchmark_def", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			test-def ("subset()", "skip first character"){ test( subset("abc", 1, 3), "bc" )}
-
-
-			benchmark-def "AAA" {
-				return [ benchmark_result_t(200, json("0 eleements")) ]
-			}
-			benchmark-def "BBB" {
-				return [ benchmark_result_t(300, json("3 monkeys")) ]
-			}
-
-			for(i in 0 ..< size(benchmark_registry)){
-				let e = benchmark_registry[i]
-				let benchmark_result = e.f()
-				for(v in 0 ..< size(benchmark_result)){
-					print(e.name + ": " + to_string(v) + ": dur: " + to_string(benchmark_result[v].dur) + ", more: " + to_pretty_string(benchmark_result[v].more) )
-				}
-			}
-
-		)",
-		{
-			R"___(AAA: 0: dur: 200, more: "0 eleements")___",
-			R"___(BBB: 0: dur: 300, more: "3 monkeys")___"
-		}
-	);
-}
-#endif
 
 
 
@@ -3009,7 +2976,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector +", "add empty vectors", ""){
 }
 
 #if 0
-//??? This fails but should not. This code becomes a constructor call to [int] with more than 16 arguments. Byte code interpreter has 16 argument limit.
+//??? Missing feature: This fails but should not. This code becomes a constructor call to [int] with more than 16 arguments. Byte code interpreter has 16 argument limit.
 FLOYD_LANG_PROOF("Floyd test suite", "vector [] - constructor", "32 elements initialization", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(
 
@@ -4460,7 +4427,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Unnamed struct", ""){
 
 
 #if 0
-//??? more advanced infererence -- very convenient.
+//??? Not implemented yet. More advanced infererence -- very convenient.
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "Unnamed struct", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -7866,7 +7833,7 @@ FLOYD_LANG_PROOF("", "Demo DEEP BY VALUE", "", ""){
 }
 
 #if 0
-FLOYD_LANG_PROOF("", "Demo DEEP BY VALUE", "", ""){
+FLOYD_LANG_PROOF("", "Demo processes", "", ""){
 	ut_run_closed_nolib(
 		QUARK_POS,
 		R"___(
@@ -7946,6 +7913,7 @@ FLOYD_LANG_PROOF("", "Demo DEEP BY VALUE", "", ""){
 
 
 #if 0
+//??? Not implemented yet. Generics.
 FLOYD_LANG_PROOF("generics", "", "", ""){
 	ut_run_closed_nolib(
 		QUARK_POS,

@@ -7,7 +7,7 @@
 //
 
 
-static const bool k_trace_pass_io = true;
+static const bool k_trace_pass_io = false;
 
 
 #include "floyd_llvm_codegen.h"
