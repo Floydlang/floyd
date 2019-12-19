@@ -76,8 +76,7 @@ static runtime_value_t llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
 	}
 
 	const auto a = value_t::make_dict_value(types, type_t::make_json(), caps_map);
-	auto result = to_runtime_value(r, a);
-	return result;
+	return to_runtime_value(r, a);
 }
 
 static runtime_value_t llvm_corelib__make_hardware_caps_report(floyd_runtime_t* frp, runtime_value_t caps0){
@@ -137,8 +136,7 @@ static runtime_value_t llvm_corelib__calc_string_sha1(floyd_runtime_t* frp, runt
 		{ value_t::make_string(ascii40) }
 	);
 
-	auto result = to_runtime_value(r, a);
-	return result;
+	return to_runtime_value(r, a);
 }
 
 static runtime_value_t llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, runtime_value_t binary_ptr0){
@@ -158,8 +156,7 @@ static runtime_value_t llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, runt
 		{ value_t::make_string(ascii40) }
 	);
 
-	auto result = to_runtime_value(r, a);
-	return result;
+	return to_runtime_value(r, a);
 }
 
 
@@ -243,12 +240,10 @@ static runtime_value_t llvm_corelib__get_fsentry_info(floyd_runtime_t* frp, runt
 	auto& r = get_floyd_runtime(frp);
 	auto& backend = r.ee->backend;
 	auto& types = backend.types;
+
 	const auto path = from_runtime_string(r, path0);
-
 	const auto info = corelib_get_fsentry_info(path);
-
 	const auto info2 = pack_fsentry_info(types, info);
-
 	return to_runtime_value(r, info2);
 }
 
@@ -258,10 +253,8 @@ static runtime_value_t llvm_corelib__get_fs_environment(floyd_runtime_t* frp){
 	auto& types = backend.types;
 
 	const auto env = corelib_get_fs_environment();
-
 	const auto result = pack_fs_environment_t(types, env);
-	const auto v = to_runtime_value(r, result);
-	return v;
+	return to_runtime_value(r, result);
 }
 
 
@@ -367,8 +360,7 @@ static runtime_value_t llvm_corelib__lookup_host_from_name(floyd_runtime_t* frp,
 	const auto name = from_runtime_string(r, name_str);
 	const auto result = lookup_host(name);
 	const auto info = make__host_info_t(r, types, result);
-	const auto v = to_runtime_value(r, info);
-	return v;
+	return to_runtime_value(r, info);
 }
 
 static runtime_value_t llvm_corelib__pack_http_request(floyd_runtime_t* frp, runtime_value_t s){

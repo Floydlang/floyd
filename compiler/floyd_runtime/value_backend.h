@@ -902,12 +902,14 @@ value_backend_t make_test_value_backend();
 //////////////////////////////////////////		runtime_value_t
 
 
+//	Warning: you need to release the returned value.
 runtime_value_t alloc_carray_8bit(value_backend_t& backend, const uint8_t data[], std::size_t count);
 
+//	Warning: you need to release the returned value.
 runtime_value_t to_runtime_string2(value_backend_t& backend, const std::string& s);
 std::string from_runtime_string2(const value_backend_t& backend, runtime_value_t encoded_value);
 
-
+//	Warning: you need to release the returned value.
 runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value);
 value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type);
 
@@ -915,11 +917,15 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t& value);
 value_t from_runtime_vector(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type);
 
+//	Warning: you need to release the returned value.
 runtime_value_t to_runtime_dict(value_backend_t& backend, const dict_t& exact_type, const value_t& value);
+
 value_t from_runtime_dict(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type);
 
 
+//	Warning: you need to release the returned value.
 runtime_value_t to_runtime_struct(value_backend_t& backend, const struct_t& exact_type, const value_t& value);
+
 value_t from_runtime_struct(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type);
 
 

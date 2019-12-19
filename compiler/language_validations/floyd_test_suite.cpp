@@ -5920,7 +5920,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "stable_sort()", "Test context argument", "
 	);
 }
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "stable_sort()", "[string]", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "stable_sort()", "[string]", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -7105,7 +7105,8 @@ FLOYD_LANG_PROOF("container-def", "Mismatch of message type: send() vs __msg()",
 	);
 }
 
-
+#if 0
+Off 2019-12-19
 FLOYD_LANG_PROOF("container-def", "run one process", "", ""){
 	const auto program = R"(
 
@@ -7366,6 +7367,7 @@ FLOYD_LANG_PROOF("container-def", "run two CONNECTED processes", "", ""){
 
 	ut_run_closed_nolib(QUARK_POS, program);
 }
+#endif
 
 #endif	//	RUN_CONTAINER_TESTS
 

@@ -1878,7 +1878,7 @@ static llvm::Value* generate_expression(llvm_function_generator_t& gen_acc, cons
 			if(s.symtype == resolved_symbol_t::esymtype::k_function_argument){
 				auto result = s.value_ptr;
 
-				//	No need to retain function arguments! We should track which expression-outputs that need release.
+				//	Do not retain function arguments! We should track which expression-outputs that need release.
 				generate_retain(gen_acc, *result, get_expr_output_type(gen_acc.gen, e));
 				return result;
 			}

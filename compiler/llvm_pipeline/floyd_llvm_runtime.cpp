@@ -354,9 +354,7 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 		const auto main_result_int = (*f2)(runtime_ptr, main_args4);
 
 		const auto return_itype = type_t::make_vector(types, type_t::make_string());
-		if(is_rc_value(types, return_itype)){
-			release_value(context.ee->backend, main_args4, return_itype);
-		}
+		release_value(context.ee->backend, main_args4, return_itype);
 		return main_result_int;
 	}
 	else if(f.type == get_main_signature_no_arg_impure(types) || f.type == get_main_signature_no_arg_pure(types)){
@@ -809,6 +807,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 			auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE>(process._msg_function->address);
 			const auto state2 = to_runtime_value(context, process._process_state);
 			result = (*f)(runtime_ptr, state2, message_with_rc);
+			release_value(backend, state2, process._process_state.get_type());
 		}
 
 		process._process_state = from_runtime_value(context, result, process._state_type);

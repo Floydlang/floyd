@@ -302,8 +302,7 @@ static runtime_value_t floyd_llvm_intrinsic__from_json(floyd_runtime_t* frp, run
 	const auto& target_type2 = lookup_type_ref(backend, target_type);
 
 	const auto result = unflatten_json_to_specific_type(backend.types, json, target_type2);
-	const auto result2 = to_runtime_value(r, result);
-	return result2;
+	return to_runtime_value(r, result);
 }
 
 
@@ -999,9 +998,15 @@ static runtime_value_t stable_sort__carray(
 	struct sort_functor_r {
 		bool operator() (const value_t &a, const value_t &b) {
 			auto& r = get_floyd_runtime(frp);
+			auto& backend = r.ee->backend;
+
 			const auto left = to_runtime_value(r, a);
 			const auto right = to_runtime_value(r, b);
 			uint8_t result = (*f)(frp, left, right, context);
+
+			release_value(backend, left, a.get_type());
+			release_value(backend, right, b.get_type());
+
 			return result == 1 ? true : false;
 		}
 
@@ -1014,10 +1019,7 @@ static runtime_value_t stable_sort__carray(
 
 	auto mutate_inplace_elements = elements2.get_vector_value();
 	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
-
-	//??? optimize
-	const auto result = to_runtime_value2(backend, value_t::make_vector_value(types, peek2(types, type0).get_vector_element_type(types), mutate_inplace_elements));
-	return result;
+	return to_runtime_value2(backend, value_t::make_vector_value(types, peek2(types, type0).get_vector_element_type(types), mutate_inplace_elements));
 }
 
 //??? optimize prio 1
@@ -1055,9 +1057,15 @@ static runtime_value_t stable_sort__hamt(
 	struct sort_functor_r {
 		bool operator() (const value_t &a, const value_t &b) {
 			auto& r = get_floyd_runtime(frp);
+			auto& backend = r.ee->backend;
+
 			const auto left = to_runtime_value(r, a);
 			const auto right = to_runtime_value(r, b);
 			uint8_t result = (*f)(frp, left, right, context);
+
+			release_value(backend, left, a.get_type());
+			release_value(backend, right, b.get_type());
+
 			return result == 1 ? true : false;
 		}
 
