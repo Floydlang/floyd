@@ -1796,8 +1796,8 @@ static runtime_value_t floyd_llvm_intrinsic__to_json(floyd_runtime_t* frp, runti
 
 
 
-
-static std::map<std::string, void*> get_intrinsic_binds(){
+//	These intrinsics have exactly one native function.
+static std::map<std::string, void*> get_one_to_one_intrinsic_binds(){
 
 	const std::map<std::string, void*> binds = {
 		{ "assert", reinterpret_cast<void *>(&floyd_llvm_intrinsic__assert) },
@@ -1875,8 +1875,9 @@ std::vector<llvm_function_link_entry_t> make_intrinsics_link_map(llvm::LLVMConte
 
 	const auto& types = type_lookup.state.types;
 
-	const auto binds = get_intrinsic_binds();
+	const auto binds = get_one_to_one_intrinsic_binds();
 
+	//	These intrinsics have specialized native functions, depending on which types are used in the call.
 	std::vector<llvm_function_link_entry_t> result;
 	for(const auto& bind: binds){
 		auto signature_it = std::find_if(intrinsic_signatures.vec.begin(), intrinsic_signatures.vec.end(), [&] (const intrinsic_signature_t& e) { return e.name == bind.first; } );

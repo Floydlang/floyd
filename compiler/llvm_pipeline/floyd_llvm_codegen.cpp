@@ -7,7 +7,7 @@
 //
 
 
-static const bool k_trace_pass_io = false;
+static const bool k_trace_pass_io = true;
 
 
 #include "floyd_llvm_codegen.h"
@@ -292,7 +292,7 @@ static llvm::Value* generate_constant_string(llvm_function_generator_t& gen_acc,
 		str_ptr,
 		str_size
 	};
-	auto string_vec_ptr_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_alloc_kstr.llvm_codegen_f, args, "string literal");
+	auto string_vec_ptr_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_alloc_kstr.llvm_codegen_f, args, "string_literal");
 	return string_vec_ptr_reg;
 };
 
@@ -1213,6 +1213,8 @@ static llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& ge
 	return generate_floyd_call(gen_acc, callee_function_type, resolved_call_function_type, *callee_reg, floyd_args);
 }
 
+//??? generate_push_back_expression() etc are needed because they have specialized native-functions depending on the types operated on.
+//??? This could be resolved more elegantly, maybe even outside of LLVM, at the Injector level.
 
 static llvm::Value* generate_push_back_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1232,7 +1234,6 @@ static llvm::Value* generate_push_back_expression(llvm_function_generator_t& gen
 
 	generate_release(gen_acc, *element_reg, element_type);
 	generate_release(gen_acc, *vector_reg, collection_type);
-
 	return result;
 }
 
