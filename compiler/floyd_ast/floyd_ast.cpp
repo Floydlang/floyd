@@ -47,7 +47,7 @@ general_purpose_ast_t make_test_gp_ast(){
 
 
 
-QUARK_TEST_VIP("", "make_test_gp_ast()", "", ""){
+QUARK_TEST("", "make_test_gp_ast()", "", ""){
 	auto b = make_test_gp_ast();
 	QUARK_VERIFY(b.check_invariant());
 }
