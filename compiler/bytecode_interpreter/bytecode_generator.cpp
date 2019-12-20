@@ -189,9 +189,6 @@ static gen_expr_out_t generate_call_expression(
 	const gen_scope_t& body
 );
 
-static type_t dummy_func(const types_t& types, const type_t& type){ return type; }
-
-
 
 
 static symbol_pos_t generate_local_temp(const types_t& types, gen_scope_t& body_acc, const type_t& type0, const std::string& name){
@@ -1338,14 +1335,14 @@ static gen_expr_out_t generate_construct_value_expression(bcgenerator_t& gen_acc
 	const auto callee_arg_count = static_cast<int>(details.elements.size());
 	std::vector<type_t> arg_types;
 	for(const auto& m: details.elements){
-		arg_types.push_back(dummy_func(types, m.get_output_type()));
+		arg_types.push_back(m.get_output_type());
 	}
 	const auto arg_count = callee_arg_count;
 
 	const auto call_setup = generate_call_setup(gen_acc, arg_types, &details.elements[0], arg_count, body_acc);
 	body_acc = call_setup._body;
 
-	const auto source_itype = arg_count == 0 ? -1 : itype_from_type(dummy_func(types, details.elements[0].get_output_type()));
+	const auto source_itype = arg_count == 0 ? -1 : itype_from_type(details.elements[0].get_output_type());
 
 	const auto target_reg2 = target_reg.is_empty()
 		? generate_local_temp(types, body_acc, e.get_output_type(), "temp: construct value result")
@@ -1452,7 +1449,7 @@ static gen_expr_out_t generate_conditional_operator_expression(bcgenerator_t& ge
 	const auto& condition_expr = generate_expression(gen_acc, {}, *details.condition, body_acc);
 	body_acc = condition_expr._body;
 
-	const auto result_type = dummy_func(types, e.get_output_type());
+	const auto result_type = e.get_output_type();
 
 	const auto target_reg2 = target_reg.is_empty() ? generate_local_temp(types, body_acc, e.get_output_type(), "temp: condition value output") : target_reg;
 
