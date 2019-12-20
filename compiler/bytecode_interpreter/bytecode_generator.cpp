@@ -422,6 +422,9 @@ static bcgen_body_t bcgen_assign2_statement(bcgenerator_t& gen_acc, const statem
 	}
 	return body_acc;
 }
+
+
+#if 1
 static bcgen_body_t bcgen_init2_statement(bcgenerator_t& gen_acc, const statement_t::init2_t& statement, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -430,6 +433,25 @@ static bcgen_body_t bcgen_init2_statement(bcgenerator_t& gen_acc, const statemen
 	const auto temp = statement_t::assign2_t{ statement._dest_variable, statement._expression };
 	return bcgen_assign2_statement(gen_acc, temp, body);
 }
+#else
+static bcgen_body_t bcgen_init2_statement(bcgenerator_t& gen_acc, const statement_t::init2_t& statement, const bcgen_body_t& body){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
+
+	auto body_acc = body;
+
+	const auto expr = bcgen_expression(gen_acc, {}, statement._expression, body_acc);
+	body_acc = expr._body;
+
+	body_acc._instrs.push_back(
+		bcgen_instruction_t(bc_opcode::k_init_local, statement._dest_variable, expr._out, {})
+	);
+
+	QUARK_ASSERT(body_acc.check_invariant());
+	return body_acc;
+}
+#endif
+
 
 static bcgen_body_t bcgen_block_statement(bcgenerator_t& gen_acc, const statement_t::block_statement_t& statement, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());

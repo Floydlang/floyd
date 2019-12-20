@@ -153,18 +153,29 @@ struct bc_symbol_t {
 enum class bc_opcode: uint8_t {
 	k_nop = 0,
 
+
 	/*
 		A: Register: where to put result
 		B: IMMEDIATE: global index
 		C: ---
 	*/
 	k_load_global_external_value,
+
+
 	/*
 		A: Register: where to put result
 		B: IMMEDIATE: global index
 		C: ---
 	*/
 	k_load_global_inplace_value,
+
+	/*
+		Overwrites the destination value, without releaseing its RC -- it has no RC since it's not initialized yet.
+		A: Register: where to put result
+		B: Register: source register
+		C: ---
+	*/
+	k_init_local,
 
 
 	/*

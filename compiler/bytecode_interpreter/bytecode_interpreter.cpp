@@ -79,6 +79,8 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_load_global_external_value, { "load_global_external_value", opcode_info_t::encoding::k_k_0ri0 } },
 	{ bc_opcode::k_load_global_inplace_value, { "load_global_inplace_value", opcode_info_t::encoding::k_k_0ri0 } },
 
+	{ bc_opcode::k_init_local, { "init_local", opcode_info_t::encoding::k_q_0rr0 } },
+
 	{ bc_opcode::k_store_global_external_value, { "store_global_external_value", opcode_info_t::encoding::k_r_0ir0 } },
 	{ bc_opcode::k_store_global_inplace_value, { "store_global_inplace_value", opcode_info_t::encoding::k_r_0ir0 } },
 
@@ -1140,6 +1142,13 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
+		case bc_opcode::k_init_local: {
+			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
+			const auto& new_value_pod = regs[i._b];
+			regs[i._a] = new_value_pod;
+			retain_value(backend, new_value_pod, type);
+			break;
+		}
 
 		case bc_opcode::k_store_global_external_value: {
 			QUARK_ASSERT(stack.check_global_access_obj(i._a));
