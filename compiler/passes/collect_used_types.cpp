@@ -23,7 +23,7 @@
 
 namespace floyd {
 
-static void collect_used_types_body(types_t& acc, const body_t& body);
+static void collect_used_types_scope(types_t& acc, const lexical_scope_t& scope);
 
 
 static void collect_used_types_expression(types_t& acc, const expression_t& expression){
@@ -97,7 +97,7 @@ static void collect_used_types_expression(types_t& acc, const expression_t& expr
 			}
 		}
 		void operator()(const expression_t::benchmark_expr_t& e) const{
-			collect_used_types_body(acc, *e.body);
+			collect_used_types_scope(acc, *e.body);
 		}
 	};
 	std::visit(visitor_t{ acc, expression }, expression._expression_variant);
@@ -131,22 +131,22 @@ static void collect_used_types(types_t& acc, const statement_t& statement){
 			collect_used_types_expression(acc, s._expression);
 		}
 		void operator()(const statement_t::block_statement_t& s) const{
-			collect_used_types_body(acc, s._body);
+			collect_used_types_scope(acc, s._body);
 		}
 
 		void operator()(const statement_t::ifelse_statement_t& s) const{
 			collect_used_types_expression(acc, s._condition);
-			collect_used_types_body(acc, s._then_body);
-			collect_used_types_body(acc, s._else_body);
+			collect_used_types_scope(acc, s._then_body);
+			collect_used_types_scope(acc, s._else_body);
 		}
 		void operator()(const statement_t::for_statement_t& s) const{
 			collect_used_types_expression(acc, s._start_expression);
 			collect_used_types_expression(acc, s._end_expression);
-			collect_used_types_body(acc, s._body);
+			collect_used_types_scope(acc, s._body);
 		}
 		void operator()(const statement_t::while_statement_t& s) const{
 			collect_used_types_expression(acc, s._condition);
-			collect_used_types_body(acc, s._body);
+			collect_used_types_scope(acc, s._body);
 		}
 
 		void operator()(const statement_t::expression_statement_t& s) const{
@@ -157,10 +157,10 @@ static void collect_used_types(types_t& acc, const statement_t& statement){
 		void operator()(const statement_t::container_def_statement_t& s) const{
 		}
 		void operator()(const statement_t::benchmark_def_statement_t& s) const{
-			collect_used_types_body(acc, s._body);
+			collect_used_types_scope(acc, s._body);
 		}
 		void operator()(const statement_t::test_def_statement_t& s) const{
-			collect_used_types_body(acc, s._body);
+			collect_used_types_scope(acc, s._body);
 		}
 	};
 
@@ -174,18 +174,18 @@ void collect_used_types_symbol(types_t& acc, const std::string& name, const symb
 	}
 }
 
-static void collect_used_types_body(types_t& acc, const body_t& body){
-	for(const auto& s: body._statements){
+static void collect_used_types_scope(types_t& acc, const lexical_scope_t& scope){
+	for(const auto& s: scope._statements){
 		collect_used_types(acc, s);
 	}
-	for(const auto& s: body._symbol_table._symbols){
+	for(const auto& s: scope._symbol_table._symbols){
 		collect_used_types_symbol(acc, s.first, s.second);
 	}
 }
 
 //??? Make this into general purpose function that collect all types.
 void collect_used_types(types_t& acc, const general_purpose_ast_t& ast){
-	collect_used_types_body(acc, ast._globals);
+	collect_used_types_scope(acc, ast._globals);
 	for(const auto& f: ast._function_defs){
 		intern_type(acc, f._function_type);
 		for(const auto& m: f._named_args){
@@ -193,7 +193,7 @@ void collect_used_types(types_t& acc, const general_purpose_ast_t& ast){
 		}
 
 		if(f._optional_body){
-			collect_used_types_body(acc, *f._optional_body);
+			collect_used_types_scope(acc, *f._optional_body);
 		}
 		else{
 		}

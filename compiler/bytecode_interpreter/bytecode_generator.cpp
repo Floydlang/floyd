@@ -156,7 +156,7 @@ struct expression_gen_t {
 */
 static expression_gen_t bcgen_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const bcgen_body_t& body);
 
-static bcgen_body_t bcgen_block(bcgenerator_t& gen_acc, const body_t& body);
+static bcgen_body_t bcgen_block(bcgenerator_t& gen_acc, const lexical_scope_t& body);
 
 static expression_gen_t bcgen_call_expression(
 	bcgenerator_t& gen_acc,
@@ -691,7 +691,7 @@ static bcgen_body_t bcgen_block_statements(bcgenerator_t& gen_acc, const bcgen_b
 	return body_acc;
 }
 
-static bcgen_body_t bcgen_block(bcgenerator_t& gen_acc, const body_t& body){
+static bcgen_body_t bcgen_block(bcgenerator_t& gen_acc, const lexical_scope_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -703,7 +703,7 @@ static bcgen_body_t bcgen_block(bcgenerator_t& gen_acc, const body_t& body){
 	return body_acc;
 }
 
-static bcgen_body_t bcgen_body_top(bcgenerator_t& gen_acc, bcgen_body_t& body_acc, const body_t& body){
+static bcgen_body_t bcgen_body_top(bcgenerator_t& gen_acc, bcgen_body_t& body_acc, const lexical_scope_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -719,7 +719,7 @@ static bcgen_body_t bcgen_body_top(bcgenerator_t& gen_acc, bcgen_body_t& body_ac
 	return body_acc;
 }
 
-static void bcgen_globals(bcgenerator_t& gen_acc, const body_t& globals){
+static void bcgen_globals(bcgenerator_t& gen_acc, const lexical_scope_t& globals){
 	gen_acc._globals = bcgen_body_t({}, globals._symbol_table);
 	bcgen_body_top(gen_acc, gen_acc._globals, globals);
 }

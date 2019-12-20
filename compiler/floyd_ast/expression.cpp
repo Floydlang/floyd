@@ -209,7 +209,7 @@ json_t function_def_to_ast_json(const types_t& types, const function_definition_
 		members_to_json(types, v._named_args)
 	};
 	if(v._optional_body){
-		result.push_back(body_to_json(types, *v._optional_body));
+		result.push_back(scope_to_json(types, *v._optional_body));
 	}
 	else{
 		result.push_back(json_t());
@@ -227,7 +227,7 @@ function_definition_t json_to_function_def(types_t& types, const json_t& p){
 	const std::string definition_name1 = definition_name0.get_string();
 	const auto function_type1 = type_from_json(types, function_type0);
 	const std::vector<member_t> args1 = members_from_json(types, args0);
-	const std::shared_ptr<body_t> body1 = body0.is_null() ? std::shared_ptr<body_t>() : std::make_shared<body_t>(json_to_body(types, body0));
+	const std::shared_ptr<lexical_scope_t> body1 = body0.is_null() ? std::shared_ptr<lexical_scope_t>() : std::make_shared<lexical_scope_t>(json_to_scope(types, body0));
 
 	return function_definition_t::make_func(
 		location1,
@@ -266,7 +266,7 @@ QUARK_TEST("", "", "", ""){
 		"definition_name",
 		peek2(types, type_t::make_function(types, type_t::make_string(), {}, epure::pure)),
 		{},
-		std::make_shared<body_t>()
+		std::make_shared<lexical_scope_t>()
 	);
 	QUARK_VERIFY(a._named_args.empty());
 
@@ -498,7 +498,7 @@ json_t expression_to_json(const types_t& types, const expression_t& e){
 			);
 		}
 		json_t operator()(const expression_t::benchmark_expr_t& e) const{
-			return make_ast_node(expr.location, expression_opcode_t::k_benchmark, { body_to_json(types, *e.body) } );
+			return make_ast_node(expr.location, expression_opcode_t::k_benchmark, { scope_to_json(types, *e.body) } );
 		}
 	};
 
@@ -680,7 +680,7 @@ expression_t ast_json_to_expression(types_t& types, const json_t& e){
 		//	Null or BODY as an object. Null: this is a declaration only.
 		const auto body0 = e.get_array_n(4);
 
-		const std::shared_ptr<body_t> body1 = body0.is_null() ? std::shared_ptr<body_t>() : std::make_shared<body_t>(json_to_body(types, body0));
+		const std::shared_ptr<lexical_scope_t> body1 = body0.is_null() ? std::shared_ptr<lexical_scope_t>() : std::make_shared<lexical_scope_t>(json_to_scope(types, body0));
 
 		auto def = function_definition_t::make_func(
 			k_no_location,
@@ -707,10 +707,10 @@ expression_t ast_json_to_expression(types_t& types, const json_t& e){
 	else if(op == expression_opcode_t::k_benchmark){
 		QUARK_ASSERT(e.get_array_size() == 2);
 
-		//??? should use json_to_body()!?
+		//??? should use json_to_scope()!?
 		const auto body_statements2 = ast_json_to_statements(types, e.get_array_n(1));
-		const auto body = body_t{ body_statements2 };
-//		const auto body_statements2 = json_to_body(e.get_array_n(1));
+		const auto body = lexical_scope_t{ body_statements2 };
+//		const auto body_statements2 = json_to_scope(e.get_array_n(1));
 		return expression_t::make_benchmark_expr(body);
 	}
 	else{

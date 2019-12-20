@@ -545,7 +545,7 @@ static function_return_mode generate_body_and_destruct_locals_if_some_path_not_r
 	return return_mode;
 }
 
-static function_return_mode generate_block(llvm_function_generator_t& gen_acc, const body_t& body){
+static function_return_mode generate_block(llvm_function_generator_t& gen_acc, const lexical_scope_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
 	auto values = generate_local_block_symbol_slots(gen_acc, body._symbol_table);
@@ -2375,7 +2375,7 @@ static std::vector<resolved_symbol_t> generate_global_symbol_slots(llvm_function
 }
 
 //	NOTICE: Fills-in the body of an existing LLVM function prototype.
-static void generate_floyd_function_body(llvm_code_generator_t& gen_acc0, const floyd::function_definition_t& function_def, const body_t& body){
+static void generate_floyd_function_body(llvm_code_generator_t& gen_acc0, const floyd::function_definition_t& function_def, const lexical_scope_t& body){
 	QUARK_ASSERT(gen_acc0.check_invariant());
 	QUARK_ASSERT(function_def.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -2471,7 +2471,7 @@ static std::vector<llvm_function_link_entry_t> generate_function_nodes(llvm::Mod
 	Floyd's global instructions are packed into the "floyd_runtime_init"-function. LLVM doesn't have global instructions.
 	All Floyd's global statements becomes instructions in floyd_init()-function that is called by Floyd runtime before any other function is called.
 */
-static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const body_t& globals){
+static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const lexical_scope_t& globals){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
 	auto& builder = gen_acc.get_builder();
@@ -2506,7 +2506,7 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const bo
 
 
 //	Related: generate_floyd_runtime_deinit(), generate_destruct_scope_locals()
-static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const body_t& globals){
+static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const lexical_scope_t& globals){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
 	auto& builder = gen_acc.get_builder();

@@ -26,7 +26,7 @@ void intern_type(desugar_t& acc, const type_t& type){
 }
 
 
-static body_t desugar_body(desugar_t& acc, const body_t& body);
+static lexical_scope_t desugar_body(desugar_t& acc, const lexical_scope_t& body);
 static function_definition_t desugar_function_def(desugar_t& acc, const function_definition_t& def);
 
 
@@ -143,7 +143,7 @@ static expression_t desugar_expression(desugar_t& acc, const expression_t& expre
 static function_definition_t desugar_function_def(desugar_t& acc, const function_definition_t& def){
 	if(def._optional_body){
 		const auto body = desugar_body(acc, *def._optional_body);
-		const auto body2 = std::make_shared<body_t>(body);
+		const auto body2 = std::make_shared<lexical_scope_t>(body);
 		return function_definition_t::make_func(
 			def._location,
 			def._definition_name,
@@ -241,8 +241,8 @@ static std::pair<std::string, floyd::symbol_t> desugar_symbol(desugar_t& acc, co
 	return { name, symbol };
 }
 
-static body_t desugar_body(desugar_t& acc, const body_t& body){
-	body_t result;
+static lexical_scope_t desugar_body(desugar_t& acc, const lexical_scope_t& body){
+	lexical_scope_t result;
 	for(const auto& s: body._statements){
 		const auto s2 = desugar_statement(acc, s);
 		result._statements.push_back(s2);

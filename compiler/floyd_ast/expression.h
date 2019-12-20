@@ -23,7 +23,7 @@
 namespace floyd {
 
 struct struct_type_desc_t;
-struct body_t;
+struct lexical_scope_t;
 
 
 
@@ -183,14 +183,14 @@ struct function_definition_t {
 		const std::string& definition_name,
 		const type_t& function_type,
 		const std::vector<member_t>& named_args,
-		const std::shared_ptr<body_t>& body
+		const std::shared_ptr<lexical_scope_t>& scope
 	){
 		return {
 			location,
 			definition_name,
 			function_type,
 			named_args,
-			body
+			scope
 		};
 	}
 	static function_definition_t make_intrinsic(
@@ -224,9 +224,9 @@ struct function_definition_t {
 	//??? Remove. Instead have vector of just the argument names. Or update type_t to contain the argument names of functions!?
 	std::vector<member_t> _named_args;
 
-	//	Contains body if this function is implemented using Floyd code.
+	//	Contains scope if this function is implemented using Floyd code.
 	//	Else the implementation needs to be linked in.
-	std::shared_ptr<const body_t> _optional_body;
+	std::shared_ptr<const lexical_scope_t> _optional_body;
 };
 
 bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);
@@ -516,14 +516,14 @@ struct expression_t {
 	////////////////////////////////		benchmark_expr_t
 
 	struct benchmark_expr_t {
-		std::shared_ptr<body_t> body;
+		std::shared_ptr<lexical_scope_t> body;
 	};
 
 	public: static expression_t make_benchmark_expr(
-		const body_t& body
+		const lexical_scope_t& body
 	)
 	{
-		return expression_t({ benchmark_expr_t{ std::make_shared<body_t>(body) } }, type_t::make_int());
+		return expression_t({ benchmark_expr_t{ std::make_shared<lexical_scope_t>(body) } }, type_t::make_int());
 	}
 
 

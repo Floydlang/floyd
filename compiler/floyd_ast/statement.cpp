@@ -176,14 +176,14 @@ symbol_table_t ast_json_to_symbols(types_t& types, const json_t& p){
 
 
 
-bool body_t::check_invariant() const {
+bool lexical_scope_t::check_invariant() const {
 	for(const auto& i: _statements){
 		QUARK_ASSERT(i.check_invariant());
 	};
 	return true;
 }
 
-json_t body_to_json(const types_t& types, const body_t& e){
+json_t scope_to_json(const types_t& types, const lexical_scope_t& e){
 	std::vector<json_t> statements;
 	for(const auto& i: e._statements){
 		statements.push_back(statement_to_json(types, i));
@@ -197,7 +197,7 @@ json_t body_to_json(const types_t& types, const body_t& e){
 	});
 }
 
-body_t json_to_body(types_t& types, const json_t& json){
+lexical_scope_t json_to_scope(types_t& types, const json_t& json){
 	QUARK_ASSERT(types.check_invariant());
 
 	const auto statements = json.does_object_element_exist("statements") ? json.get_object_element("statements") : json_t();
@@ -206,10 +206,10 @@ body_t json_to_body(types_t& types, const json_t& json){
 	const auto symbols = json.does_object_element_exist("symbols") ? json.get_object_element("symbols") : json_t();
 	const auto symbols1 = symbols.is_null() ? symbol_table_t{} : ast_json_to_symbols(types, symbols);
 
-	return body_t(statements1, symbols1);
+	return lexical_scope_t(statements1, symbols1);
 }
 
-bool operator==(const body_t& lhs, const body_t& rhs){
+bool operator==(const lexical_scope_t& lhs, const lexical_scope_t& rhs){
 	return
 		lhs._statements == rhs._statements
 		&& lhs._symbol_table == rhs._symbol_table;
@@ -290,7 +290,7 @@ static statement_t ast_json_to_statement(types_t& types, const json_t& statement
 		const auto statements = statement.get_array_n(1);
 		const auto r = ast_json_to_statements(types, statements);
 
-		const auto body = body_t(r);
+		const auto body = lexical_scope_t(r);
 		return statement_t::make__block_statement(loc, body);
 	}
 
@@ -307,8 +307,8 @@ static statement_t ast_json_to_statement(types_t& types, const json_t& statement
 		return statement_t::make__ifelse_statement(
 			loc,
 			condition_expression2,
-			body_t{ then_statements2 },
-			body_t{ else_statements2 }
+			lexical_scope_t{ then_statements2 },
+			lexical_scope_t{ else_statements2 }
 		);
 	}
 	else if(type == statement_opcode_t::k_for){
@@ -329,7 +329,7 @@ static statement_t ast_json_to_statement(types_t& types, const json_t& statement
 			iterator_name.get_string(),
 			start_expression2,
 			end_expression2,
-			body_t{ body_statements2 },
+			lexical_scope_t{ body_statements2 },
 			range_type
 		);
 	}
@@ -341,7 +341,7 @@ static statement_t ast_json_to_statement(types_t& types, const json_t& statement
 		const auto expression2 = ast_json_to_expression(types, expression);
 		const auto body_statements2 = ast_json_to_statements(types, body_statements);//??? should use json_to_body()!?
 
-		return statement_t::make__while_statement(loc, expression2, body_t{ body_statements2 });
+		return statement_t::make__while_statement(loc, expression2, lexical_scope_t{ body_statements2 });
 	}
 
 	else if(type == statement_opcode_t::k_expression_statement){
@@ -370,7 +370,7 @@ static statement_t ast_json_to_statement(types_t& types, const json_t& statement
 		const auto body = statement.get_array_n(2);
 		const auto body_statements2 = ast_json_to_statements(types, body);//??? should use json_to_body()!?
 
-		return statement_t::make__benchmark_def_statement(loc, name.get_string(), body_t { body_statements2 } );
+		return statement_t::make__benchmark_def_statement(loc, name.get_string(), lexical_scope_t { body_statements2 } );
 	}
 	else if(type == statement_opcode_t::k_test_def){
 		QUARK_ASSERT(statement.get_array_size() == 4);
@@ -379,7 +379,7 @@ static statement_t ast_json_to_statement(types_t& types, const json_t& statement
 		const auto body = statement.get_array_n(3);
 		const auto body_statements2 = ast_json_to_statements(types, body);//??? should use json_to_body()!?
 
-		return statement_t::make__test_def_statement(loc, func_name, scenario, body_t { body_statements2 } );
+		return statement_t::make__test_def_statement(loc, func_name, scenario, lexical_scope_t { body_statements2 } );
 	}
 
 	else{
@@ -463,7 +463,7 @@ json_t statement_to_json(const types_t& types, const statement_t& e){
 			);
 		}
 		json_t operator()(const statement_t::block_statement_t& s) const{
-			return make_ast_node(k_no_location, statement_opcode_t::k_block, { body_to_json(types, s._body) } );
+			return make_ast_node(k_no_location, statement_opcode_t::k_block, { scope_to_json(types, s._body) } );
 		}
 
 		json_t operator()(const statement_t::ifelse_statement_t& s) const{
@@ -472,8 +472,8 @@ json_t statement_to_json(const types_t& types, const statement_t& e){
 				statement_opcode_t::k_if,
 				{
 					expression_to_json(types, s._condition),
-					body_to_json(types, s._then_body),
-					body_to_json(types, s._else_body)
+					scope_to_json(types, s._then_body),
+					scope_to_json(types, s._else_body)
 				}
 			);
 		}
@@ -485,7 +485,7 @@ json_t statement_to_json(const types_t& types, const statement_t& e){
 					s._range_type == statement_t::for_statement_t::k_open_range ? json_t("open_range") : json_t("closed_range"),
 					expression_to_json(types, s._start_expression),
 					expression_to_json(types, s._end_expression),
-					body_to_json(types, s._body)
+					scope_to_json(types, s._body)
 				}
 			);
 		}
@@ -495,7 +495,7 @@ json_t statement_to_json(const types_t& types, const statement_t& e){
 				statement_opcode_t::k_while,
 				{
 					expression_to_json(types, s._condition),
-					body_to_json(types, s._body)
+					scope_to_json(types, s._body)
 				}
 			);
 		}
@@ -526,14 +526,14 @@ json_t statement_to_json(const types_t& types, const statement_t& e){
 			return make_ast_node(
 				statement.location,
 				statement_opcode_t::k_benchmark_def,
-				{ s.name, body_to_json(types, s._body) }
+				{ s.name, scope_to_json(types, s._body) }
 			);
 		}
 		json_t operator()(const statement_t::test_def_statement_t& s) const{
 			return make_ast_node(
 				statement.location,
 				statement_opcode_t::k_test_def,
-				{ s.function_name, s.scenario, body_to_json(types, s._body) }
+				{ s.function_name, s.scenario, scope_to_json(types, s._body) }
 			);
 		}
 	};

@@ -18,7 +18,7 @@ struct general_purpose_ast_t;
 struct function_definition_t;
 struct expression_t;
 struct statement_t;
-struct body_t;
+struct lexical_scope_t;
 struct type_t;
 struct ast_type_t;
 struct types_t;
@@ -34,7 +34,7 @@ bool check_types_resolved(const types_t& types, const std::vector<expression_t>&
 
 bool check_types_resolved(const types_t& types, const function_definition_t& def);
 
-bool check_types_resolved(const types_t& types, const body_t& body);
+bool check_types_resolved(const types_t& types, const lexical_scope_t& scope);
 
 bool check_types_resolved(const types_t& types, const statement_t& s);
 bool check_types_resolved(const types_t& types, const std::vector<std::shared_ptr<statement_t>>& s);

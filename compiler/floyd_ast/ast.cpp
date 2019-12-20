@@ -37,7 +37,7 @@ json_t gp_ast_to_json(const general_purpose_ast_t& ast){
 
 	return json_t::make_object(
 		{
-			{ "globals", body_to_json(ast._types, ast._globals) },
+			{ "globals", scope_to_json(ast._types, ast._globals) },
 			{ "function_defs", function_defs_json },
 			{ "types", types }
 		}
@@ -57,7 +57,7 @@ general_purpose_ast_t json_to_gp_ast(const json_t& json){
 	//	Fix types first, before globals and functions.
 	auto types = types_from_json(types0);
 
-	body_t globals1 = json_to_body(types, globals0);
+	lexical_scope_t globals1 = json_to_scope(types, globals0);
 
 	std::vector<floyd::function_definition_t> function_defs1;
 	for(const auto& f: function_defs.get_array()){

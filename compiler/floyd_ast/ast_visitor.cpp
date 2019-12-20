@@ -29,7 +29,7 @@ static value_t visit_ast_value(visit_ast_t& acc, const value_t& value){
 }
 
 
-static body_t visit_ast_body(visit_ast_t& acc, const body_t& body);
+static lexical_scope_t visit_ast_scope(visit_ast_t& acc, const lexical_scope_t& scope);
 
 
 static expression_t visit_ast_expression(visit_ast_t& acc, const expression_t& expression){
@@ -118,8 +118,8 @@ static expression_t visit_ast_expression(visit_ast_t& acc, const expression_t& e
 			return expression_t::make_construct_value_expr(e.value_type, elements);
 		}
 		expression_t operator()(const expression_t::benchmark_expr_t& e) const{
-			const auto body = visit_ast_body(acc, *e.body);
-			return expression_t::make_benchmark_expr(body);
+			const auto scope = visit_ast_scope(acc, *e.body);
+			return expression_t::make_benchmark_expr(scope);
 		}
 	};
 	const auto r = std::visit(visitor_t{ acc, expression }, expression._expression_variant);
@@ -128,14 +128,14 @@ static expression_t visit_ast_expression(visit_ast_t& acc, const expression_t& e
 
 static function_definition_t visit_ast_function_def(visit_ast_t& acc, const function_definition_t& def){
 	if(def._optional_body){
-		const auto body = visit_ast_body(acc, *def._optional_body);
-		const auto body2 = std::make_shared<body_t>(body);
+		const auto scope = visit_ast_scope(acc, *def._optional_body);
+		const auto scope2 = std::make_shared<lexical_scope_t>(scope);
 		return function_definition_t::make_func(
 			def._location,
 			def._definition_name,
 			def._function_type,
 			def._named_args,
-			body2
+			scope2
 		);
 	}
 	else{
@@ -180,25 +180,25 @@ static statement_t visit_ast_statement(visit_ast_t& acc, const statement_t& stat
 			return statement_t::make__init2(statement.location, s._dest_variable, e);
 		}
 		statement_t operator()(const statement_t::block_statement_t& s) const{
-			const auto e = visit_ast_body(acc, s._body);
+			const auto e = visit_ast_scope(acc, s._body);
 			return statement_t::make__block_statement(statement.location, e);
 		}
 
 		statement_t operator()(const statement_t::ifelse_statement_t& s) const{
 			const auto condition = visit_ast_expression(acc, s._condition);
-			const auto then_body = visit_ast_body(acc, s._then_body);
-			const auto else_body = visit_ast_body(acc, s._else_body);
+			const auto then_body = visit_ast_scope(acc, s._then_body);
+			const auto else_body = visit_ast_scope(acc, s._else_body);
 			return statement_t::make__ifelse_statement(statement.location, condition, then_body, else_body);
 		}
 		statement_t operator()(const statement_t::for_statement_t& s) const{
 			const auto start = visit_ast_expression(acc, s._start_expression);
 			const auto end = visit_ast_expression(acc, s._end_expression);
-			const auto body = visit_ast_body(acc, s._body);
+			const auto body = visit_ast_scope(acc, s._body);
 			return statement_t::make__for_statement(statement.location, s._iterator_name, start, end, body, s._range_type);
 		}
 		statement_t operator()(const statement_t::while_statement_t& s) const{
 			const auto condition = visit_ast_expression(acc, s._condition);
-			const auto body = visit_ast_body(acc, s._body);
+			const auto body = visit_ast_scope(acc, s._body);
 			return statement_t::make__while_statement(statement.location, condition, body);
 		}
 
@@ -213,11 +213,11 @@ static statement_t visit_ast_statement(visit_ast_t& acc, const statement_t& stat
 			return statement;
 		}
 		statement_t operator()(const statement_t::benchmark_def_statement_t& s) const{
-			const auto body = visit_ast_body(acc, s._body);
+			const auto body = visit_ast_scope(acc, s._body);
 			return statement_t::make__benchmark_def_statement(statement.location, s.name, body);
 		}
 		statement_t operator()(const statement_t::test_def_statement_t& s) const{
-			const auto body = visit_ast_body(acc, s._body);
+			const auto body = visit_ast_scope(acc, s._body);
 			return statement_t::make__test_def_statement(statement.location, s.function_name, s.scenario, body);
 		}
 	};
@@ -229,8 +229,8 @@ static std::pair<std::string, floyd::symbol_t> visit_ast_symbol(visit_ast_t& acc
 	return { name, symbol };
 }
 
-static body_t visit_ast_body(visit_ast_t& acc, const body_t& body){
-	body_t result;
+static lexical_scope_t visit_ast_scope(visit_ast_t& acc, const lexical_scope_t& body){
+	lexical_scope_t result;
 	for(const auto& s: body._statements){
 		const auto s2 = visit_ast_statement(acc, s);
 		result._statements.push_back(s2);
@@ -245,7 +245,7 @@ static body_t visit_ast_body(visit_ast_t& acc, const body_t& body){
 static general_purpose_ast_t visit_ast(visit_ast_t& acc, const general_purpose_ast_t& ast){
 	general_purpose_ast_t result;
 
-	result._globals = visit_ast_body(acc, ast._globals);
+	result._globals = visit_ast_scope(acc, ast._globals);
 
 	std::vector<floyd::function_definition_t> function_defs;
 	for(const auto& f: ast._function_defs){

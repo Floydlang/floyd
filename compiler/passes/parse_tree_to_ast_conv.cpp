@@ -22,7 +22,7 @@ unchecked_ast_t parse_tree_to_ast(const parser::parse_tree_t& parse_tree){
 	types_t types;
 	const auto program_body = ast_json_to_statements(types, parse_tree._value);
 	const auto gp_ast = general_purpose_ast_t{
-		body_t{ program_body },
+		lexical_scope_t{ program_body },
 		{},
 		types,
 		{},

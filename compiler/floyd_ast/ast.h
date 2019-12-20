@@ -32,7 +32,7 @@ struct general_purpose_ast_t {
 	}
 
 	/////////////////////////////		STATE
-	public: body_t _globals;
+	public: lexical_scope_t _globals;
 	public: std::vector<floyd::function_definition_t> _function_defs;
 	public: types_t _types;
 	public: software_system_t _software_system;

@@ -46,7 +46,7 @@ struct analyzer_imm_t {
 	Represents a node in the lexical scope tree.
 */
 
-struct lexical_scope_t {
+struct semast_lexical_scope_t {
 	symbol_table_t symbols;
 	epure pure;
 };
@@ -69,7 +69,7 @@ struct analyser_t {
 
 	//	Non-constant. Last scope is the current one. First scope is the root.
 	//	This is ONE branch through the three of lexical scopes of the program.
-	public: std::vector<lexical_scope_t> _lexical_scope_stack;
+	public: std::vector<semast_lexical_scope_t> _lexical_scope_stack;
 
 	//	These are output functions, that have been fixed.
 	public: std::map<module_symbol_t, function_definition_t> _function_defs;
@@ -484,19 +484,19 @@ static std::pair<analyser_t, std::vector<statement_t>> analyse_statements(const 
 	return { a_acc, statements2 };
 }
 
-static std::pair<analyser_t, body_t> analyse_body(const analyser_t& a, const body_t& body, epure pure, const type_t& return_type){
+static std::pair<analyser_t, lexical_scope_t> analyse_body(const analyser_t& a, const lexical_scope_t& body, epure pure, const type_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
 
 	auto new_environment = symbol_table_t{ body._symbol_table };
-	const auto lexical_scope = lexical_scope_t{ new_environment, pure };
+	const auto lexical_scope = semast_lexical_scope_t{ new_environment, pure };
 	a_acc._lexical_scope_stack.push_back(lexical_scope);
 
 	const auto result = analyse_statements(a_acc, body._statements, return_type);
 	a_acc = result.first;
 
-	const auto body2 = body_t(result.second, result.first._lexical_scope_stack.back().symbols);
+	const auto body2 = lexical_scope_t(result.second, result.first._lexical_scope_stack.back().symbols);
 
 	a_acc._lexical_scope_stack.pop_back();
 	return { a_acc, body2 };
@@ -729,7 +729,7 @@ static std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t
 	//	Add the iterator as a symbol to the body of the for-loop.
 	auto symbols = statement._body._symbol_table;
 	symbols._symbols.push_back({ statement._iterator_name, iterator_symbol});
-	const auto body_injected = body_t(statement._body._statements, symbols);
+	const auto body_injected = lexical_scope_t(statement._body._statements, symbols);
 	const auto result = analyse_body(a_acc, body_injected, a._lexical_scope_stack.back().pure, return_type);
 	a_acc = result.first;
 
@@ -790,7 +790,7 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 		function_link_name,
 		dereference_type(a_acc._types, f_type),
 		{},
-		std::make_shared<body_t>(body_pair.second)
+		std::make_shared<lexical_scope_t>(body_pair.second)
 	);
 	QUARK_ASSERT(check_types_resolved(a_acc._types, function_def2));
 
@@ -845,7 +845,7 @@ static analyser_t analyse_test_def_statement(const analyser_t& a, const statemen
 		function_link_name,
 		dereference_type(a_acc._types, f_itype),
 		{},
-		std::make_shared<body_t>(body_pair.second)
+		std::make_shared<lexical_scope_t>(body_pair.second)
 	);
 	QUARK_ASSERT(check_types_resolved(a_acc._types, function_def2));
 
@@ -2491,19 +2491,19 @@ static std::pair<analyser_t, expression_t> analyse_function_definition_expressio
 	//??? Can there be a pure function inside an impure lexical scope? I think yes.
 	const auto pure = function_pure;
 
-	std::shared_ptr<body_t> body_result;
+	std::shared_ptr<lexical_scope_t> body_result;
 	if(function_def._optional_body){
 		//	Make function body with arguments injected FIRST in body as local symbols.
 		auto symbol_vec = function_def._optional_body->_symbol_table;
 		for(const auto& arg: args2){
 			symbol_vec._symbols.push_back({ arg._name , symbol_t::make_immutable_arg(arg._type) });
 		}
-		const auto function_body2 = body_t(function_def._optional_body->_statements, symbol_vec);
+		const auto function_body2 = lexical_scope_t(function_def._optional_body->_statements, symbol_vec);
 
 		const auto body_pair = analyse_body(a_acc, function_body2, pure, function_type_peek.get_function_return(a_acc._types));
 		a_acc = body_pair.first;
 		const auto function_body3 = body_pair.second;
-		body_result = std::make_shared<body_t>(function_body3);
+		body_result = std::make_shared<lexical_scope_t>(function_body3);
 	}
 	else{
 	}
@@ -2862,13 +2862,13 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtin_symbols(an
 
 //	Create built-in global symbol map: built in data types and intrinsics.
 //	Analyze global namespace, including all Floyd functions defined there.
-static const body_t make_global_body(analyser_t& a){
+static const lexical_scope_t make_global_body(analyser_t& a){
 	QUARK_ASSERT(a.check_invariant());
 
-	auto global_body = body_t(a._imm->_ast._tree._globals._statements, symbol_table_t{ });
+	auto global_body = lexical_scope_t(a._imm->_ast._tree._globals._statements, symbol_table_t{ });
 
 	auto new_environment = symbol_table_t{ global_body._symbol_table };
-	const auto lexical_scope = lexical_scope_t{ new_environment, epure::impure };
+	const auto lexical_scope = semast_lexical_scope_t{ new_environment, epure::impure };
 	a._lexical_scope_stack.push_back(lexical_scope);
 
 	const auto builtin_symbols = generate_builtin_symbols(a, *a._imm);
@@ -2881,7 +2881,7 @@ static const body_t make_global_body(analyser_t& a){
 	const auto result = analyse_statements(a, global_body._statements, type_t::make_void());
 	a = result.first;
 
-	const auto body2 = body_t(result.second, result.first._lexical_scope_stack.back().symbols);
+	const auto body2 = lexical_scope_t(result.second, result.first._lexical_scope_stack.back().symbols);
 
 	if(false) trace_analyser(a);
 

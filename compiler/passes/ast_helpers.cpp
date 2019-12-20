@@ -144,7 +144,7 @@ bool check_types_resolved(const types_t& types, const function_definition_t& def
 	return true;
 }
 
-bool check_types_resolved(const types_t& types, const body_t& body){
+bool check_types_resolved(const types_t& types, const lexical_scope_t& body){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 

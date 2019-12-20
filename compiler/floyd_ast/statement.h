@@ -172,7 +172,7 @@ std::string symbol_to_string(const types_t& types, const symbol_t& symbol);
 
 //////////////////////////////////////		symbol_table_t
 
-
+//
 struct symbol_table_t {
 	bool check_invariant() const {
 		return true;
@@ -195,20 +195,27 @@ symbol_table_t ast_json_to_symbols(types_t& types, const json_t& p);
 
 
 
-//////////////////////////////////////		body_t
+//////////////////////////////////////		lexical_scope_t
 
+/*
+	Lexical scope, aka static scope, aka body.
 
-struct body_t {
-	body_t(){
+	We use "lexical scope" for what it IS. And "body" for what it's used for.
+
+	As in "the function body is optional and is its own lexical scope."
+*/
+
+struct lexical_scope_t {
+	lexical_scope_t(){
 	}
 
-	body_t(const std::vector<statement_t>& s) :
+	lexical_scope_t(const std::vector<statement_t>& s) :
 		_statements(s),
 		_symbol_table{}
 	{
 	}
 
-	body_t(const std::vector<statement_t>& statements, const symbol_table_t& symbols) :
+	lexical_scope_t(const std::vector<statement_t>& statements, const symbol_table_t& symbols) :
 		_statements(statements),
 		_symbol_table(symbols)
 	{
@@ -222,11 +229,11 @@ struct body_t {
 	symbol_table_t _symbol_table;
 };
 
-bool operator==(const body_t& lhs, const body_t& rhs);
+bool operator==(const lexical_scope_t& lhs, const lexical_scope_t& rhs);
 
 
-json_t body_to_json(const types_t& types, const body_t& e);
-body_t json_to_body(types_t& types, const json_t& json);
+json_t scope_to_json(const types_t& types, const lexical_scope_t& e);
+lexical_scope_t json_to_scope(types_t& types, const json_t& json);
 
 
 
@@ -350,10 +357,10 @@ struct statement_t {
 			return _body == other._body;
 		}
 
-		body_t _body;
+		lexical_scope_t _body;
 	};
 
-	public: static statement_t make__block_statement(const location_t& location, const body_t& body){
+	public: static statement_t make__block_statement(const location_t& location, const lexical_scope_t& body){
 		return statement_t(location, { block_statement_t{ body} });
 	}
 
@@ -372,14 +379,14 @@ struct statement_t {
 		}
 
 		expression_t _condition;
-		body_t _then_body;
-		body_t _else_body;
+		lexical_scope_t _then_body;
+		lexical_scope_t _else_body;
 	};
 	public: static statement_t make__ifelse_statement(
 		const location_t& location,
 		const expression_t& condition,
-		const body_t& then_body,
-		const body_t& else_body
+		const lexical_scope_t& then_body,
+		const lexical_scope_t& else_body
 	){
 		return statement_t(location, { ifelse_statement_t{ condition, then_body, else_body} });
 	}
@@ -407,7 +414,7 @@ struct statement_t {
 		std::string _iterator_name;
 		expression_t _start_expression;
 		expression_t _end_expression;
-		body_t _body;
+		lexical_scope_t _body;
 		range_type _range_type;
 	};
 	public: static statement_t make__for_statement(
@@ -415,7 +422,7 @@ struct statement_t {
 		const std::string iterator_name,
 		const expression_t& start_expression,
 		const expression_t& end_expression,
-		const body_t& body,
+		const lexical_scope_t& body,
 		for_statement_t::range_type range_type
 	){
 		return statement_t(location, { for_statement_t{ iterator_name, start_expression, end_expression, body, range_type } });
@@ -469,13 +476,13 @@ struct statement_t {
 		}
 
 		std::string name;
-		body_t _body;
+		lexical_scope_t _body;
 	};
 
 	public: static statement_t make__benchmark_def_statement(
 		const location_t& location,
 		const std::string& name,
-		const body_t& body
+		const lexical_scope_t& body
 	){
 		return statement_t(location, { benchmark_def_statement_t{ name, body } });
 	}
@@ -495,14 +502,14 @@ struct statement_t {
 
 		std::string function_name;
 		std::string scenario;
-		body_t _body;
+		lexical_scope_t _body;
 	};
 
 	public: static statement_t make__test_def_statement(
 		const location_t& location,
 		const std::string& function_name,
 		const std::string& scenario,
-		const body_t& body
+		const lexical_scope_t& body
 	){
 		return statement_t(location, { test_def_statement_t{ function_name, scenario, body } });
 	}
@@ -519,13 +526,13 @@ struct statement_t {
 		}
 
 		expression_t _condition;
-		body_t _body;
+		lexical_scope_t _body;
 	};
 
 	public: static statement_t make__while_statement(
 		const location_t& location,
 		const expression_t& condition,
-		const body_t& body
+		const lexical_scope_t& body
 	){
 		return statement_t(location, { while_statement_t{ condition, body } });
 	}
