@@ -25,11 +25,9 @@ namespace floyd {
 //////////////////////////////////////////////////		general_purpose_ast_t
 
 
+
 struct general_purpose_ast_t {
-	public: bool check_invariant() const{
-		QUARK_ASSERT(_globals.check_invariant());
-		return true;
-	}
+	public: bool check_invariant() const;
 
 	/////////////////////////////		STATE
 	public: lexical_scope_t _globals;
@@ -39,6 +37,8 @@ struct general_purpose_ast_t {
 	public: container_t _container_def;
 };
 
+
+general_purpose_ast_t make_test_gp_ast();
 
 
 

@@ -191,34 +191,6 @@ static gen_expr_out_t generate_call_expression(
 );
 
 
-
-static symbol_pos_t generate_local_temp(const types_t& types, gen_scope_t& body_acc, const type_t& type0, const std::string& name){
-	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(body_acc.check_invariant());
-	QUARK_ASSERT(type0.check_invariant());
-	QUARK_ASSERT(name.empty() == false);
-
-	const auto s = symbol_t::make_immutable_reserve(type0);
-	body_acc._symbol_table._symbols.push_back(std::pair<std::string, symbol_t>(name, s));
-	int id = static_cast<int>(body_acc._symbol_table._symbols.size() - 1);
-
-	return symbol_pos_t::make_stack_pos(0, id);
-}
-
-static symbol_pos_t generate_local_const(const types_t& types, gen_scope_t& body_acc, const value_t& value, const std::string& name){
-	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(body_acc.check_invariant());
-	QUARK_ASSERT(value.check_invariant());
-	QUARK_ASSERT(name.empty() == false);
-
-	const auto s = symbol_t::make_immutable_precalc(value.get_type(), value);
-	body_acc._symbol_table._symbols.push_back(std::pair<std::string, symbol_t>(name, s));
-	const auto id = static_cast<int>(body_acc._symbol_table._symbols.size() - 1);
-	return symbol_pos_t::make_stack_pos(0, id);
-}
-
-
-
 //////////////////////////////////////		INSTRUCTION DETAILS
 
 
@@ -364,9 +336,37 @@ static gen_scope_t flatten_scope(const bcgenerator_t& gen, const gen_scope_t& de
 }
 
 
-//////////////////////////////////////		copy_value
-//	Supports globals & locals both as dest and sources.
 
+//////////////////////////////////////		PRIMITIVE GENERATION
+
+
+
+static symbol_pos_t generate_local_temp(const types_t& types, gen_scope_t& body_acc, const type_t& type0, const std::string& name){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(body_acc.check_invariant());
+	QUARK_ASSERT(type0.check_invariant());
+	QUARK_ASSERT(name.empty() == false);
+
+	const auto s = symbol_t::make_immutable_reserve(type0);
+	body_acc._symbol_table._symbols.push_back(std::pair<std::string, symbol_t>(name, s));
+	int id = static_cast<int>(body_acc._symbol_table._symbols.size() - 1);
+
+	return symbol_pos_t::make_stack_pos(0, id);
+}
+
+static symbol_pos_t generate_local_const(const types_t& types, gen_scope_t& body_acc, const value_t& value, const std::string& name){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(body_acc.check_invariant());
+	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(name.empty() == false);
+
+	const auto s = symbol_t::make_immutable_precalc(value.get_type(), value);
+	body_acc._symbol_table._symbols.push_back(std::pair<std::string, symbol_t>(name, s));
+	const auto id = static_cast<int>(body_acc._symbol_table._symbols.size() - 1);
+	return symbol_pos_t::make_stack_pos(0, id);
+}
+
+//	Supports globals & locals both as dest and sources.
 static gen_scope_t copy_value(const bcgenerator_t& gen, const type_t& type, const symbol_pos_t& dest_reg, const symbol_pos_t& source_reg, const gen_scope_t& body){
 	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -407,7 +407,8 @@ static gen_scope_t copy_value(const bcgenerator_t& gen, const type_t& type, cons
 }
 
 
-//////////////////////////////////////		PROCESS STATEMENTS
+//////////////////////////////////////		STATEMENTS
+
 
 
 //??? need logic that knows that globals can be treated as locals for instructions in global scope.
@@ -432,7 +433,6 @@ static gen_scope_t generate_assign2_statement(const bcgenerator_t& gen, const st
 	}
 	return body_acc;
 }
-
 
 #if 1
 static gen_scope_t generate_init2_statement(const bcgenerator_t& gen, const statement_t::init2_t& statement, const gen_scope_t& body){
@@ -461,7 +461,6 @@ static bcgen_scope_t generate_init2_statement(const bcgenerator_t& gen, const st
 	return body_acc;
 }
 #endif
-
 
 static gen_scope_t generate_block_statement(const bcgenerator_t& gen, const statement_t::block_statement_t& statement, const gen_scope_t& body){
 	QUARK_ASSERT(gen.check_invariant());
@@ -1878,16 +1877,16 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 		QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(gp_ast_to_json(ast._tree)));
 	}
 
-	bcgenerator_t a(ast);
+	bcgenerator_t gen(ast);
 	const auto& types = ast._tree._types;
-	generate_global_scope(a, a._ast_imm->_tree._globals);
+	generate_global_scope(gen, gen._ast_imm->_tree._globals);
 
 	std::vector<bc_function_definition_t> funcs;
 	for(auto function_id = 0 ; function_id < ast._tree._function_defs.size() ; function_id++){
 		const auto& function_def = ast._tree._function_defs[function_id];
 
 		if(function_def._optional_body){
-			const auto body2 = generate_function_definition(a, function_def);
+			const auto body2 = generate_function_definition(gen, function_def);
 
 			const auto args2 = peek2(types, function_def._function_type).get_function_args(types);
 
@@ -1923,7 +1922,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 		}
 	}
 
-	const auto globals2 = make_frame(types, a._globals, std::vector<type_t>{});
+	const auto globals2 = make_frame(types, gen._globals, std::vector<type_t>{});
 	const auto result = bc_program_t{
 		globals2,
 		funcs,

@@ -23,6 +23,38 @@ namespace floyd {
 
 
 
+bool general_purpose_ast_t::check_invariant() const{
+	QUARK_ASSERT(_globals.check_invariant());
+	for(const auto& e: _function_defs){
+		QUARK_ASSERT(e.check_invariant());
+	}
+	QUARK_ASSERT(_types.check_invariant());
+
+	return true;
+}
+
+
+general_purpose_ast_t make_test_gp_ast(){
+	return general_purpose_ast_t {
+		{},
+		{},
+		types_t(),
+		software_system_t {},
+		container_t {}
+	};
+}
+
+
+
+
+QUARK_TEST_VIP("", "make_test_gp_ast()", "", ""){
+	auto b = make_test_gp_ast();
+	QUARK_VERIFY(b.check_invariant());
+}
+
+
+
+
 json_t gp_ast_to_json(const general_purpose_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
