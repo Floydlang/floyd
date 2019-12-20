@@ -481,6 +481,7 @@ enum class bc_opcode: uint8_t {
 //////////////////////////////////////		bc_instruction_t
 
 //	Compile-time information about the different opcodes: it's name, how the fields A-B-C are used.
+//	Term: These elements inside an instruction are called "fields".
 
 struct opcode_info_t {
 	std::string _as_text;
