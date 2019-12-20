@@ -443,7 +443,7 @@ VECTOR_CARRAY_T::~VECTOR_CARRAY_T(){
 bool VECTOR_CARRAY_T::check_invariant() const {
 	QUARK_ASSERT(this->alloc.check_invariant());
 	QUARK_ASSERT(alloc.debug_value_type.is_vector() || alloc.debug_value_type.is_string());
-	QUARK_ASSERT(get_debug_info(alloc) == "cppvec");
+//	QUARK_ASSERT(get_debug_info(alloc) == "cppvec");
 	return true;
 }
 
@@ -2073,7 +2073,7 @@ static void trace_value_backend_dynamic__internal(const value_backend_t& backend
 		const auto& e = heap.alloc_records[i];
 		QUARK_ASSERT(e.alloc_ptr->check_invariant());
 
-		const auto alloc_id_str =std::to_string(e.alloc_ptr->alloc_id);
+		const auto alloc_id_str = std::to_string(e.alloc_ptr->alloc_id);
 		const auto magic = value_to_hex_string(e.alloc_ptr->magic, 8);
 
 		const auto rc_str = std::to_string(e.alloc_ptr->rc);
@@ -2101,6 +2101,7 @@ static void trace_value_backend_dynamic__internal(const value_backend_t& backend
 			alloc_id_str,
 			rc_str,
 			magic,
+			debug_info_str,
 			debug_value_type_str,
 			value_summary_str
 		};
@@ -2108,7 +2109,7 @@ static void trace_value_backend_dynamic__internal(const value_backend_t& backend
 		matrix.push_back(line);
 	}
 
-	const auto result = generate_table_type1({ "#", "alloc ID", "RC", "magic", "type", "value summary" }, matrix);
+	const auto result = generate_table_type1({ "#", "alloc ID", "RC", "magic", "debug info", "type", "value summary" }, matrix);
 	QUARK_TRACE(result);
 }
 
@@ -2527,7 +2528,7 @@ void release_value(value_backend_t& backend, runtime_value_t value, type_t type)
 		else if(peek.is_json()){
 			release_json(backend, value);
 		}
-		else if(peek2(backend.types, type).is_struct()){
+		else if(peek.is_struct()){
 			release_struct(backend, value, type);
 		}
 		else{
@@ -2558,6 +2559,7 @@ runtime_value_t alloc_carray_8bit(value_backend_t& backend, const uint8_t data[]
 
 	const auto allocation_count = size_to_allocation_blocks(count);
 	auto result = alloc_vector_carray(backend.heap, allocation_count, count, type_t::make_string());
+	result.vector_carray_ptr->alloc.debug_info = std::string() + "str:" + std::string(data, data + count);
 
 	size_t char_pos = 0;
 	int element_index = 0;

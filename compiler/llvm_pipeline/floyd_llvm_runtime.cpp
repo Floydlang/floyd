@@ -761,8 +761,9 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 
 	{
 		auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_INIT>(process._init_function->address);
-		const auto result = (*f)(runtime_ptr);
-		process._process_state = from_runtime_value(context, result, process._state_type);
+		const auto init_state = (*f)(runtime_ptr);
+		process._process_state = from_runtime_value(context, init_state, process._state_type);
+		release_value(backend, init_state, process._state_type);
 	}
 
 	while(process._exiting_flag == false){
@@ -781,7 +782,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 			message_with_rc = process._inbox.back();
 			process._inbox.pop_back();
 
-			// NOTICE: local variable "message_with_rc" has an RC (potentially the only RC) on the value.
+			// NOTICE: local variable "message_with_rc" has an RC (potentially 1) on the value.
 		}
 
 		//	Handle message.
@@ -802,15 +803,17 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 		}
 
 		runtime_value_t result = make_blank_runtime_value();
+
 		{
 			QUARK_SCOPED_TRACE_OPTIONAL("Call msg handler", trace);
 			auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE>(process._msg_function->address);
 			const auto state2 = to_runtime_value(context, process._process_state);
 			result = (*f)(runtime_ptr, state2, message_with_rc);
-			release_value(backend, state2, process._process_state.get_type());
+			release_value(backend, state2, process._state_type);
 		}
 
 		process._process_state = from_runtime_value(context, result, process._state_type);
+		release_value(backend, result, process._state_type);
 
 		if(trace){
 			QUARK_SCOPED_TRACE("Output state");

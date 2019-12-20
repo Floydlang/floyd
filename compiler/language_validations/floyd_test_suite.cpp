@@ -7072,8 +7072,36 @@ FLOYD_LANG_PROOF("container-def", "Mismatch of message type: send() vs __msg()",
 	);
 }
 
-#if 0
-Off 2019-12-19
+FLOYD_LANG_PROOF("container-def", "State is non-pod", "", ""){
+	const auto program = R"(
+
+		container-def {
+			"name": "iphone app",
+			"tech": "Swift, iOS, Xcode, Open GL",
+			"desc": "Mobile shooter game for iOS.",
+			"clocks": {
+				"main_clock": {
+					"a": "my_gui"
+				}
+			}
+		}
+
+		func string my_gui__init() impure {
+			send("a", 2)
+			return "ready"
+		}
+
+		func string my_gui__msg(string state, int message) impure{
+			exit()
+			return "done"
+		}
+
+
+	)";
+
+	ut_run_closed_nolib(QUARK_POS, program);
+}
+
 FLOYD_LANG_PROOF("container-def", "run one process", "", ""){
 	const auto program = R"(
 
@@ -7173,6 +7201,7 @@ FLOYD_LANG_PROOF("container-def", "Test use struct as message", "", ""){
 	ut_run_closed_nolib(QUARK_POS, program);
 }
 
+#if 0
 FLOYD_LANG_PROOF("container-def", "run two unconnected processs", "", ""){
 	const auto program = R"(
 
