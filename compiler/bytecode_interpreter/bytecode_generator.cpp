@@ -79,6 +79,7 @@ struct bcgen_instruction_t {
 
 //////////////////////////////////////		bcgen_body_t
 
+//	Used only during codegen - it supports hiearchical bodies / scopes and fat bcgen_instruction_t.
 
 struct bcgen_body_t {
 	bcgen_body_t(const std::vector<bcgen_instruction_t>& s) :
@@ -126,6 +127,7 @@ struct bcgenerator_t {
 	public: std::shared_ptr<semantic_ast_t> _ast_imm;
 
 	public: bcgen_body_t _globals;
+//	public: std::vector<bcgen_body_t> _scope_stack;
 };
 
 
@@ -154,9 +156,15 @@ struct expression_gen_t {
 */
 static expression_gen_t bcgen_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const bcgen_body_t& body);
 
-static bcgen_body_t bcgen_body_block(bcgenerator_t& gen_acc, const body_t& body);
+static bcgen_body_t bcgen_block(bcgenerator_t& gen_acc, const body_t& body);
 
-static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const type_t& call_output_type, const expression_t::call_t& details, const bcgen_body_t& body);
+static expression_gen_t bcgen_call_expression(
+	bcgenerator_t& gen_acc,
+	const symbol_pos_t& target_reg,
+	const type_t& call_output_type,
+	const expression_t::call_t& details,
+	const bcgen_body_t& body
+);
 
 
 static type_t get_expr_output_type(const bcgenerator_t& gen, const expression_t& e){
@@ -457,7 +465,7 @@ static bcgen_body_t bcgen_block_statement(bcgenerator_t& gen_acc, const statemen
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-	const auto body_acc = bcgen_body_block(gen_acc, statement._body);
+	const auto body_acc = bcgen_block(gen_acc, statement._body);
 	return flatten_body(gen_acc, body, body_acc);
 }
 
@@ -488,8 +496,8 @@ static bcgen_body_t bcgen_ifelse_statement(bcgenerator_t& gen_acc, const stateme
 
 	//	Notice that we generate the instructions for then/else but we don't store them in body_acc yet, we
 	//	keep them and check their sizes so we can calculate jumps around them.
-	const auto& then_expr = bcgen_body_block(gen_acc, statement._then_body);
-	const auto& else_expr = bcgen_body_block(gen_acc, statement._else_body);
+	const auto& then_expr = bcgen_block(gen_acc, statement._then_body);
+	const auto& else_expr = bcgen_block(gen_acc, statement._else_body);
 
 	body_acc._instrs.push_back(
 		bcgen_instruction_t(
@@ -548,7 +556,7 @@ static bcgen_body_t bcgen_for_statement(bcgenerator_t& gen_acc, const statement_
 
 	const auto const1_reg = add_local_const(types, body_acc, value_t::make_int(1), "integer 1, to decrement with");
 
-	const auto& loop_body = bcgen_body_block(gen_acc, statement._body);
+	const auto& loop_body = bcgen_block(gen_acc, statement._body);
 	int body_instr_count = get_count(loop_body._instrs);
 
 	QUARK_ASSERT(
@@ -585,7 +593,7 @@ static bcgen_body_t bcgen_while_statement(bcgenerator_t& gen_acc, const statemen
 
 	auto body_acc = body;
 
-	const auto& loop_body = bcgen_body_block(gen_acc, statement._body);
+	const auto& loop_body = bcgen_block(gen_acc, statement._body);
 	int body_instr_count = static_cast<int>(loop_body._instrs.size());
 	const auto condition_pc = static_cast<int>(body_acc._instrs.size());
 
@@ -609,7 +617,7 @@ static bcgen_body_t bcgen_expression_statement(bcgenerator_t& gen_acc, const sta
 }
 
 
-static bcgen_body_t bcgen_body_block_statements(bcgenerator_t& gen_acc, const bcgen_body_t& body, const std::vector<statement_t>& statements){
+static bcgen_body_t bcgen_block_statements(bcgenerator_t& gen_acc, const bcgen_body_t& body, const std::vector<statement_t>& statements){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -683,12 +691,12 @@ static bcgen_body_t bcgen_body_block_statements(bcgenerator_t& gen_acc, const bc
 	return body_acc;
 }
 
-static bcgen_body_t bcgen_body_block(bcgenerator_t& gen_acc, const body_t& body){
+static bcgen_body_t bcgen_block(bcgenerator_t& gen_acc, const body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = bcgen_body_t({}, body._symbol_table);
-	body_acc = bcgen_body_block_statements(gen_acc, body_acc, body._statements);
+	body_acc = bcgen_block_statements(gen_acc, body_acc, body._statements);
 
 	QUARK_ASSERT(body_acc.check_invariant());
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -699,7 +707,7 @@ static bcgen_body_t bcgen_body_top(bcgenerator_t& gen_acc, bcgen_body_t& body_ac
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-	body_acc = bcgen_body_block_statements(gen_acc, body_acc, body._statements);
+	body_acc = bcgen_block_statements(gen_acc, body_acc, body._statements);
 
 	//	Append a stop to make sure execution doesn't leave instruction vector.
 	if(body_acc._instrs.empty() == true || body_acc._instrs.back()._opcode != bc_opcode::k_return){
