@@ -12,7 +12,7 @@
 #include "quark.h"
 
 #include <string>
-#include "ast.h"
+#include "floyd_ast.h"
 
 namespace floyd {
 

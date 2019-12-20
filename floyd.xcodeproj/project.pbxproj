@@ -12,7 +12,7 @@
 		2C02667C2014CAF000A82AD6 /* floyd_test_suite.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C02667A2014CAF000A82AD6 /* floyd_test_suite.cpp */; };
 		2C085CEB23140A4E009E6D24 /* floyd_benchmark_main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C69C49D2221D39B00E9D03E /* floyd_benchmark_main.cpp */; };
 		2C085CED23140C5E009E6D24 /* ast_visitor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C3D2D9522EF869B00B808AA /* ast_visitor.cpp */; };
-		2C085CEE23140C5E009E6D24 /* ast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180486208B947C00F62480 /* ast.cpp */; };
+		2C085CEE23140C5E009E6D24 /* floyd_ast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180486208B947C00F62480 /* floyd_ast.cpp */; };
 		2C085CEF23140C5E009E6D24 /* expression.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18048A208B947C00F62480 /* expression.cpp */; };
 		2C085CF023140C5E009E6D24 /* statement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18048C208B947C00F62480 /* statement.cpp */; };
 		2C085CF123140C6C009E6D24 /* benchmark_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB57462071069B0005AC7A /* benchmark_basics.cpp */; };
@@ -49,7 +49,7 @@
 		2C180477208B939800F62480 /* parse_expression.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180467208B939700F62480 /* parse_expression.cpp */; };
 		2C18047D208B939800F62480 /* parse_statement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18046D208B939700F62480 /* parse_statement.cpp */; };
 		2C180483208B939800F62480 /* parser_primitives.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180473208B939700F62480 /* parser_primitives.cpp */; };
-		2C18048E208B947C00F62480 /* ast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180486208B947C00F62480 /* ast.cpp */; };
+		2C18048E208B947C00F62480 /* floyd_ast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180486208B947C00F62480 /* floyd_ast.cpp */; };
 		2C180492208B947C00F62480 /* expression.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18048A208B947C00F62480 /* expression.cpp */; };
 		2C180494208B947C00F62480 /* statement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18048C208B947C00F62480 /* statement.cpp */; };
 		2C1CEFC723140F7D00DE9A77 /* immutable_ref_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C40A71D1D76E179003245E3 /* immutable_ref_value.cpp */; };
@@ -253,8 +253,8 @@
 		2C18046E208B939700F62480 /* parse_statement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parse_statement.h; sourceTree = "<group>"; };
 		2C180473208B939700F62480 /* parser_primitives.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser_primitives.cpp; sourceTree = "<group>"; };
 		2C180474208B939700F62480 /* parser_primitives.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser_primitives.h; sourceTree = "<group>"; };
-		2C180486208B947C00F62480 /* ast.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ast.cpp; sourceTree = "<group>"; };
-		2C180487208B947C00F62480 /* ast.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ast.h; sourceTree = "<group>"; };
+		2C180486208B947C00F62480 /* floyd_ast.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_ast.cpp; sourceTree = "<group>"; };
+		2C180487208B947C00F62480 /* floyd_ast.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = floyd_ast.h; sourceTree = "<group>"; };
 		2C18048A208B947C00F62480 /* expression.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = expression.cpp; sourceTree = "<group>"; };
 		2C18048B208B947C00F62480 /* expression.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = expression.h; sourceTree = "<group>"; };
 		2C18048C208B947C00F62480 /* statement.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = statement.cpp; sourceTree = "<group>"; };
@@ -844,8 +844,8 @@
 			children = (
 				2C3D2D9522EF869B00B808AA /* ast_visitor.cpp */,
 				2C3D2D9622EF869B00B808AA /* ast_visitor.h */,
-				2C180486208B947C00F62480 /* ast.cpp */,
-				2C180487208B947C00F62480 /* ast.h */,
+				2C180486208B947C00F62480 /* floyd_ast.cpp */,
+				2C180487208B947C00F62480 /* floyd_ast.h */,
 				2C18048A208B947C00F62480 /* expression.cpp */,
 				2C18048B208B947C00F62480 /* expression.h */,
 				2C18048C208B947C00F62480 /* statement.cpp */,
@@ -1818,7 +1818,7 @@
 				2C8C039F2221D95F0085EBBE /* statistics.cc in Sources */,
 				2C674F99230A0CF800838CCF /* semantic_ast.cpp in Sources */,
 				2C8C03A52221D95F0085EBBE /* sysinfo.cc in Sources */,
-				2C18048E208B947C00F62480 /* ast.cpp in Sources */,
+				2C18048E208B947C00F62480 /* floyd_ast.cpp in Sources */,
 				2C2224E723A3ECA60052339E /* floyd_llvm_codegen_basics.cpp in Sources */,
 				2CC9B79F2309FD1D00B195C8 /* value_backend.cpp in Sources */,
 				2C2B51CD233E348A001D59D9 /* types.cpp in Sources */,
@@ -1875,7 +1875,7 @@
 				2C085D0623140CA6009E6D24 /* value_features.cpp in Sources */,
 				2C8C03BB2221DBD70085EBBE /* json_reporter.cc in Sources */,
 				2C8C03BD2221DBD70085EBBE /* reporter.cc in Sources */,
-				2C085CEE23140C5E009E6D24 /* ast.cpp in Sources */,
+				2C085CEE23140C5E009E6D24 /* floyd_ast.cpp in Sources */,
 				2C1CEFCE23140F7D00DE9A77 /* test_helpers.cpp in Sources */,
 				2C085CF323140CA6009E6D24 /* interpretator_benchmark.cpp in Sources */,
 				2C8C03BE2221DBD70085EBBE /* colorprint.cc in Sources */,

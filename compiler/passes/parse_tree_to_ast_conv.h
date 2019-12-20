@@ -10,7 +10,7 @@
 #define parse_tree_to_ast_conv_hpp
 
 
-#include "ast.h"
+#include "floyd_ast.h"
 
 
 namespace floyd {

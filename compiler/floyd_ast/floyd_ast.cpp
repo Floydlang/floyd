@@ -6,7 +6,7 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-#include "ast.h"
+#include "floyd_ast.h"
 
 
 #include "statement.h"

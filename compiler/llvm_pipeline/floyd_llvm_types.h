@@ -9,7 +9,7 @@
 #ifndef floyd_llvm_types_hpp
 #define floyd_llvm_types_hpp
 
-#include "ast.h"
+#include "floyd_ast.h"
 #include "value_backend.h"
 
 #include <llvm/IR/Function.h>

@@ -8,7 +8,7 @@
 
 #include "ast_helpers.h"
 
-#include "ast.h"
+#include "floyd_ast.h"
 #include "expression.h"
 #include "statement.h"
 #include "types.h"

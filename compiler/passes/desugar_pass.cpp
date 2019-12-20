@@ -8,7 +8,7 @@
 
 #include "desugar_pass.h"
 
-#include "ast.h"
+#include "floyd_ast.h"
 
 
 namespace floyd {

@@ -9,7 +9,7 @@
 #include "ast_visitor.h"
 
 
-#include "ast.h"
+#include "floyd_ast.h"
 
 
 namespace floyd {

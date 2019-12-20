@@ -39,7 +39,7 @@
 #include <mutex>
 #include "ast_value.h"
 #include "types.h"
-#include "ast.h"
+#include "floyd_ast.h"
 
 #include "quark.h"
 
