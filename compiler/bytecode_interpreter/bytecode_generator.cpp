@@ -7,15 +7,28 @@
 //
 
 /*
+	OVERVIEW OF IMPLEMENTATION
+
 	bcgen_scope_t -- holds the symbols and instructions for
-		- Global state
-		- a function
-		- a sub-block of a function
+	- Global state
+	- a function
+	- a sub-block of a function
+	It is *hiearchical*.
 
 	The functions that generate code all use a bcgen_scope_t& body_acc that holds the current state of a body and where new data is *acc*umulated / added.
 	This means that only the body_acc's state is changed, not global state.
 	This makes it possible to generate code for an IF-statement's THEN and ELSE bodies first, count their instructions,
 	then setup branches and insert the THEN and ELSE instructions.
+
+	bcgen_scope_t and bcgen_instruction_t are used together and forms a tree that matches the lexical scopes of the source code.
+	The instructions can reference symbols anywhere up the lexical branch it sits in.
+	Then this tree is flattened into one frame for each function and one global frame and instructions are changed to access either function scope or global scope.
+
+	??? IDEA: split codegen and flattening into two passes.
+
+	??? Idea: if zero or few arguments, use shortcuts. Stuff single arg into instruction reg_c etc.
+	??? Idea: Do interning of add_local_const().
+	??? Idea: make different types for register vs stack-pos.
 */
 
 #include "bytecode_generator.h"
@@ -36,9 +49,6 @@ namespace floyd {
 struct semantic_ast_t;
 
 
-
-//	Replace by int when we have flattened local bodies.
-typedef symbol_pos_t reg_t;
 
 
 //////////////////////////////////////		bcgen_instruction_t
@@ -152,7 +162,12 @@ struct expression_gen_t {
 	then the expression allocates (or redirect to existing register).
 	expression_gen_t._out: always holds the output register, no matter who decided it.
 */
-static expression_gen_t bcgen_expression(bcgenerator_t& gen_acc, const symbol_pos_t& target_reg, const expression_t& e, const bcgen_scope_t& body);
+static expression_gen_t bcgen_expression(
+	bcgenerator_t& gen_acc,
+	const symbol_pos_t& target_reg,
+	const expression_t& e,
+	const bcgen_scope_t& body
+);
 
 static bcgen_scope_t bcgen_block(bcgenerator_t& gen_acc, const lexical_scope_t& body);
 
@@ -182,8 +197,6 @@ static type_t get_expr_output(const bcgenerator_t& gen, const expression_t& e){
 
 static type_t dummy_func(const types_t& types, const type_t& type){ return type; }
 
-
-//??? Don't use the term "symbol" here, since not all symbols should go into stack frames.
 
 static symbol_pos_t add_local_temp(const types_t& types, bcgen_scope_t& body_acc, const type_t& type0, const std::string& name){
 	QUARK_ASSERT(types.check_invariant());
@@ -235,14 +248,14 @@ static bc_typeid_t itype_from_type(const type_t& type){
 
 
 
-static reg_t flatten_reg(const reg_t& r, int offset){
+static symbol_pos_t flatten_reg(const symbol_pos_t& r, int offset){
 	QUARK_ASSERT(r.check_invariant());
 
 	if(r._parent_steps == 666){
 		return r;
 	}
 	else if(r._parent_steps == 0){
-		return reg_t::make_stack_pos(0, r._index + offset);
+		return symbol_pos_t::make_stack_pos(0, r._index + offset);
 	}
 	else if(r._parent_steps == symbol_pos_t::k_global_scope){
 		return r;
@@ -251,11 +264,11 @@ static reg_t flatten_reg(const reg_t& r, int offset){
 		return r;
 	}
 	else{
-		return reg_t::make_stack_pos(r._parent_steps - 1, r._index);
+		return symbol_pos_t::make_stack_pos(r._parent_steps - 1, r._index);
 	}
 }
 
-static bool check_register(const reg_t& reg, bool is_reg){
+static bool check_register(const symbol_pos_t& reg, bool is_reg){
 	if(is_reg){
 		QUARK_ASSERT(reg._parent_steps != 666);
 	}
@@ -265,7 +278,7 @@ static bool check_register(const reg_t& reg, bool is_reg){
 	return true;
 }
 
-static bool check_register_nonlocal(const reg_t& reg, bool is_reg){
+static bool check_register_nonlocal(const symbol_pos_t& reg, bool is_reg){
 	if(is_reg){
 		//	Must not be a global -- those should have been turned to global-access opcodes.
 		QUARK_ASSERT(reg._parent_steps != symbol_pos_t::k_global_scope);
@@ -276,7 +289,7 @@ static bool check_register_nonlocal(const reg_t& reg, bool is_reg){
 	return true;
 }
 
-static bool check_register__local(const reg_t& reg, bool is_reg){
+static bool check_register__local(const symbol_pos_t& reg, bool is_reg){
 	if(is_reg){
 		//	Must not be a global -- those should have been turned to global-access opcodes.
 		QUARK_ASSERT(reg._parent_steps != symbol_pos_t::k_global_scope);
@@ -363,7 +376,7 @@ static bcgen_scope_t flatten_body(const bcgenerator_t& gen, const bcgen_scope_t&
 
 
 //	Supports globals & locals both as dest and sources.
-static bcgen_scope_t copy_value(const bcgenerator_t& gen, const type_t& type, const reg_t& dest_reg, const reg_t& source_reg, const bcgen_scope_t& body){
+static bcgen_scope_t copy_value(const bcgenerator_t& gen, const type_t& type, const symbol_pos_t& dest_reg, const symbol_pos_t& source_reg, const bcgen_scope_t& body){
 	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(dest_reg.check_invariant());
@@ -1050,12 +1063,6 @@ struct call_setup_t {
 	int _stack_count;
 };
 
-
-
-//??? if zero or few arguments, use shortcuts. Stuff single arg into instruction reg_c etc.
-//??? Do interning of add_local_const().
-//??? make different types for register vs stack-pos.
-
 //	NOTICE: extbits are generated for every value on callstack, even for DYN-types. This is correct.
 static call_setup_t gen_call_setup(bcgenerator_t& gen_acc, const std::vector<type_t>& function_def_arg_type, const expression_t* args, int callee_arg_count, const bcgen_scope_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1071,11 +1078,11 @@ static call_setup_t gen_call_setup(bcgenerator_t& gen_acc, const std::vector<typ
 
 	//	Generate code / symbols for all arguments to the function call. Record where each arg is kept.
 	//	This might not create instructions or anything, if arguments are available as constants somewhere.
-	std::vector<std::pair<reg_t, type_t>> argument_regs;
+	std::vector<std::pair<symbol_pos_t, type_t>> argument_regs;
 	for(int i = 0 ; i < arg_count ; i++){
 		const auto& m2 = bcgen_expression(gen_acc, {}, args[i], body_acc);
 		body_acc = m2._body;
-		argument_regs.push_back(std::pair<reg_t, type_t>(m2._out, m2._type));
+		argument_regs.push_back(std::pair<symbol_pos_t, type_t>(m2._out, m2._type));
 	}
 
 	//	We have max 16 extbits when popping stack.
@@ -1111,8 +1118,6 @@ static call_setup_t gen_call_setup(bcgenerator_t& gen_acc, const std::vector<typ
 	return { body_acc, exts, (int)stack_count };
 }
 
-
-
 static expression_gen_t generate_callee(bcgenerator_t& gen_acc, const expression_t::call_t& details, const bcgen_scope_t& body0){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body0.check_invariant());
@@ -1136,7 +1141,6 @@ static expression_gen_t generate_callee(bcgenerator_t& gen_acc, const expression
 		return bcgen_expression(gen_acc, {}, *details.callee, body_acc);
 	}
 }
-
 
 /*
 	Handles a call-expression. Output is one of these:
@@ -1200,7 +1204,6 @@ static expression_gen_t bcgen_intrinsic_expression(bcgenerator_t& gen_acc, const
 	QUARK_ASSERT(call_output_type.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-//	const auto& types = gen_acc._ast_imm->_tree._types;
 	const auto& signs = gen_acc._ast_imm->intrinsic_signatures;
 
 	if(details.call_name == get_intrinsic_opcode(signs.assert)){
@@ -1532,8 +1535,8 @@ static expression_gen_t bcgen_comparison_expression(bcgenerator_t& gen_acc, cons
 		//	Bool tells if to flip left / right.
 		static const std::map<expression_type, std::pair<bool, bc_opcode>> conv_opcode_int = {
 			{ expression_type::k_comparison_smaller_or_equal,			{ false, bc_opcode::k_comparison_smaller_or_equal_int } },
-			{ expression_type::k_comparison_smaller,						{ false, bc_opcode::k_comparison_smaller_int } },
-			{ expression_type::k_comparison_larger_or_equal,				{ true, bc_opcode::k_comparison_smaller_or_equal_int } },
+			{ expression_type::k_comparison_smaller,					{ false, bc_opcode::k_comparison_smaller_int } },
+			{ expression_type::k_comparison_larger_or_equal,			{ true, bc_opcode::k_comparison_smaller_or_equal_int } },
 			{ expression_type::k_comparison_larger,						{ true, bc_opcode::k_comparison_smaller_int } },
 
 			{ expression_type::k_logical_equal,							{ false, bc_opcode::k_logical_equal_int } },
@@ -1553,8 +1556,8 @@ static expression_gen_t bcgen_comparison_expression(bcgenerator_t& gen_acc, cons
 		//	Bool tells if to flip left / right.
 		static const std::map<expression_type, std::pair<bool, bc_opcode>> conv_opcode = {
 			{ expression_type::k_comparison_smaller_or_equal,			{ false, bc_opcode::k_comparison_smaller_or_equal } },
-			{ expression_type::k_comparison_smaller,						{ false, bc_opcode::k_comparison_smaller } },
-			{ expression_type::k_comparison_larger_or_equal,				{ true, bc_opcode::k_comparison_smaller_or_equal } },
+			{ expression_type::k_comparison_smaller,					{ false, bc_opcode::k_comparison_smaller } },
+			{ expression_type::k_comparison_larger_or_equal,			{ true, bc_opcode::k_comparison_smaller_or_equal } },
 			{ expression_type::k_comparison_larger,						{ true, bc_opcode::k_comparison_smaller } },
 
 			{ expression_type::k_logical_equal,							{ false, bc_opcode::k_logical_equal } },
@@ -1901,12 +1904,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 	}
 
 	bcgenerator_t a(ast);
-
 	const auto& types = ast._tree._types;
-
-	//	??? We should not require a backend here -- all init-values should be primitives
-//	value_backend_t hack_backend({}, bc_make_struct_layouts(types), types, config_t { vector_backend::hamt, dict_backend::hamt, false });
-
 	bcgen_global_scope(a, a._ast_imm->_tree._globals);
 
 	std::vector<bc_function_definition_t> funcs;
