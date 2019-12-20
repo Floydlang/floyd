@@ -1129,6 +1129,8 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			const auto& new_value_pod = globals[i._b];
 			regs[i._a] = new_value_pod;
 			retain_value(backend, new_value_pod, type);
+//			QUARK_ASSERT(check_invariant(backend, new_value_pod, type));
+//			trace_value_backend_dynamic(backend);
 			break;
 		}
 		case bc_opcode::k_load_global_inplace_value: {

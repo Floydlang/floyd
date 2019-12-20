@@ -785,12 +785,7 @@ struct value_backend_t {
 
 	~value_backend_t();
 
-	bool check_invariant() const {
-		QUARK_ASSERT(heap.check_invariant());
-		QUARK_ASSERT(child_type.size() == types.nodes.size());
-		QUARK_ASSERT(config.check_invariant());
-		return true;
-	}
+	bool check_invariant() const;
 
 
 	////////////////////////////////		STATE

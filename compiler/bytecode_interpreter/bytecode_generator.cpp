@@ -1154,7 +1154,9 @@ static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const symb
 	));
 
 	const auto extbits = pack_bools(call_setup._exts);
-	body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_popn, make_imm_int(call_setup._stack_count), make_imm_int(extbits), {} ));
+	if(call_setup._stack_count > 0){
+		body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_popn, make_imm_int(call_setup._stack_count), make_imm_int(extbits), {} ));
+	}
 	body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_pop_frame_ptr, {}, {}, {} ));
 
 	QUARK_ASSERT(body_acc.check_invariant());
@@ -1364,7 +1366,9 @@ static expression_gen_t bcgen_construct_value_expression(bcgenerator_t& gen_acc,
 	}
 
 	const auto extbits = pack_bools(call_setup._exts);
-	body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_popn, make_imm_int(call_setup._stack_count), make_imm_int(extbits), {} ));
+	if(call_setup._stack_count > 0){
+		body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_popn, make_imm_int(call_setup._stack_count), make_imm_int(extbits), {} ));
+	}
 
 	QUARK_ASSERT(body_acc.check_invariant());
 	return { body_acc, target_reg2, target_type };

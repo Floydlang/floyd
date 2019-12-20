@@ -27,9 +27,6 @@ const bool k_keep_deleted_allocs = true;
 
 
 
-
-
-
 static void dispose_alloc(heap_alloc_64_t& alloc);
 
 
@@ -111,21 +108,6 @@ std::string get_debug_info(const heap_alloc_64_t& alloc){
 }
 #endif
 
-static inline void add_ref(heap_alloc_64_t& alloc){
-	QUARK_ASSERT(alloc.check_invariant());
-
-	inc_rc(alloc);
-}
-
-static inline void release_ref(heap_alloc_64_t& alloc){
-	QUARK_ASSERT(alloc.check_invariant());
-
-	if(dec_rc(alloc) == 0){
-		dispose_alloc(alloc);
-	}
-}
-
-
 
 static heap_alloc_64_t* alloc_64__internal(heap_t& heap, uint64_t allocation_word_count, type_t debug_value_type, const char debug_string[]){
 	QUARK_ASSERT(heap.check_invariant());
@@ -164,50 +146,10 @@ heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, type_t d
 	return alloc_64__internal(heap, allocation_word_count, debug_value_type, debug_string);
 }
 
-
 QUARK_TEST("heap_t", "alloc_64()", "", ""){
 	heap_t heap(false);
 	QUARK_VERIFY(heap.check_invariant());
 }
-
-/*
-QUARK_TEST("heap_t", "alloc_64()", "", ""){
-	heap_t heap(false);
-	auto a = alloc_64(heap, 0, make_vector(), "test");
-	QUARK_VERIFY(a != nullptr);
-	QUARK_VERIFY(a->check_invariant());
-	QUARK_VERIFY(a->rc == 1);
-#if DEBUG
-	QUARK_VERIFY(get_debug_info(*a) == "test");
-#endif
-
-	//	Must release alloc or heap will detect leakage.
-	release_ref(*a);
-}
-
-QUARK_TEST("heap_t", "add_ref()", "", ""){
-	heap_t heap(false);
-	auto a = alloc_64(heap, 0, make_vector(), "test");
-	add_ref(*a);
-	QUARK_VERIFY(a->rc == 2);
-
-	//	Must release alloc or heap will detect leakage.
-	release_ref(*a);
-}
-
-QUARK_TEST("heap_t", "release_ref()", "", ""){
-	heap_t heap(false);
-	auto a = alloc_64(heap, 0, make_vector(), "test");
-
-	QUARK_VERIFY(a->rc == 1);
-	release_ref(*a);
-	QUARK_VERIFY(a->rc == 0);
-
-	const auto count = heap.count_used();
-	QUARK_VERIFY(count == 0);
-}
-*/
-
 
 //	Returns pointer to the allocated words that sits after the
 void* get_alloc_ptr(heap_alloc_64_t& alloc){
@@ -227,9 +169,6 @@ const void* get_alloc_ptr(const heap_alloc_64_t& alloc){
 	auto p = &alloc;
 	return p + 1;
 }
-
-
-
 
 bool heap_alloc_64_t::check_invariant() const{
 	QUARK_ASSERT(debug_value_type.is_undefined() == false);
@@ -258,8 +197,6 @@ bool heap_alloc_64_t::check_invariant() const{
 	}
 	return true;
 }
-
-
 
 static void dispose_alloc__internal(heap_alloc_64_t& alloc){
 	QUARK_ASSERT(alloc.check_invariant());
@@ -571,8 +508,10 @@ void dispose_vector_hamt(const runtime_value_t& vec){
 	QUARK_ASSERT(vec.vector_hamt_ptr != nullptr);
 	QUARK_ASSERT(vec.vector_hamt_ptr->check_invariant());
 
-	auto& vec2 = vec.vector_hamt_ptr->get_vecref_mut();
-	vec2.~vector<runtime_value_t>();
+	if(k_keep_deleted_allocs == false){
+		auto& vec2 = vec.vector_hamt_ptr->get_vecref_mut();
+		vec2.~vector<runtime_value_t>();
+	}
 
 	auto heap = vec.vector_hamt_ptr->alloc.heap;
 	dispose_alloc(vec.vector_hamt_ptr->alloc);
@@ -707,7 +646,9 @@ static void dispose_dict_cppmap(runtime_value_t& d){
 
 	QUARK_ASSERT(dict.check_invariant());
 
-	dict.get_map_mut().~CPPMAP();
+	if(k_keep_deleted_allocs == false){
+		dict.get_map_mut().~CPPMAP();
+	}
 	auto heap = dict.alloc.heap;
 	dispose_alloc(dict.alloc);
 	QUARK_ASSERT(heap->check_invariant());
@@ -766,7 +707,9 @@ static void dispose_dict_hamt(runtime_value_t& d){
 
 	QUARK_ASSERT(dict.check_invariant());
 
-	dict.get_map_mut().~HAMT_MAP();
+	if(k_keep_deleted_allocs == false){
+		dict.get_map_mut().~HAMT_MAP();
+	}
 	auto heap = dict.alloc.heap;
 	dispose_alloc(dict.alloc);
 	QUARK_ASSERT(heap->check_invariant());
@@ -789,6 +732,7 @@ bool JSON_T::check_invariant() const{
 	QUARK_ASSERT(alloc.check_invariant());
 	QUARK_ASSERT(alloc.debug_value_type.is_json());
 	QUARK_ASSERT(get_debug_info(alloc) == "JSON");
+	QUARK_ASSERT(alloc.data[0] != 0x00);
 	QUARK_ASSERT(get_json().check_invariant());
 	return true;
 }
@@ -812,8 +756,10 @@ static void dispose_json(JSON_T& json){
 	QUARK_ASSERT(sizeof(JSON_T) == sizeof(heap_alloc_64_t));
 	QUARK_ASSERT(json.check_invariant());
 
-	delete &json.get_json();
-	json.alloc.data[0] = 0x00000000'00000000;
+	if(k_keep_deleted_allocs == false){
+		delete &json.get_json();
+		json.alloc.data[0] = 0x00000000'00000000;
+	}
 
 	auto heap = json.alloc.heap;
 	dispose_alloc(json.alloc);
@@ -1861,6 +1807,16 @@ value_backend_t::value_backend_t(
 
 value_backend_t::~value_backend_t(){
 	QUARK_ASSERT(check_invariant());
+}
+
+bool value_backend_t::check_invariant() const {
+	QUARK_ASSERT(heap.check_invariant());
+	QUARK_ASSERT(child_type.size() == types.nodes.size());
+	QUARK_ASSERT(config.check_invariant());
+
+	//??? Deep-check all heap records
+
+	return true;
 }
 
 
