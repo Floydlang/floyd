@@ -7201,7 +7201,6 @@ FLOYD_LANG_PROOF("container-def", "Test use struct as message", "", ""){
 	ut_run_closed_nolib(QUARK_POS, program);
 }
 
-#if 0
 FLOYD_LANG_PROOF("container-def", "run two unconnected processs", "", ""){
 	const auto program = R"(
 
@@ -7363,7 +7362,6 @@ FLOYD_LANG_PROOF("container-def", "run two CONNECTED processes", "", ""){
 
 	ut_run_closed_nolib(QUARK_POS, program);
 }
-#endif
 
 #endif	//	RUN_CONTAINER_TESTS
 
