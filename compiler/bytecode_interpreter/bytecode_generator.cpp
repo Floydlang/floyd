@@ -207,21 +207,15 @@ static symbol_pos_t generate_local_temp(const types_t& types, gen_scope_t& body_
 	return symbol_pos_t::make_stack_pos(0, id);
 }
 
-static int add_constant_literal(const types_t& types, symbol_table_t& symbols, const std::string& name, const floyd::value_t& value){
-	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(value.check_invariant());
-
-	const auto s = symbol_t::make_immutable_precalc(value.get_type(), value);
-	symbols._symbols.push_back(std::pair<std::string, symbol_t>(name, s));
-	return static_cast<int>(symbols._symbols.size() - 1);
-}
 static symbol_pos_t generate_local_const(const types_t& types, gen_scope_t& body_acc, const value_t& value, const std::string& name){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(body_acc.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(name.empty() == false);
 
-	int id = add_constant_literal(types, body_acc._symbol_table, name, value);
+	const auto s = symbol_t::make_immutable_precalc(value.get_type(), value);
+	body_acc._symbol_table._symbols.push_back(std::pair<std::string, symbol_t>(name, s));
+	const auto id = static_cast<int>(body_acc._symbol_table._symbols.size() - 1);
 	return symbol_pos_t::make_stack_pos(0, id);
 }
 
@@ -1883,7 +1877,6 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
 	if(trace_io_flag){
-	//	QUARK_SCOPED_TRACE("generate_bytecode");
 		QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(gp_ast_to_json(ast._tree)));
 	}
 
