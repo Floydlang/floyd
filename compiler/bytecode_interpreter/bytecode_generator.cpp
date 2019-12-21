@@ -43,7 +43,7 @@
 #include <algorithm>
 #include <cstdint>
 
-const auto trace_io_flag = true;
+const auto trace_io_flag = false;
 
 namespace floyd {
 
@@ -176,7 +176,7 @@ static gen_expr_out_t generate_expression(
 	gen_scope_t& dest_acc
 );
 
-static gen_scope_t generate_block(const bcgenerator_t& gen, const lexical_scope_t& body);
+static gen_scope_t generate_block(bcgenerator_t& gen, const lexical_scope_t& body);
 
 static gen_expr_out_t generate_call_expression(
 	const bcgenerator_t& gen,
@@ -219,7 +219,7 @@ static bool check_field(const symbol_pos_t& reg, bool is_reg){
 static bool check_field_nonlocal(const symbol_pos_t& reg, bool is_reg){
 	if(is_reg){
 		//	Must not be a global -- those should have been turned to global-access opcodes.
-		QUARK_ASSERT(reg._parent_steps != symbol_pos_t::k_global_scope);
+//		QUARK_ASSERT(reg._parent_steps != symbol_pos_t::k_global_scope);
 	}
 	else{
 		QUARK_ASSERT(reg._parent_steps == k_immediate_value__parent_steps || reg.is_empty());
@@ -433,58 +433,60 @@ static void generate_copy_value_local_global(
 	QUARK_ASSERT(source_reg.check_invariant());
 	QUARK_ASSERT(dest_acc.check_invariant());
 
-	const auto& types = gen._ast_imm->_tree._types;
-	bool is_ext = is_rc_value(types, type);
+	const auto source_reg_normalized = normalize_symbol_pos(source_reg, gen._scope_stack.size());
+	const auto dest_reg_normalized = normalize_symbol_pos(dest_reg, gen._scope_stack.size());
 
-	//	If this asserts, we should special-case and do nothing.
-	QUARK_ASSERT(!(dest_reg == source_reg));
-
-	const auto source_scope_index = symbol_pos_to_scope_index(source_reg, gen._scope_stack.size());
-	const auto dest_scope_index = symbol_pos_to_scope_index(source_reg, gen._scope_stack.size());
-
-
-
-	//	global <= global
-	if(dest_reg._parent_steps == symbol_pos_t::k_global_scope && source_reg._parent_steps == symbol_pos_t::k_global_scope){
+	if(source_reg_normalized == dest_reg_normalized){
 		QUARK_ASSERT(false);
-		quark::throw_exception();
 	}
+	else {
+		const auto& types = gen._ast_imm->_tree._types;
+		bool is_ext = is_rc_value(types, type);
 
-	//	global <= local
-	else if(dest_reg._parent_steps == symbol_pos_t::k_global_scope && source_reg._parent_steps != symbol_pos_t::k_global_scope){
-		dest_acc._instrs.push_back(
-			gen_instruction_t(
-				is_ext ? bc_opcode::k_store_global_external_value : bc_opcode::k_store_global_inplace_value,
-				make_imm_int_field(dest_reg._index),
-				source_reg,
-				{}
-			)
-		);
+		//	Local copy = use k_copy_reg.
+		//	Notice: this is also used at top-level global scope, this is also considered local-local.
+		if(source_reg_normalized._parent_steps == dest_reg_normalized._parent_steps){
+			dest_acc._instrs.push_back(
+				gen_instruction_t(
+					is_ext ? bc_opcode::k_copy_reg_external_value : bc_opcode::k_copy_reg_inplace_value,
+					dest_reg_normalized,
+					source_reg_normalized,
+					{}
+				)
+			);
+		}
+		else if(source_reg_normalized._parent_steps == symbol_pos_t::k_global_scope){
+			dest_acc._instrs.push_back(
+				gen_instruction_t(
+					is_ext ? bc_opcode::k_load_global_external_value : bc_opcode::k_load_global_inplace_value,
+					dest_reg_normalized,
+					make_imm_int_field(source_reg._index),
+					{}
+				)
+			);
+		}
+		else if(dest_reg_normalized._parent_steps == symbol_pos_t::k_global_scope){
+			dest_acc._instrs.push_back(
+				gen_instruction_t(
+					is_ext ? bc_opcode::k_store_global_external_value : bc_opcode::k_store_global_inplace_value,
+					make_imm_int_field(dest_reg_normalized._index),
+					source_reg,
+					{}
+				)
+			);
+		}
+		else{
+			dest_acc._instrs.push_back(
+				gen_instruction_t(
+					is_ext ? bc_opcode::k_copy_reg_external_value : bc_opcode::k_copy_reg_inplace_value,
+					dest_reg_normalized,
+					source_reg_normalized,
+					{}
+				)
+			);
+		}
+		QUARK_ASSERT(dest_acc.check_invariant());
 	}
-	//	local <= global
-	else if(dest_reg._parent_steps != symbol_pos_t::k_global_scope && source_reg._parent_steps == symbol_pos_t::k_global_scope){
-		dest_acc._instrs.push_back(
-			gen_instruction_t(
-				is_ext ? bc_opcode::k_load_global_external_value : bc_opcode::k_load_global_inplace_value,
-				dest_reg,
-				make_imm_int_field(source_reg._index),
-				{}
-			)
-		);
-	}
-	//	local <= local
-	else{
-		dest_acc._instrs.push_back(
-			gen_instruction_t(
-				is_ext ? bc_opcode::k_copy_reg_external_value : bc_opcode::k_copy_reg_inplace_value,
-				dest_reg,
-				source_reg,
-				{}
-			)
-		);
-	}
-
-	QUARK_ASSERT(dest_acc.check_invariant());
 }
 #endif
 
@@ -539,7 +541,7 @@ static gen_scope_t generate_init2_statement(const bcgenerator_t& gen, const stat
 }
 #endif
 
-static void generate_block_statement(const bcgenerator_t& gen, const statement_t::block_statement_t& statement, gen_scope_t& dest_acc){
+static void generate_block_statement(bcgenerator_t& gen, const statement_t::block_statement_t& statement, gen_scope_t& dest_acc){
 	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(dest_acc.check_invariant());
 
@@ -555,7 +557,7 @@ static void generate_return_statement(const bcgenerator_t& gen, const statement_
 	dest_acc._instrs.push_back(gen_instruction_t(bc_opcode::k_return, expr._out, {}, {}));
 }
 
-static void generate_ifelse_statement(const bcgenerator_t& gen, const statement_t::ifelse_statement_t& statement, gen_scope_t& dest_acc){
+static void generate_ifelse_statement(bcgenerator_t& gen, const statement_t::ifelse_statement_t& statement, gen_scope_t& dest_acc){
 	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(dest_acc.check_invariant());
 
@@ -610,7 +612,7 @@ static int get_count(const std::vector<gen_instruction_t>& instructions){
 	k_branch_smaller_or_equal_int / k_branch_smaller_int, B TRUE
 	A:
 */
-static void generate_for_statement(const bcgenerator_t& gen, const statement_t::for_statement_t& statement, gen_scope_t& dest_acc){
+static void generate_for_statement(bcgenerator_t& gen, const statement_t::for_statement_t& statement, gen_scope_t& dest_acc){
 	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(dest_acc.check_invariant());
 
@@ -659,7 +661,7 @@ static void generate_for_statement(const bcgenerator_t& gen, const statement_t::
 	QUARK_ASSERT(dest_acc.check_invariant());
 }
 
-static void generate_while_statement(const bcgenerator_t& gen, const statement_t::while_statement_t& statement, gen_scope_t& dest_acc){
+static void generate_while_statement(bcgenerator_t& gen, const statement_t::while_statement_t& statement, gen_scope_t& dest_acc){
 	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(dest_acc.check_invariant());
 
@@ -686,7 +688,7 @@ static void generate_expression_statement(
 }
 
 
-static void generate_block_statements(const bcgenerator_t& gen, gen_scope_t& dest_acc, const std::vector<statement_t>& statements){
+static void generate_block_statements(bcgenerator_t& gen, gen_scope_t& dest_acc, const std::vector<statement_t>& statements){
 	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(dest_acc.check_invariant());
 
@@ -695,7 +697,7 @@ static void generate_block_statements(const bcgenerator_t& gen, gen_scope_t& des
 			QUARK_ASSERT(statement.check_invariant());
 
 			struct visitor_t {
-				const bcgenerator_t& _gen;
+				bcgenerator_t& _gen;
 				gen_scope_t& dest_acc;
 
 				void operator()(const statement_t::return_statement_t& s) const{
@@ -753,16 +755,23 @@ static void generate_block_statements(const bcgenerator_t& gen, gen_scope_t& des
 	QUARK_ASSERT(gen.check_invariant());
 }
 
-static gen_scope_t generate_block(const bcgenerator_t& gen, const lexical_scope_t& body){
+static gen_scope_t generate_block(bcgenerator_t& gen, const lexical_scope_t& body){
 	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-	auto dest_acc = gen_scope_t({}, body._symbol_table);
-	generate_block_statements(gen, dest_acc, body._statements);
+	gen._scope_stack.push_back(gen_scope_t({}, body._symbol_table));
+	auto* dest_acc = &gen._scope_stack.back();
 
-	QUARK_ASSERT(dest_acc.check_invariant());
+	generate_block_statements(gen, *dest_acc, body._statements);
+
+	const auto result = gen._scope_stack.back();
+
+	dest_acc = nullptr;
+	gen._scope_stack.pop_back();
+
+	QUARK_ASSERT(result.check_invariant());
 	QUARK_ASSERT(gen.check_invariant());
-	return dest_acc;
+	return result;
 }
 
 //	The new scope will be pushed on gen._scope_stack on return
@@ -2009,7 +2018,7 @@ bool bcgenerator_t::check_invariant() const {
 static bool check_field__local(const symbol_pos_t& reg, bool is_reg){
 	if(is_reg){
 		//	Must not be a global position -- those should have been turned to global-access opcodes.
-		QUARK_ASSERT(reg._parent_steps != symbol_pos_t::k_global_scope);
+//		QUARK_ASSERT(reg._parent_steps != symbol_pos_t::k_global_scope);
 	}
 	else{
 		QUARK_ASSERT(reg._parent_steps == k_immediate_value__parent_steps || reg.is_empty());
@@ -2092,6 +2101,10 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 	}
 
 	bcgenerator_t gen(ast);
+
+	//??? We keep dest_acc as reference to element on _scope_stack => corrupt when stack is reallocated.
+	gen._scope_stack.reserve(1000);
+
 	const auto& types = ast._tree._types;
 	generate_global_scope(gen, gen._ast_imm->_tree._globals);
 

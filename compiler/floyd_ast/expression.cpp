@@ -23,6 +23,42 @@ static json_t expressions_to_json(const types_t& types, const std::vector<expres
 
 
 
+
+
+//////////////////////////////////////////////////		symbol_pos_t
+
+
+
+size_t symbol_pos_to_scope_index(const symbol_pos_t& pos, size_t scope_count){
+	QUARK_ASSERT(pos.check_invariant());
+
+	if(pos._parent_steps == symbol_pos_t::k_global_scope){
+		return 0;
+	}
+	else if(pos._parent_steps == symbol_pos_t::k_intrinsic){
+		return symbol_pos_t::k_intrinsic;
+	}
+	else{
+		return scope_count - 1 - pos._parent_steps;
+	}
+}
+
+symbol_pos_t scope_index_to_symbol_pos(size_t scope_index, int symbol_index, size_t scope_count){
+	QUARK_ASSERT(scope_index < scope_count);
+
+	const size_t parent_steps = scope_index == 0 ? symbol_pos_t::k_global_scope : (scope_count - scope_index - 1);
+	return symbol_pos_t::make_stack_pos((int)parent_steps, symbol_index);
+}
+
+symbol_pos_t normalize_symbol_pos(const symbol_pos_t& pos, size_t scope_count){
+	QUARK_ASSERT(pos.check_invariant());
+
+	const auto scope_index = symbol_pos_to_scope_index(pos, scope_count);
+	return scope_index_to_symbol_pos(scope_index, pos._index, scope_count);
+}
+
+
+
 //////////////////////////////////////////////////		expression_type
 
 

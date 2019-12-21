@@ -134,7 +134,8 @@ struct symbol_pos_t {
 		-1: global stack frame
 		-2: intrinsic
 
-		Notice that the global frame has two integers: -1 and (frame_count - 1)
+		Notice that the global frame has two integers: -1 and (scope_count - 1)
+		Normalized: global scope gets _parent_steps = -1
 	*/
 	enum scope_index_t {
 		k_current_scope = 0,
@@ -173,18 +174,9 @@ inline bool operator==(const symbol_pos_t& lhs, const symbol_pos_t& rhs){
 	return lhs._parent_steps == rhs._parent_steps && lhs._index == rhs._index;
 }
 
-inline size_t symbol_pos_to_scope_index(const symbol_pos_t& pos, size_t scope_size){
-	if(pos._parent_steps == symbol_pos_t::k_global_scope){
-		return 0;
-	}
-	else if(pos._parent_steps == symbol_pos_t::k_intrinsic){
-		return symbol_pos_t::k_intrinsic;
-	}
-	else{
-		return scope_size - 1 - pos._parent_steps;
-	}
-}
-
+size_t symbol_pos_to_scope_index(const symbol_pos_t& pos, size_t scope_count);
+symbol_pos_t scope_index_to_symbol_pos(size_t scope_index, int symbol_index, size_t scope_count);
+symbol_pos_t normalize_symbol_pos(const symbol_pos_t& pos, size_t scope_count);
 
 
 
