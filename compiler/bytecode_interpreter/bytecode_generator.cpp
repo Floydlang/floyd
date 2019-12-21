@@ -43,7 +43,7 @@
 #include <algorithm>
 #include <cstdint>
 
-const auto trace_io_flag = true;
+const auto trace_io_flag = false;
 
 namespace floyd {
 
@@ -788,7 +788,7 @@ static gen_expr_out_t generate_resolve_member_expression(
 	const gen_scope_t& body
 ){
 	QUARK_ASSERT(gen.check_invariant());
-	QUARK_ASSERT(target_reg.check_invariant() && target_reg.is_empty() == false);
+	QUARK_ASSERT(target_reg.check_invariant());
 
 	const auto& types = gen._ast_imm->_tree._types;
 
@@ -807,7 +807,9 @@ static gen_expr_out_t generate_resolve_member_expression(
 	int index = find_struct_member_index(struct_def, details.member_name);
 	QUARK_ASSERT(index != -1);
 
-	const auto target_reg2 = target_reg;
+	const auto target_reg2 = target_reg.is_empty()
+		? generate_local_temp(gen._ast_imm->_tree._types, body_acc, e.get_output_type(), "temp: resolve-member output")
+		: target_reg;
 
 	body_acc._instrs.push_back(gen_instruction_t(bc_opcode::k_get_struct_member,
 		target_reg2,
@@ -1971,11 +1973,7 @@ static gen_expr_out_t generate_expression(
 		}
 
 		gen_expr_out_t operator()(const expression_t::resolve_member_t& expr) const{
-			auto body_acc = body;
-			const auto target_reg2 = target_reg.is_empty()
-				? generate_local_temp(gen._ast_imm->_tree._types, body_acc, e.get_output_type(), "temp: resolve-member output")
-				: target_reg;
-			return generate_resolve_member_expression(gen, target_reg2, e, expr, body_acc);
+			return generate_resolve_member_expression(gen, target_reg, e, expr, body);
 		}
 		gen_expr_out_t operator()(const expression_t::update_member_t& expr) const{
 			return generate_update_member_expression(gen, target_reg, e, expr, body);
