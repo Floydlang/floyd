@@ -287,7 +287,7 @@ enum class bc_opcode: uint8_t {
 
 	//////////////////////////////////////		COMPARISON
 
-	//??? Remove all conditions. Only have conditional branches.
+	//??? Idea: Remove all conditions. Only have conditional branches.
 	/*
 		The type-unspecific version is a fallback to handles all types not special-cased.
 		A: Register: where to put result BOOL
@@ -1030,7 +1030,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 		QUARK_ASSERT(type.check_invariant());
-//		QUARK_ASSERT(peek2(_backend->types, type) == _entry_types[pos]);
+		QUARK_ASSERT(peek2(_backend->types, type) == _entry_types[pos]);
 
 		const auto& e = _entries[pos];
 		const auto result = rt_value_t(*_backend, type, e, rt_value_t::rc_mode::bump);
