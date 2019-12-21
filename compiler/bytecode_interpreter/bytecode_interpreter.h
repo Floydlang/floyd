@@ -35,7 +35,6 @@
 #include <chrono>
 
 /*
-
 FRAME INFO
 stack + 0	prev frame (stack pos)
 stack + 1	prev static frame ptr
@@ -773,6 +772,7 @@ struct interpreter_stack_t {
 			const bool ext = is_rc_value(_backend->types, type);
 			const auto& local = frame._locals[i];
 			if(ext){
+				//??? FIx now that we have k_init_local
 				if(local.is_undefined()){
 					push_external_value(rt_value_t(type, rt_value_t::mode::k_unwritten_ext_value));
 				}
@@ -875,12 +875,6 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(_current_static_frame->_symbols[reg].second._value_type == peek2(_backend->types, value._type));
 
 		write_register(reg, value);
-/*
-		auto prev_copy = _current_frame_start_ptr[reg];
-		value._pod._external->_rc++;
-		_current_frame_start_ptr[reg] = value._pod;
-		release_pod_external(prev_copy);
-*/
 
 		QUARK_ASSERT(check_invariant());
 	}

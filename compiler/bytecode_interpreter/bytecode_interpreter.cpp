@@ -959,7 +959,6 @@ static void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t targ
 
 	const auto result = rt_value_t::make_struct_value(backend, target_type, elements2);
 	QUARK_ASSERT(result.check_invariant());
-//	QUARK_TRACE(to_compact_string2(instance));
 
 	vm._stack.write_register__external_value(dest_reg, result);
 }
@@ -1120,7 +1119,6 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 		//////////////////////////////////////////		ACCESS GLOBALS
 
-		//??? add an init-opcode that doesn't release previous value.
 
 		case bc_opcode::k_load_global_external_value: {
 			QUARK_ASSERT(stack.check_reg__external_value(i._a));
@@ -1131,8 +1129,6 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			const auto& new_value_pod = globals[i._b];
 			regs[i._a] = new_value_pod;
 			retain_value(backend, new_value_pod, type);
-//			QUARK_ASSERT(check_invariant(backend, new_value_pod, type));
-//			trace_value_backend_dynamic(backend);
 			break;
 		}
 		case bc_opcode::k_load_global_inplace_value: {
@@ -1198,13 +1194,6 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_return: {
 			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
-/*
-			QUARK_ASSERT(
-				(is_ext && stack.check_reg__external_value(i._a))
-				|| (!is_ext && stack.check_reg__inplace_value(i._a))
-			);
-*/
-
 			return { true, rt_value_t(backend, type, regs[i._a], rt_value_t::rc_mode::bump) };
 		}
 
@@ -1250,11 +1239,10 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_push_inplace_value: {
 			QUARK_ASSERT(stack.check_reg__inplace_value(i._a));
-			const auto debug_type = stack._entry_types[stack.get_current_frame_start() + i._a];
-
+			const auto type = stack._entry_types[stack.get_current_frame_start() + i._a];
 			stack._entries[stack._stack_size] = regs[i._a];
 			stack._stack_size++;
-			stack._entry_types.push_back(debug_type);
+			stack._entry_types.push_back(type);
 			QUARK_ASSERT(stack.check_invariant());
 			break;
 		}
@@ -1449,7 +1437,6 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 		{
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg__external_value(i._a));
-//			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
 			QUARK_ASSERT(stack.check_reg_int(i._c));
 
 			const auto& vector_type = frame_ptr->_symbols[i._b].second._value_type;
