@@ -43,7 +43,7 @@
 #include <algorithm>
 #include <cstdint>
 
-const auto trace_io_flag = true;
+const auto trace_io_flag = false;
 
 namespace floyd {
 
@@ -1774,7 +1774,7 @@ static gen_expr_out_t generate_arithmetic_expression(
 	const gen_scope_t& body
 ){
 	QUARK_ASSERT(gen.check_invariant());
-	QUARK_ASSERT(target_reg.check_invariant() /*&& target_reg.is_empty() == false*/);
+	QUARK_ASSERT(target_reg.check_invariant() && target_reg.is_empty() == false);
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -1788,10 +1788,6 @@ static gen_expr_out_t generate_arithmetic_expression(
 	body_acc = right_expr._body;
 
 	const auto type = details.lhs->get_output_type();
-
-	const auto target_reg2 = target_reg.is_empty()
-		? generate_local_temp(types, body_acc, e.get_output_type(), "temp: arithmetic output")
-		: target_reg;
 
 	const auto peek = peek2(types, type);
 	const auto opcode = [&]{
@@ -1867,10 +1863,10 @@ static gen_expr_out_t generate_arithmetic_expression(
 	}();
 
 	QUARK_ASSERT(opcode != bc_opcode::k_nop);
-	body_acc._instrs.push_back(gen_instruction_t(opcode, target_reg2, left_expr._out, right_expr._out));
+	body_acc._instrs.push_back(gen_instruction_t(opcode, target_reg, left_expr._out, right_expr._out));
 
 	QUARK_ASSERT(body_acc.check_invariant());
-	return { body_acc, target_reg2, type };
+	return { body_acc, target_reg, type };
 }
 
 static gen_expr_out_t generate_literal_expression(
@@ -1935,7 +1931,12 @@ static gen_expr_out_t generate_expression(
 			return generate_literal_expression(gen, target_reg, e, expr, body);
 		}
 		gen_expr_out_t operator()(const expression_t::arithmetic_t& expr) const{
-			return generate_arithmetic_expression(gen, target_reg, expr.op, e, expr, body);
+			auto body_acc = body;
+			const auto target_reg2 = target_reg.is_empty()
+				? generate_local_temp(gen._ast_imm->_tree._types, body_acc, e.get_output_type(), "temp: resolve-member output")
+				: target_reg;
+
+			return generate_arithmetic_expression(gen, target_reg2, expr.op, e, expr, body_acc);
 		}
 		gen_expr_out_t operator()(const expression_t::comparison_t& expr) const{
 			return generate_comparison_expression(gen, target_reg, expr.op, e, expr, body);
@@ -1975,6 +1976,7 @@ static gen_expr_out_t generate_expression(
 			const auto target_reg2 = target_reg.is_empty()
 				? generate_local_temp(gen._ast_imm->_tree._types, body_acc, e.get_output_type(), "temp: resolve-member output")
 				: target_reg;
+
 			return generate_resolve_member_expression(gen, target_reg2, e, expr, body_acc);
 		}
 		gen_expr_out_t operator()(const expression_t::update_member_t& expr) const{
