@@ -446,32 +446,17 @@ static void generate_assign2_statement(bcgenerator_t& gen, const statement_t::as
 	}
 }
 
-#if 1
 static void generate_init2_statement(bcgenerator_t& gen, const statement_t::init2_t& statement){
 	QUARK_ASSERT(gen.check_invariant());
 
-	//	Treat init2 just like assign2.
-	const auto temp = statement_t::assign2_t{ statement._dest_variable, statement._expression };
-	return generate_assign2_statement(gen, temp);
-}
-#else
-static gen_scope_t generate_init2_statement(const bcgenerator_t& gen, const statement_t::init2_t& statement, const gen_scope_t& body){
-	QUARK_ASSERT(gen.check_invariant());
-	QUARK_ASSERT(body.check_invariant());
-
-	auto body_acc = body;
-
-	const auto expr = generate_expression(gen, {}, statement._expression, body_acc);
-	body_acc = expr._body;
-
-	body_acc._instrs.push_back(
+	const auto expr = generate_expression(gen, {}, statement._expression);
+	auto& dest_acc = gen._scope_stack.back();
+	dest_acc._instrs.push_back(
 		gen_instruction_t(bc_opcode::k_init_local, statement._dest_variable, expr._out, {})
 	);
 
-	QUARK_ASSERT(body_acc.check_invariant());
-	return body_acc;
+	QUARK_ASSERT(gen.check_invariant());
 }
-#endif
 
 static void generate_block_statement(bcgenerator_t& gen, const statement_t::block_statement_t& statement){
 	QUARK_ASSERT(gen.check_invariant());
