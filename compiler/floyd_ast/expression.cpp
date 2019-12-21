@@ -54,6 +54,7 @@ static std::map<expression_type, std::string> k_expression_to_opcode = {
 
 	{ expression_type::k_conditional_operator, expression_opcode_t::k_conditional_operator },
 	{ expression_type::k_call, expression_opcode_t::k_call },
+	{ expression_type::k_intrinsic, expression_opcode_t::k_intrinsic },
 
 	{ expression_type::k_load, expression_opcode_t::k_load },
 	{ expression_type::k_load2, expression_opcode_t::k_load2 },
