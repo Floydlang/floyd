@@ -772,9 +772,8 @@ struct interpreter_stack_t {
 			const bool ext = is_rc_value(_backend->types, type);
 			const auto& local = frame._locals[i];
 			if(ext){
-				//??? FIx now that we have k_init_local
 				if(local.is_undefined()){
-					push_external_value(rt_value_t(type, rt_value_t::mode::k_unwritten_ext_value));
+					push_external_value_blank(type);
 				}
 				else{
 					push_external_value(value_to_rt(*_backend, local));
@@ -1009,6 +1008,17 @@ struct interpreter_stack_t {
 		_entries[_stack_size] = value._pod;
 		_stack_size++;
 		_entry_types.push_back(value._type);
+
+		QUARK_ASSERT(check_invariant());
+	}
+
+	public: void push_external_value_blank(const type_t& type){
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(type.check_invariant());
+
+		_entries[_stack_size] = make_blank_runtime_value();
+		_stack_size++;
+		_entry_types.push_back(type);
 
 		QUARK_ASSERT(check_invariant());
 	}

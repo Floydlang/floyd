@@ -1314,22 +1314,6 @@ bool rt_value_t::check_invariant() const {
 }
 #endif
 
-rt_value_t::rt_value_t(const type_t& type, mode mode) :
-	_backend(nullptr),
-	_type(type)
-{
-	QUARK_ASSERT(type.check_invariant());
-
-	//	Allocate a dummy external value.
-//	auto temp = new bc_external_value_t{"UNWRITTEN EXT VALUE"};
-#if DEBUG
-//	temp->_debug__is_unwritten_external_value = true;
-#endif
-	_pod = make_blank_runtime_value();
-
-	QUARK_ASSERT(check_invariant());
-}
-
 
 QUARK_TEST("rt_value_t", "", "", ""){
 	const auto a = rt_value_t();

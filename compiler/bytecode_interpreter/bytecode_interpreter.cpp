@@ -358,8 +358,6 @@ json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend)
 		const auto bc_pod = stack._entries[i];
 		const auto bc = rt_value_t(backend, debug_type, bc_pod, rt_value_t::rc_mode::bump);
 
-//???		bool unwritten = ext && bc._pod._external->_debug__is_unwritten_external_value;
-
 		auto a = json_t::make_array({
 			json_t(i),
 			type_to_json(backend.types, debug_type),
@@ -599,7 +597,9 @@ interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config
 		if(false) trace_interpreter(*this, 0);
 
 		//	Run static intialization (basically run global instructions before calling main()).
-		/*const auto& r =*/ execute_instructions(*this, _imm->_program._globals._instructions);
+		execute_instructions(*this, _imm->_program._globals._instructions);
+
+		if(false) trace_interpreter(*this, 0);
 
 		//	close_frame() is called in destructor. This allows clients to read globals etc before interpreter is destructed.
 //		_stack.close_frame(_imm->_program._globals);

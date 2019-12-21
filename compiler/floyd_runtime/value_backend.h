@@ -604,12 +604,6 @@ struct rt_value_t {
 	public: explicit rt_value_t(const type_t& type, const runtime_value_t& internals);
 
 
-	//	Used for uninitialized local / global variables - before they are written to the first time. Kludge.
-	enum class mode {
-		k_unwritten_ext_value
-	};
-	public: explicit rt_value_t(const type_t& type, mode mode);
-
 
 	//////////////////////////////////////		internal-undefined type
 	public: static rt_value_t make_undefined();
