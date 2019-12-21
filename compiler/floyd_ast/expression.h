@@ -133,6 +133,8 @@ struct symbol_pos_t {
 		2: previous-previous stack frame
 		-1: global stack frame
 		-2: intrinsic
+
+		Notice that the global frame has two integers: -1 and (frame_count - 1)
 	*/
 	enum scope_index_t {
 		k_current_scope = 0,
@@ -169,6 +171,18 @@ struct symbol_pos_t {
 
 inline bool operator==(const symbol_pos_t& lhs, const symbol_pos_t& rhs){
 	return lhs._parent_steps == rhs._parent_steps && lhs._index == rhs._index;
+}
+
+inline int symbol_pos_to_scope_index(const symbol_pos_t& pos, int scope_size){
+	if(pos._parent_steps == symbol_pos_t::k_global_scope){
+		return 0;
+	}
+	else if(pos._parent_steps == symbol_pos_t::k_intrinsic){
+		return symbol_pos_t::k_intrinsic;
+	}
+	else{
+		return scope_size - 1 - pos._parent_steps;
+	}
 }
 
 

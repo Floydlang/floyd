@@ -236,26 +236,13 @@ static resolved_symbol_t make_resolved_symbol(llvm::Value* value_ptr, std::strin
 static resolved_symbol_t find_symbol(llvm_code_generator_t& gen_acc, const symbol_pos_t& reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(gen_acc.scope_path.size() >= 1);
-	QUARK_ASSERT(reg._parent_steps == symbol_pos_t::k_global_scope || (reg._parent_steps >= 0 && reg._parent_steps < gen_acc.scope_path.size()));
 
-	if(reg._parent_steps == symbol_pos_t::k_global_scope){
-		QUARK_ASSERT(gen_acc.scope_path.size() >= 1);
+	const auto scope_index = symbol_pos_to_scope_index(reg, (int)gen_acc.scope_path.size());
+	QUARK_ASSERT(scope_index >= 0 && scope_index < gen_acc.scope_path.size());
 
-		const auto& global_scope = gen_acc.scope_path.front();
-		QUARK_ASSERT(reg._index >= 0 && reg._index < global_scope.size());
-
-		return global_scope[reg._index];
-	}
-	else {
-		//	0 == back().
-		const auto scope_index = gen_acc.scope_path.size() - reg._parent_steps - 1;
-		QUARK_ASSERT(scope_index >= 0 && scope_index < gen_acc.scope_path.size());
-
-		const auto& scope = gen_acc.scope_path[scope_index];
-		QUARK_ASSERT(reg._index >= 0 && reg._index < scope.size());
-
-		return scope[reg._index];
-	}
+	const auto& scope = gen_acc.scope_path[scope_index];
+	QUARK_ASSERT(reg._index >= 0 && reg._index < scope.size());
+	return scope[reg._index];
 }
 
 

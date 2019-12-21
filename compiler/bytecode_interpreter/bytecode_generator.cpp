@@ -134,9 +134,7 @@ struct gen_scope_t {
 struct bcgenerator_t {
 	public: explicit bcgenerator_t(const semantic_ast_t& ast);
 	public: bcgenerator_t(const bcgenerator_t& other);
-	public: const bcgenerator_t& operator=(const bcgenerator_t& other);
 	public: bool check_invariant() const;
-	public: void swap(bcgenerator_t& other) throw();
 
 
 	//////////////////////////////////////		STATE
@@ -231,16 +229,6 @@ static bool check_field_nonlocal(const symbol_pos_t& reg, bool is_reg){
 	return true;
 }
 
-static bool check_field__local(const symbol_pos_t& reg, bool is_reg){
-	if(is_reg){
-		//	Must not be a global -- those should have been turned to global-access opcodes.
-		QUARK_ASSERT(reg._parent_steps != symbol_pos_t::k_global_scope);
-	}
-	else{
-		QUARK_ASSERT(reg._parent_steps == k_immediate_value__parent_steps || reg.is_empty());
-	}
-	return true;
-}
 
 
 //////////////////////////////////////		bcgen_scope_t
@@ -2014,17 +2002,6 @@ bcgenerator_t::bcgenerator_t(const bcgenerator_t& other) :
 	QUARK_ASSERT(check_invariant());
 }
 
-void bcgenerator_t::swap(bcgenerator_t& other) throw(){
-	other._ast_imm.swap(this->_ast_imm);
-	std::swap(other._globals, this->_globals);
-}
-
-const bcgenerator_t& bcgenerator_t::operator=(const bcgenerator_t& other){
-	auto temp = other;
-	temp.swap(*this);
-	return *this;
-}
-
 #if DEBUG
 bool bcgenerator_t::check_invariant() const {
 	QUARK_ASSERT(_ast_imm->check_invariant());
@@ -2037,6 +2014,16 @@ bool bcgenerator_t::check_invariant() const {
 //////////////////////////////////////		FREE
 
 
+static bool check_field__local(const symbol_pos_t& reg, bool is_reg){
+	if(is_reg){
+		//	Must not be a global position -- those should have been turned to global-access opcodes.
+		QUARK_ASSERT(reg._parent_steps != symbol_pos_t::k_global_scope);
+	}
+	else{
+		QUARK_ASSERT(reg._parent_steps == k_immediate_value__parent_steps || reg.is_empty());
+	}
+	return true;
+}
 //	Converts our fat instruction into the destination format, which is just 64 bits.
 static bc_instruction_t squeeze_instruction(const gen_instruction_t& instruction){
 	QUARK_ASSERT(instruction.check_invariant());
