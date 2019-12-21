@@ -365,7 +365,7 @@ static const type_t figure_out_callee_return_type(analyser_t& a, const statement
 				QUARK_ASSERT(load.address._parent_steps == -1);
 
 				const auto& addr = load.address; 
-				const size_t scope_index = symbol_pos_to_scope_index(addr, (int)a._lexical_scope_stack.size());
+				const auto scope_index = symbol_pos_to_scope_index(addr, a._lexical_scope_stack.size());
 				const auto& symbol_kv = a._lexical_scope_stack[scope_index].symbols._symbols[addr._index];
 
 				QUARK_ASSERT(symbol_kv.second._symbol_type == symbol_t::symbol_type::named_type);
@@ -2355,7 +2355,7 @@ static std::pair<analyser_t, expression_t> analyse_call_expression(const analyse
 	//	Converts these calls to construct-value-expressions.
 	else if(callee_expr_load2){
 		const auto& addr = callee_expr_load2->address; 
-		const size_t scope_index = symbol_pos_to_scope_index(addr, a_acc._lexical_scope_stack.size());
+		const auto scope_index = symbol_pos_to_scope_index(addr, a_acc._lexical_scope_stack.size());
 		const auto& callee_symbol = a_acc._lexical_scope_stack[scope_index].symbols._symbols[addr._index];
 
 		if(callee_symbol.second._symbol_type == symbol_t::symbol_type::named_type){

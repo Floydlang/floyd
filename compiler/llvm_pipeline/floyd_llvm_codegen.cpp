@@ -237,7 +237,7 @@ static resolved_symbol_t find_symbol(llvm_code_generator_t& gen_acc, const symbo
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(gen_acc.scope_path.size() >= 1);
 
-	const auto scope_index = symbol_pos_to_scope_index(reg, (int)gen_acc.scope_path.size());
+	const auto scope_index = symbol_pos_to_scope_index(reg, gen_acc.scope_path.size());
 	QUARK_ASSERT(scope_index >= 0 && scope_index < gen_acc.scope_path.size());
 
 	const auto& scope = gen_acc.scope_path[scope_index];

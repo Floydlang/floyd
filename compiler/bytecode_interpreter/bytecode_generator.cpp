@@ -43,7 +43,7 @@
 #include <algorithm>
 #include <cstdint>
 
-const auto trace_io_flag = false;
+const auto trace_io_flag = true;
 
 namespace floyd {
 
@@ -354,6 +354,7 @@ static symbol_pos_t generate_local_const(const types_t& types, gen_scope_t& body
 	return symbol_pos_t::make_stack_pos(0, id);
 }
 
+#if 0
 //	Supports globals & locals both as dest and sources.
 static void generate_copy_value_local_global(
 	const bcgenerator_t& gen,
@@ -417,6 +418,75 @@ static void generate_copy_value_local_global(
 
 	QUARK_ASSERT(dest_acc.check_invariant());
 }
+#else
+//	Supports globals & locals both as dest and sources.
+static void generate_copy_value_local_global(
+	const bcgenerator_t& gen,
+	const type_t& type,
+	const symbol_pos_t& dest_reg,
+	const symbol_pos_t& source_reg,
+	gen_scope_t& dest_acc
+){
+	QUARK_ASSERT(gen.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(dest_reg.check_invariant());
+	QUARK_ASSERT(source_reg.check_invariant());
+	QUARK_ASSERT(dest_acc.check_invariant());
+
+	const auto& types = gen._ast_imm->_tree._types;
+	bool is_ext = is_rc_value(types, type);
+
+	//	If this asserts, we should special-case and do nothing.
+	QUARK_ASSERT(!(dest_reg == source_reg));
+
+	const auto source_scope_index = symbol_pos_to_scope_index(source_reg, gen._scope_stack.size());
+	const auto dest_scope_index = symbol_pos_to_scope_index(source_reg, gen._scope_stack.size());
+
+
+
+	//	global <= global
+	if(dest_reg._parent_steps == symbol_pos_t::k_global_scope && source_reg._parent_steps == symbol_pos_t::k_global_scope){
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+	}
+
+	//	global <= local
+	else if(dest_reg._parent_steps == symbol_pos_t::k_global_scope && source_reg._parent_steps != symbol_pos_t::k_global_scope){
+		dest_acc._instrs.push_back(
+			gen_instruction_t(
+				is_ext ? bc_opcode::k_store_global_external_value : bc_opcode::k_store_global_inplace_value,
+				make_imm_int_field(dest_reg._index),
+				source_reg,
+				{}
+			)
+		);
+	}
+	//	local <= global
+	else if(dest_reg._parent_steps != symbol_pos_t::k_global_scope && source_reg._parent_steps == symbol_pos_t::k_global_scope){
+		dest_acc._instrs.push_back(
+			gen_instruction_t(
+				is_ext ? bc_opcode::k_load_global_external_value : bc_opcode::k_load_global_inplace_value,
+				dest_reg,
+				make_imm_int_field(source_reg._index),
+				{}
+			)
+		);
+	}
+	//	local <= local
+	else{
+		dest_acc._instrs.push_back(
+			gen_instruction_t(
+				is_ext ? bc_opcode::k_copy_reg_external_value : bc_opcode::k_copy_reg_inplace_value,
+				dest_reg,
+				source_reg,
+				{}
+			)
+		);
+	}
+
+	QUARK_ASSERT(dest_acc.check_invariant());
+}
+#endif
 
 
 //////////////////////////////////////		STATEMENTS

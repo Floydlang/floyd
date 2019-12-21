@@ -173,7 +173,7 @@ inline bool operator==(const symbol_pos_t& lhs, const symbol_pos_t& rhs){
 	return lhs._parent_steps == rhs._parent_steps && lhs._index == rhs._index;
 }
 
-inline int symbol_pos_to_scope_index(const symbol_pos_t& pos, int scope_size){
+inline size_t symbol_pos_to_scope_index(const symbol_pos_t& pos, size_t scope_size){
 	if(pos._parent_steps == symbol_pos_t::k_global_scope){
 		return 0;
 	}
