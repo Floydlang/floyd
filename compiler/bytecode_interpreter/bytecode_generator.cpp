@@ -369,7 +369,7 @@ static symbol_pos_t generate_local_const(const types_t& types, gen_scope_t& body
 }
 
 //	Supports globals & locals both as dest and sources.
-static gen_scope_t copy_value(
+static gen_scope_t generate_copy_value_local_global(
 	const bcgenerator_t& gen,
 	const type_t& type,
 	const symbol_pos_t& dest_reg,
@@ -456,7 +456,7 @@ static gen_scope_t generate_assign2_statement(const bcgenerator_t& gen, const st
 	else{
 		const auto expr = generate_expression(gen, {}, statement._expression, body_acc);
 		body_acc = expr._body;
-		body_acc = copy_value(gen, statement._expression.get_output_type(), statement._dest_variable, expr._out, body_acc);
+		body_acc = generate_copy_value_local_global(gen, statement._expression.get_output_type(), statement._dest_variable, expr._out, body_acc);
 		QUARK_ASSERT(body_acc.check_invariant());
 	}
 	return body_acc;
@@ -472,17 +472,17 @@ static gen_scope_t generate_init2_statement(const bcgenerator_t& gen, const stat
 	return generate_assign2_statement(gen, temp, body);
 }
 #else
-static bcgen_scope_t generate_init2_statement(const bcgenerator_t& gen, const statement_t::init2_t& statement, const bcgen_scope_t& body){
+static gen_scope_t generate_init2_statement(const bcgenerator_t& gen, const statement_t::init2_t& statement, const gen_scope_t& body){
 	QUARK_ASSERT(gen.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
 
-	const auto expr = bcgen_expression(gen, {}, statement._expression, body_acc);
+	const auto expr = generate_expression(gen, {}, statement._expression, body_acc);
 	body_acc = expr._body;
 
 	body_acc._instrs.push_back(
-		bcgen_instruction_t(bc_opcode::k_init_local, statement._dest_variable, expr._out, {})
+		gen_instruction_t(bc_opcode::k_init_local, statement._dest_variable, expr._out, {})
 	);
 
 	QUARK_ASSERT(body_acc.check_invariant());
@@ -1128,7 +1128,7 @@ static gen_expr_out_t generate_load2_expression(
 	}
 	else{
 		const auto target_reg2 = target_reg.is_empty() ? generate_local_temp(types, body_acc, e.get_output_type(), "temp: load2") : target_reg;
-		body_acc = copy_value(gen, result_type, target_reg2, details.address, body_acc);
+		body_acc = generate_copy_value_local_global(gen, result_type, target_reg2, details.address, body_acc);
 
 		QUARK_ASSERT(body_acc.check_invariant());
 		return { body_acc, target_reg2, result_type };
@@ -1898,7 +1898,7 @@ static gen_expr_out_t generate_literal_expression(
 	//	We need to copy the value to the target reg...
 	else{
 		const auto result_type = e.get_output_type();
-		body_acc = copy_value(gen, result_type, target_reg, const_temp, body_acc);
+		body_acc = generate_copy_value_local_global(gen, result_type, target_reg, const_temp, body_acc);
 
 		QUARK_ASSERT(body_acc.check_invariant());
 		return { body_acc, target_reg, result_type };
