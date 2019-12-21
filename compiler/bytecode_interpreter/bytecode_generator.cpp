@@ -51,6 +51,8 @@ struct semantic_ast_t;
 
 
 
+
+
 //////////////////////////////////////		bcgen_instruction_t
 
 /*
@@ -133,9 +135,7 @@ struct bcgenerator_t {
 	public: explicit bcgenerator_t(const semantic_ast_t& ast);
 	public: bcgenerator_t(const bcgenerator_t& other);
 	public: const bcgenerator_t& operator=(const bcgenerator_t& other);
-#if DEBUG
 	public: bool check_invariant() const;
-#endif
 	public: void swap(bcgenerator_t& other) throw();
 
 
@@ -270,7 +270,6 @@ static bool check_field__local(const symbol_pos_t& reg, bool is_reg){
 //////////////////////////////////////		bcgen_instruction_t
 
 
-#if DEBUG
 bool gen_instruction_t::check_invariant() const {
 	const auto encoding = k_opcode_info.at(_opcode)._encoding;
 	const auto reg_flags = encoding_to_reg_flags(encoding);
@@ -280,7 +279,6 @@ bool gen_instruction_t::check_invariant() const {
 	QUARK_ASSERT(check_field(_field_c, reg_flags._c));
 	return true;
 }
-#endif
 
 
 //////////////////////////////////////		FLATTEN
@@ -790,7 +788,7 @@ static gen_expr_out_t generate_resolve_member_expression(
 	const gen_scope_t& body
 ){
 	QUARK_ASSERT(gen.check_invariant());
-//	QUARK_ASSERT(target_reg.check_invariant() /*&& target_reg.is_empty() == false*/);
+	QUARK_ASSERT(target_reg.check_invariant() && target_reg.is_empty() == false);
 
 	const auto& types = gen._ast_imm->_tree._types;
 
@@ -809,11 +807,7 @@ static gen_expr_out_t generate_resolve_member_expression(
 	int index = find_struct_member_index(struct_def, details.member_name);
 	QUARK_ASSERT(index != -1);
 
-#if 1
-	const auto target_reg2 = target_reg.is_empty()
-		? generate_local_temp(types, body_acc, expr_output_type, "temp: resolve-member output")
-		: target_reg;
-#endif
+	const auto target_reg2 = target_reg;
 
 	body_acc._instrs.push_back(gen_instruction_t(bc_opcode::k_get_struct_member,
 		target_reg2,
@@ -1977,7 +1971,11 @@ static gen_expr_out_t generate_expression(
 		}
 
 		gen_expr_out_t operator()(const expression_t::resolve_member_t& expr) const{
-			return generate_resolve_member_expression(gen, target_reg, e, expr, body);
+			auto body_acc = body;
+			const auto target_reg2 = target_reg.is_empty()
+				? generate_local_temp(gen._ast_imm->_tree._types, body_acc, e.get_output_type(), "temp: resolve-member output")
+				: target_reg;
+			return generate_resolve_member_expression(gen, target_reg2, e, expr, body_acc);
 		}
 		gen_expr_out_t operator()(const expression_t::update_member_t& expr) const{
 			return generate_update_member_expression(gen, target_reg, e, expr, body);
