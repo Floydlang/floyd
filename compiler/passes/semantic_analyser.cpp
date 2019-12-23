@@ -582,9 +582,7 @@ static std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_st
 	//	Setup temporary symbol so function definition can find itself = recursive.
 	//	Notice: the final type may not be correct yet, but for function definitions it is.
 	//	This logic should be available for inferred binds too, in analyse_assign_statement().
-
-	const auto temp_symbol = mutable_flag ? symbol_t::make_mutable(lhs_itype) : symbol_t::make_immutable_reserve(lhs_itype);
-	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ new_local_name, temp_symbol });
+	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ new_local_name, symbol_t::make_immutable_reserve(lhs_itype) });
 	const auto local_name_index = a_acc._lexical_scope_stack.back().symbols._symbols.size() - 1;
 
 	try {
@@ -2859,8 +2857,6 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtin_symbols(an
 	return symbol_map;
 }
 
-
-
 //	Create built-in global symbol map: built in data types and intrinsics.
 //	Analyze global namespace, including all Floyd functions defined there.
 static const lexical_scope_t make_global_body(analyser_t& a){
@@ -2888,8 +2884,6 @@ static const lexical_scope_t make_global_body(analyser_t& a){
 
 	auto global_body3 = body2;
 
-
-
 #if 0
 	//??? Should be impossible thx to k_init_local.
 	//	Add Init json null.
@@ -2908,7 +2902,6 @@ static const lexical_scope_t make_global_body(analyser_t& a){
 		global_body3._statements.insert(global_body3._statements.begin(), s);
 	}
 #endif
-
 
 	//	Add Init benchmark_registry.
 	{
@@ -2943,7 +2936,6 @@ static const lexical_scope_t make_global_body(analyser_t& a){
 
 		global_body3._statements.insert(global_body3._statements.begin(), s);
 	}
-
 
 
 	//	Setup container and Floyd processes.
@@ -3033,12 +3025,6 @@ static const lexical_scope_t make_global_body(analyser_t& a){
 
 		a._container_def = container_def;
 	}
-
-
-
-
-
-
 
 
 	if(false) trace_analyser(a);
