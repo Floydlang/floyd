@@ -2207,7 +2207,7 @@ static std::vector<resolved_symbol_t> generate_function_symbol_slots(llvm_functi
 }
 
 static llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::string& symbol_name, llvm::Type& itype, llvm::Constant* init_or_nullptr){
-//	QUARK_ASSERT(check_invariant__module(&module));
+	QUARK_ASSERT(check_invariant__module(&module));
 	QUARK_ASSERT(symbol_name.empty() == false);
 
 	llvm::GlobalVariable* gv = new llvm::GlobalVariable(
@@ -2219,12 +2219,10 @@ static llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::s
 		symbol_name
 	);
 
-//	QUARK_ASSERT(check_invariant__module(&module));
-
+	QUARK_ASSERT(check_invariant__module(&module));
 	return gv;
 }
 
-//??? precalc is a decision the backend, not the semast should make
 static llvm::Value* generate_global(llvm_function_generator_t& gen_acc, const std::string& symbol_name, const symbol_t& symbol){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(symbol_name.empty() == false);
@@ -2272,8 +2270,9 @@ static llvm::Value* generate_global(llvm_function_generator_t& gen_acc, const st
 }
 
 //	Make LLVM globals for every global in the AST.
-//	Inits the globals when possible.
-//	Other globals are uninitialised and global init2-statements will store to them from floyd_runtime_init().
+//??? precalc is a decision the backend, not the semast should make
+//	Inits the globals when possible (immutable_precalc). Other globals are uninitialised (immutable_reserve &
+//	mutable_reserve) and global init2-statements will store to them from floyd_runtime_init().
 static std::vector<resolved_symbol_t> generate_global_symbol_slots(llvm_function_generator_t& gen_acc, const symbol_table_t& symbol_table){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(symbol_table.check_invariant());
@@ -2494,6 +2493,14 @@ struct module_output_t {
 	std::unique_ptr<llvm::Module> module;
 	std::vector<llvm_function_link_entry_t> link_map;
 };
+
+/*
+???? Refact sowe create function nodes, then ONE function creates global scope: init-function and globals -- at the same time. Allows us to use calls to init json(null)
+
+??? alt: change semast to replace null with intrinsic that creates a json:null. No global constant called "null" anymore.
+
+??? Alt C: use "null" constant but init it explicitly using int() code. It can be set to point to a built-in json::null that lives in  value_backend.
+*/
 
 static module_output_t generate_module(llvm_instance_t& instance, const std::string& module_name, const semantic_ast_t& semantic_ast, const compiler_settings_t& settings){
 	QUARK_ASSERT(instance.check_invariant());
