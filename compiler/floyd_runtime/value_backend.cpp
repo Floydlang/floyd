@@ -908,6 +908,7 @@ runtime_value_t load_via_ptr2(const types_t& types, const void* value_ptr, const
 
 // IMPORTANT: Different types will access different number of bytes, for example a BYTE. We cannot dereference pointer as a uint64*!!
 void store_via_ptr2(const types_t& types, void* value_ptr, const type_t& type, const runtime_value_t& value){
+	const auto type_peek = peek2(types, type);
 	struct visitor_t {
 		void* value_ptr;
 		const runtime_value_t& value;
@@ -961,7 +962,7 @@ void store_via_ptr2(const types_t& types, void* value_ptr, const type_t& type, c
 			QUARK_ASSERT(false); throw std::exception();
 		}
 	};
-	std::visit(visitor_t{ value_ptr, value }, get_type_variant(types, type));
+	std::visit(visitor_t{ value_ptr, value }, get_type_variant(types, type_peek));
 }
 
 

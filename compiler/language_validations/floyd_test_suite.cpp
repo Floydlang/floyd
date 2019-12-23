@@ -7860,7 +7860,6 @@ FLOYD_LANG_PROOF("", "Demo DEEP BY VALUE", "", ""){
 	);
 }
 
-#if 0
 FLOYD_LANG_PROOF("", "Demo processes", "", ""){
 	ut_run_closed_nolib(
 		QUARK_POS,
@@ -7937,7 +7936,6 @@ FLOYD_LANG_PROOF("", "Demo processes", "", ""){
 		)___"
 	);
 }
-#endif
 
 
 #if 0
