@@ -548,12 +548,12 @@ static std::pair<analyser_t, statement_t> analyse_assign_statement(const analyse
 }
 
 /*
-Assign with target type info. Always creates a new local.
+Assign with target type info. Always creates a new symbol in the current lexical scope.
 
 Ex:
 	let int a = 10
 	mutable a = 10
-	mutable = 10
+	let a = 10
 */
 static std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement(const analyser_t& a, const statement_t& s){
 	QUARK_ASSERT(a.check_invariant());
@@ -609,13 +609,11 @@ static std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_st
 			if(is_preinitliteral(dereference_type(a_acc._types, lhs_itype2)) && mutable_flag == false && get_expression_type(rhs_expr_pair.second) == expression_type::k_literal){
 				const auto symbol2 = symbol_t::make_immutable_precalc(lhs_itype2, rhs_expr_pair.second.get_literal());
 				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
-				analyze_expr_output_type(a_acc, rhs_expr_pair.second);
 				return { a_acc, {} };
 			}
 			else{
 				const auto symbol2 = mutable_flag ? symbol_t::make_mutable(lhs_itype2) : symbol_t::make_immutable_reserve(lhs_itype2);
 				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
-				analyze_expr_output_type(a_acc, rhs_expr_pair.second);
 
 				return {
 					a_acc,
