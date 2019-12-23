@@ -857,25 +857,14 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
 		QUARK_ASSERT(value.check_invariant());
+		QUARK_ASSERT(_current_static_frame->_symbols[reg].second._value_type == peek2(_backend->types, value._type));
 
 		const auto& frame_slot_type = _current_static_frame->_symbols[reg].second._value_type;
-//		QUARK_ASSERT(peek2(_backend->types, value._type) == frame_slot_type);//??? do check without peek2()
 
 		const auto prev = _current_frame_start_ptr[reg];
 		release_value_safe(*_backend, prev, frame_slot_type);
 		retain_value(*_backend, value._pod, frame_slot_type);
 		_current_frame_start_ptr[reg] = value._pod;
-
-		QUARK_ASSERT(check_invariant());
-	}
-
-	public: void write_register__external_value(const int reg, const rt_value_t& value){
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(check_reg__external_value(reg));
-		QUARK_ASSERT(value.check_invariant());
-		QUARK_ASSERT(_current_static_frame->_symbols[reg].second._value_type == peek2(_backend->types, value._type));
-
-		write_register(reg, value);
 
 		QUARK_ASSERT(check_invariant());
 	}

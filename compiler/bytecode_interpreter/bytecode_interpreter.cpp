@@ -890,7 +890,7 @@ static void execute_new_vector_obj(interpreter_t& vm, int16_t dest_reg, int16_t 
 	}
 
 	const auto result = make_vector_value(backend, element_type, elements2);
-	vm._stack.write_register__external_value(dest_reg, result);
+	vm._stack.write_register(dest_reg, result);
 }
 
 static void execute_new_dict_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
@@ -921,7 +921,7 @@ static void execute_new_dict_obj(interpreter_t& vm, int16_t dest_reg, int16_t ta
 	}
 
 	const auto result = make_dict_value(backend, element_type, elements2);
-	vm._stack.write_register__external_value(dest_reg, result);
+	vm._stack.write_register(dest_reg, result);
 }
 
 static void execute_new_dict_pod64(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
@@ -952,7 +952,7 @@ static void execute_new_dict_pod64(interpreter_t& vm, int16_t dest_reg, int16_t 
 	}
 
 	const auto result = make_dict(types, element_type, elements2);
-	vm._stack.write_register__external_value(dest_reg, result);
+	vm._stack.write_register(dest_reg, result);
 */
 }
 
@@ -980,7 +980,7 @@ static void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t targ
 	const auto result = rt_value_t::make_struct_value(backend, target_type, elements2);
 	QUARK_ASSERT(result.check_invariant());
 
-	vm._stack.write_register__external_value(dest_reg, result);
+	vm._stack.write_register(dest_reg, result);
 }
 
 //	??? Make stub bc_static_frame_t for each host function to make call conventions same as Floyd functions.
@@ -1843,7 +1843,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			const auto& vector_type = frame_ptr->_symbols[i._a].second._value_type;
 			const auto r = concatunate_vectors(backend, vector_type, regs[i._b], regs[i._c]);
 			const auto& result = rt_value_t(backend, vector_type, r, rt_value_t::rc_mode::adopt);
-			stack.write_register__external_value(i._a, result);
+			stack.write_register(i._a, result);
 			break;
 		}
 
