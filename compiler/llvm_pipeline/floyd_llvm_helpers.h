@@ -15,8 +15,6 @@
 #include "llvm/Target/TargetMachine.h"
 
 
-
-
 namespace floyd {
 
 struct llvm_type_lookup;
@@ -37,7 +35,6 @@ struct target_t {
 target_t make_default_target();
 
 
-
 //	Must LLVMContext be kept while using the execution engine? Yes!
 struct llvm_instance_t {
 	llvm_instance_t();
@@ -50,10 +47,6 @@ struct llvm_instance_t {
 	llvm::LLVMContext context;
 	target_t target;
 };
-
-
-
-
 
 bool check_invariant__function(const llvm::Function* f);
 bool check_invariant__module(llvm::Module* module);
@@ -83,17 +76,13 @@ bool check_emitting_function(const llvm_type_lookup& type_lookup, llvm::Function
 llvm::Value* get_callers_fcp(const llvm_type_lookup& type_lookup, llvm::Function& emit_f);
 
 
-
 ////////////////////////////////		CODEGEN
 
 
 void generate_array_element_store(llvm::IRBuilder<>& builder, llvm::Value& array_ptr_reg, uint64_t element_index, llvm::Value& element_reg);
 
 
-
-
 ////////////////////////////////		VALUES
-
 
 
 //	Converts the LLVM value into a uint64_t for storing vector, pass as DYN value.

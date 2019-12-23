@@ -5,10 +5,7 @@
 //  Created by Marcus Zetterquist on 2019-03-23.
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
-
-
 static const bool k_trace_pass_io = false;
-
 
 #include "floyd_llvm_codegen.h"
 
@@ -28,7 +25,6 @@ static const bool k_trace_pass_io = false;
 #include "quark.h"
 #include "floyd_runtime.h"
 
-
 //#include <llvm/ADT/APInt.h>
 //#include <llvm/IR/Verifier.h>
 //#include <llvm/ExecutionEngine/ExecutionEngine.h>
@@ -45,38 +41,23 @@ static const bool k_trace_pass_io = false;
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/IRBuilder.h>
-#include <llvm/Support/Casting.h>
-#include <llvm/Support/TargetSelect.h>
-#include <llvm/Support/raw_ostream.h>
+#include "llvm/IR/LegacyPassManager.h"
 #include <llvm/IR/DataLayout.h>
 #include <llvm/IR/PassManager.h>
-
-#include "llvm/Support/TargetRegistry.h"
-
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/STLExtras.h"
-#include "llvm/IR/BasicBlock.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/Instructions.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/LegacyPassManager.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Type.h"
-#include "llvm/IR/Verifier.h"
-#include "llvm/Support/FileSystem.h"
-#include "llvm/Support/Host.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Support/TargetRegistry.h"
-#include "llvm/Support/TargetSelect.h"
+
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
 
-
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Host.h"
+#include "llvm/Support/TargetRegistry.h"
+#include <llvm/Support/Casting.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include "llvm/Bitcode/BitstreamWriter.h"
 
@@ -88,10 +69,7 @@ static const bool k_trace_pass_io = false;
 #include <vector>
 #include <iostream>
 
-
 //http://releases.llvm.org/2.6/docs/tutorial/JITTutorial2.html
-
-
 
 
 namespace floyd {
@@ -100,19 +78,7 @@ namespace floyd {
 struct llvm_code_generator_t;
 
 
-
-
-
-
-
-
 ////////////////////////////////		llvm_ir_program_t
-
-
-
-
-
-
 
 llvm_ir_program_t::llvm_ir_program_t(
 	llvm_instance_t* instance,
@@ -144,15 +110,7 @@ bool llvm_ir_program_t::check_invariant() const {
 }
 
 
-
-
-
-
-
 ////////////////////////////////		BASICS
-
-
-
 
 
 enum class function_return_mode {
@@ -164,13 +122,7 @@ static function_return_mode generate_statements(llvm_function_generator_t& gen_a
 static llvm::Value* generate_expression(llvm_function_generator_t& gen_acc, const expression_t& e);
 
 
-
-
-
 ////////////////////////////////		DEBUG
-
-
-
 
 static std::string print_resolved_symbols(const std::vector<resolved_symbol_t>& globals){
 	std::stringstream out;
@@ -203,8 +155,6 @@ static std::string print_gen(const llvm_code_generator_t& gen){
 		out << print_resolved_symbols(e);
 		index++;
 	}
-
-
 	return out.str();
 }
 
@@ -220,11 +170,7 @@ static std::string print_program(const llvm_ir_program_t& program){
 }
 
 
-
-
 ////////////////////////////////		PRIMITIVES
-
-
 
 
 static resolved_symbol_t make_resolved_symbol(llvm::Value* value_ptr, std::string debug_str, resolved_symbol_t::esymtype t, const std::string& symbol_name, const symbol_t& symbol){
@@ -246,16 +192,7 @@ static resolved_symbol_t find_symbol(llvm_code_generator_t& gen_acc, const symbo
 }
 
 
-
-
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
 
 
 /*
@@ -284,6 +221,7 @@ static llvm::Value* generate_constant_string(llvm_function_generator_t& gen_acc,
 };
 
 //	Makes constant from a Floyd value. The constant may go in code segment or be computed at app init-time.
+//	Warning: cannot generate any code -- called
 static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const value_t& value){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
@@ -398,7 +336,6 @@ static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const 
 	return std::visit(visitor_t{ gen_acc, builder, context, itype, value }, get_type_variant(types, type));
 }
 
-//	Related: generate_global_symbol_slots()
 //	Reserve stack slot for each local. But not arguments, they already have stack slot.
 static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_generator_t& gen_acc, const symbol_table_t& symbol_table, const llvm_function_def_t* mapping0){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -506,7 +443,6 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_genera
 	return result;
 }
 
-//	Related: generate_global_symbol_slots(), generate_function_symbol_slots(), generate_local_block_symbol_slots()
 static std::vector<resolved_symbol_t> generate_local_block_symbol_slots(llvm_function_generator_t& gen_acc, const symbol_table_t& symbol_table){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(symbol_table.check_invariant());
@@ -514,7 +450,6 @@ static std::vector<resolved_symbol_t> generate_local_block_symbol_slots(llvm_fun
 	return generate_symbol_slots(gen_acc, symbol_table, nullptr);
 }
 
-//	Related: generate_floyd_runtime_deinit(), generate_destruct_scope_locals()
 //	Used for function scope, local scopes. Not used for globals.
 static void generate_destruct_scope_locals(llvm_function_generator_t& gen_acc, const std::vector<resolved_symbol_t>& symbols){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -575,10 +510,7 @@ static type_t get_expr_output_type(const llvm_code_generator_t& gen_acc, const e
 }
 
 
-
-
 ////////////////////////////////		EXPRESSIONS
-
 
 
 static llvm::Value* generate_literal_expression(llvm_function_generator_t& gen_acc, const expression_t& e){
@@ -756,7 +688,6 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 	return nullptr;
 }
 
-
 static llvm::Value* generate_arithmetic_expression(llvm_function_generator_t& gen_acc, expression_type op, const expression_t& e, const expression_t::arithmetic_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -866,8 +797,6 @@ static llvm::Value* generate_arithmetic_expression(llvm_function_generator_t& ge
 	UNSUPPORTED();
 }
 
-
-
 static llvm::Value* generate_compare_values(llvm_function_generator_t& gen_acc, expression_type op, const type_t& type, llvm::Value& lhs_reg, llvm::Value& rhs_reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
@@ -887,7 +816,6 @@ static llvm::Value* generate_compare_values(llvm_function_generator_t& gen_acc, 
 	QUARK_ASSERT(gen_acc.check_invariant());
 	return result;
 }
-
 
 static llvm::Value* generate_comparison_expression(llvm_function_generator_t& gen_acc, expression_type op, const expression_t& e, const expression_t::comparison_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1319,8 +1247,6 @@ static llvm::Value* generate_map_expression(llvm_function_generator_t& gen_acc, 
 	return result;
 }
 
-
-
 static llvm::Value* generate_intrinsic_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -1385,7 +1311,6 @@ static llvm::Value* generate_intrinsic_expression(llvm_function_generator_t& gen
 	}
 
 
-
 	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.map)){
 		return generate_map_expression(gen_acc, e, details);
 	}
@@ -1401,7 +1326,6 @@ static llvm::Value* generate_intrinsic_expression(llvm_function_generator_t& gen
 	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.stable_sort)){
 		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
-
 
 
 	else if(details.call_name == get_intrinsic_opcode(gen_acc.gen.intrinsic_signatures.print)){
@@ -1600,7 +1524,6 @@ static llvm::Value* generate_construct_struct(llvm_function_generator_t& gen_acc
 	return generic_struct_ptr_reg;
 }
 
-
 static llvm::Value* generate_construct_primitive(llvm_function_generator_t& gen_acc, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
@@ -1674,8 +1597,6 @@ static llvm::Value* generate_construct_value_expression(llvm_function_generator_
 		return generate_construct_primitive(gen_acc, details);
 	}
 }
-
-
 
 /*
 // do no allocate between execution of <body> -- that will pollute caches
@@ -1826,9 +1747,6 @@ static llvm::Value* generate_benchmark_expression(llvm_function_generator_t& gen
 	return best_dur_reg;
 }
 
-
-
-
 static llvm::Value* generate_load2_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::load2_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -1923,12 +1841,8 @@ static llvm::Value* generate_expression(llvm_function_generator_t& gen_acc, cons
 }
 
 
-
 	
 ////////////////////////////////		STATEMENTS
-
-
-
 
 
 static void generate_assign2_statement(llvm_function_generator_t& gen_acc, const statement_t::assign2_t& s){
@@ -2073,7 +1987,6 @@ static function_return_mode generate_for_statement(llvm_function_generator_t& ge
 	auto forend_bb = llvm::BasicBlock::Create(context, "for-end", parent_function);
 
 
-
 	//	EMIT LOOP SETUP INTO CURRENT BB
 
 	//	Notice that generate_expression() may create its own BBs and a different BB than then_bb may current when it returns.
@@ -2096,7 +2009,6 @@ static function_return_mode generate_for_statement(llvm_function_generator_t& ge
 	builder.CreateCondBr(test_reg, forloop_bb, forend_bb);
 
 
-
 	//	EMIT LOOP BB
 
 	builder.SetInsertPoint(forloop_bb);
@@ -2113,7 +2025,6 @@ static function_return_mode generate_for_statement(llvm_function_generator_t& ge
 	}
 	else{
 	}
-
 
 	//	EMIT LOOP END BB
 
@@ -2138,7 +2049,6 @@ static function_return_mode generate_for_statement(llvm_function_generator_t& ge
 	while_join_bb:
 		...
 */
-
 static function_return_mode generate_while_statement(llvm_function_generator_t& gen_acc, const statement_t::while_statement_t& statement){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
@@ -2190,7 +2100,6 @@ static void generate_expression_statement(llvm_function_generator_t& gen_acc, co
 
 	QUARK_ASSERT(gen_acc.check_invariant());
 }
-
 
 static llvm::Value* generate_return_statement(llvm_function_generator_t& gen_acc, const statement_t::return_statement_t& s){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -2362,7 +2271,6 @@ static llvm::Value* generate_global(llvm_function_generator_t& gen_acc, const st
 	}
 }
 
-//	Related: generate_global_symbol_slots(), generate_function_symbol_slots(), generate_local_block_symbol_slots()
 //	Make LLVM globals for every global in the AST.
 //	Inits the globals when possible.
 //	Other globals are uninitialised and global init2-statements will store to them from floyd_runtime_init().
@@ -2518,8 +2426,6 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const le
 	QUARK_ASSERT(gen_acc.check_invariant());
 }
 
-
-//	Related: generate_floyd_runtime_deinit(), generate_destruct_scope_locals()
 static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const lexical_scope_t& globals){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
@@ -2584,8 +2490,6 @@ static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const 
 	QUARK_ASSERT(gen_acc.check_invariant());
 }
 
-
-
 struct module_output_t {
 	std::unique_ptr<llvm::Module> module;
 	std::vector<llvm_function_link_entry_t> link_map;
@@ -2640,7 +2544,6 @@ static module_output_t generate_module(llvm_instance_t& instance, const std::str
 
 	return module_output_t{ std::move(module), gen_acc.link_map };
 }
-
 
 static std::vector<uint8_t> write_object_file(llvm::Module& module, const target_t& target, llvm::TargetMachine::CodeGenFileType type){
 	QUARK_ASSERT(target.check_invariant());
@@ -2703,7 +2606,6 @@ static std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program_internal(llvm
 	return result;
 }
 
-
 std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& instance, const semantic_ast_t& ast0, const std::string& module_name, const compiler_settings_t& settings){
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(ast0.check_invariant());
@@ -2737,8 +2639,5 @@ std::string print_llvm_ir_program(const llvm_ir_program_t& program){
 	const auto b = print_function_link_map(program.type_lookup.state.types, program.function_link_map);
 	return a + b;
 }
-
-
-
 
 }	//	floyd

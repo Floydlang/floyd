@@ -24,9 +24,6 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/IRBuilder.h>
-#include <llvm/Support/Casting.h>
-#include <llvm/Support/TargetSelect.h>
-#include <llvm/Support/raw_ostream.h>
 #include <llvm/IR/DataLayout.h>
 
 #include "quark.h"
@@ -195,7 +192,13 @@ llvm::Value* generate_get_struct_base_ptr(llvm_function_generator_t& gen_acc, ll
 
 //	Adds argument #0 which is floyd's secret runtime context.
 //	Supports ANY-types by passing TWO arguments: the value then the itype of the value.
-llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, const type_t& callee_function_type, const type_t& resolved_function_type, llvm::Value& callee_reg, const std::vector<llvm::Value*> floyd_args);
+llvm::Value* generate_floyd_call(
+	llvm_function_generator_t& gen_acc,
+	const type_t& callee_function_type,
+	const type_t& resolved_function_type,
+	llvm::Value& callee_reg,
+	const std::vector<llvm::Value*> floyd_args
+);
 
 }	//	floyd
 

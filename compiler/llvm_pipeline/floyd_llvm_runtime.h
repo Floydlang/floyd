@@ -11,7 +11,8 @@
 
 #include "value_backend.h"
 #include "floyd_llvm_types.h"
-#include <llvm/IR/IRBuilder.h>
+//#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Function.h>
 
 #include <string>
 #include <vector>

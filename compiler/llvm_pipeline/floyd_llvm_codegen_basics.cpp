@@ -69,7 +69,13 @@ llvm::Value* generate_get_struct_base_ptr(llvm_function_generator_t& gen_acc, ll
 	return ptr3_reg;
 }
 
-llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, const type_t& callee_function_type, const type_t& resolved_function_type, llvm::Value& callee_reg, const std::vector<llvm::Value*> floyd_args){
+llvm::Value* generate_floyd_call(
+	llvm_function_generator_t& gen_acc,
+	const type_t& callee_function_type,
+	const type_t& resolved_function_type,
+	llvm::Value& callee_reg,
+	const std::vector<llvm::Value*> floyd_args
+){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(callee_function_type.check_invariant());
 	QUARK_ASSERT(resolved_function_type.check_invariant());
@@ -135,7 +141,11 @@ llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, const type_
 	//	It must be retained already.
 	llvm::Value* result_reg = result0_reg;
 	if(peek2(types, peek2(types, callee_function_type).get_function_return(types)).is_any()){
-		result_reg = generate_cast_from_runtime_value(gen_acc.gen, *result0_reg, peek2(types, resolved_function_type).get_function_return(types));
+		result_reg = generate_cast_from_runtime_value(
+			gen_acc.gen,
+			*result0_reg,
+			peek2(types, resolved_function_type).get_function_return(types)
+		);
 	}
 	else{
 	}

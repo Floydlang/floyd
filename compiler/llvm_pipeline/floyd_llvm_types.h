@@ -12,7 +12,9 @@
 #include "floyd_ast.h"
 #include "value_backend.h"
 
-#include <llvm/IR/Function.h>
+//#include <llvm/IR/Function.h>
+#include <llvm/IR/Type.h>
+#include <llvm/IR/DerivedTypes.h>
 
 
 namespace floyd {
