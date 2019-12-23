@@ -633,7 +633,8 @@ static std::vector<std::string> make(value_backend_t& backend, size_t i, runtime
 
 	if(is_rc){
 		//??? Should be impossible thx to k_init_local.
-		const bool illegal_rc_value = is_rc && (bc_pod.int_value == UNINITIALIZED_RUNTIME_VALUE || bc_pod.int_value == 0x00000000);
+//		const bool illegal_rc_value = is_rc && (bc_pod.int_value == UNINITIALIZED_RUNTIME_VALUE || bc_pod.int_value == 0x00000000);
+		const bool illegal_rc_value = is_rc && (bc_pod.int_value == UNINITIALIZED_RUNTIME_VALUE);
 
 		if(illegal_rc_value){
 			value_str = "UNWRITTEN RC";

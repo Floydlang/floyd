@@ -223,7 +223,6 @@ static llvm::Value* generate_constant_string(llvm_function_generator_t& gen_acc,
 
 //	NOTICE: There is no clean way to embedd a json containing a json-null into the code segment.
 //	Here we use a nullptr instead of json_t*. This means we have to be prepared for json_t::null AND nullptr.
-//??? Related to k_init_local.
 static llvm::Value* generate_json_nullptr_placeholder(llvm_function_generator_t& gen_acc){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
@@ -279,7 +278,6 @@ static llvm::Value* generate_llvm_simple_constant_value(llvm_function_generator_
 			UNSUPPORTED();
 		}
 		llvm::Value* operator()(const json_type_t& e) const{
-			//??? k_init_local temp.
 			const auto& json0 = value.get_json();
 			if(json0.is_null()){
 				return generate_json_nullptr_placeholder(gen_acc);
@@ -1571,12 +1569,7 @@ static llvm::Value* generate_construct_noncomposite__conversion(llvm_function_ge
 			return input_value_reg;
 		}
 		else{
-
 			//	Supported input values types. json_null, int, bool, double, string, vector, object.
-
-//			QUARK_ASSERT(is_convertable_to_json_value(input_value_type));
-
-			//??? k_init_local.
 
 			//	Put a value_t into a json
 			std::vector<llvm::Value*> args2 = {
