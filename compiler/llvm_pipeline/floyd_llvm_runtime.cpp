@@ -802,7 +802,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 			}
 		}
 
-		runtime_value_t result = make_blank_runtime_value();
+		runtime_value_t result = make_uninitialized_magic();
 
 		{
 			QUARK_SCOPED_TRACE_OPTIONAL("Call msg handler", trace);

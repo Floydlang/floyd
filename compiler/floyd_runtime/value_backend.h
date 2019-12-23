@@ -279,7 +279,7 @@ union runtime_value_t {
 	}
 };
 
-runtime_value_t make_blank_runtime_value();
+runtime_value_t make_uninitialized_magic();
 
 runtime_value_t make_runtime_bool(bool value);
 runtime_value_t make_runtime_int(int64_t value);

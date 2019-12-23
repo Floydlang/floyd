@@ -453,31 +453,6 @@ json_t software_system_to_json(const software_system_t& v){
 
 
 
-
-
-
-bool is_floyd_literal(const type_desc_t& desc){
-	QUARK_ASSERT(desc.check_invariant());
-
-	//??? json is allowed but only for json::null. We should have a null-type instead.
-	if(
-		desc.is_void()
-		|| desc.is_int()
-		|| desc.is_double()
-		|| desc.is_string()
-		|| desc.is_bool()
-		|| desc.is_typeid()
-		|| desc.is_any()
-		|| desc.is_json()
-		|| desc.is_function()
-	){
-		return true;
-	}
-	else{
-		return false;
-	}
-}
-
 bool is_preinitliteral(const type_desc_t& desc){
 	QUARK_ASSERT(desc.check_invariant());
 

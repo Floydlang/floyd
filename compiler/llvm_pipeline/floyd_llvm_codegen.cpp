@@ -326,8 +326,11 @@ static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const 
 		llvm::Value* operator()(const string_t& e) const{
 			return generate_constant_string(gen_acc, value.get_string_value());
 		}
+#if 1
 		llvm::Value* operator()(const json_type_t& e) const{
+//			QUARK_ASSERT(false); // Use same technique as with vectors etc.
 			const auto& json0 = value.get_json();
+			//??? Should be impossible thx to k_init_local.
 
 			//	NOTICE: There is no clean way to embedd a json containing a json-null into the code segment.
 			//	Here we use a nullptr instead of json_t*. This means we have to be prepared for json_t::null AND nullptr.
@@ -340,6 +343,28 @@ static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const 
 				UNSUPPORTED();
 			}
 		}
+#else
+		//??? Should be impossible thx to k_init_local.
+		llvm::Value* operator()(const json_type_t& e) const{
+			const auto& json0 = value.get_json();
+			if(json0.is_null()){
+				auto json_type = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type_t::make_json());
+				llvm::PointerType* pointer_type = llvm::cast<llvm::PointerType>(json_type);
+				auto null_ptr = llvm::ConstantPointerNull::get(pointer_type);
+
+				std::vector<llvm::Value*> args2 = {
+					gen_acc.get_callers_fcp(),
+					generate_cast_to_runtime_value(gen_acc.gen, *null_ptr, type_t::make_json()),
+					generate_itype_constant(gen_acc.gen, type_t::make_json())
+				};
+				auto result = gen_acc.get_builder().CreateCall(gen_acc.gen.runtime_functions.floydrt_allocate_json.llvm_codegen_f, args2, "");
+				return result;
+			}
+			else{
+				UNSUPPORTED();
+			}
+		}
+#endif
 		llvm::Value* operator()(const typeid_type_t& e) const{
 			return generate_itype_constant(gen_acc.gen, value.get_typeid_value());
 		}
@@ -1616,7 +1641,7 @@ static llvm::Value* generate_construct_primitive(llvm_function_generator_t& gen_
 			generate_itype_constant(gen_acc.gen, input_value_type)
 		};
 		auto result = gen_acc.get_builder().CreateCall(gen_acc.gen.runtime_functions.floydrt_allocate_json.llvm_codegen_f, args2, "");
-
+		//??? Should be impossible thx to k_init_local.
 		generate_release(gen_acc, *element0_reg, input_value_type);
 		return result;
 	}

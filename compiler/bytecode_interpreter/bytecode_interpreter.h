@@ -1016,7 +1016,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(type.check_invariant());
 
-		_entries[_stack_size] = make_blank_runtime_value();
+		_entries[_stack_size] = make_uninitialized_magic();
 		_stack_size++;
 		_entry_types.push_back(type);
 

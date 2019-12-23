@@ -83,7 +83,6 @@ const uint64_t k_floyd_uint64_max =	0xffffffff'ffffffff;
 
 
 
-bool is_floyd_literal(const type_desc_t& type);
 bool is_preinitliteral(const type_desc_t& type);
 
 
