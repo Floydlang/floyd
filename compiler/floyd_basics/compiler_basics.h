@@ -84,6 +84,7 @@ const uint64_t k_floyd_uint64_max =	0xffffffff'ffffffff;
 
 
 bool is_preinitliteral(const type_desc_t& type);
+bool is_convertable_to_json_value(const type_desc_t& desc);
 
 
 enum class epod_type {

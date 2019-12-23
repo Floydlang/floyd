@@ -114,7 +114,7 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_add_double, { "add_double", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_concat_strings, { "concat_strings", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_concat_vectors_w_external_elements, { "concat_vectors_w_external_elements", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_concat_vectors_w_inplace_elements, { "concat_vectors_pod64", opcode_info_t::encoding::k_o_0rrr } },
+//	{ bc_opcode::k_concat_vectors_w_inplace_elements, { "concat_vectors_pod64", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_subtract_double, { "subtract_double", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_subtract_int, { "subtract_int", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_multiply_double, { "multiply_double", opcode_info_t::encoding::k_o_0rrr } },
@@ -626,24 +626,36 @@ static std::vector<std::string> make(value_backend_t& backend, size_t i, runtime
 	const auto debug_type = type;
 	const bool is_rc = is_rc_value(backend.types, debug_type);
 	const auto bc_pod = value;
-	const auto bc_that_owns_rc = rt_value_t(backend, debug_type, bc_pod, rt_value_t::rc_mode::bump);
 
-	//??? Should be impossible thx to k_init_local.
-	const bool illegal_rc_value = is_rc && (bc_pod.int_value == UNINITIALIZED_RUNTIME_VALUE || bc_pod.int_value == 0x00000000);
-
-	const auto value_str = illegal_rc_value ? "UNWRITTEN" : json_to_compact_string(bcvalue_to_json(backend, bc_that_owns_rc));
-
+	std::string value_str = "";
 	std::string rc_str = "";
 	std::string alloc_id_str = "";
-	if(is_rc && illegal_rc_value == false){
-		//	Cludge for now, gets the alloc struct for any type of RC-value.
-		const auto& alloc = bc_pod.struct_ptr->alloc;
-		const auto alloc_id = alloc.alloc_id;
 
-		//	 We have our own reference to the RC via "bc_that_owns_rc", we take that out of trace.
-		const int32_t rc = alloc.rc - 1;
-		rc_str = std::to_string(rc);
-		alloc_id_str = std::to_string(alloc_id);
+	if(is_rc){
+		//??? Should be impossible thx to k_init_local.
+		const bool illegal_rc_value = is_rc && (bc_pod.int_value == UNINITIALIZED_RUNTIME_VALUE || bc_pod.int_value == 0x00000000);
+
+		if(illegal_rc_value){
+			value_str = "UNWRITTEN RC";
+		}
+		else{
+			const auto bc_that_owns_rc = rt_value_t(backend, debug_type, bc_pod, rt_value_t::rc_mode::bump);
+
+			//	Cludge for now, gets the alloc struct for any type of RC-value.
+			const auto& alloc = bc_pod.struct_ptr->alloc;
+			const auto alloc_id = alloc.alloc_id;
+
+			//	 We have our own reference to the RC via "bc_that_owns_rc", we take that out of trace.
+			const int32_t rc = alloc.rc - 1;
+			rc_str = std::to_string(rc);
+			alloc_id_str = std::to_string(alloc_id);
+
+			value_str = json_to_compact_string(bcvalue_to_json(backend, bc_that_owns_rc));
+		}
+	}
+	else{
+		const auto bc_that_owns_rc = rt_value_t(backend, debug_type, bc_pod, rt_value_t::rc_mode::bump);
+		value_str = json_to_compact_string(bcvalue_to_json(backend, bc_that_owns_rc));
 	}
 
 	const std::string frame_str = std::to_string(frame_index) + (frame_index == 0 ? " GLOBAL" : "");
@@ -844,7 +856,7 @@ static void execute_new_1(interpreter_t& vm, int16_t dest_reg, int16_t target_it
 	vm._stack.write_register(dest_reg, result);
 }
 
-//	IMPORTANT: NO arguments are passed as DYN arguments.
+//	IMPORTANT: No arguments are passed as DYN arguments.
 static void execute_new_vector_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -936,7 +948,6 @@ static void execute_new_dict_pod64(interpreter_t& vm, int16_t dest_reg, int16_t 
 	const auto result = make_dict(types, element_type, elements2);
 	vm._stack.write_register__external_value(dest_reg, result);
 */
-
 }
 
 static void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
@@ -1829,29 +1840,6 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			stack.write_register__external_value(i._a, result);
 			break;
 		}
-
-/*
-		case bc_opcode::k_concat_vectors_w_inplace_elements: {
-			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._a));
-			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._b));
-			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._c));
-
-			const auto& vector_type = frame_ptr->_symbols[i._a].second._value_type;
-			const auto peek = peek2(types, vector_type);
-			const auto& element_type = peek.get_vector_element_type(types);
-
-			//	Copy left into new vector.
-			auto elements2 = regs[i._b]._external->_vector_w_inplace_elements;
-
-			const auto& right_elements = regs[i._c]._external->_vector_w_inplace_elements;
-			for(const auto& e: right_elements){
-				elements2 = elements2.push_back(e);
-			}
-			const auto& value2 = make_vector(types, element_type, elements2);
-			stack.write_register__external_value(i._a, value2);
-			break;
-		}
-*/
 
 		case bc_opcode::k_subtract_double: {
 			QUARK_ASSERT(stack.check_reg_double(i._a));

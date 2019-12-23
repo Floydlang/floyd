@@ -1815,7 +1815,7 @@ bool check_invariant(const value_backend_t& backend, runtime_value_t value, cons
 
 	const auto type_peek = peek2(backend.types, type);
 
-	if(is_rc_value(backend.types, type_peek) && value.int_value != UNINITIALIZED_RUNTIME_VALUE && value.int_value != 0x0){
+	if(is_rc_value(backend.types, type_peek) /*&& value.int_value != UNINITIALIZED_RUNTIME_VALUE && value.int_value != 0x0*/){
 		//??? BOth the check for UNINITIALIZED_RUNTIME_VALUE and int_value == 0 are temporary kludges
 		//??? Should be impossible thx to k_init_local.
 		QUARK_ASSERT(value.int_value != UNINITIALIZED_RUNTIME_VALUE);
@@ -2904,24 +2904,12 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 			return value_t::make_string(from_runtime_string2(backend, encoded_value));
 		}
 
+		//??? related to k_init_local.
 		value_t operator()(const json_type_t& e) const{
-#if 1
-			if(encoded_value.json_ptr == nullptr){
-//				QUARK_ASSERT(false);//??? Should be impossible thx to k_init_local.
-				return value_t::make_json(json_t());
-			}
-			else{
-				const auto& j = encoded_value.json_ptr->get_json();
-				return value_t::make_json(j);
-			}
-#else
 			QUARK_ASSERT(encoded_value.json_ptr != nullptr);
-			QUARK_ASSERT(false);//??? Should be impossible thx to k_init_local.
-
+			QUARK_ASSERT(encoded_value.json_ptr != nullptr);
 			const auto& j = encoded_value.json_ptr->get_json();
 			return value_t::make_json(j);
-#endif
-
 		}
 		value_t operator()(const typeid_type_t& e) const{
 			const auto& type1 = lookup_type_ref(backend, encoded_value.typeid_itype);
@@ -2988,7 +2976,6 @@ static runtime_value_t make_runtime_non_rc(const value_t& value){
 		return make_runtime_typeid(t0);
 	}
 	else if(type.is_json() && value.get_json().is_null()){
-		//??? Should be impossible thx to k_init_local.
 		QUARK_ASSERT(false);
 		return runtime_value_t { .json_ptr = nullptr };
 	}

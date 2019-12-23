@@ -5033,7 +5033,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "recursive named types", ""){
 
 
 
-
+//#define FLOYD_LANG_PROOF FLOYD_LANG_PROOF_VIP
 
 //??? document or disable using json-value directly as lookup parent.
 

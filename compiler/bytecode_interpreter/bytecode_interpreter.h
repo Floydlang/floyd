@@ -266,7 +266,7 @@ enum class bc_opcode: uint8_t {
 
 	k_concat_strings,
 	k_concat_vectors_w_external_elements,
-	k_concat_vectors_w_inplace_elements,
+//	k_concat_vectors_w_inplace_elements,
 
 	k_subtract_double,
 	k_subtract_int,

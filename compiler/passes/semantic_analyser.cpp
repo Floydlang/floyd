@@ -2809,8 +2809,8 @@ static std::vector<std::pair<std::string, symbol_t>> generate_builtin_symbols(an
 	symbol_map.push_back( make_builtin_type(a._types, type_t::make_json()) );
 
 	//	"null" is equivalent to json::null
-	symbol_map.push_back( { "null", symbol_t::make_immutable_precalc(type_t::make_json(), value_t::make_json(json_t())) });
-//	symbol_map.push_back( { "null", symbol_t::make_immutable_reserve(type_t::make_json()) });
+//	symbol_map.push_back( { "null", symbol_t::make_immutable_precalc(type_t::make_json(), value_t::make_json(json_t())) });
+	symbol_map.push_back( { "null", symbol_t::make_immutable_reserve(type_t::make_json()) });
 
 	symbol_map.push_back( { "json_object", symbol_t::make_immutable_precalc(type_t::make_int(), value_t::make_int(1)) });
 	symbol_map.push_back( { "json_array", symbol_t::make_immutable_precalc(type_t::make_int(), value_t::make_int(2)) });
@@ -2882,7 +2882,6 @@ static const lexical_scope_t make_global_body(analyser_t& a){
 
 	auto global_body3 = body2;
 
-#if 0
 	//??? Should be impossible thx to k_init_local.
 	//	Add Init json null.
 	{
@@ -2892,14 +2891,10 @@ static const lexical_scope_t make_global_body(analyser_t& a){
 		const auto s = statement_t::make__init2(
 			k_no_location,
 			symbol_ptr.second,
-			expression_t::make_construct_value_expr(
-				symbol_ptr.first->_value_type,
-				{ expression_t::make_literal(value_t::make_json({})) }
-			)
+			expression_t::make_literal(value_t::make_json({}))
 		);
 		global_body3._statements.insert(global_body3._statements.begin(), s);
 	}
-#endif
 
 	//	Add Init benchmark_registry.
 	{

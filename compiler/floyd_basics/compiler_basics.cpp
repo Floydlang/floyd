@@ -465,6 +465,17 @@ bool is_preinitliteral(const type_desc_t& desc){
 	}
 }
 
+bool is_convertable_to_json_value(const type_desc_t& desc){
+	QUARK_ASSERT(desc.check_invariant());
+
+	if(desc.is_int() || desc.is_double() || desc.is_bool() || desc.is_string()){
+		return true;
+	}
+	else{
+		return false;
+	}
+}
+
 
 ////////////////////////////////////////		main() init() and message handler
 

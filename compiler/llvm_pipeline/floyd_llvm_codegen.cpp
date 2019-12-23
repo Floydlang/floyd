@@ -216,13 +216,27 @@ static llvm::Value* generate_constant_string(llvm_function_generator_t& gen_acc,
 		str_ptr,
 		str_size
 	};
-	auto string_vec_ptr_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_alloc_kstr.llvm_codegen_f, args, "string_literal");
+	auto string_vec_ptr_reg = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_alloc_kstr.llvm_codegen_f, args, "string_const_str8");
 	return string_vec_ptr_reg;
 };
 
+
+//	NOTICE: There is no clean way to embedd a json containing a json-null into the code segment.
+//	Here we use a nullptr instead of json_t*. This means we have to be prepared for json_t::null AND nullptr.
+//??? Related to k_init_local.
+static llvm::Value* generate_json_nullptr_placeholder(llvm_function_generator_t& gen_acc){
+	QUARK_ASSERT(gen_acc.check_invariant());
+
+	auto json_type = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type_t::make_json());
+	llvm::PointerType* pointer_type = llvm::cast<llvm::PointerType>(json_type);
+	return llvm::ConstantPointerNull::get(pointer_type);
+}
+
+
 //	Makes constant from a Floyd value. The constant may go in code segment or be computed at app init-time.
-//	Warning: cannot generate any code -- called
-static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const value_t& value){
+//	Warning: cannot generate any code -- called before we generate functions. (??? change this?)
+//	Supports: any, bool, int, double, json:null
+static llvm::Value* generate_llvm_simple_constant_value(llvm_function_generator_t& gen_acc, const value_t& value){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 
@@ -262,47 +276,19 @@ static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const 
 			return llvm::ConstantFP::get(itype, value.get_double_value());
 		}
 		llvm::Value* operator()(const string_t& e) const{
-			return generate_constant_string(gen_acc, value.get_string_value());
+			UNSUPPORTED();
 		}
-#if 1
 		llvm::Value* operator()(const json_type_t& e) const{
-//			QUARK_ASSERT(false); // Use same technique as with vectors etc.
+			//??? k_init_local temp.
 			const auto& json0 = value.get_json();
-			//??? Should be impossible thx to k_init_local.
-
-			//	NOTICE: There is no clean way to embedd a json containing a json-null into the code segment.
-			//	Here we use a nullptr instead of json_t*. This means we have to be prepared for json_t::null AND nullptr.
 			if(json0.is_null()){
-				auto json_type = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type_t::make_json());
-				llvm::PointerType* pointer_type = llvm::cast<llvm::PointerType>(json_type);
-				return llvm::ConstantPointerNull::get(pointer_type);
+				return generate_json_nullptr_placeholder(gen_acc);
 			}
 			else{
 				UNSUPPORTED();
 			}
 		}
-#else
-		//??? Should be impossible thx to k_init_local.
-		llvm::Value* operator()(const json_type_t& e) const{
-			const auto& json0 = value.get_json();
-			if(json0.is_null()){
-				auto json_type = get_llvm_type_as_arg(gen_acc.gen.type_lookup, type_t::make_json());
-				llvm::PointerType* pointer_type = llvm::cast<llvm::PointerType>(json_type);
-				auto null_ptr = llvm::ConstantPointerNull::get(pointer_type);
 
-				std::vector<llvm::Value*> args2 = {
-					gen_acc.get_callers_fcp(),
-					generate_cast_to_runtime_value(gen_acc.gen, *null_ptr, type_t::make_json()),
-					generate_itype_constant(gen_acc.gen, type_t::make_json())
-				};
-				auto result = gen_acc.get_builder().CreateCall(gen_acc.gen.runtime_functions.floydrt_allocate_json.llvm_codegen_f, args2, "");
-				return result;
-			}
-			else{
-				UNSUPPORTED();
-			}
-		}
-#endif
 		llvm::Value* operator()(const typeid_type_t& e) const{
 			return generate_itype_constant(gen_acc.gen, value.get_typeid_value());
 		}
@@ -390,7 +376,7 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_genera
 
 				//	Init the slot if needed.
 				if(symbol._init.is_undefined() == false){
-					llvm::Value* c = generate_constant(gen_acc, symbol._init);
+					llvm::Value* c = generate_llvm_simple_constant_value(gen_acc, symbol._init);
 					gen_acc.get_builder().CreateStore(c, dest);
 				}
 
@@ -513,19 +499,47 @@ static type_t get_expr_output_type(const llvm_code_generator_t& gen_acc, const e
 ////////////////////////////////		EXPRESSIONS
 
 
+//	Generates a proper, RC value.
+static llvm::Value* generate_json_null_value(llvm_function_generator_t& gen_acc){
+	QUARK_ASSERT(gen_acc.check_invariant());
+
+	auto& builder = gen_acc.get_builder();
+
+	std::vector<llvm::Value*> args2 = {
+		gen_acc.get_callers_fcp(),
+		llvm::ConstantInt::get(builder.getInt64Ty(), 123),
+		generate_itype_constant(gen_acc.gen, type_t::make_json())
+	};
+	auto result = builder.CreateCall(gen_acc.gen.runtime_functions.floydrt_allocate_json.llvm_codegen_f, args2, "");
+	return result;
+}
+
 static llvm::Value* generate_literal_expression(llvm_function_generator_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	const auto literal = e.get_literal();
-	return generate_constant(gen_acc, literal);
+	const auto value = e.get_literal();
+	if(value.is_string()){
+		return generate_constant_string(gen_acc, value.get_string_value());
+	}
+	else if(value.is_json()){
+		const auto& json0 = value.get_json();
+		if(json0.is_null()){
+			return generate_json_null_value(gen_acc);
+		}
+		else{
+			UNSUPPORTED();
+		}
+	}
+	else{
+		return generate_llvm_simple_constant_value(gen_acc, value);
+	}
 }
 
 static llvm::Value* generate_resolve_member_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::resolve_member_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-//	auto& builder = gen_acc.get_builder();
 	const auto& types = gen_acc.gen.type_lookup.state.types;
 
 	auto struct_ptr_reg = generate_expression(gen_acc, *details.parent_address);
@@ -1425,7 +1439,7 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 		auto vec_ptr_reg = generate_allocate_vector(gen_acc, construct_type, element_count, vector_backend::hamt);
 		int element_index = 0;
 		for(const auto& element_value: details.elements){
-			auto index_reg = generate_constant(gen_acc, value_t::make_int(element_index));
+			auto index_reg = generate_llvm_simple_constant_value(gen_acc, value_t::make_int(element_index));
 			auto element_value_reg = generate_expression(gen_acc, element_value);
 			auto element_value2_reg = generate_cast_to_runtime_value(gen_acc.gen, *element_value_reg, element_type0);
 
@@ -1524,23 +1538,19 @@ static llvm::Value* generate_construct_struct(llvm_function_generator_t& gen_acc
 	return generic_struct_ptr_reg;
 }
 
-static llvm::Value* generate_construct_primitive(llvm_function_generator_t& gen_acc, const expression_t::value_constructor_t& details){
+//	Conctruct value expression for simple types: used to:
+//	1) Convert json to a string automatically, 2) create json from string, double etc.
+static llvm::Value* generate_construct_noncomposite__conversion(llvm_function_generator_t& gen_acc, const type_t& construct_type, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
 	auto& types = gen_acc.gen.type_lookup.state.types;
-	const auto construct_type = details.value_type;
 
-	const auto element_count = details.elements.size();
-	QUARK_ASSERT(element_count == 1);
-
-	//	Construct a primitive, using int(113) or double(3.14)
-
-	auto element0_reg = generate_expression(gen_acc, details.elements[0]);
-	const auto input_value_type = get_expr_output_type(gen_acc.gen, details.elements[0]);
+	auto input_value_reg = generate_expression(gen_acc, e);
+	const auto input_value_type = get_expr_output_type(gen_acc.gen, e);
 
 	const auto construct_type_peek = peek2(types, construct_type);
 	if(construct_type_peek.is_bool() || construct_type_peek.is_int() || construct_type_peek.is_double() || construct_type_peek.is_typeid()){
-		return element0_reg;
+		return input_value_reg;
 	}
 
 	//	NOTICE: string -> json needs to be handled at runtime.
@@ -1549,29 +1559,38 @@ static llvm::Value* generate_construct_primitive(llvm_function_generator_t& gen_
 	else if(construct_type_peek.is_string() && peek2(types, input_value_type).is_json()){
 		std::vector<llvm::Value*> args = {
 			gen_acc.get_callers_fcp(),
-			element0_reg
+			input_value_reg
 		};
 		auto result = gen_acc.get_builder().CreateCall(gen_acc.gen.runtime_functions.floydrt_json_to_string.llvm_codegen_f, args, "");
 
-		generate_release(gen_acc, *element0_reg, input_value_type);
+		generate_release(gen_acc, *input_value_reg, input_value_type);
 		return result;
 	}
 	else if(construct_type_peek.is_json()){
+		if(input_value_type.is_json()){
+			return input_value_reg;
+		}
+		else{
 
-		//??? Should be impossible thx to k_init_local.
+			//	Supported input values types. json_null, int, bool, double, string, vector, object.
 
-		//	Put a value_t into a json
-		std::vector<llvm::Value*> args2 = {
-			gen_acc.get_callers_fcp(),
-			generate_cast_to_runtime_value(gen_acc.gen, *element0_reg, input_value_type),
-			generate_itype_constant(gen_acc.gen, input_value_type)
-		};
-		auto result = gen_acc.get_builder().CreateCall(gen_acc.gen.runtime_functions.floydrt_allocate_json.llvm_codegen_f, args2, "");
-		generate_release(gen_acc, *element0_reg, input_value_type);
-		return result;
+//			QUARK_ASSERT(is_convertable_to_json_value(input_value_type));
+
+			//??? k_init_local.
+
+			//	Put a value_t into a json
+			std::vector<llvm::Value*> args2 = {
+				gen_acc.get_callers_fcp(),
+				generate_cast_to_runtime_value(gen_acc.gen, *input_value_reg, input_value_type),
+				generate_itype_constant(gen_acc.gen, input_value_type)
+			};
+			auto result = gen_acc.get_builder().CreateCall(gen_acc.gen.runtime_functions.floydrt_allocate_json.llvm_codegen_f, args2, "");
+			generate_release(gen_acc, *input_value_reg, input_value_type);
+			return result;
+		}
 	}
 	else{
-		return element0_reg;
+		return input_value_reg;
 	}
 }
 
@@ -1594,7 +1613,9 @@ static llvm::Value* generate_construct_value_expression(llvm_function_generator_
 
 	//	Construct a primitive, using int(113) or double(3.14)
 	else{
-		return generate_construct_primitive(gen_acc, details);
+		QUARK_ASSERT(details.elements.size() == 1);
+
+		return generate_construct_noncomposite__conversion(gen_acc, details.value_type, details.elements[0]);
 	}
 }
 
@@ -1669,21 +1690,21 @@ static llvm::Value* generate_benchmark_expression(llvm_function_generator_t& gen
 
 	////////	current BB
 
-	auto max_sample_count_reg = generate_constant(gen_acc, value_t::make_int(k_max_samples_count));
+	auto max_sample_count_reg = generate_llvm_simple_constant_value(gen_acc, value_t::make_int(k_max_samples_count));
 
 	auto samples_ptr_reg = builder.CreateAlloca(llvm::Type::getInt64Ty(context), max_sample_count_reg, "samples array");
 	QUARK_ASSERT(samples_ptr_reg->getType()->isPointerTy());
 	QUARK_ASSERT(samples_ptr_reg->getType() == llvm::Type::getInt64Ty(context)->getPointerTo());
 
 	auto index_ptr_reg = builder.CreateAlloca(llvm::Type::getInt64Ty(context));
-	auto zero_int_reg = generate_constant(gen_acc, value_t::make_int(0));
-	auto one_int_reg = generate_constant(gen_acc, value_t::make_int(1));
+	auto zero_int_reg = generate_llvm_simple_constant_value(gen_acc, value_t::make_int(0));
+	auto one_int_reg = generate_llvm_simple_constant_value(gen_acc, value_t::make_int(1));
 	builder.CreateStore(zero_int_reg, index_ptr_reg);
-	auto min_count_reg = generate_constant(gen_acc, value_t::make_int(k_min_run_count));
+	auto min_count_reg = generate_llvm_simple_constant_value(gen_acc, value_t::make_int(k_min_run_count));
 
 	auto start_time_reg = builder.CreateCall(get_profile_time_f, { gen_acc.get_callers_fcp() }, "");
 
-	auto length_ns_reg = generate_constant(gen_acc, value_t::make_int(k_max_run_time_ns));
+	auto length_ns_reg = generate_llvm_simple_constant_value(gen_acc, value_t::make_int(k_max_run_time_ns));
 	auto end_time_reg = builder.CreateAdd(start_time_reg, length_ns_reg);
 	builder.CreateBr(while_cond1_bb);
 
@@ -1999,7 +2020,7 @@ static function_return_mode generate_for_statement(llvm_function_generator_t& ge
 	llvm::Value* counter_reg = values[0].value_ptr;
 	builder.CreateStore(start_reg, counter_reg);
 
-	llvm::Value* add_reg = generate_constant(gen_acc, value_t::make_int(1));
+	llvm::Value* add_reg = generate_llvm_simple_constant_value(gen_acc, value_t::make_int(1));
 
 	llvm::CmpInst::Predicate pred = statement._range_type == statement_t::for_statement_t::k_closed_range
 		? llvm::CmpInst::Predicate::ICMP_SLE
@@ -2246,7 +2267,7 @@ static llvm::Value* generate_global(llvm_function_generator_t& gen_acc, const st
 		QUARK_ASSERT(symbol._init.is_undefined() == false);
 
 		const auto itype = get_llvm_type_as_arg(gen_acc.gen.type_lookup, symbol_value_type);
-		auto init_reg = generate_constant(gen_acc, symbol._init);
+		auto init_reg = generate_llvm_simple_constant_value(gen_acc, symbol._init);
 		if (llvm::Constant* CI = llvm::dyn_cast<llvm::Constant>(init_reg)){
 			return generate_global0(module, symbol_name, *itype, CI);
 		}

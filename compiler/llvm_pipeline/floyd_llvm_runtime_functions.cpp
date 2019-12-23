@@ -487,12 +487,12 @@ static runtime_value_t floydrt_allocate_json(floyd_runtime_t* frp, runtime_value
 
 	const auto& type0 = lookup_type_ref(backend, arg0_type);
 
-#if 1
+#if 0
 	const auto value = from_runtime_value(r, arg0_value, type0);
 	const auto a = value_to_json(backend.types, value);
 	return alloc_json(backend.heap, a);
 #else
-	if(arg0_value.json_ptr == nullptr){
+	if(type0.is_json() && arg0_value.int_value == 123){
 		return alloc_json(backend.heap, json_t());
 	}
 	else{
