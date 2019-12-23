@@ -1634,6 +1634,9 @@ static llvm::Value* generate_construct_primitive(llvm_function_generator_t& gen_
 		return result;
 	}
 	else if(construct_type_peek.is_json()){
+
+		//??? Should be impossible thx to k_init_local.
+
 		//	Put a value_t into a json
 		std::vector<llvm::Value*> args2 = {
 			gen_acc.get_callers_fcp(),
@@ -1641,7 +1644,6 @@ static llvm::Value* generate_construct_primitive(llvm_function_generator_t& gen_
 			generate_itype_constant(gen_acc.gen, input_value_type)
 		};
 		auto result = gen_acc.get_builder().CreateCall(gen_acc.gen.runtime_functions.floydrt_allocate_json.llvm_codegen_f, args2, "");
-		//??? Should be impossible thx to k_init_local.
 		generate_release(gen_acc, *element0_reg, input_value_type);
 		return result;
 	}

@@ -628,15 +628,14 @@ static std::vector<std::string> make(value_backend_t& backend, size_t i, runtime
 	const auto bc_pod = value;
 	const auto bc_that_owns_rc = rt_value_t(backend, debug_type, bc_pod, rt_value_t::rc_mode::bump);
 
-	//??? This should only happen for RC:s!?
 	//??? Should be impossible thx to k_init_local.
-	const bool uninitialized_local = bc_pod.int_value == UNINITIALIZED_RUNTIME_VALUE || (is_rc && bc_pod.int_value == 0x00000000);
+	const bool illegal_rc_value = is_rc && (bc_pod.int_value == UNINITIALIZED_RUNTIME_VALUE || bc_pod.int_value == 0x00000000);
 
-	const auto value_str = uninitialized_local ? "UNWRITTEN" : json_to_compact_string(bcvalue_to_json(backend, bc_that_owns_rc));
+	const auto value_str = illegal_rc_value ? "UNWRITTEN" : json_to_compact_string(bcvalue_to_json(backend, bc_that_owns_rc));
 
 	std::string rc_str = "";
 	std::string alloc_id_str = "";
-	if(is_rc && uninitialized_local == false){
+	if(is_rc && illegal_rc_value == false){
 		//	Cludge for now, gets the alloc struct for any type of RC-value.
 		const auto& alloc = bc_pod.struct_ptr->alloc;
 		const auto alloc_id = alloc.alloc_id;

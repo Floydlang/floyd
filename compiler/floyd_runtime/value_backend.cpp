@@ -1128,15 +1128,11 @@ rt_value_t rt_value_t::make_json(value_backend_t& backend, const json_t& v){
 }
 json_t rt_value_t::get_json() const{
 	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(_pod.json_ptr != nullptr);
 
-	if(_pod.json_ptr == nullptr){
-		QUARK_ASSERT(false);//??? Should be impossible thx to k_init_local.
-		return json_t();
-	}
-	else{
-		return _pod.json_ptr->get_json();
-	}
+	return _pod.json_ptr->get_json();
 }
+
 rt_value_t::rt_value_t(value_backend_t& backend, const std::shared_ptr<json_t>& value) :
 	_backend(&backend),
 	_type(type_t::make_json())
@@ -1554,13 +1550,9 @@ json_t bcvalue_to_json(value_backend_t& backend, const rt_value_t& v){
 		return json_t(static_cast<double>(v.get_double_value()));
 	}
 	else if(peek.is_string()){
-		if(v._pod.vector_carray_ptr == nullptr){
-			QUARK_ASSERT(false);//??? Should be impossible thx to k_init_local.
-			return json_t("NULL PTR");
-		}
-		else{
-			return json_t(v.get_string_value(backend));
-		}
+		QUARK_ASSERT(v._pod.vector_carray_ptr != nullptr);
+
+		return json_t(v.get_string_value(backend));
 	}
 	else if(peek.is_json()){
 		return v.get_json();
@@ -1569,6 +1561,8 @@ json_t bcvalue_to_json(value_backend_t& backend, const rt_value_t& v){
 		return type_to_json(types, v.get_typeid_value());
 	}
 	else if(peek.is_struct()){
+		QUARK_ASSERT(v._pod.struct_ptr != nullptr);
+
 		const auto& struct_value = v.get_struct_value(backend);
 		std::map<std::string, json_t> obj2;
 		const auto& struct_def = peek.get_struct(types);
@@ -1582,34 +1576,26 @@ json_t bcvalue_to_json(value_backend_t& backend, const rt_value_t& v){
 		return json_t::make_object(obj2);
 	}
 	else if(peek.is_vector()){
-		if(v._pod.vector_carray_ptr == nullptr){
-			QUARK_ASSERT(false);//??? Should be impossible thx to k_init_local.
-			return json_t("NULL PTR");
+		QUARK_ASSERT(v._pod.vector_carray_ptr != nullptr);
+
+		const auto elements = get_vector_elements(backend, v);
+		std::vector<json_t> result;
+		for(const auto& e: elements){
+			const auto j = bcvalue_to_json(backend, e);
+			result.push_back(j);
 		}
-		else{
-			const auto elements = get_vector_elements(backend, v);
-			std::vector<json_t> result;
-			for(const auto& e: elements){
-				const auto j = bcvalue_to_json(backend, e);
-				result.push_back(j);
-			}
-			return result;
-		}
+		return result;
 	}
 	else if(peek.is_dict()){
-		if(v._pod.vector_carray_ptr == nullptr){
-			QUARK_ASSERT(false);//??? Should be impossible thx to k_init_local.
-			return json_t("NULL PTR");
+		QUARK_ASSERT(v._pod.vector_carray_ptr != nullptr);
+
+		const auto values = get_dict_values(backend, v);
+		std::map<std::string, json_t> result;
+		for(const auto& e: values){
+			const auto j = bcvalue_to_json(backend, e.second);
+			result.insert({e.first, j});
 		}
-		else{
-			const auto values = get_dict_values(backend, v);
-			std::map<std::string, json_t> result;
-			for(const auto& e: values){
-				const auto j = bcvalue_to_json(backend, e.second);
-				result.insert({e.first, j});
-			}
-			return result;
-		}
+		return result;
 	}
 	else if(peek.is_function()){
 		return json_t::make_object(
@@ -1829,9 +1815,12 @@ bool check_invariant(const value_backend_t& backend, runtime_value_t value, cons
 
 	const auto type_peek = peek2(backend.types, type);
 
-	//??? BOth the check for UNINITIALIZED_RUNTIME_VALUE and int_value == 0 are temporary kludges
-	//??? Should be impossible thx to k_init_local.
-	if(is_rc_value(backend.types, type_peek) && value.int_value != UNINITIALIZED_RUNTIME_VALUE && value.int_value != 0){
+	if(is_rc_value(backend.types, type_peek) && value.int_value != UNINITIALIZED_RUNTIME_VALUE && value.int_value != 0x0){
+		//??? BOth the check for UNINITIALIZED_RUNTIME_VALUE and int_value == 0 are temporary kludges
+		//??? Should be impossible thx to k_init_local.
+		QUARK_ASSERT(value.int_value != UNINITIALIZED_RUNTIME_VALUE);
+		QUARK_ASSERT(value.int_value != 0);
+
 		if(type_peek.is_string()){
 			QUARK_ASSERT(value.vector_carray_ptr != nullptr);
 			QUARK_ASSERT(value.vector_carray_ptr->check_invariant());
@@ -1853,12 +1842,8 @@ bool check_invariant(const value_backend_t& backend, runtime_value_t value, cons
 			QUARK_ASSERT(value.dict_hamt_ptr->check_invariant());
 		}
 		else if(type_peek.is_json()){
-			if(value.json_ptr != nullptr){
-				QUARK_ASSERT(value.json_ptr->check_invariant());
-			}
-			else{
-				QUARK_ASSERT(false);//??? Should be impossible thx to k_init_local.
-			}
+			QUARK_ASSERT(value.json_ptr != nullptr);
+			QUARK_ASSERT(value.json_ptr->check_invariant());
 		}
 		else if(type_peek.is_struct()){
 			QUARK_ASSERT(value.struct_ptr != nullptr);
@@ -2207,9 +2192,12 @@ void retain_value(value_backend_t& backend, runtime_value_t value, type_t type){
 
 	const auto type_peek = peek2(backend.types, type);
 
-	//??? BOth the check for UNINITIALIZED_RUNTIME_VALUE and int_value == 0 are temporary kludges
-	//??? Should be impossible thx to k_init_local.
-	if(is_rc_value(backend.types, type_peek) && value.int_value != UNINITIALIZED_RUNTIME_VALUE && value.int_value != 0){
+	if(is_rc_value(backend.types, type_peek)){
+		//??? BOth the check for UNINITIALIZED_RUNTIME_VALUE and int_value == 0 are temporary kludges
+		//??? Should be impossible thx to k_init_local.
+		QUARK_ASSERT(value.int_value != UNINITIALIZED_RUNTIME_VALUE);
+		QUARK_ASSERT(value.int_value != 0);
+
 		if(type_peek.is_string()){
 			retain_vector_carray(backend, value, type);
 		}
@@ -2226,12 +2214,8 @@ void retain_value(value_backend_t& backend, runtime_value_t value, type_t type){
 			retain_dict_hamt(backend, value, type);
 		}
 		else if(type_peek.is_json()){
-			if(value.json_ptr != nullptr){
-				inc_rc(value.json_ptr->alloc);
-			}
-			else{
-				QUARK_ASSERT(false);//??? Should be impossible thx to k_init_local.
-			}
+			QUARK_ASSERT(value.json_ptr != nullptr);
+			inc_rc(value.json_ptr->alloc);
 		}
 		else if(type_peek.is_struct()){
 			retain_struct(backend, value, type);
@@ -2447,15 +2431,12 @@ void release_json(value_backend_t& backend, runtime_value_t s){
 	QUARK_ASSERT(check_invariant(backend, s, type_t::make_json()));
 
 	auto json = s.json_ptr;
+
 	//	NOTICE: Floyd runtime() init will destruct globals, including json::null.
-	if(json == nullptr){
-		QUARK_ASSERT(false);//??? Should be impossible thx to k_init_local.
-	}
-	else{
-		QUARK_ASSERT(json != nullptr);
-		if(dec_rc(json->alloc) == 0){
-			dispose_json(*json);
-		}
+	QUARK_ASSERT(s.json_ptr != nullptr);
+
+	if(dec_rc(json->alloc) == 0){
+		dispose_json(*json);
 	}
 }
 
@@ -2467,9 +2448,13 @@ void release_value(value_backend_t& backend, runtime_value_t value, type_t type)
 
 	const auto& peek = peek2(backend.types, type);
 
-	//??? BOth the check for UNINITIALIZED_RUNTIME_VALUE and int_value == 0 are temporary kludges
-	//??? Should be impossible thx to k_init_local.
-	if(is_rc_value(backend.types, peek) && value.int_value != UNINITIALIZED_RUNTIME_VALUE && value.int_value != 0){
+	if(is_rc_value(backend.types, peek) && value.int_value != UNINITIALIZED_RUNTIME_VALUE){
+		//??? BOth the check for UNINITIALIZED_RUNTIME_VALUE and int_value == 0 are temporary kludges
+		//??? Should be impossible thx to k_init_local.
+
+		QUARK_ASSERT(value.int_value != UNINITIALIZED_RUNTIME_VALUE);
+		QUARK_ASSERT(value.int_value != 0);
+
 		if(peek.is_string()){
 			release_vec(backend, value, type);
 		}
@@ -2920,6 +2905,7 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 		}
 
 		value_t operator()(const json_type_t& e) const{
+#if 1
 			if(encoded_value.json_ptr == nullptr){
 //				QUARK_ASSERT(false);//??? Should be impossible thx to k_init_local.
 				return value_t::make_json(json_t());
@@ -2928,6 +2914,14 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 				const auto& j = encoded_value.json_ptr->get_json();
 				return value_t::make_json(j);
 			}
+#else
+			QUARK_ASSERT(encoded_value.json_ptr != nullptr);
+			QUARK_ASSERT(false);//??? Should be impossible thx to k_init_local.
+
+			const auto& j = encoded_value.json_ptr->get_json();
+			return value_t::make_json(j);
+#endif
+
 		}
 		value_t operator()(const typeid_type_t& e) const{
 			const auto& type1 = lookup_type_ref(backend, encoded_value.typeid_itype);
@@ -2994,7 +2988,8 @@ static runtime_value_t make_runtime_non_rc(const value_t& value){
 		return make_runtime_typeid(t0);
 	}
 	else if(type.is_json() && value.get_json().is_null()){
-		QUARK_ASSERT(false);//??? Should be impossible thx to k_init_local.
+		//??? Should be impossible thx to k_init_local.
+		QUARK_ASSERT(false);
 		return runtime_value_t { .json_ptr = nullptr };
 	}
 	else{

@@ -479,7 +479,7 @@ void generate_store_dict_mutable(llvm_function_generator_t& gen_acc, llvm::Value
 
 ////////////////////////////////		allocate_json()
 
-//	NOTICE: There is a special backdoor here that lets us create json nulls: call with type = json, json_ptr = nullptr
+//	NOTICE: There is a special backdoor here that lets us create json nulls: call with type = json, json_ptr = nullptr. k_init_local
 //??? Use better storage of JSON!?
 static runtime_value_t floydrt_allocate_json(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
@@ -492,8 +492,6 @@ static runtime_value_t floydrt_allocate_json(floyd_runtime_t* frp, runtime_value
 	const auto a = value_to_json(backend.types, value);
 	return alloc_json(backend.heap, a);
 #else
-	//??? Should be impossible thx to k_init_local.
-
 	if(arg0_value.json_ptr == nullptr){
 		return alloc_json(backend.heap, json_t());
 	}
