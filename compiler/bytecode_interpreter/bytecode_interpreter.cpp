@@ -21,7 +21,7 @@
 
 namespace floyd {
 
-static const bool k_trace_stepping = false;
+static const bool k_trace_stepping = true;
 
 
 static std::string opcode_to_string(bc_opcode opcode);
@@ -621,7 +621,7 @@ void interpreter_t::unwind_stack(){
 	QUARK_ASSERT(check_invariant());
 }
 
-
+//??? Unify this debug code with trace_value_backend()
 static std::vector<std::string> make(value_backend_t& backend, size_t i, runtime_value_t value, const type_t& type, const interpreter_stack_t::active_frame_t& frame, int frame_index, int symbol_index, bool is_symbol){
 	const auto debug_type = type;
 	const bool is_rc = is_rc_value(backend.types, debug_type);
@@ -632,26 +632,31 @@ static std::vector<std::string> make(value_backend_t& backend, size_t i, runtime
 	std::string alloc_id_str = "";
 
 	if(is_rc){
-		//??? Should be impossible thx to k_init_local.
-//		const bool illegal_rc_value = is_rc && (bc_pod.int_value == UNINITIALIZED_RUNTIME_VALUE || bc_pod.int_value == 0x00000000);
+		//??? Related to k_init_local
 		const bool illegal_rc_value = is_rc && (bc_pod.int_value == UNINITIALIZED_RUNTIME_VALUE);
 
 		if(illegal_rc_value){
-			value_str = "UNWRITTEN RC";
+			value_str = "***RC VALUE: UNINITIALIZED***";
 		}
 		else{
-			const auto bc_that_owns_rc = rt_value_t(backend, debug_type, bc_pod, rt_value_t::rc_mode::bump);
-
-			//	Cludge for now, gets the alloc struct for any type of RC-value.
+			//	Hack for now, gets the alloc struct for any type of RC-value, but uses struct_ptr.
 			const auto& alloc = bc_pod.struct_ptr->alloc;
 			const auto alloc_id = alloc.alloc_id;
+			const int32_t rc = alloc.rc;
 
-			//	 We have our own reference to the RC via "bc_that_owns_rc", we take that out of trace.
-			const int32_t rc = alloc.rc - 1;
 			rc_str = std::to_string(rc);
 			alloc_id_str = std::to_string(alloc_id);
 
-			value_str = json_to_compact_string(bcvalue_to_json(backend, bc_that_owns_rc));
+			if(rc < 0){
+				value_str = "***RC VALUE: NEGATIVE RC???***";
+			}
+			else if(rc == 0){
+				value_str = "***RC VALUE: DELETED***";
+			}
+			else {
+				const auto bc_that_owns_rc = rt_value_t(backend, debug_type, bc_pod, rt_value_t::rc_mode::bump);
+				value_str = json_to_compact_string(bcvalue_to_json(backend, bc_that_owns_rc));
+			}
 		}
 	}
 	else{

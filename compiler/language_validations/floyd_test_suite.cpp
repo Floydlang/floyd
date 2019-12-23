@@ -7385,13 +7385,14 @@ FLOYD_LANG_PROOF("Floyd test suite", "hello_world.floyd", "", ""){
 	ut_run_closed_lib(QUARK_POS, program);
 }
 
+#if 1
 FLOYD_LANG_PROOF("Floyd test suite", "game_of_life.floyd", "", ""){
 	const auto path = get_working_dir() + "/examples/game_of_life.floyd";
 	const auto program = read_text_file(path);
 
 	ut_run_closed_lib(QUARK_POS, program);
 }
-
+#endif
 
 
 
@@ -7403,7 +7404,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "game_of_life.floyd", "", ""){
 
 
 
-
+//#define FLOYD_LANG_PROOF FLOYD_LANG_PROOF_VIP
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "TERNARY OPERATOR", "", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(
