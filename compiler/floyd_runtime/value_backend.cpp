@@ -2448,10 +2448,9 @@ void release_value(value_backend_t& backend, runtime_value_t value, type_t type)
 
 	const auto& peek = peek2(backend.types, type);
 
-	if(is_rc_value(backend.types, peek) && value.int_value != UNINITIALIZED_RUNTIME_VALUE){
+	if(is_rc_value(backend.types, peek)/* && value.int_value != UNINITIALIZED_RUNTIME_VALUE*/){
 		//??? Both the check for UNINITIALIZED_RUNTIME_VALUE and int_value == 0 are temporary kludges
 		//??? Should be impossible thx to k_init_local.
-
 		QUARK_ASSERT(value.int_value != UNINITIALIZED_RUNTIME_VALUE);
 		QUARK_ASSERT(value.int_value != 0);
 

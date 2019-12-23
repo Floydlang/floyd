@@ -21,7 +21,7 @@
 
 namespace floyd {
 
-static const bool k_trace_stepping = true;
+static const bool k_trace_stepping = false;
 
 
 static std::string opcode_to_string(bc_opcode opcode);
@@ -1092,7 +1092,7 @@ inline void write_reg_rc(value_backend_t& backend, runtime_value_t regs[], int d
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dest_type.check_invariant());
 
-	release_value(backend, regs[dest_reg], dest_type);
+	release_value_safe(backend, regs[dest_reg], dest_type);
 	retain_value(backend, value, dest_type);
 	regs[dest_reg] = value;
 }
@@ -1145,7 +1145,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_global_access_obj(i._b));
 
 			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
-			release_value(backend, regs[i._a], type);
+			release_value_safe(backend, regs[i._a], type);
 			const auto& new_value_pod = globals[i._b];
 			regs[i._a] = new_value_pod;
 			retain_value(backend, new_value_pod, type);
@@ -1171,7 +1171,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg__external_value(i._b));
 
 			const auto& type = frame_ptr->_symbols[i._b].second._value_type;
-			release_value(backend, globals[i._a], type);
+			release_value_safe(backend, globals[i._a], type);
 			const auto& new_value_pod = regs[i._b];
 			globals[i._a] = new_value_pod;
 			retain_value(backend, new_value_pod, type);
@@ -1201,7 +1201,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg__external_value(i._b));
 
 			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
-			release_value(backend, regs[i._a], type);
+			release_value_safe(backend, regs[i._a], type);
 			const auto& new_value_pod = regs[i._b];
 			regs[i._a] = new_value_pod;
 			retain_value(backend, new_value_pod, type);
@@ -1292,7 +1292,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			int pos = static_cast<int>(stack._stack_size) - 1;
 			for(int m = 0 ; m < n ; m++){
 				const auto type = stack._entry_types.back();
-				release_value(backend, stack._entries[pos], type);
+				release_value_safe(backend, stack._entries[pos], type);
 				pos--;
 				stack._entry_types.pop_back();
 			}
@@ -1372,7 +1372,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			const auto r = load_struct_member(backend, data_ptr, struct_type, member_index);
 			const auto& member_type = r.second;
 
-			release_value(backend, regs[i._a], member_type);
+			release_value_safe(backend, regs[i._a], member_type);
 			retain_value(backend, r.first, member_type);
 			regs[i._a] = r.first;
 
@@ -1422,7 +1422,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 				//??? no need to create full rt_value_t here! We only need pod.
 				const auto value2 = rt_value_t::make_json(backend, value);
 
-				release_value(backend, regs[i._a], value2._type);
+				release_value_safe(backend, regs[i._a], value2._type);
 				retain_value(backend, value2._pod, value2._type);
 				regs[i._a] = value2._pod;
 			}
@@ -1440,7 +1440,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 					//??? no need to create full rt_value_t here! We only need pod.
 					const auto value2 = rt_value_t::make_json(backend, value);
 
-					release_value(backend, regs[i._a], value2._type);
+					release_value_safe(backend, regs[i._a], value2._type);
 					retain_value(backend, value2._pod, value2._type);
 					regs[i._a] = value2._pod;
 				}
@@ -1830,7 +1830,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			const auto type = type_t::make_string();
 
 			const auto s2 = concat_strings(backend, regs[i._b], regs[i._c]);
-			release_value(backend, regs[i._a], type);
+			release_value_safe(backend, regs[i._a], type);
 			regs[i._a] = s2;
 			break;
 		}

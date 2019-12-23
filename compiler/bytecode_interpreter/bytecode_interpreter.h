@@ -666,6 +666,8 @@ enum {
 	9	[local3]
 */
 
+void release_value_safe(value_backend_t& backend, runtime_value_t value, type_t type);
+
 struct interpreter_stack_t {
 	public: interpreter_stack_t(value_backend_t* backend, const bc_static_frame_t* global_frame) :
 		_backend(backend),
@@ -860,7 +862,7 @@ struct interpreter_stack_t {
 //		QUARK_ASSERT(peek2(_backend->types, value._type) == frame_slot_type);//??? do check without peek2()
 
 		const auto prev = _current_frame_start_ptr[reg];
-		release_value(*_backend, prev, frame_slot_type);
+		release_value_safe(*_backend, prev, frame_slot_type);
 		retain_value(*_backend, value._pod, frame_slot_type);
 		_current_frame_start_ptr[reg] = value._pod;
 
@@ -1076,7 +1078,7 @@ struct interpreter_stack_t {
 
 		retain_value(*_backend, value._pod, value._type);
 		_entries[pos] = value._pod;
-		release_value(*_backend, prev_copy, value._type);
+		release_value_safe(*_backend, prev_copy, value._type);
 
 		QUARK_ASSERT(check_invariant());
 	}
@@ -1101,7 +1103,7 @@ struct interpreter_stack_t {
 		auto copy = _entries[_stack_size - 1];
 		_stack_size--;
 		_entry_types.pop_back();
-		release_value(*_backend, copy, type);
+		release_value_safe(*_backend, copy, type);
 
 		QUARK_ASSERT(check_invariant());
 	}
@@ -1209,6 +1211,26 @@ std::shared_ptr<value_entry_t> find_global_symbol2(interpreter_t& vm, const modu
 
 std::vector<std::pair<type_t, struct_layout_t>> bc_make_struct_layouts(const types_t& types);
 
+
+
+//////////////////////////////////////		INLINES
+
+
+
+//??? Remove need for this function! BC should overwrite registers by default = no need to release_value() on previous value.
+inline void release_value_safe(value_backend_t& backend, runtime_value_t value, type_t type){
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto& peek = peek2(backend.types, type);
+
+	if(is_rc_value(backend.types, peek) && value.int_value == UNINITIALIZED_RUNTIME_VALUE){
+	}
+	else{
+		return release_value(backend, value, type);
+	}
+}
 
 } //	floyd
 
