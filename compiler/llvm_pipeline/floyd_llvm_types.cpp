@@ -53,11 +53,11 @@ llvm::Type* deref_ptr(llvm::Type* type){
 
 
 
-////////////////////////////////		llvm_function_def_t
+////////////////////////////////		llvm_function_signature_t
 
 
 
-llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<member_t>& args){
+llvm_function_signature_t name_args(const llvm_function_signature_t& def, const std::vector<member_t>& args){
 	QUARK_ASSERT(def.check_invariant());
 
 	if(args.empty()){
@@ -101,7 +101,7 @@ llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<
 			arg_results.push_back(arg_copy);
 		}
 
-		return llvm_function_def_t { def.return_type, arg_results };
+		return llvm_function_signature_t { def.return_type, arg_results };
 	}
 }
 
@@ -240,7 +240,7 @@ static llvm::Type* get_llvm_type_prefer_generic(const type_entry_t& entry){
 	}
 }
 
-static llvm_function_def_t map_function_arguments_internal(
+static llvm_function_signature_t map_function_arguments_internal(
 	builder_t& builder,
 	const floyd::type_t& function_type
 ){
@@ -317,7 +317,7 @@ static llvm_function_def_t map_function_arguments_internal(
 		llvm_args.push_back(e.llvm_type);
 	}
 
-	return llvm_function_def_t { return_type, arg_results };
+	return llvm_function_signature_t { return_type, arg_results };
 }
 
 
@@ -515,17 +515,17 @@ static const type_entry_t& touch_type(builder_t& builder, const type_t& type, co
 		void operator()(const function_t& e) const{
 			const auto llvm_type = make_function_type(builder, type)->getPointerTo();
 
-			std::shared_ptr<const llvm_function_def_t> optional_function_def;
+			std::shared_ptr<const llvm_function_signature_t> optional_function_signature;
 			if(peek2(builder.acc.types, type).is_function()){
 				const auto function_def = map_function_arguments_internal(builder, type);
-				optional_function_def = std::make_shared<llvm_function_def_t>(function_def);
+				optional_function_signature = std::make_shared<llvm_function_signature_t>(function_def);
 			}
 
 			const auto entry = type_entry_t{
 				true,
 				llvm_type,
 				nullptr,
-				optional_function_def
+				optional_function_signature
 			};
 			builder.acc.type_entries[type_index] = entry;
 		}
@@ -626,13 +626,13 @@ void trace_llvm_type_lookup(const llvm_type_lookup& type_lookup){
 					type_to_compact_string(type_lookup.state.types, type),
 					print_type(e.llvm_type_specific),
 					print_type(e.llvm_type_generic),
-					e.optional_function_def != nullptr ? "YES" : ""
+					e.optional_function_signature != nullptr ? "YES" : ""
 				}
 			};
 			matrix.push_back(l);
 		}
 
-		const auto s = generate_table_type1({ "#", "type_t", "use", "llvm_type_specific", "llvm_type_generic", "optional_function_def" }, matrix);
+		const auto s = generate_table_type1({ "#", "type_t", "use", "llvm_type_specific", "llvm_type_generic", "optional_function_signature" }, matrix);
 		QUARK_TRACE(s);
 	}
 
@@ -655,13 +655,13 @@ void trace_llvm_type_lookup(const llvm_type_lookup& type_lookup){
 					type_to_compact_string(type_lookup.state.types, type),
 					print_type(e.llvm_type_specific),
 					print_type(e.llvm_type_generic),
-					e.optional_function_def != nullptr ? "YES" : ""
+					e.optional_function_signature != nullptr ? "YES" : ""
 				}
 			};
 			matrix.push_back(l);
 		}
 
-		const auto s = generate_table_type1({ "#", "type_t", "use", "llvm_type_specific", "llvm_type_generic", "optional_function_def" }, matrix);
+		const auto s = generate_table_type1({ "#", "type_t", "use", "llvm_type_specific", "llvm_type_generic", "optional_function_signature" }, matrix);
 		QUARK_TRACE(s);
 	}
 #endif

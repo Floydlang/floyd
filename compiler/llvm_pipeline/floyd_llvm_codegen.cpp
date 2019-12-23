@@ -337,7 +337,7 @@ static llvm::Value* generate_constant(llvm_function_generator_t& gen_acc, const 
 }
 
 //	Reserve stack slot for each local. But not arguments, they already have stack slot.
-static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_generator_t& gen_acc, const symbol_table_t& symbol_table, const llvm_function_def_t* mapping0){
+static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_generator_t& gen_acc, const symbol_table_t& symbol_table, const llvm_function_signature_t* mapping0){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(symbol_table.check_invariant());
 
@@ -2198,11 +2198,10 @@ static function_return_mode generate_statements(llvm_function_generator_t& gen_a
 static std::vector<resolved_symbol_t> generate_function_symbol_slots(llvm_function_generator_t& gen_acc, const function_definition_t& function_def){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(function_def.check_invariant());
-
 	QUARK_ASSERT(function_def._optional_body);
 
 	const symbol_table_t& symbol_table = function_def._optional_body->_symbol_table;
-	const auto mapping0 = *gen_acc.gen.type_lookup.find_from_type(function_def._function_type).optional_function_def;
+	const auto mapping0 = *gen_acc.gen.type_lookup.find_from_type(function_def._function_type).optional_function_signature;
 	const auto mapping = name_args(mapping0, function_def._named_args);
 	return generate_symbol_slots(gen_acc, symbol_table, &mapping);
 }
@@ -2225,6 +2224,7 @@ static llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::s
 	return gv;
 }
 
+//??? precalc is a decision the backend, not the semast should make
 static llvm::Value* generate_global(llvm_function_generator_t& gen_acc, const std::string& symbol_name, const symbol_t& symbol){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(symbol_name.empty() == false);
@@ -2334,7 +2334,7 @@ static void generate_all_floyd_function_bodies(llvm_code_generator_t& gen_acc, c
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(semantic_ast.check_invariant());
 
-	//	We have already generate the LLVM function-prototypes for the global functions in generate_module().
+	//	Fill up the existing LLVM function nodes with instructions.
 	for(const auto& function_def: semantic_ast._tree._function_defs){
 		if(function_def._optional_body){
 			generate_floyd_function_body(gen_acc, function_def, *function_def._optional_body);
@@ -2359,7 +2359,7 @@ static std::vector<llvm_function_link_entry_t> generate_function_nodes(llvm::Mod
 
 		//	Set names for all function defintion's arguments - makes IR easier to read.
 		if(e.function_type_or_undef.is_undefined() == false && e.arg_names_or_empty.empty() == false){
-			const auto unnamed_mapping_ptr = type_lookup.find_from_type(e.function_type_or_undef).optional_function_def;
+			const auto unnamed_mapping_ptr = type_lookup.find_from_type(e.function_type_or_undef).optional_function_signature;
 			if(unnamed_mapping_ptr != nullptr){
 				const auto named_mapping = name_args(*unnamed_mapping_ptr, e.arg_names_or_empty);
 
@@ -2393,7 +2393,7 @@ static std::vector<llvm_function_link_entry_t> generate_function_nodes(llvm::Mod
 	Floyd's global instructions are packed into the "floyd_runtime_init"-function. LLVM doesn't have global instructions.
 	All Floyd's global statements becomes instructions in floyd_init()-function that is called by Floyd runtime before any other function is called.
 */
-static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const lexical_scope_t& globals){
+static void generate_floyd_runtime_init_w_global_statements(llvm_code_generator_t& gen_acc, const lexical_scope_t& globals){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
 	auto& builder = gen_acc.get_builder();
@@ -2506,11 +2506,11 @@ static module_output_t generate_module(llvm_instance_t& instance, const std::str
 	module->setTargetTriple(instance.target.target_triple);
 	module->setDataLayout(data_layout);
 
-
+	//	For each type used, make an LLVM representation of it.
 	llvm_type_lookup type_lookup(instance.context, semantic_ast._tree._types);
 
-	//	Generate all LLVM function nodes: functions (without implementation) and globals.
-	//	This lets all other code reference them, even if they're not filled up with code yet.
+	//	Generate all LLVM function nodes.
+	//	This lets all other code reference the functions, even if function nodes aren't filled up with code yet.
 	const auto link_map1 = make_function_link_map1(module->getContext(), type_lookup, semantic_ast._tree._function_defs, semantic_ast.intrinsic_signatures);
 	if(false){
 		trace_function_link_map(type_lookup.state.types, link_map1);
@@ -2519,10 +2519,9 @@ static module_output_t generate_module(llvm_instance_t& instance, const std::str
 
 	auto gen_acc = llvm_code_generator_t(instance, module.get(), semantic_ast._tree._types, type_lookup, link_map2, settings, semantic_ast.intrinsic_signatures);
 
-	//	Globals.
+	//	Generate globals variables.
 	{
 		llvm_function_generator_t function_gen_acc(gen_acc, *gen_acc.runtime_functions.floydrt_init.llvm_codegen_f);
-
 		std::vector<resolved_symbol_t> globals = generate_global_symbol_slots(
 			function_gen_acc,
 			semantic_ast._tree._globals._symbol_table
@@ -2533,12 +2532,10 @@ static module_output_t generate_module(llvm_instance_t& instance, const std::str
 //	QUARK_TRACE_SS("result = " << floyd::print_gen(gen_acc));
 	QUARK_ASSERT(gen_acc.check_invariant());
 
-
 	//	Generate bodies of functions.
 	{
 		generate_all_floyd_function_bodies(gen_acc, semantic_ast);
-
-		generate_floyd_runtime_init(gen_acc, semantic_ast._tree._globals);
+		generate_floyd_runtime_init_w_global_statements(gen_acc, semantic_ast._tree._globals);
 		generate_floyd_runtime_deinit(gen_acc, semantic_ast._tree._globals);
 	}
 

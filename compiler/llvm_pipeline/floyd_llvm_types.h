@@ -70,12 +70,12 @@ struct llvm_arg_mapping_t {
 
 
 
-////////////////////////////////		llvm_function_def_t
+////////////////////////////////		llvm_function_signature_t
 
 //	Describes a complete LLVM function signature.
 // ??? rename llvm_function_type_t
 
-struct llvm_function_def_t {
+struct llvm_function_signature_t {
 	bool check_invariant() const {
 		QUARK_ASSERT(return_type != nullptr);
 		return true;
@@ -88,7 +88,7 @@ struct llvm_function_def_t {
 	std::vector<llvm_arg_mapping_t> args;
 };
 
-llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<member_t>& args);
+llvm_function_signature_t name_args(const llvm_function_signature_t& def, const std::vector<member_t>& args);
 
 
 
@@ -102,7 +102,7 @@ struct type_entry_t {
 		use_flag(false),
 		llvm_type_specific(nullptr),
 		llvm_type_generic(nullptr),
-		optional_function_def {}
+		optional_function_signature {}
 	{
 		QUARK_ASSERT(check_invariant());
 	}
@@ -111,12 +111,12 @@ struct type_entry_t {
 		bool use_flag,
 		llvm::Type* llvm_type_specific,
 		llvm::Type* llvm_type_generic,
-		std::shared_ptr<const llvm_function_def_t> optional_function_def
+		std::shared_ptr<const llvm_function_signature_t> optional_function_signature
 	) :
 		use_flag(use_flag),
 		llvm_type_specific(llvm_type_specific),
 		llvm_type_generic(llvm_type_generic),
-		optional_function_def(optional_function_def)
+		optional_function_signature(optional_function_signature)
 	{
 	}
 
@@ -130,7 +130,7 @@ struct type_entry_t {
 	bool use_flag;
 	llvm::Type* llvm_type_specific;
 	llvm::Type* llvm_type_generic;
-	std::shared_ptr<const llvm_function_def_t> optional_function_def;
+	std::shared_ptr<const llvm_function_signature_t> optional_function_signature;
 };
 
 
