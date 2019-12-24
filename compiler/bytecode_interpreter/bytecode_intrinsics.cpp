@@ -403,43 +403,6 @@ static rt_value_t bc_intrinsic__map(interpreter_t& vm, const rt_value_t args[], 
 }
 
 
-/////////////////////////////////////////		PURE -- map_string()
-
-
-//	string map_string(string s, func string(string e, C context) f, C context)
-static rt_value_t bc_intrinsic__map_string(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 3);
-//	QUARK_ASSERT(check_map_string_func_type(args[0]._type, args[1]._type, args[2]._type));
-
-	auto& backend = vm._backend;
-	const auto f = args[1];
-	const auto f_type_peek = peek2(backend.types, f._type);
-	const auto f_arg_types = f_type_peek.get_function_args(backend.types);
-//	const auto r_type = f_type_peek.get_function_return(backend.types);
-	const auto& context = args[2];
-
-	const auto input_vec = args[0].get_string_value(backend);
-	std::string vec2;
-	for(const auto& e: input_vec){
-		const rt_value_t f_args[] = { rt_value_t::make_int(e), context };
-		const auto result1 = call_function_bc(vm, f, f_args, 2);
-		QUARK_ASSERT(peek2(backend.types, result1._type).is_int());
-		const int64_t ch = result1.get_int_value();
-		vec2.push_back(static_cast<char>(ch));
-	}
-
-	const auto result = rt_value_t::make_string(backend, vec2);
-
-if(k_trace && false){
-	const auto debug = value_and_type_to_json(backend.types, rt_to_value(backend, result));
-	QUARK_TRACE(json_to_pretty_string(debug));
-}
-
-	return result;
-}
-
-
 
 /////////////////////////////////////////		PURE -- map_dag()
 
@@ -988,7 +951,6 @@ std::vector<std::pair<intrinsic_signature_t, BC_NATIVE_FUNCTION_PTR>> bc_get_int
 	log.push_back({ make_get_json_type_signature(types), bc_intrinsic__get_json_type });
 
 	log.push_back({ make_map_signature(types), bc_intrinsic__map });
-//	log.push_back({ make_map_string_signature(types), bc_intrinsic__map_string });
 	log.push_back({ make_filter_signature(types), bc_intrinsic__filter });
 	log.push_back({ make_reduce_signature(types), bc_intrinsic__reduce });
 	log.push_back({ make_map_dag_signature(types), bc_intrinsic__map_dag });

@@ -7965,7 +7965,6 @@ FLOYD_LANG_PROOF("generics", "", "", ""){
 
 
 FLOYD_LANG_PROOF("network component", "", "", ""){
-
 	ut_run_closed_lib(
 		QUARK_POS,
 		R"(
