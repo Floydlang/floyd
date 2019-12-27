@@ -136,22 +136,9 @@ static runtime_value_t llvm_corelib__calc_string_sha1(floyd_runtime_t* frp, runt
 
 static runtime_value_t llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, runtime_value_t binary_ptr0){
 	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
 	QUARK_ASSERT(binary_ptr0.struct_ptr != nullptr);
-	auto& types = backend.types;
 
-	const auto& binary = *reinterpret_cast<const native_binary_t*>(binary_ptr0.struct_ptr->get_data_ptr());
-
-	const auto& s = from_runtime_string(r, make_runtime_vector_carray(binary.bytes_string.vector_carray_ptr));
-	const auto ascii40 = corelib_calc_string_sha1(s);
-
-	const auto a = value_t::make_struct_value(
-		types,
-		make__sha1_t__type(types),
-		{ value_t::make_string(ascii40) }
-	);
-
-	return to_runtime_value(r, a);
+	return unified_corelib__calc_binary_sha1(&r.ee->backend, binary_ptr0);
 }
 
 
