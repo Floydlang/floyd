@@ -157,40 +157,6 @@ static rt_value_t bc_corelib__calc_string_sha1(interpreter_t& vm, const rt_value
 }
 
 
-#if 0
-static rt_value_t bc_corelib__calc_binary_sha1(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-//	QUARK_ASSERT(args[0]._type == make__binary_t__type());
-
-	auto& backend = vm._backend;
-	const auto& types = backend.types;
-
-	auto temp_types = types;
-	const auto& sha1_struct = args[0].get_struct_value(backend);
-	QUARK_ASSERT(sha1_struct.size() == peek2(temp_types, make__binary_t__type(temp_types)).get_struct(temp_types)._members.size());
-	QUARK_ASSERT(peek2(types, sha1_struct[0]._type).is_string());
-
-	const auto& sha1_string = sha1_struct[0].get_string_value(backend);
-	const auto ascii40 = corelib_calc_string_sha1(sha1_string);
-
-	const auto result = value_t::make_struct_value(
-		temp_types,
-		make__sha1_t__type(temp_types),
-		{
-			value_t::make_string(ascii40)
-		}
-	);
-
-	if(k_trace && false){
-		const auto debug = value_and_type_to_json(types, result);
-		QUARK_TRACE(json_to_pretty_string(debug));
-	}
-
-	const auto v = value_to_rt(backend, result);
-	return v;
-}
-#else
 static rt_value_t bc_corelib__calc_binary_sha1(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
@@ -200,8 +166,6 @@ static rt_value_t bc_corelib__calc_binary_sha1(interpreter_t& vm, const rt_value
 	const auto result = unified_corelib__calc_binary_sha1(&backend, args[0]._pod);
 	return rt_value_t(backend, make__sha1_t__type(backend.types), result, rt_value_t::rc_mode::adopt);
 }
-#endif
-
 
 static rt_value_t bc_corelib__get_time_of_day(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());

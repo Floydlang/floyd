@@ -99,6 +99,7 @@
 		2C5372B9207A9EBA00647AD1 /* bytecode_interpreter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5372B8207A9EBA00647AD1 /* bytecode_interpreter.cpp */; };
 		2C557C382040173E006F6818 /* bytecode_intrinsics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C557C362040173E006F6818 /* bytecode_intrinsics.cpp */; };
 		2C5E343C21527C6700B02262 /* hardware_caps_macos.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5E343B21527C6700B02262 /* hardware_caps_macos.cpp */; };
+		2C63C79623B65AAB002575F1 /* floyd_libffi_test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C63C79523B65AAB002575F1 /* floyd_libffi_test.cpp */; };
 		2C64578F2021E32E003625C8 /* libedit.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C64578E2021E32E003625C8 /* libedit.tbd */; };
 		2C674F99230A0CF800838CCF /* semantic_ast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C674F97230A0CF800838CCF /* semantic_ast.cpp */; };
 		2C6CDA9522FD92FD008F65C7 /* floyd_command_line_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C6CDA9322FD92FD008F65C7 /* floyd_command_line_parser.cpp */; };
@@ -335,6 +336,7 @@
 		2C5E343E21527C8B00B02262 /* hardware_caps.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hardware_caps.h; sourceTree = "<group>"; };
 		2C5F8320224644FB009870FC /* floyd_llvm_codegen.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_llvm_codegen.cpp; sourceTree = "<group>"; };
 		2C5F8321224644FB009870FC /* floyd_llvm_codegen.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_llvm_codegen.h; sourceTree = "<group>"; };
+		2C63C79523B65AAB002575F1 /* floyd_libffi_test.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_libffi_test.cpp; sourceTree = "<group>"; };
 		2C64578E2021E32E003625C8 /* libedit.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libedit.tbd; path = usr/lib/libedit.tbd; sourceTree = SDKROOT; };
 		2C674F97230A0CF800838CCF /* semantic_ast.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = semantic_ast.cpp; sourceTree = "<group>"; };
 		2C674F98230A0CF800838CCF /* semantic_ast.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = semantic_ast.h; sourceTree = "<group>"; };
@@ -955,9 +957,10 @@
 		2C279E2D23B64AD700553F51 /* libffi-3.2.1-snapshot */ = {
 			isa = PBXGroup;
 			children = (
+				2C279E3423B64E0F00553F51 /* floyd_libffi_readme.txt */,
+				2C63C79523B65AAB002575F1 /* floyd_libffi_test.cpp */,
 				2C279E2E23B64AD700553F51 /* libffi-3.2.1 */,
 				2C279E3223B64AD700553F51 /* libffi.a */,
-				2C279E3423B64E0F00553F51 /* floyd_libffi_readme.txt */,
 			);
 			path = "libffi-3.2.1-snapshot";
 			sourceTree = "<group>";
@@ -1855,6 +1858,7 @@
 				2C18048E208B947C00F62480 /* floyd_ast.cpp in Sources */,
 				2C2224E723A3ECA60052339E /* floyd_llvm_codegen_basics.cpp in Sources */,
 				2CC9B79F2309FD1D00B195C8 /* value_backend.cpp in Sources */,
+				2C63C79623B65AAB002575F1 /* floyd_libffi_test.cpp in Sources */,
 				2C2B51CD233E348A001D59D9 /* types.cpp in Sources */,
 				2C4DA09223035A0100190C37 /* format_table.cpp in Sources */,
 				2C6CDA9522FD92FD008F65C7 /* floyd_command_line_parser.cpp in Sources */,

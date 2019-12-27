@@ -15,9 +15,12 @@
 #include "types.h"
 #include "value_features.h"
 #include "format_table.h"
+#include <ffi.h>
 
 #include <algorithm>
 
+//??? temp -- remove this include
+#include "floyd_corelib.h"
 
 namespace floyd {
 
@@ -1036,6 +1039,86 @@ static void call_native(interpreter_t& vm, int target_reg, const func_link_t& fu
 	}
 }
 
+
+typedef void(*VOID_VOID_F)(void);
+
+//??? Support any
+static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t& func_link, int callee_arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	interpreter_stack_t& stack = vm._stack;
+
+	auto& backend = vm._backend;
+	const auto& types = backend.types;
+
+
+	QUARK_ASSERT(func_link.f != nullptr);
+
+//???
+//	const auto f = (VOID_VOID_F)func_link.f;
+	const auto f = unified_corelib__calc_binary_sha1;
+
+	const auto function_type_peek = peek2(types, func_link.function_type);
+
+	const auto temp_args = function_type_peek.get_function_args(types);
+	const auto function_def_dynamic_arg_count = func_link.dynamic_arg_count;
+
+	const int arg0_stack_pos = (int)(stack.size() - (function_def_dynamic_arg_count + callee_arg_count));
+	int stack_pos = arg0_stack_pos;
+
+
+
+
+	const auto function_def_arg_count = temp_args.size();
+	std::vector<rt_value_t> arg_values;
+	for(int a = 0 ; a < function_def_arg_count ; a++){
+		const auto func_arg_type = temp_args[a];
+		const auto arg_value = stack.load_value(stack_pos + 0, func_arg_type);
+		arg_values.push_back(arg_value);
+		stack_pos++;
+	}
+
+
+	
+	ffi_cif cif;
+	ffi_type* args[2];
+	void* values[2];
+	ffi_arg return_value;
+
+	args[0] = &ffi_type_pointer;
+	args[1] = &ffi_type_pointer;
+
+	auto backend_ptr = &backend;
+	values[0] = (void*)&backend_ptr;
+
+
+	auto value_ptr = arg_values[0]._pod;
+	values[1] = &value_ptr;
+
+	if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 2, &ffi_type_pointer, args) != FFI_OK) {
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+
+	ffi_call(&cif, (VOID_VOID_F)f, &return_value, values);
+
+	const auto& function_return_type = function_type_peek.get_function_return(types);
+	const auto function_return_type_peek = peek2(types, function_return_type);
+	if(function_return_type_peek.is_void() == true){
+	}
+	else{
+		const auto result2 = *(runtime_value_t*)&return_value;
+
+
+//		public: explicit rt_value_t(value_backend_t& backend, const type_t& type, const runtime_value_t& internals, rc_mode mode);
+
+
+		const auto result3 = rt_value_t(backend, function_return_type_peek, result2, rt_value_t::rc_mode::adopt);
+		stack.write_register(target_reg, result3);
+	}
+}
+
+
 //	We need to examine the callee, since we support magic argument lists of varying size.
 static void do_call(interpreter_t& vm, int target_reg, const runtime_value_t callee, int callee_arg_count){
 	QUARK_ASSERT(vm.check_invariant());
@@ -1082,8 +1165,12 @@ static void do_call(interpreter_t& vm, int target_reg, const runtime_value_t cal
 			quark::throw_runtime_error("Attempting to calling unimplemented function.");
 		}
 		else{
-			QUARK_ASSERT(func_link.f != nullptr);
-			call_native(vm, target_reg, func_link, callee_arg_count);
+			if(func_link.module_symbol.s == "calc_binary_sha1"){
+				call_via_libffi(vm, target_reg, func_link, callee_arg_count);
+			}
+			else{
+				call_native(vm, target_reg, func_link, callee_arg_count);
+			}
 		}
 	}
 }
