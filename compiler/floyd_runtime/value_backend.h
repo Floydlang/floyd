@@ -750,7 +750,7 @@ struct func_link_t {
 	////////////////////////////////		STATE
 
 	//	"instrinsics", "corelib", "runtime", "user function" or whatever.
-	std::string debug_type;
+	std::string module;
 
 	module_symbol_t module_symbol;
 	type_t function_type;

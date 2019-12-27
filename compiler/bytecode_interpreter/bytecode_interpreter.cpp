@@ -549,7 +549,7 @@ static std::vector<func_link_t> make_functions(const bc_program_t& program){
 		//	There us a native implementation of this function:
 		if(it != corelib_native_funcs.end()){
 			return func_link_t {
-				e.func_link.debug_type,
+				e.func_link.module,
 				function_name_symbol,
 				e.func_link.function_type,
 				e.func_link.dynamic_arg_count,
@@ -561,7 +561,7 @@ static std::vector<func_link_t> make_functions(const bc_program_t& program){
 		//	There is a BC implementation.
 		else if(e._frame_ptr != nullptr){
 			return func_link_t {
-				e.func_link.debug_type,
+				e.func_link.module,
 				function_name_symbol,
 				e.func_link.function_type,
 				e.func_link.dynamic_arg_count,

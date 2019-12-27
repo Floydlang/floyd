@@ -1652,7 +1652,7 @@ json_t func_link_to_json(const types_t& types, const func_link_t& def){
 
 	return json_t::make_array({
 		json_t(def.module_symbol.s),
-		json_t(def.debug_type),
+		json_t(def.module),
 		json_t(type_to_compact_string(types, def.function_type)),
 		json_t(def.dynamic_arg_count),
 		json_t(def.is_bc_function),
