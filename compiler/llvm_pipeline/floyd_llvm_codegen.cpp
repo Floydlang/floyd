@@ -303,7 +303,7 @@ static llvm::Value* generate_llvm_simple_constant_value(llvm_function_generator_
 		llvm::Value* operator()(const function_t& e2) const{
 			const auto link_name = value.get_function_value();
 			for(const auto& e: gen_acc.gen.link_map){
-				if(e.module_symbol == link_name){
+				if(e.func_link.module_symbol == link_name){
 					return e.llvm_codegen_f;
 				}
 			}
@@ -2361,18 +2361,18 @@ static std::vector<llvm_function_link_entry_t> generate_function_nodes(llvm::Mod
 
 	std::vector<llvm_function_link_entry_t> result;
 	for(const auto& e: link_map1){
-		auto existing_f = module.getFunction(e.module_symbol.s);
+		auto existing_f = module.getFunction(e.func_link.module_symbol.s);
 		QUARK_ASSERT(existing_f == nullptr);
 
-		auto f0 = module.getOrInsertFunction(e.module_symbol.s, e.llvm_function_type);
+		auto f0 = module.getOrInsertFunction(e.func_link.module_symbol.s, e.llvm_function_type);
 		auto f = llvm::cast<llvm::Function>(f0);
 
 		QUARK_ASSERT(check_invariant__function(f));
 		QUARK_ASSERT(check_invariant__module(&module));
 
 		//	Set names for all function defintion's arguments - makes IR easier to read.
-		if(e.function_type_optional.is_undefined() == false && e.arg_names_or_empty.empty() == false){
-			const auto unnamed_mapping_ptr = type_lookup.find_from_type(e.function_type_optional).optional_function_signature;
+		if(e.func_link.function_type_optional.is_undefined() == false && e.arg_names_or_empty.empty() == false){
+			const auto unnamed_mapping_ptr = type_lookup.find_from_type(e.func_link.function_type_optional).optional_function_signature;
 			if(unnamed_mapping_ptr != nullptr){
 				const auto named_mapping = name_args(*unnamed_mapping_ptr, e.arg_names_or_empty);
 
@@ -2393,7 +2393,14 @@ static std::vector<llvm_function_link_entry_t> generate_function_nodes(llvm::Mod
 		QUARK_ASSERT(check_invariant__function(f));
 		QUARK_ASSERT(check_invariant__module(&module));
 
-		result.push_back(llvm_function_link_entry_t{ e.module, e.module_symbol, e.function_type_optional, e.f, e.llvm_function_type, f, e.arg_names_or_empty });
+		result.push_back(
+			llvm_function_link_entry_t {
+				e.func_link,
+				e.llvm_function_type,
+				f,
+				e.arg_names_or_empty
+			}
+		);
 	}
 	if(false){
 		trace_function_link_map(type_lookup.state.types, result);

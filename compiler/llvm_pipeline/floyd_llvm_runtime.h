@@ -63,10 +63,7 @@ struct llvm_function_bind_t {
 //??? use func_link_t as member?
 //??? fix function_type for *ALL* functions, including corelib and intrinsics
 struct llvm_function_link_entry_t {
-	std::string module;
-	module_symbol_t module_symbol;
-	type_t function_type_optional;
-	void* f;
+	func_link_t func_link;
 
 	llvm::FunctionType* llvm_function_type;
 

@@ -1841,11 +1841,11 @@ static std::vector<llvm_function_link_entry_t> make_link_entries(const intrinsic
 		const auto function_type = signature_it != intrinsic_signatures.vec.end() ? signature_it->_function_type : type_t::make_undefined();
 
 		const auto link_name = bind.name;
-		const auto exists_it = std::find_if(result.begin(), result.end(), [&](const llvm_function_link_entry_t& e){ return e.module_symbol == link_name; });
+		const auto exists_it = std::find_if(result.begin(), result.end(), [&](const llvm_function_link_entry_t& e){ return e.func_link.module_symbol == link_name; });
 
 		if(exists_it == result.end()){
 			QUARK_ASSERT(bind.llvm_function_type != nullptr);
-			const auto def = llvm_function_link_entry_t{ "intrinsic", link_name, function_type, bind.native_f, bind.llvm_function_type, nullptr, {} };
+			const auto def = llvm_function_link_entry_t{ func_link_t { "intrinsic", link_name, function_type, func_link_t::emachine::k_native, bind.native_f }, bind.llvm_function_type, nullptr, {} };
 			result.push_back(def);
 		}
 	}
@@ -1869,7 +1869,7 @@ std::vector<llvm_function_link_entry_t> make_intrinsics_link_map(llvm::LLVMConte
 		const auto function_type = signature_it->_function_type;
 		llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
 		const auto function_byvalue_type = deref_ptr(function_ptr_type);
-		const auto def = llvm_function_link_entry_t{ "intrinsic", link_name, function_type, bind.second, (llvm::FunctionType*)function_byvalue_type, nullptr, {} };
+		const auto def = llvm_function_link_entry_t{ func_link_t { "intrinsic", link_name, function_type, func_link_t::emachine::k_native, bind.second }, (llvm::FunctionType*)function_byvalue_type, nullptr, {} };
 		result.push_back(def);
 	}
 

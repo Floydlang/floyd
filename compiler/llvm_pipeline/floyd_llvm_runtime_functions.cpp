@@ -1403,7 +1403,7 @@ std::vector<llvm_function_link_entry_t> make_runtime_function_link_map(llvm::LLV
 	std::vector<llvm_function_link_entry_t> result;
 	for(const auto& e: runtime_function_binds){
 		const auto link_name = module_symbol_t { e.name };
-		const auto def = llvm_function_link_entry_t{ "runtime", link_name, type_t::make_undefined(), e.native_f, e.llvm_function_type, nullptr, {} };
+		const auto def = llvm_function_link_entry_t{ func_link_t { "runtime", link_name, type_t::make_undefined(), func_link_t::emachine::k_native, e.native_f }, e.llvm_function_type, nullptr, {} };
 		result.push_back(def);
 	}
 
