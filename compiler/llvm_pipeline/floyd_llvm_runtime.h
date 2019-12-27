@@ -60,8 +60,6 @@ struct llvm_function_bind_t {
 ////////////////////////////////		llvm_function_link_entry_t
 
 
-//??? use func_link_t as member?
-//??? fix function_type for *ALL* functions, including corelib and intrinsics
 struct llvm_function_link_entry_t {
 	func_link_t func_link;
 
