@@ -1832,7 +1832,7 @@ static std::map<std::string, void*> get_one_to_one_intrinsic_binds(){
 }
 
 //	Skips duplicates.
-static std::vector<llvm_function_link_entry_t> make_entries2(const intrinsic_signatures_t& intrinsic_signatures, const std::vector<specialization_t>& specializations){
+static std::vector<llvm_function_link_entry_t> make_link_entries(const intrinsic_signatures_t& intrinsic_signatures, const std::vector<specialization_t>& specializations){
 	const auto binds = mapf<llvm_function_bind_t>(specializations, [](auto& e){ return e.bind; });
 
 	std::vector<llvm_function_link_entry_t> result;
@@ -1873,10 +1873,10 @@ std::vector<llvm_function_link_entry_t> make_intrinsics_link_map(llvm::LLVMConte
 		result.push_back(def);
 	}
 
-	result = concat(result, make_entries2(intrinsic_signatures, make_push_back_specializations(context, type_lookup)));
-	result = concat(result, make_entries2(intrinsic_signatures, make_size_specializations(context, type_lookup)));
-	result = concat(result, make_entries2(intrinsic_signatures, make_update_specializations(context, type_lookup)));
-	result = concat(result, make_entries2(intrinsic_signatures, make_map_specializations(context, type_lookup)));
+	result = concat(result, make_link_entries(intrinsic_signatures, make_push_back_specializations(context, type_lookup)));
+	result = concat(result, make_link_entries(intrinsic_signatures, make_size_specializations(context, type_lookup)));
+	result = concat(result, make_link_entries(intrinsic_signatures, make_update_specializations(context, type_lookup)));
+	result = concat(result, make_link_entries(intrinsic_signatures, make_map_specializations(context, type_lookup)));
 
 	if(k_trace_function_link_map){
 		trace_function_link_map(types, result);
