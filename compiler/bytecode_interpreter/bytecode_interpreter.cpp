@@ -534,7 +534,6 @@ static std::vector<func_link_t> make_functions(const bc_program_t& program){
 			std::string() + "intrinsics:" + e.first.name,
 			module_symbol_t(e.first.name),
 			e.first._function_type,
-			count_dyn_args(temp_types, e.first._function_type),
 			false,
 			(void*)e.second
 		};
@@ -552,7 +551,6 @@ static std::vector<func_link_t> make_functions(const bc_program_t& program){
 				e.func_link.module,
 				function_name_symbol,
 				e.func_link.function_type_optional,
-				e.func_link.dynamic_arg_count,
 				e.func_link.is_bc_function,
 				(void*)it->second
 			};
@@ -564,7 +562,6 @@ static std::vector<func_link_t> make_functions(const bc_program_t& program){
 				e.func_link.module,
 				function_name_symbol,
 				e.func_link.function_type_optional,
-				e.func_link.dynamic_arg_count,
 				e.func_link.is_bc_function,
 				(void*)e._frame_ptr.get()
 			};
@@ -572,7 +569,7 @@ static std::vector<func_link_t> make_functions(const bc_program_t& program){
 
 		//	No implementation.
 		else{
-			return func_link_t { "", k_no_module_symbol, {}, false, false, nullptr };
+			return func_link_t { "", k_no_module_symbol, {}, false, nullptr };
 		}
 	});
 
@@ -1003,7 +1000,7 @@ static void call_native(interpreter_t& vm, int target_reg, const func_link_t& fu
 	const auto function_type_peek = peek2(types, func_link.function_type_optional);
 
 	const auto temp_args = function_type_peek.get_function_args(types);
-	const auto function_def_dynamic_arg_count = func_link.dynamic_arg_count;
+	const auto function_def_dynamic_arg_count = count_dyn_args(types, func_link.function_type_optional);
 
 	const int arg0_stack_pos = (int)(stack.size() - (function_def_dynamic_arg_count + callee_arg_count));
 	int stack_pos = arg0_stack_pos;
@@ -1061,13 +1058,10 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 	const auto function_type_peek = peek2(types, func_link.function_type_optional);
 
 	const auto temp_args = function_type_peek.get_function_args(types);
-	const auto function_def_dynamic_arg_count = func_link.dynamic_arg_count;
+	const auto function_def_dynamic_arg_count = count_dyn_args(types, func_link.function_type_optional);
 
 	const int arg0_stack_pos = (int)(stack.size() - (function_def_dynamic_arg_count + callee_arg_count));
 	int stack_pos = arg0_stack_pos;
-
-
-
 
 	const auto function_def_arg_count = temp_args.size();
 	std::vector<rt_value_t> arg_values;
@@ -1141,7 +1135,7 @@ static void do_call(interpreter_t& vm, int target_reg, const runtime_value_t cal
 
 		const auto& function_return_type = peek2(types, func_link.function_type_optional).get_function_return(types);
 
-		QUARK_ASSERT(func_link.dynamic_arg_count == 0);
+		QUARK_ASSERT(count_dyn_args(types, func_link.function_type_optional) == 0);
 
 		//	We need to remember the global pos where to store return value, since we're switching frame to call function.
 		int result_reg_pos = static_cast<int>(stack._current_frame_start_ptr - &stack._entries[0]) + target_reg;

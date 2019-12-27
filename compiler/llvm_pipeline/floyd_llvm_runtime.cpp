@@ -413,7 +413,6 @@ static std::vector<func_link_t> make_func_links(const types_t& types, llvm::Exec
 				"llvm func: " + e.module_symbol.s,
 				e.module_symbol,
 				e.function_type_optional,
-				count_dyn_args(types, e.function_type_optional),
 				false,
 				f
 			});
