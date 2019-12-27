@@ -2371,8 +2371,8 @@ static std::vector<llvm_function_link_entry_t> generate_function_nodes(llvm::Mod
 		QUARK_ASSERT(check_invariant__module(&module));
 
 		//	Set names for all function defintion's arguments - makes IR easier to read.
-		if(e.function_type_or_undef.is_undefined() == false && e.arg_names_or_empty.empty() == false){
-			const auto unnamed_mapping_ptr = type_lookup.find_from_type(e.function_type_or_undef).optional_function_signature;
+		if(e.function_type_optional.is_undefined() == false && e.arg_names_or_empty.empty() == false){
+			const auto unnamed_mapping_ptr = type_lookup.find_from_type(e.function_type_optional).optional_function_signature;
 			if(unnamed_mapping_ptr != nullptr){
 				const auto named_mapping = name_args(*unnamed_mapping_ptr, e.arg_names_or_empty);
 
@@ -2393,7 +2393,7 @@ static std::vector<llvm_function_link_entry_t> generate_function_nodes(llvm::Mod
 		QUARK_ASSERT(check_invariant__function(f));
 		QUARK_ASSERT(check_invariant__module(&module));
 
-		result.push_back(llvm_function_link_entry_t{ e.module, e.module_symbol, e.llvm_function_type, f, e.function_type_or_undef, e.arg_names_or_empty, e.native_f });
+		result.push_back(llvm_function_link_entry_t{ e.module, e.module_symbol, e.llvm_function_type, f, e.function_type_optional, e.arg_names_or_empty, e.native_f });
 	}
 	if(false){
 		trace_function_link_map(type_lookup.state.types, result);

@@ -121,7 +121,7 @@ static void XXXXX_trace_function_link_map(const std::vector<llvm_function_link_e
 	};
 
 	for(const auto& e: defs){
-		const auto f0 = e.function_type_or_undef.is_undefined() ? "" : json_to_compact_string(typeid_to_compact_string(e.function_type_or_undef));
+		const auto f0 = e.function_type_optional.is_undefined() ? "" : json_to_compact_string(typeid_to_compact_string(e.function_type_optional));
 
 		std::string arg_names;
 		for(const auto& m: e.arg_names_or_empty){

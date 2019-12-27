@@ -740,7 +740,7 @@ bool is_struct_pod(const types_t& types, const struct_type_desc_t& struct_def);
 struct func_link_t {
 	bool check_invariant() const {
 		QUARK_ASSERT(module_symbol.s.empty() == false);
-		QUARK_ASSERT(function_type.is_function());
+		QUARK_ASSERT(function_type_optional.is_function());
 		QUARK_ASSERT(dynamic_arg_count >= 0 && dynamic_arg_count < 1000);
 //		QUARK_ASSERT(f != nullptr);
 		return true;
@@ -753,7 +753,7 @@ struct func_link_t {
 	std::string module;
 
 	module_symbol_t module_symbol;
-	type_t function_type;
+	type_t function_type_optional;
 	int dynamic_arg_count;
 
 	bool is_bc_function;

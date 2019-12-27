@@ -551,7 +551,7 @@ static std::vector<func_link_t> make_functions(const bc_program_t& program){
 			return func_link_t {
 				e.func_link.module,
 				function_name_symbol,
-				e.func_link.function_type,
+				e.func_link.function_type_optional,
 				e.func_link.dynamic_arg_count,
 				e.func_link.is_bc_function,
 				(void*)it->second
@@ -563,7 +563,7 @@ static std::vector<func_link_t> make_functions(const bc_program_t& program){
 			return func_link_t {
 				e.func_link.module,
 				function_name_symbol,
-				e.func_link.function_type,
+				e.func_link.function_type_optional,
 				e.func_link.dynamic_arg_count,
 				e.func_link.is_bc_function,
 				(void*)e._frame_ptr.get()
@@ -1000,7 +1000,7 @@ static void call_native(interpreter_t& vm, int target_reg, const func_link_t& fu
 	QUARK_ASSERT(func_link.f != nullptr);
 	const auto f = (BC_NATIVE_FUNCTION_PTR)func_link.f;
 
-	const auto function_type_peek = peek2(types, func_link.function_type);
+	const auto function_type_peek = peek2(types, func_link.function_type_optional);
 
 	const auto temp_args = function_type_peek.get_function_args(types);
 	const auto function_def_dynamic_arg_count = func_link.dynamic_arg_count;
@@ -1058,7 +1058,7 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 //	const auto f = (VOID_VOID_F)func_link.f;
 	const auto f = unified_corelib__calc_binary_sha1;
 
-	const auto function_type_peek = peek2(types, func_link.function_type);
+	const auto function_type_peek = peek2(types, func_link.function_type_optional);
 
 	const auto temp_args = function_type_peek.get_function_args(types);
 	const auto function_def_dynamic_arg_count = func_link.dynamic_arg_count;
@@ -1137,9 +1137,9 @@ static void do_call(interpreter_t& vm, int target_reg, const runtime_value_t cal
 	if(func_link.is_bc_function){
 		//	This is a floyd function, with a frame_ptr to execute.
 		QUARK_ASSERT(func_link.f != nullptr);
-		QUARK_ASSERT(func_link.function_type.get_function_args(types).size() == callee_arg_count);
+		QUARK_ASSERT(func_link.function_type_optional.get_function_args(types).size() == callee_arg_count);
 
-		const auto& function_return_type = peek2(types, func_link.function_type).get_function_return(types);
+		const auto& function_return_type = peek2(types, func_link.function_type_optional).get_function_return(types);
 
 		QUARK_ASSERT(func_link.dynamic_arg_count == 0);
 

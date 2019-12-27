@@ -73,7 +73,7 @@ struct llvm_function_link_entry_t {
 	//??? Rename llvm_function_node;
 	llvm::Function* llvm_codegen_f;
 
-	type_t function_type_or_undef;
+	type_t function_type_optional;
 
 	//??? better to use vector<string>
 	std::vector<member_t> arg_names_or_empty;
