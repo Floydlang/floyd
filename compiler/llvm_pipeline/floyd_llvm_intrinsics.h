@@ -25,10 +25,12 @@ std::vector<llvm_function_link_entry_t> make_intrinsics_link_map(
 	const intrinsic_signatures_t& intrinsic_signatures
 );
 
-
 llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, const type_t& resolved_call_type, llvm::Value& collection_reg, const type_t& collection_type, llvm::Value& value_reg);
+
 llvm::Value* generate_instrinsic_size(llvm_function_generator_t& gen_acc, const type_t& resolved_call_type, llvm::Value& collection_reg, const type_t& collection_type);
+
 llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, const type_t& resolved_call_type, llvm::Value& collection_reg, const type_t& collection_type, llvm::Value& key_reg, llvm::Value& value_reg);
+
 llvm::Value* generate_instrinsic_map(
 	llvm_function_generator_t& gen_acc,
 	const type_t& resolved_call_type,

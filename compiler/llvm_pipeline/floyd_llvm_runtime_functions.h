@@ -14,13 +14,13 @@
 
 namespace floyd {
 
-struct function_bind_t;
 struct llvm_function_generator_t;
 
-//	These are the support function built into the runtime, like RC primitives.
-std::vector<function_bind_t> get_runtime_function_binds(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup);
 
 
+//	Make link entries for all runtime functions, like floydrt_retain_vec().
+//	These have no floyd-style function type, only llvm function type, since they use parameters not expressable with type_t.
+std::vector<llvm_function_link_entry_t> make_runtime_function_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup);
 
 
 

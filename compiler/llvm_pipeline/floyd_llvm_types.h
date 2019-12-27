@@ -168,6 +168,7 @@ struct state_t {
 	the same size as heap_alloc_64_t.
 */
 
+// ??? add *_t to name
 struct llvm_type_lookup {
 	llvm_type_lookup(llvm::LLVMContext& context, const types_t& types);
 	bool check_invariant() const;

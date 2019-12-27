@@ -45,11 +45,11 @@ struct llvm_bind_t {
 
 
 
-////////////////////////////////		function_bind_t
+////////////////////////////////		llvm_function_bind_t
 
 
 
-struct function_bind_t {
+struct llvm_function_bind_t {
 	module_symbol_t name;
 	llvm::FunctionType* llvm_function_type;
 	void* native_f;

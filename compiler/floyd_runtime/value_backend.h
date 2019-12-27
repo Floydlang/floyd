@@ -746,6 +746,9 @@ struct func_link_t {
 		return true;
 	}
 
+
+	////////////////////////////////		STATE
+
 	//	"instrinsics", "corelib", "runtime", "user function" or whatever.
 	std::string debug_type;
 

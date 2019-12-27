@@ -160,29 +160,6 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const module_symbol_t& n
 
 
 
-
-//	Make link entries for all runtime functions, like floydrt_retain_vec().
-//	These have no floyd-style function type, only llvm function type, since they use parameters not expressable with type_t.
-static std::vector<llvm_function_link_entry_t> make_runtime_function_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
-	QUARK_ASSERT(type_lookup.check_invariant());
-
-	const auto runtime_function_binds = get_runtime_function_binds(context, type_lookup);
-	auto& types = type_lookup.state.types;
-
-	std::vector<llvm_function_link_entry_t> result;
-	for(const auto& e: runtime_function_binds){
-		const auto link_name = module_symbol_t { e.name };
-		const auto def = llvm_function_link_entry_t{ "runtime", link_name, e.llvm_function_type, nullptr, type_t::make_undefined(), {}, e.native_f };
-		result.push_back(def);
-	}
-
-	if(k_trace_function_link_map){
-		trace_function_link_map(types, result);
-	}
-
-	return result;
-}
-
 static std::vector<llvm_function_link_entry_t> make_init_deinit_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
