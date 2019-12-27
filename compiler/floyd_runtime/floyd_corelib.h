@@ -16,6 +16,7 @@
 
 #include "compiler_basics.h"
 #include "file_handling.h"
+#include "value_backend.h"
 
 namespace floyd {
 
@@ -35,6 +36,8 @@ type_t make__fs_environment_t__type(types_t& types);
 bool is_valid_absolute_dir_path(const std::string& s);
 std::vector<value_t> directory_entries_to_values(types_t& types, const std::vector<TDirEntry>& v);
 
+
+
 /*
 	struct sha1_t {
 		string ascii40
@@ -42,12 +45,28 @@ std::vector<value_t> directory_entries_to_values(types_t& types, const std::vect
 */
 type_t make__sha1_t__type(types_t& types);
 
+//	Part of corelib / standard lib
+struct native_sha1_t {
+	runtime_value_t ascii40_string;
+};
+
+
+
+
+//	Part of language
+struct native_binary_t {
+	runtime_value_t bytes_string;
+};
+
 /*
 	struct binary_t {
 		string bytes
 	}
 */
 type_t make__binary_t__type(types_t& types);
+
+
+
 
 std::string make_benchmark_report(const std::vector<benchmark_result2_t>& test_results);
 
@@ -108,6 +127,21 @@ void corelib_create_directory_branch(const std::string& abs_path);
 void corelib_delete_fsentry_deep(const std::string& abs_path);
 void corelib_rename_fsentry(const std::string& abs_path, const std::string& n);
 
+
+
+
+
+
+struct unified_runtime_t {
+	bool check_invariant() const {
+		QUARK_ASSERT(backend.check_invariant());
+		return true;
+	}
+
+	value_backend_t backend;
+};
+
+runtime_value_t unified_corelib__calc_binary_sha1(value_backend_t* b, runtime_value_t binary_ptr0);
 
 
 

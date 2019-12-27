@@ -30,15 +30,6 @@ namespace floyd {
 
 
 
-struct native_binary_t {
-	runtime_value_t ascii40;
-};
-
-struct native_sha1_t {
-	runtime_value_t ascii40;
-};
-
-
 
 //		func string make_benchmark_report([benchmark_result2_t] results)
 static runtime_value_t llvm_corelib__make_benchmark_report(floyd_runtime_t* frp, const runtime_value_t b){
@@ -132,12 +123,16 @@ static runtime_value_t llvm_corelib__calc_string_sha1(floyd_runtime_t* frp, runt
 
 	const auto a = value_t::make_struct_value(
 		types,
-		type_t::make_struct(types, struct_type_desc_t({ member_t{ type_t::make_string(), "ascii40" } }) ),
+		make__sha1_t__type(types),
 		{ value_t::make_string(ascii40) }
 	);
 
 	return to_runtime_value(r, a);
 }
+
+
+
+
 
 static runtime_value_t llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, runtime_value_t binary_ptr0){
 	auto& r = get_floyd_runtime(frp);
@@ -147,12 +142,12 @@ static runtime_value_t llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, runt
 
 	const auto& binary = *reinterpret_cast<const native_binary_t*>(binary_ptr0.struct_ptr->get_data_ptr());
 
-	const auto& s = from_runtime_string(r, make_runtime_vector_carray(binary.ascii40.vector_carray_ptr));
+	const auto& s = from_runtime_string(r, make_runtime_vector_carray(binary.bytes_string.vector_carray_ptr));
 	const auto ascii40 = corelib_calc_string_sha1(s);
 
 	const auto a = value_t::make_struct_value(
 		types,
-		type_t::make_struct(types, struct_type_desc_t({ member_t{ type_t::make_string(), "ascii40" } })),
+		make__sha1_t__type(types),
 		{ value_t::make_string(ascii40) }
 	);
 
