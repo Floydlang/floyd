@@ -291,7 +291,7 @@ std::string print_function_link_map(const types_t& types, const std::vector<llvm
 			e.llvm_codegen_f != nullptr ? ptr_to_hexstring(e.llvm_codegen_f) : "",
 			f,
 			arg_names,
-			e.native_f != nullptr ? ptr_to_hexstring(e.native_f) : "",
+			e.f != nullptr ? ptr_to_hexstring(e.f) : "",
 		};
 		matrix.push_back(line);
 	}
@@ -521,8 +521,8 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 
 			const auto& function_link_map = program_breaks.function_link_map;
 			const auto it = std::find_if(function_link_map.begin(), function_link_map.end(), [&](const llvm_function_link_entry_t& def){ return def.module_symbol.s == s2; });
-			if(it != function_link_map.end() && it->native_f != nullptr){
-				return it->native_f;
+			if(it != function_link_map.end() && it->f != nullptr){
+				return it->f;
 			}
 			else {
 				return (void*)&floyd_llvm_intrinsic__dummy;

@@ -66,7 +66,7 @@ struct llvm_function_link_entry_t {
 	std::string module;
 	module_symbol_t module_symbol;
 	type_t function_type_optional;
-	void* native_f;
+	void* f;
 
 	llvm::FunctionType* llvm_function_type;
 
