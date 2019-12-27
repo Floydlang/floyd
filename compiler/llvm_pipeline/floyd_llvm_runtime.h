@@ -65,7 +65,7 @@ struct llvm_function_bind_t {
 struct llvm_function_link_entry_t {
 	std::string module;
 
-	module_symbol_t link_name;
+	module_symbol_t module_symbol;
 
 	llvm::FunctionType* llvm_function_type;
 

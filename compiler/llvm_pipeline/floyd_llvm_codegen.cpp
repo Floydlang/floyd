@@ -303,7 +303,7 @@ static llvm::Value* generate_llvm_simple_constant_value(llvm_function_generator_
 		llvm::Value* operator()(const function_t& e2) const{
 			const auto link_name = value.get_function_value();
 			for(const auto& e: gen_acc.gen.link_map){
-				if(e.link_name == link_name){
+				if(e.module_symbol == link_name){
 					return e.llvm_codegen_f;
 				}
 			}
@@ -2361,10 +2361,10 @@ static std::vector<llvm_function_link_entry_t> generate_function_nodes(llvm::Mod
 
 	std::vector<llvm_function_link_entry_t> result;
 	for(const auto& e: link_map1){
-		auto existing_f = module.getFunction(e.link_name.s);
+		auto existing_f = module.getFunction(e.module_symbol.s);
 		QUARK_ASSERT(existing_f == nullptr);
 
-		auto f0 = module.getOrInsertFunction(e.link_name.s, e.llvm_function_type);
+		auto f0 = module.getOrInsertFunction(e.module_symbol.s, e.llvm_function_type);
 		auto f = llvm::cast<llvm::Function>(f0);
 
 		QUARK_ASSERT(check_invariant__function(f));
@@ -2393,7 +2393,7 @@ static std::vector<llvm_function_link_entry_t> generate_function_nodes(llvm::Mod
 		QUARK_ASSERT(check_invariant__function(f));
 		QUARK_ASSERT(check_invariant__module(&module));
 
-		result.push_back(llvm_function_link_entry_t{ e.module, e.link_name, e.llvm_function_type, f, e.function_type_or_undef, e.arg_names_or_empty, e.native_f });
+		result.push_back(llvm_function_link_entry_t{ e.module, e.module_symbol, e.llvm_function_type, f, e.function_type_or_undef, e.arg_names_or_empty, e.native_f });
 	}
 	if(false){
 		trace_function_link_map(type_lookup.state.types, result);

@@ -1841,7 +1841,7 @@ static std::vector<llvm_function_link_entry_t> make_link_entries(const intrinsic
 		const auto function_type = signature_it != intrinsic_signatures.vec.end() ? signature_it->_function_type : type_t::make_undefined();
 
 		const auto link_name = bind.name;
-		const auto exists_it = std::find_if(result.begin(), result.end(), [&](const llvm_function_link_entry_t& e){ return e.link_name == link_name; });
+		const auto exists_it = std::find_if(result.begin(), result.end(), [&](const llvm_function_link_entry_t& e){ return e.module_symbol == link_name; });
 
 		if(exists_it == result.end()){
 			QUARK_ASSERT(bind.llvm_function_type != nullptr);

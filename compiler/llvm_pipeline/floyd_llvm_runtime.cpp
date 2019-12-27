@@ -63,7 +63,7 @@ ret i32 %2
 
 
 const llvm_function_link_entry_t& find_function_def_from_link_name(const std::vector<llvm_function_link_entry_t>& function_link_map, const module_symbol_t& link_name){
-	auto it = std::find_if(function_link_map.begin(), function_link_map.end(), [&] (const llvm_function_link_entry_t& e) { return e.link_name == link_name; } );
+	auto it = std::find_if(function_link_map.begin(), function_link_map.end(), [&] (const llvm_function_link_entry_t& e) { return e.module_symbol == link_name; } );
 	QUARK_ASSERT(it != function_link_map.end());
 
 	QUARK_ASSERT(it->llvm_codegen_f != nullptr);
@@ -233,9 +233,9 @@ static std::vector<llvm_function_link_entry_t> make_floyd_code_and_corelib_link_
 
 	std::vector<llvm_function_link_entry_t> result;
 	for(const auto& e: result0){
-		const auto it = binds0.find(e.link_name);
+		const auto it = binds0.find(e.module_symbol);
 		if(it != binds0.end()){
-			const auto def2 = llvm_function_link_entry_t{ e.module, e.link_name, e.llvm_function_type, e.llvm_codegen_f, e.function_type_or_undef, e.arg_names_or_empty, it->second };
+			const auto def2 = llvm_function_link_entry_t{ e.module, e.module_symbol, e.llvm_function_type, e.llvm_codegen_f, e.function_type_or_undef, e.arg_names_or_empty, it->second };
 			result.push_back(def2);
 		}
 		else{
@@ -285,7 +285,7 @@ std::string print_function_link_map(const types_t& types, const std::vector<llvm
 		const auto f = f1.size() != f0.size() ? (f1 + "...") : f1;
 
 		const auto line = std::vector<std::string>{
-			e.link_name.s,
+			e.module_symbol.s,
 			e.module,
 			print_type(e.llvm_function_type),
 			e.llvm_codegen_f != nullptr ? ptr_to_hexstring(e.llvm_codegen_f) : "",
@@ -407,11 +407,11 @@ static std::vector<func_link_t> make_func_links(const types_t& types, llvm::Exec
 	std::vector<func_link_t> result;
 	for(const auto& e: function_link_map){
 		if(e.function_type_or_undef.is_function()){
-			const auto f = (void*)ee.getFunctionAddress(e.link_name.s);
+			const auto f = (void*)ee.getFunctionAddress(e.module_symbol.s);
 	//		auto f = get_function_ptr(runtime, e.link_name);
 			result.push_back(func_link_t{
-				"llvm func: " + e.link_name.s,
-				e.link_name,
+				"llvm func: " + e.module_symbol.s,
+				e.module_symbol,
 				e.function_type_or_undef,
 				count_dyn_args(types, e.function_type_or_undef),
 				false,
@@ -521,7 +521,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			const auto s2 = strip_link_name(s);
 
 			const auto& function_link_map = program_breaks.function_link_map;
-			const auto it = std::find_if(function_link_map.begin(), function_link_map.end(), [&](const llvm_function_link_entry_t& def){ return def.link_name.s == s2; });
+			const auto it = std::find_if(function_link_map.begin(), function_link_map.end(), [&](const llvm_function_link_entry_t& def){ return def.module_symbol.s == s2; });
 			if(it != function_link_map.end() && it->native_f != nullptr){
 				return it->native_f;
 			}
@@ -544,10 +544,10 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 	//	NOTICE: LLVM strips out unused functions = not all functions in our link map gets a native function pointer.
 	std::vector<llvm_function_link_entry_t> final_link_map;
 	for(const auto& e: program_breaks.function_link_map){
-		const auto addr = (void*)ee1->getFunctionAddress(e.link_name.s);
+		const auto addr = (void*)ee1->getFunctionAddress(e.module_symbol.s);
 
 		//??? null llvm_codegen_f pointer, which makes no sense now?
-		const auto e2 = llvm_function_link_entry_t{ e.module, e.link_name, e.llvm_function_type, e.llvm_codegen_f, e.function_type_or_undef, e.arg_names_or_empty, addr };
+		const auto e2 = llvm_function_link_entry_t{ e.module, e.module_symbol, e.llvm_function_type, e.llvm_codegen_f, e.function_type_or_undef, e.arg_names_or_empty, addr };
 		final_link_map.push_back(e2);
 	}
 
