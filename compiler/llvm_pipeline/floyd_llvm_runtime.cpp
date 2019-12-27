@@ -413,7 +413,7 @@ static std::vector<func_link_t> make_func_links(const types_t& types, llvm::Exec
 				"llvm func: " + e.module_symbol.s,
 				e.module_symbol,
 				e.function_type_optional,
-				false,
+				func_link_t::emachine::k_native,
 				f
 			});
 		}

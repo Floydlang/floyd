@@ -738,6 +738,8 @@ bool is_struct_pod(const types_t& types, const struct_type_desc_t& struct_def);
 
 //	Every function has a func_entry_t. It may not yet be linked to a function.
 struct func_link_t {
+	enum class emachine { k_native, k_bytecode };
+
 	bool check_invariant() const {
 		QUARK_ASSERT(module_symbol.s.empty() == false);
 		QUARK_ASSERT(function_type_optional.is_function());
@@ -754,7 +756,7 @@ struct func_link_t {
 	module_symbol_t module_symbol;
 	type_t function_type_optional;
 
-	bool is_bc_function;
+	emachine machine;
 
 	//	Points to a native function or to a bc_static_frame_t. Nullptr: only a prototype, no implementation.
 	void* f;

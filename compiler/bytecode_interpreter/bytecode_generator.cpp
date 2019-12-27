@@ -1996,7 +1996,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 					"user floyd function: " + function_def._definition_name,
 					module_symbol_t(function_def._definition_name),
 					function_def._function_type,
-					true,
+					func_link_t::emachine::k_bytecode,
 	//				function_def._named_args,
 					frame2.get()
 				},
@@ -2010,7 +2010,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 					"user function: " + function_def._definition_name,
 					module_symbol_t(function_def._definition_name),
 					function_def._function_type,
-					false,
+					func_link_t::emachine::k_native,
 					nullptr
 				},
 				nullptr

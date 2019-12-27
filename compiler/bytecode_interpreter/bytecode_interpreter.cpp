@@ -400,7 +400,7 @@ rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_val
 	}
 	const auto& func_link = *func_link_ptr;
 
-	if(func_link.is_bc_function == false){
+	if(func_link.machine == func_link_t::emachine::k_native){
 		//	arity
 //		QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
 		QUARK_ASSERT(func_link.f != nullptr)
@@ -534,7 +534,7 @@ static std::vector<func_link_t> make_functions(const bc_program_t& program){
 			std::string() + "intrinsics:" + e.first.name,
 			module_symbol_t(e.first.name),
 			e.first._function_type,
-			false,
+			func_link_t::emachine::k_native,
 			(void*)e.second
 		};
 	});
@@ -551,7 +551,7 @@ static std::vector<func_link_t> make_functions(const bc_program_t& program){
 				e.func_link.module,
 				function_name_symbol,
 				e.func_link.function_type_optional,
-				e.func_link.is_bc_function,
+				e.func_link.machine,
 				(void*)it->second
 			};
 		}
@@ -562,14 +562,14 @@ static std::vector<func_link_t> make_functions(const bc_program_t& program){
 				e.func_link.module,
 				function_name_symbol,
 				e.func_link.function_type_optional,
-				e.func_link.is_bc_function,
+				e.func_link.machine,
 				(void*)e._frame_ptr.get()
 			};
 		}
 
 		//	No implementation.
 		else{
-			return func_link_t { "", k_no_module_symbol, {}, false, nullptr };
+			return func_link_t { "", k_no_module_symbol, {}, func_link_t::emachine::k_bytecode, nullptr };
 		}
 	});
 
@@ -1128,7 +1128,7 @@ static void do_call(interpreter_t& vm, int target_reg, const runtime_value_t cal
 	}
 
 	const auto& func_link = *func_link_ptr;
-	if(func_link.is_bc_function){
+	if(func_link.machine == func_link_t::emachine::k_bytecode){
 		//	This is a floyd function, with a frame_ptr to execute.
 		QUARK_ASSERT(func_link.f != nullptr);
 		QUARK_ASSERT(func_link.function_type_optional.get_function_args(types).size() == callee_arg_count);
