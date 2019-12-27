@@ -1845,7 +1845,7 @@ static std::vector<llvm_function_link_entry_t> make_link_entries(const intrinsic
 
 		if(exists_it == result.end()){
 			QUARK_ASSERT(bind.llvm_function_type != nullptr);
-			const auto def = llvm_function_link_entry_t{ "intrinsic", link_name, bind.llvm_function_type, nullptr, function_type, {}, bind.native_f };
+			const auto def = llvm_function_link_entry_t{ "intrinsic", link_name, function_type, bind.native_f, bind.llvm_function_type, nullptr, {} };
 			result.push_back(def);
 		}
 	}
@@ -1869,7 +1869,7 @@ std::vector<llvm_function_link_entry_t> make_intrinsics_link_map(llvm::LLVMConte
 		const auto function_type = signature_it->_function_type;
 		llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
 		const auto function_byvalue_type = deref_ptr(function_ptr_type);
-		const auto def = llvm_function_link_entry_t{ "intrinsic", link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, {}, bind.second };
+		const auto def = llvm_function_link_entry_t{ "intrinsic", link_name, function_type, bind.second, (llvm::FunctionType*)function_byvalue_type, nullptr, {} };
 		result.push_back(def);
 	}
 

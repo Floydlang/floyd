@@ -2393,7 +2393,7 @@ static std::vector<llvm_function_link_entry_t> generate_function_nodes(llvm::Mod
 		QUARK_ASSERT(check_invariant__function(f));
 		QUARK_ASSERT(check_invariant__module(&module));
 
-		result.push_back(llvm_function_link_entry_t{ e.module, e.module_symbol, e.llvm_function_type, f, e.function_type_optional, e.arg_names_or_empty, e.native_f });
+		result.push_back(llvm_function_link_entry_t{ e.module, e.module_symbol, e.function_type_optional, e.native_f, e.llvm_function_type, f, e.arg_names_or_empty });
 	}
 	if(false){
 		trace_function_link_map(type_lookup.state.types, result);

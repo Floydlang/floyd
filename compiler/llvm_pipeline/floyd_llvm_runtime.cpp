@@ -176,7 +176,7 @@ static std::vector<llvm_function_link_entry_t> make_init_deinit_link_map(llvm::L
 			},
 			false
 		);
-		const auto def = llvm_function_link_entry_t{ "runtime", link_name, function_type, nullptr, type_t::make_undefined(), {}, nullptr };
+		const auto def = llvm_function_link_entry_t{ "runtime", link_name, type_t::make_undefined(), nullptr, function_type, nullptr, {} };
 		result.push_back(def);
 	}
 
@@ -190,7 +190,7 @@ static std::vector<llvm_function_link_entry_t> make_init_deinit_link_map(llvm::L
 			},
 			false
 		);
-		const auto def = llvm_function_link_entry_t{ "runtime", link_name, function_type, nullptr, type_t::make_undefined(), {}, nullptr };
+		const auto def = llvm_function_link_entry_t{ "runtime", link_name, type_t::make_undefined(), nullptr, function_type, nullptr, {} };
 		result.push_back(def);
 	}
 
@@ -216,7 +216,7 @@ static std::vector<llvm_function_link_entry_t> make_floyd_code_and_corelib_link_
 			const auto function_type = function_def._function_type;
 			llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
 			const auto function_byvalue_type = deref_ptr(function_ptr_type);
-			const auto def = llvm_function_link_entry_t{ "program", link_name, (llvm::FunctionType*)function_byvalue_type, nullptr, function_type, function_def._named_args, nullptr };
+			const auto def = llvm_function_link_entry_t{ "program", link_name, function_type, nullptr, (llvm::FunctionType*)function_byvalue_type, nullptr, function_def._named_args };
 			result0.push_back(def);
 		}
 	}
@@ -235,7 +235,7 @@ static std::vector<llvm_function_link_entry_t> make_floyd_code_and_corelib_link_
 	for(const auto& e: result0){
 		const auto it = binds0.find(e.module_symbol);
 		if(it != binds0.end()){
-			const auto def2 = llvm_function_link_entry_t{ e.module, e.module_symbol, e.llvm_function_type, e.llvm_codegen_f, e.function_type_optional, e.arg_names_or_empty, it->second };
+			const auto def2 = llvm_function_link_entry_t{ e.module, e.module_symbol, e.function_type_optional, it->second, e.llvm_function_type, e.llvm_codegen_f, e.arg_names_or_empty };
 			result.push_back(def2);
 		}
 		else{
@@ -547,7 +547,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 		const auto addr = (void*)ee1->getFunctionAddress(e.module_symbol.s);
 
 		//??? null llvm_codegen_f pointer, which makes no sense now?
-		const auto e2 = llvm_function_link_entry_t{ e.module, e.module_symbol, e.llvm_function_type, e.llvm_codegen_f, e.function_type_optional, e.arg_names_or_empty, addr };
+		const auto e2 = llvm_function_link_entry_t{ e.module, e.module_symbol, e.function_type_optional, addr, e.llvm_function_type, e.llvm_codegen_f, e.arg_names_or_empty };
 		final_link_map.push_back(e2);
 	}
 

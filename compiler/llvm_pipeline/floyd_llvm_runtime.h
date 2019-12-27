@@ -64,8 +64,9 @@ struct llvm_function_bind_t {
 //??? fix function_type for *ALL* functions, including corelib and intrinsics
 struct llvm_function_link_entry_t {
 	std::string module;
-
 	module_symbol_t module_symbol;
+	type_t function_type_optional;
+	void* native_f;
 
 	llvm::FunctionType* llvm_function_type;
 
@@ -73,12 +74,8 @@ struct llvm_function_link_entry_t {
 	//??? Rename llvm_function_node;
 	llvm::Function* llvm_codegen_f;
 
-	type_t function_type_optional;
-
 	//??? better to use vector<string>
 	std::vector<member_t> arg_names_or_empty;
-
-	void* native_f;
 };
 
 std::string print_function_link_map(const types_t& types, const std::vector<llvm_function_link_entry_t>& defs);
