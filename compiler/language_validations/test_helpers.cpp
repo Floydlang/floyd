@@ -166,7 +166,7 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 	}
 }
 
-struct llvm_test_handler_t : public llvm_runtime_handler_i {
+struct test_handler_t : public runtime_handler_i {
 	void on_print(const std::string& s) override {
 		std::cout << s;
 		const auto lines = split_on_chars(seq_t(s), "\n");
@@ -185,7 +185,7 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 		llvm_instance_t llvm_instance;
 		auto exe = generate_llvm_ir_program(llvm_instance, semast, "", settings);
 
-		llvm_test_handler_t handler;
+		test_handler_t handler;
 
 		auto ee = init_llvm_jit(*exe, handler, trace_processes);
 

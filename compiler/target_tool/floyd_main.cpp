@@ -341,7 +341,7 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 			out << s;
 		}
 
-		struct handler_t : public llvm_runtime_handler_i {
+		struct handler_t : public runtime_handler_i {
 			handler_t(std::ostream& out) : out(out) {}
 
 			void on_print(const std::string& s) override {

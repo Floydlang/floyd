@@ -13,7 +13,7 @@
 #include "floyd_llvm_runtime.h"
 #include "floyd_llvm_codegen_basics.h"
 #include "value_features.h"
-
+#include "floyd_runtime.h"
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 
 
@@ -51,8 +51,7 @@ static const llvm_function_link_entry_t& resolve_func(const std::vector<llvm_fun
 
 //	Creates a new VEC_T with the contents of the string. Caller owns the result.
 static runtime_value_t floydrt_alloc_kstr(floyd_runtime_t* frp, const char* s, uint64_t size){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 	return alloc_carray_8bit(backend, reinterpret_cast<const uint8_t*>(s), size);
 }
 
@@ -77,14 +76,12 @@ static std::vector<llvm_function_bind_t> floydrt_alloc_kstr__make(llvm::LLVMCont
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
 static runtime_value_t floydrt_allocate_vector_carray(floyd_runtime_t* frp, runtime_type_t type, uint64_t element_count){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 	return alloc_vector_carray(backend.heap, element_count, element_count, type_t(type));
 }
 
 static runtime_value_t floydrt_allocate_vector_hamt(floyd_runtime_t* frp, runtime_type_t type, uint64_t element_count){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 	return alloc_vector_hamt(backend.heap, element_count, element_count, type_t(type));
 }
 
@@ -147,8 +144,7 @@ llvm::Value* generate_allocate_vector(llvm_function_generator_t& gen_acc, const 
 
 
 static runtime_value_t floydrt_allocate_vector_fill(floyd_runtime_t* frp, runtime_type_t type, runtime_value_t* elements, uint64_t element_count){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 
 	if(is_vector_carray(backend.types, backend.config, type_t(type))){
 		return alloc_vector_carray(backend.heap, element_count, element_count, type_t(type));
@@ -186,8 +182,7 @@ static std::vector<llvm_function_bind_t> floydrt_allocate_vector_fill__make(llvm
 
 
 static void floydrt_store_vector_element_hamt_mutable(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type, uint64_t index, runtime_value_t element){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 
 	QUARK_ASSERT(is_vector_hamt(backend.types, backend.config, type_t(type)));
 	vec.vector_hamt_ptr->store_mutate(index, element);
@@ -215,8 +210,7 @@ static std::vector<llvm_function_bind_t> floydrt_store_vector_element_mutable__m
 
 
 static runtime_value_t floydrt_concatunate_vectors(floyd_runtime_t* frp, runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 	QUARK_ASSERT(lhs.check_invariant());
 	QUARK_ASSERT(rhs.check_invariant());
 
@@ -243,8 +237,7 @@ static std::vector<llvm_function_bind_t> floydrt_concatunate_vectors__make(llvm:
 
 //	Notice: value_backend never handle RC automatically = no need to make pod/nonpod access to it.
 static runtime_value_t floydrt_load_vector_element_hamt(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type, uint64_t index){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 
 	QUARK_ASSERT(is_vector_hamt(backend.types, backend.config, type_t(type)));
 
@@ -291,8 +284,7 @@ static std::vector<llvm_function_bind_t> floydrt_load_vector_element__make(llvm:
 
 //??? split into several functions
 static const runtime_value_t floydrt_allocate_dict(floyd_runtime_t* frp, runtime_type_t type){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 
 	if(is_dict_cppmap(backend.types, backend.config, type_t(type))){
 		return alloc_dict_cppmap(backend.heap, type_t(type));
@@ -326,16 +318,14 @@ static std::vector<llvm_function_bind_t> floydrt_allocate_dict__make(llvm::LLVMC
 
 
 static runtime_value_t floydrt_lookup_dict_cppmap(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t key){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 
 	return lookup_dict_cppmap(backend, dict, type_t(type), key);
 }
 
 //??? make faster key without creating std::string.
 static runtime_value_t floydrt_lookup_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t key){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 
 	return lookup_dict_hamt(backend, dict, type_t(type), key);
 }
@@ -401,22 +391,20 @@ llvm::Value* generate_lookup_dict(llvm_function_generator_t& gen_acc, llvm::Valu
 
 
 static void floydrt_store_dict_mutable_cppmap(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t key, runtime_value_t element_value){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 
 	const auto& types = backend.types;
 	QUARK_ASSERT(is_dict_cppmap(types, backend.config, type_t(type)));
-	const auto key_string = from_runtime_string(r, key);
+	const auto key_string = from_runtime_string2(backend, key);
 	dict.dict_cppmap_ptr->get_map_mut().insert_or_assign(key_string, element_value);
 }
 static void floydrt_store_dict_mutable_hamt(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type, runtime_value_t key, runtime_value_t element_value){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 
 	const auto& types = backend.types;
 	const auto peek = peek2(types, type_t(type));
 	QUARK_ASSERT(is_dict_hamt(types, backend.config, peek));
-	const auto key_string = from_runtime_string(r, key);
+	const auto key_string = from_runtime_string2(backend, key);
 	dict.dict_hamt_ptr->get_map_mut() = dict.dict_hamt_ptr->get_map_mut().set(key_string, element_value);
 }
 
@@ -485,15 +473,14 @@ void generate_store_dict_mutable(llvm_function_generator_t& gen_acc, llvm::Value
 //	NOTICE: There is a special backdoor here that lets us create json nulls: call with type = json, json_ptr = nullptr.
 //??? Use better storage of JSON!?
 static runtime_value_t floydrt_allocate_json(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 
 	const auto& type0 = lookup_type_ref(backend, arg0_type);
 	if(type0.is_json() && arg0_value.int_value == 123){
 		return alloc_json(backend.heap, json_t());
 	}
 	else{
-		const auto value = from_runtime_value(r, arg0_value, type0);
+		const auto value = from_runtime_value2(backend, arg0_value, type0);
 		const auto a = value_to_json(backend.types, value);
 		return alloc_json(backend.heap, a);
 	}
@@ -523,13 +510,12 @@ static std::vector<llvm_function_bind_t> floydrt_allocate_json__make(llvm::LLVMC
 
 //??? optimize
 static runtime_value_t floydrt_lookup_json(floyd_runtime_t* frp, runtime_value_t json0, runtime_value_t arg0_value, runtime_type_t arg0_type){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 
 	const auto& json = json0.json_ptr->get_json();
 	const auto& type0 = lookup_type_ref(backend, arg0_type);
 	const auto type0_peek = peek2(backend.types, type0);
-	const auto value = from_runtime_value(r, arg0_value, type0);
+	const auto value = from_runtime_value2(backend, arg0_value, type0);
 
 	if(json.is_object()){
 		if(type0_peek.is_string() == false){
@@ -574,12 +560,12 @@ static std::vector<llvm_function_bind_t> floydrt_lookup_json__make(llvm::LLVMCon
 
 
 static runtime_value_t floydrt_json_to_string(floyd_runtime_t* frp, runtime_value_t json0){
-	auto& r = get_floyd_runtime(frp);
+	auto& backend = get_backend(*frp);
 
 	const auto& json = json0.json_ptr->get_json();
 
 	if(json.is_string()){
-		return to_runtime_string(r, json.get_string());
+		return to_runtime_string2(backend, json.get_string());
 	}
 	else{
 		quark::throw_runtime_error("Attempting to assign a non-string JSON to a string.");
@@ -616,8 +602,7 @@ static std::vector<llvm_function_bind_t> floydrt_json_to_string__make(llvm::LLVM
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
 static runtime_value_t floydrt_allocate_struct(floyd_runtime_t* frp, const runtime_type_t type, uint64_t size){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 
 #if DEBUG
 	const auto& type0 = lookup_type_ref(backend, type);
@@ -687,8 +672,7 @@ llvm::Value* generate_load_struct_member(llvm_function_generator_t& gen_acc, llv
 
 //	Make copy of struct, overwrite member in copy.
 static const runtime_value_t floydrt_update_struct_member_nonpod(floyd_runtime_t* frp, runtime_value_t s0, runtime_type_t struct_type, int64_t member_index, runtime_value_t new_value, runtime_type_t new_value_type){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 	QUARK_ASSERT(s0.struct_ptr != nullptr);
 	QUARK_ASSERT(member_index != -1);
 
@@ -717,8 +701,7 @@ static const runtime_value_t floydrt_update_struct_member_nonpod(floyd_runtime_t
 }
 
 static const runtime_value_t floydrt_copy_struct(floyd_runtime_t* frp, runtime_value_t s0, uint64_t struct_size, runtime_type_t struct_type){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 	QUARK_ASSERT(s0.struct_ptr != nullptr);
 	QUARK_ASSERT(struct_size > 0);
 #if DEBUG
@@ -863,8 +846,7 @@ llvm::Value* generate_update_struct_member(llvm_function_generator_t& gen_acc, l
 
 //??? optimize. It is not used for simple types right now.
 static int8_t floydrt_compare_values(floyd_runtime_t* frp, int64_t op, const runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 	return (int8_t)compare_values(backend, op, type, lhs, rhs);
 }
 
@@ -886,8 +868,6 @@ static std::vector<llvm_function_bind_t> floydrt_compare_values__make(llvm::LLVM
 
 
 static int64_t floydrt_get_profile_time(floyd_runtime_t* frp){
-	get_floyd_runtime(frp);
-
 	const std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
 	const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
 	const auto result = int64_t(ns);
@@ -908,8 +888,6 @@ static std::vector<llvm_function_bind_t> floydrt_get_profile_time__make(llvm::LL
 
 static int64_t floydrt_analyse_benchmark_samples(floyd_runtime_t* frp, const int64_t* samples, int64_t index){
 	const bool trace_flag = false;
-
-	get_floyd_runtime(frp);
 
 	QUARK_ASSERT(index >= 2);
 	if(trace_flag){
@@ -957,8 +935,7 @@ static std::vector<llvm_function_bind_t> floydrt_analyse_benchmark_samples__make
 
 
 static void floydrt_retain_vector_carray(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 #if DEBUG
 	const auto& type = lookup_type_ref(backend, type0);
 	QUARK_ASSERT(peek2(backend.types, type).is_string() || peek2(backend.types, type).is_vector());
@@ -969,8 +946,7 @@ static void floydrt_retain_vector_carray(floyd_runtime_t* frp, runtime_value_t v
 }
 
 static void floydrt_retain_vector_hamt(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 #if DEBUG
 	const auto& type = lookup_type_ref(backend, type0);
 	QUARK_ASSERT(peek2(backend.types, type).is_string() || peek2(backend.types, type).is_vector());
@@ -983,8 +959,7 @@ static void floydrt_retain_vector_hamt(floyd_runtime_t* frp, runtime_value_t vec
 
 
 static void floydrt_retain_dict_cppmap(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 	const auto& type = lookup_type_ref(backend, type0);
 #if DEBUG
 	QUARK_ASSERT(is_rc_value(backend.types, type));
@@ -995,8 +970,7 @@ static void floydrt_retain_dict_cppmap(floyd_runtime_t* frp, runtime_value_t dic
 	retain_dict_cppmap(backend, dict, type);
 }
 static void floydrt_retain_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 #if DEBUG
 	const auto& type = lookup_type_ref(backend, type0);
 	QUARK_ASSERT(is_rc_value(backend.types, type));
@@ -1010,8 +984,7 @@ static void floydrt_retain_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict,
 
 
 static void floydrt_retain_json(floyd_runtime_t* frp, runtime_value_t json, runtime_type_t type0){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 
 	const auto& type = lookup_type_ref(backend, type0);
 	QUARK_ASSERT(is_rc_value(backend.types, type));
@@ -1027,8 +1000,7 @@ static void floydrt_retain_json(floyd_runtime_t* frp, runtime_value_t json, runt
 
 
 static void floydrt_retain_struct(floyd_runtime_t* frp, runtime_value_t v0, runtime_type_t type0){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 	QUARK_ASSERT(v0.struct_ptr != nullptr);
 
 const auto& type = lookup_type_ref(backend, type0);
@@ -1135,8 +1107,7 @@ static std::vector<llvm_function_bind_t> retain_funcs(llvm::LLVMContext& context
 
 
 static void floydrt_release_vector_carray_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 	const auto& type = lookup_type_ref(backend, type0);
 #if DEBUG
 	QUARK_ASSERT(peek2(backend.types, type).is_string() || is_vector_carray(backend.types, backend.config, type));
@@ -1152,8 +1123,7 @@ static void floydrt_release_vector_carray_pod(floyd_runtime_t* frp, runtime_valu
 }
 
 static void floydrt_release_vector_carray_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 	const auto& type = lookup_type_ref(backend, type0);
 #if DEBUG
 	QUARK_ASSERT(is_vector_carray(backend.types, backend.config, type));
@@ -1167,8 +1137,7 @@ static void floydrt_release_vector_carray_nonpod(floyd_runtime_t* frp, runtime_v
 }
 
 static void floydrt_release_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 	const auto& type = lookup_type_ref(backend, type0);
 #if DEBUG
 	QUARK_ASSERT(is_vector_hamt(backend.types, backend.config, type));
@@ -1182,8 +1151,7 @@ static void floydrt_release_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_
 }
 
 static void floydrt_release_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 	const auto& type = lookup_type_ref(backend, type0);
 #if DEBUG
 	QUARK_ASSERT(is_vector_hamt(backend.types, backend.config, type));
@@ -1198,8 +1166,7 @@ static void floydrt_release_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_val
 
 
 static void floydrt_release_dict_cppmap(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 	const auto& type = lookup_type_ref(backend, type0);
 #if DEBUG
 	QUARK_ASSERT(is_dict_cppmap(backend.types, backend.config, type));
@@ -1211,8 +1178,7 @@ static void floydrt_release_dict_cppmap(floyd_runtime_t* frp, runtime_value_t di
 	}
 }
 static void floydrt_release_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 	const auto& type = lookup_type_ref(backend, type0);
 #if DEBUG
 	QUARK_ASSERT(is_dict_hamt(backend.types, backend.config, type));
@@ -1227,8 +1193,7 @@ static void floydrt_release_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict
 
 
 static void floydrt_release_json(floyd_runtime_t* frp, runtime_value_t json, runtime_type_t type0){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 	const auto& type = lookup_type_ref(backend, type0);
 	QUARK_ASSERT(peek2(backend.types, type).is_json());
 
@@ -1241,8 +1206,7 @@ static void floydrt_release_json(floyd_runtime_t* frp, runtime_value_t json, run
 }
 
 static void floydrt_release_struct(floyd_runtime_t* frp, runtime_value_t v0, runtime_type_t type0){
-	auto& r = get_floyd_runtime(frp);
-	auto& backend = r.ee->backend;
+	auto& backend = get_backend(*frp);
 	const auto& type = lookup_type_ref(backend, type0);
 #if DEBUG
 	QUARK_ASSERT(peek2(backend.types, type).is_struct());

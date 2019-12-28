@@ -10,6 +10,7 @@
 #define floyd_llvm_runtime_hpp
 
 #include "value_backend.h"
+#include "floyd_runtime.h"
 #include "floyd_llvm_types.h"
 //#include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Function.h>
@@ -76,22 +77,13 @@ std::string print_function_link_map(const types_t& types, const std::vector<llvm
 void trace_function_link_map(const types_t& types, const std::vector<llvm_function_link_entry_t>& defs);
 
 
-
-
-//////////////////////////////////////		llvm_runtime_handler_i
-
-
-struct llvm_runtime_handler_i {
-	virtual ~llvm_runtime_handler_i(){};
-	virtual void on_print(const std::string& s) = 0;
-};
-
-
+struct llvm_execution_engine_t;
 
 //	NOTICE: Each process inbox has its own mutex + condition variable.
 //	No mutex protects cout.
-struct llvm_process_t {
+struct llvm_process_t : public runtime_process_i {
 	public: bool check_invariant() const {
+		QUARK_ASSERT(ee != nullptr);
 		QUARK_ASSERT(_init_function != nullptr);
 		QUARK_ASSERT(_init_function->address != nullptr);
 		QUARK_ASSERT(_msg_function != nullptr);
@@ -102,6 +94,16 @@ struct llvm_process_t {
 
 	//////////////////////////////////////		STATE - INIT
 
+
+	void runtime_process__on_print(const std::string& s) override;
+	void runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type) override;
+	void runtime_process__on_exit_process() override;
+
+
+
+	//////////////////////////////////////		STATE - INIT
+
+	llvm_execution_engine_t* ee;
 	std::string _name_key;
 	process_def_t _process_def;
 	std::thread::id _thread_id;
@@ -131,6 +133,26 @@ struct llvm_process_t {
 //https://en.wikipedia.org/wiki/Hexspeak
 const uint64_t k_debug_magic = 0xFACEFEED05050505;
 
+struct test_inherit : public runtime_process_i {
+	test_inherit(runtime_handler_i* runtime_handler) :
+		_runtime_handler(runtime_handler)
+	{
+	}
+
+
+	void runtime_process__on_print(const std::string& s) override {
+		QUARK_ASSERT(_runtime_handler != nullptr);
+
+		_runtime_handler->on_print(s);
+	}
+	void runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type) override {
+	}
+	void runtime_process__on_exit_process() override {
+	}
+
+
+	public: runtime_handler_i* _runtime_handler;
+};
 
 struct llvm_execution_engine_t {
 	~llvm_execution_engine_t();
@@ -152,7 +174,7 @@ struct llvm_execution_engine_t {
 	symbol_table_t global_symbols;
 	std::vector<llvm_function_link_entry_t> function_link_map;
 
-	public: llvm_runtime_handler_i* _handler;
+	test_inherit _handler_router;
 
 	public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
 
@@ -170,6 +192,7 @@ struct llvm_execution_engine_t {
 	bool _trace_processes;
 };
 
+
 struct llvm_context_t {
 	public: bool check_invariant() const {
 		QUARK_ASSERT(ee != nullptr);
@@ -183,9 +206,6 @@ struct llvm_context_t {
 };
 
 
-
-void send_message(llvm_context_t& c, const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type);
-void exit_process(llvm_context_t& c);
 
 
 ////////////////////////////////		FUNCTION POINTERS
@@ -240,11 +260,11 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const module_symbol_t& n
 
 
 
-floyd_runtime_t* make_runtime_ptr(llvm_context_t* p);
-llvm_context_t& get_floyd_runtime(floyd_runtime_t* frp);
+floyd_runtime_t make_runtime_ptr(llvm_context_t* p);
 
 
 
+/*
 ////////////////////////////////		VALUES
 
 
@@ -263,6 +283,7 @@ inline std::string from_runtime_string(const llvm_context_t& c, runtime_value_t 
 inline runtime_value_t to_runtime_string(llvm_context_t& c, const std::string& s){
 	return to_runtime_string2(c.ee->backend, s);
 }
+*/
 
 
 ////////////////////////////////		HIGH LEVEL
@@ -285,7 +306,7 @@ void deinit_program(llvm_execution_engine_t& ee);
 
 
 //	Calls init() and will perform deinit() when engine is destructed later.
-std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& program, llvm_runtime_handler_i& handler, bool trace_processes);
+std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& program, runtime_handler_i& handler, bool trace_processes);
 
 
 //	Calls main() if it exists, else runs the floyd processes. Returns when execution is done.
@@ -315,12 +336,8 @@ std::vector<test_t> collect_tests(llvm_execution_engine_t& ee);
 
 
 
-
-inline floyd_runtime_t* make_runtime_ptr(llvm_context_t* p){
-	return reinterpret_cast<floyd_runtime_t*>(p);
-}
-
-inline llvm_context_t& get_floyd_runtime(floyd_runtime_t* frp){
+/*
+inline llvm_context_t& get_floyd_runtime2(floyd_runtime_t* frp){
 	QUARK_ASSERT(frp != nullptr);
 
 	auto ptr = reinterpret_cast<llvm_context_t*>(frp);
@@ -330,7 +347,7 @@ inline llvm_context_t& get_floyd_runtime(floyd_runtime_t* frp){
 	QUARK_ASSERT(ptr->check_invariant());
 	return *ptr;
 }
-
+*/
 
 }	//	namespace floyd
 

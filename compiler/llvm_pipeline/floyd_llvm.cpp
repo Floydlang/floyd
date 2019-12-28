@@ -23,7 +23,7 @@ namespace floyd {
 
 
 
-struct handler_t : llvm_runtime_handler_i {
+struct handler_t : runtime_handler_i {
 	void on_print(const std::string& s) override {
 		const auto lines = split_on_chars(seq_t(s), "\n");
 		_print_output = concat(_print_output, lines);
@@ -290,7 +290,8 @@ static std::string run_test(llvm_execution_engine_t& ee, const test_t& test){
 	auto f2 = reinterpret_cast<FLOYD_TEST_F>(f_bind.address);
 
 	try {
-		(*f2)(make_runtime_ptr(&context));
+		auto runtime_ptr = make_runtime_ptr(&context);
+		(*f2)(&runtime_ptr);
 		return("");
 	}
 	catch(const std::runtime_error& e){

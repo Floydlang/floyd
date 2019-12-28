@@ -61,13 +61,6 @@ std::string print_value(llvm::Value* value);
 ////////////////////////////////	floyd_runtime_ptr
 
 
-/*
-	The Floyd runtime doesn't use global variables at all. Not even for memory heaps etc.
-	Instead it passes around an invisible argumen to all functions, called Floyd Runtime Ptr (FRP).
-*/
-
-struct floyd_runtime_t {
-};
 
 //	This pointer is passed as argument 0 to all compiled floyd functions and all runtime functions.
 

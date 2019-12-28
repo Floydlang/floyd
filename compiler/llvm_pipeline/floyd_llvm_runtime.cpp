@@ -104,7 +104,7 @@ static value_t load_via_ptr(const llvm_context_t& c, const void* value_ptr, cons
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto result = load_via_ptr2(c.ee->backend.types, value_ptr, type);
-	const auto result2 = from_runtime_value(c, result, type);
+	const auto result2 = from_runtime_value2(c.ee->backend, result, type);
 	return result2;
 }
 
@@ -122,7 +122,7 @@ void store_via_ptr(llvm_context_t& c, const type_t& member_type, void* value_ptr
 	QUARK_ASSERT(value_ptr != nullptr);
 	QUARK_ASSERT(value.check_invariant());
 
-	const auto value2 = to_runtime_value(c, value);
+	const auto value2 = to_runtime_value2(c.ee->backend, value);
 	store_via_ptr2(c.ee->backend.types, value_ptr, member_type, value2);
 }
 
@@ -337,8 +337,8 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 			main_args2.push_back(value_t::make_string(e));
 		}
 		const auto main_args3 = value_t::make_vector_value(types, type_t::make_string(), main_args2);
-		const auto main_args4 = to_runtime_value(context, main_args3);
-		const auto main_result_int = (*f2)(runtime_ptr, main_args4);
+		const auto main_args4 = to_runtime_value2(context.ee->backend, main_args3);
+		const auto main_result_int = (*f2)(&runtime_ptr, main_args4);
 
 		const auto return_itype = type_t::make_vector(types, type_t::make_string());
 		release_value(context.ee->backend, main_args4, return_itype);
@@ -346,7 +346,7 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 	}
 	else if(f.type == get_main_signature_no_arg_impure(types) || f.type == get_main_signature_no_arg_pure(types)){
 		const auto f2 = reinterpret_cast<FLOYD_RUNTIME_MAIN_NO_ARGS_IMPURE>(f.address);
-		const auto main_result_int = (*f2)(runtime_ptr);
+		const auto main_result_int = (*f2)(&runtime_ptr);
 		return main_result_int;
 	}
 	else{
@@ -383,7 +383,7 @@ static void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p
 #endif
 
 static int64_t floyd_llvm_intrinsic__dummy(floyd_runtime_t* frp){
-	auto& r = get_floyd_runtime(frp);
+	auto& r = get_backend(*frp);
 	(void)r;
 	quark::throw_runtime_error("Attempting to calling unimplemented function.");
 }
@@ -486,7 +486,7 @@ static std::string strip_link_name(const std::string& platform_link_name){
 
 
 //	Destroys program, can only called once!
-static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks, llvm_runtime_handler_i& handler, bool trace_processes){
+static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks, runtime_handler_i& runtime_handler, bool trace_processes){
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(program_breaks.check_invariant());
 
@@ -564,7 +564,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 
 
 	auto ee2 = std::unique_ptr<llvm_execution_engine_t>(
-		new llvm_execution_engine_t{
+		new llvm_execution_engine_t {
 			k_debug_magic,
 			value_backend_t(
 				make_func_links(program_breaks.type_lookup.state.types, *ee1, final_link_map),
@@ -578,7 +578,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			ee1,
 			program_breaks.debug_globals,
 			final_link_map,
-			&handler,
+			test_inherit(&runtime_handler),
 			start_time,
 			llvm_bind_t{ k_no_module_symbol, nullptr, type_t::make_undefined() },
 			false,
@@ -607,7 +607,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 
 //	Destroys program, can only run it once!
 //	Automatically runs floyd_runtime_init() to execute Floyd's global functions and initialize global constants.
-std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& program_breaks, llvm_runtime_handler_i& handler, bool trace_processes){
+std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& program_breaks, runtime_handler_i& handler, bool trace_processes){
 	QUARK_ASSERT(program_breaks.check_invariant());
 
 	auto ee = make_engine_no_init(*program_breaks.instance, program_breaks, handler, trace_processes);
@@ -634,7 +634,7 @@ std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& progra
 
 	auto runtime_ptr = make_runtime_ptr(&context);
 
-	int64_t init_result = (*a_func)(runtime_ptr);
+	int64_t init_result = (*a_func)(&runtime_ptr);
 	QUARK_ASSERT(init_result == 667);
 
 
@@ -664,33 +664,37 @@ static std::string make_trace_process_header(const llvm_process_t& process){
 	return header;
 }
 
-void send_message(llvm_context_t& c, const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type){
-	QUARK_ASSERT(c.check_invariant());
-	auto& backend = c.ee->backend;
+void llvm_process_t::runtime_process__on_print(const std::string& s){
+}
+void llvm_process_t::runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type){
+	QUARK_ASSERT(check_invariant());
+	auto& backend = ee->backend;
 	const auto& types = backend.types;
 
+/*
 	if(c.process == nullptr){
 		//	You can only send messages from within a running floyd process.
 		throw std::exception();
 	}
+*/
 
-	const auto trace = c.ee->_trace_processes;
-	const auto trace_header = trace ? make_trace_process_header(*c.process) : "";
+	const auto trace = ee->_trace_processes;
+	const auto trace_header = trace ? make_trace_process_header(*this) : "";
 	QUARK_SCOPED_TRACE_OPTIONAL(trace_header + ": Send message to dest process ID: " + dest_process_id, trace);
 
 	if(trace){
 		QUARK_SCOPED_TRACE("Message:");
-		const auto v = from_runtime_value(c, message, message_type);
+		const auto v = from_runtime_value2(ee->backend, message, message_type);
 		const auto message2 = value_to_json(types, v);
 		QUARK_TRACE_SS(json_to_pretty_string(message2));
 	}
 
 	const auto dest_process_it = std::find_if(
-		c.ee->_processes.begin(),
-		c.ee->_processes.end(),
+		ee->_processes.begin(),
+		ee->_processes.end(),
 		[&](const std::shared_ptr<llvm_process_t>& process){ return process->_name_key == dest_process_id; }
 	);
-	if(dest_process_it == c.ee->_processes.end()){
+	if(dest_process_it == ee->_processes.end()){
 		if(trace){
 			QUARK_TRACE("Cannot find floyd process: \"" + dest_process_id + "\", message not sent.");
 		}
@@ -728,12 +732,10 @@ void send_message(llvm_context_t& c, const std::string& dest_process_id, const r
 	//    dest_process._inbox_condition_variable.notify_all();
 	}
 }
-
-void exit_process(llvm_context_t& c){
-	QUARK_ASSERT(c.check_invariant());
-
-	c.process->_exiting_flag = true;
+void llvm_process_t::runtime_process__on_exit_process(){
+	_exiting_flag = true;
 }
+
 
 static void run_process(llvm_execution_engine_t& ee, int process_id){
 	auto& backend = ee.backend;
@@ -749,8 +751,8 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 
 	{
 		auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_INIT>(process._init_function->address);
-		const auto init_state = (*f)(runtime_ptr);
-		process._process_state = from_runtime_value(context, init_state, process._state_type);
+		const auto init_state = (*f)(&runtime_ptr);
+		process._process_state = from_runtime_value2(context.ee->backend, init_state, process._state_type);
 		release_value(backend, init_state, process._state_type);
 	}
 
@@ -779,7 +781,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 		if(trace){
 			{
 				QUARK_SCOPED_TRACE("Input message");
-				const auto v = from_runtime_value(context, message_with_rc, process._message_type);
+				const auto v = from_runtime_value2(context.ee->backend, message_with_rc, process._message_type);
 				const auto message2 = value_to_json(types, v);
 				QUARK_TRACE_SS(json_to_pretty_string(message2));
 			}
@@ -795,12 +797,12 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 		{
 			QUARK_SCOPED_TRACE_OPTIONAL("Call msg handler", trace);
 			auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE>(process._msg_function->address);
-			const auto state2 = to_runtime_value(context, process._process_state);
-			result = (*f)(runtime_ptr, state2, message_with_rc);
+			const auto state2 = to_runtime_value2(context.ee->backend, process._process_state);
+			result = (*f)(&runtime_ptr, state2, message_with_rc);
 			release_value(backend, state2, process._state_type);
 		}
 
-		process._process_state = from_runtime_value(context, result, process._state_type);
+		process._process_state = from_runtime_value2(context.ee->backend, result, process._state_type);
 		release_value(backend, result, process._state_type);
 
 		if(trace){
@@ -835,6 +837,7 @@ static std::map<std::string, value_t> run_processes(llvm_execution_engine_t& ee)
 
 		for(const auto& t: ee._process_infos){
 			auto process = std::make_shared<llvm_process_t>();
+			process->ee = &ee;
 			process->_name_key = t.first;
 			process->_message_type = t.second.msg_type;
 			process->_state_type = t.second.state_type;
@@ -922,11 +925,28 @@ void deinit_program(llvm_execution_engine_t& ee){
 		QUARK_ASSERT(f != nullptr);
 
 		auto context = llvm_context_t { &ee, nullptr };
-		int64_t result = (*f)(make_runtime_ptr(&context));
+		auto runtime_ptr = make_runtime_ptr(&context);
+		int64_t result = (*f)(&runtime_ptr);
 		QUARK_ASSERT(result == 668);
 		ee.inited = false;
 	};
 }
+
+
+floyd_runtime_t make_runtime_ptr(llvm_context_t* p){
+	QUARK_ASSERT(p != nullptr && p->check_invariant());
+
+//	r.ee->_handler->on_print(s);
+	runtime_process_i* a = p->process;
+	runtime_process_i* b = &p->ee->_handler_router;
+
+	return {
+		&p->ee->backend,
+		&p->ee->global_symbols,
+		p->process != nullptr ? a : b
+	};
+}
+
 
 
 ////////////////////////////////		BENCHMARKS
@@ -970,8 +990,10 @@ std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, con
 		const auto f_bind = bind_function2(ee, f_link_name);
 		QUARK_ASSERT(f_bind.address != nullptr);
 		auto f2 = reinterpret_cast<FLOYD_BENCHMARK_F>(f_bind.address);
-		const auto bench_result = (*f2)(make_runtime_ptr(&context));
-		const auto result2 = from_runtime_value(context, bench_result, benchmark_result_vec_type);
+
+		auto runtime_ptr = make_runtime_ptr(&context);
+		const auto bench_result = (*f2)(&runtime_ptr);
+		const auto result2 = from_runtime_value2(context.ee->backend, bench_result, benchmark_result_vec_type);
 
 //			QUARK_TRACE(value_and_type_to_string(result2));
 
