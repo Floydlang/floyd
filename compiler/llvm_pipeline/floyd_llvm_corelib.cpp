@@ -130,14 +130,6 @@ static runtime_value_t llvm_corelib__calc_string_sha1(floyd_runtime_t* frp, runt
 
 
 
-static runtime_value_t llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, runtime_value_t binary_ptr0){
-	auto& backend = get_backend(*frp);
-	QUARK_ASSERT(binary_ptr0.struct_ptr != nullptr);
-
-	return unified_corelib__calc_binary_sha1(&backend, binary_ptr0);
-}
-
-
 
 static int64_t llvm_corelib__get_time_of_day(floyd_runtime_t* frp){
 	return corelib__get_time_of_day();
