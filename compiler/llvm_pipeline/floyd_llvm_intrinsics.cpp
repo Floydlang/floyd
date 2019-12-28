@@ -1869,7 +1869,11 @@ std::vector<llvm_function_link_entry_t> make_intrinsics_link_map(llvm::LLVMConte
 	//	These intrinsics have specialized native functions, depending on which types are used in the call.
 	std::vector<llvm_function_link_entry_t> result;
 	for(const auto& bind: binds){
-		auto signature_it = std::find_if(intrinsic_signatures.vec.begin(), intrinsic_signatures.vec.end(), [&] (const intrinsic_signature_t& e) { return e.name == bind.first; } );
+		auto signature_it = std::find_if(
+			intrinsic_signatures.vec.begin(),
+			intrinsic_signatures.vec.end(),
+			[&] (const intrinsic_signature_t& e) { return e.name == bind.first; }
+		);
 		QUARK_ASSERT(signature_it != intrinsic_signatures.vec.end());
 
 		const auto link_name = module_symbol_t(bind.first);

@@ -209,11 +209,12 @@ static std::vector<llvm_function_link_entry_t> make_init_deinit_link_map(llvm::L
 static std::vector<llvm_function_link_entry_t> make_floyd_code_and_corelib_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	std::vector<llvm_function_link_entry_t> result0;
-	std::map<module_symbol_t, void*> binds0;
+	std::vector<llvm_function_link_entry_t> prototypes;
 	const auto& types = type_lookup.state.types;
 
-	//	Make function def for all functions inside the floyd program (floyd source code).
+	//	Make llvm_function_link_entry_t for all functions inside the floyd program (floyd source code).
+	//	This includes corelib function prototypes and user's functions.
+	//	Only makes prototypes, no implementations.
 	{
 		for(const auto& function_def: ast_function_defs){
 			const auto link_name = module_symbol_t(function_def._definition_name);
@@ -225,11 +226,13 @@ static std::vector<llvm_function_link_entry_t> make_floyd_code_and_corelib_link_
 				nullptr,
 				function_def._named_args
 			};
-			result0.push_back(def);
+			prototypes.push_back(def);
 		}
 	}
 
-	////////	Corelib
+	std::map<module_symbol_t, void*> binds0;
+
+	// Corelib function binds. The prototypes are provided in input AST already.
 	{
 		const auto corelib_function_map0 = get_corelib_binds();
 		std::map<module_symbol_t, void*> corelib_function_map;
@@ -239,8 +242,9 @@ static std::vector<llvm_function_link_entry_t> make_floyd_code_and_corelib_link_
 		binds0.insert(corelib_function_map.begin(), corelib_function_map.end());
 	}
 
+	//	Attempt to resolve prototypes to real native functions, if possible.
 	std::vector<llvm_function_link_entry_t> result;
-	for(const auto& e: result0){
+	for(const auto& e: prototypes){
 		const auto it = binds0.find(e.func_link.module_symbol);
 		if(it != binds0.end()){
 			const auto def2 = llvm_function_link_entry_t {

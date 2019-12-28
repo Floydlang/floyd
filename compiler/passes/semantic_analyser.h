@@ -26,6 +26,8 @@
 	- All nested blocks remain and have their own symbols and statements.
 
 	Output is a program that is correct with no type/semantic errors.
+
+	NOTICE: Intrinsics do not have function prototypes / entries in ast _function_defs.
 */
 
 namespace floyd {
