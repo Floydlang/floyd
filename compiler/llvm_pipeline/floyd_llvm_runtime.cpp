@@ -383,7 +383,7 @@ static void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p
 #endif
 
 static int64_t floyd_llvm_intrinsic__dummy(floyd_runtime_t* frp){
-	auto& r = get_backend(*frp);
+	auto& r = get_backend(frp);
 	(void)r;
 	quark::throw_runtime_error("Attempting to calling unimplemented function.");
 }

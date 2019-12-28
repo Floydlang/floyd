@@ -33,10 +33,10 @@ namespace floyd {
 
 //		func string make_benchmark_report([benchmark_result2_t] results)
 static runtime_value_t llvm_corelib__make_benchmark_report(floyd_runtime_t* frp, const runtime_value_t b){
-	auto& backend = get_backend(*frp);
+	auto& backend = get_backend(frp);
 	const auto& types = backend.types;
 
-	const auto global_symbols = get_global_symbols(*frp);
+	const auto global_symbols = get_global_symbols(frp);
 	const auto s = find_symbol_required(global_symbols, "benchmark_result2_t");
 	const auto benchmark_result2_vec_type = type_t::make_vector(types, s._value_type);
 
@@ -55,7 +55,7 @@ static runtime_value_t llvm_corelib__make_benchmark_report(floyd_runtime_t* frp,
 
 
 static runtime_value_t llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
-	auto& backend = get_backend(*frp);
+	auto& backend = get_backend(frp);
 
 	const auto& types = backend.types;
 	const std::vector<std::pair<std::string, json_t>> caps = corelib_detect_hardware_caps();
@@ -70,7 +70,7 @@ static runtime_value_t llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
 }
 
 static runtime_value_t llvm_corelib__make_hardware_caps_report(floyd_runtime_t* frp, runtime_value_t caps0){
-	auto& backend = get_backend(*frp);
+	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
 	const auto type = type_t::make_dict(types, type_t::make_json());
@@ -84,7 +84,7 @@ static runtime_value_t llvm_corelib__make_hardware_caps_report(floyd_runtime_t* 
 	return to_runtime_string2(backend, s);
 }
 static runtime_value_t llvm_corelib__make_hardware_caps_report_brief(floyd_runtime_t* frp, runtime_value_t caps0){
-	auto& backend = get_backend(*frp);
+	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
 	const auto b2 = from_runtime_value2(backend, caps0, type_t::make_dict(types, type_t::make_json()));
@@ -97,7 +97,7 @@ static runtime_value_t llvm_corelib__make_hardware_caps_report_brief(floyd_runti
 	return to_runtime_string2(backend, s);
 }
 static runtime_value_t llvm_corelib__get_current_date_and_time_string(floyd_runtime_t* frp){
-	auto& backend = get_backend(*frp);
+	auto& backend = get_backend(frp);
 
 	const auto s = get_current_date_and_time_string();
 	return to_runtime_string2(backend, s);
@@ -111,7 +111,7 @@ static runtime_value_t llvm_corelib__get_current_date_and_time_string(floyd_runt
 
 
 static runtime_value_t llvm_corelib__calc_string_sha1(floyd_runtime_t* frp, runtime_value_t s0){
-	auto& backend = get_backend(*frp);
+	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
 	const auto& s = from_runtime_string2(backend, s0);
@@ -138,7 +138,7 @@ static int64_t llvm_corelib__get_time_of_day(floyd_runtime_t* frp){
 
 
 static runtime_value_t llvm_corelib__read_text_file(floyd_runtime_t* frp, runtime_value_t arg){
-	auto& backend = get_backend(*frp);
+	auto& backend = get_backend(frp);
 
 	const auto path = from_runtime_string2(backend, arg);
 	const auto file_contents = 	corelib_read_text_file(path);
@@ -146,7 +146,7 @@ static runtime_value_t llvm_corelib__read_text_file(floyd_runtime_t* frp, runtim
 }
 
 static void llvm_corelib__write_text_file(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t data0){
-	auto& backend = get_backend(*frp);
+	auto& backend = get_backend(frp);
 
 	const auto path = from_runtime_string2(backend, path0);
 	const auto file_contents = from_runtime_string2(backend, data0);
@@ -154,7 +154,7 @@ static void llvm_corelib__write_text_file(floyd_runtime_t* frp, runtime_value_t 
 }
 
 static runtime_value_t llvm_corelib__read_line_stdin(floyd_runtime_t* frp){
-	auto& backend = get_backend(*frp);
+	auto& backend = get_backend(frp);
 	const auto s = 	corelib_read_line_stdin();
 	return to_runtime_string2(backend, s);
 }
@@ -163,7 +163,7 @@ static runtime_value_t llvm_corelib__read_line_stdin(floyd_runtime_t* frp){
 
 
 static runtime_value_t llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
-	auto& backend = get_backend(*frp);
+	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
 	const auto path = from_runtime_string2(backend, path0);
@@ -183,7 +183,7 @@ static runtime_value_t llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp,
 }
 
 static runtime_value_t llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
-	auto& backend = get_backend(*frp);
+	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
 	const auto path = from_runtime_string2(backend, path0);
@@ -203,7 +203,7 @@ static runtime_value_t llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, ru
 }
 
 static runtime_value_t llvm_corelib__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t path0){
-	auto& backend = get_backend(*frp);
+	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
 	const auto path = from_runtime_string2(backend, path0);
@@ -213,7 +213,7 @@ static runtime_value_t llvm_corelib__get_fsentry_info(floyd_runtime_t* frp, runt
 }
 
 static runtime_value_t llvm_corelib__get_fs_environment(floyd_runtime_t* frp){
-	auto& backend = get_backend(*frp);
+	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
 	const auto env = corelib_get_fs_environment();
@@ -225,7 +225,7 @@ static runtime_value_t llvm_corelib__get_fs_environment(floyd_runtime_t* frp){
 
 
 static uint8_t llvm_corelib__does_fsentry_exist(floyd_runtime_t* frp, runtime_value_t path0){
-	auto& backend = get_backend(*frp);
+	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 	const auto path = from_runtime_string2(backend, path0);
 
@@ -240,14 +240,14 @@ static uint8_t llvm_corelib__does_fsentry_exist(floyd_runtime_t* frp, runtime_va
 }
 
 static void llvm_corelib__create_directory_branch(floyd_runtime_t* frp, runtime_value_t path0){
-	auto& backend = get_backend(*frp);
+	auto& backend = get_backend(frp);
 	const auto path = from_runtime_string2(backend, path0);
 
 	corelib_create_directory_branch(path);
 }
 
 static void llvm_corelib__delete_fsentry_deep(floyd_runtime_t* frp, runtime_value_t path0){
-	auto& backend = get_backend(*frp);
+	auto& backend = get_backend(frp);
 
 	const auto path = from_runtime_string2(backend, path0);
 
@@ -255,7 +255,7 @@ static void llvm_corelib__delete_fsentry_deep(floyd_runtime_t* frp, runtime_valu
 }
 
 static void llvm_corelib__rename_fsentry(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t name0){
-	auto& backend = get_backend(*frp);
+	auto& backend = get_backend(frp);
 	const auto path = from_runtime_string2(backend, path0);
 	const auto n = from_runtime_string2(backend, name0);
 
@@ -314,7 +314,7 @@ static void llvm_corelib__lookup_host_from_ip(floyd_runtime_t* frp){
 	}
 
 static runtime_value_t llvm_corelib__lookup_host_from_name(floyd_runtime_t* frp, runtime_value_t name_str){
-	auto& backend = get_backend(*frp);
+	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
 //	trace_types(types);
@@ -327,7 +327,7 @@ static runtime_value_t llvm_corelib__lookup_host_from_name(floyd_runtime_t* frp,
 }
 
 static runtime_value_t llvm_corelib__pack_http_request(floyd_runtime_t* frp, runtime_value_t s){
-	auto& backend = get_backend(*frp);
+	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
 	const auto http_request_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_request_t" }});
@@ -368,7 +368,7 @@ static void llvm_corelib__unpack_http_response(floyd_runtime_t* frp){
 }
 
 static runtime_value_t llvm_corelib__execute_http_request(floyd_runtime_t* frp, runtime_value_t c, runtime_value_t addr, runtime_value_t request_string){
-	auto& backend = get_backend(*frp);
+	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
 //	const auto network_component_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "network_component_t" }});

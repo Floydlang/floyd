@@ -85,36 +85,36 @@ struct floyd_runtime_t {
 	runtime_process_i* handler;
 };
 
-inline value_backend_t& get_backend(floyd_runtime_t& runtime){
-	QUARK_ASSERT(runtime.check_invariant());
+inline value_backend_t& get_backend(floyd_runtime_t* runtime){
+	QUARK_ASSERT(runtime != nullptr && runtime->check_invariant());
 
-	return *runtime.backend;
+	return *runtime->backend;
 }
 
-inline symbol_table_t& get_global_symbols(floyd_runtime_t& runtime){
-	QUARK_ASSERT(runtime.check_invariant());
+inline symbol_table_t& get_global_symbols(floyd_runtime_t* runtime){
+	QUARK_ASSERT(runtime != nullptr && runtime->check_invariant());
 
-	return *runtime.global_symbols;
+	return *runtime->global_symbols;
 }
 
-inline void on_print(floyd_runtime_t& runtime, const std::string& s){
-	QUARK_ASSERT(runtime.check_invariant());
+inline void on_print(floyd_runtime_t* runtime, const std::string& s){
+	QUARK_ASSERT(runtime != nullptr && runtime->check_invariant());
 
-	runtime.handler->runtime_process__on_print(s);
+	runtime->handler->runtime_process__on_print(s);
 }
 
-inline void send_message2(floyd_runtime_t& runtime, const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type){
-	QUARK_ASSERT(runtime.check_invariant());
+inline void send_message2(floyd_runtime_t* runtime, const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type){
+	QUARK_ASSERT(runtime != nullptr && runtime->check_invariant());
 	QUARK_ASSERT(dest_process_id.empty() == false);
 	QUARK_ASSERT(message_type.check_invariant());
 
-	runtime.handler->runtime_process__on_send_message(dest_process_id, message, message_type);
+	runtime->handler->runtime_process__on_send_message(dest_process_id, message, message_type);
 }
 
-inline void on_exit_process(floyd_runtime_t& runtime){
-	QUARK_ASSERT(runtime.check_invariant());
+inline void on_exit_process(floyd_runtime_t* runtime){
+	QUARK_ASSERT(runtime != nullptr && runtime->check_invariant());
 
-	runtime.handler->runtime_process__on_exit_process();
+	runtime->handler->runtime_process__on_exit_process();
 }
 
 
