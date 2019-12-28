@@ -66,7 +66,6 @@ struct llvm_function_link_entry_t {
 	llvm::FunctionType* llvm_function_type;
 
 	//	Only valid during codegen
-	//??? Rename llvm_function_node;
 	llvm::Function* llvm_codegen_f;
 
 	//??? better to use vector<string>

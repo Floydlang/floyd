@@ -63,7 +63,11 @@ ret i32 %2
 
 
 const llvm_function_link_entry_t& find_function_def_from_link_name(const std::vector<llvm_function_link_entry_t>& function_link_map, const module_symbol_t& link_name){
-	auto it = std::find_if(function_link_map.begin(), function_link_map.end(), [&] (const llvm_function_link_entry_t& e) { return e.func_link.module_symbol == link_name; } );
+	auto it = std::find_if(
+		function_link_map.begin(),
+		function_link_map.end(),
+		[&] (const llvm_function_link_entry_t& e) { return e.func_link.module_symbol == link_name; }
+	);
 	QUARK_ASSERT(it != function_link_map.end());
 
 	QUARK_ASSERT(it->llvm_codegen_f != nullptr);
@@ -176,7 +180,12 @@ static std::vector<llvm_function_link_entry_t> make_init_deinit_link_map(llvm::L
 			},
 			false
 		);
-		const auto def = llvm_function_link_entry_t{ func_link_t { "runtime", link_name, type_t::make_undefined(), func_link_t::emachine::k_native, nullptr }, function_type, nullptr, {} };
+		const auto def = llvm_function_link_entry_t {
+			func_link_t { "runtime", link_name, type_t::make_undefined(), func_link_t::emachine::k_native, nullptr },
+			function_type,
+			nullptr,
+			{}
+		};
 		result.push_back(def);
 	}
 
@@ -190,7 +199,12 @@ static std::vector<llvm_function_link_entry_t> make_init_deinit_link_map(llvm::L
 			},
 			false
 		);
-		const auto def = llvm_function_link_entry_t{ func_link_t { "runtime", link_name, type_t::make_undefined(), func_link_t::emachine::k_native, nullptr }, function_type, nullptr, {} };
+		const auto def = llvm_function_link_entry_t {
+			func_link_t { "runtime", link_name, type_t::make_undefined(), func_link_t::emachine::k_native, nullptr },
+			function_type,
+			nullptr,
+			{}
+		};
 		result.push_back(def);
 	}
 
@@ -216,7 +230,12 @@ static std::vector<llvm_function_link_entry_t> make_floyd_code_and_corelib_link_
 			const auto function_type = function_def._function_type;
 			llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
 			const auto function_byvalue_type = deref_ptr(function_ptr_type);
-			const auto def = llvm_function_link_entry_t{ func_link_t { "program", link_name, function_type, func_link_t::emachine::k_native, nullptr }, (llvm::FunctionType*)function_byvalue_type, nullptr, function_def._named_args };
+			const auto def = llvm_function_link_entry_t {
+				func_link_t { "program", link_name, function_type, func_link_t::emachine::k_native, nullptr },
+				(llvm::FunctionType*)function_byvalue_type,
+				nullptr,
+				function_def._named_args
+			};
 			result0.push_back(def);
 		}
 	}
@@ -235,7 +254,12 @@ static std::vector<llvm_function_link_entry_t> make_floyd_code_and_corelib_link_
 	for(const auto& e: result0){
 		const auto it = binds0.find(e.func_link.module_symbol);
 		if(it != binds0.end()){
-			const auto def2 = llvm_function_link_entry_t{ func_link_t { e.func_link.module, e.func_link.module_symbol, e.func_link.function_type_optional, func_link_t::emachine::k_native, it->second }, e.llvm_function_type, e.llvm_codegen_f, e.arg_names_or_empty };
+			const auto def2 = llvm_function_link_entry_t {
+				func_link_t { e.func_link.module, e.func_link.module_symbol, e.func_link.function_type_optional, func_link_t::emachine::k_native, it->second },
+				e.llvm_function_type,
+				e.llvm_codegen_f,
+				e.arg_names_or_empty
+			};
 			result.push_back(def2);
 		}
 		else{
@@ -520,7 +544,11 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			const auto s2 = strip_link_name(s);
 
 			const auto& function_link_map = program_breaks.function_link_map;
-			const auto it = std::find_if(function_link_map.begin(), function_link_map.end(), [&](const llvm_function_link_entry_t& def){ return def.func_link.module_symbol.s == s2; });
+			const auto it = std::find_if(
+				function_link_map.begin(),
+				function_link_map.end(),
+				[&](const llvm_function_link_entry_t& def){ return def.func_link.module_symbol.s == s2; }
+			);
 			if(it != function_link_map.end() && it->func_link.f != nullptr){
 				return it->func_link.f;
 			}
@@ -546,7 +574,12 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 		const auto addr = (void*)ee1->getFunctionAddress(e.func_link.module_symbol.s);
 
 		//??? null llvm_codegen_f pointer, which makes no sense now?
-		const auto e2 = llvm_function_link_entry_t{ func_link_t { e.func_link.module, e.func_link.module_symbol, e.func_link.function_type_optional, func_link_t::emachine::k_native, addr }, e.llvm_function_type, e.llvm_codegen_f, e.arg_names_or_empty };
+		const auto e2 = llvm_function_link_entry_t {
+			func_link_t { e.func_link.module, e.func_link.module_symbol, e.func_link.function_type_optional, func_link_t::emachine::k_native, addr },
+			e.llvm_function_type,
+			e.llvm_codegen_f,
+			e.arg_names_or_empty
+		};
 		final_link_map.push_back(e2);
 	}
 
