@@ -32,15 +32,10 @@ static const bool k_trace_function_link_map = false;
 
 //#include "llvm/Bitcode/BitstreamWriter.h"
 
-
 #include <condition_variable>
 #include <iostream>
 
-
-
 namespace floyd {
-
-
 
 
 ////////////////////////////////	BASICS
@@ -55,8 +50,6 @@ store i32 %2, i32* @variable ; store instruction to write to global variable
 ret i32 %2
 }
 */
-
-
 
 
 ////////////////////////////////	CLIENT ACCESS OF RUNNING PROGRAM
@@ -89,7 +82,6 @@ static void* get_function_ptr(const llvm_execution_engine_t& ee, const module_sy
 	const auto addr = ee.ee->getFunctionAddress(name.s);
 	return (void*)addr;
 }
-
 
 std::pair<void*, type_t> bind_global(const llvm_execution_engine_t& ee, const module_symbol_t& name){
 	QUARK_ASSERT(ee.check_invariant());
@@ -160,8 +152,6 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const module_symbol_t& n
 
 
 ////////////////////////////////	INTERNALS FOR EXECUTION ENGINE
-
-
 
 
 static std::vector<llvm_function_link_entry_t> make_init_deinit_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -274,8 +264,6 @@ static std::vector<llvm_function_link_entry_t> make_floyd_code_and_corelib_link_
 	return result;
 }
 
-
-
 std::vector<llvm_function_link_entry_t> make_function_link_map1(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs, const intrinsic_signatures_t& intrinsic_signatures){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
@@ -292,7 +280,6 @@ std::vector<llvm_function_link_entry_t> make_function_link_map1(llvm::LLVMContex
 	return acc;
 }
 
-
 std::string print_function_link_map(const types_t& types, const std::vector<llvm_function_link_entry_t>& defs){
 	std::vector<std::vector<std::string>> matrix;
 	for(const auto& e: defs){
@@ -303,7 +290,6 @@ std::string print_function_link_map(const types_t& types, const std::vector<llvm
 			arg_names = m._name + ",";
 		}
 		arg_names = arg_names.empty() ? "" : arg_names.substr(0, arg_names.size() - 1);
-
 
 		const auto f1 = f0.substr(0, 100);
 		const auto f = f1.size() != f0.size() ? (f1 + "...") : f1;
@@ -326,13 +312,10 @@ std::string print_function_link_map(const types_t& types, const std::vector<llvm
 	);
 	return result;
 }
+
 void trace_function_link_map(const types_t& types, const std::vector<llvm_function_link_entry_t>& defs){
 	QUARK_TRACE(print_function_link_map(types, defs));
 }
-
-
-
-
 
 int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const std::vector<std::string>& main_args){
 	QUARK_ASSERT(f.address != nullptr);
@@ -368,8 +351,6 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 	}
 }
 
-
-
 #if DEBUG && 1
 //	Verify that all global functions can be accessed. If *one* is unresolved, then all return NULL!?
 static void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p){
@@ -398,7 +379,6 @@ static void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p
 }
 #endif
 
-
 static int64_t floyd_llvm_intrinsic__dummy(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
 	(void)r;
@@ -406,11 +386,7 @@ static int64_t floyd_llvm_intrinsic__dummy(floyd_runtime_t* frp){
 }
 
 
-
-
-
 ////////////////////////////////		llvm_execution_engine_t
-
 
 
 llvm_execution_engine_t::~llvm_execution_engine_t(){

@@ -49,9 +49,6 @@ static std::string gen_to_string(llvm_context_t& c, runtime_value_t arg_value, r
 	}
 }
 
-static llvm::FunctionType* make_intrinsic_llvm_function_type(const llvm_type_lookup& type_lookup, const intrinsic_signature_t& signature){
-	return (llvm::FunctionType*)deref_ptr(get_llvm_type_as_arg(type_lookup, signature._function_type));
-}
 
 
 
@@ -155,7 +152,7 @@ static bool matches_specialization(const config_t& config, const types_t& types,
 
 
 
-static const llvm_function_link_entry_t& lookup_link_map(const config_t& config, const types_t& types, const std::vector<llvm_function_link_entry_t>& link_map, const std::vector<specialization_t>& specialisations, const type_t& type){
+static const llvm_function_link_entry_t& lookup_specialization(const config_t& config, const types_t& types, const std::vector<llvm_function_link_entry_t>& link_map, const std::vector<specialization_t>& specialisations, const type_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto it = std::find_if(
@@ -421,7 +418,7 @@ llvm::Value* generate_instrinsic_map(
 
 	const auto& types = gen_acc.gen.type_lookup.state.types;
 	auto& builder = gen_acc.get_builder();
-	const auto res = lookup_link_map(gen_acc.gen.settings.config, types, gen_acc.gen.link_map, make_map_specializations(builder.getContext(), gen_acc.gen.type_lookup), elements_vec_type);
+	const auto res = lookup_specialization(gen_acc.gen.settings.config, types, gen_acc.gen.link_map, make_map_specializations(builder.getContext(), gen_acc.gen.type_lookup), elements_vec_type);
 
 	const auto result_vec_type = peek2(types, resolved_call_type).get_function_return(types);
 	return builder.CreateCall(
@@ -1190,7 +1187,7 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 	auto& builder = gen_acc.get_builder();
 	const auto& types = gen_acc.gen.type_lookup.state.types;
 
-	const auto res = lookup_link_map(gen_acc.gen.settings.config, types, gen_acc.gen.link_map, make_push_back_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
+	const auto res = lookup_specialization(gen_acc.gen.settings.config, types, gen_acc.gen.link_map, make_push_back_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
 	const auto collection_type_peek = peek2(types, collection_type);
 
 	if(collection_type_peek.is_string()){
@@ -1413,7 +1410,7 @@ llvm::Value* generate_instrinsic_size(llvm_function_generator_t& gen_acc, const 
 	auto& builder = gen_acc.get_builder();
 	const auto& types = gen_acc.gen.type_lookup.state.types;
 
-	const auto res = lookup_link_map(gen_acc.gen.settings.config, types, gen_acc.gen.link_map, make_size_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
+	const auto res = lookup_specialization(gen_acc.gen.settings.config, types, gen_acc.gen.link_map, make_size_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
 	const auto collection_itype = generate_itype_constant(gen_acc.gen, collection_type);
 	return builder.CreateCall(
 		res.llvm_codegen_f,
@@ -1713,7 +1710,7 @@ llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, cons
 	auto& builder = gen_acc.get_builder();
 	const auto& types = gen_acc.gen.type_lookup.state.types;
 
-	const auto res = lookup_link_map(
+	const auto res = lookup_specialization(
 		gen_acc.gen.settings.config,
 		types,
 		gen_acc.gen.link_map,
@@ -1833,7 +1830,7 @@ static std::map<std::string, void*> get_one_to_one_intrinsic_binds(){
 }
 
 //	Skips duplicates.
-static std::vector<llvm_function_link_entry_t> make_link_entries(const intrinsic_signatures_t& intrinsic_signatures, const std::vector<specialization_t>& specializations){
+static std::vector<llvm_function_link_entry_t> make_specialized_link_entries(const intrinsic_signatures_t& intrinsic_signatures, const std::vector<specialization_t>& specializations){
 	const auto binds = mapf<llvm_function_bind_t>(specializations, [](auto& e){ return e.bind; });
 
 	std::vector<llvm_function_link_entry_t> result;
@@ -1888,10 +1885,10 @@ std::vector<llvm_function_link_entry_t> make_intrinsics_link_map(llvm::LLVMConte
 		result.push_back(def);
 	}
 
-	result = concat(result, make_link_entries(intrinsic_signatures, make_push_back_specializations(context, type_lookup)));
-	result = concat(result, make_link_entries(intrinsic_signatures, make_size_specializations(context, type_lookup)));
-	result = concat(result, make_link_entries(intrinsic_signatures, make_update_specializations(context, type_lookup)));
-	result = concat(result, make_link_entries(intrinsic_signatures, make_map_specializations(context, type_lookup)));
+	result = concat(result, make_specialized_link_entries(intrinsic_signatures, make_push_back_specializations(context, type_lookup)));
+	result = concat(result, make_specialized_link_entries(intrinsic_signatures, make_size_specializations(context, type_lookup)));
+	result = concat(result, make_specialized_link_entries(intrinsic_signatures, make_update_specializations(context, type_lookup)));
+	result = concat(result, make_specialized_link_entries(intrinsic_signatures, make_map_specializations(context, type_lookup)));
 
 	if(k_trace_function_link_map){
 		trace_function_link_map(types, result);
