@@ -142,8 +142,7 @@ struct unified_runtime_t {
 	value_backend_t backend;
 };
 
-runtime_value_t unified_corelib__calc_binary_sha1(value_backend_t* b, runtime_value_t binary_ptr0);
-runtime_value_t llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, runtime_value_t binary_ptr0);
+runtime_value_t unified_corelib__calc_binary_sha1(floyd_runtime_t* frp, runtime_value_t binary_ptr0);
 
 
 

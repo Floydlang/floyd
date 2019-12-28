@@ -162,9 +162,13 @@ static rt_value_t bc_corelib__calc_binary_sha1(interpreter_t& vm, const rt_value
 	QUARK_ASSERT(arg_count == 1);
 //	QUARK_ASSERT(args[0]._type == make__binary_t__type());
 
+QUARK_ASSERT(false); throw std::exception();
+/*
 	auto& backend = vm._backend;
 	const auto result = unified_corelib__calc_binary_sha1(&backend, args[0]._pod);
 	return rt_value_t(backend, make__sha1_t__type(backend.types), result, rt_value_t::rc_mode::adopt);
+*/
+
 }
 
 static rt_value_t bc_corelib__get_time_of_day(interpreter_t& vm, const rt_value_t args[], int arg_count){

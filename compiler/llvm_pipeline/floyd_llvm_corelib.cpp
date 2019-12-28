@@ -36,9 +36,8 @@ static runtime_value_t llvm_corelib__make_benchmark_report(floyd_runtime_t* frp,
 	auto& backend = get_backend(frp);
 	const auto& types = backend.types;
 
-	const auto global_symbols = get_global_symbols(frp);
-	const auto s = find_symbol_required(global_symbols, "benchmark_result2_t");
-	const auto benchmark_result2_vec_type = type_t::make_vector(types, s._value_type);
+	const auto s_type = get_global_symbol_type(frp, "benchmark_result2_t");
+	const auto benchmark_result2_vec_type = type_t::make_vector(types, s_type);
 
 	const auto b2 = from_runtime_value2(backend, b, benchmark_result2_vec_type);
 
@@ -397,7 +396,7 @@ std::map<std::string, void*> get_corelib_binds(){
 		{ "get_current_date_and_time_string", reinterpret_cast<void *>(&llvm_corelib__get_current_date_and_time_string) },
 
 		{ "calc_string_sha1", reinterpret_cast<void *>(&llvm_corelib__calc_string_sha1) },
-		{ "calc_binary_sha1", reinterpret_cast<void *>(&llvm_corelib__calc_binary_sha1) },
+		{ "calc_binary_sha1", reinterpret_cast<void *>(&unified_corelib__calc_binary_sha1) },
 
 		{ "get_time_of_day", reinterpret_cast<void *>(&llvm_corelib__get_time_of_day) },
 

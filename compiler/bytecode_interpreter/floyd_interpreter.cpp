@@ -96,7 +96,7 @@ struct bc_process_t;
 
 struct bc_processes_runtime_t {
 	container_t _container;
-	bc_runtime_handler_i* handler;
+	runtime_handler_i* handler;
 	std::map<std::string, process_def_t> _process_infos;
 	std::thread::id _main_thread_id;
 
@@ -106,7 +106,7 @@ struct bc_processes_runtime_t {
 
 
 //	NOTICE: Each process inbox has its own mutex + condition variable. No mutex protects cout.
-struct bc_process_t : public bc_runtime_handler_i {
+struct bc_process_t : public runtime_process_i {
 	bool check_invariant() const {
 		QUARK_ASSERT(_init_function != nullptr);
 		QUARK_ASSERT(_msg_function != nullptr);
@@ -114,7 +114,7 @@ struct bc_process_t : public bc_runtime_handler_i {
 	}
 
 
-	void on_send(const std::string& dest_process_id, const runtime_value_t& message0, const type_t& type) override {
+	void runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message0, const type_t& type) override {
 		auto& backend = _interpreter->_backend;
 		const auto& types = backend.types;
 		const auto message = make_rt_value(backend, message0, type, rt_value_t::rc_mode::bump);
@@ -161,14 +161,20 @@ struct bc_process_t : public bc_runtime_handler_i {
 		}
 	}
 
-	void on_exit() override {
+	void runtime_process__on_exit_process() override {
 		_exiting_flag = true;
 	}
 
-	void on_print(const std::string& s) override {
+	void runtime_process__on_print(const std::string& s) override {
 		_owning_runtime->handler->on_print(s);
 	}
 
+	type_t runtime_process__get_global_symbol_type(const std::string& s) override {
+		QUARK_ASSERT(false); return type_t::make_undefined();
+	}
+
+
+	//////////////////////////////////////		STATE
 
 	bc_processes_runtime_t* _owning_runtime;
 	std::condition_variable _inbox_condition_variable;
@@ -242,6 +248,7 @@ static void process_process(bc_processes_runtime_t& runtime, int process_id){
 }
 
 //	NOTICE: Will not run the input VM, it makes new VMs for every thread run(!?)
+//??? No need for args
 static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& vm, const std::vector<std::string>& args, const config_t& config){
 	const auto& container_def = vm._imm->_program._container_def;
 
@@ -250,7 +257,7 @@ static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& v
 	}
 	else{
 		bc_processes_runtime_t runtime;
-		runtime.handler = vm._handler;
+		runtime.handler = vm._runtime_handler;
 		runtime._main_thread_id = std::this_thread::get_id();
 		runtime._container = container_def;
 		runtime._process_infos = reduce(
@@ -269,7 +276,7 @@ static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& v
 			process->_message_type = t.second.msg_type;
 			process->_owning_runtime = &runtime;
 			process->_name_key = t.first;
-			process->_interpreter = std::make_shared<interpreter_t>(vm._imm->_program, config, *process.get());
+			process->_interpreter = std::make_shared<interpreter_t>(vm._imm->_program, config, process.get(), *runtime.handler);
 			process->_init_function = find_global_symbol2(*process->_interpreter, t.second.init_func_linkname);
 			process->_msg_function = find_global_symbol2(*process->_interpreter, t.second.msg_func_linkname);
 

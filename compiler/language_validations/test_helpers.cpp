@@ -98,35 +98,25 @@ void ut_verify_report(const quark::call_context_t& context, const test_report_t&
 }
 
 
-
-struct bc_test_handler_t : public bc_runtime_handler_i {
-	void on_send(const std::string& dest_process_id, const runtime_value_t& message, const type_t& type) override {
-		QUARK_ASSERT(false);
-	}
-
-	void on_exit() override {
-		QUARK_ASSERT(false);
-	}
-
+struct test_handler_t : public runtime_handler_i {
 	void on_print(const std::string& s) override {
 		std::cout << s;
 		const auto lines = split_on_chars(seq_t(s), "\n");
 		_print_output = concat(_print_output, lines);
-//		_print_output.push_back(s);
 	}
+
 
 	std::vector<std::string> _print_output;
 };
-
 
 static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std::vector<std::string>& main_args, const config_t& config){
 	try {
 		const auto exe = generate_bytecode(semast);
 
-		bc_test_handler_t handler;
+		test_handler_t handler;
 
 		//	Runs global code.
-		auto interpreter = interpreter_t(exe, config, handler);
+		auto interpreter = interpreter_t(exe, config, nullptr, handler);
 
 		std::vector<test_t> all_tests = collect_tests(interpreter);
 		const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
@@ -166,16 +156,6 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 	}
 }
 
-struct test_handler_t : public runtime_handler_i {
-	void on_print(const std::string& s) override {
-		std::cout << s;
-		const auto lines = split_on_chars(seq_t(s), "\n");
-		_print_output = concat(_print_output, lines);
-	}
-
-
-	std::vector<std::string> _print_output;
-};
 
 static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const compiler_settings_t& settings, const std::vector<std::string>& main_args, bool trace_processes){
 	QUARK_ASSERT(semast.check_invariant());

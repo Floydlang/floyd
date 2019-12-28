@@ -8,6 +8,7 @@
 
 #include "bytecode_interpreter.h"
 
+#include "floyd_runtime.h"
 #include "bytecode_intrinsics.h"
 #include "bytecode_corelib.h"
 #include "text_parser.h"
@@ -580,9 +581,10 @@ static std::vector<func_link_t> make_functions(const bc_program_t& program){
 	return func_lookup;
 }
 
-interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config, bc_runtime_handler_i& handler) :
+interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config, runtime_process_i* process_handler, runtime_handler_i& runtime_handler) :
 	_imm(std::make_shared<interpreter_imm_t>(interpreter_imm_t{ std::chrono::high_resolution_clock::now(), program })),
-	_handler(&handler),
+	_process_handler(process_handler),
+	_runtime_handler(&runtime_handler),
 	_backend{ make_functions(program), bc_make_struct_layouts(program._types), program._types, config },
 	_stack { &_backend, &_imm->_program._globals }
 {
@@ -802,7 +804,8 @@ void trace_interpreter(interpreter_t& vm, int pc){
 
 void interpreter_t::swap(interpreter_t& other) throw(){
 	other._imm.swap(this->_imm);
-	std::swap(other._handler, this->_handler);
+	std::swap(other._process_handler, this->_process_handler);
+	std::swap(other._runtime_handler, this->_runtime_handler);
 	other._stack.swap(this->_stack);
 }
 
@@ -810,7 +813,8 @@ void interpreter_t::swap(interpreter_t& other) throw(){
 bool interpreter_t::check_invariant() const {
 	QUARK_ASSERT(_imm->_program.check_invariant());
 	QUARK_ASSERT(_stack.check_invariant());
-	QUARK_ASSERT(_handler != nullptr);
+//	QUARK_ASSERT(_process_handler != nullptr);
+	QUARK_ASSERT(_runtime_handler != nullptr);
 	return true;
 }
 #endif
@@ -1036,6 +1040,26 @@ static void call_native(interpreter_t& vm, int target_reg, const func_link_t& fu
 	}
 }
 
+struct bc_handler_t : public runtime_process_i {
+	void runtime_process__on_print(const std::string& s) override {
+		QUARK_ASSERT(false);
+	}
+	void runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type) override {
+		QUARK_ASSERT(false);
+	}
+	void runtime_process__on_exit_process() override {
+		QUARK_ASSERT(false);
+	}
+	virtual type_t runtime_process__get_global_symbol_type(const std::string& s) override {
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+};
+
+
+
+
+
 
 typedef void(*VOID_VOID_F)(void);
 
@@ -1072,6 +1096,11 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 		stack_pos++;
 	}
 
+	bc_handler_t handler;
+	const auto runtime_ptr = floyd_runtime_t {
+		&backend,
+		&handler
+	};
 
 	
 	ffi_cif cif;
@@ -1082,8 +1111,8 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 	args[0] = &ffi_type_pointer;
 	args[1] = &ffi_type_pointer;
 
-	auto backend_ptr = &backend;
-	values[0] = (void*)&backend_ptr;
+	auto runtime_ptr_ptr = &runtime_ptr;
+	values[0] = (void*)&runtime_ptr_ptr;
 
 
 	auto value_ptr = arg_values[0]._pod;

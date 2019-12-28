@@ -380,16 +380,8 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 		const auto cu = floyd::make_compilation_unit_lib(program_source, command2.source_path);
 		auto program = floyd::compile_to_bytecode(cu);
 
-		struct handler_t : public bc_runtime_handler_i {
+		struct handler_t : public runtime_handler_i {
 			handler_t(std::ostream& out) : out(out) {}
-
-			void on_send(const std::string& dest_process_id, const runtime_value_t& message, const type_t& type) override {
-				QUARK_ASSERT(false);
-			}
-
-			void on_exit() override {
-				QUARK_ASSERT(false);
-			}
 
 			void on_print(const std::string& s) override {
 				out << s;
@@ -397,8 +389,7 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 			std::ostream& out;
 		};
 		handler_t handler { out };
-
-		auto interpreter = floyd::interpreter_t(program, command2.compiler_settings.config, handler);
+		auto interpreter = floyd::interpreter_t(program, command2.compiler_settings.config, nullptr, handler);
 
 		//	Run tests before calling main()?
 		if(command2.run_tests){

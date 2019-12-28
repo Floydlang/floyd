@@ -98,6 +98,7 @@ struct llvm_process_t : public runtime_process_i {
 	void runtime_process__on_print(const std::string& s) override;
 	void runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type) override;
 	void runtime_process__on_exit_process() override;
+	type_t runtime_process__get_global_symbol_type(const std::string& s) override;
 
 
 
@@ -128,30 +129,45 @@ struct llvm_process_t : public runtime_process_i {
 
 ////////////////////////////////		llvm_execution_engine_t
 
-
+struct llvm_execution_engine_t;
 
 //https://en.wikipedia.org/wiki/Hexspeak
 const uint64_t k_debug_magic = 0xFACEFEED05050505;
 
 struct test_inherit : public runtime_process_i {
-	test_inherit(runtime_handler_i* runtime_handler) :
-		_runtime_handler(runtime_handler)
+	test_inherit(runtime_handler_i* runtime_handler, const symbol_table_t* symbol_table) :
+		_runtime_handler(runtime_handler),
+		_symbol_table(symbol_table)
 	{
 	}
 
 
 	void runtime_process__on_print(const std::string& s) override {
 		QUARK_ASSERT(_runtime_handler != nullptr);
+		QUARK_ASSERT(_symbol_table != nullptr);
 
 		_runtime_handler->on_print(s);
 	}
 	void runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type) override {
+		QUARK_ASSERT(_runtime_handler != nullptr);
+		QUARK_ASSERT(_symbol_table != nullptr);
 	}
 	void runtime_process__on_exit_process() override {
+		QUARK_ASSERT(_runtime_handler != nullptr);
+		QUARK_ASSERT(_symbol_table != nullptr);
+	}
+
+	type_t runtime_process__get_global_symbol_type(const std::string& s) override{
+		QUARK_ASSERT(_runtime_handler != nullptr);
+		QUARK_ASSERT(_symbol_table != nullptr);
+
+		const auto sym = find_symbol_required(*_symbol_table, s);
+		return sym._value_type;
 	}
 
 
 	public: runtime_handler_i* _runtime_handler;
+	public: const symbol_table_t* _symbol_table;
 };
 
 struct llvm_execution_engine_t {

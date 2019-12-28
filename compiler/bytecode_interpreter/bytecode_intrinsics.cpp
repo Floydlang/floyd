@@ -38,7 +38,7 @@ static rt_value_t bc_intrinsic__assert(interpreter_t& vm, const rt_value_t args[
 	const auto& value = args[0];
 	bool ok = value.get_bool_value();
 	if(!ok){
-		vm._handler->on_print("Assertion failed.");
+		vm._runtime_handler->on_print("Assertion failed.");
 		throw assert_failed_exception();
 //		quark::throw_runtime_error("Assertion failed.");
 	}
@@ -775,7 +775,7 @@ static rt_value_t bc_intrinsic__print(interpreter_t& vm, const rt_value_t args[]
 	const auto& value = args[0];
 	const auto s = to_compact_string2(backend.types, rt_to_value(backend, value));
 //	printf("%s", s.c_str());
-	vm._handler->on_print(s);
+	vm._runtime_handler->on_print(s);
 
 //	const auto lines = split_on_chars(seq_t(s), "\n");
 //	vm._print_output = concat(vm._print_output, lines);
@@ -795,7 +795,7 @@ static rt_value_t bc_intrinsic__send(interpreter_t& vm, const rt_value_t args[],
 
 //	QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
 
-	vm._handler->on_send(dest_process_id, get_rt_value(backend, message), message._type);
+	vm._process_handler->runtime_process__on_send_message(dest_process_id, get_rt_value(backend, message), message._type);
 
 	return rt_value_t::make_undefined();
 }
@@ -806,7 +806,7 @@ static rt_value_t bc_intrinsic__exit(interpreter_t& vm, const rt_value_t args[],
 
 //	QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
 
-	vm._handler->on_exit();
+	vm._process_handler->runtime_process__on_exit_process();
 
 	return rt_value_t::make_undefined();
 }

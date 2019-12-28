@@ -392,6 +392,8 @@ static int64_t floyd_llvm_intrinsic__dummy(floyd_runtime_t* frp){
 ////////////////////////////////		llvm_execution_engine_t
 
 
+
+
 llvm_execution_engine_t::~llvm_execution_engine_t(){
 	QUARK_ASSERT(check_invariant());
 }
@@ -578,7 +580,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			ee1,
 			program_breaks.debug_globals,
 			final_link_map,
-			test_inherit(&runtime_handler),
+			test_inherit(&runtime_handler, nullptr),
 			start_time,
 			llvm_bind_t{ k_no_module_symbol, nullptr, type_t::make_undefined() },
 			false,
@@ -591,6 +593,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			trace_processes
 		}
 	);
+	ee2->_handler_router._symbol_table = &ee2->global_symbols;
 	QUARK_ASSERT(ee2->check_invariant());
 
 #if DEBUG
@@ -735,6 +738,11 @@ void llvm_process_t::runtime_process__on_send_message(const std::string& dest_pr
 void llvm_process_t::runtime_process__on_exit_process(){
 	_exiting_flag = true;
 }
+
+type_t llvm_process_t::runtime_process__get_global_symbol_type(const std::string& s){
+	QUARK_ASSERT(false);throw std::exception();
+}
+
 
 
 static void run_process(llvm_execution_engine_t& ee, int process_id){
@@ -942,7 +950,6 @@ floyd_runtime_t make_runtime_ptr(llvm_context_t* p){
 
 	return {
 		&p->ee->backend,
-		&p->ee->global_symbols,
 		p->process != nullptr ? a : b
 	};
 }

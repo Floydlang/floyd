@@ -1214,16 +1214,8 @@ void corelib_rename_fsentry(const std::string& abs_path, const std::string& n){
 
 
 
-runtime_value_t llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, runtime_value_t binary_ptr0){
-	auto& backend = get_backend(frp);
-	QUARK_ASSERT(binary_ptr0.struct_ptr != nullptr);
 
-	return unified_corelib__calc_binary_sha1(&backend, binary_ptr0);
-}
-
-
-
-runtime_value_t unified_corelib__calc_binary_sha1(value_backend_t* b, runtime_value_t binary_ptr0){
+static runtime_value_t unified_corelib__calc_binary_sha1(value_backend_t* b, runtime_value_t binary_ptr0){
 	QUARK_ASSERT(b != nullptr && b->check_invariant());
 	QUARK_ASSERT(binary_ptr0.struct_ptr != nullptr);
 
@@ -1242,6 +1234,14 @@ runtime_value_t unified_corelib__calc_binary_sha1(value_backend_t* b, runtime_va
 	);
 
 	return to_runtime_value2(backend, a);
+}
+
+
+runtime_value_t unified_corelib__calc_binary_sha1(floyd_runtime_t* frp, runtime_value_t binary_ptr0){
+	auto& backend = get_backend(frp);
+	QUARK_ASSERT(binary_ptr0.struct_ptr != nullptr);
+
+	return unified_corelib__calc_binary_sha1(&backend, binary_ptr0);
 }
 
 

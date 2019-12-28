@@ -90,7 +90,7 @@ namespace floyd {
 struct type_t;
 struct types_t;
 struct runtime_handler_i;
-
+struct runtime_process_i;
 struct interpreter_t;
 struct bc_program_t;
 
@@ -102,17 +102,6 @@ typedef rt_value_t (*BC_NATIVE_FUNCTION_PTR)(interpreter_t& vm, const rt_value_t
 //??? runtime_type_t is 32 bits, we need to bump bc_typeid_t to match. This requires changes to opcode encoding
 typedef int16_t bc_typeid_t;
 
-
-
-//////////////////////////////////////		bc_runtime_handler_i
-
-
-struct bc_runtime_handler_i {
-	virtual ~bc_runtime_handler_i(){};
-	virtual void on_send(const std::string& dest_process_id, const runtime_value_t& message, const type_t& type) = 0;
-	virtual void on_exit() = 0;
-	virtual void on_print(const std::string& s) = 0;
-};
 
 
 
@@ -1146,7 +1135,7 @@ struct interpreter_imm_t {
 */
 
 struct interpreter_t {
-	public: explicit interpreter_t(const bc_program_t& program, const config_t& config, bc_runtime_handler_i& handler);
+	public: explicit interpreter_t(const bc_program_t& program, const config_t& config, runtime_process_i* process_handler, runtime_handler_i& runtime_handler);
 	public: interpreter_t(const interpreter_t& other) = delete;
 	public: ~interpreter_t();
 
@@ -1161,7 +1150,8 @@ struct interpreter_t {
 
 	////////////////////////		STATE
 	public: std::shared_ptr<interpreter_imm_t> _imm;
-	public: bc_runtime_handler_i* _handler;
+	public: runtime_process_i* _process_handler;
+	public: runtime_handler_i* _runtime_handler;
 
 	public: value_backend_t _backend;
 
