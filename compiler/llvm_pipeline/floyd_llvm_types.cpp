@@ -717,9 +717,11 @@ llvm::Type* get_llvm_type_as_arg(const llvm_type_lookup& i, const type_t& type){
 llvm::FunctionType* get_llvm_function_type(const llvm_type_lookup& type_lookup, const type_t& type){
 	QUARK_ASSERT(type_lookup.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(type.is_function());
 
 	auto t = get_llvm_type_as_arg(type_lookup, type);
-	return llvm::cast<llvm::FunctionType>(t);
+	auto t2 = deref_ptr(t);
+	return llvm::cast<llvm::FunctionType>(t2);
 }
 
 

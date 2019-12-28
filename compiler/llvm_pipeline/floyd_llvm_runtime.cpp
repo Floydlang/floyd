@@ -217,12 +217,11 @@ static std::vector<llvm_function_link_entry_t> make_floyd_code_and_corelib_link_
 	{
 		for(const auto& function_def: ast_function_defs){
 			const auto link_name = module_symbol_t(function_def._definition_name);
-			const auto function_type = function_def._function_type;
-			llvm::Type* function_ptr_type = get_llvm_type_as_arg(type_lookup, function_type);
-			const auto function_byvalue_type = deref_ptr(function_ptr_type);
+			const auto function_type = get_llvm_function_type(type_lookup, function_def._function_type);
+
 			const auto def = llvm_function_link_entry_t {
-				func_link_t { "program", link_name, function_type, func_link_t::emachine::k_native, nullptr },
-				(llvm::FunctionType*)function_byvalue_type,
+				func_link_t { "program", link_name, function_def._function_type, func_link_t::emachine::k_native, nullptr },
+				function_type,
 				nullptr,
 				function_def._named_args
 			};
