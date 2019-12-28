@@ -1212,17 +1212,13 @@ void corelib_rename_fsentry(const std::string& abs_path, const std::string& n){
 
 
 
+runtime_value_t unified_corelib__calc_binary_sha1(floyd_runtime_t* frp, runtime_value_t binary_ptr){
+	auto& backend = get_backend(frp);
+	QUARK_ASSERT(binary_ptr.struct_ptr != nullptr);
 
-
-
-static runtime_value_t unified_corelib__calc_binary_sha1(value_backend_t* b, runtime_value_t binary_ptr0){
-	QUARK_ASSERT(b != nullptr && b->check_invariant());
-	QUARK_ASSERT(binary_ptr0.struct_ptr != nullptr);
-
-	auto& backend = *b;
 	auto& types = backend.types;
 
-	const auto& binary = *reinterpret_cast<const native_binary_t*>(binary_ptr0.struct_ptr->get_data_ptr());
+	const auto& binary = *reinterpret_cast<const native_binary_t*>(binary_ptr.struct_ptr->get_data_ptr());
 
 	const auto& s = from_runtime_string2(backend, make_runtime_vector_carray(binary.bytes_string.vector_carray_ptr));
 	const auto ascii40 = corelib_calc_string_sha1(s);
@@ -1234,14 +1230,6 @@ static runtime_value_t unified_corelib__calc_binary_sha1(value_backend_t* b, run
 	);
 
 	return to_runtime_value2(backend, a);
-}
-
-
-runtime_value_t unified_corelib__calc_binary_sha1(floyd_runtime_t* frp, runtime_value_t binary_ptr0){
-	auto& backend = get_backend(frp);
-	QUARK_ASSERT(binary_ptr0.struct_ptr != nullptr);
-
-	return unified_corelib__calc_binary_sha1(&backend, binary_ptr0);
 }
 
 

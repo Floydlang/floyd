@@ -61,14 +61,6 @@ struct runtime_process_i {
 	virtual type_t runtime_process__get_global_symbol_type(const std::string& s) = 0;
 };
 
-/*
-struct blank_process_handler_t : public runtime_process_i {
-	void runtime_process__on_print(const std::string& s) override { }
-	void runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type) override { }
-	void runtime_process__on_exit_process() override { }
-	type_t runtime_process__get_global_symbol_type(const std::string& s) override { QUARK_ASSERT(false); return type_t::make_undefined(); }
-};
-*/
 
 
 //////////////////////////////////////		floyd_runtime_t
@@ -83,13 +75,11 @@ struct blank_process_handler_t : public runtime_process_i {
 struct floyd_runtime_t {
 	bool check_invariant() const {
 		QUARK_ASSERT(backend != nullptr && backend->check_invariant());
-//		QUARK_ASSERT(global_symbols != nullptr);
 //		QUARK_ASSERT(handler != nullptr);
 		return true;
 	}
 
 	value_backend_t* backend;
-//	symbol_table_t* global_symbols;
 	runtime_process_i* handler;
 };
 
@@ -103,16 +93,6 @@ inline type_t get_global_symbol_type(floyd_runtime_t* runtime, const std::string
 	QUARK_ASSERT(runtime != nullptr && runtime->check_invariant());
 
 	return runtime->handler->runtime_process__get_global_symbol_type(s);
-/*
-	&p->ee->global_symbols,
-
-	const auto global_symbols = get_global_symbols(frp);
-	const auto s = find_symbol_required(global_symbols, "benchmark_result2_t");
-	const auto benchmark_result2_vec_type = type_t::make_vector(types, s._value_type);
-
-	return *runtime->global_symbols;
-*/
-
 }
 
 inline void on_print(floyd_runtime_t* runtime, const std::string& s){
@@ -134,8 +114,6 @@ inline void on_exit_process(floyd_runtime_t* runtime){
 
 	runtime->handler->runtime_process__on_exit_process();
 }
-
-
 
 }	//	floyd
 
