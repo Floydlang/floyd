@@ -435,6 +435,8 @@ static rt_value_t bc_corelib__write_socket(interpreter_t& vm, const rt_value_t a
 	return rt_value_t::make_void();
 }
 
+
+//??? Unify for BC, LLVM etc.
 static rt_value_t make__ip_address_t(value_backend_t& backend, const ip_address_t& value){
 	const auto ip_address_t__type = lookup_type_from_name(backend.types, type_name_t{{ "global_scope", "ip_address_t" }});
 
@@ -447,6 +449,7 @@ static rt_value_t make__ip_address_t(value_backend_t& backend, const ip_address_
 	);
 }
 
+//??? Unify for BC, LLVM etc.
 static rt_value_t make__host_info_t(value_backend_t& backend, const hostent_t& value){
 	const auto name_aliases = mapf<rt_value_t>(value.name_aliases, [&](const auto& e){ return rt_value_t::make_string(backend, e); });
 	const auto addresses_IPv4 = mapf<rt_value_t>(value.addresses_IPv4, [&](const auto& e){ return make__ip_address_t(backend, e); });
