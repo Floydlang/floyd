@@ -1076,8 +1076,8 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 	QUARK_ASSERT(func_link.f != nullptr);
 
 //???
-//	const auto f = (VOID_VOID_F)func_link.f;
-	const auto f = unified_corelib__calc_binary_sha1;
+	const auto f = (VOID_VOID_F)func_link.f;
+//	const auto f = unified_corelib__calc_binary_sha1;
 
 	const auto function_type_peek = peek2(types, func_link.function_type_optional);
 

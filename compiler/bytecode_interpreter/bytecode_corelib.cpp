@@ -156,21 +156,6 @@ static rt_value_t bc_corelib__calc_string_sha1(interpreter_t& vm, const rt_value
 	return v;
 }
 
-
-static rt_value_t bc_corelib__calc_binary_sha1(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-//	QUARK_ASSERT(args[0]._type == make__binary_t__type());
-
-QUARK_ASSERT(false); throw std::exception();
-/*
-	auto& backend = vm._backend;
-	const auto result = unified_corelib__calc_binary_sha1(&backend, args[0]._pod);
-	return rt_value_t(backend, make__sha1_t__type(backend.types), result, rt_value_t::rc_mode::adopt);
-*/
-
-}
-
 static rt_value_t bc_corelib__get_time_of_day(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
@@ -699,7 +684,7 @@ std::map<module_symbol_t, BC_NATIVE_FUNCTION_PTR> bc_get_corelib_calls(){
 		{ module_symbol_t("get_current_date_and_time_string"), bc_corelib__get_current_date_and_time_string },
 
 		{ module_symbol_t("calc_string_sha1"), bc_corelib__calc_string_sha1 },
-		{ module_symbol_t("calc_binary_sha1"), bc_corelib__calc_binary_sha1 },
+		{ module_symbol_t("calc_binary_sha1"), (BC_NATIVE_FUNCTION_PTR)unified_corelib__calc_binary_sha1 },
 
 		{ module_symbol_t("get_time_of_day"), bc_corelib__get_time_of_day },
 
