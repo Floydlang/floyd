@@ -15,6 +15,7 @@
 #include "floyd_interpreter.h"
 #include "floyd_runtime.h"
 #include "value_features.h"
+#include "floyd_intrinsics.h"
 
 #include <algorithm>
 
@@ -750,7 +751,7 @@ if(k_trace && false){
 
 
 
-
+/*
 //	print = impure!
 //	Records all output to interpreter
 static rt_value_t bc_intrinsic__print(interpreter_t& vm, const rt_value_t args[], int arg_count){
@@ -766,6 +767,7 @@ static rt_value_t bc_intrinsic__print(interpreter_t& vm, const rt_value_t args[]
 
 	return rt_value_t::make_undefined();
 }
+*/
 
 static rt_value_t bc_intrinsic__send(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
@@ -907,6 +909,18 @@ static func_link_t make_intr(const intrinsic_signature_t& sign, BC_NATIVE_FUNCTI
 		nullptr
 	};
 }
+static func_link_t make_intr2(const intrinsic_signature_t& sign, void* f){
+//	log.push_back({ make_assert_signature(types), bc_intrinsic__assert });
+	return func_link_t {
+		std::string() + "bc-intrinsics-impl:" + sign.name,
+		module_symbol_t(sign.name),
+		sign._function_type,
+		func_link_t::emachine::k_native2,
+		(void*)f,
+		{},
+		nullptr
+	};
+}
 
 std::vector<func_link_t> bc_get_intrinsics(types_t& types){
 	QUARK_ASSERT(types.check_invariant());
@@ -949,7 +963,7 @@ std::vector<func_link_t> bc_get_intrinsics(types_t& types){
 	log.push_back(make_intr(make_stable_sort_signature(types), bc_intrinsic__stable_sort));
 
 
-	log.push_back(make_intr(make_print_signature(types), bc_intrinsic__print));
+	log.push_back(make_intr2(make_print_signature(types), (void*)unified_intrinsic__print));
 	log.push_back(make_intr(make_send_signature(types), bc_intrinsic__send));
 	log.push_back(make_intr(make_exit_signature(types), bc_intrinsic__exit));
 

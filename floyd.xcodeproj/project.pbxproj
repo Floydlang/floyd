@@ -183,6 +183,7 @@
 		2CDA9AE52318933500231AA8 /* write_cache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDA9AE32318933500231AA8 /* write_cache.cpp */; };
 		2CE0FE7822EE54B100018A96 /* desugar_pass.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CE0FE7622EE54B100018A96 /* desugar_pass.cpp */; };
 		2CEB57472071069B0005AC7A /* benchmark_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB57462071069B0005AC7A /* benchmark_basics.cpp */; };
+		2CF65DCB23B944020045F614 /* floyd_intrinsics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CF65DC923B944020045F614 /* floyd_intrinsics.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -739,6 +740,8 @@
 		2CE1C35C2270C7AC007892B4 /* floyd_llvm_runtime.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_llvm_runtime.h; sourceTree = "<group>"; };
 		2CEB57462071069B0005AC7A /* benchmark_basics.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = benchmark_basics.cpp; sourceTree = "<group>"; };
 		2CEB5748207106C60005AC7A /* benchmark_basics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = benchmark_basics.h; sourceTree = "<group>"; };
+		2CF65DC923B944020045F614 /* floyd_intrinsics.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_intrinsics.cpp; sourceTree = "<group>"; };
+		2CF65DCA23B944020045F614 /* floyd_intrinsics.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_intrinsics.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -780,6 +783,8 @@
 			children = (
 				2CCA88F322B6B5F100976D8E /* floyd_corelib.cpp */,
 				2CCA88F422B6B5F100976D8E /* floyd_corelib.h */,
+				2CF65DC923B944020045F614 /* floyd_intrinsics.cpp */,
+				2CF65DCA23B944020045F614 /* floyd_intrinsics.h */,
 				2C00DEC622198C6300DB322E /* floyd_runtime.cpp */,
 				2C00DEC722198C6300DB322E /* floyd_runtime.h */,
 				2CAC5B8E230FFC8800F89608 /* quadratic_probing_hash_table.cpp */,
@@ -1853,6 +1858,7 @@
 				2C4DA09223035A0100190C37 /* format_table.cpp in Sources */,
 				2C6CDA9522FD92FD008F65C7 /* floyd_command_line_parser.cpp in Sources */,
 				2C180477208B939800F62480 /* parse_expression.cpp in Sources */,
+				2CF65DCB23B944020045F614 /* floyd_intrinsics.cpp in Sources */,
 				2CB460BD230ECADD00F664B9 /* hardware_caps.cpp in Sources */,
 				2C8C03A72221D95F0085EBBE /* benchmark_api_internal.cc in Sources */,
 				2C2224ED23A3ECA60052339E /* floyd_llvm_runtime_functions.cpp in Sources */,

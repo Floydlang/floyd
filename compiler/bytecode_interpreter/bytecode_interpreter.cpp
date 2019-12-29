@@ -1067,16 +1067,16 @@ static void call_native(interpreter_t& vm, int target_reg, const func_link_t& fu
 	int stack_pos = arg0_stack_pos;
 
 	//	Notice that dynamic functions will have each DYN argument with a leading itype as an extra argument.
-	const auto function_def_arg_count = function_type_args.size();
+	const auto function_type_args_size = function_type_args.size();
 	std::vector<rt_value_t> arg_values;
-	for(int a = 0 ; a < function_def_arg_count ; a++){
+	for(int a = 0 ; a < function_type_args_size ; a++){
 		const auto func_arg_type = function_type_args[a];
 		if(peek2(types, func_arg_type).is_any()){
 			const auto arg_itype = stack.load_intq(stack_pos);
 			const auto& arg_type = lookup_full_type(vm, static_cast<int16_t>(arg_itype));
 			const auto arg_value = stack.load_value(stack_pos + 1, arg_type);
 			arg_values.push_back(arg_value);
-			stack_pos += k_frame_overhead;
+			stack_pos += 2;
 		}
 		else{
 			const auto arg_value = stack.load_value(stack_pos + 0, func_arg_type);
@@ -1101,12 +1101,12 @@ typedef void(*VOID_VOID_F)(void);
 
 struct cif_t {
 	ffi_cif cif;
-	std::vector<ffi_type*> args;
+	std::vector<ffi_type*> arg_types;
 
 	ffi_type* return_type;
 
 	//	Those type we need to malloc are owned by this vector so we can delete them.
-	std::vector<ffi_type*> args_owning;
+	std::vector<ffi_type*> args_types_owning;
 };
 
 /*
@@ -1174,58 +1174,56 @@ static ffi_type* make_ffi_type(const type_t& type){
 	}
 }
 
-//??? Support any function types.
-static cif_t make_cif(interpreter_t& vm, const func_link_t& func_link, int callee_arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-
-	interpreter_stack_t& stack = vm._stack;
-
-	auto& backend = vm._backend;
+static cif_t make_cif(const value_backend_t& backend, const type_t& function_type){
+	QUARK_ASSERT(backend.check_invariant());
 	const auto& types = backend.types;
 
-	const auto function_type_peek = peek2(types, func_link.function_type_optional);
+	const auto function_type_peek = peek2(types, function_type);
 	const auto function_type_args = function_type_peek.get_function_args(types);
-	const auto function_def_dynamic_arg_count = count_dyn_args(types, func_link.function_type_optional);
 	const auto return_type = function_type_peek.get_function_return(types);
-
-	const int arg0_stack_pos = (int)(stack.size() - (function_def_dynamic_arg_count + callee_arg_count));
-	int stack_pos = arg0_stack_pos;
 
 	cif_t result;
 
 	//	This is the runtime pointer, passed as first argument to all functions.
-	result.args.push_back(&ffi_type_pointer);
+	result.arg_types.push_back(&ffi_type_pointer);
 
-	const auto function_def_arg_count = function_type_args.size();
-	for(int a = 0 ; a < function_def_arg_count ; a++){
-		const auto func_arg_type = function_type_args[a];
-		const auto arg_value = stack.load_value(stack_pos + 0, func_arg_type);
+	const auto function_type_args_size = function_type_args.size();
+	for(int arg_index = 0 ; arg_index < function_type_args_size ; arg_index++){
+		const auto func_arg_type = function_type_args[arg_index];
 
-		const auto f = make_ffi_type(peek2(types, func_arg_type));
-		result.args.push_back(f);
+		//	Notice that ANY will represent this function type arg as TWO elements in BC stack and in FFI argument list
+		if(func_arg_type.is_any()){
+			//	runtime_value_t
+			result.arg_types.push_back(&ffi_type_uint64);
 
-		stack_pos++;
+			//	runtime_type_t
+			result.arg_types.push_back(&ffi_type_uint64);
+		}
+		else{
+			const auto f = make_ffi_type(peek2(types, func_arg_type));
+			result.arg_types.push_back(f);
+		}
 	}
 
 	result.return_type = make_ffi_type(peek2(types, return_type));
 
-	if (ffi_prep_cif(&result.cif, FFI_DEFAULT_ABI, (int)result.args.size(), result.return_type, &result.args[0]) != FFI_OK) {
+	if (ffi_prep_cif(&result.cif, FFI_DEFAULT_ABI, (int)result.arg_types.size(), result.return_type, &result.arg_types[0]) != FFI_OK) {
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
 	return result;
 }
 
-//??? Support ANY
 static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t& func_link, int callee_arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	auto cif = make_cif(vm, func_link, callee_arg_count);
+	auto& backend = vm._backend;
+	const auto& types = backend.types;
+
+	auto cif = make_cif(backend, func_link.function_type_optional);
 
 	interpreter_stack_t& stack = vm._stack;
 
-	auto& backend = vm._backend;
-	const auto& types = backend.types;
 
 	QUARK_ASSERT(func_link.f != nullptr);
 
@@ -1245,56 +1243,43 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 	auto runtime_ptr_ptr = &runtime_ptr;
 	values.push_back((void*)&runtime_ptr_ptr);
 
-	const auto function_def_arg_count = function_type_args.size();
-	std::vector<rt_value_t> arg_values;
-	arg_values.reserve(function_def_arg_count);
-	for(int a = 0 ; a < function_def_arg_count ; a++){
-		const auto func_arg_type = function_type_args[a];
-		const auto arg_value = stack.load_value(stack_pos + 0, func_arg_type);
-		arg_values.push_back(arg_value);
+	const auto function_type_args_size = function_type_args.size();
 
-		//	Use a pointer directly into arg_values. This is tricky. Requires reserve().
-		values.push_back(&arg_values[a]._pod);
+	std::vector<rt_value_t> storage;
+	storage.reserve(function_type_args_size + function_def_dynamic_arg_count);
 
-/*
-		if(func_arg_type.is_bool()){
-			result.args.push_back(&ffi_type_uint8);
-		}
-		else if(func_arg_type.is_int()){
-			result.args.push_back(&ffi_type_sint64);
-		}
-		else if(func_arg_type.is_double()){
-			result.args.push_back(&ffi_type_double);
-		}
-		else if(func_arg_type.is_string()){
-			result.args.push_back(&ffi_type_pointer);
-		}
-		else if(func_arg_type.is_json()){
-			result.args.push_back(&ffi_type_pointer);
-		}
-		else if(func_arg_type.is_typeid()){
-			result.args.push_back(&ffi_type_sint64);
-		}
-		else if(func_arg_type.is_struct()){
-			result.args.push_back(&ffi_type_pointer);
-		}
-		else if(func_arg_type.is_vector()){
-			result.args.push_back(&ffi_type_pointer);
-		}
-		else if(func_arg_type.is_dict()){
-			result.args.push_back(&ffi_type_pointer);
-		}
-		else if(func_arg_type.is_function()){
-			result.args.push_back(&ffi_type_pointer);
+	for(int arg_index = 0 ; arg_index < function_type_args_size ; arg_index++){
+		const auto func_arg_type = function_type_args[arg_index];
+
+		//	Notice that ANY will represent this function type arg as TWO elements in BC stack and in FFI argument list
+		if(func_arg_type.is_any()){
+			const auto arg_itype = stack._entries[stack_pos + 0].int_value;
+			const auto arg_pod = stack._entries[stack_pos + 1];
+
+			const auto arg_type = lookup_full_type(vm, static_cast<int16_t>(arg_itype));
+
+			storage.push_back(rt_value_t::make_int(arg_type.get_data()));
+
+			//	Store the value as a 64 bit integer always.
+			storage.push_back(rt_value_t::make_int(arg_pod.int_value));
+
+			//	Notice: in ABI, any is passed like: [ runtime_value_t value, runtime_type_t value_type ], notice swapped order!
+			//	Use a pointer directly into storage. This is tricky. Requires reserve().
+			values.push_back(&storage[storage.size() - 1]._pod);
+			values.push_back(&storage[storage.size() - 2]._pod);
+
+			stack_pos++;
+			stack_pos++;
 		}
 		else{
-			UNSUPPORTED();
-		}
-*/
+			const auto arg_value = stack.load_value(stack_pos + 0, func_arg_type);
+			storage.push_back(arg_value);
 
-		stack_pos++;
+			//	Use a pointer directly into storage. This is tricky. Requires reserve().
+			values.push_back(&storage[storage.size() - 1]._pod);
+			stack_pos++;
+		}
 	}
-	QUARK_ASSERT(arg_values.size() == function_def_arg_count);
 
 	ffi_arg return_value;
 

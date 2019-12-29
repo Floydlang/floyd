@@ -8,7 +8,7 @@
 
 #include "floyd_llvm_intrinsics.h"
 
-
+#include "floyd_intrinsics.h"
 #include "floyd_llvm_helpers.h"
 #include "floyd_llvm_runtime.h"
 #include "floyd_llvm_codegen_basics.h"
@@ -16,8 +16,6 @@
 #include "floyd_runtime.h"
 #include "text_parser.h"
 #include "utils.h"
-
-#include <llvm/ExecutionEngine/ExecutionEngine.h>
 
 namespace floyd {
 
@@ -964,14 +962,14 @@ static runtime_value_t floyd_llvm_intrinsic__stable_sort(
 /////////////////////////////////////////		print()
 
 
-
+/*
 static void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
 	auto& backend = get_backend(frp);
 
 	const auto s = gen_to_string(backend, value, type_t(value_type));
 	on_print(frp, s);
 }
-
+*/
 
 
 
@@ -1615,54 +1613,90 @@ static runtime_value_t floyd_llvm_intrinsic__to_json(floyd_runtime_t* frp, runti
 
 
 
+
 //	These intrinsics have exactly one native function.
-static std::map<std::string, void*> get_one_to_one_intrinsic_binds(){
-	const std::map<std::string, void*> binds = {
-		{ "assert", reinterpret_cast<void *>(&floyd_llvm_intrinsic__assert) },
-		{ "to_string", reinterpret_cast<void *>(&floyd_llvm_intrinsic__to_string) },
-		{ "to_pretty_string", reinterpret_cast<void *>(&floyd_llvm_intrinsic__to_pretty_string) },
-		{ "typeof", reinterpret_cast<void *>(&floyd_llvm_intrinsic__typeof) },
+static func_link_t make_intrinsic(const llvm_type_lookup& type_lookup, const intrinsic_signature_t& sign, void* f){
+	QUARK_ASSERT(type_lookup.check_invariant());
+	QUARK_ASSERT(f != nullptr);
 
-//		{ "update", reinterpret_cast<void *>(&floyd_llvm_intrinsic__update) },
-//		{ "size", reinterpret_cast<void *>(&floyd_llvm_intrinsic__size) },
-		{ "find", reinterpret_cast<void *>(&floyd_llvm_intrinsic__find) },
-		{ "exists", reinterpret_cast<void *>(&floyd_llvm_intrinsic__exists) },
-		{ "erase", reinterpret_cast<void *>(&floyd_llvm_intrinsic__erase) },
-		{ "get_keys", reinterpret_cast<void *>(&floyd_llvm_intrinsic__get_keys) },
-//		{ "push_back", reinterpret_cast<void *>(&floyd_llvm_intrinsic__push_back) },
-		{ "subset", reinterpret_cast<void *>(&floyd_llvm_intrinsic__subset) },
-		{ "replace", reinterpret_cast<void *>(&floyd_llvm_intrinsic__replace) },
+	const auto function_type = sign._function_type;
+	const auto function_type2 = get_llvm_function_type(type_lookup, function_type);
+	const auto def = func_link_t {
+		"intrinsic",
+		module_symbol_t(sign.name),
+		function_type,
+		func_link_t::emachine::k_native,
+		f,
+		{},
+		(native_type_t*)function_type2
+	};
+	return def;
+}
 
-		{ "generate_json_script", reinterpret_cast<void *>(&floyd_llvm_intrinsic__generate_json_script) },
-		{ "from_json", reinterpret_cast<void *>(&floyd_llvm_intrinsic__from_json) },
-		{ "parse_json_script", reinterpret_cast<void *>(&floyd_llvm_intrinsic__parse_json_script) },
-		{ "to_json", reinterpret_cast<void *>(&floyd_llvm_intrinsic__to_json) },
 
-		{ "get_json_type", reinterpret_cast<void *>(&floyd_llvm_intrinsic__get_json_type) },
 
-//		{ "map", reinterpret_cast<void *>(&floyd_llvm_intrinsic__map) },
-//		{ "map_string", reinterpret_cast<void *>(&floyd_llvm_intrinsic__map_string) },
-		{ "map_dag", reinterpret_cast<void *>(&floyd_llvm_intrinsic__map_dag) },
-		{ "filter", reinterpret_cast<void *>(&floyd_llvm_intrinsic__filter) },
-		{ "reduce", reinterpret_cast<void *>(&floyd_llvm_intrinsic__reduce) },
-		{ "stable_sort", reinterpret_cast<void *>(&floyd_llvm_intrinsic__stable_sort) },
 
-		{ "print", reinterpret_cast<void *>(&floyd_llvm_intrinsic__print) },
-		{ "send", reinterpret_cast<void *>(&floyd_llvm_intrinsic__send) },
-		{ "exit", reinterpret_cast<void *>(&floyd_llvm_intrinsic__exit) },
+
+
+//	These intrinsics have exactly one native function.
+static std::vector<func_link_t> get_one_to_one_intrinsic_binds2(
+	llvm::LLVMContext& context,
+	const llvm_type_lookup& type_lookup,
+	const intrinsic_signatures_t& intrinsic_signatures
+){
+	QUARK_ASSERT(type_lookup.check_invariant());
+
+	//	??? copy
+	auto types = type_lookup.state.types;
+
+	const std::vector<func_link_t> defs = {
+		make_intrinsic(type_lookup, make_assert_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__assert)),
+		make_intrinsic(type_lookup, make_to_string_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__to_string)),
+		make_intrinsic(type_lookup, make_to_pretty_string_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__to_pretty_string)),
+		make_intrinsic(type_lookup, make_typeof_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__typeof)),
+
+//		make_intrinsic(type_lookup, make_update_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__update)),
+//		make_intrinsic(type_lookup, make_size_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__size)),
+		make_intrinsic(type_lookup, make_find_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__find)),
+		make_intrinsic(type_lookup, make_exists_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__exists)),
+		make_intrinsic(type_lookup, make_erase_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__erase)),
+		make_intrinsic(type_lookup, make_get_keys_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__get_keys)),
+//		make_intrinsic(type_lookup, make_push_back_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__push_back)),
+		make_intrinsic(type_lookup, make_subset_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__subset)),
+		make_intrinsic(type_lookup, make_replace_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__replace)),
+
+		make_intrinsic(type_lookup, make_generate_json_script_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__generate_json_script)),
+		make_intrinsic(type_lookup, make_from_json_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__from_json)),
+		make_intrinsic(type_lookup, make_parse_json_script_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__parse_json_script)),
+		make_intrinsic(type_lookup, make_to_json_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__to_json)),
+
+		make_intrinsic(type_lookup, make_get_json_type_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__get_json_type)),
+
+//		make_intrinsic(type_lookup, make_map_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__map)),
+//		make_intrinsic(type_lookup, make_map_string_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__map_string)),
+		make_intrinsic(type_lookup, make_map_dag_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__map_dag)),
+		make_intrinsic(type_lookup, make_filter_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__filter)),
+		make_intrinsic(type_lookup, make_reduce_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__reduce)),
+		make_intrinsic(type_lookup, make_stable_sort_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__stable_sort)),
+
+		make_intrinsic(type_lookup, make_print_signature(types), reinterpret_cast<void *>(&unified_intrinsic__print)),
+		make_intrinsic(type_lookup, make_send_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__send)),
+		make_intrinsic(type_lookup, make_exit_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__exit)),
 
 /*
-		{ "bw_not", reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy) },
-		{ "bw_and", reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy) },
-		{ "bw_or", reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy) },
-		{ "bw_xor", reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy) },
-		{ "bw_shift_left", reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy) },
-		{ "bw_shift_right", reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy) },
-		{ "bw_shift_right_arithmetic", reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy) },
+		make_intrinsic(type_lookup, make_bw_not_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy)),
+		make_intrinsic(type_lookup, make_bw_and_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy)),
+		make_intrinsic(type_lookup, make_bw_or_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy)),
+		make_intrinsic(type_lookup, make_bw_xor_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy)),
+		make_intrinsic(type_lookup, make_bw_shift_left_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy)),
+		make_intrinsic(type_lookup, make_bw_shift_right_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy)),
+		make_intrinsic(type_lookup, make_bw_shift_right_arithmetic_signature(types), reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy))
 */
 	};
-	return binds;
+	return defs;
 }
+
+
 
 //	Skips duplicates.
 static std::vector<func_link_t> make_specialized_link_entries(const intrinsic_signatures_t& intrinsic_signatures, const std::vector<specialization_t>& specializations){
@@ -1706,25 +1740,7 @@ std::vector<func_link_t> make_intrinsics_link_map(llvm::LLVMContext& context, co
 
 	const auto& types = type_lookup.state.types;
 
-	const auto binds = get_one_to_one_intrinsic_binds();
-
-	//	These intrinsics have specialized native functions, depending on which types are used in the call.
-	std::vector<func_link_t> result;
-	for(const auto& bind: binds){
-		auto signature_it = std::find_if(
-			intrinsic_signatures.vec.begin(),
-			intrinsic_signatures.vec.end(),
-			[&] (const intrinsic_signature_t& e) { return e.name == bind.first; }
-		);
-		QUARK_ASSERT(signature_it != intrinsic_signatures.vec.end());
-
-		const auto link_name = module_symbol_t(bind.first);
-		const auto function_type = signature_it->_function_type;
-		const auto function_type2 = get_llvm_function_type(type_lookup, function_type);
-		const auto def = func_link_t { "intrinsic", link_name, function_type, func_link_t::emachine::k_native, bind.second, {}, (native_type_t*)function_type2 };
-		result.push_back(def);
-	}
-
+	auto result = get_one_to_one_intrinsic_binds2(context, type_lookup, intrinsic_signatures);
 	result = concat(result, make_specialized_link_entries(intrinsic_signatures, make_push_back_specializations(context, type_lookup)));
 	result = concat(result, make_specialized_link_entries(intrinsic_signatures, make_size_specializations(context, type_lookup)));
 	result = concat(result, make_specialized_link_entries(intrinsic_signatures, make_update_specializations(context, type_lookup)));
