@@ -747,40 +747,6 @@ if(k_trace && false){
 
 
 
-/////////////////////////////////////////		IMPURE -- MISC
-
-
-
-static rt_value_t bc_intrinsic__send(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 2);
-
-	auto& backend = vm._backend;
-	QUARK_ASSERT(peek2(backend.types, args[0]._type).is_string());
-
-	const auto& dest_process_id = args[0].get_string_value(backend);
-	const auto& message = args[1];
-
-//	QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
-
-	vm._process_handler->runtime_process__on_send_message(dest_process_id, get_rt_value(backend, message), message._type);
-
-	return rt_value_t::make_undefined();
-}
-
-static rt_value_t bc_intrinsic__exit(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 0);
-
-//	QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
-
-	vm._process_handler->runtime_process__on_exit_process();
-
-	return rt_value_t::make_undefined();
-}
-
-
-
 /////////////////////////////////////////		PURE BITWISE
 
 
@@ -946,8 +912,8 @@ std::vector<func_link_t> bc_get_intrinsics(types_t& types){
 
 
 	log.push_back(make_intr2(make_print_signature(types), (void*)unified_intrinsic__print));
-	log.push_back(make_intr(make_send_signature(types), bc_intrinsic__send));
-	log.push_back(make_intr(make_exit_signature(types), bc_intrinsic__exit));
+	log.push_back(make_intr2(make_send_signature(types), (void*)unified_intrinsic__send));
+	log.push_back(make_intr2(make_exit_signature(types), (void*)unified_intrinsic__exit));
 
 
 	log.push_back(make_intr(make_bw_not_signature(types), bc_intrinsic__bw_not));

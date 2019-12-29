@@ -1104,36 +1104,6 @@ static runtime_value_t floyd_llvm_intrinsic__parse_json_script(floyd_runtime_t* 
 }
 
 
-/////////////////////////////////////////		send()
-
-
-static void floyd_llvm_intrinsic__send(floyd_runtime_t* frp, runtime_value_t dest_process_id0, runtime_value_t message, runtime_type_t message_type){
-	auto& backend = get_backend(frp);
-
-	const auto& dest_process_id = from_runtime_string2(backend, dest_process_id0);
-	const auto& message_type2 = lookup_type_ref(backend, message_type);
-
-/*
-	if(k_trace_process_messaging){
-		const auto& message2 = from_runtime_value2(backend, message, message_type2);
-		const auto j = value_and_type_to_json(backend.types, message2);
-		QUARK_TRACE_SS("send(\"" << dest_process_id << "\"," << json_to_pretty_string(j) <<")");
-	}
-*/
-
-//	r._handler->on_send(process_id, message_json);
-	send_message2(frp, dest_process_id, message, message_type2);
-}
-
-static void floyd_llvm_intrinsic__exit(floyd_runtime_t* frp){
-	auto& backend = get_backend(frp);
-	(void)backend;
-
-//???	const auto& process_id = from_runtime_string2(backend, process_id0);
-
-	on_exit_process(frp);
-}
-
 
 
 
@@ -1662,8 +1632,8 @@ static std::vector<func_link_t> get_one_to_one_intrinsic_binds2(
 		make_intri(type_lookup, make_stable_sort_signature(types), (void*)&floyd_llvm_intrinsic__stable_sort),
 
 		make_intri(type_lookup, make_print_signature(types), (void*)&unified_intrinsic__print),
-		make_intri(type_lookup, make_send_signature(types), (void*)&floyd_llvm_intrinsic__send),
-		make_intri(type_lookup, make_exit_signature(types), (void*)&floyd_llvm_intrinsic__exit),
+		make_intri(type_lookup, make_send_signature(types), (void*)&unified_intrinsic__send),
+		make_intri(type_lookup, make_exit_signature(types), (void*)&unified_intrinsic__exit),
 
 /*
 		make_intri(type_lookup, make_bw_not_signature(types), (void*)&floyd_llvm_intrinsic__dummy),
