@@ -561,22 +561,11 @@ std::vector<std::pair<type_t, struct_layout_t>> bc_make_struct_layouts(const typ
 		return merge;
 	}
 
-static std::vector<func_link_t> make_functions(const bc_program_t& program){
+static std::vector<func_link_t> link_functions(const bc_program_t& program){
 	QUARK_ASSERT(program.check_invariant());
 
 	auto temp_types = program._types;
-	const auto intrinsics = bc_get_intrinsics_internal(temp_types);
-	QUARK_ASSERT(temp_types.nodes.size() == program._types.nodes.size());
-	const auto intrinsics2 = mapf<func_link_t>(intrinsics, [&](const auto& e){
-		return func_link_t {
-			std::string() + "intrinsics:" + e.first.name,
-			module_symbol_t(e.first.name),
-			e.first._function_type,
-			func_link_t::emachine::k_native,
-			(void*)e.second
-		};
-	});
-
+	const auto intrinsics2 = bc_get_intrinsics(temp_types);
 	const auto corelib_native_funcs = get_corelib_and_network_binds();
 
 	const auto funcs = mapf<func_link_t>(program._function_defs, [&corelib_native_funcs](const auto& e){
@@ -646,7 +635,7 @@ interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config
 	_imm(std::make_shared<interpreter_imm_t>(interpreter_imm_t{ std::chrono::high_resolution_clock::now(), program })),
 	_process_handler(process_handler),
 	_runtime_handler(&runtime_handler),
-	_backend{ make_functions(program), bc_make_struct_layouts(program._types), program._types, config },
+	_backend{ link_functions(program), bc_make_struct_layouts(program._types), program._types, config },
 	_stack { &_backend, &_imm->_program._globals }
 {
 	QUARK_ASSERT(program.check_invariant());

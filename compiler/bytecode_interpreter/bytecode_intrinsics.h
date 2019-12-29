@@ -10,24 +10,19 @@
 #define bytecode_intrinsics_h
 
 /*
-	Provides built-in intrinsics: these are operators built into the language itself.
+	Provides bytecode implementation of the language built-in intrinsics.
+	Intrinsics are operators built into the language itself.
 */
 
-#include "quark.h"
-
-#include <map>
 #include "bytecode_interpreter.h"
+#include "quark.h"
 
 
 namespace floyd {
 
 struct types_t;
 
-
-std::vector<std::pair<intrinsic_signature_t, BC_NATIVE_FUNCTION_PTR>> bc_get_intrinsics_internal(types_t& types);
-
-//	Create lookup from function id -> C function pointer.
-std::map<module_symbol_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics(types_t& types);
+std::vector<func_link_t> bc_get_intrinsics(types_t& types);
 
 
 }	//	floyd

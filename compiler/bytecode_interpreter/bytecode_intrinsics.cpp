@@ -11,23 +11,17 @@
 #include "json_support.h"
 
 #include "text_parser.h"
-#include "file_handling.h"
-#include "floyd_corelib.h"
 #include "ast_value.h"
 #include "floyd_interpreter.h"
 #include "floyd_runtime.h"
 #include "value_features.h"
 
-
 #include <algorithm>
-#include <iostream>
-#include <fstream>
 
 
 namespace floyd {
 
 static const bool k_trace = false;
-
 
 
 static rt_value_t bc_intrinsic__assert(interpreter_t& vm, const rt_value_t args[], int arg_count){
@@ -76,11 +70,6 @@ static rt_value_t bc_intrinsic__typeof(interpreter_t& vm, const rt_value_t args[
 	const auto result = value_t::make_typeid_value(type);
 	return value_to_rt(backend, result);
 }
-
-
-
-
-
 
 
 //////////////////////////////////////////		UPDATE
@@ -903,81 +892,75 @@ static rt_value_t bc_intrinsic__bw_shift_right_arithmetic(interpreter_t& vm, con
 }
 
 
+/////////////////////////////////////////		bc_get_intrinsics()
 
 
+static func_link_t make_intr(const intrinsic_signature_t& sign, BC_NATIVE_FUNCTION_PTR f){
+//	log.push_back({ make_assert_signature(types), bc_intrinsic__assert });
+	return func_link_t {
+		std::string() + "bc-intrinsics-impl:" + sign.name,
+		module_symbol_t(sign.name),
+		sign._function_type,
+		func_link_t::emachine::k_native,
+		(void*)f
+	};
+}
 
-
-/////////////////////////////////////////		REGISTRY
-
-
-
-
-std::vector<std::pair<intrinsic_signature_t, BC_NATIVE_FUNCTION_PTR>> bc_get_intrinsics_internal(types_t& types){
+std::vector<func_link_t> bc_get_intrinsics(types_t& types){
 	QUARK_ASSERT(types.check_invariant());
 
-	std::vector<std::pair<intrinsic_signature_t, BC_NATIVE_FUNCTION_PTR>> log;
+	std::vector<func_link_t> log;
 
-	log.push_back({ make_assert_signature(types), bc_intrinsic__assert });
-	log.push_back({ make_to_string_signature(types), bc_intrinsic__to_string });
-	log.push_back({ make_to_pretty_string_signature(types), bc_intrinsic__to_pretty_string });
-	log.push_back({ make_typeof_signature(types), bc_intrinsic__typeof });
+	log.push_back(make_intr(make_assert_signature(types), bc_intrinsic__assert));
+	log.push_back(make_intr(make_to_string_signature(types), bc_intrinsic__to_string));
+	log.push_back(make_intr(make_to_pretty_string_signature(types), bc_intrinsic__to_pretty_string));
+	log.push_back(make_intr(make_typeof_signature(types), bc_intrinsic__typeof));
 
-	log.push_back({ make_update_signature(types), bc_intrinsic__update });
+	log.push_back(make_intr(make_update_signature(types), bc_intrinsic__update));
 
 	//	size(types) is translated to bc_opcode::k_get_size_vector_w_external_elements(types) etc.
 
-	log.push_back({ make_find_signature(types), bc_intrinsic__find });
-	log.push_back({ make_exists_signature(types), bc_intrinsic__exists });
-	log.push_back({ make_erase_signature(types), bc_intrinsic__erase });
-	log.push_back({ make_get_keys_signature(types), bc_intrinsic__get_keys });
+	log.push_back(make_intr(make_find_signature(types), bc_intrinsic__find));
+	log.push_back(make_intr(make_exists_signature(types), bc_intrinsic__exists));
+	log.push_back(make_intr(make_erase_signature(types), bc_intrinsic__erase));
+	log.push_back(make_intr(make_get_keys_signature(types), bc_intrinsic__get_keys));
 
 	//	push_back(types) is translated to bc_opcode::k_pushback_vector_w_inplace_elements(types) etc.
 
-	log.push_back({ make_subset_signature(types), bc_intrinsic__subset });
-	log.push_back({ make_replace_signature(types), bc_intrinsic__replace });
+	log.push_back(make_intr(make_subset_signature(types), bc_intrinsic__subset));
+	log.push_back(make_intr(make_replace_signature(types), bc_intrinsic__replace));
 
 
-	log.push_back({ make_parse_json_script_signature(types), bc_intrinsic__parse_json_script });
-	log.push_back({ make_generate_json_script_signature(types), bc_intrinsic__generate_json_script });
-	log.push_back({ make_to_json_signature(types), bc_intrinsic__to_json });
+	log.push_back(make_intr(make_parse_json_script_signature(types), bc_intrinsic__parse_json_script));
+	log.push_back(make_intr(make_generate_json_script_signature(types), bc_intrinsic__generate_json_script));
+	log.push_back(make_intr(make_to_json_signature(types), bc_intrinsic__to_json));
 
-	log.push_back({ make_from_json_signature(types), bc_intrinsic__from_json });
+	log.push_back(make_intr(make_from_json_signature(types), bc_intrinsic__from_json));
 
-	log.push_back({ make_get_json_type_signature(types), bc_intrinsic__get_json_type });
+	log.push_back(make_intr(make_get_json_type_signature(types), bc_intrinsic__get_json_type));
 
-	log.push_back({ make_map_signature(types), bc_intrinsic__map });
-	log.push_back({ make_filter_signature(types), bc_intrinsic__filter });
-	log.push_back({ make_reduce_signature(types), bc_intrinsic__reduce });
-	log.push_back({ make_map_dag_signature(types), bc_intrinsic__map_dag });
+	log.push_back(make_intr(make_map_signature(types), bc_intrinsic__map));
+	log.push_back(make_intr(make_filter_signature(types), bc_intrinsic__filter));
+	log.push_back(make_intr(make_reduce_signature(types), bc_intrinsic__reduce));
+	log.push_back(make_intr(make_map_dag_signature(types), bc_intrinsic__map_dag));
 
-	log.push_back({ make_stable_sort_signature(types), bc_intrinsic__stable_sort });
-
-
-	log.push_back({ make_print_signature(types), bc_intrinsic__print });
-	log.push_back({ make_send_signature(types), bc_intrinsic__send });
-	log.push_back({ make_exit_signature(types), bc_intrinsic__exit });
+	log.push_back(make_intr(make_stable_sort_signature(types), bc_intrinsic__stable_sort));
 
 
-	log.push_back({ make_bw_not_signature(types), bc_intrinsic__bw_not });
-	log.push_back({ make_bw_and_signature(types), bc_intrinsic__bw_and });
-	log.push_back({ make_bw_or_signature(types), bc_intrinsic__bw_or });
-	log.push_back({ make_bw_xor_signature(types), bc_intrinsic__bw_xor });
-	log.push_back({ make_bw_shift_left_signature(types), bc_intrinsic__bw_shift_left });
-	log.push_back({ make_bw_shift_right_signature(types), bc_intrinsic__bw_shift_right });
-	log.push_back({ make_bw_shift_right_arithmetic_signature(types), bc_intrinsic__bw_shift_right_arithmetic });
+	log.push_back(make_intr(make_print_signature(types), bc_intrinsic__print));
+	log.push_back(make_intr(make_send_signature(types), bc_intrinsic__send));
+	log.push_back(make_intr(make_exit_signature(types), bc_intrinsic__exit));
+
+
+	log.push_back(make_intr(make_bw_not_signature(types), bc_intrinsic__bw_not));
+	log.push_back(make_intr(make_bw_and_signature(types), bc_intrinsic__bw_and));
+	log.push_back(make_intr(make_bw_or_signature(types), bc_intrinsic__bw_or));
+	log.push_back(make_intr(make_bw_xor_signature(types), bc_intrinsic__bw_xor));
+	log.push_back(make_intr(make_bw_shift_left_signature(types), bc_intrinsic__bw_shift_left));
+	log.push_back(make_intr(make_bw_shift_right_signature(types), bc_intrinsic__bw_shift_right));
+	log.push_back(make_intr(make_bw_shift_right_arithmetic_signature(types), bc_intrinsic__bw_shift_right_arithmetic));
 
 	return log;
-}
-
-std::map<module_symbol_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics(types_t& types){
-	QUARK_ASSERT(types.check_invariant());
-
-	const auto a  = bc_get_intrinsics_internal(types);
-	std::map<module_symbol_t, BC_NATIVE_FUNCTION_PTR> result;
-	for(const auto& e: a){
-		result.insert({ module_symbol_t(e.first.name), e.second });
-	}
-	return result;
 }
 
 
