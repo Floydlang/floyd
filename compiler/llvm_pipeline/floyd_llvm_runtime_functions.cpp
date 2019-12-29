@@ -24,7 +24,7 @@ static const bool k_trace_function_link_map = false;
 
 
 
-static const llvm_function_link_entry_t& resolve_func(const std::vector<llvm_function_link_entry_t>& function_defs, const module_symbol_t& name){
+static const llvm_codegen_function_type_t& resolve_func(const std::vector<llvm_codegen_function_type_t>& function_defs, const module_symbol_t& name){
 	return find_function_def_from_link_name(function_defs, name);
 }
 
@@ -1395,7 +1395,7 @@ std::vector<func_link_t> make_runtime_function_link_map(llvm::LLVMContext& conte
 
 
 
-runtime_functions_t::runtime_functions_t(const std::vector<llvm_function_link_entry_t>& function_defs) :
+runtime_functions_t::runtime_functions_t(const std::vector<llvm_codegen_function_type_t>& function_defs) :
 	floydrt_init(resolve_func(function_defs, module_symbol_t("init"))),
 	floydrt_deinit(resolve_func(function_defs, module_symbol_t("deinit"))),
 

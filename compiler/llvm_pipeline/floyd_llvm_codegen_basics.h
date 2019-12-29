@@ -67,7 +67,7 @@ struct llvm_code_generator_t {
 		llvm::Module* module,
 		const types_t& types,
 		const llvm_type_lookup& type_lookup,
-		const std::vector<llvm_function_link_entry_t>& link_map,
+		const std::vector<llvm_codegen_function_type_t>& link_map,
 		const compiler_settings_t& settings,
 		const intrinsic_signatures_t& intrinsic_signatures
 	) :
@@ -108,7 +108,7 @@ struct llvm_code_generator_t {
 	llvm::Module* module;
 	llvm::IRBuilder<> builder;
 	const llvm_type_lookup type_lookup;
-	std::vector<llvm_function_link_entry_t> link_map;
+	std::vector<llvm_codegen_function_type_t> link_map;
 
 	/*
 		symbol_pos_t::_parent_steps

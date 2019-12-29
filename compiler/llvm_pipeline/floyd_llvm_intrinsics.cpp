@@ -31,10 +31,10 @@ struct specialization_t {
 };
 
 
-static const llvm_function_link_entry_t& lookup_specialization(
+static const llvm_codegen_function_type_t& lookup_specialization(
 	const config_t& config,
 	const types_t& types,
-	const std::vector<llvm_function_link_entry_t>& link_map,
+	const std::vector<llvm_codegen_function_type_t>& link_map,
 	const std::vector<specialization_t>& specialisations,
 	const type_t& type
 ){

@@ -85,7 +85,7 @@ llvm_ir_program_t::llvm_ir_program_t(
 	std::unique_ptr<llvm::Module>& module2_swap,
 	const llvm_type_lookup& type_lookup,
 	const symbol_table_t& globals,
-	const std::vector<llvm_function_link_entry_t>& function_link_map,
+	const std::vector<llvm_codegen_function_type_t>& function_link_map,
 	const compiler_settings_t& settings
 ) :
 	instance(instance),
@@ -2356,10 +2356,10 @@ static void generate_all_floyd_function_bodies(llvm_code_generator_t& gen_acc, c
 }
 
 //	Generate LLVM function nodes and merge them into link map.
-static std::vector<llvm_function_link_entry_t> generate_function_nodes(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<func_link_t>& link_map1){
+static std::vector<llvm_codegen_function_type_t> generate_function_nodes(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<func_link_t>& link_map1){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	std::vector<llvm_function_link_entry_t> result;
+	std::vector<llvm_codegen_function_type_t> result;
 	for(const auto& e: link_map1){
 		auto existing_f = module.getFunction(e.module_symbol.s);
 		QUARK_ASSERT(existing_f == nullptr);
@@ -2395,7 +2395,7 @@ static std::vector<llvm_function_link_entry_t> generate_function_nodes(llvm::Mod
 		QUARK_ASSERT(check_invariant__function(f));
 		QUARK_ASSERT(check_invariant__module(&module));
 
-		result.push_back(llvm_function_link_entry_t { e, f });
+		result.push_back(llvm_codegen_function_type_t { e, f });
 	}
 	if(false){
 		trace_function_link_map(type_lookup.state.types, result);
@@ -2507,7 +2507,7 @@ static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const 
 
 struct module_output_t {
 	std::unique_ptr<llvm::Module> module;
-	std::vector<llvm_function_link_entry_t> link_map;
+	std::vector<llvm_codegen_function_type_t> link_map;
 };
 
 /*

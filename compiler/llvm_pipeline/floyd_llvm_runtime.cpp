@@ -58,11 +58,11 @@ ret i32 %2
 ////////////////////////////////	CLIENT ACCESS OF RUNNING PROGRAM
 
 
-const llvm_function_link_entry_t& find_function_def_from_link_name(const std::vector<llvm_function_link_entry_t>& function_link_map, const module_symbol_t& link_name){
+const llvm_codegen_function_type_t& find_function_def_from_link_name(const std::vector<llvm_codegen_function_type_t>& function_link_map, const module_symbol_t& link_name){
 	auto it = std::find_if(
 		function_link_map.begin(),
 		function_link_map.end(),
-		[&] (const llvm_function_link_entry_t& e) { return e.func_link.module_symbol == link_name; }
+		[&] (const llvm_codegen_function_type_t& e) { return e.func_link.module_symbol == link_name; }
 	);
 	QUARK_ASSERT(it != function_link_map.end());
 
@@ -239,7 +239,7 @@ static std::vector<func_link_t> make_floyd_code_and_corelib_link_map(llvm::LLVMC
 
 	std::vector<func_link_t> prototypes;
 
-	//	Make llvm_function_link_entry_t for all functions inside the floyd program (floyd source code).
+	//	Make llvm_codegen_function_type_t for all functions inside the floyd program (floyd source code).
 	//	This includes corelib function prototypes and user's functions.
 	//	Only makes prototypes, no implementations.
 	{
@@ -308,7 +308,7 @@ std::vector<func_link_t> make_function_link_map1(llvm::LLVMContext& context, con
 	return acc;
 }
 
-std::string print_function_link_map(const types_t& types, const std::vector<llvm_function_link_entry_t>& defs){
+std::string print_function_link_map(const types_t& types, const std::vector<llvm_codegen_function_type_t>& defs){
 	std::vector<std::vector<std::string>> matrix;
 	for(const auto& e: defs){
 		const auto f0 = e.func_link.function_type_optional.is_undefined() ? "" : json_to_compact_string(type_to_compact_string(types, e.func_link.function_type_optional));
@@ -341,7 +341,7 @@ std::string print_function_link_map(const types_t& types, const std::vector<llvm
 	return result;
 }
 
-void trace_function_link_map(const types_t& types, const std::vector<llvm_function_link_entry_t>& defs){
+void trace_function_link_map(const types_t& types, const std::vector<llvm_codegen_function_type_t>& defs){
 	QUARK_TRACE(print_function_link_map(types, defs));
 }
 
@@ -432,7 +432,7 @@ bool llvm_execution_engine_t::check_invariant() const {
 }
 
 //	NOTICE: LLVM strips out unused functions = nullptr = not all functions in our link map gets a native function pointer.
-static std::vector<func_link_t> resolve_function_ptrs(const types_t& types, llvm::ExecutionEngine& ee, const std::vector<llvm_function_link_entry_t>& function_link_map){
+static std::vector<func_link_t> resolve_function_ptrs(const types_t& types, llvm::ExecutionEngine& ee, const std::vector<llvm_codegen_function_type_t>& function_link_map){
 	QUARK_ASSERT(types.check_invariant());
 
 	std::vector<func_link_t> result;
@@ -556,7 +556,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			const auto it = std::find_if(
 				function_link_map.begin(),
 				function_link_map.end(),
-				[&](const llvm_function_link_entry_t& def){ return def.func_link.module_symbol.s == s2; }
+				[&](const llvm_codegen_function_type_t& def){ return def.func_link.module_symbol.s == s2; }
 			);
 			if(it != function_link_map.end() && it->func_link.f != nullptr){
 				return it->func_link.f;
