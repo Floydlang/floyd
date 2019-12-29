@@ -8,6 +8,9 @@
 
 #include "bytecode_interpreter.h"
 
+//??? temp
+#include "floyd_network_component.h"
+
 #include "floyd_runtime.h"
 #include "bytecode_intrinsics.h"
 #include "text_parser.h"
@@ -547,6 +550,17 @@ std::vector<std::pair<type_t, struct_layout_t>> bc_make_struct_layouts(const typ
 	return result;
 }
 
+
+	static std::map<std::string, void*> get_corelib_and_network_binds(){
+		const std::map<std::string, void*> corelib_binds = get_unified_corelib_binds();
+		const auto network_binds = get_network_component_binds();
+
+		std::map<std::string, void*> merge = corelib_binds;
+		merge.insert(network_binds.begin(), network_binds.end());
+
+		return merge;
+	}
+
 static std::vector<func_link_t> make_functions(const bc_program_t& program){
 	QUARK_ASSERT(program.check_invariant());
 
@@ -563,8 +577,7 @@ static std::vector<func_link_t> make_functions(const bc_program_t& program){
 		};
 	});
 
-//	const auto corelib_native_funcs = bc_get_corelib_calls();
-	const auto corelib_native_funcs = get_unified_corelib_binds();
+	const auto corelib_native_funcs = get_corelib_and_network_binds();
 
 	const auto funcs = mapf<func_link_t>(program._function_defs, [&corelib_native_funcs](const auto& e){
 		const auto& function_name_symbol = e.func_link.module_symbol;

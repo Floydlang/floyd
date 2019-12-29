@@ -23,8 +23,6 @@ namespace floyd {
 struct value_t;
 struct floyd_runtime_t;
 
-extern const std::string k_corelib_builtin_types_and_constants;
-
 
 
 type_t make__ip_address_t__type(types_t& types);
@@ -146,6 +144,7 @@ runtime_value_t unified_corelib__calc_binary_sha1(floyd_runtime_t* frp, runtime_
 
 
 
+std::string get_corelib_header();
 std::map<std::string, void*> get_unified_corelib_binds();
 
 }	//	floyd

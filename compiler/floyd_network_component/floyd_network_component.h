@@ -24,8 +24,6 @@ namespace floyd {
 
 
 
-extern const std::string k_network_component_header;
-
 
 
 
@@ -79,6 +77,10 @@ http_response_t unpack_http_response(const std::string& s);
 std::string execute_http_request(ip_address_and_port_t addr, const std::string& request);
 */
 
+
+
+std::string get_network_component_header();
+std::map<std::string, void*> get_network_component_binds();
 
 } // floyd
 

@@ -16,6 +16,9 @@ static const bool k_trace_function_link_map = false;
 #include "floyd_llvm_runtime_functions.h"
 #include "floyd_llvm_intrinsics.h"
 
+//??? temp
+#include "floyd_network_component.h"
+
 #include "floyd_corelib.h"
 #include "text_parser.h"
 #include "os_process.h"
@@ -205,6 +208,19 @@ static std::vector<llvm_function_link_entry_t> make_init_deinit_link_map(llvm::L
 	return result;
 }
 
+
+static std::map<std::string, void*> get_corelib_and_network_binds(){
+	const std::map<std::string, void*> corelib_binds = get_unified_corelib_binds();
+	const auto network_binds = get_network_component_binds();
+
+	std::map<std::string, void*> merge = corelib_binds;
+	merge.insert(network_binds.begin(), network_binds.end());
+
+	return merge;
+}
+
+
+
 //	IMPORTANT: The corelib function function prototypes & types lives in floyd source code, thus is inside ast_function_defs.
 static std::vector<llvm_function_link_entry_t> make_floyd_code_and_corelib_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
 	QUARK_ASSERT(type_lookup.check_invariant());
@@ -234,7 +250,7 @@ static std::vector<llvm_function_link_entry_t> make_floyd_code_and_corelib_link_
 
 	// Corelib function binds. The prototypes are provided in input AST already.
 	{
-		const auto corelib_function_map0 = get_unified_corelib_binds();
+		const auto corelib_function_map0 = get_corelib_and_network_binds();
 		std::map<module_symbol_t, void*> corelib_function_map;
 		for(const auto& e: corelib_function_map0){
 			corelib_function_map.insert({ module_symbol_t(e.first), e.second });

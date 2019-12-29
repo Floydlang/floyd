@@ -10,11 +10,16 @@
 
 #include "floyd_corelib.h"
 
+
+//??? temporary
+#include "bytecode_interpreter.h"
+
+
 namespace floyd {
 
 
 
-extern const std::string k_network_component_header = R"(
+static const std::string k_network_component_header = R"(
 
 	//######################################################################################################################
 	//	NETWORK COMPONENT
@@ -126,6 +131,9 @@ extern const std::string k_network_component_header = R"(
 )";
 
 
+std::string get_network_component_header(){
+	return k_network_component_header;
+}
 
 
 
@@ -218,6 +226,292 @@ type_t make__http_response_t__type(types_t& types){
 	);
 }
 
+
+
+
+
+
+
+
+		static rt_value_t bc_corelib__read_socket(interpreter_t& vm, const rt_value_t args[], int arg_count){
+			QUARK_ASSERT(vm.check_invariant());
+			QUARK_ASSERT(arg_count == 1);
+
+			auto& backend = vm._backend;
+			const auto& types = backend.types;
+
+			QUARK_ASSERT(peek2(types, args[0]._type).is_int());
+
+			const auto socket_id = args[0].get_int_value();
+			const auto r = read_socket_string((int)socket_id);
+			return rt_value_t::make_string(backend, r);
+		}
+static void unified_corelib__read_socket(floyd_runtime_t* frp){
+}
+
+
+		static rt_value_t bc_corelib__write_socket(interpreter_t& vm, const rt_value_t args[], int arg_count){
+			QUARK_ASSERT(vm.check_invariant());
+			QUARK_ASSERT(arg_count == 1);
+			QUARK_ASSERT(arg_count == 2);
+
+			auto& backend = vm._backend;
+			const auto& types = backend.types;
+
+			QUARK_ASSERT(peek2(types, args[0]._type).is_int());
+			QUARK_ASSERT(peek2(types, args[1]._type).is_string());
+
+			const auto socket_id = args[0].get_int_value();
+			const auto& data = args[1].get_string_value(backend);
+			write_socket_string((int)socket_id, data);
+			return rt_value_t::make_void();
+		}
+static void unified_corelib__write_socket(floyd_runtime_t* frp){
+}
+
+static void unified_corelib__lookup_host_from_ip(floyd_runtime_t* frp){
+}
+
+
+	static value_t make__ip_address_t(const types_t& types, const ip_address_t& value){
+		const auto ip_address_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "ip_address_t" }});
+
+		const auto result = value_t::make_struct_value(
+			types,
+			peek2(types, ip_address_t__type),
+			{
+				value_t::make_string(unmake_ipv4(value))
+			}
+		);
+		return result;
+	}
+
+	static value_t make__host_info_t(const types_t& types, const hostent_t& value){
+		const auto name_aliases = mapf<value_t>(value.name_aliases, [](const auto& e){ return value_t::make_string(e); });
+		const auto addresses_IPv4 = mapf<value_t>(value.addresses_IPv4, [&](const auto& e){ return make__ip_address_t(types, e); });
+
+//		trace_types(types);
+		const auto host_info_t__type = peek2(types, lookup_type_from_name(types, type_name_t{{ "global_scope", "host_info_t" }}));
+		const auto ip_address_t__type = peek2(types, lookup_type_from_name(types, type_name_t{{ "global_scope", "ip_address_t" }}));
+		const auto result = value_t::make_struct_value(
+			types,
+			peek2(types, host_info_t__type),
+			{
+				value_t::make_string(value.official_host_name),
+				value_t::make_vector_value(types, type_t::make_string(), name_aliases),
+				value_t::make_vector_value(types, ip_address_t__type, addresses_IPv4),
+			}
+		);
+		return result;
+	}
+
+static runtime_value_t unified_corelib__lookup_host_from_name(floyd_runtime_t* frp, runtime_value_t name_str){
+	auto& backend = get_backend(frp);
+	auto& types = backend.types;
+
+//	trace_types(types);
+//	trace_llvm_type_lookup(r.ee->type_lookup);
+
+	const auto name = from_runtime_string2(backend, name_str);
+	const auto result = lookup_host(name);
+	const auto info = make__host_info_t(types, result);
+	return to_runtime_value2(backend, info);
+}
+
+static runtime_value_t unified_corelib__pack_http_request(floyd_runtime_t* frp, runtime_value_t s){
+	auto& backend = get_backend(frp);
+	auto& types = backend.types;
+
+	const auto http_request_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_request_t" }});
+
+	const auto request = from_runtime_value2(backend, s, http_request_t__type).get_struct_value();
+
+	const auto request_line = request->_member_values[0].get_struct_value();
+	const auto headers = request->_member_values[1].get_vector_value();
+	const auto optional_body = request->_member_values[2].get_string_value();
+
+	const auto headers2 = mapf<http_header_t>(headers, [](const auto& e){
+		const auto& header = e.get_struct_value();
+		return http_header_t {
+			header->_member_values[0].get_string_value(),
+			header->_member_values[1].get_string_value()
+		};
+	});
+	const auto req = http_request_t {
+		http_request_line_t {
+			request_line->_member_values[0].get_string_value(),
+			request_line->_member_values[1].get_string_value(),
+			request_line->_member_values[2].get_string_value()
+		},
+		headers2,
+		optional_body
+	};
+	const auto request_string = pack_http_request(req);
+	return to_runtime_string2(backend, request_string);
+}
+
+static rt_value_t bc_corelib__unpack_http_request(interpreter_t& vm, const rt_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+
+	auto& backend = vm._backend;
+	const auto& types = backend.types;
+
+	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
+
+	const auto http_header_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_header_t" }});
+	const auto http_request_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_request_t_" }});
+	const auto http_request_line_t___type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_request_line_t" }});
+
+	const auto s = args[0].get_string_value(backend);
+	const http_request_t req = unpack_http_request(s);
+
+	const auto headers2 = mapf<rt_value_t>(req.headers, [&](const auto& e){
+		return rt_value_t::make_struct_value(
+			backend,
+			http_header_t__type,
+			{
+				rt_value_t::make_string(backend, e.key),
+				rt_value_t::make_string(backend, e.value)
+			}
+		);
+	});
+
+	return rt_value_t::make_struct_value(
+		backend,
+		http_request_t__type,
+		{
+			rt_value_t::make_struct_value(
+				backend,
+				http_request_line_t___type,
+				{
+					rt_value_t::make_string(backend, req.request_line.method),
+					rt_value_t::make_string(backend, req.request_line.uri),
+					rt_value_t::make_string(backend, req.request_line.http_version)
+				}
+			),
+			make_vector_value(backend, http_header_t__type, immer::vector<rt_value_t>(headers2.begin(), headers2.end())),
+			rt_value_t::make_string(backend, req.optional_body)
+		}
+	);
+}
+
+static void unified_corelib__unpack_http_request(floyd_runtime_t* frp){
+}
+
+
+		static rt_value_t bc_corelib__pack_http_response(interpreter_t& vm, const rt_value_t args[], int arg_count){
+			QUARK_ASSERT(vm.check_invariant());
+			QUARK_ASSERT(arg_count == 1);
+
+			auto& backend = vm._backend;
+			const auto& types = backend.types;
+
+			const auto http_response_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_response_t" }});
+			QUARK_ASSERT(args[0]._type == http_response_t__type);
+
+			const auto status_line = args[0].get_struct_value(backend);
+			const auto headers = get_vector_elements(backend, args[1]);
+			const auto optional_body = args[2].get_string_value(backend);
+
+			const auto headers2 = mapf<http_header_t>(headers, [&](const auto& e){
+				const auto& header = e.get_struct_value(backend);
+				return http_header_t { header[0].get_string_value(backend), header[1].get_string_value(backend) };
+			});
+			const auto req = http_response_t {
+				http_response_status_line_t {
+					status_line[0].get_string_value(backend),
+					status_line[1].get_string_value(backend)
+				},
+				headers2,
+				optional_body
+			};
+			const auto r = pack_http_response(req);
+			return rt_value_t::make_string(backend, r);
+		}
+static void unified_corelib__pack_http_response(floyd_runtime_t* frp){
+}
+
+
+
+		static rt_value_t bc_corelib__unpack_http_response(interpreter_t& vm, const rt_value_t args[], int arg_count){
+			QUARK_ASSERT(vm.check_invariant());
+			QUARK_ASSERT(arg_count == 1);
+
+			auto& backend = vm._backend;
+			const auto& types = backend.types;
+
+			QUARK_ASSERT(peek2(types, args[0]._type).is_string());
+
+			const auto s = args[0].get_string_value(backend);
+			const http_response_t response = unpack_http_response(s);
+
+			const auto http_header_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_header_t" }});
+			const auto http_response_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_response_t" }});
+			const auto http_response_status_line_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_response_status_line_t" }});
+
+			const auto headers2 = mapf<rt_value_t>(response.headers, [&](const auto& e){
+				return rt_value_t::make_struct_value(
+					backend,
+					http_header_t__type,
+					{
+						rt_value_t::make_string(backend, e.key),
+						rt_value_t::make_string(backend, e.value)
+					}
+				);
+			});
+
+			return rt_value_t::make_struct_value(
+				backend,
+				http_response_t__type,
+				{
+					rt_value_t::make_struct_value(
+						backend,
+						http_response_status_line_t__type,
+						{
+							rt_value_t::make_string(backend, response.status_line.http_version),
+							rt_value_t::make_string(backend, response.status_line.status_code),
+						}
+					),
+					make_vector_value(backend, http_header_t__type, immer::vector<rt_value_t>(headers2.begin(), headers2.end())),
+					rt_value_t::make_string(backend, response.optional_body)
+				}
+			);
+		}
+static void unified_corelib__unpack_http_response(floyd_runtime_t* frp){
+}
+
+static runtime_value_t unified_corelib__execute_http_request(floyd_runtime_t* frp, runtime_value_t c, runtime_value_t addr, runtime_value_t request_string){
+	auto& backend = get_backend(frp);
+	auto& types = backend.types;
+
+//	const auto network_component_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "network_component_t" }});
+	const auto ip_address_and_port_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "ip_address_and_port_t" }});
+
+	const auto addr1 = from_runtime_value2(backend, addr, ip_address_and_port_t__type).get_struct_value();
+	const auto request = from_runtime_string2(backend, request_string);
+
+	const auto addr2 = ip_address_t { make_ipv4(addr1->_member_values[0].get_struct_value()->_member_values[0].get_string_value()) };
+	const auto response = execute_http_request(ip_address_and_port_t { addr2, (int)addr1->_member_values[1].get_int_value() }, request);
+	return to_runtime_string2(backend, response);
+}
+
+std::map<std::string, void*> get_network_component_binds(){
+	const std::map<std::string, void*> host_functions_map = {
+		{ "read_socket", reinterpret_cast<void *>(&unified_corelib__read_socket) },
+		{ "write_socket", reinterpret_cast<void *>(&unified_corelib__write_socket) },
+		{ "lookup_host_from_ip", reinterpret_cast<void *>(&unified_corelib__lookup_host_from_ip) },
+		{ "lookup_host_from_name", reinterpret_cast<void *>(&unified_corelib__lookup_host_from_name) },
+		{ "to_ipv4_dotted_decimal_string", nullptr },
+		{ "from_ipv4_dotted_decimal_string", nullptr },
+		{ "pack_http_request", reinterpret_cast<void *>(&unified_corelib__pack_http_request) },
+		{ "unpack_http_request", reinterpret_cast<void *>(&unified_corelib__unpack_http_request) },
+		{ "pack_http_response", reinterpret_cast<void *>(&unified_corelib__pack_http_response) },
+		{ "unpack_http_response", reinterpret_cast<void *>(&unified_corelib__unpack_http_response) },
+		{ "execute_http_request", reinterpret_cast<void *>(&unified_corelib__execute_http_request) }
+	};
+	return host_functions_map;
+}
 
 
 } // floyd
