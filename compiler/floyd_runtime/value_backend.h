@@ -834,6 +834,8 @@ int count_dyn_args(const types_t& types, const type_t& function_type);
 json_t func_link_to_json(const types_t& types, const func_link_t& def);
 void trace_function_link_map(const types_t& types, const std::vector<func_link_t>& defs);
 
+const func_link_t* find_function_by_name3(const std::vector<func_link_t>& v, const module_symbol_t& s);
+
 inline func_link_t set_f(const func_link_t& e, void* f){
 	const auto v2 = func_link_t {
 		e.module,

@@ -11,11 +11,11 @@
 
 #include "floyd_llvm_types.h"
 #include "floyd_llvm_runtime.h"
+#include "floyd_llvm_helpers.h"
 
 namespace floyd {
 
 struct llvm_function_generator_t;
-
 
 
 //	Make link entries for all runtime functions, like floydrt_retain_vec().

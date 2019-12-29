@@ -40,6 +40,17 @@ namespace floyd {
 
 
 
+////////////////////////////////		llvm_codegen_function_type_t
+
+
+
+std::string print_function_link_map(const types_t& types, const std::vector<llvm_codegen_function_type_t>& defs);
+void trace_function_link_map(const types_t& types, const std::vector<llvm_codegen_function_type_t>& defs);
+
+
+const llvm_codegen_function_type_t& find_function_def_from_link_name(const std::vector<llvm_codegen_function_type_t>& function_link_map, const module_symbol_t& link_name);
+
+
 
 ////////////////////////////////		resolved_symbol_t
 

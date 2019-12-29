@@ -22,6 +22,18 @@ struct link_name_t;
 struct value_backend_t;
 
 
+////////////////////////////////		llvm_codegen_function_type_t
+
+
+struct llvm_codegen_function_type_t {
+	func_link_t func_link;
+
+	//	Only valid during codegen
+	llvm::Function* llvm_codegen_f;
+};
+
+
+
 struct target_t {
 	std::string target_triple;
 	llvm::TargetMachine* target_machine;

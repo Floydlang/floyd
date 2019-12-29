@@ -31,7 +31,7 @@ struct specialization_t {
 };
 
 
-static const llvm_codegen_function_type_t& lookup_specialization(
+static const llvm_codegen_function_type_t& codegen_lookup_specialization(
 	const config_t& config,
 	const types_t& types,
 	const std::vector<llvm_codegen_function_type_t>& link_map,
@@ -297,7 +297,7 @@ llvm::Value* generate_instrinsic_map(
 
 	const auto& types = gen_acc.gen.type_lookup.state.types;
 	auto& builder = gen_acc.get_builder();
-	const auto res = lookup_specialization(gen_acc.gen.settings.config, types, gen_acc.gen.link_map, make_map_specializations(builder.getContext(), gen_acc.gen.type_lookup), elements_vec_type);
+	const auto res = codegen_lookup_specialization(gen_acc.gen.settings.config, types, gen_acc.gen.link_map, make_map_specializations(builder.getContext(), gen_acc.gen.type_lookup), elements_vec_type);
 
 	const auto result_vec_type = peek2(types, resolved_call_type).get_function_return(types);
 	return builder.CreateCall(
@@ -1040,7 +1040,7 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 	auto& builder = gen_acc.get_builder();
 	const auto& types = gen_acc.gen.type_lookup.state.types;
 
-	const auto res = lookup_specialization(gen_acc.gen.settings.config, types, gen_acc.gen.link_map, make_push_back_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
+	const auto res = codegen_lookup_specialization(gen_acc.gen.settings.config, types, gen_acc.gen.link_map, make_push_back_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
 	const auto collection_type_peek = peek2(types, collection_type);
 
 	if(collection_type_peek.is_string()){
@@ -1260,7 +1260,7 @@ llvm::Value* generate_instrinsic_size(llvm_function_generator_t& gen_acc, const 
 	auto& builder = gen_acc.get_builder();
 	const auto& types = gen_acc.gen.type_lookup.state.types;
 
-	const auto res = lookup_specialization(gen_acc.gen.settings.config, types, gen_acc.gen.link_map, make_size_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
+	const auto res = codegen_lookup_specialization(gen_acc.gen.settings.config, types, gen_acc.gen.link_map, make_size_specializations(builder.getContext(), gen_acc.gen.type_lookup), collection_type);
 	const auto collection_itype = generate_itype_constant(gen_acc.gen, collection_type);
 	return builder.CreateCall(
 		res.llvm_codegen_f,
@@ -1548,7 +1548,7 @@ llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, cons
 	auto& builder = gen_acc.get_builder();
 	const auto& types = gen_acc.gen.type_lookup.state.types;
 
-	const auto res = lookup_specialization(
+	const auto res = codegen_lookup_specialization(
 		gen_acc.gen.settings.config,
 		types,
 		gen_acc.gen.link_map,

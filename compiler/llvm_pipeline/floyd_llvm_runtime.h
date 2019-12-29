@@ -58,18 +58,7 @@ struct llvm_function_bind_t {
 
 
 
-////////////////////////////////		llvm_codegen_function_type_t
 
-
-struct llvm_codegen_function_type_t {
-	func_link_t func_link;
-
-	//	Only valid during codegen
-	llvm::Function* llvm_codegen_f;
-};
-
-std::string print_function_link_map(const types_t& types, const std::vector<llvm_codegen_function_type_t>& defs);
-void trace_function_link_map(const types_t& types, const std::vector<llvm_codegen_function_type_t>& defs);
 
 
 struct llvm_execution_engine_t;
@@ -260,7 +249,6 @@ typedef void (*FLOYD_TEST_F)(floyd_runtime_t* frp);
 ////////////////////////////////	CLIENT ACCESS OF RUNNING PROGRAM
 
 
-const llvm_codegen_function_type_t& find_function_def_from_link_name(const std::vector<llvm_codegen_function_type_t>& function_link_map, const module_symbol_t& link_name);
 
 void* get_global_ptr(const llvm_execution_engine_t& c, const module_symbol_t& name);
 

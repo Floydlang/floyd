@@ -8,8 +8,73 @@
 
 #include "floyd_llvm_codegen_basics.h"
 
+#include "format_table.h"
+#include "floyd_llvm_runtime_functions.h"
 
 namespace floyd {
+
+
+
+
+
+std::string print_function_link_map(const types_t& types, const std::vector<llvm_codegen_function_type_t>& defs){
+	std::vector<std::vector<std::string>> matrix;
+	for(const auto& e: defs){
+		const auto f0 = e.func_link.function_type_optional.is_undefined() ? "" : json_to_compact_string(type_to_compact_string(types, e.func_link.function_type_optional));
+
+		std::string arg_names;
+		for(const auto& m: e.func_link.arg_names){
+			arg_names = m + ",";
+		}
+		arg_names = arg_names.empty() ? "" : arg_names.substr(0, arg_names.size() - 1);
+
+		const auto f1 = f0.substr(0, 100);
+		const auto f = f1.size() != f0.size() ? (f1 + "...") : f1;
+
+		const auto line = std::vector<std::string>{
+			e.func_link.module_symbol.s,
+			e.func_link.module,
+			print_type((llvm::FunctionType*)e.func_link.native_type),
+			e.llvm_codegen_f != nullptr ? ptr_to_hexstring(e.llvm_codegen_f) : "",
+			f,
+			arg_names,
+			e.func_link.f != nullptr ? ptr_to_hexstring(e.func_link.f) : "",
+		};
+		matrix.push_back(line);
+	}
+
+	const auto result = generate_table_type1(
+		{ "LINK-NAME", "MODULE", "LLVM_FUNCTION_TYPE", "LLVM_CODEGEN_F", "FUNCTION TYPE", "ARG NAMES", "NATIVE_F" },
+		matrix
+	);
+	return result;
+}
+
+void trace_function_link_map(const types_t& types, const std::vector<llvm_codegen_function_type_t>& defs){
+	QUARK_TRACE(print_function_link_map(types, defs));
+}
+
+
+
+
+
+
+
+
+const llvm_codegen_function_type_t& find_function_def_from_link_name(const std::vector<llvm_codegen_function_type_t>& function_link_map, const module_symbol_t& link_name){
+	auto it = std::find_if(
+		function_link_map.begin(),
+		function_link_map.end(),
+		[&] (const llvm_codegen_function_type_t& e) { return e.func_link.module_symbol == link_name; }
+	);
+	QUARK_ASSERT(it != function_link_map.end());
+
+	QUARK_ASSERT(it->llvm_codegen_f != nullptr);
+	return *it;
+}
+
+
+
 
 
 

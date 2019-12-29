@@ -1729,12 +1729,7 @@ void trace_function_link_map(const types_t& types, const std::vector<func_link_t
 	QUARK_TRACE(json_to_pretty_string(vec2));
 }
 
-
-////////////////////////////////		value_backend_t
-
-
-const func_link_t* find_function_by_name2(const value_backend_t& backend, const module_symbol_t& s){
-	const auto& v = backend.func_link_lookup;
+const func_link_t* find_function_by_name3(const std::vector<func_link_t>& v, const module_symbol_t& s){
 	const auto it = std::find_if(v.begin(), v.end(), [&] (auto& m) { return m.module_symbol == s; });
 	if(it != v.end()){
 		return &(*it);
@@ -1743,6 +1738,16 @@ const func_link_t* find_function_by_name2(const value_backend_t& backend, const 
 		return nullptr;
 	}
 }
+
+
+
+////////////////////////////////		value_backend_t
+
+
+const func_link_t* find_function_by_name2(const value_backend_t& backend, const module_symbol_t& s){
+	return find_function_by_name3(backend.func_link_lookup, s);
+}
+
 int64_t find_function_by_name0(const value_backend_t& backend, const module_symbol_t& s){
 	const auto& v = backend.func_link_lookup;
 	const auto it = std::find_if(v.begin(), v.end(), [&] (auto& m) { return m.module_symbol == s; });
