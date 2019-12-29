@@ -10,7 +10,6 @@
 
 #include "floyd_runtime.h"
 #include "bytecode_intrinsics.h"
-#include "bytecode_corelib.h"
 #include "text_parser.h"
 #include "ast_value.h"
 #include "types.h"
@@ -20,7 +19,6 @@
 
 #include <algorithm>
 
-//??? temp -- remove this include
 #include "floyd_corelib.h"
 
 namespace floyd {

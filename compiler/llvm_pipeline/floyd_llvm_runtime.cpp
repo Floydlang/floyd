@@ -12,7 +12,6 @@ static const bool k_trace_function_link_map = false;
 
 #include "floyd_llvm_codegen.h"
 #include "floyd_runtime.h"
-#include "floyd_llvm_corelib.h"
 #include "value_features.h"
 #include "floyd_llvm_runtime_functions.h"
 #include "floyd_llvm_intrinsics.h"
