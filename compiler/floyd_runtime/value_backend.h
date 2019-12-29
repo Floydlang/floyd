@@ -740,9 +740,31 @@ bool is_struct_pod(const types_t& types, const struct_type_desc_t& struct_def);
 struct func_link_t {
 	enum class emachine { k_native, k_bytecode, k_native2 };
 
+	func_link_t(
+		const std::string& module,
+		const module_symbol_t& module_symbol,
+		const type_t& function_type_optional,
+
+		func_link_t::emachine machine,
+
+		void* f
+	) :
+		module(module),
+		module_symbol(module_symbol),
+		function_type_optional(function_type_optional),
+		machine(machine),
+		f(f)
+	{
+//		QUARK_ASSERT(module_symbol.s.empty() == false);
+		QUARK_ASSERT(function_type_optional.is_function() || function_type_optional.is_undefined());
+//		QUARK_ASSERT(f != nullptr);
+
+		QUARK_ASSERT(check_invariant());
+	}
+
 	bool check_invariant() const {
-		QUARK_ASSERT(module_symbol.s.empty() == false);
-		QUARK_ASSERT(function_type_optional.is_function());
+//		QUARK_ASSERT(module_symbol.s.empty() == false);
+		QUARK_ASSERT(function_type_optional.is_function() || function_type_optional.is_undefined());
 //		QUARK_ASSERT(dynamic_arg_count >= 0 && dynamic_arg_count < 1000);
 //		QUARK_ASSERT(f != nullptr);
 		return true;
