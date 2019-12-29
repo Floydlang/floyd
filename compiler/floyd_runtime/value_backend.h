@@ -733,8 +733,43 @@ struct struct_layout_t {
 bool is_struct_pod(const types_t& types, const struct_type_desc_t& struct_def);
 
 
+
+
 ////////////////////////////////		func_entry_t
 
+/*
+POD VS NONPOD
+
+								return		arg0		arg1		arg2
+	------------------------------------------------------------------------------------------------
+	update()					any			any			any			any
+
+	update_string()				string		string		int			int
+	update_vector_carray()		vec<T>		vec<T>		int			T
+	update_vector_hamt()		vec<T>		vec<T>		int			T
+
+	update_dict_cppmap()		dict<T>		dict<T>		string		T
+	update_dict_hamt()			dict<T>		dict<T>		string		T
+*/
+
+enum class eresolved_type {
+	k_none,
+
+	k_string,
+
+	k_vector_carray_pod,
+	k_vector_carray_nonpod,
+	k_vector_hamt_pod,
+	k_vector_hamt_nonpod,
+
+	k_dict_cppmap_pod,
+	k_dict_cppmap_nonpod,
+
+	k_dict_hamt_pod,
+	k_dict_hamt_nonpod,
+
+	k_json
+};
 
 //	Every function has a func_entry_t. It may not yet be linked to a function.
 struct func_link_t {
@@ -747,13 +782,15 @@ struct func_link_t {
 
 		func_link_t::emachine machine,
 
-		void* f
+		void* f,
+		eresolved_type required_arg_type = eresolved_type::k_none
 	) :
 		module(module),
 		module_symbol(module_symbol),
 		function_type_optional(function_type_optional),
 		machine(machine),
-		f(f)
+		f(f),
+		required_arg_type(required_arg_type)
 	{
 //		QUARK_ASSERT(module_symbol.s.empty() == false);
 		QUARK_ASSERT(function_type_optional.is_function() || function_type_optional.is_undefined());
@@ -782,12 +819,15 @@ struct func_link_t {
 
 	//	Points to a native function or to a bc_static_frame_t. Nullptr: only a prototype, no implementation.
 	void* f;
+
+	eresolved_type required_arg_type;
 };
 
 int count_dyn_args(const types_t& types, const type_t& function_type);
 json_t func_link_to_json(const types_t& types, const func_link_t& def);
 void trace_func_link(const types_t& types, const std::vector<func_link_t>& defs);
 
+bool matches_specialization(const config_t& config, const types_t& types, eresolved_type wanted, const type_t& arg_type);
 
 
 ////////////////////////////////		value_backend_t

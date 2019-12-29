@@ -1639,6 +1639,68 @@ bool is_struct_pod(const types_t& types, const struct_type_desc_t& struct_def){
 
 
 
+
+bool matches_specialization(const config_t& config, const types_t& types, eresolved_type wanted, const type_t& arg_type){
+	QUARK_ASSERT(config.check_invariant());
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(arg_type.check_invariant());
+
+	const auto arg_type_peek = peek2(types, arg_type);
+	if(arg_type_peek.is_string()){
+		return wanted == eresolved_type::k_string;
+	}
+	else if(is_vector_carray(types, config, arg_type)){
+		const auto is_rc = is_rc_value(types, arg_type_peek.get_vector_element_type(types));
+		if(is_rc){
+			return wanted == eresolved_type::k_vector_carray_nonpod;
+		}
+		else{
+			return wanted == eresolved_type::k_vector_carray_pod;
+		}
+	}
+	else if(is_vector_hamt(types, config, arg_type)){
+		const auto is_rc = is_rc_value(types, arg_type_peek.get_vector_element_type(types));
+		if(is_rc){
+			return wanted == eresolved_type::k_vector_hamt_nonpod;
+		}
+		else{
+			return wanted == eresolved_type::k_vector_hamt_pod;
+		}
+	}
+
+	else if(is_dict_cppmap(types, config, arg_type)){
+		const auto is_rc = is_rc_value(types, arg_type_peek.get_dict_value_type(types));
+		if(is_rc){
+			return wanted == eresolved_type::k_dict_cppmap_nonpod;
+		}
+		else{
+			return wanted == eresolved_type::k_dict_cppmap_pod;
+		}
+	}
+	else if(is_dict_hamt(types, config, arg_type)){
+		const auto is_rc = is_rc_value(types, arg_type_peek.get_dict_value_type(types));
+		if(is_rc){
+			return wanted == eresolved_type::k_dict_hamt_nonpod;
+		}
+		else{
+			return wanted == eresolved_type::k_dict_hamt_pod;
+		}
+	}
+
+	else if(arg_type_peek.is_json()){
+		return wanted == eresolved_type::k_json;
+	}
+
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+
+
+
+
 int count_dyn_args(const types_t& types, const type_t& function_type){
 	QUARK_ASSERT(function_type.is_function());
 	const auto args2 = peek2(types, function_type).get_function_args(types);

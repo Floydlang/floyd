@@ -25,104 +25,19 @@ namespace floyd {
 
 static const bool k_trace_function_link_map = false;
 
-
-/////////////////////////////////////////		specialization_t
-
-/*
-POD VS NONPOD
-
-								return		arg0		arg1		arg2
-	------------------------------------------------------------------------------------------------
-	update()					any			any			any			any
-
-	update_string()				string		string		int			int
-	update_vector_carray()		vec<T>		vec<T>		int			T
-	update_vector_hamt()		vec<T>		vec<T>		int			T
-
-	update_dict_cppmap()		dict<T>		dict<T>		string		T
-	update_dict_hamt()			dict<T>		dict<T>		string		T
-*/
-
-enum class eresolved_type {
-	k_string,
-
-	k_vector_carray_pod,
-	k_vector_carray_nonpod,
-	k_vector_hamt_pod,
-	k_vector_hamt_nonpod,
-
-	k_dict_cppmap_pod,
-	k_dict_cppmap_nonpod,
-
-	k_dict_hamt_pod,
-	k_dict_hamt_nonpod,
-
-	k_json
-};
-
 struct specialization_t {
 	eresolved_type required_arg_type;
 	llvm_function_bind_t bind;
 };
 
-static bool matches_specialization(const config_t& config, const types_t& types, eresolved_type wanted, const type_t& arg_type){
-	QUARK_ASSERT(config.check_invariant());
-	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(arg_type.check_invariant());
 
-	const auto arg_type_peek = peek2(types, arg_type);
-	if(arg_type_peek.is_string()){
-		return wanted == eresolved_type::k_string;
-	}
-	else if(is_vector_carray(types, config, arg_type)){
-		const auto is_rc = is_rc_value(types, arg_type_peek.get_vector_element_type(types));
-		if(is_rc){
-			return wanted == eresolved_type::k_vector_carray_nonpod;
-		}
-		else{
-			return wanted == eresolved_type::k_vector_carray_pod;
-		}
-	}
-	else if(is_vector_hamt(types, config, arg_type)){
-		const auto is_rc = is_rc_value(types, arg_type_peek.get_vector_element_type(types));
-		if(is_rc){
-			return wanted == eresolved_type::k_vector_hamt_nonpod;
-		}
-		else{
-			return wanted == eresolved_type::k_vector_hamt_pod;
-		}
-	}
-
-	else if(is_dict_cppmap(types, config, arg_type)){
-		const auto is_rc = is_rc_value(types, arg_type_peek.get_dict_value_type(types));
-		if(is_rc){
-			return wanted == eresolved_type::k_dict_cppmap_nonpod;
-		}
-		else{
-			return wanted == eresolved_type::k_dict_cppmap_pod;
-		}
-	}
-	else if(is_dict_hamt(types, config, arg_type)){
-		const auto is_rc = is_rc_value(types, arg_type_peek.get_dict_value_type(types));
-		if(is_rc){
-			return wanted == eresolved_type::k_dict_hamt_nonpod;
-		}
-		else{
-			return wanted == eresolved_type::k_dict_hamt_pod;
-		}
-	}
-
-	else if(arg_type_peek.is_json()){
-		return wanted == eresolved_type::k_json;
-	}
-
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-}
-
-static const llvm_function_link_entry_t& lookup_specialization(const config_t& config, const types_t& types, const std::vector<llvm_function_link_entry_t>& link_map, const std::vector<specialization_t>& specialisations, const type_t& type){
+static const llvm_function_link_entry_t& lookup_specialization(
+	const config_t& config,
+	const types_t& types,
+	const std::vector<llvm_function_link_entry_t>& link_map,
+	const std::vector<specialization_t>& specialisations,
+	const type_t& type
+){
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto it = std::find_if(
