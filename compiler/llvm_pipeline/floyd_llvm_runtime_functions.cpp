@@ -131,14 +131,6 @@ llvm::Value* generate_allocate_vector(llvm_function_generator_t& gen_acc, const 
 
 
 
-
-
-
-
-
-
-
-
 ////////////////////////////////		allocate_vector_fill()
 
 
@@ -171,9 +163,6 @@ static std::vector<llvm_function_bind_t> floydrt_allocate_vector_fill__make(llvm
 	);
 	return {{ module_symbol_t("allocate_vector_fill"), function_type, reinterpret_cast<void*>(floydrt_allocate_vector_fill) }};
 }
-
-
-
 
 
 
@@ -230,9 +219,6 @@ static std::vector<llvm_function_bind_t> floydrt_concatunate_vectors__make(llvm:
 	);
 	return {{ module_symbol_t("concatunate_vectors"), function_type, reinterpret_cast<void*>(floydrt_concatunate_vectors) }};
 }
-
-
-
 
 
 //	Notice: value_backend never handle RC automatically = no need to make pod/nonpod access to it.
@@ -454,17 +440,8 @@ void generate_store_dict_mutable(llvm_function_generator_t& gen_acc, llvm::Value
 
 
 
-
-
-
-
-
-
-
-
 //	JSON
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 
 
@@ -498,7 +475,6 @@ static std::vector<llvm_function_bind_t> floydrt_allocate_json__make(llvm::LLVMC
 	);
 	return {{ module_symbol_t("allocate_json"), function_type, reinterpret_cast<void*>(floydrt_allocate_json) }};
 }
-
 
 
 
@@ -587,10 +563,6 @@ static std::vector<llvm_function_bind_t> floydrt_json_to_string__make(llvm::LLVM
 
 
 
-
-
-
-
 //	STRUCT
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -658,11 +630,7 @@ llvm::Value* generate_load_struct_member(llvm_function_generator_t& gen_acc, llv
 
 
 
-
-
-
 ////////////////////////////////		floydrt_update_struct_member()
-
 
 
 //??? optimize for speed. Most things can be precalculated.
@@ -917,19 +885,6 @@ static std::vector<llvm_function_bind_t> floydrt_analyse_benchmark_samples__make
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 ////////////////////////////////		RETAIN
 
 
@@ -956,8 +911,6 @@ static void floydrt_retain_vector_hamt(floyd_runtime_t* frp, runtime_value_t vec
 	retain_vector_hamt(backend, vec, type_t(type0));
 }
 
-
-
 static void floydrt_retain_dict_cppmap(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
 	auto& backend = get_backend(frp);
 	const auto& type = lookup_type_ref(backend, type0);
@@ -981,8 +934,6 @@ static void floydrt_retain_dict_hamt(floyd_runtime_t* frp, runtime_value_t dict,
 	retain_dict_hamt(backend, dict, type_t(type0));
 }
 
-
-
 static void floydrt_retain_json(floyd_runtime_t* frp, runtime_value_t json, runtime_type_t type0){
 	auto& backend = get_backend(frp);
 
@@ -998,7 +949,6 @@ static void floydrt_retain_json(floyd_runtime_t* frp, runtime_value_t json, runt
 	}
 }
 
-
 static void floydrt_retain_struct(floyd_runtime_t* frp, runtime_value_t v0, runtime_type_t type0){
 	auto& backend = get_backend(frp);
 	QUARK_ASSERT(v0.struct_ptr != nullptr);
@@ -1011,8 +961,6 @@ const auto& type = lookup_type_ref(backend, type0);
 
 	retain_struct(backend, make_runtime_struct(v0.struct_ptr), type);
 }
-
-
 
 void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const type_t& type0){
 	QUARK_ASSERT(gen_acc.gen.type_lookup.check_invariant());
@@ -1311,11 +1259,6 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 	}
 }
 
-
-
-
-
-
 //	These are the support function built into the runtime, like RC primitives.
 static std::vector<llvm_function_bind_t> get_runtime_function_binds(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	const std::vector<std::vector<llvm_function_bind_t>> result0 = {
@@ -1355,9 +1298,6 @@ static std::vector<llvm_function_bind_t> get_runtime_function_binds(llvm::LLVMCo
 	return result;
 }
 
-
-
-
 std::vector<func_link_t> make_runtime_function_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
@@ -1385,45 +1325,5 @@ std::vector<func_link_t> make_runtime_function_link_map(llvm::LLVMContext& conte
 
 	return result;
 }
-
-
-
-/*
-////////////////////////////////		runtime_functions_t
-
-
-
-runtime_functions_t::runtime_functions_t(const std::vector<llvm_codegen_function_type_t>& function_defs) :
-	floydrt_init(resolve_func(function_defs, module_symbol_t("init"))),
-	floydrt_deinit(resolve_func(function_defs, module_symbol_t("deinit"))),
-
-
-	floydrt_alloc_kstr(resolve_func(function_defs, module_symbol_t("alloc_kstr"))),
-	floydrt_allocate_vector_fill(resolve_func(function_defs, module_symbol_t("allocate_vector_fill"))),
-
-	floydrt_store_vector_element_hamt_mutable(resolve_func(function_defs, module_symbol_t("store_vector_element_hamt_mutable"))),
-	floydrt_concatunate_vectors(resolve_func(function_defs, module_symbol_t("concatunate_vectors"))),
-	floydrt_load_vector_element_hamt(resolve_func(function_defs, module_symbol_t("load_vector_element_hamt"))),
-
-
-	floydrt_allocate_dict(resolve_func(function_defs, module_symbol_t("allocate_dict"))),
-
-
-	floydrt_allocate_json(resolve_func(function_defs, module_symbol_t("allocate_json"))),
-	floydrt_lookup_json(resolve_func(function_defs, module_symbol_t("lookup_json"))),
-	floydrt_json_to_string(resolve_func(function_defs, module_symbol_t("json_to_string"))),
-
-
-	floydrt_allocate_struct(resolve_func(function_defs, module_symbol_t("allocate_struct"))),
-
-	floydrt_compare_values(resolve_func(function_defs, module_symbol_t("compare_values"))),
-
-
-	floydrt_get_profile_time(resolve_func(function_defs, module_symbol_t("get_profile_time"))),
-	floydrt_analyse_benchmark_samples(resolve_func(function_defs, module_symbol_t("analyse_benchmark_samples")))
-{
-}
-*/
-
 
 } // floyd

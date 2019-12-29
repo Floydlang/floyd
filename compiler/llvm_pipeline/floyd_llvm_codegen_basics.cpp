@@ -13,10 +13,6 @@
 
 namespace floyd {
 
-
-
-
-
 std::string print_function_link_map(const types_t& types, const std::vector<llvm_codegen_function_type_t>& defs){
 	std::vector<std::vector<std::string>> matrix;
 	for(const auto& e: defs){
@@ -54,13 +50,6 @@ void trace_function_link_map(const types_t& types, const std::vector<llvm_codege
 	QUARK_TRACE(print_function_link_map(types, defs));
 }
 
-
-
-
-
-
-
-
 const llvm_codegen_function_type_t& find_function_def_from_link_name(const std::vector<llvm_codegen_function_type_t>& function_link_map, const module_symbol_t& link_name){
 	auto it = std::find_if(
 		function_link_map.begin(),
@@ -73,11 +62,6 @@ const llvm_codegen_function_type_t& find_function_def_from_link_name(const std::
 	return *it;
 }
 
-
-
-
-
-
 llvm::Constant* generate_itype_constant(const llvm_code_generator_t& gen_acc, const type_t& type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -86,9 +70,6 @@ llvm::Constant* generate_itype_constant(const llvm_code_generator_t& gen_acc, co
 	auto t = make_runtime_type_type(gen_acc.type_lookup);
  	return llvm::ConstantInt::get(t, itype);
 }
-
-
-
 
 llvm::Value* generate_cast_to_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const type_t& floyd_type){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -102,8 +83,6 @@ llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_acc, ll
 	auto& builder = gen_acc.get_builder();
 	return generate_cast_from_runtime_value2(builder, gen_acc.type_lookup, runtime_value_reg, type);
 }
-
-
 
 llvm::Value* generate_get_vec_element_ptr_needs_cast(llvm_function_generator_t& gen_acc, llvm::Value& vec_ptr_reg){
 	QUARK_ASSERT(gen_acc.check_invariant());

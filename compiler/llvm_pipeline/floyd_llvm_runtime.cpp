@@ -21,9 +21,6 @@ static const bool k_trace_function_link_map = false;
 #include "floyd_llvm_intrinsics.h"
 
 //??? temp
-#include "floyd_llvm_codegen.h"
-
-//??? temp
 #include "floyd_network_component.h"
 
 #include "floyd_corelib.h"
@@ -617,11 +614,6 @@ std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& progra
 
 	QUARK_ASSERT(init_result == 667);
 	ee->inited = true;
-
-//	trace_heap(ee->backend.heap);
-//	const auto leaks = ee->heap.count_used();
-//	QUARK_ASSERT(leaks == 0);
-
 	return ee;
 }
 
@@ -880,8 +872,6 @@ static std::map<std::string, value_t> run_processes(llvm_execution_engine_t& ee)
 	}
 }
 
-
-
 run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::string>& main_args){
 	if(ee.main_function.address != nullptr){
 		const auto main_result_int = llvm_call_main(ee, ee.main_function, main_args);
@@ -893,23 +883,7 @@ run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::str
 	}
 }
 
-
 void deinit_program(llvm_execution_engine_t& ee){
-	/*
-	QUARK_ASSERT(ee.deinit_function.address != nullptr);
-	QUARK_ASSERT(ee.inited == true);
-	auto a_func = reinterpret_cast<FLOYD_RUNTIME_DEINIT>(ee.deinit_function.address);
-	QUARK_ASSERT(a_func != nullptr);
-
-	auto context = llvm_context_t{ &ee, nullptr };
-	auto runtime_ptr = make_runtime_ptr(&context);
-
-	int64_t result = (*a_func)(runtime_ptr);
-	QUARK_ASSERT(result == 668);
-
-	ee.inited = false;
-*/
-
 	if(ee.inited){
 		auto f = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_function_ptr(ee, module_symbol_t("deinit")));
 		QUARK_ASSERT(f != nullptr);
@@ -947,8 +921,6 @@ floyd_runtime_t make_runtime_ptr(llvm_context_t* p){
 ////////////////////////////////		BENCHMARKS
 
 
-//	??? should lookup structs via their name in symbol table!
-//	??? This requires resolving symbols, which is too late at runtime. Resolve these earlier?
 std::vector<bench_t> collect_benchmarks(llvm_execution_engine_t& ee){
 	auto context = llvm_context_t { &ee, nullptr };
 
@@ -1015,8 +987,6 @@ std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, con
 
 
 
-//	??? should lookup structs via their name in symbol table!
-//	??? This requires resolving symbols, which is too late at runtime. Resolve these earlier?
 std::vector<test_t> collect_tests(llvm_execution_engine_t& ee){
 	auto context = llvm_context_t { &ee, nullptr };
 
