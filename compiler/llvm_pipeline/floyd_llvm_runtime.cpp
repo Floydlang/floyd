@@ -264,7 +264,13 @@ static std::vector<llvm_function_link_entry_t> make_floyd_code_and_corelib_link_
 		const auto it = binds0.find(e.func_link.module_symbol);
 		if(it != binds0.end()){
 			const auto def2 = llvm_function_link_entry_t {
-				func_link_t { e.func_link.module, e.func_link.module_symbol, e.func_link.function_type_optional, func_link_t::emachine::k_native, it->second },
+				func_link_t {
+					e.func_link.module,
+					e.func_link.module_symbol,
+					e.func_link.function_type_optional,
+					func_link_t::emachine::k_native,
+					it->second
+				},
 				e.llvm_function_type,
 				e.llvm_codegen_f,
 				e.arg_names_or_empty
