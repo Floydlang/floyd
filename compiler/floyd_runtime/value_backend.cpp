@@ -1721,7 +1721,7 @@ json_t func_link_to_json(const types_t& types, const func_link_t& def){
 	});
 }
 
-void trace_func_link(const types_t& types, const std::vector<func_link_t>& defs){
+void trace_function_link_map(const types_t& types, const std::vector<func_link_t>& defs){
 	QUARK_ASSERT(types.check_invariant());
 
 	const auto vec = mapf<json_t>(defs, [&](const auto& e){ return func_link_to_json(types, e); });

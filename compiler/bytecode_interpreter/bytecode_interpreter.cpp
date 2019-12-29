@@ -579,7 +579,9 @@ static std::vector<func_link_t> link_functions(const bc_program_t& program){
 				function_name_symbol,
 				e.func_link.function_type_optional,
 				func_link_t::emachine::k_native2,
-				(void*)it->second
+				(void*)it->second,
+				{},
+				nullptr
 			};
 		}
 
@@ -590,13 +592,15 @@ static std::vector<func_link_t> link_functions(const bc_program_t& program){
 				function_name_symbol,
 				e.func_link.function_type_optional,
 				e.func_link.machine,
-				(void*)e._frame_ptr.get()
+				(void*)e._frame_ptr.get(),
+				{},
+				nullptr
 			};
 		}
 
 		//	No implementation.
 		else{
-			return func_link_t { "", k_no_module_symbol, {}, func_link_t::emachine::k_bytecode, nullptr };
+			return func_link_t { "", k_no_module_symbol, {}, func_link_t::emachine::k_bytecode, nullptr, {}, nullptr };
 		}
 	});
 

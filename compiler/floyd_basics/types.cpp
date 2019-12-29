@@ -709,6 +709,13 @@ std::vector<type_t> get_member_types(const std::vector<member_t>& m){
 	}
 	return r;
 }
+std::vector<std::string> get_member_names(const std::vector<member_t>& m){
+	std::vector<std::string> r;
+	for(const auto& a: m){
+		r.push_back(a._name);
+	}
+	return r;
+}
 
 
 int find_struct_member_index(const struct_type_desc_t& desc, const std::string& name){

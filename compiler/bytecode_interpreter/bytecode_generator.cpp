@@ -2000,7 +2000,9 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 					function_def._function_type,
 					func_link_t::emachine::k_bytecode,
 	//				function_def._named_args,
-					frame2.get()
+					frame2.get(),
+					{},
+					nullptr
 				},
 				frame2
 			};
@@ -2013,6 +2015,8 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 					module_symbol_t(function_def._definition_name),
 					function_def._function_type,
 					func_link_t::emachine::k_native,
+					nullptr,
+					{},
 					nullptr
 				},
 				nullptr

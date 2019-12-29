@@ -64,13 +64,8 @@ struct llvm_function_bind_t {
 struct llvm_function_link_entry_t {
 	func_link_t func_link;
 
-	llvm::FunctionType* llvm_function_type;
-
 	//	Only valid during codegen
 	llvm::Function* llvm_codegen_f;
-
-	//??? better to use vector<string>
-	std::vector<member_t> arg_names_or_empty;
 };
 
 std::string print_function_link_map(const types_t& types, const std::vector<llvm_function_link_entry_t>& defs);
@@ -192,7 +187,7 @@ struct llvm_execution_engine_t {
 	llvm_instance_t* instance;
 	std::shared_ptr<llvm::ExecutionEngine> ee;
 	symbol_table_t global_symbols;
-	std::vector<llvm_function_link_entry_t> function_link_map;
+	std::vector<func_link_t> function_link_map;
 
 	route_t _handler_router;
 
@@ -311,7 +306,7 @@ inline runtime_value_t to_runtime_string(llvm_context_t& c, const std::string& s
 
 
 //	Returns a complete list of all functions: programmed in floyd, runtime functions, init() deinit().
-std::vector<llvm_function_link_entry_t> make_function_link_map1(
+std::vector<func_link_t> make_function_link_map1(
 	llvm::LLVMContext& context,
 	const llvm_type_lookup& type_lookup,
 	const std::vector<floyd::function_definition_t>& ast_function_defs,

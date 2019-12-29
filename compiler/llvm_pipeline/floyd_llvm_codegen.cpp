@@ -2216,7 +2216,7 @@ static std::vector<resolved_symbol_t> generate_function_symbol_slots(llvm_functi
 
 	const symbol_table_t& symbol_table = function_def._optional_body->_symbol_table;
 	const auto mapping0 = *gen_acc.gen.type_lookup.find_from_type(function_def._function_type).optional_function_signature;
-	const auto mapping = name_args(mapping0, function_def._named_args);
+	const auto mapping = name_args(mapping0, get_member_names(function_def._named_args));
 	return generate_symbol_slots(gen_acc, symbol_table, &mapping);
 }
 
@@ -2356,25 +2356,27 @@ static void generate_all_floyd_function_bodies(llvm_code_generator_t& gen_acc, c
 }
 
 //	Generate LLVM function nodes and merge them into link map.
-static std::vector<llvm_function_link_entry_t> generate_function_nodes(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<llvm_function_link_entry_t>& link_map1){
+static std::vector<llvm_function_link_entry_t> generate_function_nodes(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<func_link_t>& link_map1){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	std::vector<llvm_function_link_entry_t> result;
 	for(const auto& e: link_map1){
-		auto existing_f = module.getFunction(e.func_link.module_symbol.s);
+		auto existing_f = module.getFunction(e.module_symbol.s);
 		QUARK_ASSERT(existing_f == nullptr);
 
-		auto f0 = module.getOrInsertFunction(e.func_link.module_symbol.s, e.llvm_function_type);
+		QUARK_ASSERT(e.native_type != nullptr);
+
+		auto f0 = module.getOrInsertFunction(e.module_symbol.s, (llvm::FunctionType*)e.native_type);
 		auto f = llvm::cast<llvm::Function>(f0);
 
 		QUARK_ASSERT(check_invariant__function(f));
 		QUARK_ASSERT(check_invariant__module(&module));
 
 		//	Set names for all function defintion's arguments - makes IR easier to read.
-		if(e.func_link.function_type_optional.is_undefined() == false && e.arg_names_or_empty.empty() == false){
-			const auto unnamed_mapping_ptr = type_lookup.find_from_type(e.func_link.function_type_optional).optional_function_signature;
+		if(e.function_type_optional.is_undefined() == false && e.arg_names.empty() == false){
+			const auto unnamed_mapping_ptr = type_lookup.find_from_type(e.function_type_optional).optional_function_signature;
 			if(unnamed_mapping_ptr != nullptr){
-				const auto named_mapping = name_args(*unnamed_mapping_ptr, e.arg_names_or_empty);
+				const auto named_mapping = name_args(*unnamed_mapping_ptr, e.arg_names);
 
 				auto f_args = f->args();
 				const auto f_arg_count = f_args.end() - f_args.begin();
@@ -2393,14 +2395,7 @@ static std::vector<llvm_function_link_entry_t> generate_function_nodes(llvm::Mod
 		QUARK_ASSERT(check_invariant__function(f));
 		QUARK_ASSERT(check_invariant__module(&module));
 
-		result.push_back(
-			llvm_function_link_entry_t {
-				e.func_link,
-				e.llvm_function_type,
-				f,
-				e.arg_names_or_empty
-			}
-		);
+		result.push_back(llvm_function_link_entry_t { e, f });
 	}
 	if(false){
 		trace_function_link_map(type_lookup.state.types, result);

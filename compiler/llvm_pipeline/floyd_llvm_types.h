@@ -88,7 +88,7 @@ struct llvm_function_signature_t {
 	std::vector<llvm_arg_mapping_t> args;
 };
 
-llvm_function_signature_t name_args(const llvm_function_signature_t& def, const std::vector<member_t>& args);
+llvm_function_signature_t name_args(const llvm_function_signature_t& def, const std::vector<std::string>& arg_names);
 
 
 

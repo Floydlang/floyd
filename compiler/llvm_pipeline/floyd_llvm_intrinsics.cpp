@@ -1666,10 +1666,10 @@ static std::map<std::string, void*> get_one_to_one_intrinsic_binds(){
 }
 
 //	Skips duplicates.
-static std::vector<llvm_function_link_entry_t> make_specialized_link_entries(const intrinsic_signatures_t& intrinsic_signatures, const std::vector<specialization_t>& specializations){
+static std::vector<func_link_t> make_specialized_link_entries(const intrinsic_signatures_t& intrinsic_signatures, const std::vector<specialization_t>& specializations){
 	const auto binds = mapf<llvm_function_bind_t>(specializations, [](auto& e){ return e.bind; });
 
-	std::vector<llvm_function_link_entry_t> result;
+	std::vector<func_link_t> result;
 	for(const auto& bind: binds){
 		auto signature_it = std::find_if(
 			intrinsic_signatures.vec.begin(),
@@ -1682,16 +1682,19 @@ static std::vector<llvm_function_link_entry_t> make_specialized_link_entries(con
 		const auto exists_it = std::find_if(
 			result.begin(),
 			result.end(),
-			[&](const llvm_function_link_entry_t& e){ return e.func_link.module_symbol == link_name; }
+			[&](const auto& e){ return e.module_symbol == link_name; }
 		);
 
 		if(exists_it == result.end()){
 			QUARK_ASSERT(bind.llvm_function_type != nullptr);
-			const auto def = llvm_function_link_entry_t {
-				func_link_t { "intrinsic", link_name, function_type, func_link_t::emachine::k_native, bind.native_f },
-				bind.llvm_function_type,
-				nullptr,
-				{}
+			const auto def = func_link_t {
+				"intrinsic",
+				link_name,
+				function_type,
+				func_link_t::emachine::k_native,
+				bind.native_f,
+				{},
+				(native_type_t*)bind.llvm_function_type,
 			};
 			result.push_back(def);
 		}
@@ -1699,7 +1702,7 @@ static std::vector<llvm_function_link_entry_t> make_specialized_link_entries(con
 	return result;
 }
 
-std::vector<llvm_function_link_entry_t> make_intrinsics_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const intrinsic_signatures_t& intrinsic_signatures){
+std::vector<func_link_t> make_intrinsics_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const intrinsic_signatures_t& intrinsic_signatures){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	const auto& types = type_lookup.state.types;
@@ -1707,7 +1710,7 @@ std::vector<llvm_function_link_entry_t> make_intrinsics_link_map(llvm::LLVMConte
 	const auto binds = get_one_to_one_intrinsic_binds();
 
 	//	These intrinsics have specialized native functions, depending on which types are used in the call.
-	std::vector<llvm_function_link_entry_t> result;
+	std::vector<func_link_t> result;
 	for(const auto& bind: binds){
 		auto signature_it = std::find_if(
 			intrinsic_signatures.vec.begin(),
@@ -1719,12 +1722,7 @@ std::vector<llvm_function_link_entry_t> make_intrinsics_link_map(llvm::LLVMConte
 		const auto link_name = module_symbol_t(bind.first);
 		const auto function_type = signature_it->_function_type;
 		const auto function_type2 = get_llvm_function_type(type_lookup, function_type);
-		const auto def = llvm_function_link_entry_t{
-			func_link_t { "intrinsic", link_name, function_type, func_link_t::emachine::k_native, bind.second },
-			function_type2,
-			nullptr,
-			{}
-		};
+		const auto def = func_link_t { "intrinsic", link_name, function_type, func_link_t::emachine::k_native, bind.second, {}, (native_type_t*)function_type2 };
 		result.push_back(def);
 	}
 

@@ -57,17 +57,17 @@ llvm::Type* deref_ptr(llvm::Type* type){
 
 
 
-llvm_function_signature_t name_args(const llvm_function_signature_t& def, const std::vector<member_t>& args){
+llvm_function_signature_t name_args(const llvm_function_signature_t& def, const std::vector<std::string>& arg_names){
 	QUARK_ASSERT(def.check_invariant());
 
-	if(args.empty()){
+	if(arg_names.empty()){
 		QUARK_ASSERT(def.args.size() == 1);
 		return def;
 	}
 	else{
 		//	Skip arg #0, which is "floyd_runtime_ptr".
 		const auto floyd_arg_count = def.args.back().floyd_arg_index + 1;
-		QUARK_ASSERT(floyd_arg_count == args.size());
+		QUARK_ASSERT(floyd_arg_count == arg_names.size());
 
 		std::vector<llvm_arg_mapping_t> arg_results;
 
@@ -77,23 +77,19 @@ llvm_function_signature_t name_args(const llvm_function_signature_t& def, const 
 			}
 			else if(arg_copy.map_type == llvm_arg_mapping_t::map_type::k_known_value_type){
 				auto floyd_arg_index = arg_copy.floyd_arg_index;
-				const auto& floyd_arg = args[floyd_arg_index];
-				QUARK_ASSERT(arg_copy.floyd_type == floyd_arg._type);
-
-				arg_copy.floyd_name = floyd_arg._name;
+				const auto& arg_name = arg_names[floyd_arg_index];
+				arg_copy.floyd_name = arg_name;
 			}
 			else if(arg_copy.map_type == llvm_arg_mapping_t::map_type::k_dyn_value){
 				auto floyd_arg_index = arg_copy.floyd_arg_index;
-				const auto& floyd_arg = args[floyd_arg_index];
-				QUARK_ASSERT(arg_copy.floyd_type == floyd_arg._type);
-
-				arg_copy.floyd_name = floyd_arg._name + "-dynval";
+				const auto& arg_name = arg_names[floyd_arg_index];
+				arg_copy.floyd_name = arg_name + "-dynval";
 			}
 			else if(arg_copy.map_type == llvm_arg_mapping_t::map_type::k_dyn_type){
 				auto floyd_arg_index = arg_copy.floyd_arg_index;
-				const auto& floyd_arg = args[floyd_arg_index];
+				const auto& arg_name = arg_names[floyd_arg_index];
 
-				arg_copy.floyd_name = floyd_arg._name + "-dyntype";
+				arg_copy.floyd_name = arg_name + "-dyntype";
 			}
 			else{
 				QUARK_ASSERT(false);

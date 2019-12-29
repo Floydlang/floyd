@@ -1358,20 +1358,23 @@ static std::vector<llvm_function_bind_t> get_runtime_function_binds(llvm::LLVMCo
 
 
 
-std::vector<llvm_function_link_entry_t> make_runtime_function_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+std::vector<func_link_t> make_runtime_function_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	const auto runtime_function_binds = get_runtime_function_binds(context, type_lookup);
 	auto& types = type_lookup.state.types;
 
-	std::vector<llvm_function_link_entry_t> result;
+	std::vector<func_link_t> result;
 	for(const auto& e: runtime_function_binds){
 		const auto link_name = module_symbol_t { e.name };
-		const auto def = llvm_function_link_entry_t{
-			func_link_t { "runtime", link_name, type_t::make_undefined(), func_link_t::emachine::k_native, e.native_f },
-			e.llvm_function_type,
-			nullptr,
-			{}
+		const auto def = func_link_t {
+			"runtime",
+			link_name,
+			type_t::make_undefined(),
+			func_link_t::emachine::k_native,
+			e.native_f,
+			{},
+			(native_type_t*)e.llvm_function_type
 		};
 		result.push_back(def);
 	}

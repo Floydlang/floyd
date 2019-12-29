@@ -902,7 +902,9 @@ static func_link_t make_intr(const intrinsic_signature_t& sign, BC_NATIVE_FUNCTI
 		module_symbol_t(sign.name),
 		sign._function_type,
 		func_link_t::emachine::k_native,
-		(void*)f
+		(void*)f,
+		{},
+		nullptr
 	};
 }
 

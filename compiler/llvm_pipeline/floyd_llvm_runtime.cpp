@@ -136,8 +136,12 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const module_symbol_t& n
 
 	const auto f = get_function_ptr(ee, name);
 	if(f != nullptr){
-		const auto def = find_function_def_from_link_name(ee.function_link_map, name);
-		const auto function_type = def.func_link.function_type_optional;
+		const auto def = find_function_by_name2(ee.backend, name);
+		if(def == nullptr){
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+		const auto function_type = def->function_type_optional;
 		return llvm_bind_t {
 			name,
 			f,
@@ -157,10 +161,10 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const module_symbol_t& n
 ////////////////////////////////	INTERNALS FOR EXECUTION ENGINE
 
 
-static std::vector<llvm_function_link_entry_t> make_init_deinit_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+static std::vector<func_link_t> make_init_deinit_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	std::vector<llvm_function_link_entry_t> result;
+	std::vector<func_link_t> result;
 	auto& types = type_lookup.state.types;
 
 	//	init()
@@ -173,11 +177,14 @@ static std::vector<llvm_function_link_entry_t> make_init_deinit_link_map(llvm::L
 			},
 			false
 		);
-		const auto def = llvm_function_link_entry_t {
-			func_link_t { "runtime", link_name, type_t::make_undefined(), func_link_t::emachine::k_native, nullptr },
-			function_type,
+		const auto def = func_link_t {
+			"runtime",
+			link_name,
+			type_t::make_undefined(),
+			func_link_t::emachine::k_native,
 			nullptr,
-			{}
+			{},
+			(native_type_t*)function_type
 		};
 		result.push_back(def);
 	}
@@ -192,11 +199,14 @@ static std::vector<llvm_function_link_entry_t> make_init_deinit_link_map(llvm::L
 			},
 			false
 		);
-		const auto def = llvm_function_link_entry_t {
-			func_link_t { "runtime", link_name, type_t::make_undefined(), func_link_t::emachine::k_native, nullptr },
-			function_type,
+		const auto def = func_link_t {
+			"runtime",
+			link_name,
+			type_t::make_undefined(),
+			func_link_t::emachine::k_native,
 			nullptr,
-			{}
+			{},
+			(native_type_t*)function_type
 		};
 		result.push_back(def);
 	}
@@ -222,11 +232,12 @@ static std::map<std::string, void*> get_corelib_and_network_binds(){
 
 
 //	IMPORTANT: The corelib function function prototypes & types lives in floyd source code, thus is inside ast_function_defs.
-static std::vector<llvm_function_link_entry_t> make_floyd_code_and_corelib_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
+static std::vector<func_link_t> make_floyd_code_and_corelib_link_map(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	std::vector<llvm_function_link_entry_t> prototypes;
 	const auto& types = type_lookup.state.types;
+
+	std::vector<func_link_t> prototypes;
 
 	//	Make llvm_function_link_entry_t for all functions inside the floyd program (floyd source code).
 	//	This includes corelib function prototypes and user's functions.
@@ -236,11 +247,14 @@ static std::vector<llvm_function_link_entry_t> make_floyd_code_and_corelib_link_
 			const auto link_name = module_symbol_t(function_def._definition_name);
 			const auto function_type = get_llvm_function_type(type_lookup, function_def._function_type);
 
-			const auto def = llvm_function_link_entry_t {
-				func_link_t { "program", link_name, function_def._function_type, func_link_t::emachine::k_native, nullptr },
-				function_type,
+			const auto def = func_link_t {
+				"program",
+				link_name,
+				function_def._function_type,
+				func_link_t::emachine::k_native,
 				nullptr,
-				function_def._named_args
+				get_member_names(function_def._named_args),
+				(native_type_t*)function_type
 			};
 			prototypes.push_back(def);
 		}
@@ -259,22 +273,11 @@ static std::vector<llvm_function_link_entry_t> make_floyd_code_and_corelib_link_
 	}
 
 	//	Attempt to resolve prototypes to real native functions, if possible.
-	std::vector<llvm_function_link_entry_t> result;
+	std::vector<func_link_t> result;
 	for(const auto& e: prototypes){
-		const auto it = binds0.find(e.func_link.module_symbol);
+		const auto it = binds0.find(e.module_symbol);
 		if(it != binds0.end()){
-			const auto def2 = llvm_function_link_entry_t {
-				func_link_t {
-					e.func_link.module,
-					e.func_link.module_symbol,
-					e.func_link.function_type_optional,
-					func_link_t::emachine::k_native,
-					it->second
-				},
-				e.llvm_function_type,
-				e.llvm_codegen_f,
-				e.arg_names_or_empty
-			};
+			const auto def2 = set_f(e, it->second);
 			result.push_back(def2);
 		}
 		else{
@@ -289,7 +292,7 @@ static std::vector<llvm_function_link_entry_t> make_floyd_code_and_corelib_link_
 	return result;
 }
 
-std::vector<llvm_function_link_entry_t> make_function_link_map1(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs, const intrinsic_signatures_t& intrinsic_signatures){
+std::vector<func_link_t> make_function_link_map1(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& ast_function_defs, const intrinsic_signatures_t& intrinsic_signatures){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	const auto runtime_functions_link_map = make_runtime_function_link_map(context, type_lookup);
@@ -297,7 +300,7 @@ std::vector<llvm_function_link_entry_t> make_function_link_map1(llvm::LLVMContex
 	const auto init_deinit_link_map = make_init_deinit_link_map(context, type_lookup);
 	const auto floyd_code_and_corelib_link_map = make_floyd_code_and_corelib_link_map(context, type_lookup, ast_function_defs);
 
-	std::vector<llvm_function_link_entry_t> acc;
+	std::vector<func_link_t> acc;
 	acc = concat(acc, runtime_functions_link_map);
 	acc = concat(acc, intrinsics_link_map);
 	acc = concat(acc, init_deinit_link_map);
@@ -311,8 +314,8 @@ std::string print_function_link_map(const types_t& types, const std::vector<llvm
 		const auto f0 = e.func_link.function_type_optional.is_undefined() ? "" : json_to_compact_string(type_to_compact_string(types, e.func_link.function_type_optional));
 
 		std::string arg_names;
-		for(const auto& m: e.arg_names_or_empty){
-			arg_names = m._name + ",";
+		for(const auto& m: e.func_link.arg_names){
+			arg_names = m + ",";
 		}
 		arg_names = arg_names.empty() ? "" : arg_names.substr(0, arg_names.size() - 1);
 
@@ -322,7 +325,7 @@ std::string print_function_link_map(const types_t& types, const std::vector<llvm
 		const auto line = std::vector<std::string>{
 			e.func_link.module_symbol.s,
 			e.func_link.module,
-			print_type(e.llvm_function_type),
+			print_type((llvm::FunctionType*)e.func_link.native_type),
 			e.llvm_codegen_f != nullptr ? ptr_to_hexstring(e.llvm_codegen_f) : "",
 			f,
 			arg_names,
@@ -428,7 +431,8 @@ bool llvm_execution_engine_t::check_invariant() const {
 	return true;
 }
 
-static std::vector<func_link_t> make_func_links(const types_t& types, llvm::ExecutionEngine& ee, const std::vector<llvm_function_link_entry_t>& function_link_map){
+//	NOTICE: LLVM strips out unused functions = nullptr = not all functions in our link map gets a native function pointer.
+static std::vector<func_link_t> resolve_function_ptrs(const types_t& types, llvm::ExecutionEngine& ee, const std::vector<llvm_function_link_entry_t>& function_link_map){
 	QUARK_ASSERT(types.check_invariant());
 
 	std::vector<func_link_t> result;
@@ -441,12 +445,14 @@ static std::vector<func_link_t> make_func_links(const types_t& types, llvm::Exec
 				e.func_link.module_symbol,
 				e.func_link.function_type_optional,
 				func_link_t::emachine::k_native,
-				f
+				f,
+				e.func_link.arg_names,
+				e.func_link.native_type
 			});
 		}
 	}
 
-	if(false) trace_func_link(types, result);
+	if(false) trace_function_link_map(types, result);
 
 /*
 	if(false){
@@ -571,27 +577,13 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 	//	ee2.ee->DisableSymbolSearching(false);
 	}
 
-	//	NOTICE: LLVM strips out unused functions = not all functions in our link map gets a native function pointer.
-	std::vector<llvm_function_link_entry_t> final_link_map;
-	for(const auto& e: program_breaks.function_link_map){
-		const auto addr = (void*)ee1->getFunctionAddress(e.func_link.module_symbol.s);
-
-		//??? null llvm_codegen_f pointer, which makes no sense now?
-		const auto e2 = llvm_function_link_entry_t {
-			func_link_t { e.func_link.module, e.func_link.module_symbol, e.func_link.function_type_optional, func_link_t::emachine::k_native, addr },
-			e.llvm_function_type,
-			e.llvm_codegen_f,
-			e.arg_names_or_empty
-		};
-		final_link_map.push_back(e2);
-	}
-
+	std::vector<func_link_t> final_link_map = resolve_function_ptrs(program_breaks.type_lookup.state.types, *ee1, program_breaks.function_link_map);
 
 	auto ee2 = std::unique_ptr<llvm_execution_engine_t>(
 		new llvm_execution_engine_t {
 			k_debug_magic,
 			value_backend_t(
-				make_func_links(program_breaks.type_lookup.state.types, *ee1, final_link_map),
+				final_link_map,
 				make_struct_layouts(program_breaks.type_lookup, ee1->getDataLayout()),
 				program_breaks.type_lookup.state.types,
 				program_breaks.settings.config

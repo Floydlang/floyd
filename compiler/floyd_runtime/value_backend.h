@@ -771,6 +771,8 @@ enum class eresolved_type {
 	k_json
 };
 
+struct native_type_t {};
+
 //	Every function has a func_entry_t. It may not yet be linked to a function.
 struct func_link_t {
 	enum class emachine { k_native, k_bytecode, k_native2 };
@@ -783,14 +785,16 @@ struct func_link_t {
 		func_link_t::emachine machine,
 
 		void* f,
-		eresolved_type required_arg_type = eresolved_type::k_none
+		std::vector<std::string> arg_names,
+		native_type_t* native_type
 	) :
 		module(module),
 		module_symbol(module_symbol),
 		function_type_optional(function_type_optional),
 		machine(machine),
 		f(f),
-		required_arg_type(required_arg_type)
+		arg_names(arg_names),
+		native_type(native_type)
 	{
 //		QUARK_ASSERT(module_symbol.s.empty() == false);
 		QUARK_ASSERT(function_type_optional.is_function() || function_type_optional.is_undefined());
@@ -820,12 +824,29 @@ struct func_link_t {
 	//	Points to a native function or to a bc_static_frame_t. Nullptr: only a prototype, no implementation.
 	void* f;
 
-	eresolved_type required_arg_type;
+	std::vector<std::string> arg_names;
+
+	native_type_t* native_type;
+//	eresolved_type required_arg_type;
 };
 
 int count_dyn_args(const types_t& types, const type_t& function_type);
 json_t func_link_to_json(const types_t& types, const func_link_t& def);
-void trace_func_link(const types_t& types, const std::vector<func_link_t>& defs);
+void trace_function_link_map(const types_t& types, const std::vector<func_link_t>& defs);
+
+inline func_link_t set_f(const func_link_t& e, void* f){
+	const auto v2 = func_link_t {
+		e.module,
+		e.module_symbol,
+		e.function_type_optional,
+		e.machine,
+		f,
+		e.arg_names,
+		e.native_type
+	};
+	return v2;
+}
+
 
 bool matches_specialization(const config_t& config, const types_t& types, eresolved_type wanted, const type_t& arg_type);
 
