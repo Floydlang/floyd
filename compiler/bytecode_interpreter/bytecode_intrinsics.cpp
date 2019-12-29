@@ -751,24 +751,6 @@ if(k_trace && false){
 
 
 
-/*
-//	print = impure!
-//	Records all output to interpreter
-static rt_value_t bc_intrinsic__print(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-
-	auto& backend = vm._backend;
-	if(false) trace_types(backend.types);
-
-	const auto& value = args[0];
-	const auto s = gen_to_string(backend, value._pod, value._type);
-	vm._runtime_handler->on_print(s);
-
-	return rt_value_t::make_undefined();
-}
-*/
-
 static rt_value_t bc_intrinsic__send(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
