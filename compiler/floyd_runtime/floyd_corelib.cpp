@@ -1758,13 +1758,28 @@ static runtime_value_t unified_corelib__execute_http_request(floyd_runtime_t* fr
 	return to_runtime_string2(backend, response);
 }
 
+static std::map<std::string, void*> get_network_component_binds(){
+	const std::map<std::string, void*> host_functions_map = {
+		{ "read_socket", reinterpret_cast<void *>(&unified_corelib__read_socket) },
+		{ "write_socket", reinterpret_cast<void *>(&unified_corelib__write_socket) },
+		{ "lookup_host_from_ip", reinterpret_cast<void *>(&unified_corelib__lookup_host_from_ip) },
+		{ "lookup_host_from_name", reinterpret_cast<void *>(&unified_corelib__lookup_host_from_name) },
+		{ "to_ipv4_dotted_decimal_string", nullptr },
+		{ "from_ipv4_dotted_decimal_string", nullptr },
+		{ "pack_http_request", reinterpret_cast<void *>(&unified_corelib__pack_http_request) },
+		{ "unpack_http_request", reinterpret_cast<void *>(&unified_corelib__unpack_http_request) },
+		{ "pack_http_response", reinterpret_cast<void *>(&unified_corelib__pack_http_response) },
+		{ "unpack_http_response", reinterpret_cast<void *>(&unified_corelib__unpack_http_response) },
+		{ "execute_http_request", reinterpret_cast<void *>(&unified_corelib__execute_http_request) }
+	};
+	return host_functions_map;
+}
+
 
 
 
 std::map<std::string, void*> get_unified_corelib_binds(){
-
-	////////////////////////////////		CORE FUNCTIONS AND HOST FUNCTIONS
-	const std::map<std::string, void*> host_functions_map = {
+	const std::map<std::string, void*> corelib_binds = {
 		{ "make_benchmark_report", reinterpret_cast<void *>(&unified_corelib__make_benchmark_report) },
 
 		{ "detect_hardware_caps", reinterpret_cast<void *>(&unified_corelib__detect_hardware_caps) },
@@ -1789,21 +1804,15 @@ std::map<std::string, void*> get_unified_corelib_binds(){
 		{ "does_fsentry_exist", reinterpret_cast<void *>(&unified_corelib__does_fsentry_exist) },
 		{ "create_directory_branch", reinterpret_cast<void *>(&unified_corelib__create_directory_branch) },
 		{ "delete_fsentry_deep", reinterpret_cast<void *>(&unified_corelib__delete_fsentry_deep) },
-		{ "rename_fsentry", reinterpret_cast<void *>(&unified_corelib__rename_fsentry) },
-
-		{ "read_socket", reinterpret_cast<void *>(&unified_corelib__read_socket) },
-		{ "write_socket", reinterpret_cast<void *>(&unified_corelib__write_socket) },
-		{ "lookup_host_from_ip", reinterpret_cast<void *>(&unified_corelib__lookup_host_from_ip) },
-		{ "lookup_host_from_name", reinterpret_cast<void *>(&unified_corelib__lookup_host_from_name) },
-		{ "to_ipv4_dotted_decimal_string", nullptr },
-		{ "from_ipv4_dotted_decimal_string", nullptr },
-		{ "pack_http_request", reinterpret_cast<void *>(&unified_corelib__pack_http_request) },
-		{ "unpack_http_request", reinterpret_cast<void *>(&unified_corelib__unpack_http_request) },
-		{ "pack_http_response", reinterpret_cast<void *>(&unified_corelib__pack_http_response) },
-		{ "unpack_http_response", reinterpret_cast<void *>(&unified_corelib__unpack_http_response) },
-		{ "execute_http_request", reinterpret_cast<void *>(&unified_corelib__execute_http_request) }
+		{ "rename_fsentry", reinterpret_cast<void *>(&unified_corelib__rename_fsentry) }
 	};
-	return host_functions_map;
+
+	const auto network_binds = get_network_component_binds();
+
+	std::map<std::string, void*> merge = corelib_binds;
+	merge.insert(network_binds.begin(), network_binds.end());
+
+	return merge;
 }
 
 
