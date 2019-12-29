@@ -88,7 +88,6 @@ struct llvm_code_generator_t {
 		type_lookup(type_lookup),
 		link_map(link_map),
 
-		runtime_functions(link_map),
 		settings(settings),
 		intrinsic_signatures(intrinsic_signatures)
 	{
@@ -131,9 +130,7 @@ struct llvm_code_generator_t {
 	//	One element for each global symbol in AST. Same indexes as in symbol table.
 	std::vector<std::vector<resolved_symbol_t>> scope_path;
 
-	const runtime_functions_t runtime_functions;
 	compiler_settings_t settings;
-
 
 	const intrinsic_signatures_t intrinsic_signatures;
 };

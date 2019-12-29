@@ -12,7 +12,6 @@
 #include "value_backend.h"
 #include "floyd_runtime.h"
 #include "floyd_llvm_types.h"
-//#include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Function.h>
 
 #include <string>
@@ -28,10 +27,10 @@ namespace llvm {
 namespace floyd {
 
 struct llvm_ir_program_t;
-
 struct run_output_t;
 struct floyd_runtime_t;
 struct llvm_instance_t;
+struct llvm_execution_engine_t;
 
 
 
@@ -57,11 +56,6 @@ struct llvm_function_bind_t {
 };
 
 
-
-
-
-
-struct llvm_execution_engine_t;
 
 //	NOTICE: Each process inbox has its own mutex + condition variable.
 //	No mutex protects cout.
@@ -211,7 +205,6 @@ struct llvm_context_t {
 
 
 
-
 ////////////////////////////////		FUNCTION POINTERS
 
 
@@ -262,31 +255,8 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const module_symbol_t& n
 
 
 
-
 floyd_runtime_t make_runtime_ptr(llvm_context_t* p);
 
-
-
-/*
-////////////////////////////////		VALUES
-
-
-
-inline value_t from_runtime_value(const llvm_context_t& c, const runtime_value_t encoded_value, const type_t& type){
-	return from_runtime_value2(c.ee->backend, encoded_value, type);
-}
-
-inline runtime_value_t to_runtime_value(llvm_context_t& c, const value_t& value){
-	return to_runtime_value2(c.ee->backend, value);
-}
-
-inline std::string from_runtime_string(const llvm_context_t& c, runtime_value_t encoded_value){
-	return from_runtime_string2(c.ee->backend, encoded_value);
-}
-inline runtime_value_t to_runtime_string(llvm_context_t& c, const std::string& s){
-	return to_runtime_string2(c.ee->backend, s);
-}
-*/
 
 
 ////////////////////////////////		HIGH LEVEL
@@ -328,29 +298,9 @@ std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, con
 ////////////////////////////////		TESTS
 
 
-
-
 std::vector<test_t> collect_tests(llvm_execution_engine_t& ee);
 
 
-
-
-/////////////////////////////////////////		INLINES
-
-
-
-/*
-inline llvm_context_t& get_floyd_runtime2(floyd_runtime_t* frp){
-	QUARK_ASSERT(frp != nullptr);
-
-	auto ptr = reinterpret_cast<llvm_context_t*>(frp);
-	QUARK_ASSERT(ptr != nullptr);
-	QUARK_ASSERT(ptr->ee != nullptr);
-	QUARK_ASSERT(ptr->ee->debug_magic == k_debug_magic);
-	QUARK_ASSERT(ptr->check_invariant());
-	return *ptr;
-}
-*/
 
 }	//	namespace floyd
 

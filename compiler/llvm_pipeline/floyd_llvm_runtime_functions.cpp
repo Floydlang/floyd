@@ -1388,9 +1388,7 @@ std::vector<func_link_t> make_runtime_function_link_map(llvm::LLVMContext& conte
 
 
 
-
-
-
+/*
 ////////////////////////////////		runtime_functions_t
 
 
@@ -1425,6 +1423,7 @@ runtime_functions_t::runtime_functions_t(const std::vector<llvm_codegen_function
 	floydrt_analyse_benchmark_samples(resolve_func(function_defs, module_symbol_t("analyse_benchmark_samples")))
 {
 }
+*/
 
 
 } // floyd
