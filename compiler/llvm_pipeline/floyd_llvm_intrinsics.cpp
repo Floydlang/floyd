@@ -26,14 +26,7 @@ namespace floyd {
 static const bool k_trace_function_link_map = false;
 
 
-
-
-
-
-
-
 /////////////////////////////////////////		specialization_t
-
 
 /*
 POD VS NONPOD
@@ -128,9 +121,6 @@ static bool matches_specialization(const config_t& config, const types_t& types,
 		throw std::exception();
 	}
 }
-
-
-
 
 static const llvm_function_link_entry_t& lookup_specialization(const config_t& config, const types_t& types, const std::vector<llvm_function_link_entry_t>& link_map, const std::vector<specialization_t>& specialisations, const type_t& type){
 	QUARK_ASSERT(type.check_invariant());
@@ -416,10 +406,7 @@ llvm::Value* generate_instrinsic_map(
 }
 
 
-
-
 /////////////////////////////////////////		map_dag()
-
 
 
 // [R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
@@ -1716,7 +1703,6 @@ static runtime_value_t floyd_llvm_intrinsic__to_json(floyd_runtime_t* frp, runti
 
 //	These intrinsics have exactly one native function.
 static std::map<std::string, void*> get_one_to_one_intrinsic_binds(){
-
 	const std::map<std::string, void*> binds = {
 		{ "assert", reinterpret_cast<void *>(&floyd_llvm_intrinsic__assert) },
 		{ "to_string", reinterpret_cast<void *>(&floyd_llvm_intrinsic__to_string) },
@@ -1770,7 +1756,11 @@ static std::vector<llvm_function_link_entry_t> make_specialized_link_entries(con
 
 	std::vector<llvm_function_link_entry_t> result;
 	for(const auto& bind: binds){
-		auto signature_it = std::find_if(intrinsic_signatures.vec.begin(), intrinsic_signatures.vec.end(), [&] (const intrinsic_signature_t& m) { return module_symbol_t(m.name) == bind.name; } );
+		auto signature_it = std::find_if(
+			intrinsic_signatures.vec.begin(),
+			intrinsic_signatures.vec.end(),
+			[&] (const intrinsic_signature_t& m) { return module_symbol_t(m.name) == bind.name; }
+		);
 		const auto function_type = signature_it != intrinsic_signatures.vec.end() ? signature_it->_function_type : type_t::make_undefined();
 
 		const auto link_name = bind.name;
@@ -1831,6 +1821,14 @@ std::vector<llvm_function_link_entry_t> make_intrinsics_link_map(llvm::LLVMConte
 	if(k_trace_function_link_map){
 		trace_function_link_map(types, result);
 	}
+
+	//	Specialized functions don't get a function_type_optional!
+/*
+	for(const auto& e: result){
+		llvm::FunctionType* llvm_function_type = get_llvm_function_type(type_lookup, e.func_link.function_type_optional);
+//		QUARK_ASSERT(llvm_function_type == e.llvm_function_type);
+	}
+*/
 
 	return result;
 }
