@@ -25,39 +25,6 @@ namespace floyd {
 static const bool k_trace = false;
 
 
-//	string to_string(value_t)
-static rt_value_t bc_intrinsic__to_string(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-
-	auto& backend = vm._backend;
-	const auto& value = args[0];
-	const auto a = to_compact_string2(backend.types, rt_to_value(backend, value));
-	return rt_value_t::make_string(backend, a);
-}
-static rt_value_t bc_intrinsic__to_pretty_string(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-
-	auto& backend = vm._backend;
-	const auto& value = args[0];
-	const auto json = bcvalue_to_json(backend, value);
-	const auto s = json_to_pretty_string(json, 0, pretty_t{ 80, 4 });
-	return rt_value_t::make_string(backend, s);
-}
-
-static rt_value_t bc_intrinsic__typeof(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-
-	auto& backend = vm._backend;
-	const auto& value = args[0];
-	const auto type = value._type;
-	const auto result = value_t::make_typeid_value(type);
-	return value_to_rt(backend, result);
-}
-
-
 //////////////////////////////////////////		UPDATE
 
 
@@ -858,9 +825,9 @@ std::vector<func_link_t> bc_get_intrinsics(types_t& types){
 
 	return {
 		make_intr2(make_assert_signature(types), (void*)unified_intrinsic__assert),
-		make_intr(make_to_string_signature(types), bc_intrinsic__to_string),
-		make_intr(make_to_pretty_string_signature(types), bc_intrinsic__to_pretty_string),
-		make_intr(make_typeof_signature(types), bc_intrinsic__typeof),
+		make_intr2(make_to_string_signature(types), (void*)unified_intrinsic__to_string),
+		make_intr2(make_to_pretty_string_signature(types), (void*)unified_intrinsic__to_pretty_string),
+		make_intr2(make_typeof_signature(types), (void*)unified_intrinsic__typeof),
 
 		make_intr(make_update_signature(types), bc_intrinsic__update),
 

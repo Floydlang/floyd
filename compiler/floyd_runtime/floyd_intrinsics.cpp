@@ -22,8 +22,6 @@ void unified_intrinsic__assert(floyd_runtime_t* frp, runtime_value_t arg){
 	auto& backend = get_backend(frp);
 	(void)backend;
 
-//	QUARK_ASSERT(arg.bool_value == 0 || arg.bool_value == 1);
-
 	bool ok = (arg.bool_value & 0x01) == 0 ? false : true;
 	if(!ok){
 		on_print(frp, "Assertion failed.");
@@ -31,22 +29,39 @@ void unified_intrinsic__assert(floyd_runtime_t* frp, runtime_value_t arg){
 //		quark::throw_runtime_error("Assertion failed.");
 	}
 }
-/*
-static rt_value_t bc_intrinsic__assert(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_bool());
 
-	const auto& value = args[0];
-	bool ok = value.get_bool_value();
-	if(!ok){
-		vm._runtime_handler->on_print("Assertion failed.");
-		throw assert_failed_exception();
-//		quark::throw_runtime_error("Assertion failed.");
-	}
-	return rt_value_t::make_undefined();
+
+
+
+runtime_value_t unified_intrinsic__to_string(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
+	auto& backend = get_backend(frp);
+
+	const auto s = gen_to_string(backend, value, type_t(value_type));
+	return to_runtime_string2(backend, s);
 }
-*/
+
+
+runtime_value_t unified_intrinsic__to_pretty_string(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
+	auto& backend = get_backend(frp);
+
+	const auto& type0 = lookup_type_ref(backend, value_type);
+	const auto& value2 = from_runtime_value2(backend, value, type0);
+	const auto json = value_to_json(backend.types, value2);
+	const auto s = json_to_pretty_string(json, 0, pretty_t{ 80, 4 });
+	return to_runtime_string2(backend, s);
+}
+
+
+runtime_type_t unified_intrinsic__typeof(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
+	auto& backend = get_backend(frp);
+
+#if DEBUG
+	const auto& type0 = lookup_type_ref(backend, value_type);
+	QUARK_ASSERT(type0.check_invariant());
+#endif
+	return value_type;
+}
+
 
 
 /////////////////////////////////////////		print()

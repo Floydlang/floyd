@@ -1234,48 +1234,6 @@ static const runtime_value_t floyd_llvm_intrinsic__subset(floyd_runtime_t* frp, 
 }
 
 
-/////////////////////////////////////////		to_pretty_string()
-
-
-static runtime_value_t floyd_llvm_intrinsic__to_pretty_string(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
-	auto& backend = get_backend(frp);
-
-	const auto& type0 = lookup_type_ref(backend, value_type);
-	const auto& value2 = from_runtime_value2(backend, value, type0);
-	const auto json = value_to_json(backend.types, value2);
-	const auto s = json_to_pretty_string(json, 0, pretty_t{ 80, 4 });
-	return to_runtime_string2(backend, s);
-}
-
-
-
-/////////////////////////////////////////		to_string()
-
-
-
-static runtime_value_t floyd_llvm_intrinsic__to_string(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
-	auto& backend = get_backend(frp);
-
-	const auto s = gen_to_string(backend, value, type_t(value_type));
-	return to_runtime_string2(backend, s);
-}
-
-
-
-/////////////////////////////////////////		typeof()
-
-
-
-static runtime_type_t floyd_llvm_intrinsic__typeof(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
-	auto& backend = get_backend(frp);
-
-#if DEBUG
-	const auto& type0 = lookup_type_ref(backend, value_type);
-	QUARK_ASSERT(type0.check_invariant());
-#endif
-	return value_type;
-}
-
 
 
 /////////////////////////////////////////		update()
@@ -1585,9 +1543,9 @@ static std::vector<func_link_t> get_one_to_one_intrinsic_binds2(
 
 	const std::vector<func_link_t> defs = {
 		make_intri(type_lookup, make_assert_signature(types), (void*)&unified_intrinsic__assert),
-		make_intri(type_lookup, make_to_string_signature(types), (void*)&floyd_llvm_intrinsic__to_string),
-		make_intri(type_lookup, make_to_pretty_string_signature(types), (void*)&floyd_llvm_intrinsic__to_pretty_string),
-		make_intri(type_lookup, make_typeof_signature(types), (void*)&floyd_llvm_intrinsic__typeof),
+		make_intri(type_lookup, make_to_string_signature(types), (void*)&unified_intrinsic__to_string),
+		make_intri(type_lookup, make_to_pretty_string_signature(types), (void*)&unified_intrinsic__to_pretty_string),
+		make_intri(type_lookup, make_typeof_signature(types), (void*)&unified_intrinsic__typeof),
 
 //		make_intri(type_lookup, make_update_signature(types), (void*)&floyd_llvm_intrinsic__update),
 //		make_intri(type_lookup, make_size_signature(types), (void*)&floyd_llvm_intrinsic__size),
