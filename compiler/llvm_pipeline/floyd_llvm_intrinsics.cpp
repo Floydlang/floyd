@@ -1522,7 +1522,7 @@ static func_link_t make_intri(const llvm_type_lookup& type_lookup, const intrins
 		"intrinsic",
 		module_symbol_t(sign.name),
 		function_type,
-		func_link_t::emachine::k_native,
+		func_link_t::emachine::k_native2,
 		f,
 		{},
 		(native_type_t*)function_type2
@@ -1547,7 +1547,7 @@ static std::vector<func_link_t> get_one_to_one_intrinsic_binds2(
 		make_intri(type_lookup, make_to_pretty_string_signature(types), (void*)&unified_intrinsic__to_pretty_string),
 		make_intri(type_lookup, make_typeof_signature(types), (void*)&unified_intrinsic__typeof),
 
-//		make_intri(type_lookup, make_update_signature(types), (void*)&floyd_llvm_intrinsic__update),
+		make_intri(type_lookup, make_update_signature(types), (void*)&unified_intrinsic__update),
 //		make_intri(type_lookup, make_size_signature(types), (void*)&floyd_llvm_intrinsic__size),
 		make_intri(type_lookup, make_find_signature(types), (void*)&floyd_llvm_intrinsic__find),
 		make_intri(type_lookup, make_exists_signature(types), (void*)&floyd_llvm_intrinsic__exists),

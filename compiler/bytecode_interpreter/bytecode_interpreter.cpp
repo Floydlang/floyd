@@ -1205,7 +1205,8 @@ static cif_t make_cif(const value_backend_t& backend, const type_t& function_typ
 		}
 	}
 
-	result.return_type = make_ffi_type(peek2(types, return_type));
+	const auto return_type_peek = peek2(types, return_type);
+	result.return_type = return_type_peek.is_any() ? make_ffi_type(type_t::make_int()) : make_ffi_type(return_type_peek);
 
 	if (ffi_prep_cif(&result.cif, FFI_DEFAULT_ABI, (int)result.arg_types.size(), result.return_type, &result.arg_types[0]) != FFI_OK) {
 		QUARK_ASSERT(false);
@@ -1291,7 +1292,10 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 	}
 	else{
 		const auto result2 = *(runtime_value_t*)&return_value;
-		const auto result3 = rt_value_t(backend, function_return_type_peek, result2, rt_value_t::rc_mode::adopt);
+
+		//	Cast the result to the destination symbol's type.
+		const auto dest_type = stack._current_static_frame->_symbol_effective_type[target_reg];
+		const auto result3 = rt_value_t(backend, dest_type, result2, rt_value_t::rc_mode::adopt);
 		stack.write_register(target_reg, result3);
 	}
 }

@@ -29,109 +29,6 @@ static const bool k_trace = false;
 
 
 
-//??? move to value_features.h. Move to intrinsics for BC.
-static rt_value_t update_element(interpreter_t& vm, const rt_value_t& obj1, const rt_value_t& lookup_key, const rt_value_t& new_value){
-	QUARK_ASSERT(vm.check_invariant());
-
-//	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
-	auto& backend = vm._backend;
-	const auto& types = backend.types;
-
-	const auto& obj1_peek = peek2(types, obj1._type);
-	const auto& key_peek = peek2(types, lookup_key._type);
-	const auto& new_value_peek = peek2(types, new_value._type);
-
-	if(obj1_peek.is_string()){
-		if(key_peek.is_int() == false){
-			quark::throw_runtime_error("String lookup using integer index only.");
-		}
-		else{
-			if(new_value_peek.is_int() == false){
-				quark::throw_runtime_error("Update element must be a character in an int.");
-			}
-			else{
-				return rt_value_t(backend, obj1._type, update__string(backend, obj1._pod, lookup_key._pod, new_value._pod), rt_value_t::rc_mode::adopt);
-			}
-		}
-	}
-	else if(obj1_peek.is_json()){
-		const auto json0 = obj1.get_json();
-		if(json0.is_array()){
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-		else if(json0.is_object()){
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-		else{
-			quark::throw_runtime_error("Can only update string, vector, dict or struct.");
-		}
-	}
-	else if(obj1_peek.is_vector()){
-		const auto element_type = obj1_peek.get_vector_element_type(types);
-		if(key_peek.is_int() == false){
-			quark::throw_runtime_error("Vector lookup using integer index only.");
-		}
-		else if(element_type != new_value._type){
-			quark::throw_runtime_error("Update element must match vector type.");
-		}
-		else{
-			return rt_value_t(backend, obj1._type, update_element__vector(backend, obj1._pod, obj1_peek.get_data(), lookup_key._pod, new_value._pod), rt_value_t::rc_mode::adopt);
-		}
-	}
-	else if(obj1_peek.is_dict()){
-		if(key_peek.is_string() == false){
-			quark::throw_runtime_error("Dict lookup using string key only.");
-		}
-		else{
-			const auto value_type = obj1_peek.get_dict_value_type(types);
-			if(value_type != new_value._type){
-				quark::throw_runtime_error("Update element must match dict value type.");
-			}
-			else{
-				return rt_value_t(backend, obj1._type, update_dict(backend, obj1._pod, obj1_peek.get_data(), lookup_key._pod, new_value._pod), rt_value_t::rc_mode::adopt);
-			}
-		}
-	}
-	else if(obj1_peek.is_struct()){
-		if(key_peek.is_string() == false){
-			quark::throw_runtime_error("You must specify structure member using string.");
-		}
-		else{
-			//??? Instruction should keep the member index, not the name of the member!
-			const auto& struct_def = obj1_peek.get_struct(types);
-			const auto key = from_runtime_string2(backend, lookup_key._pod);
-			int member_index = find_struct_member_index(struct_def, key);
-			if(member_index == -1){
-				quark::throw_runtime_error("Unknown member.");
-			}
-
-//			trace_heap(backend.heap);
-
-			const auto result = rt_value_t(backend, obj1._type, update_struct_member(backend, obj1._pod, obj1._type, member_index, new_value._pod, new_value_peek), rt_value_t::rc_mode::adopt);
-
-//			trace_heap(backend.heap);
-
-			return result;
-		}
-	}
-	else {
-		UNSUPPORTED();
-		throw std::exception();
-	}
-}
-
-static rt_value_t bc_intrinsic__update(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 3);
-//	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
-
-	const auto& obj1 = args[0];
-	const auto& lookup_key = args[1];
-	const auto& new_value = args[2];
-	return update_element(vm, obj1, lookup_key, new_value);
-}
 
 static rt_value_t bc_intrinsic__find(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
@@ -808,6 +705,7 @@ static func_link_t make_intr(const intrinsic_signature_t& sign, BC_NATIVE_FUNCTI
 		nullptr
 	};
 }
+
 static func_link_t make_intr2(const intrinsic_signature_t& sign, void* f){
 	return func_link_t {
 		std::string() + "bc-intrinsics-impl:" + sign.name,
@@ -829,7 +727,7 @@ std::vector<func_link_t> bc_get_intrinsics(types_t& types){
 		make_intr2(make_to_pretty_string_signature(types), (void*)unified_intrinsic__to_pretty_string),
 		make_intr2(make_typeof_signature(types), (void*)unified_intrinsic__typeof),
 
-		make_intr(make_update_signature(types), bc_intrinsic__update),
+		make_intr2(make_update_signature(types), (void*)unified_intrinsic__update),
 
 		//	size(types) is translated to bc_opcode::k_get_size_vector_w_external_elements(types) etc.
 

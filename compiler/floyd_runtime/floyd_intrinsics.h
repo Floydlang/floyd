@@ -22,6 +22,21 @@ runtime_value_t unified_intrinsic__to_string(floyd_runtime_t* frp, runtime_value
 runtime_value_t unified_intrinsic__to_pretty_string(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type);
 runtime_type_t unified_intrinsic__typeof(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type);
 
+runtime_value_t unified_intrinsic__update(
+	floyd_runtime_t* frp,
+
+	runtime_value_t collection_value,
+	runtime_type_t collection_type,
+
+	runtime_value_t key_value,
+	runtime_type_t key_type,
+
+	runtime_value_t newvalue_value,
+	runtime_type_t newvalue_type
+);
+
+
+
 void unified_intrinsic__print(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type);
 
 void unified_intrinsic__send(floyd_runtime_t* frp, runtime_value_t dest_process_id0, runtime_value_t message, runtime_type_t message_type);
