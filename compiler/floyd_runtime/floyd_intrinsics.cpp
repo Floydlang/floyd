@@ -16,11 +16,41 @@
 #include "text_parser.h"
 #include "utils.h"
 
-
 namespace floyd {
+
+void unified_intrinsic__assert(floyd_runtime_t* frp, runtime_value_t arg){
+	auto& backend = get_backend(frp);
+	(void)backend;
+
+//	QUARK_ASSERT(arg.bool_value == 0 || arg.bool_value == 1);
+
+	bool ok = (arg.bool_value & 0x01) == 0 ? false : true;
+	if(!ok){
+		on_print(frp, "Assertion failed.");
+		throw assert_failed_exception();
+//		quark::throw_runtime_error("Assertion failed.");
+	}
+}
+/*
+static rt_value_t bc_intrinsic__assert(interpreter_t& vm, const rt_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type.is_bool());
+
+	const auto& value = args[0];
+	bool ok = value.get_bool_value();
+	if(!ok){
+		vm._runtime_handler->on_print("Assertion failed.");
+		throw assert_failed_exception();
+//		quark::throw_runtime_error("Assertion failed.");
+	}
+	return rt_value_t::make_undefined();
+}
+*/
 
 
 /////////////////////////////////////////		print()
+
 
 void unified_intrinsic__print(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
 	auto& backend = get_backend(frp);
@@ -28,9 +58,6 @@ void unified_intrinsic__print(floyd_runtime_t* frp, runtime_value_t value, runti
 	const auto s = gen_to_string(backend, value, type_t(value_type));
 	on_print(frp, s);
 }
-
-
-
 
 
 void unified_intrinsic__send(floyd_runtime_t* frp, runtime_value_t dest_process_id0, runtime_value_t message, runtime_type_t message_type){
@@ -59,7 +86,6 @@ void unified_intrinsic__exit(floyd_runtime_t* frp){
 
 	on_exit_process(frp);
 }
-
 
 
 } // floyd

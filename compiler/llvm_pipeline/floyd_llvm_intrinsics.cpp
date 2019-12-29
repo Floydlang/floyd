@@ -51,24 +51,6 @@ static const llvm_codegen_function_type_t& codegen_lookup_specialization(
 }
 
 
-/////////////////////////////////////////		assert()
-
-
-
-static void floyd_llvm_intrinsic__assert(floyd_runtime_t* frp, runtime_value_t arg){
-	auto& backend = get_backend(frp);
-	(void)backend;
-
-//	QUARK_ASSERT(arg.bool_value == 0 || arg.bool_value == 1);
-
-	bool ok = (arg.bool_value & 0x01) == 0 ? false : true;
-	if(!ok){
-		on_print(frp, "Assertion failed.");
-		throw assert_failed_exception();
-//		quark::throw_runtime_error("Assertion failed.");
-	}
-}
-
 
 
 /////////////////////////////////////////		erase()
@@ -1602,7 +1584,7 @@ static std::vector<func_link_t> get_one_to_one_intrinsic_binds2(
 	auto types = type_lookup.state.types;
 
 	const std::vector<func_link_t> defs = {
-		make_intri(type_lookup, make_assert_signature(types), (void*)&floyd_llvm_intrinsic__assert),
+		make_intri(type_lookup, make_assert_signature(types), (void*)&unified_intrinsic__assert),
 		make_intri(type_lookup, make_to_string_signature(types), (void*)&floyd_llvm_intrinsic__to_string),
 		make_intri(type_lookup, make_to_pretty_string_signature(types), (void*)&floyd_llvm_intrinsic__to_pretty_string),
 		make_intri(type_lookup, make_typeof_signature(types), (void*)&floyd_llvm_intrinsic__typeof),
