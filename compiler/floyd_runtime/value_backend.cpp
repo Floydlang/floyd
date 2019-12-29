@@ -1721,12 +1721,17 @@ json_t func_link_to_json(const types_t& types, const func_link_t& def){
 	});
 }
 
-void trace_function_link_map(const types_t& types, const std::vector<func_link_t>& defs){
+std::string print_function_link_map(const types_t& types, const std::vector<func_link_t>& defs){
 	QUARK_ASSERT(types.check_invariant());
 
 	const auto vec = mapf<json_t>(defs, [&](const auto& e){ return func_link_to_json(types, e); });
 	const auto vec2 = json_t::make_array(vec);
-	QUARK_TRACE(json_to_pretty_string(vec2));
+	return json_to_pretty_string(vec2);
+}
+void trace_function_link_map(const types_t& types, const std::vector<func_link_t>& defs){
+	QUARK_ASSERT(types.check_invariant());
+
+	QUARK_TRACE(print_function_link_map(types, defs));
 }
 
 const func_link_t* find_function_by_name3(const std::vector<func_link_t>& v, const module_symbol_t& s){

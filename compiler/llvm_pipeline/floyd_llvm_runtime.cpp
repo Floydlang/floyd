@@ -389,23 +389,14 @@ bool llvm_execution_engine_t::check_invariant() const {
 }
 
 //	NOTICE: LLVM strips out unused functions = nullptr = not all functions in our link map gets a native function pointer.
-static std::vector<func_link_t> resolve_function_ptrs(const types_t& types, llvm::ExecutionEngine& ee, const std::vector<llvm_codegen_function_type_t>& function_link_map){
+static std::vector<func_link_t> resolve_function_ptrs(const types_t& types, llvm::ExecutionEngine& ee, const std::vector<func_link_t>& function_link_map){
 	QUARK_ASSERT(types.check_invariant());
 
 	std::vector<func_link_t> result;
 	for(const auto& e: function_link_map){
-		if(e.func_link.function_type_optional.is_function()){
-			const auto f = (void*)ee.getFunctionAddress(e.func_link.module_symbol.s);
-	//		auto f = get_function_ptr(runtime, e.link_name);
-			result.push_back(func_link_t{
-				"llvm func: " + e.func_link.module_symbol.s,
-				e.func_link.module_symbol,
-				e.func_link.function_type_optional,
-				func_link_t::emachine::k_native,
-				f,
-				e.func_link.arg_names,
-				e.func_link.native_type
-			});
+		if(e.function_type_optional.is_function()){
+			const auto f = (void*)ee.getFunctionAddress(e.module_symbol.s);
+			result.push_back(set_f(e, f));
 		}
 	}
 
@@ -510,17 +501,12 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			const auto s2 = strip_link_name(s);
 
 			const auto& function_link_map = program_breaks.function_link_map;
-			const auto it = std::find_if(
-				function_link_map.begin(),
-				function_link_map.end(),
-				[&](const llvm_codegen_function_type_t& def){ return def.func_link.module_symbol.s == s2; }
-			);
-			if(it != function_link_map.end() && it->func_link.f != nullptr){
-				return it->func_link.f;
+			const auto found = find_function_by_name3(function_link_map, module_symbol_t(s2));
+			if(found != nullptr && found->f != nullptr){
+				return found->f;
 			}
 			else {
 				return (void*)&floyd_llvm_intrinsic__dummy;
-//				throw std::exception();
 			}
 		};
 		std::function<void*(const std::string&)> on_lazy_function_creator2 = lambda;

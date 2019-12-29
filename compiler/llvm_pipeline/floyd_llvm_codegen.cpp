@@ -85,7 +85,7 @@ llvm_ir_program_t::llvm_ir_program_t(
 	std::unique_ptr<llvm::Module>& module2_swap,
 	const llvm_type_lookup& type_lookup,
 	const symbol_table_t& globals,
-	const std::vector<llvm_codegen_function_type_t>& function_link_map,
+	const std::vector<func_link_t>& function_link_map,
 	const compiler_settings_t& settings
 ) :
 	instance(instance),
@@ -2627,7 +2627,14 @@ static std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program_internal(llvm
 	//???	Don't make a new llvm_type_lookup, generate_module() already created one.
 	const auto type_lookup = llvm_type_lookup(instance.context, ast0._tree._types);
 
-	auto result = std::make_unique<llvm_ir_program_t>(&instance, module, type_lookup, ast._tree._globals._symbol_table, result0.link_map, settings);
+	auto result = std::make_unique<llvm_ir_program_t>(
+		&instance,
+		module,
+		type_lookup,
+		ast._tree._globals._symbol_table,
+		mapf<func_link_t>(result0.link_map, [](const auto& e){ return e.func_link; }),
+		settings
+	);
 
 	result->container_def = ast0._tree._container_def;
 	result->software_system = ast0._tree._software_system;

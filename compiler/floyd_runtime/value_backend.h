@@ -832,6 +832,7 @@ struct func_link_t {
 
 int count_dyn_args(const types_t& types, const type_t& function_type);
 json_t func_link_to_json(const types_t& types, const func_link_t& def);
+std::string print_function_link_map(const types_t& types, const std::vector<func_link_t>& defs);
 void trace_function_link_map(const types_t& types, const std::vector<func_link_t>& defs);
 
 const func_link_t* find_function_by_name3(const std::vector<func_link_t>& v, const module_symbol_t& s);
