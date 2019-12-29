@@ -3840,7 +3840,7 @@ Warning: Blocks, impure
 
 <a id="37-standard-types"></a>
 ## 3.7 STANDARD TYPES
-A bunch of common data types are built into Floyd. This is to make composition easier and avoid the noise of converting all simple types between different component's own versions.
+A bunch of common data types are built into Floyd's standard library. This is to make composition easier and avoid the noise of converting all simple types between different component's own versions.
 
 
 

@@ -14,15 +14,22 @@
 #include <map>
 #include <vector>
 
-#include "compiler_basics.h"
 #include "file_handling.h"
 #include "value_backend.h"
 
 namespace floyd {
 
 struct value_t;
-struct floyd_runtime_t;
 
+
+//////////////////////////////////////////		FUNCTIONALITY
+
+
+bool is_valid_absolute_dir_path(const std::string& s);
+std::vector<value_t> directory_entries_to_values(types_t& types, const std::vector<TDirEntry>& v);
+
+
+//////////////////////////////////////////		CORELIB GLUE
 
 
 type_t make__ip_address_t__type(types_t& types);
@@ -31,11 +38,6 @@ type_t make__ip_address_t__type(const types_t& types);
 type_t make__fsentry_t__type(types_t& types);
 type_t make__fsentry_info_t__type(types_t& types);
 type_t make__fs_environment_t__type(types_t& types);
-
-bool is_valid_absolute_dir_path(const std::string& s);
-std::vector<value_t> directory_entries_to_values(types_t& types, const std::vector<TDirEntry>& v);
-
-
 
 /*
 	struct sha1_t {
@@ -48,8 +50,6 @@ type_t make__sha1_t__type(types_t& types);
 struct native_sha1_t {
 	runtime_value_t ascii40_string;
 };
-
-
 
 
 //	Part of language
@@ -65,14 +65,11 @@ struct native_binary_t {
 type_t make__binary_t__type(types_t& types);
 
 
-
-
 std::string make_benchmark_report(const std::vector<benchmark_result2_t>& test_results);
 
 std::vector<std::pair<std::string, json_t>> corelib_detect_hardware_caps();
 std::string corelib_make_hardware_caps_report(const std::vector<std::pair<std::string, json_t>>& caps);
 std::string corelib_make_hardware_caps_report_brief(const std::vector<std::pair<std::string, json_t>>& caps);
-
 
 
 std::string get_current_date_and_time_string();
@@ -125,23 +122,6 @@ bool corelib_does_fsentry_exist(const std::string& abs_path);
 void corelib_create_directory_branch(const std::string& abs_path);
 void corelib_delete_fsentry_deep(const std::string& abs_path);
 void corelib_rename_fsentry(const std::string& abs_path, const std::string& n);
-
-
-
-
-
-
-struct unified_runtime_t {
-	bool check_invariant() const {
-		QUARK_ASSERT(backend.check_invariant());
-		return true;
-	}
-
-	value_backend_t backend;
-};
-
-runtime_value_t unified_corelib__calc_binary_sha1(floyd_runtime_t* frp, runtime_value_t binary_ptr0);
-
 
 
 std::string get_corelib_header();

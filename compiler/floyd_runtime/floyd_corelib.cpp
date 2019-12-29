@@ -8,7 +8,6 @@
 
 #include "floyd_corelib.h"
 
-
 #include "utils.h"
 #include "types.h"
 #include "ast_value.h"
@@ -17,10 +16,6 @@
 #include "file_handling.h"
 #include "hardware_caps.h"
 #include "format_table.h"
-
-//??? move network stuff here.
-//#include "floyd_network_component.h"
-
 
 #include <iostream>
 #include <fstream>
@@ -31,7 +26,10 @@
 
 namespace floyd {
 
+
 /*
+??? Add support for temporary files / swapping.
+
 std::string GetTemporaryFile(const std::string& name){
 	//	char *tmpnam(char *str)
 	//	tempnam()
@@ -67,7 +65,6 @@ static const std::string k_corelib = R"(
 		benchmark_result_t result
 	}
 
-
 	func benchmark_id_t get_benchmarks_f(benchmark_def_t def, int c){
 		return benchmark_id_t( "", def.name)
 	}
@@ -75,8 +72,6 @@ static const std::string k_corelib = R"(
 	func [benchmark_id_t] get_benchmarks(){
 		return map(benchmark_registry, get_benchmarks_f, 0)
 	}
-
-
 
 	//[E] filter([E] elements, func bool (E e, C context) f, C context)
 	func bool run_benchmarks_f(benchmark_def_t def, string wanted_name){
@@ -103,9 +98,7 @@ static const std::string k_corelib = R"(
 		return out
 	}
 
-	//	Implemented in C++
 	func string make_benchmark_report([benchmark_result2_t] results)
-
 
 	func [string: json] detect_hardware_caps()
 
@@ -113,9 +106,7 @@ static const std::string k_corelib = R"(
 	func string make_hardware_caps_report_brief([string: json] caps)
 	func string get_current_date_and_time_string() impure
 
-
 	let double cmath_pi = 3.14159265358979323846
-
 
 	struct time_ms_t {
 		int pos
@@ -130,11 +121,9 @@ static const std::string k_corelib = R"(
 		int low64
 	}
 
-
 	struct ip_address_t {
 		string data
 	}
-
 
 	struct url_t {
 		string absolute_url
@@ -193,9 +182,7 @@ static const std::string k_corelib = R"(
 		double y
 	}
 
-
-	////////////////////////////		FILE SYSTEM TYPES
-
+	////////////////////////////		FILE SYSTEM
 
 	struct fsentry_t {
 		string type	//	"dir" or "file"
@@ -247,15 +234,11 @@ static const std::string k_corelib = R"(
 
 )";
 
-
 std::string get_corelib_header(){
 	return k_corelib;
 }
 
-
-
 /*
-
 	//[R] map([E] elements, func R (E e, C context) f, C context)
 	func string trace_benchmarks_f(benchmark_result2_t r, int c){
 		return "(" + r.test_id.module + ":" + r.test_id.test + "): dur: " + to_string(r.result.dur) + ", more: " + to_pretty_string(r.result.more)
@@ -270,12 +253,9 @@ std::string get_corelib_header(){
 		return acc
 	}
 
-
-
 	func int max(int a, int b){
 		return a > b ? a : b
 	}
-
 
 	func string repeat(int count, int pad_char){
 		mutable a = ""
@@ -304,7 +284,6 @@ std::string get_corelib_header(){
 		}
 		return acc
 	}
-
 
 	//[R] map([E] elements, func R (E e, C context) f, C context)
 	func line_t table_f(benchmark_result2_t r, int c){
@@ -353,7 +332,6 @@ std::string get_corelib_header(){
 		mutable dur_width = 0
 		mutable more1_width = 0
 
-
 		for(i in 0 ..< size(test_results)){
 			let r = test_results[i]
 			module_width = max(module_width, size(r.test_id.module))
@@ -384,8 +362,6 @@ std::string get_corelib_header(){
 			
 			let mode1_width = max(dur_width, size(to_string(r.result.dur)))
 
-
-
 			let s = "(" + r.test_id.module + ":" + r.test_id.test + "): dur: " + to_string(r.result.dur) + ", more: " + to_pretty_string(r.result.more)
 			print(s)
 		}
@@ -398,8 +374,6 @@ std::string get_corelib_header(){
 	}
 */
 
-
-
 type_t make__ip_address_t__type(types_t& types){
 	const auto temp = type_t::make_struct(
 		types,
@@ -410,9 +384,6 @@ type_t make__ip_address_t__type(types_t& types){
 	return temp;
 }
 
-//??? clean up source/header.
-
-// ??? old duplicate.
 type_t make__ip_address_t__type(const types_t& types){
 	const auto temp = type_t::make_struct(
 		types,
@@ -422,10 +393,6 @@ type_t make__ip_address_t__type(const types_t& types){
 	);
 	return temp;
 }
-
-
-
-
 
 /*
     auto start = std::chrono::system_clock::now();
@@ -447,13 +414,10 @@ std::string get_current_date_and_time_string(){
 	return s.substr(0, s.size() - 1);
 }
 
-
 static json_t json_from_uint64(uint64_t v){
 	const int64_t a = v;
 	return json_t(a);
 }
-
-
 
 std::vector<std::pair<std::string, json_t>> corelib_detect_hardware_caps(){
 	const auto caps = read_hardware_caps();
@@ -561,9 +525,6 @@ QUARK_TEST("", "corelib_make_hardware_caps_report()", "", ""){
 //	QUARK_VERIFY(r == "4 GB");
 }
 
-
-
-
 static std::string simplify_freq(int64_t freq){
 	if((freq % 1000000000) == 0){
 		return std::to_string(freq / 1000000000) + " GHz";
@@ -578,8 +539,6 @@ static std::string simplify_freq(int64_t freq){
 		return std::to_string(freq) + " Hz";
 	}
 }
-
-
 
 std::string corelib_make_hardware_caps_report(const std::vector<std::pair<std::string, json_t>>& caps){
 	const auto m = std::map<std::string, json_t>(caps.begin(), caps.end());
@@ -645,7 +604,6 @@ std::string corelib_make_hardware_caps_report(const std::vector<std::pair<std::s
 	return ss.str();
 }
 
-
 QUARK_TEST("", "corelib_make_hardware_caps_report()", "", ""){
 	const auto caps = corelib_detect_hardware_caps();
 	const auto r = corelib_make_hardware_caps_report(caps);
@@ -710,7 +668,6 @@ std::string make_benchmark_report(const std::vector<benchmark_result2_t>& test_r
 	}
 	const std::vector<std::string> meta_columns2(meta_columns.begin(), meta_columns.end());
 	const int column_count = fixed_column_count + (int)meta_columns.size();
-
 
 	std::vector<std::string> uppercase_meta_titles;
 	for(const auto& e: meta_columns2){
@@ -813,14 +770,6 @@ QUARK_TEST("", "make_benchmark_report()", "Demo", ""){
 	std::cout << result << std::endl;
 }
 
-
-
-
-
-
-
-
-
 //??? check path is valid dir
 bool is_valid_absolute_dir_path(const std::string& s){
 	if(s.empty()){
@@ -836,7 +785,6 @@ bool is_valid_absolute_dir_path(const std::string& s){
 	}
 	return true;
 }
-
 
 std::vector<value_t> directory_entries_to_values(types_t& types, const std::vector<TDirEntry>& v){
 	QUARK_ASSERT(types.check_invariant());
@@ -861,7 +809,6 @@ std::vector<value_t> directory_entries_to_values(types_t& types, const std::vect
 	);
 	return elements;
 }
-
 
 type_t make__fsentry_t__type(types_t& types){
 	const auto temp = type_t::make_struct(
@@ -960,16 +907,11 @@ static type_t make__file_pos_t__type(types_t& types){
 	return temp;
 }
 
-
-
-
-
 std::string corelib_calc_string_sha1(const std::string& s){
 	const auto sha1 = CalcSHA1(s);
 	const auto ascii40 = SHA1ToStringPlain(sha1);
 	return ascii40;
 }
-
 
 std::string corelib_read_text_file(const std::string& abs_path){
 	return read_text_file(abs_path);
@@ -995,7 +937,6 @@ void corelib_write_text_file(const std::string& abs_path, const std::string& fil
 	outputFile << file_contents;
 	outputFile.close();
 }
-
 
 /*
 	const auto a = std::chrono::high_resolution_clock::now();
@@ -1030,9 +971,6 @@ QUARK_TEST("get_time_of_day_ms()", "", "", ""){
 	QUARK_VERIFY(ms >= 7)
 }
 
-
-
-
 std::vector<TDirEntry> corelib_get_fsentries_shallow(const std::string& abs_path){
 	if(is_valid_absolute_dir_path(abs_path) == false){
 		quark::throw_runtime_error("get_fsentries_shallow() illegal input path.");
@@ -1042,8 +980,6 @@ std::vector<TDirEntry> corelib_get_fsentries_shallow(const std::string& abs_path
 	return a;
 }
 
-
-
 std::vector<TDirEntry> corelib_get_fsentries_deep(const std::string& abs_path){
 	if(is_valid_absolute_dir_path(abs_path) == false){
 		quark::throw_runtime_error("get_fsentries_deep() illegal input path.");
@@ -1052,9 +988,6 @@ std::vector<TDirEntry> corelib_get_fsentries_deep(const std::string& abs_path){
 	const auto a = GetDirItemsDeep(abs_path);
 	return a;
 }
-
-
-
 
 //??? implement
 static std::string posix_timespec__to__utc(const time_t& t){
@@ -1114,15 +1047,13 @@ value_t pack_fsentry_info(types_t& types, const fsentry_info_t& info){
 		}
 	);
 
-#if 1
+#if DEBUG
 	const auto debug = value_and_type_to_json(types, result);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	return result;
 }
-
-
 
 fs_environment_t corelib_get_fs_environment(){
 	const auto dirs = GetDirectories();
@@ -1160,15 +1091,13 @@ value_t pack_fs_environment_t(types_t& types, const fs_environment_t& env){
 		}
 	);
 
-#if 1
+#if DEBUG
 	const auto debug = value_and_type_to_json(types, result);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	return result;
 }
-
-
 
 bool corelib_does_fsentry_exist(const std::string& abs_path){
 	if(is_valid_absolute_dir_path(abs_path) == false){
@@ -1179,8 +1108,6 @@ bool corelib_does_fsentry_exist(const std::string& abs_path){
 	return exists;
 }
 
-
-
 void corelib_create_directory_branch(const std::string& abs_path){
 	if(is_valid_absolute_dir_path(abs_path) == false){
 		quark::throw_runtime_error("create_directory_branch() illegal input path.");
@@ -1188,8 +1115,6 @@ void corelib_create_directory_branch(const std::string& abs_path){
 
 	MakeDirectoriesDeep(abs_path);
 }
-
-
 
 void corelib_delete_fsentry_deep(const std::string& abs_path){
 	if(is_valid_absolute_dir_path(abs_path) == false){
@@ -1211,10 +1136,7 @@ void corelib_rename_fsentry(const std::string& abs_path, const std::string& n){
 	RenameEntry(abs_path, n);
 }
 
-
-
-
-runtime_value_t unified_corelib__calc_binary_sha1(floyd_runtime_t* frp, runtime_value_t binary_ptr){
+static runtime_value_t corelib_impl__calc_binary_sha1(floyd_runtime_t* frp, runtime_value_t binary_ptr){
 	auto& backend = get_backend(frp);
 	QUARK_ASSERT(binary_ptr.struct_ptr != nullptr);
 
@@ -1234,23 +1156,7 @@ runtime_value_t unified_corelib__calc_binary_sha1(floyd_runtime_t* frp, runtime_
 	return to_runtime_value2(backend, a);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//		func string make_benchmark_report([benchmark_result2_t] results)
-static runtime_value_t unified_corelib__make_benchmark_report(floyd_runtime_t* frp, const runtime_value_t b){
+static runtime_value_t corelib_impl__make_benchmark_report(floyd_runtime_t* frp, const runtime_value_t b){
 	auto& backend = get_backend(frp);
 	const auto& types = backend.types;
 
@@ -1270,10 +1176,7 @@ static runtime_value_t unified_corelib__make_benchmark_report(floyd_runtime_t* f
 	return result;
 }
 
-
-
-
-static runtime_value_t unified_corelib__detect_hardware_caps(floyd_runtime_t* frp){
+static runtime_value_t corelib_impl__detect_hardware_caps(floyd_runtime_t* frp){
 	auto& backend = get_backend(frp);
 
 	const auto& types = backend.types;
@@ -1288,7 +1191,7 @@ static runtime_value_t unified_corelib__detect_hardware_caps(floyd_runtime_t* fr
 	return to_runtime_value2(backend, a);
 }
 
-static runtime_value_t unified_corelib__make_hardware_caps_report(floyd_runtime_t* frp, runtime_value_t caps0){
+static runtime_value_t corelib_impl__make_hardware_caps_report(floyd_runtime_t* frp, runtime_value_t caps0){
 	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
@@ -1302,7 +1205,7 @@ static runtime_value_t unified_corelib__make_hardware_caps_report(floyd_runtime_
 	const auto s = corelib_make_hardware_caps_report(caps);
 	return to_runtime_string2(backend, s);
 }
-static runtime_value_t unified_corelib__make_hardware_caps_report_brief(floyd_runtime_t* frp, runtime_value_t caps0){
+static runtime_value_t corelib_impl__make_hardware_caps_report_brief(floyd_runtime_t* frp, runtime_value_t caps0){
 	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
@@ -1315,21 +1218,14 @@ static runtime_value_t unified_corelib__make_hardware_caps_report_brief(floyd_ru
 	const auto s = corelib_make_hardware_caps_report_brief(caps);
 	return to_runtime_string2(backend, s);
 }
-static runtime_value_t unified_corelib__get_current_date_and_time_string(floyd_runtime_t* frp){
+static runtime_value_t corelib_impl__get_current_date_and_time_string(floyd_runtime_t* frp){
 	auto& backend = get_backend(frp);
 
 	const auto s = get_current_date_and_time_string();
 	return to_runtime_string2(backend, s);
 }
 
-
-
-
-
-
-
-
-static runtime_value_t unified_corelib__calc_string_sha1(floyd_runtime_t* frp, runtime_value_t s0){
+static runtime_value_t corelib_impl__calc_string_sha1(floyd_runtime_t* frp, runtime_value_t s0){
 	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
@@ -1345,18 +1241,11 @@ static runtime_value_t unified_corelib__calc_string_sha1(floyd_runtime_t* frp, r
 	return to_runtime_value2(backend, a);
 }
 
-
-
-
-
-
-static int64_t unified_corelib__get_time_of_day(floyd_runtime_t* frp){
+static int64_t corelib_impl__get_time_of_day(floyd_runtime_t* frp){
 	return corelib__get_time_of_day();
 }
 
-
-
-static runtime_value_t unified_corelib__read_text_file(floyd_runtime_t* frp, runtime_value_t arg){
+static runtime_value_t corelib_impl__read_text_file(floyd_runtime_t* frp, runtime_value_t arg){
 	auto& backend = get_backend(frp);
 
 	const auto path = from_runtime_string2(backend, arg);
@@ -1364,7 +1253,7 @@ static runtime_value_t unified_corelib__read_text_file(floyd_runtime_t* frp, run
 	return to_runtime_string2(backend, file_contents);
 }
 
-static void unified_corelib__write_text_file(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t data0){
+static void corelib_impl__write_text_file(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t data0){
 	auto& backend = get_backend(frp);
 
 	const auto path = from_runtime_string2(backend, path0);
@@ -1372,16 +1261,13 @@ static void unified_corelib__write_text_file(floyd_runtime_t* frp, runtime_value
 	corelib_write_text_file(path, file_contents);
 }
 
-static runtime_value_t unified_corelib__read_line_stdin(floyd_runtime_t* frp){
+static runtime_value_t corelib_impl__read_line_stdin(floyd_runtime_t* frp){
 	auto& backend = get_backend(frp);
 	const auto s = 	corelib_read_line_stdin();
 	return to_runtime_string2(backend, s);
 }
 
-
-
-
-static runtime_value_t unified_corelib__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
+static runtime_value_t corelib_impl__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
@@ -1393,7 +1279,7 @@ static runtime_value_t unified_corelib__get_fsentries_shallow(floyd_runtime_t* f
 	const auto k_fsentry_t__type = make__fsentry_t__type(types);
 	const auto vec2 = value_t::make_vector_value(types, k_fsentry_t__type, elements);
 
-#if 1
+#if DEBUG
 	const auto debug = value_and_type_to_json(types, vec2);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
@@ -1401,7 +1287,7 @@ static runtime_value_t unified_corelib__get_fsentries_shallow(floyd_runtime_t* f
 	return to_runtime_value2(backend, vec2);
 }
 
-static runtime_value_t unified_corelib__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
+static runtime_value_t corelib_impl__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
@@ -1413,7 +1299,7 @@ static runtime_value_t unified_corelib__get_fsentries_deep(floyd_runtime_t* frp,
 	const auto k_fsentry_t__type = make__fsentry_t__type(types);
 	const auto vec2 = value_t::make_vector_value(types, k_fsentry_t__type, elements);
 
-#if 1
+#if DEBUG
 	const auto debug = value_and_type_to_json(types, vec2);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
@@ -1421,7 +1307,7 @@ static runtime_value_t unified_corelib__get_fsentries_deep(floyd_runtime_t* frp,
 	return to_runtime_value2(backend, vec2);
 }
 
-static runtime_value_t unified_corelib__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t path0){
+static runtime_value_t corelib_impl__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
@@ -1431,7 +1317,7 @@ static runtime_value_t unified_corelib__get_fsentry_info(floyd_runtime_t* frp, r
 	return to_runtime_value2(backend, info2);
 }
 
-static runtime_value_t unified_corelib__get_fs_environment(floyd_runtime_t* frp){
+static runtime_value_t corelib_impl__get_fs_environment(floyd_runtime_t* frp){
 	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
@@ -1440,10 +1326,7 @@ static runtime_value_t unified_corelib__get_fs_environment(floyd_runtime_t* frp)
 	return to_runtime_value2(backend, result);
 }
 
-
-
-
-static uint8_t unified_corelib__does_fsentry_exist(floyd_runtime_t* frp, runtime_value_t path0){
+static uint8_t corelib_impl__does_fsentry_exist(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 	const auto path = from_runtime_string2(backend, path0);
@@ -1451,21 +1334,21 @@ static uint8_t unified_corelib__does_fsentry_exist(floyd_runtime_t* frp, runtime
 	bool exists = corelib_does_fsentry_exist(path);
 
 	const auto result = value_t::make_bool(exists);
-#if 1
+#if DEBUG
 	const auto debug = value_and_type_to_json(types, result);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 	return exists ? 0x01 : 0x00;
 }
 
-static void unified_corelib__create_directory_branch(floyd_runtime_t* frp, runtime_value_t path0){
+static void corelib_impl__create_directory_branch(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& backend = get_backend(frp);
 	const auto path = from_runtime_string2(backend, path0);
 
 	corelib_create_directory_branch(path);
 }
 
-static void unified_corelib__delete_fsentry_deep(floyd_runtime_t* frp, runtime_value_t path0){
+static void corelib_impl__delete_fsentry_deep(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& backend = get_backend(frp);
 
 	const auto path = from_runtime_string2(backend, path0);
@@ -1473,7 +1356,7 @@ static void unified_corelib__delete_fsentry_deep(floyd_runtime_t* frp, runtime_v
 	corelib_delete_fsentry_deep(path);
 }
 
-static void unified_corelib__rename_fsentry(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t name0){
+static void corelib_impl__rename_fsentry(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t name0){
 	auto& backend = get_backend(frp);
 	const auto path = from_runtime_string2(backend, path0);
 	const auto n = from_runtime_string2(backend, name0);
@@ -1483,39 +1366,34 @@ static void unified_corelib__rename_fsentry(floyd_runtime_t* frp, runtime_value_
 
 std::map<std::string, void*> get_unified_corelib_binds(){
 	const std::map<std::string, void*> corelib_binds = {
-		{ "make_benchmark_report", reinterpret_cast<void *>(&unified_corelib__make_benchmark_report) },
+		{ "make_benchmark_report", reinterpret_cast<void *>(&corelib_impl__make_benchmark_report) },
 
-		{ "detect_hardware_caps", reinterpret_cast<void *>(&unified_corelib__detect_hardware_caps) },
-		{ "make_hardware_caps_report", reinterpret_cast<void *>(&unified_corelib__make_hardware_caps_report) },
-		{ "make_hardware_caps_report_brief", reinterpret_cast<void *>(&unified_corelib__make_hardware_caps_report_brief) },
-		{ "get_current_date_and_time_string", reinterpret_cast<void *>(&unified_corelib__get_current_date_and_time_string) },
+		{ "detect_hardware_caps", reinterpret_cast<void *>(&corelib_impl__detect_hardware_caps) },
+		{ "make_hardware_caps_report", reinterpret_cast<void *>(&corelib_impl__make_hardware_caps_report) },
+		{ "make_hardware_caps_report_brief", reinterpret_cast<void *>(&corelib_impl__make_hardware_caps_report_brief) },
+		{ "get_current_date_and_time_string", reinterpret_cast<void *>(&corelib_impl__get_current_date_and_time_string) },
 
-		{ "calc_string_sha1", reinterpret_cast<void *>(&unified_corelib__calc_string_sha1) },
-		{ "calc_binary_sha1", reinterpret_cast<void *>(&unified_corelib__calc_binary_sha1) },
+		{ "calc_string_sha1", reinterpret_cast<void *>(&corelib_impl__calc_string_sha1) },
+		{ "calc_binary_sha1", reinterpret_cast<void *>(&corelib_impl__calc_binary_sha1) },
 
-		{ "get_time_of_day", reinterpret_cast<void *>(&unified_corelib__get_time_of_day) },
+		{ "get_time_of_day", reinterpret_cast<void *>(&corelib_impl__get_time_of_day) },
 
-		{ "read_text_file", reinterpret_cast<void *>(&unified_corelib__read_text_file) },
-		{ "write_text_file", reinterpret_cast<void *>(&unified_corelib__write_text_file) },
-		{ "read_line_stdin", reinterpret_cast<void *>(&unified_corelib__read_line_stdin) },
+		{ "read_text_file", reinterpret_cast<void *>(&corelib_impl__read_text_file) },
+		{ "write_text_file", reinterpret_cast<void *>(&corelib_impl__write_text_file) },
+		{ "read_line_stdin", reinterpret_cast<void *>(&corelib_impl__read_line_stdin) },
 
-		{ "get_fsentries_shallow", reinterpret_cast<void *>(&unified_corelib__get_fsentries_shallow) },
-		{ "get_fsentries_deep", reinterpret_cast<void *>(&unified_corelib__get_fsentries_deep) },
-		{ "get_fsentry_info", reinterpret_cast<void *>(&unified_corelib__get_fsentry_info) },
-		{ "get_fs_environment", reinterpret_cast<void *>(&unified_corelib__get_fs_environment) },
+		{ "get_fsentries_shallow", reinterpret_cast<void *>(&corelib_impl__get_fsentries_shallow) },
+		{ "get_fsentries_deep", reinterpret_cast<void *>(&corelib_impl__get_fsentries_deep) },
+		{ "get_fsentry_info", reinterpret_cast<void *>(&corelib_impl__get_fsentry_info) },
+		{ "get_fs_environment", reinterpret_cast<void *>(&corelib_impl__get_fs_environment) },
 
-		{ "does_fsentry_exist", reinterpret_cast<void *>(&unified_corelib__does_fsentry_exist) },
-		{ "create_directory_branch", reinterpret_cast<void *>(&unified_corelib__create_directory_branch) },
-		{ "delete_fsentry_deep", reinterpret_cast<void *>(&unified_corelib__delete_fsentry_deep) },
-		{ "rename_fsentry", reinterpret_cast<void *>(&unified_corelib__rename_fsentry) }
+		{ "does_fsentry_exist", reinterpret_cast<void *>(&corelib_impl__does_fsentry_exist) },
+		{ "create_directory_branch", reinterpret_cast<void *>(&corelib_impl__create_directory_branch) },
+		{ "delete_fsentry_deep", reinterpret_cast<void *>(&corelib_impl__delete_fsentry_deep) },
+		{ "rename_fsentry", reinterpret_cast<void *>(&corelib_impl__rename_fsentry) }
 	};
 	return corelib_binds;
 }
-
-
-
-
-
 
 }	// floyd
 
