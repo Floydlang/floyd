@@ -1105,6 +1105,31 @@ struct cif_t {
 	std::vector<ffi_type*> args_owning;
 };
 
+/*
+ #define UNIX64_RET_VOID		0
+ #define UNIX64_RET_UINT8	1
+ #define UNIX64_RET_UINT16	2
+ #define UNIX64_RET_UINT32	3
+ #define UNIX64_RET_SINT8	4
+ #define UNIX64_RET_SINT16	5
+ #define UNIX64_RET_SINT32	6
+ #define UNIX64_RET_INT64	7
+ #define UNIX64_RET_XMM32	8
+ #define UNIX64_RET_XMM64	9
+ #define UNIX64_RET_X87		10
+ #define UNIX64_RET_X87_2	11
+ #define UNIX64_RET_ST_XMM0_RAX	12
+ #define UNIX64_RET_ST_RAX_XMM0	13
+ #define UNIX64_RET_ST_XMM0_XMM1	14
+ #define UNIX64_RET_ST_RAX_RDX	15
+
+ #define UNIX64_RET_LAST		15
+
+ #define UNIX64_FLAG_RET_IN_MEM	(1 << 10)
+ #define UNIX64_FLAG_XMM_ARGS	(1 << 11)
+ #define UNIX64_SIZE_SHIFT	12
+*/
+
 //	??? To add support for complex types, we need to wrap ffi_type in a struct that also owns sub-types.
 static ffi_type* make_ffi_type(const type_t& type){
 	if(type.is_void()){
@@ -1155,14 +1180,16 @@ static cif_t make_cif(interpreter_t& vm, const func_link_t& func_link, int calle
 	const auto& types = backend.types;
 
 	const auto function_type_peek = peek2(types, func_link.function_type_optional);
-
 	const auto function_type_args = function_type_peek.get_function_args(types);
 	const auto function_def_dynamic_arg_count = count_dyn_args(types, func_link.function_type_optional);
+	const auto return_type = function_type_peek.get_function_return(types);
 
 	const int arg0_stack_pos = (int)(stack.size() - (function_def_dynamic_arg_count + callee_arg_count));
 	int stack_pos = arg0_stack_pos;
 
 	cif_t result;
+
+	//	This is the runtime pointer, passed as first argument to all functions.
 	result.args.push_back(&ffi_type_pointer);
 
 	const auto function_def_arg_count = function_type_args.size();
@@ -1176,7 +1203,7 @@ static cif_t make_cif(interpreter_t& vm, const func_link_t& func_link, int calle
 		stack_pos++;
 	}
 
-	result.return_type = make_ffi_type(peek2(types, function_type_peek.get_function_return(types)));
+	result.return_type = make_ffi_type(peek2(types, return_type));
 
 	if (ffi_prep_cif(&result.cif, FFI_DEFAULT_ABI, (int)result.args.size(), result.return_type, &result.args[0]) != FFI_OK) {
 		QUARK_ASSERT(false);
@@ -1185,7 +1212,7 @@ static cif_t make_cif(interpreter_t& vm, const func_link_t& func_link, int calle
 	return result;
 }
 
-//??? Support any function types.
+//??? Support ANY
 static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t& func_link, int callee_arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -1210,6 +1237,7 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 
 	std::vector<void*> values;
 
+	//	This is the runtime pointer, passed as first argument to all functions.
 	auto runtime_ptr_ptr = &runtime_ptr;
 	values.push_back((void*)&runtime_ptr_ptr);
 
@@ -1222,7 +1250,7 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 		arg_values.push_back(arg_value);
 
 		//	Use a pointer directly into arg_values. This is tricky. Requires reserve().
-		values[1] = &arg_values[0]._pod;
+		values.push_back(&arg_values[a]._pod);
 
 /*
 		if(func_arg_type.is_bool()){
@@ -1262,6 +1290,7 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 
 		stack_pos++;
 	}
+	QUARK_ASSERT(arg_values.size() == function_def_arg_count);
 
 	ffi_arg return_value;
 
