@@ -767,18 +767,13 @@ if(k_trace && false){
 static rt_value_t bc_intrinsic__print(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
-//	QUARK_ASSERT(args[0]._type.is_string());
 
 	auto& backend = vm._backend;
 	if(false) trace_types(backend.types);
 
 	const auto& value = args[0];
-	const auto s = to_compact_string2(backend.types, rt_to_value(backend, value));
-//	printf("%s", s.c_str());
+	const auto s = gen_to_string(backend, value._pod, value._type);
 	vm._runtime_handler->on_print(s);
-
-//	const auto lines = split_on_chars(seq_t(s), "\n");
-//	vm._print_output = concat(vm._print_output, lines);
 
 	return rt_value_t::make_undefined();
 }

@@ -29,7 +29,7 @@ static const bool k_trace_stepping = false;
 
 
 static std::string opcode_to_string(bc_opcode opcode);
-static std::vector<json_t> bc_symbols_to_json(value_backend_t& backend, const std::vector<std::pair<std::string, bc_symbol_t>>& symbols);
+static std::vector<json_t> bc_symbols_to_json(value_backend_t& backend, const symbol_table_t& symbols);
 
 
 static type_t lookup_full_type(const interpreter_t& vm, const bc_typeid_t& type){
@@ -202,30 +202,53 @@ bool bc_instruction_t::check_invariant() const {
 //////////////////////////////////////////		bc_static_frame_t
 
 
-bc_static_frame_t::bc_static_frame_t(const types_t& types, const std::vector<bc_instruction_t>& instrs2, const std::vector<std::pair<std::string, bc_symbol_t>>& symbols, const std::vector<type_t>& args) :
+bc_static_frame_t::bc_static_frame_t(const types_t& types, const std::vector<bc_instruction_t>& instrs2, const symbol_table_t& symbols, const std::vector<type_t>& args) :
 	_instructions(instrs2),
 	_symbols(symbols),
-	_arg_count((int)args.size())
+	_arg_count((int)args.size()),
+	_locals_count((int)_symbols._symbols.size() - (int)args.size())
 {
 	QUARK_ASSERT(types.check_invariant());
 
-	//	Process the locals & temps. They go after any parameters, which already sits on stack.
-	for(std::vector<rt_value_t>::size_type i = _arg_count ; i < _symbols.size() ; i++){
-		const auto& symbol = _symbols[i];
-		const auto type = symbol.second._value_type;
+	for(int symbol_index = 0 ; symbol_index < symbols._symbols.size() ; symbol_index++){
+		const auto& symbol_kv = symbols._symbols[symbol_index];
+		const auto& symbol = symbol_kv.second;
+		const auto type = symbol._value_type;
 
-		//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
-		//	Problem is that IF this is an RC_object, it WILL be decremented when written to.
-		const auto init_value = symbol.second._init.is_undefined() ? make_default_value(type) : symbol.second._init;
-//		QUARK_ASSERT(type == init_value.get_type());
-
-		_locals.push_back(init_value);
+		if(symbol._symbol_type == symbol_t::symbol_type::immutable_reserve){
+			_symbol_effective_type.push_back(type);
+		}
+		else if(symbol._symbol_type == symbol_t::symbol_type::immutable_arg){
+			_symbol_effective_type.push_back(type);
+		}
+		else if(symbol._symbol_type == symbol_t::symbol_type::immutable_precalc){
+			_symbol_effective_type.push_back(type);
+			QUARK_ASSERT(type == symbol._init.get_type());
+		}
+		else if(symbol._symbol_type == symbol_t::symbol_type::named_type){
+			_symbol_effective_type.push_back(type_t::make_typeid());
+		}
+		else if(symbol._symbol_type == symbol_t::symbol_type::mutable_reserve){
+			_symbol_effective_type.push_back(type);
+		}
+		else {
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
 	}
 
 	QUARK_ASSERT(check_invariant());
 }
 
 bool bc_static_frame_t::check_invariant() const {
+	QUARK_ASSERT(_instructions.size() > 0);
+	QUARK_ASSERT(_instructions.size() < 65000);
+
+	QUARK_ASSERT(_symbols.check_invariant());
+	QUARK_ASSERT(_arg_count >= 0 && _arg_count <= _symbols._symbols.size());
+	QUARK_ASSERT(_locals_count >= 0 && _locals_count <= _symbols._symbols.size());
+	QUARK_ASSERT(_arg_count + _locals_count == _symbols._symbols.size());
+	QUARK_ASSERT(_symbol_effective_type.size() == _symbols._symbols.size());
 	return true;
 }
 
@@ -265,8 +288,10 @@ bool interpreter_stack_t::check_stack_frame(const frame_pos_t& in_frame) const{
 		return true;
 	}
 	else{
-		for(int i = 0 ; i < in_frame._frame_ptr->_symbols.size() ; i++){
-//			const auto& symbol = in_frame._frame_ptr->_symbols[i];
+		QUARK_ASSERT(in_frame._frame_ptr->_symbols.check_invariant());
+
+		for(int i = 0 ; i < in_frame._frame_ptr->_symbols._symbols.size() ; i++){
+			const auto& symbol = in_frame._frame_ptr->_symbols._symbols[i];
 
 //			bool symbol_ext = encode_as_external(_types, symbol.second._value_type);
 //			int local_pos = get_local_n_pos(in_frame._frame_pos, i);
@@ -297,7 +322,7 @@ std::vector<interpreter_stack_t::active_frame_t> interpreter_stack_t::get_stack_
 	std::vector<active_frame_t> result;
 	const auto frame_start0 = get_current_frame_start();
 	{
-		const auto frame_size0 = _current_static_frame->_symbols.size();
+		const auto frame_size0 = _current_static_frame->_symbols._symbols.size();
 		const auto frame_end0 = frame_start0 + frame_size0;
 
 		//??? Notice: during a call sequence: push_frame_ptr, push arguments, call, popn, pop_frame_ptr -- the stack size vs frames is slighly out of sync and gives us negative temporary stack entries.
@@ -310,7 +335,7 @@ std::vector<interpreter_stack_t::active_frame_t> interpreter_stack_t::get_stack_
 	auto frame = read_frame_info(info_pos);
 	while(frame._frame_ptr != nullptr){
 		const auto frame_start = frame._frame_pos;
-		const auto frame_size = frame._frame_ptr->_symbols.size();
+		const auto frame_size = frame._frame_ptr->_symbols._symbols.size();
 		const auto frame_end = frame_start + frame_size;
 		const auto temp_count = info_pos >= frame_end ? info_pos - frame_end : 0;
 
@@ -382,7 +407,7 @@ json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend)
 //////////////////////////////////////////		GLOBAL FUNCTIONS
 
 
-
+//??? support k_native_2
 //??? use code from do_call() -- share code.
 rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_value_t args[], int arg_count){
 	const auto& backend = vm._backend;
@@ -540,11 +565,12 @@ static std::vector<func_link_t> make_functions(const bc_program_t& program){
 		};
 	});
 
-	const auto corelib_native_funcs = bc_get_corelib_calls();
+//	const auto corelib_native_funcs = bc_get_corelib_calls();
+	const auto corelib_native_funcs = get_unified_corelib_binds();
 
 	const auto funcs = mapf<func_link_t>(program._function_defs, [&corelib_native_funcs](const auto& e){
 		const auto& function_name_symbol = e.func_link.module_symbol;
-		const auto it = corelib_native_funcs.find(function_name_symbol);
+		const auto it = corelib_native_funcs.find(function_name_symbol.s);
 
 		//	There us a native implementation of this function:
 		if(it != corelib_native_funcs.end()){
@@ -552,7 +578,7 @@ static std::vector<func_link_t> make_functions(const bc_program_t& program){
 				e.func_link.module,
 				function_name_symbol,
 				e.func_link.function_type_optional,
-				e.func_link.machine,
+				func_link_t::emachine::k_native2,
 				(void*)it->second
 			};
 		}
@@ -580,6 +606,30 @@ static std::vector<func_link_t> make_functions(const bc_program_t& program){
 	const auto func_lookup = concat(funcs2, intrinsics2);
 	return func_lookup;
 }
+
+
+
+
+
+void interpreter_t::runtime_basics__on_print(const std::string& s){
+	_runtime_handler->on_print(s);
+}
+
+type_t interpreter_t::runtime_basics__get_global_symbol_type(const std::string& s){
+	const auto& symbols = _imm->_program._globals._symbols;
+
+	const auto it = std::find_if(symbols._symbols.begin(), symbols._symbols.end(), [&s](const auto& e){ return e.first == s; });
+	if(it == symbols._symbols.end()){
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+
+	return it->second._value_type;
+}
+
+
+
+
 
 interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config, runtime_process_i* process_handler, runtime_handler_i& runtime_handler) :
 	_imm(std::make_shared<interpreter_imm_t>(interpreter_imm_t{ std::chrono::high_resolution_clock::now(), program })),
@@ -616,7 +666,6 @@ interpreter_t::~interpreter_t(){
 void interpreter_t::unwind_stack(){
 	QUARK_ASSERT(check_invariant());
 
-	//??? Could also
 	QUARK_ASSERT(_stack._current_static_frame == &_imm->_program._globals);
 	_stack.close_frame(_imm->_program._globals);
 
@@ -624,14 +673,14 @@ void interpreter_t::unwind_stack(){
 }
 
 //??? Unify this debug code with trace_value_backend()
-static std::vector<std::string> make(value_backend_t& backend, size_t i, runtime_value_t value, const type_t& type, const interpreter_stack_t::active_frame_t& frame, int frame_index, int symbol_index, bool is_symbol){
-	const auto debug_type = type;
+static std::vector<std::string> make(value_backend_t& backend, size_t i, runtime_value_t bc_pod, const type_t& debug_type, const interpreter_stack_t::active_frame_t& frame, int frame_index, int symbol_index, bool is_symbol){
 	const bool is_rc = is_rc_value(backend.types, debug_type);
-	const auto bc_pod = value;
 
 	std::string value_str = "";
 	std::string rc_str = "";
 	std::string alloc_id_str = "";
+
+	std::string symbol_effective_type = type_to_compact_string(backend.types, frame.static_frame->_symbol_effective_type[symbol_index]);
 
 	if(is_rc){
 		//??? Related to k_init_local
@@ -668,9 +717,9 @@ static std::vector<std::string> make(value_backend_t& backend, size_t i, runtime
 
 	const std::string frame_str = std::to_string(frame_index) + (frame_index == 0 ? " GLOBAL" : "");
 	if(is_symbol){
-		const auto& symbol = frame.static_frame->_symbols[symbol_index];
+		const auto& symbol = frame.static_frame->_symbols._symbols[symbol_index];
 		const std::string symname = symbol.first;
-		const std::string symtype = type_to_compact_string(backend.types, symbol.second._value_type);
+		const std::string symbol_value_type = type_to_compact_string(backend.types, symbol.second._value_type);
 
 		const auto line = std::vector<std::string> {
 			std::to_string(i) + ":" + std::to_string(symbol_index),
@@ -681,13 +730,14 @@ static std::vector<std::string> make(value_backend_t& backend, size_t i, runtime
 
 			frame_str,
 			symname,
-			symtype
+			symbol_value_type,
+			symbol_effective_type
 		};
 		return line;
 	}
 	else{
 		const std::string symname = std::string() + "stack-temp" + std::to_string(symbol_index);
-		const std::string symtype = "";
+		const std::string symbol_value_type = "";
 
 		const auto line = std::vector<std::string> {
 			std::to_string(i) + ":" + std::to_string(symbol_index),
@@ -698,7 +748,8 @@ static std::vector<std::string> make(value_backend_t& backend, size_t i, runtime
 
 			frame_str,
 			symname,
-			symtype
+			symbol_value_type,
+			symbol_effective_type
 		};
 		return line;
 	}
@@ -728,6 +779,7 @@ void trace_interpreter(interpreter_t& vm, int pc){
 
 				"",
 				"prev frame pos",
+				"",
 				""
 			};
 			matrix.push_back(line0);
@@ -742,6 +794,7 @@ void trace_interpreter(interpreter_t& vm, int pc){
 
 				"",
 				"prev frame ptr",
+				"",
 				""
 			};
 			matrix.push_back(line1);
@@ -766,7 +819,7 @@ void trace_interpreter(interpreter_t& vm, int pc){
 		}
 
 		QUARK_SCOPED_TRACE("STACK ENTRIES");
-		const auto result = generate_table_type1({ "#", "type", "value", "RC", "alloc ID", "frame", "symname", "symtype" }, matrix);
+		const auto result = generate_table_type1({ "#", "debug type", "value", "RC", "alloc ID", "frame", "symname", "sym.value type", "sym.effective type" }, matrix);
 		QUARK_TRACE(result);
 	}
 
@@ -887,7 +940,7 @@ static void execute_new_vector_obj(interpreter_t& vm, int16_t dest_reg, int16_t 
 	immer::vector<rt_value_t> elements2;
 	for(int i = 0 ; i < arg_count ; i++){
 		const auto pos = arg0_stack_pos + i;
-		QUARK_ASSERT(vm._stack._entry_types[pos] == type_t(peek2(types, element_type)));
+		QUARK_ASSERT(peek2(types, vm._stack._entry_types[pos]) == type_t(peek2(types, element_type)));
 		const auto& e = vm._stack._entries[pos];
 		const auto e2 = rt_value_t(backend, element_type, e, rt_value_t::rc_mode::bump);
 		elements2 = elements2.push_back(e2);
@@ -1003,17 +1056,17 @@ static void call_native(interpreter_t& vm, int target_reg, const func_link_t& fu
 
 	const auto function_type_peek = peek2(types, func_link.function_type_optional);
 
-	const auto temp_args = function_type_peek.get_function_args(types);
+	const auto function_type_args = function_type_peek.get_function_args(types);
 	const auto function_def_dynamic_arg_count = count_dyn_args(types, func_link.function_type_optional);
 
 	const int arg0_stack_pos = (int)(stack.size() - (function_def_dynamic_arg_count + callee_arg_count));
 	int stack_pos = arg0_stack_pos;
 
 	//	Notice that dynamic functions will have each DYN argument with a leading itype as an extra argument.
-	const auto function_def_arg_count = temp_args.size();
+	const auto function_def_arg_count = function_type_args.size();
 	std::vector<rt_value_t> arg_values;
 	for(int a = 0 ; a < function_def_arg_count ; a++){
-		const auto func_arg_type = temp_args[a];
+		const auto func_arg_type = function_type_args[a];
 		if(peek2(types, func_arg_type).is_any()){
 			const auto arg_itype = stack.load_intq(stack_pos);
 			const auto& arg_type = lookup_full_type(vm, static_cast<int16_t>(arg_itype));
@@ -1040,31 +1093,60 @@ static void call_native(interpreter_t& vm, int target_reg, const func_link_t& fu
 	}
 }
 
-struct bc_handler_t : public runtime_process_i {
-	void runtime_process__on_print(const std::string& s) override {
-		QUARK_ASSERT(false);
-	}
-	void runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type) override {
-		QUARK_ASSERT(false);
-	}
-	void runtime_process__on_exit_process() override {
-		QUARK_ASSERT(false);
-	}
-	virtual type_t runtime_process__get_global_symbol_type(const std::string& s) override {
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-};
-
-
-
-
-
-
 typedef void(*VOID_VOID_F)(void);
 
-//??? Support any
-static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t& func_link, int callee_arg_count){
+struct cif_t {
+	ffi_cif cif;
+	std::vector<ffi_type*> args;
+
+	ffi_type* return_type;
+
+	//	Those type we need to malloc are owned by this vector so we can delete them.
+	std::vector<ffi_type*> args_owning;
+};
+
+//	??? To add support for complex types, we need to wrap ffi_type in a struct that also owns sub-types.
+static ffi_type* make_ffi_type(const type_t& type){
+	if(type.is_void()){
+		return &ffi_type_void;
+	}
+	else if(type.is_bool()){
+		return &ffi_type_uint8;
+	}
+	else if(type.is_int()){
+		return &ffi_type_sint64;
+	}
+	else if(type.is_double()){
+		return &ffi_type_double;
+	}
+	else if(type.is_string()){
+		return &ffi_type_pointer;
+	}
+	else if(type.is_json()){
+		return &ffi_type_pointer;
+	}
+	else if(type.is_typeid()){
+		return &ffi_type_sint64;
+	}
+	else if(type.is_struct()){
+		return &ffi_type_pointer;
+	}
+	else if(type.is_vector()){
+		return &ffi_type_pointer;
+	}
+	else if(type.is_dict()){
+		return &ffi_type_pointer;
+	}
+	else if(type.is_function()){
+		return &ffi_type_pointer;
+	}
+	else{
+		UNSUPPORTED();
+	}
+}
+
+//??? Support any function types.
+static cif_t make_cif(interpreter_t& vm, const func_link_t& func_link, int callee_arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
 	interpreter_stack_t& stack = vm._stack;
@@ -1072,58 +1154,118 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
-
-	QUARK_ASSERT(func_link.f != nullptr);
-
-//???
-	const auto f = (VOID_VOID_F)func_link.f;
-//	const auto f = unified_corelib__calc_binary_sha1;
-
 	const auto function_type_peek = peek2(types, func_link.function_type_optional);
 
-	const auto temp_args = function_type_peek.get_function_args(types);
+	const auto function_type_args = function_type_peek.get_function_args(types);
 	const auto function_def_dynamic_arg_count = count_dyn_args(types, func_link.function_type_optional);
 
 	const int arg0_stack_pos = (int)(stack.size() - (function_def_dynamic_arg_count + callee_arg_count));
 	int stack_pos = arg0_stack_pos;
 
-	const auto function_def_arg_count = temp_args.size();
-	std::vector<rt_value_t> arg_values;
+	cif_t result;
+	result.args.push_back(&ffi_type_pointer);
+
+	const auto function_def_arg_count = function_type_args.size();
 	for(int a = 0 ; a < function_def_arg_count ; a++){
-		const auto func_arg_type = temp_args[a];
+		const auto func_arg_type = function_type_args[a];
 		const auto arg_value = stack.load_value(stack_pos + 0, func_arg_type);
-		arg_values.push_back(arg_value);
+
+		const auto f = make_ffi_type(peek2(types, func_arg_type));
+		result.args.push_back(f);
+
 		stack_pos++;
 	}
 
-	bc_handler_t handler;
-	const auto runtime_ptr = floyd_runtime_t {
-		&backend,
-		&handler
-	};
+	result.return_type = make_ffi_type(peek2(types, function_type_peek.get_function_return(types)));
 
-	
-	ffi_cif cif;
-	ffi_type* args[2];
-	void* values[2];
-	ffi_arg return_value;
-
-	args[0] = &ffi_type_pointer;
-	args[1] = &ffi_type_pointer;
-
-	auto runtime_ptr_ptr = &runtime_ptr;
-	values[0] = (void*)&runtime_ptr_ptr;
-
-
-	auto value_ptr = arg_values[0]._pod;
-	values[1] = &value_ptr;
-
-	if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 2, &ffi_type_pointer, args) != FFI_OK) {
+	if (ffi_prep_cif(&result.cif, FFI_DEFAULT_ABI, (int)result.args.size(), result.return_type, &result.args[0]) != FFI_OK) {
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
+	return result;
+}
 
-	ffi_call(&cif, (VOID_VOID_F)f, &return_value, values);
+//??? Support any function types.
+static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t& func_link, int callee_arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	auto cif = make_cif(vm, func_link, callee_arg_count);
+
+	interpreter_stack_t& stack = vm._stack;
+
+	auto& backend = vm._backend;
+	const auto& types = backend.types;
+
+	QUARK_ASSERT(func_link.f != nullptr);
+
+	const auto function_type_peek = peek2(types, func_link.function_type_optional);
+
+	const auto function_type_args = function_type_peek.get_function_args(types);
+	const auto function_def_dynamic_arg_count = count_dyn_args(types, func_link.function_type_optional);
+
+	const int arg0_stack_pos = (int)(stack.size() - (function_def_dynamic_arg_count + callee_arg_count));
+	int stack_pos = arg0_stack_pos;
+
+	const auto runtime_ptr = floyd_runtime_t { &backend, &vm, vm._process_handler };
+
+	std::vector<void*> values;
+
+	auto runtime_ptr_ptr = &runtime_ptr;
+	values.push_back((void*)&runtime_ptr_ptr);
+
+	const auto function_def_arg_count = function_type_args.size();
+	std::vector<rt_value_t> arg_values;
+	arg_values.reserve(function_def_arg_count);
+	for(int a = 0 ; a < function_def_arg_count ; a++){
+		const auto func_arg_type = function_type_args[a];
+		const auto arg_value = stack.load_value(stack_pos + 0, func_arg_type);
+		arg_values.push_back(arg_value);
+
+		//	Use a pointer directly into arg_values. This is tricky. Requires reserve().
+		values[1] = &arg_values[0]._pod;
+
+/*
+		if(func_arg_type.is_bool()){
+			result.args.push_back(&ffi_type_uint8);
+		}
+		else if(func_arg_type.is_int()){
+			result.args.push_back(&ffi_type_sint64);
+		}
+		else if(func_arg_type.is_double()){
+			result.args.push_back(&ffi_type_double);
+		}
+		else if(func_arg_type.is_string()){
+			result.args.push_back(&ffi_type_pointer);
+		}
+		else if(func_arg_type.is_json()){
+			result.args.push_back(&ffi_type_pointer);
+		}
+		else if(func_arg_type.is_typeid()){
+			result.args.push_back(&ffi_type_sint64);
+		}
+		else if(func_arg_type.is_struct()){
+			result.args.push_back(&ffi_type_pointer);
+		}
+		else if(func_arg_type.is_vector()){
+			result.args.push_back(&ffi_type_pointer);
+		}
+		else if(func_arg_type.is_dict()){
+			result.args.push_back(&ffi_type_pointer);
+		}
+		else if(func_arg_type.is_function()){
+			result.args.push_back(&ffi_type_pointer);
+		}
+		else{
+			UNSUPPORTED();
+		}
+*/
+
+		stack_pos++;
+	}
+
+	ffi_arg return_value;
+
+	ffi_call(&cif.cif, (VOID_VOID_F)func_link.f, &return_value, &values[0]);
 
 	const auto& function_return_type = function_type_peek.get_function_return(types);
 	const auto function_return_type_peek = peek2(types, function_return_type);
@@ -1131,16 +1273,10 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 	}
 	else{
 		const auto result2 = *(runtime_value_t*)&return_value;
-
-
-//		public: explicit rt_value_t(value_backend_t& backend, const type_t& type, const runtime_value_t& internals, rc_mode mode);
-
-
 		const auto result3 = rt_value_t(backend, function_return_type_peek, result2, rt_value_t::rc_mode::adopt);
 		stack.write_register(target_reg, result3);
 	}
 }
-
 
 //	We need to examine the callee, since we support magic argument lists of varying size.
 static void do_call(interpreter_t& vm, int target_reg, const runtime_value_t callee, int callee_arg_count){
@@ -1157,6 +1293,11 @@ static void do_call(interpreter_t& vm, int target_reg, const runtime_value_t cal
 	}
 
 	const auto& func_link = *func_link_ptr;
+
+	if(func_link.f == nullptr){
+		quark::throw_runtime_error("Attempting to calling unimplemented function.");
+	}
+
 	if(func_link.machine == func_link_t::emachine::k_bytecode){
 		//	This is a floyd function, with a frame_ptr to execute.
 		QUARK_ASSERT(func_link.f != nullptr);
@@ -1183,18 +1324,15 @@ static void do_call(interpreter_t& vm, int target_reg, const runtime_value_t cal
 			stack.replace_external_value(result_reg_pos, result.second);
 		}
 	}
+	else if(func_link.machine == func_link_t::emachine::k_native){
+		call_native(vm, target_reg, func_link, callee_arg_count);
+	}
+	else if(func_link.machine == func_link_t::emachine::k_native2){
+		call_via_libffi(vm, target_reg, func_link, callee_arg_count);
+	}
 	else{
-		if(func_link.f == nullptr){
-			quark::throw_runtime_error("Attempting to calling unimplemented function.");
-		}
-		else{
-			if(func_link.module_symbol.s == "calc_binary_sha1"){
-				call_via_libffi(vm, target_reg, func_link, callee_arg_count);
-			}
-			else{
-				call_native(vm, target_reg, func_link, callee_arg_count);
-			}
-		}
+		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 
@@ -1254,7 +1392,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg__external_value(i._a));
 			QUARK_ASSERT(stack.check_global_access_obj(i._b));
 
-			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
+			const auto& type = frame_ptr->_symbols._symbols[i._a].second._value_type;
 			release_value_safe(backend, regs[i._a], type);
 			const auto& new_value_pod = globals[i._b];
 			regs[i._a] = new_value_pod;
@@ -1269,7 +1407,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 		case bc_opcode::k_init_local: {
-			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
+			const auto& type = frame_ptr->_symbols._symbols[i._a].second._value_type;
 			const auto& new_value_pod = regs[i._b];
 			regs[i._a] = new_value_pod;
 			retain_value(backend, new_value_pod, type);
@@ -1280,7 +1418,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_global_access_obj(i._a));
 			QUARK_ASSERT(stack.check_reg__external_value(i._b));
 
-			const auto& type = frame_ptr->_symbols[i._b].second._value_type;
+			const auto& type = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			release_value_safe(backend, globals[i._a], type);
 			const auto& new_value_pod = regs[i._b];
 			globals[i._a] = new_value_pod;
@@ -1310,7 +1448,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg__external_value(i._a));
 			QUARK_ASSERT(stack.check_reg__external_value(i._b));
 
-			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
+			const auto& type = frame_ptr->_symbols._symbols[i._a].second._value_type;
 			release_value_safe(backend, regs[i._a], type);
 			const auto& new_value_pod = regs[i._b];
 			regs[i._a] = new_value_pod;
@@ -1323,7 +1461,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 
 		case bc_opcode::k_return: {
-			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
+			const auto& type = frame_ptr->_symbols._symbols[i._a].second._value_type;
 			return { true, rt_value_t(backend, type, regs[i._a], rt_value_t::rc_mode::bump) };
 		}
 
@@ -1378,7 +1516,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 		}
 		case bc_opcode::k_push_external_value: {
 			QUARK_ASSERT(stack.check_reg__external_value(i._a));
-			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
+			const auto& type = frame_ptr->_symbols._symbols[i._a].second._value_type;
 			const auto& new_value_pod = regs[i._a];
 			retain_value(backend, new_value_pod, type);
 			stack._entries[stack._stack_size] = new_value_pod;
@@ -1476,7 +1614,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_any(i._a));
 			QUARK_ASSERT(stack.check_reg_struct(i._b));
 
-			const auto& struct_type = frame_ptr->_symbols[i._b].second._value_type;
+			const auto& struct_type = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			const auto data_ptr = regs[i._b].struct_ptr->get_data_ptr();
 			const auto member_index = i._c;
 			const auto r = load_struct_member(backend, data_ptr, struct_type, member_index);
@@ -1569,7 +1707,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg__external_value(i._a));
 			QUARK_ASSERT(stack.check_reg_int(i._c));
 
-			const auto& vector_type = frame_ptr->_symbols[i._b].second._value_type;
+			const auto& vector_type = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			const auto lookup_index = regs[i._c].int_value;
 			const auto size = get_vector_size(backend, vector_type, regs[i._b]);
 			if(lookup_index < 0 || lookup_index >= size){
@@ -1591,7 +1729,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_dict_w_external_values(i._b));
 			QUARK_ASSERT(stack.check_reg_string(i._c));
 
-			const auto& dict_type = frame_ptr->_symbols[i._b].second._value_type;
+			const auto& dict_type = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			const auto key = regs[i._c];
 //				quark::throw_runtime_error("Lookup in dict: key not found.");
 			const auto element_type = peek2(types, dict_type).get_dict_value_type(types);
@@ -1606,7 +1744,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
 			QUARK_ASSERT(i._c == 0);
 
-			const auto& type_b = frame_ptr->_symbols[i._b].second._value_type;
+			const auto& type_b = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			regs[i._a].int_value = get_vector_size(backend, type_b, regs[i._b]);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
@@ -1618,7 +1756,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._b));
 			QUARK_ASSERT(i._c == 0);
 
-			const auto& type_b = frame_ptr->_symbols[i._b].second._value_type;
+			const auto& type_b = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			regs[i._a].int_value = get_vector_size(backend, type_b, regs[i._b]);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
@@ -1630,7 +1768,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_dict_w_external_values(i._b));
 			QUARK_ASSERT(i._c == 0);
 
-			const auto& type_b = frame_ptr->_symbols[i._b].second._value_type;
+			const auto& type_b = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			regs[i._a].int_value = get_dict_size(backend, type_b, regs[i._b]);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
@@ -1641,7 +1779,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_dict_w_inplace_values(i._b));
 			QUARK_ASSERT(i._c == 0);
 
-			const auto& type_b = frame_ptr->_symbols[i._b].second._value_type;
+			const auto& type_b = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			regs[i._a].int_value = get_dict_size(backend, type_b, regs[i._b]);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
@@ -1686,7 +1824,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
 			QUARK_ASSERT(stack.check_reg__external_value(i._c));
 
-			const auto type_b = frame_ptr->_symbols[i._b].second._value_type;
+			const auto type_b = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			write_reg_rc(backend, regs, i._a, type_b, push_back_vector_element(backend, regs[i._b], type_b, regs[i._c]));
 
 			QUARK_ASSERT(vm.check_invariant());
@@ -1699,7 +1837,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._b));
 			QUARK_ASSERT(stack.check_reg(i._c));
 
-			const auto type_b = frame_ptr->_symbols[i._b].second._value_type;
+			const auto type_b = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			write_reg_rc(backend, regs, i._a, type_b, push_back_vector_element(backend, regs[i._b], type_b, regs[i._c]));
 
 			QUARK_ASSERT(vm.check_invariant());
@@ -1712,7 +1850,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_string(i._b));
 			QUARK_ASSERT(stack.check_reg_int(i._c));
 
-			const auto type_b = frame_ptr->_symbols[i._b].second._value_type;
+			const auto type_b = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			write_reg_rc(backend, regs, i._a, type_b, push_back_vector_element(backend, regs[i._b], type_b, regs[i._c]));
 
 			QUARK_ASSERT(vm.check_invariant());
@@ -1815,7 +1953,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_any(i._b));
 			QUARK_ASSERT(stack.check_reg_any(i._c));
 
-			const auto& type = frame_ptr->_symbols[i._b].second._value_type;
+			const auto& type = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			QUARK_ASSERT(peek2(types, type).is_int() == false);
 
 			const auto left = stack.read_register(i._b);
@@ -1839,7 +1977,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_any(i._b));
 			QUARK_ASSERT(stack.check_reg_any(i._c));
 
-			const auto& type = frame_ptr->_symbols[i._b].second._value_type;
+			const auto& type = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			QUARK_ASSERT(peek2(types, type).is_int() == false);
 			const auto left = stack.read_register(i._b);
 			const auto right = stack.read_register(i._c);
@@ -1861,7 +1999,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_any(i._b));
 			QUARK_ASSERT(stack.check_reg_any(i._c));
 
-			const auto& type = frame_ptr->_symbols[i._b].second._value_type;
+			const auto& type = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			QUARK_ASSERT(peek2(types, type).is_int() == false);
 			const auto left = stack.read_register(i._b);
 			const auto right = stack.read_register(i._c);
@@ -1884,7 +2022,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_any(i._b));
 			QUARK_ASSERT(stack.check_reg_any(i._c));
 
-			const auto& type = frame_ptr->_symbols[i._b].second._value_type;
+			const auto& type = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			QUARK_ASSERT(peek2(types, type).is_int() == false);
 			const auto left = stack.read_register(i._b);
 			const auto right = stack.read_register(i._c);
@@ -1950,7 +2088,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
 			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._c));
 
-			const auto& vector_type = frame_ptr->_symbols[i._a].second._value_type;
+			const auto& vector_type = frame_ptr->_symbols._symbols[i._a].second._value_type;
 			const auto r = concatunate_vectors(backend, vector_type, regs[i._b], regs[i._c]);
 			const auto& result = rt_value_t(backend, vector_type, r, rt_value_t::rc_mode::adopt);
 			stack.write_register(i._a, result);
@@ -2105,12 +2243,12 @@ std::shared_ptr<value_entry_t> find_global_symbol2(interpreter_t& vm, const modu
 
 	const auto& symbols = vm._imm->_program._globals._symbols;
     const auto& it = std::find_if(
-    	symbols.begin(),
-    	symbols.end(),
-    	[&s](const std::pair<std::string, bc_symbol_t>& e) { return e.first == s.s; }
+    	symbols._symbols.begin(),
+    	symbols._symbols.end(),
+    	[&s](const std::pair<std::string, symbol_t>& e) { return e.first == s.s; }
 	);
-	if(it != symbols.end()){
-		const auto index = static_cast<int>(it - symbols.begin());
+	if(it != symbols._symbols.end()){
+		const auto index = static_cast<int>(it - symbols._symbols.begin());
 		const auto pos = get_global_n_pos(index);
 		QUARK_ASSERT(pos >= 0 && pos < vm._stack.size());
 
@@ -2147,12 +2285,14 @@ json_t interpreter_to_json(interpreter_t& vm){
 	});
 }
 
-static std::vector<json_t> bc_symbols_to_json(value_backend_t& backend, const std::vector<std::pair<std::string, bc_symbol_t>>& symbols){
+static std::vector<json_t> bc_symbols_to_json(value_backend_t& backend, const symbol_table_t& symbols){
 	QUARK_ASSERT(backend.check_invariant());
 
+	return symbols_to_json(backend.types, symbols);
+/*
 	std::vector<json_t> r;
 	int symbol_index = 0;
-	for(const auto& e: symbols){
+	for(const auto& e: symbols._symbols){
 		const auto& symbol = e.second;
 		const auto symbol_type_str = symbol._symbol_type == bc_symbol_t::type::immutable ? "immutable" : "mutable";
 		const auto e2 = json_t::make_array({
@@ -2168,6 +2308,8 @@ static std::vector<json_t> bc_symbols_to_json(value_backend_t& backend, const st
 		symbol_index++;
 	}
 	return r;
+*/
+
 }
 
 static json_t frame_to_json(value_backend_t& backend, const bc_static_frame_t& frame){

@@ -55,12 +55,49 @@ struct runtime_handler_i {
 
 struct runtime_process_i {
 	virtual ~runtime_process_i(){};
-	virtual void runtime_process__on_print(const std::string& s) = 0;
 	virtual void runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type) = 0;
 	virtual void runtime_process__on_exit_process() = 0;
-	virtual type_t runtime_process__get_global_symbol_type(const std::string& s) = 0;
 };
 
+
+//////////////////////////////////////		runtime_process_i
+
+
+struct runtime_basics_i {
+	virtual ~runtime_basics_i(){};
+	virtual void runtime_basics__on_print(const std::string& s) = 0;
+	virtual type_t runtime_basics__get_global_symbol_type(const std::string& s) = 0;
+};
+
+
+
+
+/*
+struct route_process_handler_t : public runtime_process_i {
+	route_process_handler_t(runtime_handler_i* runtime) :
+		runtime(runtime)
+	{
+	}
+
+	void runtime_process__on_print(const std::string& s) override {
+		runtime->on_print(s);
+	}
+
+	void runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type) override {
+		QUARK_ASSERT(false);
+	}
+	void runtime_process__on_exit_process() override {
+		QUARK_ASSERT(false);
+	}
+
+	type_t runtime_process__get_global_symbol_type(const std::string& s) override {
+		QUARK_ASSERT(false); return type_t::make_undefined();
+	}
+
+
+	runtime_handler_i* runtime;
+};
+*/
 
 
 //////////////////////////////////////		floyd_runtime_t
@@ -80,6 +117,7 @@ struct floyd_runtime_t {
 	}
 
 	value_backend_t* backend;
+	runtime_basics_i* basics;
 	runtime_process_i* handler;
 };
 
@@ -92,13 +130,13 @@ inline value_backend_t& get_backend(floyd_runtime_t* runtime){
 inline type_t get_global_symbol_type(floyd_runtime_t* runtime, const std::string& s){
 	QUARK_ASSERT(runtime != nullptr && runtime->check_invariant());
 
-	return runtime->handler->runtime_process__get_global_symbol_type(s);
+	return runtime->basics->runtime_basics__get_global_symbol_type(s);
 }
 
 inline void on_print(floyd_runtime_t* runtime, const std::string& s){
 	QUARK_ASSERT(runtime != nullptr && runtime->check_invariant());
 
-	runtime->handler->runtime_process__on_print(s);
+	runtime->basics->runtime_basics__on_print(s);
 }
 
 inline void send_message2(floyd_runtime_t* runtime, const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type){

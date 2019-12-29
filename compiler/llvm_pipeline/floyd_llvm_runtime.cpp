@@ -17,6 +17,7 @@ static const bool k_trace_function_link_map = false;
 #include "floyd_llvm_runtime_functions.h"
 #include "floyd_llvm_intrinsics.h"
 
+#include "floyd_corelib.h"
 #include "text_parser.h"
 #include "os_process.h"
 #include "compiler_helpers.h"
@@ -234,7 +235,7 @@ static std::vector<llvm_function_link_entry_t> make_floyd_code_and_corelib_link_
 
 	// Corelib function binds. The prototypes are provided in input AST already.
 	{
-		const auto corelib_function_map0 = get_corelib_binds();
+		const auto corelib_function_map0 = get_unified_corelib_binds();
 		std::map<module_symbol_t, void*> corelib_function_map;
 		for(const auto& e: corelib_function_map0){
 			corelib_function_map.insert({ module_symbol_t(e.first), e.second });
@@ -580,7 +581,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			ee1,
 			program_breaks.debug_globals,
 			final_link_map,
-			test_inherit(&runtime_handler, nullptr),
+			route_t(&runtime_handler, nullptr),
 			start_time,
 			llvm_bind_t{ k_no_module_symbol, nullptr, type_t::make_undefined() },
 			false,
@@ -658,6 +659,19 @@ std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& progra
 //	https://en.cppreference.com/w/cpp/thread/condition_variable/wait
 
 
+
+void llvm_process_t::runtime_basics__on_print(const std::string& s){
+	ee->_handler_router._runtime_handler->on_print(s);
+}
+
+type_t llvm_process_t::runtime_basics__get_global_symbol_type(const std::string& s){
+	return find_symbol_required(ee->global_symbols, s)._value_type;
+}
+
+
+
+
+
 static std::string make_trace_process_header(const llvm_process_t& process){
 	const auto process_name = process._name_key;
 	const auto os_thread_name = get_current_thread_name();
@@ -667,8 +681,6 @@ static std::string make_trace_process_header(const llvm_process_t& process){
 	return header;
 }
 
-void llvm_process_t::runtime_process__on_print(const std::string& s){
-}
 void llvm_process_t::runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type){
 	QUARK_ASSERT(check_invariant());
 	auto& backend = ee->backend;
@@ -735,12 +747,9 @@ void llvm_process_t::runtime_process__on_send_message(const std::string& dest_pr
 	//    dest_process._inbox_condition_variable.notify_all();
 	}
 }
+
 void llvm_process_t::runtime_process__on_exit_process(){
 	_exiting_flag = true;
-}
-
-type_t llvm_process_t::runtime_process__get_global_symbol_type(const std::string& s){
-	QUARK_ASSERT(false);throw std::exception();
 }
 
 
@@ -944,14 +953,20 @@ void deinit_program(llvm_execution_engine_t& ee){
 floyd_runtime_t make_runtime_ptr(llvm_context_t* p){
 	QUARK_ASSERT(p != nullptr && p->check_invariant());
 
-//	r.ee->_handler->on_print(s);
-	runtime_process_i* a = p->process;
-	runtime_process_i* b = &p->ee->_handler_router;
-
-	return {
-		&p->ee->backend,
-		p->process != nullptr ? a : b
-	};
+	if(p->process){
+		return {
+			&p->ee->backend,
+			p->process,
+			p->process
+		};
+	}
+	else{
+		return {
+			&p->ee->backend,
+			&p->ee->_handler_router,
+			&p->ee->_handler_router
+		};
+	}
 }
 
 

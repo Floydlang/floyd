@@ -25,7 +25,7 @@ namespace floyd {
 
 static const bool k_trace = false;
 
-
+#if 0
 static rt_value_t bc_corelib__make_benchmark_report(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
@@ -47,7 +47,7 @@ static rt_value_t bc_corelib__make_benchmark_report(interpreter_t& vm, const rt_
 	const auto report = make_benchmark_report(test_results);
 	return value_to_rt(backend, value_t::make_string(report));
 }
-
+#endif
 
 
 
@@ -672,11 +672,11 @@ static rt_value_t bc_corelib__execute_http_request(interpreter_t& vm, const rt_v
 /////////////////////////////////////////		REGISTRY
 
 
-
+/*
 std::map<module_symbol_t, BC_NATIVE_FUNCTION_PTR> bc_get_corelib_calls(){
 
 	const auto result = std::map<module_symbol_t, BC_NATIVE_FUNCTION_PTR>{
-		{ module_symbol_t("make_benchmark_report"), bc_corelib__make_benchmark_report },
+		{ module_symbol_t("make_benchmark_report"), (BC_NATIVE_FUNCTION_PTR)unified_corelib__make_benchmark_report },
 
 		{ module_symbol_t("detect_hardware_caps"), bc_corelib__detect_hardware_caps },
 		{ module_symbol_t("make_hardware_caps_report"), bc_corelib__make_hardware_caps_report },
@@ -715,6 +715,6 @@ std::map<module_symbol_t, BC_NATIVE_FUNCTION_PTR> bc_get_corelib_calls(){
 	};
 	return result;
 }
-
+*/
 
 }	// floyd

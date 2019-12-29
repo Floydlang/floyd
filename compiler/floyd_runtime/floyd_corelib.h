@@ -146,8 +146,8 @@ runtime_value_t unified_corelib__calc_binary_sha1(floyd_runtime_t* frp, runtime_
 
 
 
+std::map<std::string, void*> get_unified_corelib_binds();
+
 }	//	floyd
-
-
 
 #endif /* floyd_corelib_hpp */

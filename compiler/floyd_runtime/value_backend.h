@@ -738,7 +738,7 @@ bool is_struct_pod(const types_t& types, const struct_type_desc_t& struct_def);
 
 //	Every function has a func_entry_t. It may not yet be linked to a function.
 struct func_link_t {
-	enum class emachine { k_native, k_bytecode };
+	enum class emachine { k_native, k_bytecode, k_native2 };
 
 	bool check_invariant() const {
 		QUARK_ASSERT(module_symbol.s.empty() == false);

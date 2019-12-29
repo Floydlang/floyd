@@ -81,7 +81,7 @@ struct llvm_execution_engine_t;
 
 //	NOTICE: Each process inbox has its own mutex + condition variable.
 //	No mutex protects cout.
-struct llvm_process_t : public runtime_process_i {
+struct llvm_process_t : public runtime_basics_i, runtime_process_i {
 	public: bool check_invariant() const {
 		QUARK_ASSERT(ee != nullptr);
 		QUARK_ASSERT(_init_function != nullptr);
@@ -95,10 +95,11 @@ struct llvm_process_t : public runtime_process_i {
 	//////////////////////////////////////		STATE - INIT
 
 
-	void runtime_process__on_print(const std::string& s) override;
+	void runtime_basics__on_print(const std::string& s) override;
+	type_t runtime_basics__get_global_symbol_type(const std::string& s) override;
+
 	void runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type) override;
 	void runtime_process__on_exit_process() override;
-	type_t runtime_process__get_global_symbol_type(const std::string& s) override;
 
 
 
@@ -134,20 +135,30 @@ struct llvm_execution_engine_t;
 //https://en.wikipedia.org/wiki/Hexspeak
 const uint64_t k_debug_magic = 0xFACEFEED05050505;
 
-struct test_inherit : public runtime_process_i {
-	test_inherit(runtime_handler_i* runtime_handler, const symbol_table_t* symbol_table) :
+struct route_t : public runtime_basics_i, runtime_process_i {
+	route_t(runtime_handler_i* runtime_handler, const symbol_table_t* symbol_table) :
 		_runtime_handler(runtime_handler),
 		_symbol_table(symbol_table)
 	{
 	}
 
 
-	void runtime_process__on_print(const std::string& s) override {
+
+	void runtime_basics__on_print(const std::string& s) override {
 		QUARK_ASSERT(_runtime_handler != nullptr);
 		QUARK_ASSERT(_symbol_table != nullptr);
 
 		_runtime_handler->on_print(s);
 	}
+
+	type_t runtime_basics__get_global_symbol_type(const std::string& s) override {
+		QUARK_ASSERT(_runtime_handler != nullptr);
+		QUARK_ASSERT(_symbol_table != nullptr);
+
+		const auto sym = find_symbol_required(*_symbol_table, s);
+		return sym._value_type;
+	}
+
 	void runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type) override {
 		QUARK_ASSERT(_runtime_handler != nullptr);
 		QUARK_ASSERT(_symbol_table != nullptr);
@@ -157,13 +168,6 @@ struct test_inherit : public runtime_process_i {
 		QUARK_ASSERT(_symbol_table != nullptr);
 	}
 
-	type_t runtime_process__get_global_symbol_type(const std::string& s) override{
-		QUARK_ASSERT(_runtime_handler != nullptr);
-		QUARK_ASSERT(_symbol_table != nullptr);
-
-		const auto sym = find_symbol_required(*_symbol_table, s);
-		return sym._value_type;
-	}
 
 
 	public: runtime_handler_i* _runtime_handler;
@@ -190,7 +194,7 @@ struct llvm_execution_engine_t {
 	symbol_table_t global_symbols;
 	std::vector<llvm_function_link_entry_t> function_link_map;
 
-	test_inherit _handler_router;
+	route_t _handler_router;
 
 	public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
 

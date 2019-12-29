@@ -28,25 +28,6 @@ static const bool k_trace_function_link_map = false;
 
 
 
-static std::string gen_to_string(value_backend_t& backend, runtime_value_t arg_value, runtime_type_t arg_type){
-	QUARK_ASSERT(backend.check_invariant());
-
-	const auto& types = backend.types;
-	const auto& type = lookup_type_ref(backend, arg_type);
-
-	if(peek2(types, type).is_typeid()){
-		const auto value = from_runtime_value2(backend, arg_value, type);
-		const auto type2 = value.get_typeid_value();
-		const auto type3 = peek2(types, type2);
-		const auto a = type_to_compact_string(types, type3);
-		return a;
-	}
-	else{
-		const auto value = from_runtime_value2(backend, arg_value, type);
-		const auto a = to_compact_string2(backend.types, value);
-		return a;
-	}
-}
 
 
 
@@ -1086,12 +1067,8 @@ static runtime_value_t floyd_llvm_intrinsic__stable_sort(
 static void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
 	auto& backend = get_backend(frp);
 
-	const auto s = gen_to_string(backend, value, value_type);
-//	printf("%s", s.c_str());
+	const auto s = gen_to_string(backend, value, type_t(value_type));
 	on_print(frp, s);
-
-//	const auto lines = split_on_chars(seq_t(s), "\n");
-//	r._print_output = concat(r._print_output, lines);
 }
 
 
@@ -1440,7 +1417,7 @@ static runtime_value_t floyd_llvm_intrinsic__to_pretty_string(floyd_runtime_t* f
 static runtime_value_t floyd_llvm_intrinsic__to_string(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
 	auto& backend = get_backend(frp);
 
-	const auto s = gen_to_string(backend, value, value_type);
+	const auto s = gen_to_string(backend, value, type_t(value_type));
 	return to_runtime_string2(backend, s);
 }
 

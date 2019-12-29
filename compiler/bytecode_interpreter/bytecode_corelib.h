@@ -24,7 +24,7 @@ namespace floyd {
 
 //	Create lookup from function id -> C function pointer.
 
-std::map<module_symbol_t, BC_NATIVE_FUNCTION_PTR> bc_get_corelib_calls();
+//std::map<module_symbol_t, BC_NATIVE_FUNCTION_PTR> bc_get_corelib_calls();
 
 
 

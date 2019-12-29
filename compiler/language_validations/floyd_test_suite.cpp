@@ -6631,7 +6631,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "read_text_file()", "", ""){
 //////////////////////////////////////////		CORE LIBRARY - write_text_file()
 
 
-FLOYD_LANG_PROOF("Floyd test suite", "write_text_file()", "", ""){
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "write_text_file()", "", ""){
 	ut_run_closed_lib(QUARK_POS, R"(
 
 		let path = get_fs_environment().desktop_dir

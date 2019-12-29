@@ -165,14 +165,6 @@ struct bc_process_t : public runtime_process_i {
 		_exiting_flag = true;
 	}
 
-	void runtime_process__on_print(const std::string& s) override {
-		_owning_runtime->handler->on_print(s);
-	}
-
-	type_t runtime_process__get_global_symbol_type(const std::string& s) override {
-		QUARK_ASSERT(false); return type_t::make_undefined();
-	}
-
 
 	//////////////////////////////////////		STATE
 

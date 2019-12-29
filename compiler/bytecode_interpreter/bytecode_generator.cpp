@@ -1934,6 +1934,7 @@ static bc_static_frame_t make_frame(const types_t& types, const gen_scope_t& bod
 		instrs2.push_back(squeeze_instruction(e));
 	}
 
+/*
 	std::vector<std::pair<std::string, bc_symbol_t>> symbols2;
 	for(const auto& e: body._symbol_table._symbols){
 		const auto t0 = e.second.get_value_type();
@@ -1943,7 +1944,7 @@ static bc_static_frame_t make_frame(const types_t& types, const gen_scope_t& bod
 				e.first,
 				bc_symbol_t{
 					bc_symbol_t::type::immutable,
-					type_desc_t::make_typeid(),
+					t,
 					value_t::make_typeid_value(t)
 				}
 			};
@@ -1961,8 +1962,9 @@ static bc_static_frame_t make_frame(const types_t& types, const gen_scope_t& bod
 			symbols2.push_back(e2);
 		}
 	}
+*/
 
-	return bc_static_frame_t(types, instrs2, symbols2, args);
+	return bc_static_frame_t(types, instrs2, body._symbol_table, args);
 }
 
 bc_program_t generate_bytecode(const semantic_ast_t& ast){

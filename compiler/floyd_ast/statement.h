@@ -175,6 +175,10 @@ std::string symbol_to_string(const types_t& types, const symbol_t& symbol);
 //
 struct symbol_table_t {
 	bool check_invariant() const {
+		for(const auto& e: _symbols){
+			QUARK_ASSERT(e.first.size() > 0 && e.first.size() < 10000);
+			QUARK_ASSERT(e.second.check_invariant());
+		}
 		return true;
 	}
 
