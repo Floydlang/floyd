@@ -31,8 +31,6 @@ bool target_t::check_invariant() const{
 	return true;
 }
 
-
-
 llvm_instance_t::llvm_instance_t(){
 	llvm::InitializeAllTargetInfos();
 	llvm::InitializeAllTargets();
@@ -49,10 +47,6 @@ bool llvm_instance_t::check_invariant() const {
 	QUARK_ASSERT(target.check_invariant());
 	return true;
 }
-
-
-
-
 
 target_t make_default_target(){
 	auto TargetTriple = llvm::sys::getDefaultTargetTriple();
@@ -77,12 +71,6 @@ target_t make_default_target(){
 //	auto data_layout = TargetMachine->createDataLayout();
 	return target_t { TargetTriple, TargetMachine };
 }
-
-
-
-
-
-
 
 /*
 LLVM return struct byvalue:
@@ -123,8 +111,6 @@ struct Big foo() {
   return result;
 }
 */
-
-
 
 /// Check a function for errors, useful for use when debugging a
 /// pass.
@@ -182,10 +168,6 @@ bool check_invariant__builder(llvm::IRBuilder<>* builder){
 }
 
 
-
-
-
-
 static bool replace(std::string& str, const std::string& from, const std::string& to) {
     size_t start_pos = str.find(from);
     if(start_pos == std::string::npos)
@@ -220,9 +202,6 @@ static std::string reformat_llvm_module_print(const std::string& s0){
     }
 	return temp;
 }
-
-
-
 
 std::string print_module(llvm::Module& module){
 	std::string dump;
@@ -320,7 +299,6 @@ std::string print_value(llvm::Value* value){
 }
 
 
-
 ////////////////////////////////	floyd_runtime_ptr
 
 
@@ -353,9 +331,7 @@ llvm::Value* get_callers_fcp(const llvm_type_lookup& type_lookup, llvm::Function
 
 
 
-
 ////////////////////////////////		HELPERS
-
 
 
 
@@ -374,7 +350,6 @@ void generate_array_element_store(llvm::IRBuilder<>& builder, llvm::Value& array
 	llvm::Value* element_n_ptr = builder.CreateGEP(element_type, &array_ptr_reg, gep, "");
 	builder.CreateStore(&element_reg, element_n_ptr);
 }
-
 
 
 
