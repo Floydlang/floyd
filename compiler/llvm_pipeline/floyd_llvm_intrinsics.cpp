@@ -175,57 +175,6 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 ////////////////////////////////	size()
 
 
-static int64_t size__string(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type){
-	auto& backend = get_backend(frp);
-
-#if DEBUG
-	const auto& type0 = lookup_type_ref(backend, vec_type);
-	QUARK_ASSERT(peek2(backend.types, type0).is_string());
-#endif
-
-	return vec.vector_carray_ptr->get_element_count();
-}
-
-static int64_t size_vector_carray(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type){
-	auto& backend = get_backend(frp);
-	(void)backend;
-	return collection.vector_carray_ptr->get_element_count();
-}
-static int64_t size_vector_hamt(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type){
-	auto& backend = get_backend(frp);
-	(void)backend;
-	return collection.vector_hamt_ptr->get_element_count();
-}
-static int64_t size_dict_cppmap(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type){
-	auto& backend = get_backend(frp);
-	(void)backend;
-	return collection.dict_cppmap_ptr->size();
-}
-static int64_t size_dict_hamt(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type){
-	auto& backend = get_backend(frp);
-	(void)backend;
-	return collection.dict_hamt_ptr->size();
-}
-static int64_t size_json(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type){
-	auto& backend = get_backend(frp);
-	(void)backend;
-
-	const auto& json = collection.json_ptr->get_json();
-
-	if(json.is_object()){
-		return json.get_object_size();
-	}
-	else if(json.is_array()){
-		return json.get_array_size();
-	}
-	else if(json.is_string()){
-		return json.get_string().size();
-	}
-	else{
-		quark::throw_runtime_error("Calling size() on unsupported type of value.");
-	}
-}
-
 static std::vector<specialization_t> make_size_specializations(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type1 = llvm::FunctionType::get(
 		llvm::Type::getInt64Ty(context),
@@ -256,19 +205,19 @@ static std::vector<specialization_t> make_size_specializations(llvm::LLVMContext
 	);
 	return {
 //		specialization_t { eresolved_type::k_string,					{ "size", make_intrinsic_llvm_function_type(type_lookup, make_size_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__size) },
-		specialization_t { eresolved_type::k_string,					{ module_symbol_t("size__string"), function_type1, reinterpret_cast<void*>(size__string) } },
+		specialization_t { eresolved_type::k_string,					{ module_symbol_t("size__string"), function_type1, reinterpret_cast<void*>(unified_intrinsic__size_string) } },
 
-		specialization_t { eresolved_type::k_vector_carray_pod,			{ module_symbol_t("size_vector_carray"), function_type1, reinterpret_cast<void*>(size_vector_carray) } },
-		specialization_t { eresolved_type::k_vector_carray_nonpod,		{ module_symbol_t("size_vector_carray"), function_type1, reinterpret_cast<void*>(size_vector_carray) } },
-		specialization_t { eresolved_type::k_vector_hamt_pod,			{ module_symbol_t("size_vector_hamt"), function_type1, reinterpret_cast<void*>(size_vector_hamt) } },
-		specialization_t { eresolved_type::k_vector_hamt_nonpod,		{ module_symbol_t("size_vector_hamt"), function_type1, reinterpret_cast<void*>(size_vector_hamt) } },
+		specialization_t { eresolved_type::k_vector_carray_pod,			{ module_symbol_t("size_vector_carray"), function_type1, reinterpret_cast<void*>(unified_intrinsic__size_vector_carray) } },
+		specialization_t { eresolved_type::k_vector_carray_nonpod,		{ module_symbol_t("size_vector_carray"), function_type1, reinterpret_cast<void*>(unified_intrinsic__size_vector_carray) } },
+		specialization_t { eresolved_type::k_vector_hamt_pod,			{ module_symbol_t("size_vector_hamt"), function_type1, reinterpret_cast<void*>(unified_intrinsic__size_vector_hamt) } },
+		specialization_t { eresolved_type::k_vector_hamt_nonpod,		{ module_symbol_t("size_vector_hamt"), function_type1, reinterpret_cast<void*>(unified_intrinsic__size_vector_hamt) } },
 
-		specialization_t { eresolved_type::k_dict_cppmap_pod,			{ module_symbol_t("size_dict_cppmap"), function_type2, reinterpret_cast<void*>(size_dict_cppmap) } },
-		specialization_t { eresolved_type::k_dict_cppmap_nonpod,		{ module_symbol_t("size_dict_cppmap"), function_type2, reinterpret_cast<void*>(size_dict_cppmap) } },
-		specialization_t { eresolved_type::k_dict_hamt_pod,				{ module_symbol_t("size_dict_hamt"), function_type2, reinterpret_cast<void*>(size_dict_hamt) } },
-		specialization_t { eresolved_type::k_dict_hamt_nonpod,			{ module_symbol_t("size_dict_hamt"), function_type2, reinterpret_cast<void*>(size_dict_hamt) } },
+		specialization_t { eresolved_type::k_dict_cppmap_pod,			{ module_symbol_t("size_dict_cppmap"), function_type2, reinterpret_cast<void*>(unified_intrinsic__size_dict_cppmap) } },
+		specialization_t { eresolved_type::k_dict_cppmap_nonpod,		{ module_symbol_t("size_dict_cppmap"), function_type2, reinterpret_cast<void*>(unified_intrinsic__size_dict_cppmap) } },
+		specialization_t { eresolved_type::k_dict_hamt_pod,				{ module_symbol_t("size_dict_hamt"), function_type2, reinterpret_cast<void*>(unified_intrinsic__size_dict_hamt) } },
+		specialization_t { eresolved_type::k_dict_hamt_nonpod,			{ module_symbol_t("size_dict_hamt"), function_type2, reinterpret_cast<void*>(unified_intrinsic__size_dict_hamt) } },
 
-		specialization_t { eresolved_type::k_json,						{ module_symbol_t("size_json"), function_type3, reinterpret_cast<void*>(size_json) } }
+		specialization_t { eresolved_type::k_json,						{ module_symbol_t("size_json"), function_type3, reinterpret_cast<void*>(unified_intrinsic__size_json) } }
 	};
 }
 
@@ -292,152 +241,6 @@ llvm::Value* generate_instrinsic_size(llvm_function_generator_t& gen_acc, const 
 /////////////////////////////////////////		update()
 
 
-static const runtime_value_t update_string(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
-	auto& backend = get_backend(frp);
-#if DEBUG
-	const auto& type0 = lookup_type_ref(backend, coll_type);
-	const auto& type1 = lookup_type_ref(backend, key_type);
-	const auto& type2 = lookup_type_ref(backend, value_type);
-
-	QUARK_ASSERT(type0.check_invariant());
-	QUARK_ASSERT(type1.check_invariant());
-	QUARK_ASSERT(type2.check_invariant());
-	QUARK_ASSERT(peek2(backend.types, type0).is_string());
-	QUARK_ASSERT(peek2(backend.types, type1).is_int());
-	QUARK_ASSERT(peek2(backend.types, type2).is_int());
-#endif
-	return update__string(backend, coll_value, key_value, value);
-}
-
-
-static const runtime_value_t update_vector_carray_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
-	auto& backend = get_backend(frp);
-
-#if DEBUG
-	const auto& type0 = lookup_type_ref(backend, coll_type);
-	const auto& type1 = lookup_type_ref(backend, key_type);
-	const auto& type2 = lookup_type_ref(backend, value_type);
-
-	QUARK_ASSERT(type0.check_invariant());
-	QUARK_ASSERT(type1.check_invariant());
-	QUARK_ASSERT(type2.check_invariant());
-	QUARK_ASSERT(peek2(backend.types, type1).is_int());
-#endif
-
-	return update_element__vector_carray(backend, coll_value, coll_type, key_value, value);
-}
-static const runtime_value_t update_vector_carray_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
-	auto& backend = get_backend(frp);
-
-#if DEBUG
-	const auto& type0 = lookup_type_ref(backend, coll_type);
-	const auto& type1 = lookup_type_ref(backend, key_type);
-	const auto& type2 = lookup_type_ref(backend, value_type);
-
-	QUARK_ASSERT(type0.check_invariant());
-	QUARK_ASSERT(type1.check_invariant());
-	QUARK_ASSERT(type2.check_invariant());
-	QUARK_ASSERT(peek2(backend.types, type1).is_int());
-#endif
-
-	return update_element__vector_carray(backend, coll_value, coll_type, key_value, value);
-}
-static const runtime_value_t update_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
-	auto& backend = get_backend(frp);
-
-#if DEBUG
-	const auto& type0 = lookup_type_ref(backend, coll_type);
-	const auto& type1 = lookup_type_ref(backend, key_type);
-	const auto& type2 = lookup_type_ref(backend, value_type);
-
-	QUARK_ASSERT(type0.check_invariant());
-	QUARK_ASSERT(type1.check_invariant());
-	QUARK_ASSERT(type2.check_invariant());
-	QUARK_ASSERT(peek2(backend.types, type1).is_int());
-#endif
-
-	return update_element__vector_hamt_pod(backend, coll_value, coll_type, key_value, value);
-}
-static const runtime_value_t update_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
-	auto& backend = get_backend(frp);
-
-#if DEBUG
-	const auto& type0 = lookup_type_ref(backend, coll_type);
-	const auto& type1 = lookup_type_ref(backend, key_type);
-	const auto& type2 = lookup_type_ref(backend, value_type);
-
-	QUARK_ASSERT(type0.check_invariant());
-	QUARK_ASSERT(type1.check_invariant());
-	QUARK_ASSERT(type2.check_invariant());
-	QUARK_ASSERT(peek2(backend.types, type1).is_int());
-#endif
-
-	return update_element__vector_hamt_nonpod(backend, coll_value, coll_type, key_value, value);
-}
-
-
-static const runtime_value_t update_dict_cppmap_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
-	auto& backend = get_backend(frp);
-
-#if DEBUG
-	const auto& type0 = lookup_type_ref(backend, coll_type);
-	const auto& type1 = lookup_type_ref(backend, key_type);
-	const auto& type2 = lookup_type_ref(backend, value_type);
-
-	QUARK_ASSERT(type0.check_invariant());
-	QUARK_ASSERT(type1.check_invariant());
-	QUARK_ASSERT(type2.check_invariant());
-	QUARK_ASSERT(peek2(backend.types, type1).is_string());
-#endif
-
-	return update__dict_cppmap(backend, coll_value, coll_type, key_value, value);
-}
-static const runtime_value_t update_dict_cppmap_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
-	auto& backend = get_backend(frp);
-
-#if DEBUG
-	const auto& type0 = lookup_type_ref(backend, coll_type);
-	const auto& type1 = lookup_type_ref(backend, key_type);
-	const auto& type2 = lookup_type_ref(backend, value_type);
-
-	QUARK_ASSERT(type0.check_invariant());
-	QUARK_ASSERT(type1.check_invariant());
-	QUARK_ASSERT(type2.check_invariant());
-	QUARK_ASSERT(peek2(backend.types, type1).is_string());
-#endif
-
-	return update__dict_cppmap(backend, coll_value, coll_type, key_value, value);
-}
-static const runtime_value_t update_dict_hamt_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
-	auto& backend = get_backend(frp);
-
-#if DEBUG
-	const auto& type0 = lookup_type_ref(backend, coll_type);
-	const auto& type1 = lookup_type_ref(backend, key_type);
-	const auto& type2 = lookup_type_ref(backend, value_type);
-
-	QUARK_ASSERT(type0.check_invariant());
-	QUARK_ASSERT(type1.check_invariant());
-	QUARK_ASSERT(type2.check_invariant());
-	QUARK_ASSERT(peek2(backend.types, type1).is_string());
-#endif
-	return update__dict_hamt(backend, coll_value, coll_type, key_value, value);
-}
-static const runtime_value_t update_dict_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
-	auto& backend = get_backend(frp);
-
-#if DEBUG
-	const auto& type0 = lookup_type_ref(backend, coll_type);
-	const auto& type1 = lookup_type_ref(backend, key_type);
-	const auto& type2 = lookup_type_ref(backend, value_type);
-
-	QUARK_ASSERT(type0.check_invariant());
-	QUARK_ASSERT(type1.check_invariant());
-	QUARK_ASSERT(type2.check_invariant());
-	QUARK_ASSERT(peek2(backend.types, type1).is_string());
-#endif
-	return update__dict_hamt(backend, coll_value, coll_type, key_value, value);
-}
 
 static std::vector<specialization_t> make_update_specializations(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type1 = llvm::FunctionType::get(

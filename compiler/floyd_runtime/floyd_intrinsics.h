@@ -23,6 +23,20 @@ runtime_value_t unified_intrinsic__to_pretty_string(floyd_runtime_t* frp, runtim
 runtime_type_t unified_intrinsic__typeof(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type);
 
 
+
+
+
+
+const runtime_value_t update_string(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
+const runtime_value_t update_vector_carray_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
+const runtime_value_t update_vector_carray_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
+const runtime_value_t update_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
+const runtime_value_t update_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
+const runtime_value_t update_dict_cppmap_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
+const runtime_value_t update_dict_cppmap_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
+const runtime_value_t update_dict_hamt_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
+const runtime_value_t update_dict_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
+
 runtime_value_t unified_intrinsic__update(
 	floyd_runtime_t* frp,
 
@@ -36,7 +50,16 @@ runtime_value_t unified_intrinsic__update(
 	runtime_type_t newvalue_type
 );
 
+
+
+int64_t unified_intrinsic__size_string(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type);
+int64_t unified_intrinsic__size_vector_carray(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type);
+int64_t unified_intrinsic__size_vector_hamt(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type);
+int64_t unified_intrinsic__size_dict_cppmap(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type);
+int64_t unified_intrinsic__size_dict_hamt(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type);
+int64_t unified_intrinsic__size_json(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type);
 int64_t unified_intrinsic__size(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type);
+
 int64_t unified_intrinsic__find(
 	floyd_runtime_t* frp,
 	runtime_value_t coll_value,

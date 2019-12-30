@@ -61,6 +61,161 @@ runtime_type_t unified_intrinsic__typeof(floyd_runtime_t* frp, runtime_value_t v
 }
 
 
+
+
+
+
+
+/////////////////////////////////////////		update()
+
+
+const runtime_value_t update_string(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
+	auto& backend = get_backend(frp);
+#if DEBUG
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	const auto& type1 = lookup_type_ref(backend, key_type);
+	const auto& type2 = lookup_type_ref(backend, value_type);
+
+	QUARK_ASSERT(type0.check_invariant());
+	QUARK_ASSERT(type1.check_invariant());
+	QUARK_ASSERT(type2.check_invariant());
+	QUARK_ASSERT(peek2(backend.types, type0).is_string());
+	QUARK_ASSERT(peek2(backend.types, type1).is_int());
+	QUARK_ASSERT(peek2(backend.types, type2).is_int());
+#endif
+	return update__string(backend, coll_value, key_value, value);
+}
+
+const runtime_value_t update_vector_carray_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
+	auto& backend = get_backend(frp);
+
+#if DEBUG
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	const auto& type1 = lookup_type_ref(backend, key_type);
+	const auto& type2 = lookup_type_ref(backend, value_type);
+
+	QUARK_ASSERT(type0.check_invariant());
+	QUARK_ASSERT(type1.check_invariant());
+	QUARK_ASSERT(type2.check_invariant());
+	QUARK_ASSERT(peek2(backend.types, type1).is_int());
+#endif
+
+	return update_element__vector_carray(backend, coll_value, coll_type, key_value, value);
+}
+const runtime_value_t update_vector_carray_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
+	auto& backend = get_backend(frp);
+
+#if DEBUG
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	const auto& type1 = lookup_type_ref(backend, key_type);
+	const auto& type2 = lookup_type_ref(backend, value_type);
+
+	QUARK_ASSERT(type0.check_invariant());
+	QUARK_ASSERT(type1.check_invariant());
+	QUARK_ASSERT(type2.check_invariant());
+	QUARK_ASSERT(peek2(backend.types, type1).is_int());
+#endif
+
+	return update_element__vector_carray(backend, coll_value, coll_type, key_value, value);
+}
+const runtime_value_t update_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
+	auto& backend = get_backend(frp);
+
+#if DEBUG
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	const auto& type1 = lookup_type_ref(backend, key_type);
+	const auto& type2 = lookup_type_ref(backend, value_type);
+
+	QUARK_ASSERT(type0.check_invariant());
+	QUARK_ASSERT(type1.check_invariant());
+	QUARK_ASSERT(type2.check_invariant());
+	QUARK_ASSERT(peek2(backend.types, type1).is_int());
+#endif
+
+	return update_element__vector_hamt_pod(backend, coll_value, coll_type, key_value, value);
+}
+const runtime_value_t update_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
+	auto& backend = get_backend(frp);
+
+#if DEBUG
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	const auto& type1 = lookup_type_ref(backend, key_type);
+	const auto& type2 = lookup_type_ref(backend, value_type);
+
+	QUARK_ASSERT(type0.check_invariant());
+	QUARK_ASSERT(type1.check_invariant());
+	QUARK_ASSERT(type2.check_invariant());
+	QUARK_ASSERT(peek2(backend.types, type1).is_int());
+#endif
+
+	return update_element__vector_hamt_nonpod(backend, coll_value, coll_type, key_value, value);
+}
+
+const runtime_value_t update_dict_cppmap_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
+	auto& backend = get_backend(frp);
+
+#if DEBUG
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	const auto& type1 = lookup_type_ref(backend, key_type);
+	const auto& type2 = lookup_type_ref(backend, value_type);
+
+	QUARK_ASSERT(type0.check_invariant());
+	QUARK_ASSERT(type1.check_invariant());
+	QUARK_ASSERT(type2.check_invariant());
+	QUARK_ASSERT(peek2(backend.types, type1).is_string());
+#endif
+
+	return update__dict_cppmap(backend, coll_value, coll_type, key_value, value);
+}
+const runtime_value_t update_dict_cppmap_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
+	auto& backend = get_backend(frp);
+
+#if DEBUG
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	const auto& type1 = lookup_type_ref(backend, key_type);
+	const auto& type2 = lookup_type_ref(backend, value_type);
+
+	QUARK_ASSERT(type0.check_invariant());
+	QUARK_ASSERT(type1.check_invariant());
+	QUARK_ASSERT(type2.check_invariant());
+	QUARK_ASSERT(peek2(backend.types, type1).is_string());
+#endif
+
+	return update__dict_cppmap(backend, coll_value, coll_type, key_value, value);
+}
+const runtime_value_t update_dict_hamt_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
+	auto& backend = get_backend(frp);
+
+#if DEBUG
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	const auto& type1 = lookup_type_ref(backend, key_type);
+	const auto& type2 = lookup_type_ref(backend, value_type);
+
+	QUARK_ASSERT(type0.check_invariant());
+	QUARK_ASSERT(type1.check_invariant());
+	QUARK_ASSERT(type2.check_invariant());
+	QUARK_ASSERT(peek2(backend.types, type1).is_string());
+#endif
+	return update__dict_hamt(backend, coll_value, coll_type, key_value, value);
+}
+const runtime_value_t update_dict_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type){
+	auto& backend = get_backend(frp);
+
+#if DEBUG
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	const auto& type1 = lookup_type_ref(backend, key_type);
+	const auto& type2 = lookup_type_ref(backend, value_type);
+
+	QUARK_ASSERT(type0.check_invariant());
+	QUARK_ASSERT(type1.check_invariant());
+	QUARK_ASSERT(type2.check_invariant());
+	QUARK_ASSERT(peek2(backend.types, type1).is_string());
+#endif
+	return update__dict_hamt(backend, coll_value, coll_type, key_value, value);
+}
+
+
+
 static rt_value_t update_element(value_backend_t& backend, const rt_value_t& obj1, const rt_value_t& lookup_key, const rt_value_t& new_value){
 	QUARK_ASSERT(backend.check_invariant());
 
@@ -152,9 +307,7 @@ static rt_value_t update_element(value_backend_t& backend, const rt_value_t& obj
 	}
 }
 
-
 //??? user function type overloading and create several different functions, depending on the DYN argument.
-
 
 // let b = update(a, member, value)
 runtime_value_t unified_intrinsic__update(
@@ -180,6 +333,62 @@ runtime_value_t unified_intrinsic__update(
 	return result._pod;
 }
 
+
+
+////////////////////////////////	size()
+
+
+int64_t unified_intrinsic__size_string(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type){
+	auto& backend = get_backend(frp);
+
+#if DEBUG
+	const auto& type0 = lookup_type_ref(backend, vec_type);
+	QUARK_ASSERT(peek2(backend.types, type0).is_string());
+#endif
+
+	return vec.vector_carray_ptr->get_element_count();
+}
+
+int64_t unified_intrinsic__size_vector_carray(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type){
+	auto& backend = get_backend(frp);
+	(void)backend;
+	return collection.vector_carray_ptr->get_element_count();
+}
+int64_t unified_intrinsic__size_vector_hamt(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type){
+	auto& backend = get_backend(frp);
+	(void)backend;
+	return collection.vector_hamt_ptr->get_element_count();
+}
+int64_t unified_intrinsic__size_dict_cppmap(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type){
+	auto& backend = get_backend(frp);
+	(void)backend;
+	return collection.dict_cppmap_ptr->size();
+}
+int64_t unified_intrinsic__size_dict_hamt(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type){
+	auto& backend = get_backend(frp);
+	(void)backend;
+	return collection.dict_hamt_ptr->size();
+}
+int64_t unified_intrinsic__size_json(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type){
+	auto& backend = get_backend(frp);
+	(void)backend;
+
+	const auto& json = collection.json_ptr->get_json();
+
+	if(json.is_object()){
+		return json.get_object_size();
+	}
+	else if(json.is_array()){
+		return json.get_array_size();
+	}
+	else if(json.is_string()){
+		return json.get_string().size();
+	}
+	else{
+		quark::throw_runtime_error("Calling size() on unsupported type of value.");
+	}
+}
+
 int64_t unified_intrinsic__size(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type){
 #if DEBUG
 	auto& backend = get_backend(frp);
@@ -189,6 +398,9 @@ int64_t unified_intrinsic__size(floyd_runtime_t* frp, runtime_value_t coll_value
 	//	BC and LLVM inlines size()
 	NOT_IMPLEMENTED_YET();
 }
+
+
+
 
 int64_t unified_intrinsic__find(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type){
 	auto& backend = get_backend(frp);
