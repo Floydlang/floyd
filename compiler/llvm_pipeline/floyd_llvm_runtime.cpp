@@ -364,7 +364,7 @@ static void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p
 }
 #endif
 
-static int64_t floyd_llvm_intrinsic__dummy(floyd_runtime_t* frp){
+static int64_t floyd_llvm_intrinsic__dummy(runtime_t* frp){
 	auto& r = get_backend(frp);
 	(void)r;
 	quark::throw_runtime_error("Attempting to calling unimplemented function.");
@@ -632,7 +632,7 @@ static std::string make_trace_process_header(const llvm_process_t& process){
 	return header;
 }
 
-void llvm_process_t::runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type){
+void llvm_process_t::runtime_process__on_send_message(const std::string& dest_process_id, const rt_pod_t& message, const type_t& message_type){
 	QUARK_ASSERT(check_invariant());
 	auto& backend = ee->backend;
 	const auto& types = backend.types;
@@ -726,7 +726,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 
 	while(process._exiting_flag == false){
 		//	Block until we get a message
-		runtime_value_t message_with_rc;
+		rt_pod_t message_with_rc;
 		{
 			std::unique_lock<std::mutex> lk(process._inbox_mutex);
 
@@ -760,7 +760,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 			}
 		}
 
-		runtime_value_t result = make_uninitialized_magic();
+		rt_pod_t result = make_uninitialized_magic();
 
 		{
 			QUARK_SCOPED_TRACE_OPTIONAL("Call msg handler", trace);
@@ -883,7 +883,7 @@ void deinit_program(llvm_execution_engine_t& ee){
 }
 
 
-floyd_runtime_t make_runtime_ptr(llvm_context_t* p){
+runtime_t make_runtime_ptr(llvm_context_t* p){
 	QUARK_ASSERT(p != nullptr && p->check_invariant());
 
 	if(p->process){

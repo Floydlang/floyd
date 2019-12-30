@@ -136,8 +136,8 @@ The non-first-class types are:
 
 //	### Also use for arguments, not only return.
 struct WIDE_RETURN_T {
-	runtime_value_t a;
-	runtime_value_t b;
+	rt_pod_t a;
+	rt_pod_t b;
 };
 
 enum class WIDE_RETURN_MEMBERS {
@@ -145,11 +145,11 @@ enum class WIDE_RETURN_MEMBERS {
 	b = 1
 };
 
-WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
+WIDE_RETURN_T make_wide_return_2x64(rt_pod_t a, rt_pod_t b);
 
 
 
-WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b){
+WIDE_RETURN_T make_wide_return_2x64(rt_pod_t a, rt_pod_t b){
 	return WIDE_RETURN_T{ a, b };
 }
 

@@ -51,7 +51,7 @@ QUARK_TEST("", "", "", ""){
 	const auto int_size = sizeof(int);
 	QUARK_ASSERT(int_size == 4);
 
-	const auto pod_size = sizeof(runtime_value_t);
+	const auto pod_size = sizeof(rt_pod_t);
 	QUARK_ASSERT(pod_size == 8);
 
 	const auto bcvalue_size = sizeof(rt_value_t);
@@ -677,7 +677,7 @@ void interpreter_t::unwind_stack(){
 }
 
 //??? Unify this debug code with trace_value_backend()
-static std::vector<std::string> make(value_backend_t& backend, size_t i, runtime_value_t bc_pod, const type_t& debug_type, const interpreter_stack_t::active_frame_t& frame, int frame_index, int symbol_index, bool is_symbol){
+static std::vector<std::string> make(value_backend_t& backend, size_t i, rt_pod_t bc_pod, const type_t& debug_type, const interpreter_stack_t::active_frame_t& frame, int frame_index, int symbol_index, bool is_symbol){
 	const bool is_rc = is_rc_value(backend.types, debug_type);
 
 	std::string value_str = "";
@@ -1193,7 +1193,7 @@ static cif_t make_cif(const value_backend_t& backend, const type_t& function_typ
 
 		//	Notice that ANY will represent this function type arg as TWO elements in BC stack and in FFI argument list
 		if(func_arg_type.is_any()){
-			//	runtime_value_t
+			//	rt_pod_t
 			result.arg_types.push_back(&ffi_type_uint64);
 
 			//	runtime_type_t
@@ -1236,7 +1236,7 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 	const int arg0_stack_pos = (int)(stack.size() - (function_def_dynamic_arg_count + callee_arg_count));
 	int stack_pos = arg0_stack_pos;
 
-	const auto runtime_ptr = floyd_runtime_t { &backend, &vm, vm._process_handler };
+	const auto runtime_ptr = runtime_t { &backend, &vm, vm._process_handler };
 
 	std::vector<void*> values;
 
@@ -1264,7 +1264,7 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 			//	Store the value as a 64 bit integer always.
 			storage.push_back(rt_value_t::make_int(arg_pod.int_value));
 
-			//	Notice: in ABI, any is passed like: [ runtime_value_t value, runtime_type_t value_type ], notice swapped order!
+			//	Notice: in ABI, any is passed like: [ rt_pod_t value, runtime_type_t value_type ], notice swapped order!
 			//	Use a pointer directly into storage. This is tricky. Requires reserve().
 			values.push_back(&storage[storage.size() - 1]._pod);
 			values.push_back(&storage[storage.size() - 2]._pod);
@@ -1291,7 +1291,7 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 	if(function_return_type_peek.is_void() == true){
 	}
 	else{
-		const auto result2 = *(runtime_value_t*)&return_value;
+		const auto result2 = *(rt_pod_t*)&return_value;
 
 		//	Cast the result to the destination symbol's type.
 		const auto dest_type = stack._current_static_frame->_symbol_effective_type[target_reg];
@@ -1301,7 +1301,7 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 }
 
 //	We need to examine the callee, since we support magic argument lists of varying size.
-static void do_call(interpreter_t& vm, int target_reg, const runtime_value_t callee, int callee_arg_count){
+static void do_call(interpreter_t& vm, int target_reg, const rt_pod_t callee, int callee_arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
 	interpreter_stack_t& stack = vm._stack;
@@ -1358,7 +1358,7 @@ static void do_call(interpreter_t& vm, int target_reg, const runtime_value_t cal
 	}
 }
 
-inline void write_reg_rc(value_backend_t& backend, runtime_value_t regs[], int dest_reg, const type_t& dest_type, runtime_value_t value){
+inline void write_reg_rc(value_backend_t& backend, rt_pod_t regs[], int dest_reg, const type_t& dest_type, rt_pod_t value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dest_type.check_invariant());
 

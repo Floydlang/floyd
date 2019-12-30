@@ -27,7 +27,7 @@ bool pass_as_ptr(const type_desc_t& type);
 
 
 /*
-floyd			C++			runtime_value_t			native func arg/return
+floyd			C++			rt_pod_t			native func arg/return
 --------------------------------------------------------------------------------------
 bool			bool		uint8					uint1
 int							int64_t					int64

@@ -1136,7 +1136,7 @@ void corelib_rename_fsentry(const std::string& abs_path, const std::string& n){
 	RenameEntry(abs_path, n);
 }
 
-static runtime_value_t corelib_impl__calc_binary_sha1(floyd_runtime_t* frp, runtime_value_t binary_ptr){
+static rt_pod_t corelib_impl__calc_binary_sha1(runtime_t* frp, rt_pod_t binary_ptr){
 	auto& backend = get_backend(frp);
 	QUARK_ASSERT(binary_ptr.struct_ptr != nullptr);
 
@@ -1156,7 +1156,7 @@ static runtime_value_t corelib_impl__calc_binary_sha1(floyd_runtime_t* frp, runt
 	return to_runtime_value2(backend, a);
 }
 
-static runtime_value_t corelib_impl__make_benchmark_report(floyd_runtime_t* frp, const runtime_value_t b){
+static rt_pod_t corelib_impl__make_benchmark_report(runtime_t* frp, const rt_pod_t b){
 	auto& backend = get_backend(frp);
 	const auto& types = backend.types;
 
@@ -1176,7 +1176,7 @@ static runtime_value_t corelib_impl__make_benchmark_report(floyd_runtime_t* frp,
 	return result;
 }
 
-static runtime_value_t corelib_impl__detect_hardware_caps(floyd_runtime_t* frp){
+static rt_pod_t corelib_impl__detect_hardware_caps(runtime_t* frp){
 	auto& backend = get_backend(frp);
 
 	const auto& types = backend.types;
@@ -1191,7 +1191,7 @@ static runtime_value_t corelib_impl__detect_hardware_caps(floyd_runtime_t* frp){
 	return to_runtime_value2(backend, a);
 }
 
-static runtime_value_t corelib_impl__make_hardware_caps_report(floyd_runtime_t* frp, runtime_value_t caps0){
+static rt_pod_t corelib_impl__make_hardware_caps_report(runtime_t* frp, rt_pod_t caps0){
 	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
@@ -1205,7 +1205,7 @@ static runtime_value_t corelib_impl__make_hardware_caps_report(floyd_runtime_t* 
 	const auto s = corelib_make_hardware_caps_report(caps);
 	return to_runtime_string2(backend, s);
 }
-static runtime_value_t corelib_impl__make_hardware_caps_report_brief(floyd_runtime_t* frp, runtime_value_t caps0){
+static rt_pod_t corelib_impl__make_hardware_caps_report_brief(runtime_t* frp, rt_pod_t caps0){
 	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
@@ -1218,14 +1218,14 @@ static runtime_value_t corelib_impl__make_hardware_caps_report_brief(floyd_runti
 	const auto s = corelib_make_hardware_caps_report_brief(caps);
 	return to_runtime_string2(backend, s);
 }
-static runtime_value_t corelib_impl__get_current_date_and_time_string(floyd_runtime_t* frp){
+static rt_pod_t corelib_impl__get_current_date_and_time_string(runtime_t* frp){
 	auto& backend = get_backend(frp);
 
 	const auto s = get_current_date_and_time_string();
 	return to_runtime_string2(backend, s);
 }
 
-static runtime_value_t corelib_impl__calc_string_sha1(floyd_runtime_t* frp, runtime_value_t s0){
+static rt_pod_t corelib_impl__calc_string_sha1(runtime_t* frp, rt_pod_t s0){
 	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
@@ -1241,11 +1241,11 @@ static runtime_value_t corelib_impl__calc_string_sha1(floyd_runtime_t* frp, runt
 	return to_runtime_value2(backend, a);
 }
 
-static int64_t corelib_impl__get_time_of_day(floyd_runtime_t* frp){
+static int64_t corelib_impl__get_time_of_day(runtime_t* frp){
 	return corelib__get_time_of_day();
 }
 
-static runtime_value_t corelib_impl__read_text_file(floyd_runtime_t* frp, runtime_value_t arg){
+static rt_pod_t corelib_impl__read_text_file(runtime_t* frp, rt_pod_t arg){
 	auto& backend = get_backend(frp);
 
 	const auto path = from_runtime_string2(backend, arg);
@@ -1253,7 +1253,7 @@ static runtime_value_t corelib_impl__read_text_file(floyd_runtime_t* frp, runtim
 	return to_runtime_string2(backend, file_contents);
 }
 
-static void corelib_impl__write_text_file(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t data0){
+static void corelib_impl__write_text_file(runtime_t* frp, rt_pod_t path0, rt_pod_t data0){
 	auto& backend = get_backend(frp);
 
 	const auto path = from_runtime_string2(backend, path0);
@@ -1261,13 +1261,13 @@ static void corelib_impl__write_text_file(floyd_runtime_t* frp, runtime_value_t 
 	corelib_write_text_file(path, file_contents);
 }
 
-static runtime_value_t corelib_impl__read_line_stdin(floyd_runtime_t* frp){
+static rt_pod_t corelib_impl__read_line_stdin(runtime_t* frp){
 	auto& backend = get_backend(frp);
 	const auto s = 	corelib_read_line_stdin();
 	return to_runtime_string2(backend, s);
 }
 
-static runtime_value_t corelib_impl__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
+static rt_pod_t corelib_impl__get_fsentries_shallow(runtime_t* frp, rt_pod_t path0){
 	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
@@ -1287,7 +1287,7 @@ static runtime_value_t corelib_impl__get_fsentries_shallow(floyd_runtime_t* frp,
 	return to_runtime_value2(backend, vec2);
 }
 
-static runtime_value_t corelib_impl__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
+static rt_pod_t corelib_impl__get_fsentries_deep(runtime_t* frp, rt_pod_t path0){
 	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
@@ -1307,7 +1307,7 @@ static runtime_value_t corelib_impl__get_fsentries_deep(floyd_runtime_t* frp, ru
 	return to_runtime_value2(backend, vec2);
 }
 
-static runtime_value_t corelib_impl__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t path0){
+static rt_pod_t corelib_impl__get_fsentry_info(runtime_t* frp, rt_pod_t path0){
 	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
@@ -1317,7 +1317,7 @@ static runtime_value_t corelib_impl__get_fsentry_info(floyd_runtime_t* frp, runt
 	return to_runtime_value2(backend, info2);
 }
 
-static runtime_value_t corelib_impl__get_fs_environment(floyd_runtime_t* frp){
+static rt_pod_t corelib_impl__get_fs_environment(runtime_t* frp){
 	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
@@ -1326,7 +1326,7 @@ static runtime_value_t corelib_impl__get_fs_environment(floyd_runtime_t* frp){
 	return to_runtime_value2(backend, result);
 }
 
-static uint8_t corelib_impl__does_fsentry_exist(floyd_runtime_t* frp, runtime_value_t path0){
+static uint8_t corelib_impl__does_fsentry_exist(runtime_t* frp, rt_pod_t path0){
 	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 	const auto path = from_runtime_string2(backend, path0);
@@ -1341,14 +1341,14 @@ static uint8_t corelib_impl__does_fsentry_exist(floyd_runtime_t* frp, runtime_va
 	return exists ? 0x01 : 0x00;
 }
 
-static void corelib_impl__create_directory_branch(floyd_runtime_t* frp, runtime_value_t path0){
+static void corelib_impl__create_directory_branch(runtime_t* frp, rt_pod_t path0){
 	auto& backend = get_backend(frp);
 	const auto path = from_runtime_string2(backend, path0);
 
 	corelib_create_directory_branch(path);
 }
 
-static void corelib_impl__delete_fsentry_deep(floyd_runtime_t* frp, runtime_value_t path0){
+static void corelib_impl__delete_fsentry_deep(runtime_t* frp, rt_pod_t path0){
 	auto& backend = get_backend(frp);
 
 	const auto path = from_runtime_string2(backend, path0);
@@ -1356,7 +1356,7 @@ static void corelib_impl__delete_fsentry_deep(floyd_runtime_t* frp, runtime_valu
 	corelib_delete_fsentry_deep(path);
 }
 
-static void corelib_impl__rename_fsentry(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t name0){
+static void corelib_impl__rename_fsentry(runtime_t* frp, rt_pod_t path0, rt_pod_t name0){
 	auto& backend = get_backend(frp);
 	const auto path = from_runtime_string2(backend, path0);
 	const auto n = from_runtime_string2(backend, name0);

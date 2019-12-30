@@ -70,10 +70,10 @@ static std::vector<specialization_t> make_map_specializations(llvm::LLVMContext&
 		false
 	);
 	return {
-		specialization_t { eresolved_type::k_vector_carray_pod,		{ module_symbol_t("map_carray_pod"), function_type, reinterpret_cast<void*>(unified_intrinsic__map__carray) } },
-		specialization_t { eresolved_type::k_vector_carray_nonpod,	{ module_symbol_t("map_carray_nonpod"), function_type, reinterpret_cast<void*>(unified_intrinsic__map__carray) } },
-		specialization_t { eresolved_type::k_vector_hamt_pod,		{ module_symbol_t("map_hamt_pod"), function_type, reinterpret_cast<void*>(unified_intrinsic__map__hamt) } },
-		specialization_t { eresolved_type::k_vector_hamt_nonpod, 	{ module_symbol_t("map_hamt_nonpod"), function_type, reinterpret_cast<void*>(unified_intrinsic__map__hamt) } }
+		specialization_t { eresolved_type::k_vector_carray_pod,		{ module_symbol_t("map_carray_pod"), function_type, reinterpret_cast<void*>(intrinsic__map__carray) } },
+		specialization_t { eresolved_type::k_vector_carray_nonpod,	{ module_symbol_t("map_carray_nonpod"), function_type, reinterpret_cast<void*>(intrinsic__map__carray) } },
+		specialization_t { eresolved_type::k_vector_hamt_pod,		{ module_symbol_t("map_hamt_pod"), function_type, reinterpret_cast<void*>(intrinsic__map__hamt) } },
+		specialization_t { eresolved_type::k_vector_hamt_nonpod, 	{ module_symbol_t("map_hamt_nonpod"), function_type, reinterpret_cast<void*>(intrinsic__map__hamt) } }
 	};
 }
 
@@ -128,11 +128,11 @@ static std::vector<specialization_t> make_push_back_specializations(llvm::LLVMCo
 	);
 	return {
 //		specialization_t { { "push_back", make_intrinsic_llvm_function_type(type_lookup, make_push_back_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__push_back) }, xx),
-		specialization_t { eresolved_type::k_string,				{ module_symbol_t("push_back__string"), function_type, reinterpret_cast<void*>(unified_intrinsic__push_back_string) } },
-		specialization_t { eresolved_type::k_vector_carray_pod,		{ module_symbol_t("push_back_carray_pod"), function_type, reinterpret_cast<void*>(unified_intrinsic__push_back_carray_pod) } },
-		specialization_t { eresolved_type::k_vector_carray_nonpod,	{ module_symbol_t("push_back_carray_nonpod"), function_type, reinterpret_cast<void*>(unified_intrinsic__push_back_carray_nonpod) } },
-		specialization_t { eresolved_type::k_vector_hamt_pod,		{ module_symbol_t("push_back_hamt_pod"), function_type, reinterpret_cast<void*>(unified_intrinsic__push_back_hamt_pod) } },
-		specialization_t { eresolved_type::k_vector_hamt_nonpod, 	{ module_symbol_t("push_back_hamt_nonpod"), function_type, reinterpret_cast<void*>(unified_intrinsic__push_back_hamt_nonpod) } }
+		specialization_t { eresolved_type::k_string,				{ module_symbol_t("push_back__string"), function_type, reinterpret_cast<void*>(intrinsic__push_back_string) } },
+		specialization_t { eresolved_type::k_vector_carray_pod,		{ module_symbol_t("push_back_carray_pod"), function_type, reinterpret_cast<void*>(intrinsic__push_back_carray_pod) } },
+		specialization_t { eresolved_type::k_vector_carray_nonpod,	{ module_symbol_t("push_back_carray_nonpod"), function_type, reinterpret_cast<void*>(intrinsic__push_back_carray_nonpod) } },
+		specialization_t { eresolved_type::k_vector_hamt_pod,		{ module_symbol_t("push_back_hamt_pod"), function_type, reinterpret_cast<void*>(intrinsic__push_back_hamt_pod) } },
+		specialization_t { eresolved_type::k_vector_hamt_nonpod, 	{ module_symbol_t("push_back_hamt_nonpod"), function_type, reinterpret_cast<void*>(intrinsic__push_back_hamt_nonpod) } }
 	};
 }
 
@@ -205,19 +205,19 @@ static std::vector<specialization_t> make_size_specializations(llvm::LLVMContext
 	);
 	return {
 //		specialization_t { eresolved_type::k_string,					{ "size", make_intrinsic_llvm_function_type(type_lookup, make_size_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__size) },
-		specialization_t { eresolved_type::k_string,					{ module_symbol_t("size__string"), function_type1, reinterpret_cast<void*>(unified_intrinsic__size_string) } },
+		specialization_t { eresolved_type::k_string,					{ module_symbol_t("size__string"), function_type1, reinterpret_cast<void*>(intrinsic__size_string) } },
 
-		specialization_t { eresolved_type::k_vector_carray_pod,			{ module_symbol_t("size_vector_carray"), function_type1, reinterpret_cast<void*>(unified_intrinsic__size_vector_carray) } },
-		specialization_t { eresolved_type::k_vector_carray_nonpod,		{ module_symbol_t("size_vector_carray"), function_type1, reinterpret_cast<void*>(unified_intrinsic__size_vector_carray) } },
-		specialization_t { eresolved_type::k_vector_hamt_pod,			{ module_symbol_t("size_vector_hamt"), function_type1, reinterpret_cast<void*>(unified_intrinsic__size_vector_hamt) } },
-		specialization_t { eresolved_type::k_vector_hamt_nonpod,		{ module_symbol_t("size_vector_hamt"), function_type1, reinterpret_cast<void*>(unified_intrinsic__size_vector_hamt) } },
+		specialization_t { eresolved_type::k_vector_carray_pod,			{ module_symbol_t("size_vector_carray"), function_type1, reinterpret_cast<void*>(intrinsic__size_vector_carray) } },
+		specialization_t { eresolved_type::k_vector_carray_nonpod,		{ module_symbol_t("size_vector_carray"), function_type1, reinterpret_cast<void*>(intrinsic__size_vector_carray) } },
+		specialization_t { eresolved_type::k_vector_hamt_pod,			{ module_symbol_t("size_vector_hamt"), function_type1, reinterpret_cast<void*>(intrinsic__size_vector_hamt) } },
+		specialization_t { eresolved_type::k_vector_hamt_nonpod,		{ module_symbol_t("size_vector_hamt"), function_type1, reinterpret_cast<void*>(intrinsic__size_vector_hamt) } },
 
-		specialization_t { eresolved_type::k_dict_cppmap_pod,			{ module_symbol_t("size_dict_cppmap"), function_type2, reinterpret_cast<void*>(unified_intrinsic__size_dict_cppmap) } },
-		specialization_t { eresolved_type::k_dict_cppmap_nonpod,		{ module_symbol_t("size_dict_cppmap"), function_type2, reinterpret_cast<void*>(unified_intrinsic__size_dict_cppmap) } },
-		specialization_t { eresolved_type::k_dict_hamt_pod,				{ module_symbol_t("size_dict_hamt"), function_type2, reinterpret_cast<void*>(unified_intrinsic__size_dict_hamt) } },
-		specialization_t { eresolved_type::k_dict_hamt_nonpod,			{ module_symbol_t("size_dict_hamt"), function_type2, reinterpret_cast<void*>(unified_intrinsic__size_dict_hamt) } },
+		specialization_t { eresolved_type::k_dict_cppmap_pod,			{ module_symbol_t("size_dict_cppmap"), function_type2, reinterpret_cast<void*>(intrinsic__size_dict_cppmap) } },
+		specialization_t { eresolved_type::k_dict_cppmap_nonpod,		{ module_symbol_t("size_dict_cppmap"), function_type2, reinterpret_cast<void*>(intrinsic__size_dict_cppmap) } },
+		specialization_t { eresolved_type::k_dict_hamt_pod,				{ module_symbol_t("size_dict_hamt"), function_type2, reinterpret_cast<void*>(intrinsic__size_dict_hamt) } },
+		specialization_t { eresolved_type::k_dict_hamt_nonpod,			{ module_symbol_t("size_dict_hamt"), function_type2, reinterpret_cast<void*>(intrinsic__size_dict_hamt) } },
 
-		specialization_t { eresolved_type::k_json,						{ module_symbol_t("size_json"), function_type3, reinterpret_cast<void*>(unified_intrinsic__size_json) } }
+		specialization_t { eresolved_type::k_json,						{ module_symbol_t("size_json"), function_type3, reinterpret_cast<void*>(intrinsic__size_json) } }
 	};
 }
 
@@ -380,45 +380,45 @@ static std::vector<func_link_t> get_one_to_one_intrinsic_binds2(
 	auto types = type_lookup.state.types;
 
 	const std::vector<func_link_t> defs = {
-		make_intri(type_lookup, make_assert_signature(types), (void*)&unified_intrinsic__assert),
-		make_intri(type_lookup, make_to_string_signature(types), (void*)&unified_intrinsic__to_string),
-		make_intri(type_lookup, make_to_pretty_string_signature(types), (void*)&unified_intrinsic__to_pretty_string),
-		make_intri(type_lookup, make_typeof_signature(types), (void*)&unified_intrinsic__typeof),
+		make_intri(type_lookup, make_assert_signature(types), (void*)&intrinsic__assert),
+		make_intri(type_lookup, make_to_string_signature(types), (void*)&intrinsic__to_string),
+		make_intri(type_lookup, make_to_pretty_string_signature(types), (void*)&intrinsic__to_pretty_string),
+		make_intri(type_lookup, make_typeof_signature(types), (void*)&intrinsic__typeof),
 
-		make_intri(type_lookup, make_update_signature(types), (void*)&unified_intrinsic__update),
-		make_intri(type_lookup, make_size_signature(types), (void*)&unified_intrinsic__size),
-		make_intri(type_lookup, make_find_signature(types), (void*)&unified_intrinsic__find),
-		make_intri(type_lookup, make_exists_signature(types), (void*)&unified_intrinsic__exists),
-		make_intri(type_lookup, make_erase_signature(types), (void*)&unified_intrinsic__erase),
-		make_intri(type_lookup, make_get_keys_signature(types), (void*)&unified_intrinsic__get_keys),
-		make_intri(type_lookup, make_push_back_signature(types), (void*)&unified_intrinsic__push_back),
-		make_intri(type_lookup, make_subset_signature(types), (void*)&unified_intrinsic__subset),
-		make_intri(type_lookup, make_replace_signature(types), (void*)&unified_intrinsic__replace),
+		make_intri(type_lookup, make_update_signature(types), (void*)&intrinsic__update),
+		make_intri(type_lookup, make_size_signature(types), (void*)&intrinsic__size),
+		make_intri(type_lookup, make_find_signature(types), (void*)&intrinsic__find),
+		make_intri(type_lookup, make_exists_signature(types), (void*)&intrinsic__exists),
+		make_intri(type_lookup, make_erase_signature(types), (void*)&intrinsic__erase),
+		make_intri(type_lookup, make_get_keys_signature(types), (void*)&intrinsic__get_keys),
+		make_intri(type_lookup, make_push_back_signature(types), (void*)&intrinsic__push_back),
+		make_intri(type_lookup, make_subset_signature(types), (void*)&intrinsic__subset),
+		make_intri(type_lookup, make_replace_signature(types), (void*)&intrinsic__replace),
 
-		make_intri(type_lookup, make_get_json_type_signature(types), (void*)&unified_intrinsic__get_json_type),
-		make_intri(type_lookup, make_generate_json_script_signature(types), (void*)&unified_intrinsic__generate_json_script),
-		make_intri(type_lookup, make_parse_json_script_signature(types), (void*)&unified_intrinsic__parse_json_script),
-		make_intri(type_lookup, make_to_json_signature(types), (void*)&unified_intrinsic__to_json),
-		make_intri(type_lookup, make_from_json_signature(types), (void*)&unified_intrinsic__from_json),
+		make_intri(type_lookup, make_get_json_type_signature(types), (void*)&intrinsic__get_json_type),
+		make_intri(type_lookup, make_generate_json_script_signature(types), (void*)&intrinsic__generate_json_script),
+		make_intri(type_lookup, make_parse_json_script_signature(types), (void*)&intrinsic__parse_json_script),
+		make_intri(type_lookup, make_to_json_signature(types), (void*)&intrinsic__to_json),
+		make_intri(type_lookup, make_from_json_signature(types), (void*)&intrinsic__from_json),
 
 
-		make_intri(type_lookup, make_map_signature(types), (void*)&unified_intrinsic__map),
-		make_intri(type_lookup, make_map_dag_signature(types), (void*)&unified_intrinsic__map_dag),
-		make_intri(type_lookup, make_filter_signature(types), (void*)&unified_intrinsic__filter),
-		make_intri(type_lookup, make_reduce_signature(types), (void*)&unified_intrinsic__reduce),
-		make_intri(type_lookup, make_stable_sort_signature(types), (void*)&unified_intrinsic__stable_sort),
+		make_intri(type_lookup, make_map_signature(types), (void*)&intrinsic__map),
+		make_intri(type_lookup, make_map_dag_signature(types), (void*)&intrinsic__map_dag),
+		make_intri(type_lookup, make_filter_signature(types), (void*)&intrinsic__filter),
+		make_intri(type_lookup, make_reduce_signature(types), (void*)&intrinsic__reduce),
+		make_intri(type_lookup, make_stable_sort_signature(types), (void*)&intrinsic__stable_sort),
 
-		make_intri(type_lookup, make_print_signature(types), (void*)&unified_intrinsic__print),
-		make_intri(type_lookup, make_send_signature(types), (void*)&unified_intrinsic__send),
-		make_intri(type_lookup, make_exit_signature(types), (void*)&unified_intrinsic__exit),
+		make_intri(type_lookup, make_print_signature(types), (void*)&intrinsic__print),
+		make_intri(type_lookup, make_send_signature(types), (void*)&intrinsic__send),
+		make_intri(type_lookup, make_exit_signature(types), (void*)&intrinsic__exit),
 
-		make_intri(type_lookup, make_bw_not_signature(types), (void*)&unified_intrinsic__bw_not),
-		make_intri(type_lookup, make_bw_and_signature(types), (void*)&unified_intrinsic__bw_and),
-		make_intri(type_lookup, make_bw_or_signature(types), (void*)&unified_intrinsic__bw_or),
-		make_intri(type_lookup, make_bw_xor_signature(types), (void*)&unified_intrinsic__bw_xor),
-		make_intri(type_lookup, make_bw_shift_left_signature(types), (void*)&unified_intrinsic__bw_shift_left),
-		make_intri(type_lookup, make_bw_shift_right_signature(types), (void*)&unified_intrinsic__bw_shift_right),
-		make_intri(type_lookup, make_bw_shift_right_arithmetic_signature(types), (void*)&unified_intrinsic__bw_shift_right_arithmetic)
+		make_intri(type_lookup, make_bw_not_signature(types), (void*)&intrinsic__bw_not),
+		make_intri(type_lookup, make_bw_and_signature(types), (void*)&intrinsic__bw_and),
+		make_intri(type_lookup, make_bw_or_signature(types), (void*)&intrinsic__bw_or),
+		make_intri(type_lookup, make_bw_xor_signature(types), (void*)&intrinsic__bw_xor),
+		make_intri(type_lookup, make_bw_shift_left_signature(types), (void*)&intrinsic__bw_shift_left),
+		make_intri(type_lookup, make_bw_shift_right_signature(types), (void*)&intrinsic__bw_shift_right),
+		make_intri(type_lookup, make_bw_shift_right_arithmetic_signature(types), (void*)&intrinsic__bw_shift_right_arithmetic)
 	};
 
 	QUARK_ASSERT(types.nodes.size() == type_lookup.state.types.nodes.size());

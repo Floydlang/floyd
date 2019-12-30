@@ -40,7 +40,7 @@ int64_t analyse_samples(const int64_t* samples, int64_t count){
 
 
 
-std::string gen_to_string(value_backend_t& backend, runtime_value_t arg_value, type_t arg_type){
+std::string gen_to_string(value_backend_t& backend, rt_pod_t arg_value, type_t arg_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& types = backend.types;

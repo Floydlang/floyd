@@ -14,106 +14,106 @@
 
 namespace floyd {
 
-struct floyd_runtime_t;
+struct runtime_t;
 
-void unified_intrinsic__assert(floyd_runtime_t* frp, runtime_value_t arg);
+void intrinsic__assert(runtime_t* frp, rt_pod_t arg);
 
-runtime_value_t unified_intrinsic__to_string(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type);
-runtime_value_t unified_intrinsic__to_pretty_string(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type);
-runtime_type_t unified_intrinsic__typeof(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type);
-
-
+rt_pod_t intrinsic__to_string(runtime_t* frp, rt_pod_t value, runtime_type_t value_type);
+rt_pod_t intrinsic__to_pretty_string(runtime_t* frp, rt_pod_t value, runtime_type_t value_type);
+runtime_type_t intrinsic__typeof(runtime_t* frp, rt_pod_t value, runtime_type_t value_type);
 
 
 
 
-const runtime_value_t update_string(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
-const runtime_value_t update_vector_carray_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
-const runtime_value_t update_vector_carray_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
-const runtime_value_t update_vector_hamt_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
-const runtime_value_t update_vector_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
-const runtime_value_t update_dict_cppmap_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
-const runtime_value_t update_dict_cppmap_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
-const runtime_value_t update_dict_hamt_pod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
-const runtime_value_t update_dict_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type, runtime_value_t value, runtime_type_t value_type);
 
-runtime_value_t unified_intrinsic__update(
-	floyd_runtime_t* frp,
 
-	runtime_value_t collection_value,
+const rt_pod_t update_string(runtime_t* frp, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t key_value, runtime_type_t key_type, rt_pod_t value, runtime_type_t value_type);
+const rt_pod_t update_vector_carray_pod(runtime_t* frp, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t key_value, runtime_type_t key_type, rt_pod_t value, runtime_type_t value_type);
+const rt_pod_t update_vector_carray_nonpod(runtime_t* frp, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t key_value, runtime_type_t key_type, rt_pod_t value, runtime_type_t value_type);
+const rt_pod_t update_vector_hamt_pod(runtime_t* frp, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t key_value, runtime_type_t key_type, rt_pod_t value, runtime_type_t value_type);
+const rt_pod_t update_vector_hamt_nonpod(runtime_t* frp, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t key_value, runtime_type_t key_type, rt_pod_t value, runtime_type_t value_type);
+const rt_pod_t update_dict_cppmap_pod(runtime_t* frp, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t key_value, runtime_type_t key_type, rt_pod_t value, runtime_type_t value_type);
+const rt_pod_t update_dict_cppmap_nonpod(runtime_t* frp, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t key_value, runtime_type_t key_type, rt_pod_t value, runtime_type_t value_type);
+const rt_pod_t update_dict_hamt_pod(runtime_t* frp, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t key_value, runtime_type_t key_type, rt_pod_t value, runtime_type_t value_type);
+const rt_pod_t update_dict_hamt_nonpod(runtime_t* frp, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t key_value, runtime_type_t key_type, rt_pod_t value, runtime_type_t value_type);
+
+rt_pod_t intrinsic__update(
+	runtime_t* frp,
+
+	rt_pod_t collection_value,
 	runtime_type_t collection_type,
 
-	runtime_value_t key_value,
+	rt_pod_t key_value,
 	runtime_type_t key_type,
 
-	runtime_value_t newvalue_value,
+	rt_pod_t newvalue_value,
 	runtime_type_t newvalue_type
 );
 
 
 
-int64_t unified_intrinsic__size_string(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type);
-int64_t unified_intrinsic__size_vector_carray(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type);
-int64_t unified_intrinsic__size_vector_hamt(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type);
-int64_t unified_intrinsic__size_dict_cppmap(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type);
-int64_t unified_intrinsic__size_dict_hamt(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type);
-int64_t unified_intrinsic__size_json(floyd_runtime_t* frp, runtime_value_t collection, runtime_type_t collection_type);
-int64_t unified_intrinsic__size(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type);
+int64_t intrinsic__size_string(runtime_t* frp, rt_pod_t vec, runtime_type_t vec_type);
+int64_t intrinsic__size_vector_carray(runtime_t* frp, rt_pod_t collection, runtime_type_t collection_type);
+int64_t intrinsic__size_vector_hamt(runtime_t* frp, rt_pod_t collection, runtime_type_t collection_type);
+int64_t intrinsic__size_dict_cppmap(runtime_t* frp, rt_pod_t collection, runtime_type_t collection_type);
+int64_t intrinsic__size_dict_hamt(runtime_t* frp, rt_pod_t collection, runtime_type_t collection_type);
+int64_t intrinsic__size_json(runtime_t* frp, rt_pod_t collection, runtime_type_t collection_type);
+int64_t intrinsic__size(runtime_t* frp, rt_pod_t coll_value, runtime_type_t coll_type);
 
-int64_t unified_intrinsic__find(
-	floyd_runtime_t* frp,
-	runtime_value_t coll_value,
+int64_t intrinsic__find(
+	runtime_t* frp,
+	rt_pod_t coll_value,
 	runtime_type_t coll_type,
-	const runtime_value_t value,
+	const rt_pod_t value,
 	runtime_type_t value_type
 );
-uint32_t unified_intrinsic__exists(
-	floyd_runtime_t* frp,
-	runtime_value_t coll_value,
+uint32_t intrinsic__exists(
+	runtime_t* frp,
+	rt_pod_t coll_value,
 	runtime_type_t coll_type,
-	runtime_value_t value,
+	rt_pod_t value,
 	runtime_type_t value_type
 );
-runtime_value_t unified_intrinsic__erase(
-	floyd_runtime_t* frp,
-	runtime_value_t coll_value,
+rt_pod_t intrinsic__erase(
+	runtime_t* frp,
+	rt_pod_t coll_value,
 	runtime_type_t coll_type,
-	runtime_value_t key_value,
+	rt_pod_t key_value,
 	runtime_type_t key_type
 );
-runtime_value_t unified_intrinsic__get_keys(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type);
+rt_pod_t intrinsic__get_keys(runtime_t* frp, rt_pod_t coll_value, runtime_type_t coll_type);
 
 
-runtime_value_t unified_intrinsic__push_back_string(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element);
-runtime_value_t unified_intrinsic__push_back_carray_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element);
-runtime_value_t unified_intrinsic__push_back_carray_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element);
-runtime_value_t unified_intrinsic__push_back_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element);
-runtime_value_t unified_intrinsic__push_back_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element);
-runtime_value_t unified_intrinsic__push_back(
-	floyd_runtime_t* frp,
+rt_pod_t intrinsic__push_back_string(runtime_t* frp, rt_pod_t vec, runtime_type_t vec_type, rt_pod_t element);
+rt_pod_t intrinsic__push_back_carray_pod(runtime_t* frp, rt_pod_t vec, runtime_type_t vec_type, rt_pod_t element);
+rt_pod_t intrinsic__push_back_carray_nonpod(runtime_t* frp, rt_pod_t vec, runtime_type_t vec_type, rt_pod_t element);
+rt_pod_t intrinsic__push_back_hamt_pod(runtime_t* frp, rt_pod_t vec, runtime_type_t vec_type, rt_pod_t element);
+rt_pod_t intrinsic__push_back_hamt_nonpod(runtime_t* frp, rt_pod_t vec, runtime_type_t vec_type, rt_pod_t element);
+rt_pod_t intrinsic__push_back(
+	runtime_t* frp,
 
-	runtime_value_t collection_value,
+	rt_pod_t collection_value,
 	runtime_type_t collection_type,
 
-	runtime_value_t newvalue_value,
+	rt_pod_t newvalue_value,
 	runtime_type_t newvalue_type
 );
 
 
-const runtime_value_t unified_intrinsic__subset(
-	floyd_runtime_t* frp,
-	runtime_value_t elements_vec,
+const rt_pod_t intrinsic__subset(
+	runtime_t* frp,
+	rt_pod_t elements_vec,
 	runtime_type_t elements_vec_type,
 	uint64_t start,
 	uint64_t end
 );
-const runtime_value_t unified_intrinsic__replace(
-	floyd_runtime_t* frp,
-	runtime_value_t elements_vec,
+const rt_pod_t intrinsic__replace(
+	runtime_t* frp,
+	rt_pod_t elements_vec,
 	runtime_type_t elements_vec_type,
 	uint64_t start,
 	uint64_t end,
-	runtime_value_t arg3_value,
+	rt_pod_t arg3_value,
 	runtime_type_t arg3_type
 );
 
@@ -121,35 +121,35 @@ const runtime_value_t unified_intrinsic__replace(
 /////////////////////////////////////////		HIGHER ORDER
 
 
-typedef runtime_value_t (*MAP_F)(floyd_runtime_t* frp, runtime_value_t e_value, runtime_value_t context_value);
+typedef rt_pod_t (*MAP_F)(runtime_t* frp, rt_pod_t e_value, rt_pod_t context_value);
 
-runtime_value_t unified_intrinsic__map__carray(
-	floyd_runtime_t* frp,
-	runtime_value_t elements_vec,
+rt_pod_t intrinsic__map__carray(
+	runtime_t* frp,
+	rt_pod_t elements_vec,
 	runtime_type_t elements_vec_type,
-	runtime_value_t f_value,
+	rt_pod_t f_value,
 	runtime_type_t f_type,
-	runtime_value_t context_value,
+	rt_pod_t context_value,
 	runtime_type_t context_type,
 	runtime_type_t result_vec_type
 );
-runtime_value_t unified_intrinsic__map__hamt(
-	floyd_runtime_t* frp,
-	runtime_value_t elements_vec,
+rt_pod_t intrinsic__map__hamt(
+	runtime_t* frp,
+	rt_pod_t elements_vec,
 	runtime_type_t elements_vec_type,
-	runtime_value_t f_value,
+	rt_pod_t f_value,
 	runtime_type_t f_type,
-	runtime_value_t context_value,
+	rt_pod_t context_value,
 	runtime_type_t context_type,
 	runtime_type_t result_vec_type
 );
-runtime_value_t unified_intrinsic__map(
-	floyd_runtime_t* frp,
-	runtime_value_t elements_vec,
+rt_pod_t intrinsic__map(
+	runtime_t* frp,
+	rt_pod_t elements_vec,
 	runtime_type_t elements_vec_type,
-	runtime_value_t f_value,
+	rt_pod_t f_value,
 	runtime_type_t f_type,
-	runtime_value_t context_value,
+	rt_pod_t context_value,
 	runtime_type_t context_type,
 	runtime_type_t result_vec_type
 );
@@ -157,138 +157,138 @@ runtime_value_t unified_intrinsic__map(
 
 
 
-typedef runtime_value_t (*map_dag_F)(floyd_runtime_t* frp, runtime_value_t r_value, runtime_value_t r_vec_value, runtime_value_t context_value);
+typedef rt_pod_t (*map_dag_F)(runtime_t* frp, rt_pod_t r_value, rt_pod_t r_vec_value, rt_pod_t context_value);
 
-runtime_value_t unified_intrinsic__map_dag__carray(
-	floyd_runtime_t* frp,
-	runtime_value_t elements_vec,
+rt_pod_t intrinsic__map_dag__carray(
+	runtime_t* frp,
+	rt_pod_t elements_vec,
 	runtime_type_t elements_vec_type,
-	runtime_value_t depends_on_vec,
+	rt_pod_t depends_on_vec,
 	runtime_type_t depends_on_vec_type,
-	runtime_value_t f_value,
+	rt_pod_t f_value,
 	runtime_type_t f_value_type,
-	runtime_value_t context,
+	rt_pod_t context,
 	runtime_type_t context_type
 );
-runtime_value_t unified_intrinsic__map_dag__hamt(
-	floyd_runtime_t* frp,
-	runtime_value_t elements_vec,
+rt_pod_t intrinsic__map_dag__hamt(
+	runtime_t* frp,
+	rt_pod_t elements_vec,
 	runtime_type_t elements_vec_type,
-	runtime_value_t depends_on_vec,
+	rt_pod_t depends_on_vec,
 	runtime_type_t depends_on_vec_type,
-	runtime_value_t f_value,
+	rt_pod_t f_value,
 	runtime_type_t f_value_type,
-	runtime_value_t context,
+	rt_pod_t context,
 	runtime_type_t context_type
 );
-runtime_value_t unified_intrinsic__map_dag(
-	floyd_runtime_t* frp,
-	runtime_value_t elements_vec,
+rt_pod_t intrinsic__map_dag(
+	runtime_t* frp,
+	rt_pod_t elements_vec,
 	runtime_type_t elements_vec_type,
-	runtime_value_t depends_on_vec,
+	rt_pod_t depends_on_vec,
 	runtime_type_t depends_on_vec_type,
-	runtime_value_t f_value,
+	rt_pod_t f_value,
 	runtime_type_t f_value_type,
-	runtime_value_t context,
+	rt_pod_t context,
 	runtime_type_t context_type
 );
 
 
-typedef runtime_value_t (*FILTER_F)(floyd_runtime_t* frp, runtime_value_t element_value, runtime_value_t context);
+typedef rt_pod_t (*FILTER_F)(runtime_t* frp, rt_pod_t element_value, rt_pod_t context);
 
-runtime_value_t unified_intrinsic__filter_carray(
-	floyd_runtime_t* frp,
-	runtime_value_t elements_vec,
+rt_pod_t intrinsic__filter_carray(
+	runtime_t* frp,
+	rt_pod_t elements_vec,
 	runtime_type_t elements_vec_type,
-	runtime_value_t f_value,
+	rt_pod_t f_value,
 	runtime_type_t f_value_type,
-	runtime_value_t context,
+	rt_pod_t context,
 	runtime_type_t context_type
 );
-runtime_value_t unified_intrinsic__filter_hamt(
-	floyd_runtime_t* frp,
-	runtime_value_t elements_vec,
+rt_pod_t intrinsic__filter_hamt(
+	runtime_t* frp,
+	rt_pod_t elements_vec,
 	runtime_type_t elements_vec_type,
-	runtime_value_t f_value,
+	rt_pod_t f_value,
 	runtime_type_t f_value_type,
-	runtime_value_t context,
+	rt_pod_t context,
 	runtime_type_t context_type
 );
-runtime_value_t unified_intrinsic__filter(
-	floyd_runtime_t* frp,
-	runtime_value_t elements_vec,
+rt_pod_t intrinsic__filter(
+	runtime_t* frp,
+	rt_pod_t elements_vec,
 	runtime_type_t elements_vec_type,
-	runtime_value_t f_value,
+	rt_pod_t f_value,
 	runtime_type_t f_value_type,
-	runtime_value_t arg2_value,
+	rt_pod_t arg2_value,
 	runtime_type_t arg2_type
 );
 
 
-typedef runtime_value_t (*REDUCE_F)(floyd_runtime_t* frp, runtime_value_t acc_value, runtime_value_t element_value, runtime_value_t context);
+typedef rt_pod_t (*REDUCE_F)(runtime_t* frp, rt_pod_t acc_value, rt_pod_t element_value, rt_pod_t context);
 
-runtime_value_t unified_intrinsic__reduce_carray(
-	floyd_runtime_t* frp,
-	runtime_value_t elements_vec,
+rt_pod_t intrinsic__reduce_carray(
+	runtime_t* frp,
+	rt_pod_t elements_vec,
 	runtime_type_t elements_vec_type,
-	runtime_value_t init_value,
+	rt_pod_t init_value,
 	runtime_type_t init_value_type,
-	runtime_value_t f_value,
+	rt_pod_t f_value,
 	runtime_type_t f_type,
-	runtime_value_t context,
+	rt_pod_t context,
 	runtime_type_t context_type
 );
-runtime_value_t unified_intrinsic__reduce_hamt(
-	floyd_runtime_t* frp,
-	runtime_value_t elements_vec,
+rt_pod_t intrinsic__reduce_hamt(
+	runtime_t* frp,
+	rt_pod_t elements_vec,
 	runtime_type_t elements_vec_type,
-	runtime_value_t init_value,
+	rt_pod_t init_value,
 	runtime_type_t init_value_type,
-	runtime_value_t f_value,
+	rt_pod_t f_value,
 	runtime_type_t f_type,
-	runtime_value_t context,
+	rt_pod_t context,
 	runtime_type_t context_type
 );
-runtime_value_t unified_intrinsic__reduce(
-	floyd_runtime_t* frp,
-	runtime_value_t elements_vec,
+rt_pod_t intrinsic__reduce(
+	runtime_t* frp,
+	rt_pod_t elements_vec,
 	runtime_type_t elements_vec_type,
-	runtime_value_t init_value,
+	rt_pod_t init_value,
 	runtime_type_t init_value_type,
-	runtime_value_t f_value,
+	rt_pod_t f_value,
 	runtime_type_t f_type,
-	runtime_value_t context,
+	rt_pod_t context,
 	runtime_type_t context_type
 );
 
 
-typedef uint8_t (*stable_sort_F)(floyd_runtime_t* frp, runtime_value_t left_value, runtime_value_t right_value, runtime_value_t context_value);
+typedef uint8_t (*stable_sort_F)(runtime_t* frp, rt_pod_t left_value, rt_pod_t right_value, rt_pod_t context_value);
 
-runtime_value_t unified_intrinsic__stable_sort_carray(
-	floyd_runtime_t* frp,
-	runtime_value_t elements_vec,
+rt_pod_t intrinsic__stable_sort_carray(
+	runtime_t* frp,
+	rt_pod_t elements_vec,
 	runtime_type_t elements_vec_type,
-	runtime_value_t f_value,
+	rt_pod_t f_value,
 	runtime_type_t f_value_type,
-	runtime_value_t context_value,
+	rt_pod_t context_value,
 	runtime_type_t context_value_type
 );
-runtime_value_t unified_intrinsic__stable_sort_hamt(
-	floyd_runtime_t* frp,
-	runtime_value_t elements_vec,
+rt_pod_t intrinsic__stable_sort_hamt(
+	runtime_t* frp,
+	rt_pod_t elements_vec,
 	runtime_type_t elements_vec_type,
-	runtime_value_t f_value,
+	rt_pod_t f_value,
 	runtime_type_t f_value_type,
-	runtime_value_t context_value,
+	rt_pod_t context_value,
 	runtime_type_t context_value_type
 );
-runtime_value_t unified_intrinsic__stable_sort(
-	floyd_runtime_t* frp,
-	runtime_value_t elements_vec,
+rt_pod_t intrinsic__stable_sort(
+	runtime_t* frp,
+	rt_pod_t elements_vec,
 	runtime_type_t elements_vec_type,
-	runtime_value_t f_value,
+	rt_pod_t f_value,
 	runtime_type_t f_value_type,
-	runtime_value_t context_value,
+	rt_pod_t context_value,
 	runtime_type_t context_value_type
 );
 
@@ -296,26 +296,26 @@ runtime_value_t unified_intrinsic__stable_sort(
 /////////////////////////////////////////		JSON
 
 
-int64_t unified_intrinsic__get_json_type(floyd_runtime_t* frp, runtime_value_t json0);
-runtime_value_t unified_intrinsic__generate_json_script(floyd_runtime_t* frp, runtime_value_t json0);
-runtime_value_t unified_intrinsic__parse_json_script(floyd_runtime_t* frp, runtime_value_t string_s0);
-runtime_value_t unified_intrinsic__to_json(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type);
-runtime_value_t unified_intrinsic__from_json(floyd_runtime_t* frp, runtime_value_t json0, runtime_type_t target_type);
+int64_t intrinsic__get_json_type(runtime_t* frp, rt_pod_t json0);
+rt_pod_t intrinsic__generate_json_script(runtime_t* frp, rt_pod_t json0);
+rt_pod_t intrinsic__parse_json_script(runtime_t* frp, rt_pod_t string_s0);
+rt_pod_t intrinsic__to_json(runtime_t* frp, rt_pod_t value, runtime_type_t value_type);
+rt_pod_t intrinsic__from_json(runtime_t* frp, rt_pod_t json0, runtime_type_t target_type);
 
 
-void unified_intrinsic__print(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type);
+void intrinsic__print(runtime_t* frp, rt_pod_t value, runtime_type_t value_type);
 
-void unified_intrinsic__send(floyd_runtime_t* frp, runtime_value_t dest_process_id0, runtime_value_t message, runtime_type_t message_type);
-void unified_intrinsic__exit(floyd_runtime_t* frp);
+void intrinsic__send(runtime_t* frp, rt_pod_t dest_process_id0, rt_pod_t message, runtime_type_t message_type);
+void intrinsic__exit(runtime_t* frp);
 
 
-runtime_value_t unified_intrinsic__bw_not(floyd_runtime_t* frp, runtime_value_t v);
-runtime_value_t unified_intrinsic__bw_and(floyd_runtime_t* frp, runtime_value_t a, runtime_value_t b);
-runtime_value_t unified_intrinsic__bw_or(floyd_runtime_t* frp, runtime_value_t a, runtime_value_t b);
-runtime_value_t unified_intrinsic__bw_xor(floyd_runtime_t* frp, runtime_value_t a, runtime_value_t b);
-runtime_value_t unified_intrinsic__bw_shift_left(floyd_runtime_t* frp, runtime_value_t v, runtime_value_t count);
-runtime_value_t unified_intrinsic__bw_shift_right(floyd_runtime_t* frp, runtime_value_t v, runtime_value_t count);
-runtime_value_t unified_intrinsic__bw_shift_right_arithmetic(floyd_runtime_t* frp, runtime_value_t v, runtime_value_t count);
+rt_pod_t intrinsic__bw_not(runtime_t* frp, rt_pod_t v);
+rt_pod_t intrinsic__bw_and(runtime_t* frp, rt_pod_t a, rt_pod_t b);
+rt_pod_t intrinsic__bw_or(runtime_t* frp, rt_pod_t a, rt_pod_t b);
+rt_pod_t intrinsic__bw_xor(runtime_t* frp, rt_pod_t a, rt_pod_t b);
+rt_pod_t intrinsic__bw_shift_left(runtime_t* frp, rt_pod_t v, rt_pod_t count);
+rt_pod_t intrinsic__bw_shift_right(runtime_t* frp, rt_pod_t v, rt_pod_t count);
+rt_pod_t intrinsic__bw_shift_right_arithmetic(runtime_t* frp, rt_pod_t v, rt_pod_t count);
 
 
 } // floyd

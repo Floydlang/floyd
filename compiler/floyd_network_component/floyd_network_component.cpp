@@ -246,7 +246,7 @@ type_t make__http_response_t__type(types_t& types){
 			const auto r = read_socket_string((int)socket_id);
 			return rt_value_t::make_string(backend, r);
 		}
-static void unified_corelib__read_socket(floyd_runtime_t* frp){
+static void unified_corelib__read_socket(runtime_t* frp){
 }
 
 
@@ -266,10 +266,10 @@ static void unified_corelib__read_socket(floyd_runtime_t* frp){
 			write_socket_string((int)socket_id, data);
 			return rt_value_t::make_void();
 		}
-static void unified_corelib__write_socket(floyd_runtime_t* frp){
+static void unified_corelib__write_socket(runtime_t* frp){
 }
 
-static void unified_corelib__lookup_host_from_ip(floyd_runtime_t* frp){
+static void unified_corelib__lookup_host_from_ip(runtime_t* frp){
 }
 
 
@@ -305,7 +305,7 @@ static void unified_corelib__lookup_host_from_ip(floyd_runtime_t* frp){
 		return result;
 	}
 
-static runtime_value_t unified_corelib__lookup_host_from_name(floyd_runtime_t* frp, runtime_value_t name_str){
+static rt_pod_t unified_corelib__lookup_host_from_name(runtime_t* frp, rt_pod_t name_str){
 	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
@@ -318,7 +318,7 @@ static runtime_value_t unified_corelib__lookup_host_from_name(floyd_runtime_t* f
 	return to_runtime_value2(backend, info);
 }
 
-static runtime_value_t unified_corelib__pack_http_request(floyd_runtime_t* frp, runtime_value_t s){
+static rt_pod_t unified_corelib__pack_http_request(runtime_t* frp, rt_pod_t s){
 	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 
@@ -396,7 +396,7 @@ static rt_value_t bc_corelib__unpack_http_request(interpreter_t& vm, const rt_va
 	);
 }
 
-static void unified_corelib__unpack_http_request(floyd_runtime_t* frp){
+static void unified_corelib__unpack_http_request(runtime_t* frp){
 }
 
 
@@ -429,7 +429,7 @@ static void unified_corelib__unpack_http_request(floyd_runtime_t* frp){
 			const auto r = pack_http_response(req);
 			return rt_value_t::make_string(backend, r);
 		}
-static void unified_corelib__pack_http_response(floyd_runtime_t* frp){
+static void unified_corelib__pack_http_response(runtime_t* frp){
 }
 
 
@@ -478,10 +478,10 @@ static void unified_corelib__pack_http_response(floyd_runtime_t* frp){
 				}
 			);
 		}
-static void unified_corelib__unpack_http_response(floyd_runtime_t* frp){
+static void unified_corelib__unpack_http_response(runtime_t* frp){
 }
 
-static runtime_value_t unified_corelib__execute_http_request(floyd_runtime_t* frp, runtime_value_t c, runtime_value_t addr, runtime_value_t request_string){
+static rt_pod_t unified_corelib__execute_http_request(runtime_t* frp, rt_pod_t c, rt_pod_t addr, rt_pod_t request_string){
 	auto& backend = get_backend(frp);
 	auto& types = backend.types;
 

@@ -21,7 +21,7 @@ struct json_t;
 namespace floyd {
 
 struct value_t;
-struct floyd_runtime_t;
+struct runtime_t;
 struct symbol_table_t;
 
 
@@ -55,7 +55,7 @@ struct runtime_handler_i {
 
 struct runtime_process_i {
 	virtual ~runtime_process_i(){};
-	virtual void runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type) = 0;
+	virtual void runtime_process__on_send_message(const std::string& dest_process_id, const rt_pod_t& message, const type_t& message_type) = 0;
 	virtual void runtime_process__on_exit_process() = 0;
 };
 
@@ -83,7 +83,7 @@ struct route_process_handler_t : public runtime_process_i {
 		runtime->on_print(s);
 	}
 
-	void runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type) override {
+	void runtime_process__on_send_message(const std::string& dest_process_id, const rt_pod_t& message, const type_t& message_type) override {
 		QUARK_ASSERT(false);
 	}
 	void runtime_process__on_exit_process() override {
@@ -100,7 +100,7 @@ struct route_process_handler_t : public runtime_process_i {
 */
 
 
-//////////////////////////////////////		floyd_runtime_t
+//////////////////////////////////////		runtime_t
 
 
 
@@ -109,7 +109,7 @@ struct route_process_handler_t : public runtime_process_i {
 	Instead it passes around an invisible argumen to all functions, called Floyd Runtime Ptr (FRP).
 */
 
-struct floyd_runtime_t {
+struct runtime_t {
 	bool check_invariant() const {
 		QUARK_ASSERT(backend != nullptr && backend->check_invariant());
 //		QUARK_ASSERT(handler != nullptr);
@@ -121,25 +121,25 @@ struct floyd_runtime_t {
 	runtime_process_i* handler;
 };
 
-inline value_backend_t& get_backend(floyd_runtime_t* runtime){
+inline value_backend_t& get_backend(runtime_t* runtime){
 	QUARK_ASSERT(runtime != nullptr && runtime->check_invariant());
 
 	return *runtime->backend;
 }
 
-inline type_t get_global_symbol_type(floyd_runtime_t* runtime, const std::string& s){
+inline type_t get_global_symbol_type(runtime_t* runtime, const std::string& s){
 	QUARK_ASSERT(runtime != nullptr && runtime->check_invariant());
 
 	return runtime->basics->runtime_basics__get_global_symbol_type(s);
 }
 
-inline void on_print(floyd_runtime_t* runtime, const std::string& s){
+inline void on_print(runtime_t* runtime, const std::string& s){
 	QUARK_ASSERT(runtime != nullptr && runtime->check_invariant());
 
 	runtime->basics->runtime_basics__on_print(s);
 }
 
-inline void send_message2(floyd_runtime_t* runtime, const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type){
+inline void send_message2(runtime_t* runtime, const std::string& dest_process_id, const rt_pod_t& message, const type_t& message_type){
 	QUARK_ASSERT(runtime != nullptr && runtime->check_invariant());
 	QUARK_ASSERT(dest_process_id.empty() == false);
 	QUARK_ASSERT(message_type.check_invariant());
@@ -147,7 +147,7 @@ inline void send_message2(floyd_runtime_t* runtime, const std::string& dest_proc
 	runtime->handler->runtime_process__on_send_message(dest_process_id, message, message_type);
 }
 
-inline void on_exit_process(floyd_runtime_t* runtime){
+inline void on_exit_process(runtime_t* runtime){
 	QUARK_ASSERT(runtime != nullptr && runtime->check_invariant());
 
 	runtime->handler->runtime_process__on_exit_process();

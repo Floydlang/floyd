@@ -17,7 +17,7 @@ namespace floyd {
 //	Use subset of samples -- assume first sample is warm-up.
 int64_t analyse_samples(const int64_t* samples, int64_t count);
 
-std::string gen_to_string(value_backend_t& backend, runtime_value_t arg_value, type_t arg_type);
+std::string gen_to_string(value_backend_t& backend, rt_pod_t arg_value, type_t arg_type);
 
 }	// floyd
 

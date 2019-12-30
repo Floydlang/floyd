@@ -181,7 +181,7 @@ llvm::Value* generate_floyd_call(
 	//	??? Release callee?
 
 
-	//	If the return type is dynamic, cast the returned runtime_value_t to the correct type.
+	//	If the return type is dynamic, cast the returned rt_pod_t to the correct type.
 	//	It must be retained already.
 	llvm::Value* result_reg = result0_reg;
 	if(peek2(types, peek2(types, callee_function_type).get_function_return(types)).is_any()){

@@ -629,7 +629,7 @@ inline bool operator==(const frame_pos_t& lhs, const frame_pos_t& rhs){
 //////////////////////////////////////		interpreter_stack_t
 
 /*
-	The interpreters's stack -- each element contains a runtime_value_t.
+	The interpreters's stack -- each element contains a rt_pod_t.
 	For each stack entry we need to keep track of if it's an inplace or external value so we can
 	keep the external value's reference counting OK.
 
@@ -656,7 +656,7 @@ enum {
 	9	[local3]
 */
 
-void release_value_safe(value_backend_t& backend, runtime_value_t value, type_t type);
+void release_value_safe(value_backend_t& backend, rt_pod_t value, type_t type);
 
 struct interpreter_stack_t {
 	public: interpreter_stack_t(value_backend_t* backend, const bc_static_frame_t* global_frame) :
@@ -671,7 +671,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(backend != nullptr);
 		QUARK_ASSERT(backend->check_invariant());
 
-		_entries = new runtime_value_t[8192];
+		_entries = new rt_pod_t[8192];
 		_allocated_count = 8192;
 		_current_frame_start_ptr = &_entries[0];
 
@@ -1138,7 +1138,7 @@ struct interpreter_stack_t {
 	////////////////////////		STATE
 
 	public: value_backend_t* _backend;
-	public: runtime_value_t* _entries;
+	public: rt_pod_t* _entries;
 	public: size_t _allocated_count;
 	public: size_t _stack_size;
 
@@ -1147,7 +1147,7 @@ struct interpreter_stack_t {
 	public: std::vector<type_t> _entry_types;
 
 	public: const bc_static_frame_t* _current_static_frame;
-	public: runtime_value_t* _current_frame_start_ptr;
+	public: rt_pod_t* _current_frame_start_ptr;
 
 	public: const bc_static_frame_t* _global_frame;
 };
@@ -1244,7 +1244,7 @@ std::vector<std::pair<type_t, struct_layout_t>> bc_make_struct_layouts(const typ
 
 
 //??? Remove need for this function! BC should overwrite registers by default = no need to release_value() on previous value.
-inline void release_value_safe(value_backend_t& backend, runtime_value_t value, type_t type){
+inline void release_value_safe(value_backend_t& backend, rt_pod_t value, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());

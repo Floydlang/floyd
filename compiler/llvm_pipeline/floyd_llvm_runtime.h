@@ -28,7 +28,7 @@ namespace floyd {
 
 struct llvm_ir_program_t;
 struct run_output_t;
-struct floyd_runtime_t;
+struct runtime_t;
 struct llvm_instance_t;
 struct llvm_execution_engine_t;
 
@@ -76,7 +76,7 @@ struct llvm_process_t : public runtime_basics_i, runtime_process_i {
 	void runtime_basics__on_print(const std::string& s) override;
 	type_t runtime_basics__get_global_symbol_type(const std::string& s) override;
 
-	void runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type) override;
+	void runtime_process__on_send_message(const std::string& dest_process_id, const rt_pod_t& message, const type_t& message_type) override;
 	void runtime_process__on_exit_process() override;
 
 
@@ -98,7 +98,7 @@ struct llvm_process_t : public runtime_basics_i, runtime_process_i {
 
 	std::condition_variable _inbox_condition_variable;
 	std::mutex _inbox_mutex;
-	std::deque<runtime_value_t> _inbox;
+	std::deque<rt_pod_t> _inbox;
 
 	//	Notice: before init() is called, this value is an undefined.
 	value_t _process_state;
@@ -137,7 +137,7 @@ struct route_t : public runtime_basics_i, runtime_process_i {
 		return sym._value_type;
 	}
 
-	void runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type) override {
+	void runtime_process__on_send_message(const std::string& dest_process_id, const rt_pod_t& message, const type_t& message_type) override {
 		QUARK_ASSERT(_runtime_handler != nullptr);
 		QUARK_ASSERT(_symbol_table != nullptr);
 	}
@@ -208,34 +208,34 @@ struct llvm_context_t {
 ////////////////////////////////		FUNCTION POINTERS
 
 
-typedef int64_t (*FLOYD_RUNTIME_INIT)(floyd_runtime_t* frp);
-typedef int64_t (*FLOYD_RUNTIME_DEINIT)(floyd_runtime_t* frp);
+typedef int64_t (*FLOYD_RUNTIME_INIT)(runtime_t* frp);
+typedef int64_t (*FLOYD_RUNTIME_DEINIT)(runtime_t* frp);
 
 //??? remove
-typedef void (*FLOYD_RUNTIME_HOST_FUNCTION)(floyd_runtime_t* frp, int64_t arg);
+typedef void (*FLOYD_RUNTIME_HOST_FUNCTION)(runtime_t* frp, int64_t arg);
 
 
 //	func int main([string] args) impure
-typedef int64_t (*FLOYD_RUNTIME_MAIN_ARGS_IMPURE)(floyd_runtime_t* frp, runtime_value_t args);
+typedef int64_t (*FLOYD_RUNTIME_MAIN_ARGS_IMPURE)(runtime_t* frp, rt_pod_t args);
 
 //	func int main() impure
-typedef int64_t (*FLOYD_RUNTIME_MAIN_NO_ARGS_IMPURE)(floyd_runtime_t* frp);
+typedef int64_t (*FLOYD_RUNTIME_MAIN_NO_ARGS_IMPURE)(runtime_t* frp);
 
 //	func int main([string] args) pure
-typedef int64_t (*FLOYD_RUNTIME_MAIN_ARGS_PURE)(floyd_runtime_t* frp, runtime_value_t args);
+typedef int64_t (*FLOYD_RUNTIME_MAIN_ARGS_PURE)(runtime_t* frp, rt_pod_t args);
 
 //	func int main() impure
-typedef int64_t (*FLOYD_RUNTIME_MAIN_NO_ARGS_PURE)(floyd_runtime_t* frp);
+typedef int64_t (*FLOYD_RUNTIME_MAIN_NO_ARGS_PURE)(runtime_t* frp);
 
 
 //		func my_gui_state_t my_gui__init() impure { }
-typedef runtime_value_t (*FLOYD_RUNTIME_PROCESS_INIT)(floyd_runtime_t* frp);
+typedef rt_pod_t (*FLOYD_RUNTIME_PROCESS_INIT)(runtime_t* frp);
 
 //		func my_gui_state_t my_gui__msg(my_gui_state_t state, T message) impure{
-typedef runtime_value_t (*FLOYD_RUNTIME_PROCESS_MESSAGE)(floyd_runtime_t* frp, runtime_value_t state, runtime_value_t message);
+typedef rt_pod_t (*FLOYD_RUNTIME_PROCESS_MESSAGE)(runtime_t* frp, rt_pod_t state, rt_pod_t message);
 
-typedef runtime_value_t (*FLOYD_BENCHMARK_F)(floyd_runtime_t* frp);
-typedef void (*FLOYD_TEST_F)(floyd_runtime_t* frp);
+typedef rt_pod_t (*FLOYD_BENCHMARK_F)(runtime_t* frp);
+typedef void (*FLOYD_TEST_F)(runtime_t* frp);
 
 
 
@@ -255,7 +255,7 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const module_symbol_t& n
 
 
 
-floyd_runtime_t make_runtime_ptr(llvm_context_t* p);
+runtime_t make_runtime_ptr(llvm_context_t* p);
 
 
 
