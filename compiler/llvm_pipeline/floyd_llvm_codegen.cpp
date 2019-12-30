@@ -2543,7 +2543,7 @@ static module_output_t generate_module(llvm_instance_t& instance, const std::str
 	//	Generate all LLVM function nodes.
 	//	This lets all other code reference the functions, even if function nodes aren't filled up with code yet.
 	const auto link_map1 = make_function_link_map1(module->getContext(), type_lookup, semantic_ast._tree._function_defs, semantic_ast.intrinsic_signatures);
-	if(true){
+	if(false){
 		trace_function_link_map(type_lookup.state.types, link_map1);
 	}
 	const auto link_map2 = generate_function_nodes(*module, type_lookup, link_map1);
