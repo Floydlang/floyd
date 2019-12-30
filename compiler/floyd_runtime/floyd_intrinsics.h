@@ -48,7 +48,13 @@ const runtime_value_t unified_intrinsic__subset(floyd_runtime_t* frp, runtime_va
 const runtime_value_t unified_intrinsic__replace(floyd_runtime_t* frp, runtime_value_t elements_vec, runtime_type_t elements_vec_type, uint64_t start, uint64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type);
 
 
+/////////////////////////////////////////		JSON
 
+int64_t unified_intrinsic__get_json_type(floyd_runtime_t* frp, runtime_value_t json0);
+runtime_value_t unified_intrinsic__generate_json_script(floyd_runtime_t* frp, runtime_value_t json0);
+runtime_value_t unified_intrinsic__parse_json_script(floyd_runtime_t* frp, runtime_value_t string_s0);
+runtime_value_t unified_intrinsic__to_json(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type);
+runtime_value_t unified_intrinsic__from_json(floyd_runtime_t* frp, runtime_value_t json0, runtime_type_t target_type);
 
 
 void unified_intrinsic__print(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type);

@@ -557,6 +557,8 @@ intrinsic_signature_t make_replace_signature(types_t& types){
 	return make_intrinsic("replace", type_t::make_function_dyn_return(types, { ANY_TYPE, type_t::make_int(), type_t::make_int(), ANY_TYPE }, epure::pure, return_dyn_type::arg0) );
 }
 
+
+
 intrinsic_signature_t make_parse_json_script_signature(types_t& types){
 	return make_intrinsic("parse_json_script", type_t::make_function(types, type_t::make_json(), { type_t::make_string() }, epure::pure) );
 }
@@ -974,13 +976,11 @@ intrinsic_signatures_t make_intrinsic_signatures(types_t& types){
 	result.subset = make_subset_signature(types);
 	result.replace = make_replace_signature(types);
 
-	result.parse_json_script = make_parse_json_script_signature(types);
+	result.get_json_type = make_get_json_type_signature(types);
 	result.generate_json_script = make_generate_json_script_signature(types);
+	result.parse_json_script = make_parse_json_script_signature(types);
 	result.to_json = make_to_json_signature(types);
 	result.from_json = make_from_json_signature(types);
-
-	result.get_json_type = make_get_json_type_signature(types);
-
 
 	result.map = make_map_signature(types);
 //	result.xxx = make_map_string_signature(types);
@@ -1019,12 +1019,11 @@ intrinsic_signatures_t make_intrinsic_signatures(types_t& types){
 		make_subset_signature(types),
 		make_replace_signature(types),
 
-		make_parse_json_script_signature(types),
+		make_get_json_type_signature(types),
 		make_generate_json_script_signature(types),
+		make_parse_json_script_signature(types),
 		make_to_json_signature(types),
 		make_from_json_signature(types),
-
-		make_get_json_type_signature(types),
 
 		make_map_signature(types),
 //		make_map_string_signature(types),

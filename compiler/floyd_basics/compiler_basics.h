@@ -453,14 +453,11 @@ intrinsic_signature_t make_push_back_signature(types_t& types);
 intrinsic_signature_t make_subset_signature(types_t& types);
 intrinsic_signature_t make_replace_signature(types_t& types);
 
-intrinsic_signature_t make_parse_json_script_signature(types_t& types);
+intrinsic_signature_t make_get_json_type_signature(types_t& types);
 intrinsic_signature_t make_generate_json_script_signature(types_t& types);
+intrinsic_signature_t make_parse_json_script_signature(types_t& types);
 intrinsic_signature_t make_to_json_signature(types_t& types);
 intrinsic_signature_t make_from_json_signature(types_t& types);
-
-intrinsic_signature_t make_get_json_type_signature(types_t& types);
-
-
 
 
 //////////////////////////////////////		HIGHER-ORDER INTRINSICS
@@ -534,14 +531,11 @@ struct intrinsic_signatures_t {
 	intrinsic_signature_t subset;
 	intrinsic_signature_t replace;
 
-	intrinsic_signature_t parse_json_script;
+	intrinsic_signature_t get_json_type;
 	intrinsic_signature_t generate_json_script;
+	intrinsic_signature_t parse_json_script;
 	intrinsic_signature_t to_json;
 	intrinsic_signature_t from_json;
-
-	intrinsic_signature_t get_json_type;
-
-
 
 	intrinsic_signature_t map;
 	intrinsic_signature_t filter;

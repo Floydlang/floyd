@@ -274,6 +274,58 @@ const runtime_value_t unified_intrinsic__replace(floyd_runtime_t* frp, runtime_v
 
 
 
+/////////////////////////////////////////		JSON
+
+
+
+int64_t unified_intrinsic__get_json_type(floyd_runtime_t* frp, runtime_value_t json0){
+	auto& backend = get_backend(frp);
+	(void)backend;
+	QUARK_ASSERT(json0.json_ptr != nullptr);
+
+	const auto& json = json0.json_ptr->get_json();
+	const auto result = get_json_type(json);
+	return result;
+}
+
+runtime_value_t unified_intrinsic__generate_json_script(floyd_runtime_t* frp, runtime_value_t json0){
+	auto& backend = get_backend(frp);
+	QUARK_ASSERT(json0.json_ptr != nullptr);
+
+	const auto& json = json0.json_ptr->get_json();
+	const std::string s = json_to_compact_string(json);
+	return to_runtime_string2(backend, s);
+}
+
+runtime_value_t unified_intrinsic__parse_json_script(floyd_runtime_t* frp, runtime_value_t string_s0){
+	auto& backend = get_backend(frp);
+
+	const auto string_s = from_runtime_string2(backend, string_s0);
+
+	std::pair<json_t, seq_t> result0 = parse_json(seq_t(string_s));
+	return alloc_json(backend.heap, result0.first);
+}
+
+runtime_value_t unified_intrinsic__to_json(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
+	auto& backend = get_backend(frp);
+
+	const auto& type0 = lookup_type_ref(backend, value_type);
+	const auto value0 = from_runtime_value2(backend, value, type0);
+	const auto j = value_to_json(backend.types, value0);
+	return alloc_json(backend.heap, j);
+}
+
+runtime_value_t unified_intrinsic__from_json(floyd_runtime_t* frp, runtime_value_t json0, runtime_type_t target_type){
+	auto& backend = get_backend(frp);
+	QUARK_ASSERT(json0.json_ptr != nullptr);
+
+	const auto& json = json0.json_ptr->get_json();
+	const auto& target_type2 = lookup_type_ref(backend, target_type);
+
+	const auto result = unflatten_json_to_specific_type(backend.types, json, target_type2);
+	return to_runtime_value2(backend, result);
+}
+
 
 
 

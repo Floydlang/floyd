@@ -27,80 +27,6 @@ static const bool k_trace = false;
 
 
 
-
-/*
-	Reads json from a text string, returning an unpacked json.
-*/
-static rt_value_t bc_intrinsic__parse_json_script(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-
-	auto& backend = vm._backend;
-	QUARK_ASSERT(peek2(backend.types, args[0]._type).is_string());
-
-	const auto s = args[0].get_string_value(backend);
-	std::pair<json_t, seq_t> result = parse_json(seq_t(s));
-	const auto json = rt_value_t::make_json(backend, result.first);
-	return json;
-}
-
-static rt_value_t bc_intrinsic__generate_json_script(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-
-	auto& backend = vm._backend;
-	QUARK_ASSERT(peek2(backend.types, args[0]._type).is_json());
-
-	const auto value0 = args[0].get_json();
-	const auto s = json_to_compact_string(value0);
-	return rt_value_t::make_string(backend, s);
-}
-
-
-static rt_value_t bc_intrinsic__to_json(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-
-	auto& backend = vm._backend;
-	const auto value = args[0];
-	const auto value2 = rt_to_value(backend, args[0]);
-
-	const auto j = value_to_json(backend.types, value2);
-	value_t result = value_t::make_json(j);
-
-	return value_to_rt(backend, result);
-}
-
-static rt_value_t bc_intrinsic__from_json(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 2);
-
-	auto& backend = vm._backend;
-	QUARK_ASSERT(peek2(backend.types, args[0]._type).is_json());
-	QUARK_ASSERT(peek2(backend.types, args[1]._type).is_typeid());
-
-	const auto json = args[0].get_json();
-	const auto target_type = args[1].get_typeid_value();
-
-	types_t temp = backend.types;
-	const auto result = unflatten_json_to_specific_type(temp, json, target_type);
-	return value_to_rt(backend, result);
-}
-
-
-static rt_value_t bc_intrinsic__get_json_type(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-
-	auto& backend = vm._backend;
-	QUARK_ASSERT(peek2(backend.types, args[0]._type).is_json());
-
-	const auto json = args[0].get_json();
-	return rt_value_t::make_int(get_json_type(json));
-}
-
-
-
 /////////////////////////////////////////		PURE -- MAP()
 
 
@@ -640,14 +566,11 @@ std::vector<func_link_t> bc_get_intrinsics(types_t& types){
 		make_intr2(make_subset_signature(types), (void*)unified_intrinsic__subset),
 		make_intr2(make_replace_signature(types), (void*)unified_intrinsic__replace),
 
-
-		make_intr(make_parse_json_script_signature(types), bc_intrinsic__parse_json_script),
-		make_intr(make_generate_json_script_signature(types), bc_intrinsic__generate_json_script),
-		make_intr(make_to_json_signature(types), bc_intrinsic__to_json),
-
-		make_intr(make_from_json_signature(types), bc_intrinsic__from_json),
-
-		make_intr(make_get_json_type_signature(types), bc_intrinsic__get_json_type),
+		make_intr2(make_get_json_type_signature(types), (void*)unified_intrinsic__get_json_type),
+		make_intr2(make_generate_json_script_signature(types), (void*)unified_intrinsic__generate_json_script),
+		make_intr2(make_parse_json_script_signature(types), (void*)unified_intrinsic__parse_json_script),
+		make_intr2(make_to_json_signature(types), (void*)unified_intrinsic__to_json),
+		make_intr2(make_from_json_signature(types), (void*)unified_intrinsic__from_json),
 
 		make_intr(make_map_signature(types), bc_intrinsic__map),
 		make_intr(make_filter_signature(types), bc_intrinsic__filter),

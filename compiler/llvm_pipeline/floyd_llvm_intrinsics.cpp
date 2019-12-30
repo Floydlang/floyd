@@ -51,62 +51,7 @@ static const llvm_codegen_function_type_t& codegen_lookup_specialization(
 }
 
 
-
-
-
-
-/////////////////////////////////////////		get_json_type()
-
-
-
-static int64_t floyd_llvm_intrinsic__get_json_type(floyd_runtime_t* frp, runtime_value_t json0){
-	auto& backend = get_backend(frp);
-	(void)backend;
-	QUARK_ASSERT(json0.json_ptr != nullptr);
-
-	const auto& json = json0.json_ptr->get_json();
-	const auto result = get_json_type(json);
-	return result;
-}
-
-
-
-/////////////////////////////////////////		generate_json_script()
-
-
-
-static runtime_value_t floyd_llvm_intrinsic__generate_json_script(floyd_runtime_t* frp, runtime_value_t json0){
-	auto& backend = get_backend(frp);
-	QUARK_ASSERT(json0.json_ptr != nullptr);
-
-	const auto& json = json0.json_ptr->get_json();
-	const std::string s = json_to_compact_string(json);
-	return to_runtime_string2(backend, s);
-}
-
-
-
-/////////////////////////////////////////		from_json()
-
-
-
-static runtime_value_t floyd_llvm_intrinsic__from_json(floyd_runtime_t* frp, runtime_value_t json0, runtime_type_t target_type){
-	auto& backend = get_backend(frp);
-	QUARK_ASSERT(json0.json_ptr != nullptr);
-
-	const auto& json = json0.json_ptr->get_json();
-	const auto& target_type2 = lookup_type_ref(backend, target_type);
-
-	const auto result = unflatten_json_to_specific_type(backend.types, json, target_type2);
-	return to_runtime_value2(backend, result);
-}
-
-
-
-
 /////////////////////////////////////////		map()
-
-
 
 
 //??? Use C++ template to generate these two functions.
@@ -978,23 +923,6 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 
 
 
-////////////////////////////////	parse_json_script()
-
-
-
-
-static runtime_value_t floyd_llvm_intrinsic__parse_json_script(floyd_runtime_t* frp, runtime_value_t string_s0){
-	auto& backend = get_backend(frp);
-
-	const auto string_s = from_runtime_string2(backend, string_s0);
-
-	std::pair<json_t, seq_t> result0 = parse_json(seq_t(string_s));
-	return alloc_json(backend.heap, result0.first);
-}
-
-
-
-
 
 ////////////////////////////////	size()
 
@@ -1374,19 +1302,6 @@ llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, cons
 
 
 
-/////////////////////////////////////////		to_json()
-
-
-
-static runtime_value_t floyd_llvm_intrinsic__to_json(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
-	auto& backend = get_backend(frp);
-
-	const auto& type0 = lookup_type_ref(backend, value_type);
-	const auto value0 = from_runtime_value2(backend, value, type0);
-	const auto j = value_to_json(backend.types, value0);
-	return alloc_json(backend.heap, j);
-}
-
 
 /////////////////////////////////////////		REGISTRY
 
@@ -1438,12 +1353,12 @@ static std::vector<func_link_t> get_one_to_one_intrinsic_binds2(
 		make_intri(type_lookup, make_subset_signature(types), (void*)&unified_intrinsic__subset),
 		make_intri(type_lookup, make_replace_signature(types), (void*)&unified_intrinsic__replace),
 
-		make_intri(type_lookup, make_generate_json_script_signature(types), (void*)&floyd_llvm_intrinsic__generate_json_script),
-		make_intri(type_lookup, make_from_json_signature(types), (void*)&floyd_llvm_intrinsic__from_json),
-		make_intri(type_lookup, make_parse_json_script_signature(types), (void*)&floyd_llvm_intrinsic__parse_json_script),
-		make_intri(type_lookup, make_to_json_signature(types), (void*)&floyd_llvm_intrinsic__to_json),
+		make_intri(type_lookup, make_get_json_type_signature(types), (void*)&unified_intrinsic__get_json_type),
+		make_intri(type_lookup, make_generate_json_script_signature(types), (void*)&unified_intrinsic__generate_json_script),
+		make_intri(type_lookup, make_parse_json_script_signature(types), (void*)&unified_intrinsic__parse_json_script),
+		make_intri(type_lookup, make_to_json_signature(types), (void*)&unified_intrinsic__to_json),
+		make_intri(type_lookup, make_from_json_signature(types), (void*)&unified_intrinsic__from_json),
 
-		make_intri(type_lookup, make_get_json_type_signature(types), (void*)&floyd_llvm_intrinsic__get_json_type),
 
 //		make_intri(type_lookup, make_map_signature(types), (void*)&floyd_llvm_intrinsic__map),
 //		make_intri(type_lookup, make_map_string_signature(types), (void*)&floyd_llvm_intrinsic__map_string),
