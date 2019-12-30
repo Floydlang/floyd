@@ -86,7 +86,6 @@ runtime_value_t unified_intrinsic__map__carray(
 	runtime_type_t context_type,
 	runtime_type_t result_vec_type
 );
-
 runtime_value_t unified_intrinsic__map__hamt(
 	floyd_runtime_t* frp,
 	runtime_value_t elements_vec,
@@ -97,7 +96,6 @@ runtime_value_t unified_intrinsic__map__hamt(
 	runtime_type_t context_type,
 	runtime_type_t result_vec_type
 );
-
 runtime_value_t unified_intrinsic__map(
 	floyd_runtime_t* frp,
 	runtime_value_t elements_vec,
@@ -125,7 +123,6 @@ runtime_value_t unified_intrinsic__map_dag__carray(
 	runtime_value_t context,
 	runtime_type_t context_type
 );
-
 runtime_value_t unified_intrinsic__map_dag__hamt(
 	floyd_runtime_t* frp,
 	runtime_value_t elements_vec,
@@ -137,7 +134,6 @@ runtime_value_t unified_intrinsic__map_dag__hamt(
 	runtime_value_t context,
 	runtime_type_t context_type
 );
-
 runtime_value_t unified_intrinsic__map_dag(
 	floyd_runtime_t* frp,
 	runtime_value_t elements_vec,
@@ -151,8 +147,39 @@ runtime_value_t unified_intrinsic__map_dag(
 );
 
 
+typedef runtime_value_t (*FILTER_F)(floyd_runtime_t* frp, runtime_value_t element_value, runtime_value_t context);
+
+runtime_value_t unified_intrinsic__filter_carray(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_value_type,
+	runtime_value_t context,
+	runtime_type_t context_type
+);
+runtime_value_t unified_intrinsic__filter_hamt(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_value_type,
+	runtime_value_t context,
+	runtime_type_t context_type
+);
+runtime_value_t unified_intrinsic__filter(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_value_type,
+	runtime_value_t arg2_value,
+	runtime_type_t arg2_type
+);
+
 
 /////////////////////////////////////////		JSON
+
 
 int64_t unified_intrinsic__get_json_type(floyd_runtime_t* frp, runtime_value_t json0);
 runtime_value_t unified_intrinsic__generate_json_script(floyd_runtime_t* frp, runtime_value_t json0);

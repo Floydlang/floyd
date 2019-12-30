@@ -692,6 +692,137 @@ runtime_value_t unified_intrinsic__map_dag(
 }
 
 
+/////////////////////////////////////////		filter()
+
+
+
+runtime_value_t unified_intrinsic__filter_carray(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_value_type,
+	runtime_value_t context,
+	runtime_type_t context_type
+){
+	auto& backend = get_backend(frp);
+
+	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
+//	const auto& type1 = lookup_type_ref(backend, f_value_type);
+//	const auto& type2 = lookup_type_ref(backend, context_type);
+	const auto& return_type = type0;
+
+//	QUARK_ASSERT(check_filter_func_type(type0, type1, type2));
+	QUARK_ASSERT(is_vector_carray(backend.types, backend.config, type_t(elements_vec_type)));
+
+	const auto& vec = *elements_vec.vector_carray_ptr;
+
+	const auto& func_link = lookup_func_link_required(backend, f_value);
+	const auto f = reinterpret_cast<FILTER_F>(func_link.f);
+
+	auto count = vec.get_element_count();
+
+	const auto e_element_itype = lookup_vector_element_type(backend, type_t(elements_vec_type));
+
+	std::vector<runtime_value_t> acc;
+	for(int i = 0 ; i < count ; i++){
+		const auto element_value = vec.get_element_ptr()[i];
+		const auto keep = (*f)(frp, element_value, context);
+		if(keep.bool_value != 0){
+			acc.push_back(element_value);
+
+			if(is_rc_value(backend.types, e_element_itype)){
+				retain_value(backend, element_value, e_element_itype);
+			}
+		}
+		else{
+		}
+	}
+
+	const auto count2 = acc.size();
+	auto result_vec = alloc_vector_carray(backend.heap, count2, count2, return_type);
+
+	if(count2 > 0){
+		//	Count > 0 required to get address to first element in acc.
+		copy_elements(result_vec.vector_carray_ptr->get_element_ptr(), &acc[0], count2);
+	}
+	return result_vec;
+}
+
+runtime_value_t unified_intrinsic__filter_hamt(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_value_type,
+	runtime_value_t context,
+	runtime_type_t context_type)
+{
+	auto& backend = get_backend(frp);
+
+	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
+//	const auto& type1 = lookup_type_ref(backend, f_value_type);
+//	const auto& type2 = lookup_type_ref(backend, context_type);
+	const auto& return_type = type0;
+
+//	QUARK_ASSERT(check_filter_func_type(type0, type1, type2));
+	QUARK_ASSERT(is_vector_hamt(backend.types, backend.config, type_t(elements_vec_type)));
+
+	const auto& vec = *elements_vec.vector_hamt_ptr;
+
+	const auto& func_link = lookup_func_link_required(backend, f_value);
+	const auto f = reinterpret_cast<FILTER_F>(func_link.f);
+
+	auto count = vec.get_element_count();
+
+	const auto e_element_itype = lookup_vector_element_type(backend, type_t(elements_vec_type));
+
+	std::vector<runtime_value_t> acc;
+	for(int i = 0 ; i < count ; i++){
+		const auto element_value = vec.load_element(i);
+		const auto keep = (*f)(frp, element_value, context);
+		if(keep.bool_value != 0){
+			acc.push_back(element_value);
+
+			if(is_rc_value(backend.types, e_element_itype)){
+				retain_value(backend, element_value, e_element_itype);
+			}
+		}
+		else{
+		}
+	}
+
+	const auto count2 = acc.size();
+	auto result_vec = alloc_vector_hamt(backend.heap, &acc[0], count2, return_type);
+	return result_vec;
+}
+
+//??? check type at compile time, not runtime.
+//	[E] filter([E] elements, func bool (E e, C context) f, C context)
+runtime_value_t unified_intrinsic__filter(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_value_type,
+	runtime_value_t arg2_value,
+	runtime_type_t arg2_type)
+{
+	auto& backend = get_backend(frp);
+
+//	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
+	if(is_vector_carray(backend.types, backend.config, type_t(elements_vec_type))){
+		return unified_intrinsic__filter_carray(frp, elements_vec, elements_vec_type, f_value, f_value_type, arg2_value, arg2_type);
+	}
+	else if(is_vector_hamt(backend.types, backend.config, type_t(elements_vec_type))){
+		return unified_intrinsic__filter_hamt(frp, elements_vec, elements_vec_type, f_value, f_value_type, arg2_value, arg2_type);
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
 
 
 
