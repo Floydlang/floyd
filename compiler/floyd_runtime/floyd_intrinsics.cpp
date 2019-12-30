@@ -371,4 +371,73 @@ void unified_intrinsic__exit(floyd_runtime_t* frp){
 }
 
 
+
+
+
+
+
+
+
+/////////////////////////////////////////		PURE BITWISE
+
+/*
+ |OPERATOR		| EXPLANATION
+ |:---	|:---
+ | int bw\_not(int v)		| inverts all bits in the integer v.
+ | int bw\_and(int a, int b)		| and:s each bit in a with the corresponding bit in b
+ | int bw\_or(int a, int b)		| or:s each bit in a with the corresponding bit in b
+ | int bw\_xor(int a, int b)		| xor:s each bit in a with the corresponding bit in b
+ | int bw\_shift\_left(int v, int count)		| shifts the bits in v left, the number of bits specified by count. New bits are set to 0.
+ | int bw\_shift\_right(int v, int count)		| shifts the bits in v right, the number of bits specified by count. New bits are set to 0.
+ | int bw\_shift\_right\_arithmetic(int v, int count)		| shifts the bits in v right, the number of bits specified by count. New bits are copied from bit 63, which sign-extends the number		| it doesn't lose its negativeness.
+
+*/
+
+runtime_value_t unified_intrinsic__bw_not(floyd_runtime_t* frp, runtime_value_t v){
+	auto& backend = get_backend(frp);
+
+	const int64_t result = ~v.int_value;
+	return runtime_value_t { .int_value = result };
+}
+runtime_value_t unified_intrinsic__bw_and(floyd_runtime_t* frp, runtime_value_t a, runtime_value_t b){
+	auto& backend = get_backend(frp);
+
+	const int64_t result = a.int_value & b.int_value;
+	return runtime_value_t { .int_value = result };
+}
+runtime_value_t unified_intrinsic__bw_or(floyd_runtime_t* frp, runtime_value_t a, runtime_value_t b){
+	auto& backend = get_backend(frp);
+
+	const int64_t result = a.int_value | b.int_value;
+	return runtime_value_t { .int_value = result };
+}
+runtime_value_t unified_intrinsic__bw_xor(floyd_runtime_t* frp, runtime_value_t a, runtime_value_t b){
+	auto& backend = get_backend(frp);
+
+	const int64_t result = a.int_value ^ b.int_value;
+	return runtime_value_t { .int_value = result };
+}
+runtime_value_t unified_intrinsic__bw_shift_left(floyd_runtime_t* frp, runtime_value_t v, runtime_value_t count){
+	auto& backend = get_backend(frp);
+
+	const int64_t result = v.int_value << count.int_value;
+	return runtime_value_t { .int_value = result };
+}
+runtime_value_t unified_intrinsic__bw_shift_right(floyd_runtime_t* frp, runtime_value_t v, runtime_value_t count){
+	auto& backend = get_backend(frp);
+
+	const int64_t result = v.int_value >> count.int_value;
+	return runtime_value_t { .int_value = result };
+}
+runtime_value_t unified_intrinsic__bw_shift_right_arithmetic(floyd_runtime_t* frp, runtime_value_t v, runtime_value_t count){
+	auto& backend = get_backend(frp);
+
+	const int64_t result = v.int_value >> count.int_value;
+	return runtime_value_t { .int_value = result };
+}
+
+
+
+
+
 } // floyd

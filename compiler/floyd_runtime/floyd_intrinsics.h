@@ -63,6 +63,15 @@ void unified_intrinsic__send(floyd_runtime_t* frp, runtime_value_t dest_process_
 void unified_intrinsic__exit(floyd_runtime_t* frp);
 
 
+runtime_value_t unified_intrinsic__bw_not(floyd_runtime_t* frp, runtime_value_t v);
+runtime_value_t unified_intrinsic__bw_and(floyd_runtime_t* frp, runtime_value_t a, runtime_value_t b);
+runtime_value_t unified_intrinsic__bw_or(floyd_runtime_t* frp, runtime_value_t a, runtime_value_t b);
+runtime_value_t unified_intrinsic__bw_xor(floyd_runtime_t* frp, runtime_value_t a, runtime_value_t b);
+runtime_value_t unified_intrinsic__bw_shift_left(floyd_runtime_t* frp, runtime_value_t v, runtime_value_t count);
+runtime_value_t unified_intrinsic__bw_shift_right(floyd_runtime_t* frp, runtime_value_t v, runtime_value_t count);
+runtime_value_t unified_intrinsic__bw_shift_right_arithmetic(floyd_runtime_t* frp, runtime_value_t v, runtime_value_t count);
+
+
 } // floyd
 
 #endif /* floyd_intrinsics_hpp */

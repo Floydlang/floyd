@@ -421,101 +421,6 @@ if(k_trace && false){
 
 
 
-/////////////////////////////////////////		PURE BITWISE
-
-
-
-static rt_value_t bc_intrinsic__bw_not(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-
-	auto& backend = vm._backend;
-	QUARK_ASSERT(peek2(backend.types, args[0]._type).is_int());
-
-	const auto a = args[0].get_int_value();
-	const auto result = ~a;
-	return rt_value_t::make_int(result);
-}
-static rt_value_t bc_intrinsic__bw_and(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 2);
-
-	auto& backend = vm._backend;
-	QUARK_ASSERT(peek2(backend.types, args[0]._type).is_int());
-	QUARK_ASSERT(peek2(backend.types, args[1]._type).is_int());
-
-	const auto a = args[0].get_int_value();
-	const auto b = args[1].get_int_value();
-	const auto result = a & b;
-	return rt_value_t::make_int(result);
-}
-static rt_value_t bc_intrinsic__bw_or(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 2);
-
-	auto& backend = vm._backend;
-	QUARK_ASSERT(peek2(backend.types, args[0]._type).is_int());
-	QUARK_ASSERT(peek2(backend.types, args[1]._type).is_int());
-
-	const auto a = args[0].get_int_value();
-	const auto b = args[1].get_int_value();
-	const auto result = a | b;
-	return rt_value_t::make_int(result);
-}
-static rt_value_t bc_intrinsic__bw_xor(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 2);
-
-	auto& backend = vm._backend;
-	QUARK_ASSERT(peek2(backend.types, args[0]._type).is_int());
-	QUARK_ASSERT(peek2(backend.types, args[1]._type).is_int());
-
-	const auto a = args[0].get_int_value();
-	const auto b = args[1].get_int_value();
-	const auto result = a ^ b;
-	return rt_value_t::make_int(result);
-}
-static rt_value_t bc_intrinsic__bw_shift_left(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 2);
-
-	auto& backend = vm._backend;
-	QUARK_ASSERT(peek2(backend.types, args[0]._type).is_int());
-	QUARK_ASSERT(peek2(backend.types, args[1]._type).is_int());
-
-	const auto a = args[0].get_int_value();
-	const auto count = args[1].get_int_value();
-	const auto result = a << count;
-	return rt_value_t::make_int(result);
-}
-static rt_value_t bc_intrinsic__bw_shift_right(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 2);
-
-	auto& backend = vm._backend;
-	QUARK_ASSERT(peek2(backend.types, args[0]._type).is_int());
-	QUARK_ASSERT(peek2(backend.types, args[1]._type).is_int());
-
-	const uint64_t a = args[0].get_int_value();
-	const uint64_t count = args[1].get_int_value();
-	const auto result = a >> count;
-	return rt_value_t::make_int(result);
-}
-static rt_value_t bc_intrinsic__bw_shift_right_arithmetic(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 2);
-
-	auto& backend = vm._backend;
-	QUARK_ASSERT(peek2(backend.types, args[0]._type).is_int());
-	QUARK_ASSERT(peek2(backend.types, args[1]._type).is_int());
-
-	const auto a = args[0].get_int_value();
-	const auto count = args[1].get_int_value();
-	const auto result = a >> count;
-	return rt_value_t::make_int(result);
-}
-
-
 /////////////////////////////////////////		bc_get_intrinsics()
 
 
@@ -579,19 +484,17 @@ std::vector<func_link_t> bc_get_intrinsics(types_t& types){
 
 		make_intr(make_stable_sort_signature(types), bc_intrinsic__stable_sort),
 
-
 		make_intr2(make_print_signature(types), (void*)unified_intrinsic__print),
 		make_intr2(make_send_signature(types), (void*)unified_intrinsic__send),
 		make_intr2(make_exit_signature(types), (void*)unified_intrinsic__exit),
 
-
-		make_intr(make_bw_not_signature(types), bc_intrinsic__bw_not),
-		make_intr(make_bw_and_signature(types), bc_intrinsic__bw_and),
-		make_intr(make_bw_or_signature(types), bc_intrinsic__bw_or),
-		make_intr(make_bw_xor_signature(types), bc_intrinsic__bw_xor),
-		make_intr(make_bw_shift_left_signature(types), bc_intrinsic__bw_shift_left),
-		make_intr(make_bw_shift_right_signature(types), bc_intrinsic__bw_shift_right),
-		make_intr(make_bw_shift_right_arithmetic_signature(types), bc_intrinsic__bw_shift_right_arithmetic)
+		make_intr2(make_bw_not_signature(types), (void*)unified_intrinsic__bw_not),
+		make_intr2(make_bw_and_signature(types), (void*)unified_intrinsic__bw_and),
+		make_intr2(make_bw_or_signature(types), (void*)unified_intrinsic__bw_or),
+		make_intr2(make_bw_xor_signature(types), (void*)unified_intrinsic__bw_xor),
+		make_intr2(make_bw_shift_left_signature(types), (void*)unified_intrinsic__bw_shift_left),
+		make_intr2(make_bw_shift_right_signature(types), (void*)unified_intrinsic__bw_shift_right),
+		make_intr2(make_bw_shift_right_arithmetic_signature(types), (void*)unified_intrinsic__bw_shift_right_arithmetic)
 	};
 }
 
