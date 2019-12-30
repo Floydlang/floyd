@@ -612,6 +612,7 @@ std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& progra
 
 
 void llvm_process_t::runtime_basics__on_print(const std::string& s){
+	//??? needs mutex.
 	ee->_handler_router._runtime_handler->on_print(s);
 }
 
@@ -619,6 +620,10 @@ type_t llvm_process_t::runtime_basics__get_global_symbol_type(const std::string&
 	return find_symbol_required(ee->global_symbols, s)._value_type;
 }
 
+rt_value_t llvm_process_t::runtime_basics__call_thunk(const rt_value_t& f, const rt_value_t args[], int arg_count){
+	QUARK_ASSERT(false);
+	throw std::exception();
+}
 
 
 

@@ -67,8 +67,8 @@ struct runtime_basics_i {
 	virtual ~runtime_basics_i(){};
 	virtual void runtime_basics__on_print(const std::string& s) = 0;
 	virtual type_t runtime_basics__get_global_symbol_type(const std::string& s) = 0;
+	virtual rt_value_t runtime_basics__call_thunk(const rt_value_t& f, const rt_value_t args[], int arg_count) = 0;
 };
-
 
 
 
@@ -151,6 +151,12 @@ inline void on_exit_process(runtime_t* runtime){
 	QUARK_ASSERT(runtime != nullptr && runtime->check_invariant());
 
 	runtime->handler->runtime_process__on_exit_process();
+}
+
+inline rt_value_t call_thunk(runtime_t* runtime, const rt_value_t& f, const rt_value_t args[], int arg_count){
+	QUARK_ASSERT(runtime != nullptr && runtime->check_invariant());
+
+	return runtime->basics->runtime_basics__call_thunk(f, args, arg_count);
 }
 
 }	//	floyd

@@ -27,46 +27,6 @@ static const bool k_trace = false;
 
 
 
-
-
-
-//	[R] map([E] elements, func R (E e, C context) f, C context)
-static rt_value_t bc_intrinsic__map(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 3);
-//	QUARK_ASSERT(check_map_func_type(args[0]._type, args[1]._type, args[2]._type));
-
-	auto& backend = vm._backend;
-
-//	const auto e_type = peek2(backend.types, args[0]._type).get_vector_element_type(backend.types);
-	const auto f = args[1];
-	const auto f_type_peek = peek2(backend.types, f._type);
-	const auto f_arg_types = f_type_peek.get_function_args(backend.types);
-	const auto r_type = f_type_peek.get_function_return(backend.types);
-
-	const auto& context = args[2];
-
-	const auto input_vec = get_vector_elements(backend, args[0]);
-	immer::vector<rt_value_t> vec2;
-	for(const auto& e: input_vec){
-		const rt_value_t f_args[] = { e, context };
-		const auto result1 = call_function_bc(vm, f, f_args, 2);
-		QUARK_ASSERT(result1.check_invariant());
-		vec2 = vec2.push_back(result1);
-	}
-
-	const auto result = make_vector_value(backend, r_type, vec2);
-
-	if(k_trace && false){
-		const auto debug = value_and_type_to_json(backend.types, rt_to_value(backend, result));
-		QUARK_TRACE(json_to_pretty_string(debug));
-	}
-	QUARK_ASSERT(result.check_invariant());
-	return result;
-}
-
-
-
 /////////////////////////////////////////		PURE -- map_dag()
 
 
@@ -163,9 +123,6 @@ static rt_value_t bc_intrinsic__map_dag(interpreter_t& vm, const rt_value_t args
 
 	return result;
 }
-
-
-
 
 
 /////////////////////////////////////////		PURE -- map_dag2()
@@ -479,8 +436,7 @@ std::vector<func_link_t> bc_get_intrinsics(types_t& types){
 		make_intr2(make_from_json_signature(types), (void*)intrinsic__from_json),
 
 
-		make_intr(make_map_signature(types), bc_intrinsic__map),
-//		make_intr2(make_map_signature(types), (void*)intrinsic__map),
+		make_intr2(make_map_signature(types), (void*)intrinsic__map),
 		make_intr(make_filter_signature(types), bc_intrinsic__filter),
 		make_intr(make_reduce_signature(types), bc_intrinsic__reduce),
 		make_intr(make_map_dag_signature(types), bc_intrinsic__map_dag),

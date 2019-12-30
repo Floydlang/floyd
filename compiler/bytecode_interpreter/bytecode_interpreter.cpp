@@ -436,7 +436,10 @@ rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_val
 		QUARK_ASSERT(result.check_invariant());
 		return result;
 	}
-	else{
+	else if(func_link.machine == func_link_t::emachine::k_native2){
+		NOT_IMPLEMENTED_YET();
+	}
+	else if(func_link.machine == func_link_t::emachine::k_bytecode){
 #if DEBUG
 		const auto& arg_types = peek2(types, f._type).get_function_args(types);
 
@@ -476,6 +479,9 @@ rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_val
 		else{
 			return rt_value_t::make_undefined();
 		}
+	}
+	else{
+		UNSUPPORTED();
 	}
 }
 
@@ -631,6 +637,9 @@ type_t interpreter_t::runtime_basics__get_global_symbol_type(const std::string& 
 	return it->second._value_type;
 }
 
+rt_value_t interpreter_t::runtime_basics__call_thunk(const rt_value_t& f, const rt_value_t args[], int arg_count){
+	return call_function_bc(*this, f, args, arg_count);
+}
 
 
 

@@ -1193,6 +1193,7 @@ struct interpreter_t : runtime_basics_i {
 
 	void runtime_basics__on_print(const std::string& s) override;
 	type_t runtime_basics__get_global_symbol_type(const std::string& s) override;
+	rt_value_t runtime_basics__call_thunk(const rt_value_t& f, const rt_value_t args[], int arg_count) override;
 
 
 	////////////////////////		STATE

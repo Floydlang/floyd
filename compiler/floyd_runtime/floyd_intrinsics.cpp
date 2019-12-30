@@ -556,9 +556,6 @@ const rt_pod_t intrinsic__replace(runtime_t* frp, rt_pod_t elements_vec, rt_type
 //	[R] map([E] elements, func R (E e, C context) f, C context)
 
 
-
-//??? Use C++ template to generate these two functions.
-
 rt_pod_t intrinsic__map__carray(runtime_t* frp, rt_pod_t elements_vec, rt_type_t elements_vec_type, rt_pod_t f_value, rt_type_t f_type, rt_pod_t context_value, rt_type_t context_type, rt_type_t result_vec_type){
 	auto& backend = get_backend(frp);
 	const auto& types = backend.types;
@@ -575,6 +572,7 @@ rt_pod_t intrinsic__map__carray(runtime_t* frp, rt_pod_t elements_vec, rt_type_t
 //	const auto e_type = peek2(types, type0).get_vector_element_type(types);
 	const auto f_arg_types = peek2(types, type1).get_function_args(types);
 #endif
+	const auto e_type = peek2(types, type_t(elements_vec_type)).get_vector_element_type(types);
 
 	const auto& func_link = lookup_func_link_required(backend, f_value);
 	QUARK_ASSERT(func_link.machine == func_link_t::emachine::k_native || func_link.machine == func_link_t::emachine::k_native2);
@@ -583,14 +581,27 @@ rt_pod_t intrinsic__map__carray(runtime_t* frp, rt_pod_t elements_vec, rt_type_t
 	const auto count = elements_vec.vector_carray_ptr->get_element_count();
 	auto result_vec = alloc_vector_carray(backend.heap, count, count, type_t(result_vec_type));
 	for(int i = 0 ; i < count ; i++){
-		const auto a = (*f)(frp, elements_vec.vector_carray_ptr->get_element_ptr()[i], context_value);
-		result_vec.vector_carray_ptr->get_element_ptr()[i] = a;
+		const auto& element = elements_vec.vector_carray_ptr->get_element_ptr()[i];
+
+		if(func_link.machine == func_link_t::emachine::k_bytecode){
+			const rt_value_t f_args[] = {
+				rt_value_t(backend, type_t(e_type), element, rt_value_t::rc_mode::bump),
+				rt_value_t(backend, type_t(context_type), context_value, rt_value_t::rc_mode::bump)
+			};
+			const auto a = call_thunk(frp, rt_value_t(backend, type_t(f_type), f_value, rt_value_t::rc_mode::bump), f_args, 2);
+			QUARK_ASSERT(a.check_invariant());
+			retain_value(backend, a._pod, a._type);
+
+			result_vec.vector_carray_ptr->get_element_ptr()[i] = a._pod;
+		}
+		else{
+			const auto a = (*f)(frp, element, context_value);
+			result_vec.vector_carray_ptr->get_element_ptr()[i] = a;
+		}
 	}
 	return result_vec;
 }
 
-//??? Update 1 element in a big hamt will copy the entire hamt, inc RC on all elements in hamt2. This is not needed since most of hamt is shared. Cheaper if we build in RC for leaf in the hamt itself.
-//??? Use batching to speed up hamt creation. Add 32 nodes at a time. Also faster read iteration.
 rt_pod_t intrinsic__map__hamt(runtime_t* frp, rt_pod_t elements_vec, rt_type_t elements_vec_type, rt_pod_t f_value, rt_type_t f_type, rt_pod_t context_value, rt_type_t context_type, rt_type_t result_vec_type){
 	auto& backend = get_backend(frp);
 	QUARK_ASSERT(backend.check_invariant());
@@ -603,41 +614,55 @@ rt_pod_t intrinsic__map__hamt(runtime_t* frp, rt_pod_t elements_vec, rt_type_t e
 //	const auto& type2 = lookup_type_ref(backend, context_type);
 //	QUARK_ASSERT(check_map_func_type(type0, type1, type2));
 
-//	const auto e_type = peek2(types, type0).get_vector_element_type(types);
 	const auto f_arg_types = peek2(types, type1).get_function_args(types);
 #endif
+	const auto e_type = peek2(types, type_t(elements_vec_type)).get_vector_element_type(types);
 
 	const auto& func_link = lookup_func_link_required(backend, f_value);
-	QUARK_ASSERT(func_link.machine == func_link_t::emachine::k_native || func_link.machine == func_link_t::emachine::k_native2);
+//	QUARK_ASSERT(func_link.machine == func_link_t::emachine::k_native || func_link.machine == func_link_t::emachine::k_native2);
 	const auto f = reinterpret_cast<MAP_F>(func_link.f);
 
 	const auto count = elements_vec.vector_hamt_ptr->get_element_count();
 	auto result_vec = alloc_vector_hamt(backend.heap, count, count, type_t(result_vec_type));
 	for(int i = 0 ; i < count ; i++){
 		const auto& element = elements_vec.vector_hamt_ptr->load_element(i);
-		const auto a = (*f)(frp, element, context_value);
-		result_vec.vector_hamt_ptr->store_mutate(i, a);
+
+		if(func_link.machine == func_link_t::emachine::k_bytecode){
+			const rt_value_t f_args[] = {
+				rt_value_t(backend, type_t(e_type), element, rt_value_t::rc_mode::bump),
+				rt_value_t(backend, type_t(context_type), context_value, rt_value_t::rc_mode::bump)
+			};
+			const auto a = call_thunk(frp, rt_value_t(backend, type_t(f_type), f_value, rt_value_t::rc_mode::bump), f_args, 2);
+			QUARK_ASSERT(a.check_invariant());
+			retain_value(backend, a._pod, a._type);
+
+			result_vec.vector_hamt_ptr->store_mutate(i, a._pod);
+		}
+		else{
+			const auto a = (*f)(frp, element, context_value);
+			result_vec.vector_hamt_ptr->store_mutate(i, a);
+		}
 	}
 	return result_vec;
 }
 
-rt_pod_t intrinsic__map(runtime_t* frp, rt_pod_t elements_vec, rt_type_t elements_vec_type, rt_pod_t f_value, rt_type_t f_type, rt_pod_t context_value, rt_type_t context_type, rt_type_t result_vec_type){
+rt_pod_t intrinsic__map(runtime_t* frp, rt_pod_t elements_vec, rt_type_t elements_vec_type, rt_pod_t f_value, rt_type_t f_type, rt_pod_t context_value, rt_type_t context_type){
 	auto& backend = get_backend(frp);
-//	const auto& types = backend.types;
-
-	const auto vec_type = type_t(elements_vec_type);
-
 	QUARK_ASSERT(backend.check_invariant());
 
-	if(vec_type.is_string()){
-		QUARK_ASSERT(false);
-		throw std::exception();
+	const auto& types = backend.types;
+
+	const auto vec_e_type = type_t(elements_vec_type);
+	QUARK_ASSERT(vec_e_type.is_string() == false);
+
+	const auto& r_type = peek2(types, type_t(f_type)).get_function_return(types);
+	const auto vec_r_type = type_t::make_vector(types, r_type);
+
+	if(is_vector_carray(backend.types, backend.config, vec_e_type)){
+		return intrinsic__map__carray(frp, elements_vec, elements_vec_type, f_value, f_type, context_value, context_type, vec_r_type.get_data());
 	}
-	else if(is_vector_carray(backend.types, backend.config, vec_type)){
-		return intrinsic__map__carray(frp, elements_vec, elements_vec_type, f_value, f_type, context_value, context_type, result_vec_type);
-	}
-	else if(is_vector_hamt(backend.types, backend.config, vec_type)){
-		return intrinsic__map__hamt(frp, elements_vec, elements_vec_type, f_value, f_type, context_value, context_type, result_vec_type);
+	else if(is_vector_hamt(backend.types, backend.config, vec_e_type)){
+		return intrinsic__map__hamt(frp, elements_vec, elements_vec_type, f_value, f_type, context_value, context_type, vec_r_type.get_data());
 	}
 	else{
 		QUARK_ASSERT(false);

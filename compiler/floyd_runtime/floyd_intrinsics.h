@@ -150,8 +150,7 @@ rt_pod_t intrinsic__map(
 	rt_pod_t f_value,
 	rt_type_t f_type,
 	rt_pod_t context_value,
-	rt_type_t context_type,
-	rt_type_t result_vec_type
+	rt_type_t context_type
 );
 
 

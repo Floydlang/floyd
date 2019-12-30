@@ -75,6 +75,7 @@ struct llvm_process_t : public runtime_basics_i, runtime_process_i {
 
 	void runtime_basics__on_print(const std::string& s) override;
 	type_t runtime_basics__get_global_symbol_type(const std::string& s) override;
+	rt_value_t runtime_basics__call_thunk(const rt_value_t& f, const rt_value_t args[], int arg_count) override;
 
 	void runtime_process__on_send_message(const std::string& dest_process_id, const rt_pod_t& message, const type_t& message_type) override;
 	void runtime_process__on_exit_process() override;
@@ -144,6 +145,10 @@ struct route_t : public runtime_basics_i, runtime_process_i {
 	void runtime_process__on_exit_process() override {
 		QUARK_ASSERT(_runtime_handler != nullptr);
 		QUARK_ASSERT(_symbol_table != nullptr);
+	}
+	rt_value_t runtime_basics__call_thunk(const rt_value_t& f, const rt_value_t args[], int arg_count) override {
+		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 
 
