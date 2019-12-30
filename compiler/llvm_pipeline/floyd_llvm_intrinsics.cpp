@@ -115,41 +115,6 @@ llvm::Value* generate_instrinsic_map(
 	);
 }
 
-
-////////////////////////////////	push_back()
-
-
-static runtime_value_t floydrt_push_back__string(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
-	auto& backend = get_backend(frp);
-
-	return push_back_vector_element__string(backend, vec, type_t(vec_type), element);
-}
-
-static runtime_value_t floydrt_push_back_carray_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
-	auto& backend = get_backend(frp);
-
-	return push_back_vector_element__carray_pod(backend, vec, type_t(vec_type), element);
-}
-
-static runtime_value_t floydrt_push_back_carray_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
-	auto& backend = get_backend(frp);
-
-	return push_back_vector_element__carray_nonpod(backend, vec, type_t(vec_type), element);
-}
-
-static runtime_value_t floydrt_push_back_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
-	auto& backend = get_backend(frp);
-
-	return push_back_vector_element__hamt_pod(backend, vec, type_t(vec_type), element);
-}
-
-static runtime_value_t floydrt_push_back_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
-	auto& backend = get_backend(frp);
-
-	return push_back_vector_element__hamt_nonpod(backend, vec, type_t(vec_type), element);
-}
-
-
 static std::vector<specialization_t> make_push_back_specializations(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		make_generic_vec_type_byvalue(type_lookup)->getPointerTo(),
@@ -163,11 +128,11 @@ static std::vector<specialization_t> make_push_back_specializations(llvm::LLVMCo
 	);
 	return {
 //		specialization_t { { "push_back", make_intrinsic_llvm_function_type(type_lookup, make_push_back_signature()), reinterpret_cast<void*>(floyd_llvm_intrinsic__push_back) }, xx),
-		specialization_t { eresolved_type::k_string,				{ module_symbol_t("push_back__string"), function_type, reinterpret_cast<void*>(floydrt_push_back__string) } },
-		specialization_t { eresolved_type::k_vector_carray_pod,		{ module_symbol_t("push_back_carray_pod"), function_type, reinterpret_cast<void*>(floydrt_push_back_carray_pod) } },
-		specialization_t { eresolved_type::k_vector_carray_nonpod,	{ module_symbol_t("push_back_carray_nonpod"), function_type, reinterpret_cast<void*>(floydrt_push_back_carray_nonpod) } },
-		specialization_t { eresolved_type::k_vector_hamt_pod,		{ module_symbol_t("push_back_hamt_pod"), function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_pod) } },
-		specialization_t { eresolved_type::k_vector_hamt_nonpod, 	{ module_symbol_t("push_back_hamt_nonpod"), function_type, reinterpret_cast<void*>(floydrt_push_back_hamt_nonpod) } }
+		specialization_t { eresolved_type::k_string,				{ module_symbol_t("push_back__string"), function_type, reinterpret_cast<void*>(unified_intrinsic__push_back_string) } },
+		specialization_t { eresolved_type::k_vector_carray_pod,		{ module_symbol_t("push_back_carray_pod"), function_type, reinterpret_cast<void*>(unified_intrinsic__push_back_carray_pod) } },
+		specialization_t { eresolved_type::k_vector_carray_nonpod,	{ module_symbol_t("push_back_carray_nonpod"), function_type, reinterpret_cast<void*>(unified_intrinsic__push_back_carray_nonpod) } },
+		specialization_t { eresolved_type::k_vector_hamt_pod,		{ module_symbol_t("push_back_hamt_pod"), function_type, reinterpret_cast<void*>(unified_intrinsic__push_back_hamt_pod) } },
+		specialization_t { eresolved_type::k_vector_hamt_nonpod, 	{ module_symbol_t("push_back_hamt_nonpod"), function_type, reinterpret_cast<void*>(unified_intrinsic__push_back_hamt_nonpod) } }
 	};
 }
 

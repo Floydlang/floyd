@@ -32,16 +32,12 @@ void unified_intrinsic__assert(floyd_runtime_t* frp, runtime_value_t arg){
 	}
 }
 
-
-
-
 runtime_value_t unified_intrinsic__to_string(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
 	auto& backend = get_backend(frp);
 
 	const auto s = gen_to_string(backend, value, type_t(value_type));
 	return to_runtime_string2(backend, s);
 }
-
 
 runtime_value_t unified_intrinsic__to_pretty_string(floyd_runtime_t* frp, runtime_value_t value, runtime_type_t value_type){
 	auto& backend = get_backend(frp);
@@ -63,7 +59,6 @@ runtime_type_t unified_intrinsic__typeof(floyd_runtime_t* frp, runtime_value_t v
 #endif
 	return value_type;
 }
-
 
 
 static rt_value_t update_element(value_backend_t& backend, const rt_value_t& obj1, const rt_value_t& lookup_key, const rt_value_t& new_value){
@@ -234,6 +229,50 @@ runtime_value_t unified_intrinsic__get_keys(floyd_runtime_t* frp, runtime_value_
 	return get_keys(backend, coll_value, coll_type);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+////////////////////////////////	push_back()
+
+
+runtime_value_t unified_intrinsic__push_back_string(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
+	auto& backend = get_backend(frp);
+
+	return push_back_vector_element__string(backend, vec, type_t(vec_type), element);
+}
+
+runtime_value_t unified_intrinsic__push_back_carray_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
+	auto& backend = get_backend(frp);
+
+	return push_back_vector_element__carray_pod(backend, vec, type_t(vec_type), element);
+}
+
+runtime_value_t unified_intrinsic__push_back_carray_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
+	auto& backend = get_backend(frp);
+
+	return push_back_vector_element__carray_nonpod(backend, vec, type_t(vec_type), element);
+}
+
+runtime_value_t unified_intrinsic__push_back_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
+	auto& backend = get_backend(frp);
+
+	return push_back_vector_element__hamt_pod(backend, vec, type_t(vec_type), element);
+}
+
+runtime_value_t unified_intrinsic__push_back_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element){
+	auto& backend = get_backend(frp);
+
+	return push_back_vector_element__hamt_nonpod(backend, vec, type_t(vec_type), element);
+}
+
 runtime_value_t unified_intrinsic__push_back(
 	floyd_runtime_t* frp,
 
@@ -298,8 +337,6 @@ const runtime_value_t unified_intrinsic__replace(floyd_runtime_t* frp, runtime_v
 		UNSUPPORTED();
 	}
 }
-
-
 
 
 
@@ -398,9 +435,7 @@ runtime_value_t unified_intrinsic__map(floyd_runtime_t* frp, runtime_value_t ele
 
 
 
-
 /////////////////////////////////////////		map_dag()
-
 
 
 
@@ -824,14 +859,7 @@ runtime_value_t unified_intrinsic__filter(
 }
 
 
-
-
-
-
-
-
 /////////////////////////////////////////		reduce()
-
 
 
 
@@ -946,12 +974,6 @@ runtime_value_t unified_intrinsic__reduce(
 		throw std::exception();
 	}
 }
-
-
-
-
-
-
 
 
 /////////////////////////////////////////		stable_sort()
@@ -1101,12 +1123,6 @@ runtime_value_t unified_intrinsic__stable_sort(
 }
 
 
-
-
-
-
-
-
 /////////////////////////////////////////		JSON
 
 
@@ -1163,10 +1179,6 @@ runtime_value_t unified_intrinsic__from_json(floyd_runtime_t* frp, runtime_value
 
 
 
-
-
-
-
 /////////////////////////////////////////		print()
 
 
@@ -1206,12 +1218,6 @@ void unified_intrinsic__exit(floyd_runtime_t* frp){
 
 	on_exit_process(frp);
 }
-
-
-
-
-
-
 
 
 

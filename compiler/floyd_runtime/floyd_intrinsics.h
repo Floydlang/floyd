@@ -60,6 +60,12 @@ runtime_value_t unified_intrinsic__erase(
 );
 runtime_value_t unified_intrinsic__get_keys(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type);
 
+
+runtime_value_t unified_intrinsic__push_back_string(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element);
+runtime_value_t unified_intrinsic__push_back_carray_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element);
+runtime_value_t unified_intrinsic__push_back_carray_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element);
+runtime_value_t unified_intrinsic__push_back_hamt_pod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element);
+runtime_value_t unified_intrinsic__push_back_hamt_nonpod(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t vec_type, runtime_value_t element);
 runtime_value_t unified_intrinsic__push_back(
 	floyd_runtime_t* frp,
 
