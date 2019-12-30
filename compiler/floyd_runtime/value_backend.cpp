@@ -16,6 +16,7 @@
 #include "compiler_basics.h"
 #include "quark.h"
 #include "format_table.h"
+#include "floyd_llvm_helpers.h"
 
 namespace floyd {
 
@@ -1640,64 +1641,6 @@ bool is_struct_pod(const types_t& types, const struct_type_desc_t& struct_def){
 
 
 
-bool matches_specialization(const config_t& config, const types_t& types, eresolved_type wanted, const type_t& arg_type){
-	QUARK_ASSERT(config.check_invariant());
-	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(arg_type.check_invariant());
-
-	const auto arg_type_peek = peek2(types, arg_type);
-	if(arg_type_peek.is_string()){
-		return wanted == eresolved_type::k_string;
-	}
-	else if(is_vector_carray(types, config, arg_type)){
-		const auto is_rc = is_rc_value(types, arg_type_peek.get_vector_element_type(types));
-		if(is_rc){
-			return wanted == eresolved_type::k_vector_carray_nonpod;
-		}
-		else{
-			return wanted == eresolved_type::k_vector_carray_pod;
-		}
-	}
-	else if(is_vector_hamt(types, config, arg_type)){
-		const auto is_rc = is_rc_value(types, arg_type_peek.get_vector_element_type(types));
-		if(is_rc){
-			return wanted == eresolved_type::k_vector_hamt_nonpod;
-		}
-		else{
-			return wanted == eresolved_type::k_vector_hamt_pod;
-		}
-	}
-
-	else if(is_dict_cppmap(types, config, arg_type)){
-		const auto is_rc = is_rc_value(types, arg_type_peek.get_dict_value_type(types));
-		if(is_rc){
-			return wanted == eresolved_type::k_dict_cppmap_nonpod;
-		}
-		else{
-			return wanted == eresolved_type::k_dict_cppmap_pod;
-		}
-	}
-	else if(is_dict_hamt(types, config, arg_type)){
-		const auto is_rc = is_rc_value(types, arg_type_peek.get_dict_value_type(types));
-		if(is_rc){
-			return wanted == eresolved_type::k_dict_hamt_nonpod;
-		}
-		else{
-			return wanted == eresolved_type::k_dict_hamt_pod;
-		}
-	}
-
-	else if(arg_type_peek.is_json()){
-		return wanted == eresolved_type::k_json;
-	}
-
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-}
-
-
 
 
 
@@ -1708,6 +1651,21 @@ int count_dyn_args(const types_t& types, const type_t& function_type){
 	return dyn_arg_count;
 }
 
+static std::string machine_to_string(func_link_t::emachine machine){
+	if(machine == func_link_t::emachine::k_bytecode){
+		return "bytecode";
+	}
+	else if(machine == func_link_t::emachine::k_native){
+		return "native";
+	}
+	else if(machine == func_link_t::emachine::k_native2){
+		return "native2";
+	}
+	else{
+		return "";
+	}
+}
+
 json_t func_link_to_json(const types_t& types, const func_link_t& def){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(def.check_invariant());
@@ -1716,11 +1674,12 @@ json_t func_link_to_json(const types_t& types, const func_link_t& def){
 		json_t(def.module_symbol.s),
 		json_t(def.module),
 		json_t(type_to_compact_string(types, def.function_type_optional)),
-		json_t(def.machine == func_link_t::emachine::k_native ? "native" : "bytecode"),
+		json_t(machine_to_string(def.machine)),
 		json_t(ptr_to_hexstring(def.f)),
 	});
 }
 
+/*
 std::string print_function_link_map(const types_t& types, const std::vector<func_link_t>& defs){
 	QUARK_ASSERT(types.check_invariant());
 
@@ -1728,6 +1687,47 @@ std::string print_function_link_map(const types_t& types, const std::vector<func
 	const auto vec2 = json_t::make_array(vec);
 	return json_to_pretty_string(vec2);
 }
+*/
+std::string print_function_link_map(const types_t& types, const std::vector<func_link_t>& defs){
+	std::vector<std::vector<std::string>> matrix;
+	for(const auto& e: defs){
+		const auto ftype0 = e.function_type_optional.is_undefined() ? "" : json_to_compact_string(type_to_compact_string(types, e.function_type_optional));
+
+		std::string arg_names;
+		for(const auto& m: e.arg_names){
+			arg_names = m + ",";
+		}
+		arg_names = arg_names.empty() ? "" : arg_names.substr(0, arg_names.size() - 1);
+
+		const auto ftype1 = ftype0.substr(0, 100);
+		const auto ftype = ftype1.size() != ftype0.size() ? (ftype1 + "...") : ftype1;
+
+		const auto machine = machine_to_string(e.machine);
+
+		const auto f_str = e.f != nullptr ? ptr_to_hexstring(e.f) : "";
+
+		const std::string native_type_str = print_type((llvm::FunctionType*)e.native_type);
+
+		const auto line = std::vector<std::string>{
+			e.module_symbol.s,
+			e.module,
+			ftype,
+			machine,
+			f_str,
+			arg_names,
+			native_type_str
+		};
+		matrix.push_back(line);
+	}
+
+	const auto result = generate_table_type1(
+		{ "LINK-NAME", "MODULE", "FUNCTION TYPE", "MACHINE", "F", "ARG NAMES", "NATIVE TYPE" },
+		matrix
+	);
+	return result;
+}
+
+
 void trace_function_link_map(const types_t& types, const std::vector<func_link_t>& defs){
 	QUARK_ASSERT(types.check_invariant());
 

@@ -737,40 +737,6 @@ bool is_struct_pod(const types_t& types, const struct_type_desc_t& struct_def);
 
 ////////////////////////////////		func_entry_t
 
-/*
-POD VS NONPOD
-
-								return		arg0		arg1		arg2
-	------------------------------------------------------------------------------------------------
-	update()					any			any			any			any
-
-	update_string()				string		string		int			int
-	update_vector_carray()		vec<T>		vec<T>		int			T
-	update_vector_hamt()		vec<T>		vec<T>		int			T
-
-	update_dict_cppmap()		dict<T>		dict<T>		string		T
-	update_dict_hamt()			dict<T>		dict<T>		string		T
-*/
-
-enum class eresolved_type {
-	k_none,
-
-	k_string,
-
-	k_vector_carray_pod,
-	k_vector_carray_nonpod,
-	k_vector_hamt_pod,
-	k_vector_hamt_nonpod,
-
-	k_dict_cppmap_pod,
-	k_dict_cppmap_nonpod,
-
-	k_dict_hamt_pod,
-	k_dict_hamt_nonpod,
-
-	k_json
-};
-
 struct native_type_t {};
 
 //	Every function has a func_entry_t. It may not yet be linked to a function.
@@ -827,7 +793,6 @@ struct func_link_t {
 	std::vector<std::string> arg_names;
 
 	native_type_t* native_type;
-//	eresolved_type required_arg_type;
 };
 
 int count_dyn_args(const types_t& types, const type_t& function_type);
@@ -851,7 +816,6 @@ inline func_link_t set_f(const func_link_t& e, void* f){
 }
 
 
-bool matches_specialization(const config_t& config, const types_t& types, eresolved_type wanted, const type_t& arg_type);
 
 
 ////////////////////////////////		value_backend_t
