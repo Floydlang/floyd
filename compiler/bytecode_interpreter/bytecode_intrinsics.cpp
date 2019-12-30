@@ -25,109 +25,8 @@ namespace floyd {
 static const bool k_trace = false;
 
 
-//////////////////////////////////////////		UPDATE
 
 
-
-
-static rt_value_t bc_intrinsic__find(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 2);
-
-	auto& backend = vm._backend;
-	const auto obj = args[0];
-	const auto wanted = args[1];
-	const auto index = find_vector_element(backend, obj._pod, obj._type.get_data(), wanted._pod, wanted._type.get_data());
-	return rt_value_t(backend, type_t::make_int(), make_runtime_int(index), rt_value_t::rc_mode::adopt);
-}
-
-//??? user function type overloading and create several different functions, depending on the DYN argument.
-
-
-static rt_value_t bc_intrinsic__exists(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 2);
-
-	auto& backend = vm._backend;
-	const auto obj = args[0];
-	const auto key = args[1];
-
-	QUARK_ASSERT(peek2(backend.types, obj._type).is_dict());
-	QUARK_ASSERT(peek2(backend.types, key._type).is_string());
-
-	const bool result = exists_dict_value(backend, obj._pod, obj._type.get_data(), key._pod, key._type.get_data());
-	return rt_value_t::make_bool(result);
-}
-
-static rt_value_t bc_intrinsic__erase(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 2);
-
-	auto& backend = vm._backend;
-	const auto obj = args[0];
-	const auto key = args[1];
-
-	QUARK_ASSERT(peek2(backend.types, obj._type).is_dict());
-	QUARK_ASSERT(peek2(backend.types, key._type).is_string());
-
-	const auto result = erase_dict_value(backend, obj._pod, obj._type.get_data(), key._pod, key._type.get_data());
-	return rt_value_t(backend, obj._type, result, rt_value_t::rc_mode::adopt);
-}
-
-static rt_value_t bc_intrinsic__get_keys(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-
-	auto& backend = vm._backend;
-	const auto obj = args[0];
-	const auto& obj_type_peek = peek2(backend.types, obj._type);
-	QUARK_ASSERT(obj_type_peek.is_dict());
-
-	const auto result = get_keys(backend, obj._pod, obj._type.get_data());
-	return rt_value_t(backend, type_t::make_vector(backend.types, type_t::make_string()), result, rt_value_t::rc_mode::adopt);
-}
-
-/*
-rt_value_t bc_intrinsic__push_back(interpreter_t& vm, const rt_value_t args[], int arg_count){
-}
-*/
-
-//	assert(subset("abc", 1, 3) == "bc");
-static rt_value_t bc_intrinsic__subset(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 3);
-
-	auto& backend = vm._backend;
-	QUARK_ASSERT(peek2(backend.types, args[1]._type).is_int());
-	QUARK_ASSERT(peek2(backend.types, args[2]._type).is_int());
-
-	const auto obj = args[0];
-
-	const auto start = args[1].get_int_value();
-	const auto end = args[2].get_int_value();
-
-	const auto result = subset_vector_range(backend, obj._pod, obj._type.get_data(), start, end);
-	return rt_value_t(backend, obj._type, result, rt_value_t::rc_mode::adopt);
-}
-
-
-//	assert(replace("One ring to rule them all", 4, 7, "rabbit") == "One rabbit to rule them all");
-static rt_value_t bc_intrinsic__replace(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 4);
-
-	auto& backend = vm._backend;
-	QUARK_ASSERT(peek2(backend.types, args[1]._type).is_int());
-	QUARK_ASSERT(peek2(backend.types, args[2]._type).is_int());
-
-	const auto obj = args[0];
-
-	const auto start = args[1].get_int_value();
-	const auto end = args[2].get_int_value();
-	const auto replacement = args[3];
-	const auto result = replace_vector_range(backend, obj._pod, obj._type.get_data(), start, end, replacement._pod, replacement._type.get_data());
-	return rt_value_t(backend, obj._type, result, rt_value_t::rc_mode::adopt);
-}
 
 /*
 	Reads json from a text string, returning an unpacked json.
@@ -731,15 +630,15 @@ std::vector<func_link_t> bc_get_intrinsics(types_t& types){
 
 		//	size(types) is translated to bc_opcode::k_get_size_vector_w_external_elements(types) etc.
 
-		make_intr(make_find_signature(types), bc_intrinsic__find),
-		make_intr(make_exists_signature(types), bc_intrinsic__exists),
-		make_intr(make_erase_signature(types), bc_intrinsic__erase),
-		make_intr(make_get_keys_signature(types), bc_intrinsic__get_keys),
-
-		//	push_back(types) is translated to bc_opcode::k_pushback_vector_w_inplace_elements(types) etc.
-
-		make_intr(make_subset_signature(types), bc_intrinsic__subset),
-		make_intr(make_replace_signature(types), bc_intrinsic__replace),
+		make_intr2(make_find_signature(types), (void*)unified_intrinsic__find),
+		//	size()
+		make_intr2(make_exists_signature(types), (void*)unified_intrinsic__exists),
+		make_intr2(make_erase_signature(types), (void*)unified_intrinsic__erase),
+		make_intr2(make_get_keys_signature(types), (void*)unified_intrinsic__get_keys),
+//		push_back(types) is translated to bc_opcode::k_pushback_vector_w_inplace_elements(types) etc.
+//		make_intr2(make_push_back_signature(types), (void*)unified_intrinsic__push_back),
+		make_intr2(make_subset_signature(types), (void*)unified_intrinsic__subset),
+		make_intr2(make_replace_signature(types), (void*)unified_intrinsic__replace),
 
 
 		make_intr(make_parse_json_script_signature(types), bc_intrinsic__parse_json_script),

@@ -155,6 +155,10 @@ static rt_value_t update_element(value_backend_t& backend, const rt_value_t& obj
 	}
 }
 
+
+//??? user function type overloading and create several different functions, depending on the DYN argument.
+
+
 // let b = update(a, member, value)
 runtime_value_t unified_intrinsic__update(
 	floyd_runtime_t* frp,
@@ -178,6 +182,97 @@ runtime_value_t unified_intrinsic__update(
 	retain_value(backend, result._pod, result._type);
 	return result._pod;
 }
+
+//	SIZE
+
+int64_t unified_intrinsic__find(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type){
+	auto& backend = get_backend(frp);
+	return find_vector_element(backend, coll_value, coll_type, value, value_type);
+}
+
+uint32_t unified_intrinsic__exists(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t value, runtime_type_t value_type){
+	auto& backend = get_backend(frp);
+
+	const auto& types = backend.types;
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+//	const auto& type1 = lookup_type_ref(backend, value_type);
+	QUARK_ASSERT(peek2(types, type0).is_dict());
+
+	const bool result = exists_dict_value(backend, coll_value, coll_type, value, value_type);
+	return result ? 1 : 0;
+}
+
+//??? all types are compile-time only.
+runtime_value_t unified_intrinsic__erase(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type){
+	auto& backend = get_backend(frp);
+
+	const auto& types = backend.types;
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	const auto& type1 = lookup_type_ref(backend, key_type);
+	QUARK_ASSERT(peek2(types, type0).is_dict());
+	QUARK_ASSERT(peek2(types, type1).is_string());
+	return erase_dict_value(backend, coll_value, coll_type, key_value, key_type);
+}
+
+//??? We need to figure out the return type *again*, knowledge we have already in semast.
+runtime_value_t unified_intrinsic__get_keys(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type){
+	auto& backend = get_backend(frp);
+
+	const auto& types = backend.types;
+	const auto& type0 = lookup_type_ref(backend, coll_type);
+	QUARK_ASSERT(peek2(types, type0).is_dict());
+	return get_keys(backend, coll_value, coll_type);
+}
+
+//	PUSHBACK
+
+//??? check type at compile time, not runtime.
+// VECTOR subset(VECTOR s, int start, int end)
+const runtime_value_t unified_intrinsic__subset(floyd_runtime_t* frp, runtime_value_t elements_vec, runtime_type_t elements_vec_type, uint64_t start, uint64_t end){
+	auto& backend = get_backend(frp);
+
+	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
+	if(peek2(backend.types, type0).is_string()){
+		return subset_vector_range__string(backend, elements_vec, elements_vec_type, start, end);
+	}
+	else if(is_vector_carray(backend.types, backend.config, type_t(elements_vec_type))){
+		return subset_vector_range__carray(backend, elements_vec, elements_vec_type, start, end);
+	}
+	else if(is_vector_hamt(backend.types, backend.config, type_t(elements_vec_type))){
+		return subset_vector_range__hamt(backend, elements_vec, elements_vec_type, start, end);
+	}
+	else{
+		//	No other types allowed.
+		UNSUPPORTED();
+	}
+}
+
+//??? check type at compile time, not runtime.
+//	replace(VECTOR s, int start, int end, VECTOR new)
+const runtime_value_t unified_intrinsic__replace(floyd_runtime_t* frp, runtime_value_t elements_vec, runtime_type_t elements_vec_type, uint64_t start, uint64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
+	auto& backend = get_backend(frp);
+
+	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
+	const auto& type3 = lookup_type_ref(backend, arg3_type);
+
+	QUARK_ASSERT(type3 == type0);
+
+	if(peek2(backend.types, type0).is_string()){
+		return replace_vector_range__string(backend, elements_vec, elements_vec_type, start, end, arg3_value, arg3_type);
+	}
+	else if(is_vector_carray(backend.types, backend.config, type_t(elements_vec_type))){
+		return replace_vector_range__carray(backend, elements_vec, elements_vec_type, start, end, arg3_value, arg3_type);
+	}
+	else if(is_vector_hamt(backend.types, backend.config, type_t(elements_vec_type))){
+		return replace_vector_range__hamt(backend, elements_vec, elements_vec_type, start, end, arg3_value, arg3_type);
+	}
+	else{
+		//	No other types allowed.
+		UNSUPPORTED();
+	}
+}
+
+
 
 
 
