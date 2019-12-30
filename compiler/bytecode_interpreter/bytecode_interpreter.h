@@ -100,7 +100,7 @@ struct rt_value_t;
 
 typedef rt_value_t (*BC_NATIVE_FUNCTION_PTR)(interpreter_t& vm, const rt_value_t args[], int arg_count);
 
-//??? runtime_type_t is 32 bits, we need to bump bc_typeid_t to match. This requires changes to opcode encoding
+//??? rt_type_t is 32 bits, we need to bump bc_typeid_t to match. This requires changes to opcode encoding
 typedef int16_t bc_typeid_t;
 
 

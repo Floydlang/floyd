@@ -1196,7 +1196,7 @@ static cif_t make_cif(const value_backend_t& backend, const type_t& function_typ
 			//	rt_pod_t
 			result.arg_types.push_back(&ffi_type_uint64);
 
-			//	runtime_type_t
+			//	rt_type_t
 			result.arg_types.push_back(&ffi_type_uint64);
 		}
 		else{
@@ -1264,7 +1264,7 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 			//	Store the value as a 64 bit integer always.
 			storage.push_back(rt_value_t::make_int(arg_pod.int_value));
 
-			//	Notice: in ABI, any is passed like: [ rt_pod_t value, runtime_type_t value_type ], notice swapped order!
+			//	Notice: in ABI, any is passed like: [ rt_pod_t value, rt_type_t value_type ], notice swapped order!
 			//	Use a pointer directly into storage. This is tricky. Requires reserve().
 			values.push_back(&storage[storage.size() - 1]._pod);
 			values.push_back(&storage[storage.size() - 2]._pod);

@@ -16,7 +16,7 @@
 	It is NOT VERY EFFICIENT - limit use in critical paths in final user program exectuables.
 	Immutable, value-semantics.
 
-	In final user program executable: prefer rt_pod_t & runtime_type_t and type_t -- these are fast.
+	In final user program executable: prefer rt_pod_t & rt_type_t and type_t -- these are fast.
 
 	- type: the semantic type, which could be a "game_object_t" or int.
 	- physical type: a concrete type that tells which field, element etc to use -- all named types are gone here.

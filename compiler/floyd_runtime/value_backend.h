@@ -69,7 +69,7 @@ struct bc_static_frame_t;
 struct value_backend_t;
 
 
-////////////////////////////////	runtime_type_t
+////////////////////////////////	rt_type_t
 
 /*
 	An integer that specifies a unique type a type types. Use this to specify types in running program.
@@ -77,9 +77,9 @@ struct value_backend_t;
 	It is 1:1 compatible with type_t. Use type_t except in binary situations.
 */
 
-typedef uint32_t runtime_type_t;
+typedef uint32_t rt_type_t;
 
-runtime_type_t make_runtime_type(type_t type);
+rt_type_t make_runtime_type(type_t type);
 
 
 ////////////////////////////////		heap_t
@@ -253,7 +253,7 @@ int32_t inc_rc(const heap_alloc_64_t& alloc);
 union rt_pod_t {
 	uint8_t bool_value;
 	int64_t int_value;
-	runtime_type_t typeid_itype;
+	rt_type_t typeid_itype;
 	double double_value;
 
 	//	Strings are encoded as vector.
@@ -916,7 +916,7 @@ const func_link_t& lookup_func_link_from_id(const value_backend_t& backend, rt_p
 const func_link_t& lookup_func_link_from_native(const value_backend_t& backend, rt_pod_t value);
 
 //??? kill this function
-inline type_t lookup_type_ref(const value_backend_t& backend, runtime_type_t type){
+inline type_t lookup_type_ref(const value_backend_t& backend, rt_type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	return type_t(type);
@@ -1021,41 +1021,41 @@ rt_pod_t get_rt_value(value_backend_t& backend, const rt_value_t& value);
 
 
 
-int compare_values(value_backend_t& backend, int64_t op, const runtime_type_t type, rt_pod_t lhs, rt_pod_t rhs);
+int compare_values(value_backend_t& backend, int64_t op, const rt_type_t type, rt_pod_t lhs, rt_pod_t rhs);
 
 
 
 rt_pod_t update__string(value_backend_t& backend, rt_pod_t s, rt_pod_t key_value, rt_pod_t value);
-rt_pod_t update_element__vector_carray(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t index, rt_pod_t value);
-rt_pod_t update_element__vector_hamt_pod(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t index, rt_pod_t value, runtime_type_t value_type);
-rt_pod_t update_element__vector_hamt_nonpod(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t index, rt_pod_t value, runtime_type_t value_type);
-rt_pod_t update_element__vector(value_backend_t& backend, rt_pod_t obj1, runtime_type_t coll_type, rt_pod_t index, rt_pod_t value);
+rt_pod_t update_element__vector_carray(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, rt_pod_t index, rt_pod_t value);
+rt_pod_t update_element__vector_hamt_pod(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, rt_pod_t index, rt_pod_t value, rt_type_t value_type);
+rt_pod_t update_element__vector_hamt_nonpod(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, rt_pod_t index, rt_pod_t value, rt_type_t value_type);
+rt_pod_t update_element__vector(value_backend_t& backend, rt_pod_t obj1, rt_type_t coll_type, rt_pod_t index, rt_pod_t value);
 
 
-const rt_pod_t update__dict_cppmap(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t key_value, rt_pod_t value);
-const rt_pod_t update__dict_hamt(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t key_value, rt_pod_t value);
-rt_pod_t update_dict(value_backend_t& backend, rt_pod_t obj1, runtime_type_t coll_type, rt_pod_t key_value, rt_pod_t value);
+const rt_pod_t update__dict_cppmap(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, rt_pod_t key_value, rt_pod_t value);
+const rt_pod_t update__dict_hamt(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, rt_pod_t key_value, rt_pod_t value);
+rt_pod_t update_dict(value_backend_t& backend, rt_pod_t obj1, rt_type_t coll_type, rt_pod_t key_value, rt_pod_t value);
 
 
 rt_pod_t update_struct_member(value_backend_t& backend, rt_pod_t struct_value, const type_t& struct_type, int member_index, rt_pod_t value, const type_t& member_type);
 
 
-rt_pod_t subset_vector_range(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, int64_t start, int64_t end);
-rt_pod_t subset_vector_range__string(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end);
-rt_pod_t subset_vector_range__carray(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end);
-rt_pod_t subset_vector_range__hamt(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end);
+rt_pod_t subset_vector_range(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, int64_t start, int64_t end);
+rt_pod_t subset_vector_range__string(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, uint64_t start, uint64_t end);
+rt_pod_t subset_vector_range__carray(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, uint64_t start, uint64_t end);
+rt_pod_t subset_vector_range__hamt(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, uint64_t start, uint64_t end);
 
 
-rt_pod_t replace_vector_range(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, int64_t start, int64_t end, rt_pod_t value, runtime_type_t replacement_type);
-rt_pod_t replace_vector_range__string(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, size_t start, size_t end, rt_pod_t value, runtime_type_t replacement_type);
-rt_pod_t replace_vector_range__carray(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, size_t start, size_t end, rt_pod_t value, runtime_type_t replacement_type);
-rt_pod_t replace_vector_range__hamt(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, size_t start, size_t end, rt_pod_t value, runtime_type_t replacement_type);
+rt_pod_t replace_vector_range(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, int64_t start, int64_t end, rt_pod_t value, rt_type_t replacement_type);
+rt_pod_t replace_vector_range__string(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, size_t start, size_t end, rt_pod_t value, rt_type_t replacement_type);
+rt_pod_t replace_vector_range__carray(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, size_t start, size_t end, rt_pod_t value, rt_type_t replacement_type);
+rt_pod_t replace_vector_range__hamt(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, size_t start, size_t end, rt_pod_t value, rt_type_t replacement_type);
 
 
-int64_t find_vector_element(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, const rt_pod_t value, runtime_type_t value_type);
-int64_t find__string(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, const rt_pod_t value, runtime_type_t value_type);
-int64_t find__carray(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, const rt_pod_t value, runtime_type_t value_type);
-int64_t find__hamt(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, const rt_pod_t value, runtime_type_t value_type);
+int64_t find_vector_element(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, const rt_pod_t value, rt_type_t value_type);
+int64_t find__string(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, const rt_pod_t value, rt_type_t value_type);
+int64_t find__carray(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, const rt_pod_t value, rt_type_t value_type);
+int64_t find__hamt(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, const rt_pod_t value, rt_type_t value_type);
 
 
 rt_pod_t concatunate_vectors(value_backend_t& backend, const type_t& type, rt_pod_t lhs, rt_pod_t rhs);
@@ -1076,19 +1076,19 @@ rt_pod_t push_back_vector_element__hamt_nonpod(value_backend_t& backend, rt_pod_
 
 
 uint64_t get_dict_size(value_backend_t& backend, const type_t& dict_type, rt_pod_t dict);
-bool exists_dict_value(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t value, runtime_type_t value_type);
-rt_pod_t erase_dict_value(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t key_value, runtime_type_t key_type);
+bool exists_dict_value(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, rt_pod_t value, rt_type_t value_type);
+rt_pod_t erase_dict_value(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, rt_pod_t key_value, rt_type_t key_type);
 
 rt_pod_t lookup_dict(value_backend_t& backend, rt_pod_t dict, const type_t& dict_type, rt_pod_t key);
 rt_pod_t lookup_dict_cppmap(value_backend_t& backend, rt_pod_t dict, const type_t& dict_type, rt_pod_t key);
 rt_pod_t lookup_dict_hamt(value_backend_t& backend, rt_pod_t dict, const type_t& dict_type, rt_pod_t key);
 
 
-rt_pod_t get_keys(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type);
-rt_pod_t get_keys__cppmap_carray(value_backend_t& backend, rt_pod_t dict_value, runtime_type_t dict_type);
-rt_pod_t get_keys__cppmap_hamt(value_backend_t& backend, rt_pod_t dict_value, runtime_type_t dict_type);
-rt_pod_t get_keys__hamtmap_carray(value_backend_t& backend, rt_pod_t dict_value, runtime_type_t dict_type);
-rt_pod_t get_keys__hamtmap_hamt(value_backend_t& backend, rt_pod_t dict_value, runtime_type_t dict_type);
+rt_pod_t get_keys(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type);
+rt_pod_t get_keys__cppmap_carray(value_backend_t& backend, rt_pod_t dict_value, rt_type_t dict_type);
+rt_pod_t get_keys__cppmap_hamt(value_backend_t& backend, rt_pod_t dict_value, rt_type_t dict_type);
+rt_pod_t get_keys__hamtmap_carray(value_backend_t& backend, rt_pod_t dict_value, rt_type_t dict_type);
+rt_pod_t get_keys__hamtmap_hamt(value_backend_t& backend, rt_pod_t dict_value, rt_type_t dict_type);
 
 
 
@@ -1251,7 +1251,7 @@ inline rt_pod_t update__string(value_backend_t& backend, rt_pod_t s, rt_pod_t ke
 	return result2;
 }
 
-inline rt_pod_t update_element__vector_hamt_pod(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t index, rt_pod_t value){
+inline rt_pod_t update_element__vector_hamt_pod(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, rt_pod_t index, rt_pod_t value){
 #if DEBUG
 	QUARK_ASSERT(backend.check_invariant());
 	const auto coll_type2 = type_t(coll_type);
@@ -1269,7 +1269,7 @@ inline rt_pod_t update_element__vector_hamt_pod(value_backend_t& backend, rt_pod
 	}
 	return store_immutable_hamt(coll_value, i, value);
 }
-inline rt_pod_t update_element__vector_hamt_nonpod(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t index, rt_pod_t value){
+inline rt_pod_t update_element__vector_hamt_nonpod(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, rt_pod_t index, rt_pod_t value){
 #if DEBUG
 	QUARK_ASSERT(backend.check_invariant());
 	const auto coll_type2 = type_t(coll_type);

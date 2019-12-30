@@ -266,11 +266,11 @@ int heap_t::count_used() const {
 
 
 
-////////////////////////////////	runtime_type_t
+////////////////////////////////	rt_type_t
 
 
 
-runtime_type_t make_runtime_type(type_t type){
+rt_type_t make_runtime_type(type_t type){
 	return type.get_data();
 }
 
@@ -3102,7 +3102,7 @@ rt_pod_t get_rt_value(value_backend_t& backend, const rt_value_t& value){
 
 
 
-static VECTOR_CARRAY_T* unpack_vector_carray_arg(const value_backend_t& backend, rt_pod_t arg, runtime_type_t arg_type){
+static VECTOR_CARRAY_T* unpack_vector_carray_arg(const value_backend_t& backend, rt_pod_t arg, rt_type_t arg_type){
 	QUARK_ASSERT(backend.check_invariant());
 #if DEBUG
 	const auto& type = lookup_type_ref(backend, arg_type);
@@ -3114,7 +3114,7 @@ static VECTOR_CARRAY_T* unpack_vector_carray_arg(const value_backend_t& backend,
 	return arg.vector_carray_ptr;
 }
 
-static DICT_CPPMAP_T* unpack_dict_cppmap_arg(const value_backend_t& backend, rt_pod_t arg, runtime_type_t arg_type){
+static DICT_CPPMAP_T* unpack_dict_cppmap_arg(const value_backend_t& backend, rt_pod_t arg, rt_type_t arg_type){
 	QUARK_ASSERT(backend.check_invariant());
 #if DEBUG
 	const auto& type = lookup_type_ref(backend, arg_type);
@@ -3645,7 +3645,7 @@ int compare_value_true_deep(value_backend_t& backend, const rt_value_t& left, co
 
 
 
-int compare_values(value_backend_t& backend, int64_t op, const runtime_type_t type, rt_pod_t lhs, rt_pod_t rhs){
+int compare_values(value_backend_t& backend, int64_t op, const rt_type_t type, rt_pod_t lhs, rt_pod_t rhs){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& value_type = lookup_type_ref(backend, type);
@@ -3681,7 +3681,7 @@ int compare_values(value_backend_t& backend, int64_t op, const runtime_type_t ty
 	}
 }
 
-rt_pod_t update_element__vector(value_backend_t& backend, rt_pod_t obj1, runtime_type_t coll_type, rt_pod_t index, rt_pod_t value){
+rt_pod_t update_element__vector(value_backend_t& backend, rt_pod_t obj1, rt_type_t coll_type, rt_pod_t index, rt_pod_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& types = backend.types;
@@ -3708,7 +3708,7 @@ rt_pod_t update_element__vector(value_backend_t& backend, rt_pod_t obj1, runtime
 	}
 }
 
-rt_pod_t update_dict(value_backend_t& backend, rt_pod_t obj1, runtime_type_t coll_type, rt_pod_t key_value, rt_pod_t value){
+rt_pod_t update_dict(value_backend_t& backend, rt_pod_t obj1, rt_type_t coll_type, rt_pod_t key_value, rt_pod_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto backend_mode = backend.config.dict_backend_mode;
@@ -3727,7 +3727,7 @@ rt_pod_t update_dict(value_backend_t& backend, rt_pod_t obj1, runtime_type_t col
 
 
 
-rt_pod_t update_element__vector_carray(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t index, rt_pod_t value){
+rt_pod_t update_element__vector_carray(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, rt_pod_t index, rt_pod_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto vec = unpack_vector_carray_arg(backend, coll_value, coll_type);
@@ -3764,7 +3764,7 @@ rt_pod_t update_element__vector_carray(value_backend_t& backend, rt_pod_t coll_v
 }
 
 
-const rt_pod_t update__dict_cppmap(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t key_value, rt_pod_t value){
+const rt_pod_t update__dict_cppmap(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, rt_pod_t key_value, rt_pod_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
 	//??? move to compile time
@@ -3791,7 +3791,7 @@ const rt_pod_t update__dict_cppmap(value_backend_t& backend, rt_pod_t coll_value
 	return dict2;
 }
 
-const rt_pod_t update__dict_hamt(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t key_value, rt_pod_t value){
+const rt_pod_t update__dict_hamt(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, rt_pod_t key_value, rt_pod_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
 	//??? move to compile time
@@ -3916,7 +3916,7 @@ rt_pod_t update_struct_member(value_backend_t& backend, rt_pod_t struct_value, c
 
 
 
-rt_pod_t subset_vector_range__string(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end){
+rt_pod_t subset_vector_range__string(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, uint64_t start, uint64_t end){
 	QUARK_ASSERT(backend.check_invariant());
 
 	if(start < 0 || end < 0){
@@ -3934,7 +3934,7 @@ rt_pod_t subset_vector_range__string(value_backend_t& backend, rt_pod_t coll_val
 	return result;
 }
 
-rt_pod_t subset_vector_range__carray(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end){
+rt_pod_t subset_vector_range__carray(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, uint64_t start, uint64_t end){
 	QUARK_ASSERT(backend.check_invariant());
 
 	if(start < 0 || end < 0){
@@ -3969,7 +3969,7 @@ rt_pod_t subset_vector_range__carray(value_backend_t& backend, rt_pod_t coll_val
 	return vec2;
 }
 
-rt_pod_t subset_vector_range__hamt(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end){
+rt_pod_t subset_vector_range__hamt(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, uint64_t start, uint64_t end){
 	QUARK_ASSERT(backend.check_invariant());
 
 	if(start < 0 || end < 0){
@@ -4005,7 +4005,7 @@ rt_pod_t subset_vector_range__hamt(value_backend_t& backend, rt_pod_t coll_value
 
 
 //	assert(subset("abc", 1, 3) == "bc");
-rt_pod_t subset_vector_range(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, int64_t start, int64_t end){
+rt_pod_t subset_vector_range(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, int64_t start, int64_t end){
 	QUARK_ASSERT(backend.check_invariant());
 
 	//??? Move runtime checks like this to the client. Assert here.
@@ -4044,7 +4044,7 @@ static void check_replace_indexes(std::size_t start, std::size_t end){
 	}
 }
 
-rt_pod_t replace_vector_range__string(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, size_t start, size_t end, rt_pod_t value0, runtime_type_t replacement_type){
+rt_pod_t replace_vector_range__string(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, size_t start, size_t end, rt_pod_t value0, rt_type_t replacement_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	check_replace_indexes(start, end);
@@ -4073,7 +4073,7 @@ rt_pod_t replace_vector_range__string(value_backend_t& backend, rt_pod_t coll_va
 	return result2;
 }
 
-rt_pod_t replace_vector_range__carray(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, size_t start, size_t end, rt_pod_t value0, runtime_type_t replacement_type){
+rt_pod_t replace_vector_range__carray(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, size_t start, size_t end, rt_pod_t value0, rt_type_t replacement_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	check_replace_indexes(start, end);
@@ -4107,7 +4107,7 @@ rt_pod_t replace_vector_range__carray(value_backend_t& backend, rt_pod_t coll_va
 
 	return vec2;
 }
-rt_pod_t replace_vector_range__hamt(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, size_t start, size_t end, rt_pod_t value0, runtime_type_t replacement_type){
+rt_pod_t replace_vector_range__hamt(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, size_t start, size_t end, rt_pod_t value0, rt_type_t replacement_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	check_replace_indexes(start, end);
@@ -4156,7 +4156,7 @@ rt_pod_t replace_vector_range__hamt(value_backend_t& backend, rt_pod_t coll_valu
 
 
 //	assert(replace("One ring to rule them all", 4, 7, "rabbit") == "One rabbit to rule them all");
-rt_pod_t replace_vector_range(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, int64_t start, int64_t end, rt_pod_t value0, runtime_type_t replacement_type){
+rt_pod_t replace_vector_range(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, int64_t start, int64_t end, rt_pod_t value0, rt_type_t replacement_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	if(start < 0 || end < 0){
@@ -4188,7 +4188,7 @@ rt_pod_t replace_vector_range(value_backend_t& backend, rt_pod_t coll_value, run
 
 
 
-int64_t find__string(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, const rt_pod_t value, runtime_type_t value_type){
+int64_t find__string(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, const rt_pod_t value, rt_type_t value_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& type1 = lookup_type_ref(backend, value_type);
@@ -4201,7 +4201,7 @@ int64_t find__string(value_backend_t& backend, rt_pod_t coll_value, runtime_type
 	const auto result = pos == std::string::npos ? -1 : static_cast<int64_t>(pos);
 	return result;
 }
-int64_t find__carray(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, const rt_pod_t value, runtime_type_t value_type){
+int64_t find__carray(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, const rt_pod_t value, rt_type_t value_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& type0 = lookup_type_ref(backend, coll_type);
@@ -4227,7 +4227,7 @@ int64_t find__carray(value_backend_t& backend, rt_pod_t coll_value, runtime_type
 		return pos;
 	}
 }
-int64_t find__hamt(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, const rt_pod_t value, runtime_type_t value_type){
+int64_t find__hamt(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, const rt_pod_t value, rt_type_t value_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& type0 = lookup_type_ref(backend, coll_type);
@@ -4252,7 +4252,7 @@ int64_t find__hamt(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t
 }
 
 
-int64_t find_vector_element(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, const rt_pod_t value, runtime_type_t value_type){
+int64_t find_vector_element(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, const rt_pod_t value, rt_type_t value_type){
 	const auto& type0 = lookup_type_ref(backend, coll_type);
 	if(peek2(backend.types, type0).is_string()){
 		return find__string(backend, coll_value, coll_type, value, value_type);
@@ -4271,7 +4271,7 @@ int64_t find_vector_element(value_backend_t& backend, rt_pod_t coll_value, runti
 
 //??? use rt_value_t as primitive for all features.
 
-bool exists_dict_value(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t value, runtime_type_t value_type){
+bool exists_dict_value(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, rt_pod_t value, rt_type_t value_type){
 	const auto& types = backend.types;
 	const auto& type0 = lookup_type_ref(backend, coll_type);
 //	const auto& type1 = lookup_type_ref(backend, value_type);
@@ -4299,7 +4299,7 @@ bool exists_dict_value(value_backend_t& backend, rt_pod_t coll_value, runtime_ty
 	}
 }
 
-rt_pod_t erase_dict_value(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type, rt_pod_t key_value, runtime_type_t key_type){
+rt_pod_t erase_dict_value(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, rt_pod_t key_value, rt_type_t key_type){
 	const auto& types = backend.types;
 	const auto& type0 = lookup_type_ref(backend, coll_type);
 	const auto& type1 = lookup_type_ref(backend, key_type);
@@ -4355,7 +4355,7 @@ rt_pod_t erase_dict_value(value_backend_t& backend, rt_pod_t coll_value, runtime
 
 //??? optimize prio 1
 //??? We need to figure out the return type *again*, knowledge we have already in semast.
-rt_pod_t get_keys(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t coll_type){
+rt_pod_t get_keys(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type){
 	const auto& types = backend.types;
 	const auto& type0 = lookup_type_ref(backend, coll_type);
 	QUARK_ASSERT(peek2(types, type0).is_dict());
@@ -4394,7 +4394,7 @@ rt_pod_t get_keys(value_backend_t& backend, rt_pod_t coll_value, runtime_type_t 
 
 
 ///??? Split into two passes so we don't get 2 x 2. Generate code mixup? Have one function with two checks?
-rt_pod_t get_keys__cppmap_carray(value_backend_t& backend, rt_pod_t dict_value, runtime_type_t dict_type){
+rt_pod_t get_keys__cppmap_carray(value_backend_t& backend, rt_pod_t dict_value, rt_type_t dict_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& type0 = lookup_type_ref(backend, dict_type);
@@ -4417,7 +4417,7 @@ rt_pod_t get_keys__cppmap_carray(value_backend_t& backend, rt_pod_t dict_value, 
 	}
 	return result_vec;
 }
-rt_pod_t get_keys__cppmap_hamt(value_backend_t& backend, rt_pod_t dict_value, runtime_type_t dict_type){
+rt_pod_t get_keys__cppmap_hamt(value_backend_t& backend, rt_pod_t dict_value, rt_type_t dict_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& type0 = lookup_type_ref(backend, dict_type);
@@ -4442,7 +4442,7 @@ rt_pod_t get_keys__cppmap_hamt(value_backend_t& backend, rt_pod_t dict_value, ru
 }
 
 
-rt_pod_t get_keys__hamtmap_carray(value_backend_t& backend, rt_pod_t dict_value, runtime_type_t dict_type){
+rt_pod_t get_keys__hamtmap_carray(value_backend_t& backend, rt_pod_t dict_value, rt_type_t dict_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& type0 = lookup_type_ref(backend, dict_type);
@@ -4465,7 +4465,7 @@ rt_pod_t get_keys__hamtmap_carray(value_backend_t& backend, rt_pod_t dict_value,
 	}
 	return result_vec;
 }
-rt_pod_t get_keys__hamtmap_hamt(value_backend_t& backend, rt_pod_t dict_value, runtime_type_t dict_type){
+rt_pod_t get_keys__hamtmap_hamt(value_backend_t& backend, rt_pod_t dict_value, rt_type_t dict_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& type0 = lookup_type_ref(backend, dict_type);
