@@ -1344,12 +1344,12 @@ static std::vector<func_link_t> get_one_to_one_intrinsic_binds2(
 		make_intri(type_lookup, make_typeof_signature(types), (void*)&unified_intrinsic__typeof),
 
 		make_intri(type_lookup, make_update_signature(types), (void*)&unified_intrinsic__update),
-//		make_intri(type_lookup, make_size_signature(types), (void*)&unified_intrinsic__size),
+		make_intri(type_lookup, make_size_signature(types), (void*)&unified_intrinsic__size),
 		make_intri(type_lookup, make_find_signature(types), (void*)&unified_intrinsic__find),
 		make_intri(type_lookup, make_exists_signature(types), (void*)&unified_intrinsic__exists),
 		make_intri(type_lookup, make_erase_signature(types), (void*)&unified_intrinsic__erase),
 		make_intri(type_lookup, make_get_keys_signature(types), (void*)&unified_intrinsic__get_keys),
-//		make_intri(type_lookup, make_push_back_signature(types), (void*)&unified_intrinsic__push_back),
+		make_intri(type_lookup, make_push_back_signature(types), (void*)&unified_intrinsic__push_back),
 		make_intri(type_lookup, make_subset_signature(types), (void*)&unified_intrinsic__subset),
 		make_intri(type_lookup, make_replace_signature(types), (void*)&unified_intrinsic__replace),
 
@@ -1361,7 +1361,6 @@ static std::vector<func_link_t> get_one_to_one_intrinsic_binds2(
 
 
 //		make_intri(type_lookup, make_map_signature(types), (void*)&floyd_llvm_intrinsic__map),
-//		make_intri(type_lookup, make_map_string_signature(types), (void*)&floyd_llvm_intrinsic__map_string),
 		make_intri(type_lookup, make_map_dag_signature(types), (void*)&floyd_llvm_intrinsic__map_dag),
 		make_intri(type_lookup, make_filter_signature(types), (void*)&floyd_llvm_intrinsic__filter),
 		make_intri(type_lookup, make_reduce_signature(types), (void*)&floyd_llvm_intrinsic__reduce),

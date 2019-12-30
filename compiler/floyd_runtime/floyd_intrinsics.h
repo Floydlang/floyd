@@ -36,13 +36,22 @@ runtime_value_t unified_intrinsic__update(
 	runtime_type_t newvalue_type
 );
 
-//	SIZE()
+int64_t unified_intrinsic__size(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type);
 int64_t unified_intrinsic__find(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type);
 uint32_t unified_intrinsic__exists(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t value, runtime_type_t value_type);
 runtime_value_t unified_intrinsic__erase(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type);
 runtime_value_t unified_intrinsic__get_keys(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type);
 
-//	PUSHBACK()
+runtime_value_t unified_intrinsic__push_back(
+	floyd_runtime_t* frp,
+
+	runtime_value_t collection_value,
+	runtime_type_t collection_type,
+
+	runtime_value_t newvalue_value,
+	runtime_type_t newvalue_type
+);
+
 
 const runtime_value_t unified_intrinsic__subset(floyd_runtime_t* frp, runtime_value_t elements_vec, runtime_type_t elements_vec_type, uint64_t start, uint64_t end);
 const runtime_value_t unified_intrinsic__replace(floyd_runtime_t* frp, runtime_value_t elements_vec, runtime_type_t elements_vec_type, uint64_t start, uint64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type);

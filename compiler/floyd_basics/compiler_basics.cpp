@@ -640,56 +640,6 @@ bool check_map_func_type(types_t& types, const type_t& elements, const type_t& f
 
 
 
-//	string map_string(string s, func int(int e, C context) f, C context)
-intrinsic_signature_t make_map_string_signature(types_t& types){
-	return make_intrinsic(
-		"map_string",
-		type_t::make_function(
-			types,
-			type_t::make_string(),
-			{
-				type_t::make_string(),
-				ANY_TYPE,
-				ANY_TYPE
-			},
-			epure::pure
-		)
-	);
-}
-
-type_t harden_map_string_func_type(types_t& types, const type_t& resolved_call_type0){
-	QUARK_ASSERT(resolved_call_type0.check_invariant());
-
-	const auto resolved_call_type = peek2(types, resolved_call_type0);
-	const auto sign = make_map_string_signature(types);
-	const auto context_type = resolved_call_type.get_function_args(types)[2];
-
-	const auto expected = type_t::make_function(
-		types,
-		type_t::make_string(),
-		{
-			type_t::make_string(),
-			type_t::make_function(types, type_t::make_int(), { type_t::make_int(), context_type }, epure::pure),
-			context_type
-		},
-		epure::pure
-	);
-	return expected;
-}
-
-bool check_map_string_func_type(types_t& types, const type_t& elements, const type_t& f, const type_t& context){
-	QUARK_ASSERT(peek2(types, elements).is_string());
-
-	const auto f_peek = peek2(types, f);
-	QUARK_ASSERT(f_peek.is_function());
-	QUARK_ASSERT(f_peek.get_function_args(types).size() == 2);
-	QUARK_ASSERT(f_peek.get_function_args(types)[0] == type_t::make_int());
-	QUARK_ASSERT(f_peek.get_function_args(types)[1] == context);
-	return true;
-}
-
-
-
 
 //	[R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
 intrinsic_signature_t make_map_dag_signature(types_t& types){
@@ -983,7 +933,6 @@ intrinsic_signatures_t make_intrinsic_signatures(types_t& types){
 	result.from_json = make_from_json_signature(types);
 
 	result.map = make_map_signature(types);
-//	result.xxx = make_map_string_signature(types);
 	result.filter = make_filter_signature(types);
 	result.reduce = make_reduce_signature(types);
 	result.map_dag = make_map_dag_signature(types);
@@ -1026,7 +975,6 @@ intrinsic_signatures_t make_intrinsic_signatures(types_t& types){
 		make_from_json_signature(types),
 
 		make_map_signature(types),
-//		make_map_string_signature(types),
 		make_filter_signature(types),
 		make_reduce_signature(types),
 		make_map_dag_signature(types),

@@ -185,7 +185,15 @@ runtime_value_t unified_intrinsic__update(
 	return result._pod;
 }
 
-//	SIZE
+int64_t unified_intrinsic__size(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type){
+#if DEBUG
+	auto& backend = get_backend(frp);
+	(void)backend;
+#endif
+
+	//	BC and LLVM inlines size()
+	NOT_IMPLEMENTED_YET();
+}
 
 int64_t unified_intrinsic__find(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type){
 	auto& backend = get_backend(frp);
@@ -226,7 +234,24 @@ runtime_value_t unified_intrinsic__get_keys(floyd_runtime_t* frp, runtime_value_
 	return get_keys(backend, coll_value, coll_type);
 }
 
-//	PUSHBACK
+runtime_value_t unified_intrinsic__push_back(
+	floyd_runtime_t* frp,
+
+	runtime_value_t collection_value,
+	runtime_type_t collection_type,
+
+	runtime_value_t newvalue_value,
+	runtime_type_t newvalue_type
+){
+#if DEBUG
+	auto& backend = get_backend(frp);
+	(void)backend;
+#endif
+
+	//	BC and LLVM inlines push_back()
+	NOT_IMPLEMENTED_YET();
+}
+
 
 //??? check type at compile time, not runtime.
 // VECTOR subset(VECTOR s, int start, int end)

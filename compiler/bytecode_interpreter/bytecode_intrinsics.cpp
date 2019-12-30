@@ -457,25 +457,28 @@ std::vector<func_link_t> bc_get_intrinsics(types_t& types){
 		make_intr2(make_to_pretty_string_signature(types), (void*)unified_intrinsic__to_pretty_string),
 		make_intr2(make_typeof_signature(types), (void*)unified_intrinsic__typeof),
 
+
 		make_intr2(make_update_signature(types), (void*)unified_intrinsic__update),
 
-		//	size(types) is translated to bc_opcode::k_get_size_vector_w_external_elements(types) etc.
-
+		//	size() is translated to BC opcode
+		make_intr2(make_size_signature(types), (void*)unified_intrinsic__size),
 		make_intr2(make_find_signature(types), (void*)unified_intrinsic__find),
-		//	size()
 		make_intr2(make_exists_signature(types), (void*)unified_intrinsic__exists),
 		make_intr2(make_erase_signature(types), (void*)unified_intrinsic__erase),
 		make_intr2(make_get_keys_signature(types), (void*)unified_intrinsic__get_keys),
-//		push_back(types) is translated to bc_opcode::k_pushback_vector_w_inplace_elements(types) etc.
-//		make_intr2(make_push_back_signature(types), (void*)unified_intrinsic__push_back),
+
+		//	push_back() is translated to BC opcode
+		make_intr2(make_push_back_signature(types), (void*)unified_intrinsic__push_back),
 		make_intr2(make_subset_signature(types), (void*)unified_intrinsic__subset),
 		make_intr2(make_replace_signature(types), (void*)unified_intrinsic__replace),
+
 
 		make_intr2(make_get_json_type_signature(types), (void*)unified_intrinsic__get_json_type),
 		make_intr2(make_generate_json_script_signature(types), (void*)unified_intrinsic__generate_json_script),
 		make_intr2(make_parse_json_script_signature(types), (void*)unified_intrinsic__parse_json_script),
 		make_intr2(make_to_json_signature(types), (void*)unified_intrinsic__to_json),
 		make_intr2(make_from_json_signature(types), (void*)unified_intrinsic__from_json),
+
 
 		make_intr(make_map_signature(types), bc_intrinsic__map),
 		make_intr(make_filter_signature(types), bc_intrinsic__filter),
@@ -484,9 +487,11 @@ std::vector<func_link_t> bc_get_intrinsics(types_t& types){
 
 		make_intr(make_stable_sort_signature(types), bc_intrinsic__stable_sort),
 
+
 		make_intr2(make_print_signature(types), (void*)unified_intrinsic__print),
 		make_intr2(make_send_signature(types), (void*)unified_intrinsic__send),
 		make_intr2(make_exit_signature(types), (void*)unified_intrinsic__exit),
+
 
 		make_intr2(make_bw_not_signature(types), (void*)unified_intrinsic__bw_not),
 		make_intr2(make_bw_and_signature(types), (void*)unified_intrinsic__bw_and),

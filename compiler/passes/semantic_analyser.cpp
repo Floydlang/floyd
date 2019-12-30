@@ -1427,30 +1427,6 @@ static std::pair<analyser_t, expression_t> analyse_intrinsic_map_expression(cons
 	};
 }
 
-//	string map_string(string s, func string(string e, C context) f, C context)
-static std::pair<analyser_t, expression_t> analyse_intrinsic_map_string_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
-	QUARK_ASSERT(a.check_invariant());
-	QUARK_ASSERT(parent.check_invariant());
-
-	auto a_acc = a;
-	const auto sign = make_map_string_signature(a_acc._types);
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
-	a_acc = resolved_call.first;
-
-	//??? Fix this signature check!
-	const auto expected = resolved_call.second.function_type;
-	const auto function_type = dereference_type(a_acc._types, resolved_call.second.function_type);
-
-	if(resolved_call.second.function_type != expected){
-		throw_compiler_error(parent.location, "Call to map_string() uses signature \"" + type_to_compact_string(a_acc._types, resolved_call.second.function_type) + "\", needs to be \"" + type_to_compact_string(a_acc._types, expected) + "\".");
-	}
-
-	return {
-		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, function_type.get_function_return(a_acc._types))
-	};
-}
-
 //	[R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
 static std::pair<analyser_t, expression_t> analyse_intrinsic_map_dag_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());

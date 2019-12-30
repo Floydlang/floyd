@@ -468,10 +468,6 @@ intrinsic_signature_t make_map_signature(types_t& types);
 type_t harden_map_func_type(types_t& types, const type_t& resolved_call_type);
 bool check_map_func_type(types_t& types, const type_t& elements, const type_t& f, const type_t& context);
 
-intrinsic_signature_t make_map_string_signature(types_t& types);
-type_t harden_map_string_func_type(types_t& types, const type_t& resolved_call_type);
-bool check_map_string_func_type(types_t& types, const type_t& elements, const type_t& f, const type_t& context);
-
 intrinsic_signature_t make_map_dag_signature(types_t& types);
 type_t harden_map_dag_func_type(types_t& types, const type_t& resolved_call_type);
 bool check_map_dag_func_type(types_t& types, const type_t& elements, const type_t& depends_on, const type_t& f, const type_t& context);

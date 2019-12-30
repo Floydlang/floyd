@@ -5655,30 +5655,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "map()", "context struct", ""){
 }
 //??? make sure f() can't be impure!
 
-/*
-//////////////////////////////////////////		HIGHER-ORDER INTRINSICS - map_string()
-
-
-
-FLOYD_LANG_PROOF("Floyd test suite", "map_string()", "", ""){
-	ut_run_closed_nolib(QUARK_POS, R"(
-
-		let a = "ABC"
-
-		func int f(int ch, string context){
-			assert(context == "con")
-
-			return ch)
-		}
-
-		let result = map_string(a, f, "con")
-//		print(to_string(result))
-		assert(result == "656667")
-
-	)");
-}
-*/
-
 
 
 //////////////////////////////////////////		HIGHER-ORDER INTRINSICS - map_dag()
