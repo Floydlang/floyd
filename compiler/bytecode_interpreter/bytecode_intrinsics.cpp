@@ -27,7 +27,6 @@ static const bool k_trace = false;
 
 
 
-/////////////////////////////////////////		PURE -- MAP()
 
 
 
@@ -481,6 +480,7 @@ std::vector<func_link_t> bc_get_intrinsics(types_t& types){
 
 
 		make_intr(make_map_signature(types), bc_intrinsic__map),
+//		make_intr2(make_map_signature(types), (void*)unified_intrinsic__map),
 		make_intr(make_filter_signature(types), bc_intrinsic__filter),
 		make_intr(make_reduce_signature(types), bc_intrinsic__reduce),
 		make_intr(make_map_dag_signature(types), bc_intrinsic__map_dag),

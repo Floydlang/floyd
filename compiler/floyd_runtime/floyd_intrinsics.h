@@ -53,8 +53,61 @@ runtime_value_t unified_intrinsic__push_back(
 );
 
 
-const runtime_value_t unified_intrinsic__subset(floyd_runtime_t* frp, runtime_value_t elements_vec, runtime_type_t elements_vec_type, uint64_t start, uint64_t end);
-const runtime_value_t unified_intrinsic__replace(floyd_runtime_t* frp, runtime_value_t elements_vec, runtime_type_t elements_vec_type, uint64_t start, uint64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type);
+const runtime_value_t unified_intrinsic__subset(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	uint64_t start,
+	uint64_t end
+);
+const runtime_value_t unified_intrinsic__replace(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	uint64_t start,
+	uint64_t end,
+	runtime_value_t arg3_value,
+	runtime_type_t arg3_type
+);
+
+
+/////////////////////////////////////////		HIGHER ORDER
+
+
+typedef runtime_value_t (*MAP_F)(floyd_runtime_t* frp, runtime_value_t e_value, runtime_value_t context_value);
+
+runtime_value_t unified_intrinsic__map__carray(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_type,
+	runtime_value_t context_value,
+	runtime_type_t context_type,
+	runtime_type_t result_vec_type
+);
+
+runtime_value_t unified_intrinsic__map__hamt(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_type,
+	runtime_value_t context_value,
+	runtime_type_t context_type,
+	runtime_type_t result_vec_type
+);
+
+runtime_value_t unified_intrinsic__map(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_type,
+	runtime_value_t context_value,
+	runtime_type_t context_type,
+	runtime_type_t result_vec_type
+);
 
 
 /////////////////////////////////////////		JSON

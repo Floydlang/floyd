@@ -51,72 +51,6 @@ static const llvm_codegen_function_type_t& codegen_lookup_specialization(
 }
 
 
-/////////////////////////////////////////		map()
-
-
-//??? Use C++ template to generate these two functions.
-typedef runtime_value_t (*MAP_F)(floyd_runtime_t* frp, runtime_value_t e_value, runtime_value_t context_value);
-
-static runtime_value_t map__carray(floyd_runtime_t* frp, runtime_value_t elements_vec, runtime_type_t elements_vec_type, runtime_value_t f_value, runtime_type_t f_type, runtime_value_t context_value, runtime_type_t context_type, runtime_type_t result_vec_type){
-	auto& backend = get_backend(frp);
-	const auto& types = backend.types;
-
-	QUARK_ASSERT(backend.check_invariant());
-
-#if DEBUG
-	const auto& type1 = lookup_type_ref(backend, f_type);
-
-//	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
-//	const auto& type2 = lookup_type_ref(backend, context_type);
-//	QUARK_ASSERT(check_map_func_type(type0, type1, type2));
-
-//	const auto e_type = peek2(types, type0).get_vector_element_type(types);
-	const auto f_arg_types = peek2(types, type1).get_function_args(types);
-#endif
-
-	const auto& func_link = lookup_func_link_required(backend, f_value);
-	const auto f = reinterpret_cast<MAP_F>(func_link.f);
-
-	const auto count = elements_vec.vector_carray_ptr->get_element_count();
-	auto result_vec = alloc_vector_carray(backend.heap, count, count, type_t(result_vec_type));
-	for(int i = 0 ; i < count ; i++){
-		const auto a = (*f)(frp, elements_vec.vector_carray_ptr->get_element_ptr()[i], context_value);
-		result_vec.vector_carray_ptr->get_element_ptr()[i] = a;
-	}
-	return result_vec;
-}
-
-//??? Update 1 element in a big hamt will copy the entire hamt, inc RC on all elements in hamt2. This is not needed since most of hamt is shared. Cheaper if we build in RC for leaf in the hamt itself.
-//??? Use batching to speed up hamt creation. Add 32 nodes at a time. Also faster read iteration.
-static runtime_value_t map__hamt(floyd_runtime_t* frp, runtime_value_t elements_vec, runtime_type_t elements_vec_type, runtime_value_t f_value, runtime_type_t f_type, runtime_value_t context_value, runtime_type_t context_type, runtime_type_t result_vec_type){
-	auto& backend = get_backend(frp);
-	QUARK_ASSERT(backend.check_invariant());
-	const auto& types = backend.types;
-
-#if DEBUG
-	const auto& type1 = lookup_type_ref(backend, f_type);
-
-//	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
-//	const auto& type2 = lookup_type_ref(backend, context_type);
-//	QUARK_ASSERT(check_map_func_type(type0, type1, type2));
-
-//	const auto e_type = peek2(types, type0).get_vector_element_type(types);
-	const auto f_arg_types = peek2(types, type1).get_function_args(types);
-#endif
-
-	const auto& func_link = lookup_func_link_required(backend, f_value);
-	const auto f = reinterpret_cast<MAP_F>(func_link.f);
-
-	const auto count = elements_vec.vector_hamt_ptr->get_element_count();
-	auto result_vec = alloc_vector_hamt(backend.heap, count, count, type_t(result_vec_type));
-	for(int i = 0 ; i < count ; i++){
-		const auto& element = elements_vec.vector_hamt_ptr->load_element(i);
-		const auto a = (*f)(frp, element, context_value);
-		result_vec.vector_hamt_ptr->store_mutate(i, a);
-	}
-	return result_vec;
-}
-
 //	[R] map([E] elements, func R (E e, C context) f, C context)
 static std::vector<specialization_t> make_map_specializations(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
@@ -138,10 +72,10 @@ static std::vector<specialization_t> make_map_specializations(llvm::LLVMContext&
 		false
 	);
 	return {
-		specialization_t { eresolved_type::k_vector_carray_pod,		{ module_symbol_t("map_carray_pod"), function_type, reinterpret_cast<void*>(map__carray) } },
-		specialization_t { eresolved_type::k_vector_carray_nonpod,	{ module_symbol_t("map_carray_nonpod"), function_type, reinterpret_cast<void*>(map__carray) } },
-		specialization_t { eresolved_type::k_vector_hamt_pod,		{ module_symbol_t("map_hamt_pod"), function_type, reinterpret_cast<void*>(map__hamt) } },
-		specialization_t { eresolved_type::k_vector_hamt_nonpod, 	{ module_symbol_t("map_hamt_nonpod"), function_type, reinterpret_cast<void*>(map__hamt) } }
+		specialization_t { eresolved_type::k_vector_carray_pod,		{ module_symbol_t("map_carray_pod"), function_type, reinterpret_cast<void*>(unified_intrinsic__map__carray) } },
+		specialization_t { eresolved_type::k_vector_carray_nonpod,	{ module_symbol_t("map_carray_nonpod"), function_type, reinterpret_cast<void*>(unified_intrinsic__map__carray) } },
+		specialization_t { eresolved_type::k_vector_hamt_pod,		{ module_symbol_t("map_hamt_pod"), function_type, reinterpret_cast<void*>(unified_intrinsic__map__hamt) } },
+		specialization_t { eresolved_type::k_vector_hamt_nonpod, 	{ module_symbol_t("map_hamt_nonpod"), function_type, reinterpret_cast<void*>(unified_intrinsic__map__hamt) } }
 	};
 }
 
