@@ -10,7 +10,7 @@ jobs:
       - checkout
       - run:
           name: Installing add-apt
-          command: 'sudo apt-get install software-properties-common'
+          command: 'sudo apt-get install software-properties-common libffi-dev'
       - run:
           name: apt-get g++
           command: 'sudo apt-get install -qq --allow-unauthenticated  g++-9 cmake llvm-8-dev libedit-dev'

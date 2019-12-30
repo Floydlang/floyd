@@ -12,7 +12,7 @@ jobs:
       run:  sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
     - name: apt-get
       run: |
-        sudo apt-get install -qq --allow-unauthenticated  g++-9 cmake llvm-8-dev libedit-dev
+        sudo apt-get install -qq --allow-unauthenticated  g++-9 cmake llvm-8-dev libedit-dev libffi-dev
         sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 90
         dpkg-query -L llvm-8
     - name: install-llvm
