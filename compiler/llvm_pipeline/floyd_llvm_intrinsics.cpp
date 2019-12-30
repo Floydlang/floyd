@@ -1371,15 +1371,13 @@ static std::vector<func_link_t> get_one_to_one_intrinsic_binds2(
 		make_intri(type_lookup, make_send_signature(types), (void*)&unified_intrinsic__send),
 		make_intri(type_lookup, make_exit_signature(types), (void*)&unified_intrinsic__exit),
 
-/*
-		make_intri(type_lookup, make_bw_not_signature(types), (void*)&floyd_llvm_intrinsic__dummy),
-		make_intri(type_lookup, make_bw_and_signature(types), (void*)&floyd_llvm_intrinsic__dummy),
-		make_intri(type_lookup, make_bw_or_signature(types), (void*)&floyd_llvm_intrinsic__dummy),
-		make_intri(type_lookup, make_bw_xor_signature(types), (void*)&floyd_llvm_intrinsic__dummy),
-		make_intri(type_lookup, make_bw_shift_left_signature(types), (void*)&floyd_llvm_intrinsic__dummy),
-		make_intri(type_lookup, make_bw_shift_right_signature(types), (void*)&floyd_llvm_intrinsic__dummy),
-		make_intri(type_lookup, make_bw_shift_right_arithmetic_signature(types), (void*)&floyd_llvm_intrinsic__dummy))
-*/
+		make_intri(type_lookup, make_bw_not_signature(types), (void*)&unified_intrinsic__bw_not),
+		make_intri(type_lookup, make_bw_and_signature(types), (void*)&unified_intrinsic__bw_and),
+		make_intri(type_lookup, make_bw_or_signature(types), (void*)&unified_intrinsic__bw_or),
+		make_intri(type_lookup, make_bw_xor_signature(types), (void*)&unified_intrinsic__bw_xor),
+		make_intri(type_lookup, make_bw_shift_left_signature(types), (void*)&unified_intrinsic__bw_shift_left),
+		make_intri(type_lookup, make_bw_shift_right_signature(types), (void*)&unified_intrinsic__bw_shift_right),
+		make_intri(type_lookup, make_bw_shift_right_arithmetic_signature(types), (void*)&unified_intrinsic__bw_shift_right_arithmetic)
 	};
 
 	QUARK_ASSERT(types.nodes.size() == type_lookup.state.types.nodes.size());

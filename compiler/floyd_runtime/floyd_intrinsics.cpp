@@ -19,8 +19,10 @@
 namespace floyd {
 
 void unified_intrinsic__assert(floyd_runtime_t* frp, runtime_value_t arg){
+#if DEBUG
 	auto& backend = get_backend(frp);
 	(void)backend;
+#endif
 
 	bool ok = (arg.bool_value & 0x01) == 0 ? false : true;
 	if(!ok){
@@ -279,8 +281,10 @@ const runtime_value_t unified_intrinsic__replace(floyd_runtime_t* frp, runtime_v
 
 
 int64_t unified_intrinsic__get_json_type(floyd_runtime_t* frp, runtime_value_t json0){
+#if DEBUG
 	auto& backend = get_backend(frp);
 	(void)backend;
+#endif
 	QUARK_ASSERT(json0.json_ptr != nullptr);
 
 	const auto& json = json0.json_ptr->get_json();
@@ -362,8 +366,10 @@ void unified_intrinsic__send(floyd_runtime_t* frp, runtime_value_t dest_process_
 }
 
 void unified_intrinsic__exit(floyd_runtime_t* frp){
+#if DEBUG
 	auto& backend = get_backend(frp);
 	(void)backend;
+#endif
 
 //???	const auto& process_id = from_runtime_string2(backend, process_id0);
 
@@ -394,43 +400,64 @@ void unified_intrinsic__exit(floyd_runtime_t* frp){
 */
 
 runtime_value_t unified_intrinsic__bw_not(floyd_runtime_t* frp, runtime_value_t v){
+#if DEBUG
 	auto& backend = get_backend(frp);
+	(void)backend;
+#endif
 
 	const int64_t result = ~v.int_value;
 	return runtime_value_t { .int_value = result };
 }
 runtime_value_t unified_intrinsic__bw_and(floyd_runtime_t* frp, runtime_value_t a, runtime_value_t b){
+#if DEBUG
 	auto& backend = get_backend(frp);
+	(void)backend;
+#endif
 
 	const int64_t result = a.int_value & b.int_value;
 	return runtime_value_t { .int_value = result };
 }
 runtime_value_t unified_intrinsic__bw_or(floyd_runtime_t* frp, runtime_value_t a, runtime_value_t b){
+#if DEBUG
 	auto& backend = get_backend(frp);
+	(void)backend;
+#endif
 
 	const int64_t result = a.int_value | b.int_value;
 	return runtime_value_t { .int_value = result };
 }
 runtime_value_t unified_intrinsic__bw_xor(floyd_runtime_t* frp, runtime_value_t a, runtime_value_t b){
+#if DEBUG
 	auto& backend = get_backend(frp);
+	(void)backend;
+#endif
 
 	const int64_t result = a.int_value ^ b.int_value;
 	return runtime_value_t { .int_value = result };
 }
 runtime_value_t unified_intrinsic__bw_shift_left(floyd_runtime_t* frp, runtime_value_t v, runtime_value_t count){
+#if DEBUG
 	auto& backend = get_backend(frp);
+	(void)backend;
+#endif
 
 	const int64_t result = v.int_value << count.int_value;
 	return runtime_value_t { .int_value = result };
 }
 runtime_value_t unified_intrinsic__bw_shift_right(floyd_runtime_t* frp, runtime_value_t v, runtime_value_t count){
+#if DEBUG
 	auto& backend = get_backend(frp);
+	(void)backend;
+#endif
 
 	const int64_t result = v.int_value >> count.int_value;
 	return runtime_value_t { .int_value = result };
 }
 runtime_value_t unified_intrinsic__bw_shift_right_arithmetic(floyd_runtime_t* frp, runtime_value_t v, runtime_value_t count){
+#if DEBUG
 	auto& backend = get_backend(frp);
+	(void)backend;
+#endif
 
 	const int64_t result = v.int_value >> count.int_value;
 	return runtime_value_t { .int_value = result };
