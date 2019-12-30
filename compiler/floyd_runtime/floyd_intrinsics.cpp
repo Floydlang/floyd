@@ -830,6 +830,282 @@ runtime_value_t unified_intrinsic__filter(
 
 
 
+/////////////////////////////////////////		reduce()
+
+
+
+
+runtime_value_t unified_intrinsic__reduce_carray(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t init_value,
+	runtime_type_t init_value_type,
+	runtime_value_t f_value,
+	runtime_type_t f_type,
+	runtime_value_t context,
+	runtime_type_t context_type
+){
+	auto& backend = get_backend(frp);
+
+//	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
+//	const auto& type1 = lookup_type_ref(backend, init_value_type);
+//	const auto& type2 = lookup_type_ref(backend, f_type);
+
+//	QUARK_ASSERT(check_reduce_func_type(type0, type1, type2, lookup_type_ref(backend, f_type)));
+	QUARK_ASSERT(is_vector_carray(backend.types, backend.config, type_t(elements_vec_type)));
+
+	const auto& vec = *elements_vec.vector_carray_ptr;
+	const auto& init = init_value;
+
+	const auto& func_link = lookup_func_link_required(backend, f_value);
+	const auto f = reinterpret_cast<REDUCE_F>(func_link.f);
+
+	auto count = vec.get_element_count();
+	runtime_value_t acc = init;
+	retain_value(backend, acc, type_t(init_value_type));
+
+	for(int i = 0 ; i < count ; i++){
+		const auto element_value = vec.get_element_ptr()[i];
+		const auto acc2 = (*f)(frp, acc, element_value, context);
+
+		if(is_rc_value(backend.types, type_t(init_value_type))){
+			release_value(backend, acc, type_t(init_value_type));
+		}
+		acc = acc2;
+	}
+	return acc;
+}
+
+runtime_value_t unified_intrinsic__reduce_hamt(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t init_value,
+	runtime_type_t init_value_type,
+	runtime_value_t f_value,
+	runtime_type_t f_type,
+	runtime_value_t context,
+	runtime_type_t context_type
+){
+	auto& backend = get_backend(frp);
+
+//	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
+//	const auto& type1 = lookup_type_ref(backend, init_value_type);
+//	const auto& type2 = lookup_type_ref(backend, f_type);
+
+//	QUARK_ASSERT(check_reduce_func_type(type0, type1, type2, lookup_type_ref(backend, f_type)));
+	QUARK_ASSERT(is_vector_hamt(backend.types, backend.config, type_t(elements_vec_type)));
+
+	const auto& vec = *elements_vec.vector_hamt_ptr;
+	const auto& init = init_value;
+
+	const auto& func_link = lookup_func_link_required(backend, f_value);
+	const auto f = reinterpret_cast<REDUCE_F>(func_link.f);
+
+	auto count = vec.get_element_count();
+	runtime_value_t acc = init;
+	retain_value(backend, acc, type_t(init_value_type));
+
+	for(int i = 0 ; i < count ; i++){
+		const auto element_value = vec.load_element(i);
+		const auto acc2 = (*f)(frp, acc, element_value, context);
+
+		if(is_rc_value(backend.types, type_t(init_value_type))){
+			release_value(backend, acc, type_t(init_value_type));
+		}
+		acc = acc2;
+	}
+	return acc;
+}
+
+//	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
+
+//??? check type at compile time, not runtime.
+runtime_value_t unified_intrinsic__reduce(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t init_value,
+	runtime_type_t init_value_type,
+	runtime_value_t f_value,
+	runtime_type_t f_type,
+	runtime_value_t context,
+	runtime_type_t context_type
+){
+	auto& backend = get_backend(frp);
+
+	if(is_vector_carray(backend.types, backend.config, type_t(elements_vec_type))){
+		return unified_intrinsic__reduce_carray(frp, elements_vec, elements_vec_type, init_value, init_value_type, f_value, f_type, context, context_type);
+	}
+	else if(is_vector_hamt(backend.types, backend.config, type_t(elements_vec_type))){
+		return unified_intrinsic__reduce_hamt(frp, elements_vec, elements_vec_type, init_value, init_value_type, f_value, f_type, context, context_type);
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+
+
+
+
+
+
+
+/////////////////////////////////////////		stable_sort()
+
+
+
+typedef uint8_t (*stable_sort_F)(floyd_runtime_t* frp, runtime_value_t left_value, runtime_value_t right_value, runtime_value_t context_value);
+
+runtime_value_t unified_intrinsic__stable_sort_carray(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_value_type,
+	runtime_value_t context_value,
+	runtime_type_t context_value_type
+){
+	auto& backend = get_backend(frp);
+
+	const auto& types = backend.types;
+
+	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
+//	const auto& type1 = lookup_type_ref(backend, f_value_type);
+//	const auto& type2 = lookup_type_ref(backend, context_value_type);
+
+//	QUARK_ASSERT(check_stable_sort_func_type(type0, type1, type2));
+	QUARK_ASSERT(is_vector_carray(types, backend.config, type_t(elements_vec_type)));
+
+	const auto& elements = elements_vec;
+	const auto& f = f_value;
+	const auto& context = context_value;
+
+	const auto elements2 = from_runtime_value2(backend, elements, type0);
+
+	const auto& func_link = lookup_func_link_required(backend, f);
+	const auto f2 = reinterpret_cast<stable_sort_F>(func_link.f);
+
+	struct sort_functor_r {
+		bool operator() (const value_t &a, const value_t &b) {
+			auto& backend = get_backend(frp);
+
+			const auto left = to_runtime_value2(backend, a);
+			const auto right = to_runtime_value2(backend, b);
+			uint8_t result = (*f)(frp, left, right, context);
+
+			release_value(backend, left, a.get_type());
+			release_value(backend, right, b.get_type());
+
+			return result == 1 ? true : false;
+		}
+
+		floyd_runtime_t* frp;
+		runtime_value_t context;
+		stable_sort_F f;
+	};
+
+	const sort_functor_r sort_functor { frp, context, f2 };
+
+	auto mutate_inplace_elements = elements2.get_vector_value();
+	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
+	return to_runtime_value2(backend, value_t::make_vector_value(types, peek2(types, type0).get_vector_element_type(types), mutate_inplace_elements));
+}
+
+runtime_value_t unified_intrinsic__stable_sort_hamt(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_value_type,
+	runtime_value_t context_value,
+	runtime_type_t context_value_type
+){
+	auto& backend = get_backend(frp);
+
+	const auto& types = backend.types;
+
+	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
+//	const auto& type1 = lookup_type_ref(backend, f_value_type);
+//	const auto& type2 = lookup_type_ref(backend, context_value_type);
+
+//	QUARK_ASSERT(check_stable_sort_func_type(type0, type1, type2));
+	QUARK_ASSERT(is_vector_hamt(types, backend.config, type_t(elements_vec_type)));
+
+	const auto& elements = elements_vec;
+	const auto& f = f_value;
+	const auto& context = context_value;
+
+	const auto elements2 = from_runtime_value2(backend, elements, type0);
+
+	const auto& func_link = lookup_func_link_required(backend, f);
+	const auto f2 = reinterpret_cast<stable_sort_F>(func_link.f);
+
+	struct sort_functor_r {
+		bool operator() (const value_t &a, const value_t &b) {
+			auto& backend = get_backend(frp);
+
+			const auto left = to_runtime_value2(backend, a);
+			const auto right = to_runtime_value2(backend, b);
+			uint8_t result = (*f)(frp, left, right, context);
+
+			release_value(backend, left, a.get_type());
+			release_value(backend, right, b.get_type());
+
+			return result == 1 ? true : false;
+		}
+
+		floyd_runtime_t* frp;
+		runtime_value_t context;
+		stable_sort_F f;
+	};
+
+	const sort_functor_r sort_functor { frp, context, f2 };
+
+	auto mutate_inplace_elements = elements2.get_vector_value();
+	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
+
+	//??? optimize
+	const auto result = to_runtime_value2(backend, value_t::make_vector_value(types, peek2(types, type0).get_vector_element_type(types), mutate_inplace_elements));
+	return result;
+}
+
+//	[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
+
+//??? check type at compile time, not runtime.
+runtime_value_t unified_intrinsic__stable_sort(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_value_type,
+	runtime_value_t context_value,
+	runtime_type_t context_value_type
+){
+	auto& backend = get_backend(frp);
+
+//	const auto& type0 = lookup_type_ref(r.backend, elements_vec_type);
+	if(is_vector_carray(backend.types, backend.config, type_t(elements_vec_type))){
+		return unified_intrinsic__stable_sort_carray(frp, elements_vec, elements_vec_type, f_value, f_value_type, context_value, context_value_type);
+	}
+	else if(is_vector_hamt(backend.types, backend.config, type_t(elements_vec_type))){
+		return unified_intrinsic__stable_sort_hamt(frp, elements_vec, elements_vec_type, f_value, f_value_type, context_value, context_value_type);
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+
+
+
+
+
+
 
 /////////////////////////////////////////		JSON
 

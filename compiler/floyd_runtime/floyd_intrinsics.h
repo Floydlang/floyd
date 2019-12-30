@@ -37,9 +37,27 @@ runtime_value_t unified_intrinsic__update(
 );
 
 int64_t unified_intrinsic__size(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type);
-int64_t unified_intrinsic__find(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type);
-uint32_t unified_intrinsic__exists(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t value, runtime_type_t value_type);
-runtime_value_t unified_intrinsic__erase(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type);
+int64_t unified_intrinsic__find(
+	floyd_runtime_t* frp,
+	runtime_value_t coll_value,
+	runtime_type_t coll_type,
+	const runtime_value_t value,
+	runtime_type_t value_type
+);
+uint32_t unified_intrinsic__exists(
+	floyd_runtime_t* frp,
+	runtime_value_t coll_value,
+	runtime_type_t coll_type,
+	runtime_value_t value,
+	runtime_type_t value_type
+);
+runtime_value_t unified_intrinsic__erase(
+	floyd_runtime_t* frp,
+	runtime_value_t coll_value,
+	runtime_type_t coll_type,
+	runtime_value_t key_value,
+	runtime_type_t key_type
+);
 runtime_value_t unified_intrinsic__get_keys(floyd_runtime_t* frp, runtime_value_t coll_value, runtime_type_t coll_type);
 
 runtime_value_t unified_intrinsic__push_back(
@@ -175,6 +193,74 @@ runtime_value_t unified_intrinsic__filter(
 	runtime_type_t f_value_type,
 	runtime_value_t arg2_value,
 	runtime_type_t arg2_type
+);
+
+
+typedef runtime_value_t (*REDUCE_F)(floyd_runtime_t* frp, runtime_value_t acc_value, runtime_value_t element_value, runtime_value_t context);
+
+runtime_value_t unified_intrinsic__reduce_carray(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t init_value,
+	runtime_type_t init_value_type,
+	runtime_value_t f_value,
+	runtime_type_t f_type,
+	runtime_value_t context,
+	runtime_type_t context_type
+);
+runtime_value_t unified_intrinsic__reduce_hamt(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t init_value,
+	runtime_type_t init_value_type,
+	runtime_value_t f_value,
+	runtime_type_t f_type,
+	runtime_value_t context,
+	runtime_type_t context_type
+);
+runtime_value_t unified_intrinsic__reduce(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t init_value,
+	runtime_type_t init_value_type,
+	runtime_value_t f_value,
+	runtime_type_t f_type,
+	runtime_value_t context,
+	runtime_type_t context_type
+);
+
+
+typedef uint8_t (*stable_sort_F)(floyd_runtime_t* frp, runtime_value_t left_value, runtime_value_t right_value, runtime_value_t context_value);
+
+runtime_value_t unified_intrinsic__stable_sort_carray(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_value_type,
+	runtime_value_t context_value,
+	runtime_type_t context_value_type
+);
+runtime_value_t unified_intrinsic__stable_sort_hamt(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_value_type,
+	runtime_value_t context_value,
+	runtime_type_t context_value_type
+);
+runtime_value_t unified_intrinsic__stable_sort(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_value_type,
+	runtime_value_t context_value,
+	runtime_type_t context_value_type
 );
 
 
