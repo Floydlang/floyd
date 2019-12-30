@@ -110,6 +110,48 @@ runtime_value_t unified_intrinsic__map(
 );
 
 
+
+
+typedef runtime_value_t (*map_dag_F)(floyd_runtime_t* frp, runtime_value_t r_value, runtime_value_t r_vec_value, runtime_value_t context_value);
+
+runtime_value_t unified_intrinsic__map_dag__carray(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t depends_on_vec,
+	runtime_type_t depends_on_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_value_type,
+	runtime_value_t context,
+	runtime_type_t context_type
+);
+
+runtime_value_t unified_intrinsic__map_dag__hamt(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t depends_on_vec,
+	runtime_type_t depends_on_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_value_type,
+	runtime_value_t context,
+	runtime_type_t context_type
+);
+
+runtime_value_t unified_intrinsic__map_dag(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t depends_on_vec,
+	runtime_type_t depends_on_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_value_type,
+	runtime_value_t context,
+	runtime_type_t context_type
+);
+
+
+
 /////////////////////////////////////////		JSON
 
 int64_t unified_intrinsic__get_json_type(floyd_runtime_t* frp, runtime_value_t json0);

@@ -303,17 +303,6 @@ const runtime_value_t unified_intrinsic__replace(floyd_runtime_t* frp, runtime_v
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 /////////////////////////////////////////		map()
 //	[R] map([E] elements, func R (E e, C context) f, C context)
 
@@ -407,6 +396,300 @@ runtime_value_t unified_intrinsic__map(floyd_runtime_t* frp, runtime_value_t ele
 	}
 }
 
+
+
+
+/////////////////////////////////////////		map_dag()
+
+
+
+
+// [R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
+
+
+runtime_value_t unified_intrinsic__map_dag__carray(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t depends_on_vec,
+	runtime_type_t depends_on_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_value_type,
+	runtime_value_t context,
+	runtime_type_t context_type
+){
+	auto& backend = get_backend(frp);
+	const auto& types = backend.types;
+	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
+//	const auto& type1 = lookup_type_ref(backend, depends_on_vec_type);
+	const auto& type2 = lookup_type_ref(backend, f_value_type);
+//	QUARK_ASSERT(check_map_dag_func_type(type0, type1, type2, lookup_type_ref(backend, context_type)));
+
+	const auto& elements = elements_vec;
+#if DEBUG
+	const auto& e_type = peek2(types, type0).get_vector_element_type(types);
+#endif
+	const auto& parents = depends_on_vec;
+	const auto& f = f_value;
+	const auto& r_type = peek2(types, type2).get_function_return(types);
+
+	QUARK_ASSERT(e_type == peek2(types, type2).get_function_args(types)[0] && r_type == peek2(types, peek2(types, type2).get_function_args(types)[1]).get_vector_element_type(types));
+
+//	QUARK_ASSERT(is_vector_carray(make_vector(e_type)));
+//	QUARK_ASSERT(is_vector_carray(make_vector(r_type)));
+
+	const auto return_type = type_t::make_vector(types, r_type);
+
+	const auto& func_link = lookup_func_link_required(backend, f);
+	const auto f2 = reinterpret_cast<map_dag_F>(func_link.f);
+
+	const auto elements2 = elements.vector_carray_ptr;
+	const auto parents2 = parents.vector_carray_ptr;
+
+	if(elements2->get_element_count() != parents2->get_element_count()) {
+		quark::throw_runtime_error("map_dag() requires elements and parents be the same count.");
+	}
+
+	auto elements_todo = elements2->get_element_count();
+	std::vector<int> rcs(elements2->get_element_count(), 0);
+
+	std::vector<runtime_value_t> complete(elements2->get_element_count(), runtime_value_t());
+
+	for(int i = 0 ; i < parents2->get_element_count() ; i++){
+		const auto& e = parents2->load_element(i);
+		const auto parent_index = e.int_value;
+
+		const auto count = static_cast<int64_t>(elements2->get_element_count());
+		QUARK_ASSERT(parent_index >= -1);
+		QUARK_ASSERT(parent_index < count);
+
+		if(parent_index != -1){
+			rcs[parent_index]++;
+		}
+	}
+
+	while(elements_todo > 0){
+		//	Find all elements that are free to process -- they are not blocked on a depenency.
+		std::vector<int> pass_ids;
+		for(int i = 0 ; i < elements2->get_element_count() ; i++){
+			const auto rc = rcs[i];
+			if(rc == 0){
+				pass_ids.push_back(i);
+				rcs[i] = -1;
+			}
+		}
+		if(pass_ids.empty()){
+			quark::throw_runtime_error("map_dag() dependency cycle error.");
+		}
+
+		for(const auto element_index: pass_ids){
+			const auto& e = elements2->load_element(element_index);
+
+			//	Make list of the element's inputs -- they must all be complete now.
+			std::vector<runtime_value_t> solved_deps;
+			for(int element_index2 = 0 ; element_index2 < parents2->get_element_count() ; element_index2++){
+				const auto& p = parents2->load_element(element_index2);
+				const auto parent_index = p.int_value;
+				if(parent_index == element_index){
+					QUARK_ASSERT(element_index2 != -1);
+					QUARK_ASSERT(element_index2 >= -1 && element_index2 < elements2->get_element_count());
+					QUARK_ASSERT(rcs[element_index2] == -1);
+
+					const auto& solved = complete[element_index2];
+					solved_deps.push_back(solved);
+				}
+			}
+
+			auto solved_deps2 = alloc_vector_carray(backend.heap, solved_deps.size(), solved_deps.size(), return_type);
+			for(int i = 0 ; i < solved_deps.size() ; i++){
+				solved_deps2.vector_carray_ptr->store(i, solved_deps[i]);
+			}
+			runtime_value_t solved_deps3 = solved_deps2;
+
+			const auto result1 = (*f2)(frp, e, solved_deps3, context);
+
+			//	Warning: optimization trick.
+			//	Release just the vec, **not the elements**. The elements are aliases for complete-vector.
+			if(dec_rc(solved_deps2.vector_carray_ptr->alloc) == 0){
+				dispose_vector_carray(solved_deps2);
+			}
+
+			const auto parent_index = parents2->load_element(element_index).int_value;
+			if(parent_index != -1){
+				rcs[parent_index]--;
+			}
+			complete[element_index] = result1;
+			elements_todo--;
+		}
+	}
+
+	//??? No need to copy all elements -- could store them directly into the VEC_T.
+	const auto count = complete.size();
+	auto result_vec = alloc_vector_carray(backend.heap, count, count, return_type);
+	for(int i = 0 ; i < count ; i++){
+//		retain_value(r, complete[i], r_type);
+		result_vec.vector_carray_ptr->store(i, complete[i]);
+	}
+
+	return result_vec;
+}
+
+runtime_value_t unified_intrinsic__map_dag__hamt(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t depends_on_vec,
+	runtime_type_t depends_on_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_value_type,
+	runtime_value_t context,
+	runtime_type_t context_type
+){
+	auto& backend = get_backend(frp);
+
+	const auto& types = backend.types;
+	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
+//	const auto& type1 = lookup_type_ref(backend, depends_on_vec_type);
+	const auto& type2 = lookup_type_ref(backend, f_value_type);
+//	QUARK_ASSERT(check_map_dag_func_type(type0, type1, type2, lookup_type_ref(backend, context_type)));
+
+	const auto& elements = elements_vec;
+#if DEBUG
+	const auto& e_type = peek2(types, type0).get_vector_element_type(types);
+#endif
+	const auto& parents = depends_on_vec;
+	const auto& f = f_value;
+	const auto& r_type = peek2(types, type2).get_function_return(types);
+
+	QUARK_ASSERT(e_type == peek2(types, type2).get_function_args(types)[0] && r_type == peek2(types, peek2(types, type2).get_function_args(types)[1]).get_vector_element_type(types));
+
+//	QUARK_ASSERT(is_vector_hamt(make_vector(e_type)));
+//	QUARK_ASSERT(is_vector_hamt(make_vector(r_type)));
+
+	const auto return_type = type_t::make_vector(types, r_type);
+
+	const auto& func_link = lookup_func_link_required(backend, f);
+	const auto f2 = reinterpret_cast<map_dag_F>(func_link.f);
+
+	const auto elements2 = elements.vector_hamt_ptr;
+	const auto parents2 = parents.vector_hamt_ptr;
+
+	if(elements2->get_element_count() != parents2->get_element_count()) {
+		quark::throw_runtime_error("map_dag() requires elements and parents be the same count.");
+	}
+
+	auto elements_todo = elements2->get_element_count();
+	std::vector<int> rcs(elements2->get_element_count(), 0);
+
+	std::vector<runtime_value_t> complete(elements2->get_element_count(), runtime_value_t());
+
+	for(int i = 0 ; i < parents2->get_element_count() ; i++){
+		const auto& e = parents2->load_element(i);
+		const auto parent_index = e.int_value;
+
+		//??? remove cast? static_cast<int64_t>()
+		const auto count = static_cast<int64_t>(elements2->get_element_count());
+		QUARK_ASSERT(parent_index >= -1);
+		QUARK_ASSERT(parent_index < count);
+
+		if(parent_index != -1){
+			rcs[parent_index]++;
+		}
+	}
+
+	while(elements_todo > 0){
+		//	Find all elements that are free to process -- they are not blocked on a depenency.
+		std::vector<int> pass_ids;
+		for(int i = 0 ; i < elements2->get_element_count() ; i++){
+			const auto rc = rcs[i];
+			if(rc == 0){
+				pass_ids.push_back(i);
+				rcs[i] = -1;
+			}
+		}
+		if(pass_ids.empty()){
+			quark::throw_runtime_error("map_dag() dependency cycle error.");
+		}
+
+		for(const auto element_index: pass_ids){
+			const auto& e = elements2->load_element(element_index);
+
+			//	Make list of the element's inputs -- they must all be complete now.
+			std::vector<runtime_value_t> solved_deps;
+			for(int element_index2 = 0 ; element_index2 < parents2->get_element_count() ; element_index2++){
+				const auto& p = parents2->load_element(element_index2);
+				const auto parent_index = p.int_value;
+				if(parent_index == element_index){
+					QUARK_ASSERT(element_index2 != -1);
+					QUARK_ASSERT(element_index2 >= -1 && element_index2 < elements2->get_element_count());
+					QUARK_ASSERT(rcs[element_index2] == -1);
+
+					const auto& solved = complete[element_index2];
+					solved_deps.push_back(solved);
+				}
+			}
+
+			auto solved_deps2 = alloc_vector_hamt(backend.heap, solved_deps.size(), solved_deps.size(), return_type);
+			for(int i = 0 ; i < solved_deps.size() ; i++){
+				solved_deps2.vector_hamt_ptr->store_mutate(i, solved_deps[i]);
+			}
+			runtime_value_t solved_deps3 = solved_deps2;
+
+			const auto result1 = (*f2)(frp, e, solved_deps3, context);
+
+			//	Warning: optimization trick.
+			//	Release just the vec, **not the elements**. The elements are aliases for complete-vector.
+			if(dec_rc(solved_deps2.vector_hamt_ptr->alloc) == 0){
+				dispose_vector_hamt(solved_deps2);
+			}
+
+			const auto parent_index = parents2->load_element(element_index).int_value;
+			if(parent_index != -1){
+				rcs[parent_index]--;
+			}
+			complete[element_index] = result1;
+			elements_todo--;
+		}
+	}
+
+	//??? No need to copy all elements -- could store them directly into the VEC_T.
+	const auto count = complete.size();
+	auto result_vec = alloc_vector_hamt(backend.heap, count, count, return_type);
+	for(int i = 0 ; i < count ; i++){
+//		retain_value(r, complete[i], r_type);
+		result_vec.vector_hamt_ptr->store_mutate(i, complete[i]);
+	}
+
+	return result_vec;
+}
+
+// ??? check type at compile time, not runtime.
+// [R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
+runtime_value_t unified_intrinsic__map_dag(
+	floyd_runtime_t* frp,
+	runtime_value_t elements_vec,
+	runtime_type_t elements_vec_type,
+	runtime_value_t depends_on_vec,
+	runtime_type_t depends_on_vec_type,
+	runtime_value_t f_value,
+	runtime_type_t f_value_type,
+	runtime_value_t context,
+	runtime_type_t context_type
+){
+	auto& backend = get_backend(frp);
+
+//	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
+	if(is_vector_carray(backend.types, backend.config, type_t(elements_vec_type))){
+		return unified_intrinsic__map_dag__carray(frp, elements_vec, elements_vec_type, depends_on_vec, depends_on_vec_type, f_value, f_value_type, context, context_type);
+	}
+	else if(is_vector_hamt(backend.types, backend.config, type_t(elements_vec_type))){
+		return unified_intrinsic__map_dag__hamt(frp, elements_vec, elements_vec_type, depends_on_vec, depends_on_vec_type, f_value, f_value_type, context, context_type);
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
 
 
 
