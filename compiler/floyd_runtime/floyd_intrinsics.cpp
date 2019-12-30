@@ -679,6 +679,128 @@ rt_pod_t intrinsic__map(runtime_t* frp, rt_pod_t elements_vec, rt_type_t element
 // [R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
 
 
+//	Input dependencies are specified for as 1... many integers per E, in order. [-1] or [a, -1] or [a, b, -1 ] etc.
+//
+//	[R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
+
+struct dep_t {
+	int64_t incomplete_count;
+	std::vector<int64_t> depends_in_element_index;
+};
+
+#if 0
+static rt_value_t bc_intrinsic__map_dag2(interpreter_t& vm, const rt_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 4);
+//	QUARK_ASSERT(check_map_dag_func_type(args[0]._type, args[1]._type, args[2]._type, args[3]._type));
+
+	auto& backend = vm._backend;
+	const auto& elements = args[0];
+	const auto& e_type = peek2(backend.types, elements._type).get_vector_element_type(backend.types);
+	const auto& dependencies = args[1];
+	const auto& f = args[2];
+	const auto f_type_peek = peek2(backend.types, f._type);
+	const auto& r_type = f_type_peek.get_function_return(backend.types);
+
+	const auto& context = args[3];
+
+	if(
+		e_type == f_type_peek.get_function_args(backend.types)[0]
+		&& r_type == peek2(backend.types, f_type_peek.get_function_args(backend.types)[1]).get_vector_element_type(backend.types)
+	){
+	}
+	else {
+		quark::throw_runtime_error("R map_dag([E] elements, R init_value, R (R acc, E element) f");
+	}
+
+	const auto elements2 = get_vector_elements(backend, elements);
+	const auto dependencies2 = get_vector_elements(backend, dependencies);
+
+
+	immer::vector<rt_value_t> complete(elements2.size(), rt_value_t());
+
+	std::vector<dep_t> element_dependencies(elements2.size(), dep_t{ 0, {} });
+	{
+		const auto element_count = static_cast<int64_t>(elements2.size());
+		const auto dep_index_count = static_cast<int64_t>(dependencies2.size());
+		int element_index = 0;
+		int dep_index = 0;
+		while(element_index < element_count){
+			std::vector<int64_t> deps;
+			const auto& e = dependencies2[dep_index];
+			auto e_int = e.get_int_value();
+			while(e_int != -1){
+				deps.push_back(e_int);
+
+				dep_index++;
+				QUARK_ASSERT(dep_index < dep_index_count);
+
+				e_int = dependencies2[dep_index].get_int_value();
+			}
+			QUARK_ASSERT(element_index < element_count);
+			element_dependencies[element_index] = dep_t{ static_cast<int64_t>(deps.size()), deps };
+			element_index++;
+		}
+		QUARK_ASSERT(element_index == element_count);
+		QUARK_ASSERT(dep_index == dep_index_count);
+	}
+
+	auto elements_todo = elements2.size();
+	while(elements_todo > 0){
+
+		//	Make list of elements that should be processed this pass.
+		std::vector<int> pass_ids;
+		for(int i = 0 ; i < elements2.size() ; i++){
+			const auto rc = element_dependencies[i].incomplete_count;
+			if(rc == 0){
+				pass_ids.push_back(i);
+				element_dependencies[i].incomplete_count = -1;
+			}
+		}
+
+		if(pass_ids.empty()){
+			quark::throw_runtime_error("map_dag() dependency cycle error.");
+		}
+
+		for(const auto element_index: pass_ids){
+			const auto& e = elements2[element_index];
+
+			immer::vector<rt_value_t> ready_elements;
+			for(const auto& dep_e: element_dependencies[element_index].depends_in_element_index){
+				const auto& ready = complete[dep_e];
+				ready_elements = ready_elements.push_back(ready);
+			}
+			const auto ready_elements2 = make_vector_value(backend, r_type, ready_elements);
+			const rt_value_t f_args[] = { e, ready_elements2, context };
+
+			const auto result1 = call_function_bc(vm, f, f_args, 3);
+
+			//	Decrement incomplete_count for every element that specifies *element_index* as a input dependency.
+			for(auto& x: element_dependencies){
+				const auto it = std::find(x.depends_in_element_index.begin(), x.depends_in_element_index.end(), element_index);
+				if(it != x.depends_in_element_index.end()){
+					x.incomplete_count--;
+				}
+			}
+
+			//	Copy value to output.
+			complete = complete.set(element_index, result1);
+			elements_todo--;
+		}
+	}
+
+	const auto result = make_vector_value(backend, r_type, complete);
+
+	if(k_trace && false){
+		const auto debug = value_and_type_to_json(backend.types, rt_to_value(backend, result));
+		QUARK_TRACE(json_to_pretty_string(debug));
+	}
+
+	return result;
+}
+#endif
+
+
 rt_pod_t intrinsic__map_dag__carray(
 	runtime_t* frp,
 	rt_pod_t elements_vec,
@@ -694,8 +816,8 @@ rt_pod_t intrinsic__map_dag__carray(
 	const auto& types = backend.types;
 	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
 //	const auto& type1 = lookup_type_ref(backend, depends_on_vec_type);
-	const auto& type2 = lookup_type_ref(backend, f_value_type);
-//	QUARK_ASSERT(check_map_dag_func_type(type0, type1, type2, lookup_type_ref(backend, context_type)));
+	const auto& f_value_type2 = lookup_type_ref(backend, f_value_type);
+//	QUARK_ASSERT(check_map_dag_func_type(type0, type1, f_value_type2, lookup_type_ref(backend, context_type)));
 
 	const auto& elements = elements_vec;
 #if DEBUG
@@ -703,14 +825,14 @@ rt_pod_t intrinsic__map_dag__carray(
 #endif
 	const auto& parents = depends_on_vec;
 	const auto& f = f_value;
-	const auto& r_type = peek2(types, type2).get_function_return(types);
+	const auto& r_type = peek2(types, f_value_type2).get_function_return(types);
 
-	QUARK_ASSERT(e_type == peek2(types, type2).get_function_args(types)[0] && r_type == peek2(types, peek2(types, type2).get_function_args(types)[1]).get_vector_element_type(types));
+	QUARK_ASSERT(e_type == peek2(types, f_value_type2).get_function_args(types)[0] && r_type == peek2(types, peek2(types, f_value_type2).get_function_args(types)[1]).get_vector_element_type(types));
 
 //	QUARK_ASSERT(is_vector_carray(make_vector(e_type)));
 //	QUARK_ASSERT(is_vector_carray(make_vector(r_type)));
 
-	const auto return_type = type_t::make_vector(types, r_type);
+	const auto vec_r_type = type_t::make_vector(types, r_type);
 
 	const auto& func_link = lookup_func_link_required(backend, f);
 	const auto f2 = reinterpret_cast<map_dag_F>(func_link.f);
@@ -772,13 +894,29 @@ rt_pod_t intrinsic__map_dag__carray(
 				}
 			}
 
-			auto solved_deps2 = alloc_vector_carray(backend.heap, solved_deps.size(), solved_deps.size(), return_type);
+			auto solved_deps2 = alloc_vector_carray(backend.heap, solved_deps.size(), solved_deps.size(), vec_r_type);
 			for(int i = 0 ; i < solved_deps.size() ; i++){
 				solved_deps2.vector_carray_ptr->store(i, solved_deps[i]);
 			}
 			rt_pod_t solved_deps3 = solved_deps2;
 
-			const auto result1 = (*f2)(frp, e, solved_deps3, context);
+			rt_pod_t result1 = make_uninitialized_magic();
+
+			if(func_link.machine == func_link_t::emachine::k_bytecode){
+				const rt_value_t f_args[] = {
+					rt_value_t(backend, type_t(e_type), e, rt_value_t::rc_mode::bump),
+					rt_value_t(backend, type_t(vec_r_type), solved_deps3, rt_value_t::rc_mode::bump),
+					rt_value_t(backend, type_t(context_type), context, rt_value_t::rc_mode::bump)
+				};
+				const auto a = call_thunk(frp, rt_value_t(backend, f_value_type2, f_value, rt_value_t::rc_mode::bump), f_args, 3);
+				QUARK_ASSERT(a.check_invariant());
+				retain_value(backend, a._pod, a._type);
+
+				result1 = a._pod;
+			}
+			else{
+				result1 = (*f2)(frp, e, solved_deps3, context);
+			}
 
 			//	Warning: optimization trick.
 			//	Release just the vec, **not the elements**. The elements are aliases for complete-vector.
@@ -797,7 +935,7 @@ rt_pod_t intrinsic__map_dag__carray(
 
 	//??? No need to copy all elements -- could store them directly into the VEC_T.
 	const auto count = complete.size();
-	auto result_vec = alloc_vector_carray(backend.heap, count, count, return_type);
+	auto result_vec = alloc_vector_carray(backend.heap, count, count, vec_r_type);
 	for(int i = 0 ; i < count ; i++){
 //		retain_value(r, complete[i], r_type);
 		result_vec.vector_carray_ptr->store(i, complete[i]);
@@ -822,8 +960,8 @@ rt_pod_t intrinsic__map_dag__hamt(
 	const auto& types = backend.types;
 	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
 //	const auto& type1 = lookup_type_ref(backend, depends_on_vec_type);
-	const auto& type2 = lookup_type_ref(backend, f_value_type);
-//	QUARK_ASSERT(check_map_dag_func_type(type0, type1, type2, lookup_type_ref(backend, context_type)));
+	const auto& f_value_type2 = lookup_type_ref(backend, f_value_type);
+//	QUARK_ASSERT(check_map_dag_func_type(type0, type1, f_value_type2, lookup_type_ref(backend, context_type)));
 
 	const auto& elements = elements_vec;
 #if DEBUG
@@ -831,14 +969,14 @@ rt_pod_t intrinsic__map_dag__hamt(
 #endif
 	const auto& parents = depends_on_vec;
 	const auto& f = f_value;
-	const auto& r_type = peek2(types, type2).get_function_return(types);
+	const auto& r_type = peek2(types, f_value_type2).get_function_return(types);
 
-	QUARK_ASSERT(e_type == peek2(types, type2).get_function_args(types)[0] && r_type == peek2(types, peek2(types, type2).get_function_args(types)[1]).get_vector_element_type(types));
+	QUARK_ASSERT(e_type == peek2(types, f_value_type2).get_function_args(types)[0] && r_type == peek2(types, peek2(types, f_value_type2).get_function_args(types)[1]).get_vector_element_type(types));
 
 //	QUARK_ASSERT(is_vector_hamt(make_vector(e_type)));
 //	QUARK_ASSERT(is_vector_hamt(make_vector(r_type)));
 
-	const auto return_type = type_t::make_vector(types, r_type);
+	const auto vec_r_type = type_t::make_vector(types, r_type);
 
 	const auto& func_link = lookup_func_link_required(backend, f);
 	const auto f2 = reinterpret_cast<map_dag_F>(func_link.f);
@@ -901,13 +1039,28 @@ rt_pod_t intrinsic__map_dag__hamt(
 				}
 			}
 
-			auto solved_deps2 = alloc_vector_hamt(backend.heap, solved_deps.size(), solved_deps.size(), return_type);
+			auto solved_deps2 = alloc_vector_hamt(backend.heap, solved_deps.size(), solved_deps.size(), vec_r_type);
 			for(int i = 0 ; i < solved_deps.size() ; i++){
 				solved_deps2.vector_hamt_ptr->store_mutate(i, solved_deps[i]);
 			}
 			rt_pod_t solved_deps3 = solved_deps2;
 
-			const auto result1 = (*f2)(frp, e, solved_deps3, context);
+			rt_pod_t result1 = make_uninitialized_magic();
+			if(func_link.machine == func_link_t::emachine::k_bytecode){
+				const rt_value_t f_args[] = {
+					rt_value_t(backend, type_t(e_type), e, rt_value_t::rc_mode::bump),
+					rt_value_t(backend, type_t(vec_r_type), solved_deps3, rt_value_t::rc_mode::bump),
+					rt_value_t(backend, type_t(context_type), context, rt_value_t::rc_mode::bump)
+				};
+				const auto a = call_thunk(frp, rt_value_t(backend, f_value_type2, f_value, rt_value_t::rc_mode::bump), f_args, 3);
+				QUARK_ASSERT(a.check_invariant());
+				retain_value(backend, a._pod, a._type);
+
+				result1 = a._pod;
+			}
+			else{
+				result1 = (*f2)(frp, e, solved_deps3, context);
+			}
 
 			//	Warning: optimization trick.
 			//	Release just the vec, **not the elements**. The elements are aliases for complete-vector.
@@ -926,7 +1079,7 @@ rt_pod_t intrinsic__map_dag__hamt(
 
 	//??? No need to copy all elements -- could store them directly into the VEC_T.
 	const auto count = complete.size();
-	auto result_vec = alloc_vector_hamt(backend.heap, count, count, return_type);
+	auto result_vec = alloc_vector_hamt(backend.heap, count, count, vec_r_type);
 	for(int i = 0 ; i < count ; i++){
 //		retain_value(r, complete[i], r_type);
 		result_vec.vector_hamt_ptr->store_mutate(i, complete[i]);
@@ -964,8 +1117,9 @@ rt_pod_t intrinsic__map_dag(
 }
 
 
-/////////////////////////////////////////		filter()
+/////////////////////////////////////////		filter()Y
 
+//	[E] filter([E] elements, func bool (E e, C context) f, C context)
 
 
 rt_pod_t intrinsic__filter_carray(
@@ -1070,7 +1224,6 @@ rt_pod_t intrinsic__filter_hamt(
 }
 
 //??? check type at compile time, not runtime.
-//	[E] filter([E] elements, func bool (E e, C context) f, C context)
 rt_pod_t intrinsic__filter(
 	runtime_t* frp,
 	rt_pod_t elements_vec,
