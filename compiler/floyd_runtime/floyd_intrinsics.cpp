@@ -8,15 +8,31 @@
 
 #include "floyd_intrinsics.h"
 
-#include "floyd_llvm_helpers.h"
-#include "floyd_llvm_runtime.h"
-#include "floyd_llvm_codegen_basics.h"
-#include "value_features.h"
 #include "floyd_runtime.h"
 #include "text_parser.h"
-#include "utils.h"
 
 namespace floyd {
+
+
+static std::string gen_to_string(value_backend_t& backend, rt_pod_t arg_value, type_t arg_type){
+	QUARK_ASSERT(backend.check_invariant());
+
+	const auto& types = backend.types;
+
+	if(peek2(types, arg_type).is_typeid()){
+		const auto value = from_runtime_value2(backend, arg_value, arg_type);
+		const auto type2 = value.get_typeid_value();
+		const auto type3 = peek2(types, type2);
+		const auto a = type_to_compact_string(types, type3);
+		return a;
+	}
+	else{
+		const auto value = from_runtime_value2(backend, arg_value, arg_type);
+		const auto a = to_compact_string2(backend.types, value);
+		return a;
+	}
+}
+
 
 void intrinsic__assert(runtime_t* frp, rt_pod_t arg){
 #if DEBUG
@@ -59,11 +75,6 @@ rt_type_t intrinsic__typeof(runtime_t* frp, rt_pod_t value, rt_type_t value_type
 #endif
 	return value_type;
 }
-
-
-
-
-
 
 
 /////////////////////////////////////////		update()
@@ -213,7 +224,6 @@ const rt_pod_t update_dict_hamt_nonpod(runtime_t* frp, rt_pod_t coll_value, rt_t
 #endif
 	return update__dict_hamt(backend, coll_value, coll_type, key_value, value);
 }
-
 
 
 static rt_value_t update_element(value_backend_t& backend, const rt_value_t& obj1, const rt_value_t& lookup_key, const rt_value_t& new_value){
@@ -400,8 +410,6 @@ int64_t intrinsic__size(runtime_t* frp, rt_pod_t coll_value, rt_type_t coll_type
 }
 
 
-
-
 int64_t intrinsic__find(runtime_t* frp, rt_pod_t coll_value, rt_type_t coll_type, const rt_pod_t value, rt_type_t value_type){
 	auto& backend = get_backend(frp);
 	return find_vector_element(backend, coll_value, coll_type, value, value_type);
@@ -440,12 +448,6 @@ rt_pod_t intrinsic__get_keys(runtime_t* frp, rt_pod_t coll_value, rt_type_t coll
 	QUARK_ASSERT(peek2(types, type0).is_dict());
 	return get_keys(backend, coll_value, coll_type);
 }
-
-
-
-
-
-
 
 
 
@@ -1117,7 +1119,7 @@ rt_pod_t intrinsic__map_dag(
 }
 
 
-/////////////////////////////////////////		filter()Y
+/////////////////////////////////////////		filter()
 
 //	[E] filter([E] elements, func bool (E e, C context) f, C context)
 
@@ -1132,13 +1134,13 @@ rt_pod_t intrinsic__filter_carray(
 	rt_type_t context_type
 ){
 	auto& backend = get_backend(frp);
+	const auto& types = backend.types;
 
-	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
-//	const auto& type1 = lookup_type_ref(backend, f_value_type);
-//	const auto& type2 = lookup_type_ref(backend, context_type);
-	const auto& return_type = type0;
+	const auto& vec_e_type = lookup_type_ref(backend, elements_vec_type);
+	const auto e_type = peek2(types, vec_e_type).get_vector_element_type(types);
+	const auto& f_value_type2 = lookup_type_ref(backend, f_value_type);
 
-//	QUARK_ASSERT(check_filter_func_type(type0, type1, type2));
+//	QUARK_ASSERT(check_filter_func_type(vec_e_type, type1, type2));
 	QUARK_ASSERT(is_vector_carray(backend.types, backend.config, type_t(elements_vec_type)));
 
 	const auto& vec = *elements_vec.vector_carray_ptr;
@@ -1152,13 +1154,29 @@ rt_pod_t intrinsic__filter_carray(
 
 	std::vector<rt_pod_t> acc;
 	for(int i = 0 ; i < count ; i++){
-		const auto element_value = vec.get_element_ptr()[i];
-		const auto keep = (*f)(frp, element_value, context);
+		const auto value = vec.get_element_ptr()[i];
+
+		rt_pod_t keep = make_uninitialized_magic();
+		if(func_link.machine == func_link_t::emachine::k_bytecode){
+			const rt_value_t f_args[] = {
+				rt_value_t(backend, type_t(e_type), value, rt_value_t::rc_mode::bump),
+				rt_value_t(backend, type_t(context_type), context, rt_value_t::rc_mode::bump)
+			};
+			const auto a = call_thunk(frp, rt_value_t(backend, f_value_type2, f_value, rt_value_t::rc_mode::bump), f_args, 2);
+			QUARK_ASSERT(a.check_invariant());
+			retain_value(backend, a._pod, a._type);
+
+			keep = a._pod;
+		}
+		else{
+			keep = (*f)(frp, value, context);
+		}
+
 		if(keep.bool_value != 0){
-			acc.push_back(element_value);
+			acc.push_back(value);
 
 			if(is_rc_value(backend.types, e_element_itype)){
-				retain_value(backend, element_value, e_element_itype);
+				retain_value(backend, value, e_element_itype);
 			}
 		}
 		else{
@@ -1166,7 +1184,7 @@ rt_pod_t intrinsic__filter_carray(
 	}
 
 	const auto count2 = acc.size();
-	auto result_vec = alloc_vector_carray(backend.heap, count2, count2, return_type);
+	auto result_vec = alloc_vector_carray(backend.heap, count2, count2, vec_e_type);
 
 	if(count2 > 0){
 		//	Count > 0 required to get address to first element in acc.
@@ -1185,13 +1203,13 @@ rt_pod_t intrinsic__filter_hamt(
 	rt_type_t context_type)
 {
 	auto& backend = get_backend(frp);
+	const auto& types = backend.types;
 
-	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
-//	const auto& type1 = lookup_type_ref(backend, f_value_type);
-//	const auto& type2 = lookup_type_ref(backend, context_type);
-	const auto& return_type = type0;
+	const auto& vec_e_type = lookup_type_ref(backend, elements_vec_type);
+	const auto e_type = peek2(types, vec_e_type).get_vector_element_type(types);
+	const auto& f_value_type2 = lookup_type_ref(backend, f_value_type);
 
-//	QUARK_ASSERT(check_filter_func_type(type0, type1, type2));
+//	QUARK_ASSERT(check_filter_func_type(vec_e_type, type1, type2));
 	QUARK_ASSERT(is_vector_hamt(backend.types, backend.config, type_t(elements_vec_type)));
 
 	const auto& vec = *elements_vec.vector_hamt_ptr;
@@ -1201,17 +1219,31 @@ rt_pod_t intrinsic__filter_hamt(
 
 	auto count = vec.get_element_count();
 
-	const auto e_element_itype = lookup_vector_element_type(backend, type_t(elements_vec_type));
-
 	std::vector<rt_pod_t> acc;
 	for(int i = 0 ; i < count ; i++){
-		const auto element_value = vec.load_element(i);
-		const auto keep = (*f)(frp, element_value, context);
-		if(keep.bool_value != 0){
-			acc.push_back(element_value);
+		const auto value = vec.load_element(i);
 
-			if(is_rc_value(backend.types, e_element_itype)){
-				retain_value(backend, element_value, e_element_itype);
+		rt_pod_t keep = make_uninitialized_magic();
+		if(func_link.machine == func_link_t::emachine::k_bytecode){
+			const rt_value_t f_args[] = {
+				rt_value_t(backend, type_t(e_type), value, rt_value_t::rc_mode::bump),
+				rt_value_t(backend, type_t(context_type), context, rt_value_t::rc_mode::bump)
+			};
+			const auto a = call_thunk(frp, rt_value_t(backend, f_value_type2, f_value, rt_value_t::rc_mode::bump), f_args, 2);
+			QUARK_ASSERT(a.check_invariant());
+			retain_value(backend, a._pod, a._type);
+
+			keep = a._pod;
+		}
+		else{
+			keep = (*f)(frp, value, context);
+		}
+
+		if(keep.bool_value != 0){
+			acc.push_back(value);
+
+			if(is_rc_value(backend.types, e_type)){
+				retain_value(backend, value, e_type);
 			}
 		}
 		else{
@@ -1219,7 +1251,7 @@ rt_pod_t intrinsic__filter_hamt(
 	}
 
 	const auto count2 = acc.size();
-	auto result_vec = alloc_vector_hamt(backend.heap, &acc[0], count2, return_type);
+	auto result_vec = alloc_vector_hamt(backend.heap, &acc[0], count2, vec_e_type);
 	return result_vec;
 }
 
@@ -1235,7 +1267,6 @@ rt_pod_t intrinsic__filter(
 {
 	auto& backend = get_backend(frp);
 
-//	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
 	if(is_vector_carray(backend.types, backend.config, type_t(elements_vec_type))){
 		return intrinsic__filter_carray(frp, elements_vec, elements_vec_type, f_value, f_value_type, arg2_value, arg2_type);
 	}
@@ -1251,6 +1282,7 @@ rt_pod_t intrinsic__filter(
 
 /////////////////////////////////////////		reduce()
 
+//	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
 
 
 rt_pod_t intrinsic__reduce_carray(
@@ -1265,10 +1297,12 @@ rt_pod_t intrinsic__reduce_carray(
 	rt_type_t context_type
 ){
 	auto& backend = get_backend(frp);
+	const auto& types = backend.types;
 
-//	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
-//	const auto& type1 = lookup_type_ref(backend, init_value_type);
-//	const auto& type2 = lookup_type_ref(backend, f_type);
+	const auto& vec_e_type = lookup_type_ref(backend, elements_vec_type);
+	const auto& r_type = lookup_type_ref(backend, init_value_type);
+	const auto& f_value_type2 = lookup_type_ref(backend, f_type);
+	const auto e_type = peek2(types, vec_e_type).get_vector_element_type(types);
 
 //	QUARK_ASSERT(check_reduce_func_type(type0, type1, type2, lookup_type_ref(backend, f_type)));
 	QUARK_ASSERT(is_vector_carray(backend.types, backend.config, type_t(elements_vec_type)));
@@ -1280,19 +1314,35 @@ rt_pod_t intrinsic__reduce_carray(
 	const auto f = reinterpret_cast<REDUCE_F>(func_link.f);
 
 	auto count = vec.get_element_count();
-	rt_pod_t acc = init;
-	retain_value(backend, acc, type_t(init_value_type));
+	rt_pod_t accumulator = init;
+	retain_value(backend, accumulator, type_t(init_value_type));
 
 	for(int i = 0 ; i < count ; i++){
-		const auto element_value = vec.get_element_ptr()[i];
-		const auto acc2 = (*f)(frp, acc, element_value, context);
+		const auto value = vec.get_element_ptr()[i];
+
+		rt_pod_t accumulator2 = make_uninitialized_magic();
+		if(func_link.machine == func_link_t::emachine::k_bytecode){
+			const rt_value_t f_args[] = {
+				rt_value_t(backend, type_t(r_type), accumulator, rt_value_t::rc_mode::bump),
+				rt_value_t(backend, type_t(e_type), value, rt_value_t::rc_mode::bump),
+				rt_value_t(backend, type_t(context_type), context, rt_value_t::rc_mode::bump)
+			};
+			const auto a = call_thunk(frp, rt_value_t(backend, f_value_type2, f_value, rt_value_t::rc_mode::bump), f_args, 3);
+			QUARK_ASSERT(a.check_invariant());
+			retain_value(backend, a._pod, a._type);
+
+			accumulator2 = a._pod;
+		}
+		else{
+			accumulator2 = (*f)(frp, accumulator, value, context);
+		}
 
 		if(is_rc_value(backend.types, type_t(init_value_type))){
-			release_value(backend, acc, type_t(init_value_type));
+			release_value(backend, accumulator, type_t(init_value_type));
 		}
-		acc = acc2;
+		accumulator = accumulator2;
 	}
-	return acc;
+	return accumulator;
 }
 
 rt_pod_t intrinsic__reduce_hamt(
@@ -1307,12 +1357,14 @@ rt_pod_t intrinsic__reduce_hamt(
 	rt_type_t context_type
 ){
 	auto& backend = get_backend(frp);
+	const auto& types = backend.types;
 
-//	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
-//	const auto& type1 = lookup_type_ref(backend, init_value_type);
-//	const auto& type2 = lookup_type_ref(backend, f_type);
+	const auto& vec_e_type = lookup_type_ref(backend, elements_vec_type);
+	const auto& r_type = lookup_type_ref(backend, init_value_type);
+	const auto& f_value_type2 = lookup_type_ref(backend, f_type);
+	const auto e_type = peek2(types, vec_e_type).get_vector_element_type(types);
 
-//	QUARK_ASSERT(check_reduce_func_type(type0, type1, type2, lookup_type_ref(backend, f_type)));
+//	QUARK_ASSERT(check_reduce_func_type(type0, r_type, f_value_type2, lookup_type_ref(backend, f_type)));
 	QUARK_ASSERT(is_vector_hamt(backend.types, backend.config, type_t(elements_vec_type)));
 
 	const auto& vec = *elements_vec.vector_hamt_ptr;
@@ -1322,22 +1374,35 @@ rt_pod_t intrinsic__reduce_hamt(
 	const auto f = reinterpret_cast<REDUCE_F>(func_link.f);
 
 	auto count = vec.get_element_count();
-	rt_pod_t acc = init;
-	retain_value(backend, acc, type_t(init_value_type));
+	rt_pod_t accumulator = init;
+	retain_value(backend, accumulator, type_t(init_value_type));
 
 	for(int i = 0 ; i < count ; i++){
-		const auto element_value = vec.load_element(i);
-		const auto acc2 = (*f)(frp, acc, element_value, context);
+		const auto value = vec.load_element(i);
 
-		if(is_rc_value(backend.types, type_t(init_value_type))){
-			release_value(backend, acc, type_t(init_value_type));
+		rt_pod_t accumulator2 = make_uninitialized_magic();
+		if(func_link.machine == func_link_t::emachine::k_bytecode){
+			const rt_value_t f_args[] = {
+				rt_value_t(backend, type_t(r_type), accumulator, rt_value_t::rc_mode::bump),
+				rt_value_t(backend, type_t(e_type), value, rt_value_t::rc_mode::bump),
+				rt_value_t(backend, type_t(context_type), context, rt_value_t::rc_mode::bump)
+			};
+			const auto a = call_thunk(frp, rt_value_t(backend, f_value_type2, f_value, rt_value_t::rc_mode::bump), f_args, 3);
+			QUARK_ASSERT(a.check_invariant());
+			retain_value(backend, a._pod, a._type);
+
+			accumulator2 = a._pod;
 		}
-		acc = acc2;
+		else{
+			accumulator2 = (*f)(frp, accumulator, value, context);
+		}
+		if(is_rc_value(backend.types, type_t(init_value_type))){
+			release_value(backend, accumulator, type_t(init_value_type));
+		}
+		accumulator = accumulator2;
 	}
-	return acc;
+	return accumulator;
 }
-
-//	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
 
 //??? check type at compile time, not runtime.
 rt_pod_t intrinsic__reduce(
@@ -1368,123 +1433,6 @@ rt_pod_t intrinsic__reduce(
 
 /////////////////////////////////////////		stable_sort()
 
-
-
-typedef uint8_t (*stable_sort_F)(runtime_t* frp, rt_pod_t left_value, rt_pod_t right_value, rt_pod_t context_value);
-
-rt_pod_t intrinsic__stable_sort_carray(
-	runtime_t* frp,
-	rt_pod_t elements_vec,
-	rt_type_t elements_vec_type,
-	rt_pod_t f_value,
-	rt_type_t f_value_type,
-	rt_pod_t context_value,
-	rt_type_t context_value_type
-){
-	auto& backend = get_backend(frp);
-
-	const auto& types = backend.types;
-
-	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
-//	const auto& type1 = lookup_type_ref(backend, f_value_type);
-//	const auto& type2 = lookup_type_ref(backend, context_value_type);
-
-//	QUARK_ASSERT(check_stable_sort_func_type(type0, type1, type2));
-	QUARK_ASSERT(is_vector_carray(types, backend.config, type_t(elements_vec_type)));
-
-	const auto& elements = elements_vec;
-	const auto& f = f_value;
-	const auto& context = context_value;
-
-	const auto elements2 = from_runtime_value2(backend, elements, type0);
-
-	const auto& func_link = lookup_func_link_required(backend, f);
-	const auto f2 = reinterpret_cast<stable_sort_F>(func_link.f);
-
-	struct sort_functor_r {
-		bool operator() (const value_t &a, const value_t &b) {
-			auto& backend = get_backend(frp);
-
-			const auto left = to_runtime_value2(backend, a);
-			const auto right = to_runtime_value2(backend, b);
-			uint8_t result = (*f)(frp, left, right, context);
-
-			release_value(backend, left, a.get_type());
-			release_value(backend, right, b.get_type());
-
-			return result == 1 ? true : false;
-		}
-
-		runtime_t* frp;
-		rt_pod_t context;
-		stable_sort_F f;
-	};
-
-	const sort_functor_r sort_functor { frp, context, f2 };
-
-	auto mutate_inplace_elements = elements2.get_vector_value();
-	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
-	return to_runtime_value2(backend, value_t::make_vector_value(types, peek2(types, type0).get_vector_element_type(types), mutate_inplace_elements));
-}
-
-rt_pod_t intrinsic__stable_sort_hamt(
-	runtime_t* frp,
-	rt_pod_t elements_vec,
-	rt_type_t elements_vec_type,
-	rt_pod_t f_value,
-	rt_type_t f_value_type,
-	rt_pod_t context_value,
-	rt_type_t context_value_type
-){
-	auto& backend = get_backend(frp);
-
-	const auto& types = backend.types;
-
-	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
-//	const auto& type1 = lookup_type_ref(backend, f_value_type);
-//	const auto& type2 = lookup_type_ref(backend, context_value_type);
-
-//	QUARK_ASSERT(check_stable_sort_func_type(type0, type1, type2));
-	QUARK_ASSERT(is_vector_hamt(types, backend.config, type_t(elements_vec_type)));
-
-	const auto& elements = elements_vec;
-	const auto& f = f_value;
-	const auto& context = context_value;
-
-	const auto elements2 = from_runtime_value2(backend, elements, type0);
-
-	const auto& func_link = lookup_func_link_required(backend, f);
-	const auto f2 = reinterpret_cast<stable_sort_F>(func_link.f);
-
-	struct sort_functor_r {
-		bool operator() (const value_t &a, const value_t &b) {
-			auto& backend = get_backend(frp);
-
-			const auto left = to_runtime_value2(backend, a);
-			const auto right = to_runtime_value2(backend, b);
-			uint8_t result = (*f)(frp, left, right, context);
-
-			release_value(backend, left, a.get_type());
-			release_value(backend, right, b.get_type());
-
-			return result == 1 ? true : false;
-		}
-
-		runtime_t* frp;
-		rt_pod_t context;
-		stable_sort_F f;
-	};
-
-	const sort_functor_r sort_functor { frp, context, f2 };
-
-	auto mutate_inplace_elements = elements2.get_vector_value();
-	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
-
-	//??? optimize
-	const auto result = to_runtime_value2(backend, value_t::make_vector_value(types, peek2(types, type0).get_vector_element_type(types), mutate_inplace_elements));
-	return result;
-}
-
 //	[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
 
 //??? check type at compile time, not runtime.
@@ -1498,17 +1446,92 @@ rt_pod_t intrinsic__stable_sort(
 	rt_type_t context_value_type
 ){
 	auto& backend = get_backend(frp);
+	const auto& types = backend.types;
 
-//	const auto& type0 = lookup_type_ref(r.backend, elements_vec_type);
 	if(is_vector_carray(backend.types, backend.config, type_t(elements_vec_type))){
-		return intrinsic__stable_sort_carray(frp, elements_vec, elements_vec_type, f_value, f_value_type, context_value, context_value_type);
 	}
 	else if(is_vector_hamt(backend.types, backend.config, type_t(elements_vec_type))){
-		return intrinsic__stable_sort_hamt(frp, elements_vec, elements_vec_type, f_value, f_value_type, context_value, context_value_type);
 	}
 	else{
 		QUARK_ASSERT(false);
 		throw std::exception();
+	}
+
+	const auto& vec_t_type = lookup_type_ref(backend, elements_vec_type);
+	const auto t_type = vec_t_type.get_vector_element_type(types);
+	const auto& f_value_type2 = lookup_type_ref(backend, f_value_type);
+
+	const auto& func_link = lookup_func_link_required(backend, f_value);
+	const auto f2 = reinterpret_cast<stable_sort_F>(func_link.f);
+
+	//??? Expensive deep-copy of all elements!
+	const auto elements2 = from_runtime_value2(backend, elements_vec, vec_t_type);
+
+	if(func_link.machine == func_link_t::emachine::k_bytecode){
+		struct sort_functor_r {
+			bool operator() (const value_t &a, const value_t &b) {
+				auto& backend = get_backend(frp);
+
+				const auto left = to_runtime_value2(backend, a);
+				const auto right = to_runtime_value2(backend, b);
+
+				const rt_value_t f_args[] = {
+					rt_value_t(backend, t_type, left, rt_value_t::rc_mode::bump),
+					rt_value_t(backend, t_type, right, rt_value_t::rc_mode::bump),
+					rt_value_t(backend, context_type, context, rt_value_t::rc_mode::bump)
+				};
+				const auto result = call_thunk(frp, rt_value_t(backend, f_type, f_value, rt_value_t::rc_mode::bump), f_args, 3);
+				QUARK_ASSERT(result.check_invariant());
+				return result.get_bool_value();
+			}
+
+			runtime_t* frp;
+
+			rt_pod_t f_value;
+			type_t f_type;
+
+			type_t t_type;
+
+			rt_pod_t context;
+			type_t context_type;
+		};
+		const sort_functor_r sort_functor { frp, f_value, f_value_type2, t_type, context_value, type_t(context_value_type) };
+
+		auto mutate_inplace_elements = elements2.get_vector_value();
+		std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
+
+		//??? optimize
+		const auto result = to_runtime_value2(backend, value_t::make_vector_value(types, t_type, mutate_inplace_elements));
+		return result;
+	}
+	else{
+
+		struct sort_functor_r {
+			bool operator() (const value_t &a, const value_t &b) {
+				auto& backend = get_backend(frp);
+
+				const auto left = to_runtime_value2(backend, a);
+				const auto right = to_runtime_value2(backend, b);
+				uint8_t result = (*f)(frp, left, right, context);
+
+				release_value(backend, left, a.get_type());
+				release_value(backend, right, b.get_type());
+
+				return result == 1 ? true : false;
+			}
+
+			runtime_t* frp;
+			rt_pod_t context;
+			stable_sort_F f;
+		};
+		const sort_functor_r sort_functor { frp, context_value, f2 };
+
+		auto mutate_inplace_elements = elements2.get_vector_value();
+		std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
+
+		//??? optimize
+		const auto result = to_runtime_value2(backend, value_t::make_vector_value(types, t_type, mutate_inplace_elements));
+		return result;
 	}
 }
 
@@ -1635,6 +1658,7 @@ rt_pod_t intrinsic__bw_not(runtime_t* frp, rt_pod_t v){
 	const int64_t result = ~v.int_value;
 	return rt_pod_t { .int_value = result };
 }
+
 rt_pod_t intrinsic__bw_and(runtime_t* frp, rt_pod_t a, rt_pod_t b){
 #if DEBUG
 	auto& backend = get_backend(frp);
@@ -1644,6 +1668,7 @@ rt_pod_t intrinsic__bw_and(runtime_t* frp, rt_pod_t a, rt_pod_t b){
 	const int64_t result = a.int_value & b.int_value;
 	return rt_pod_t { .int_value = result };
 }
+
 rt_pod_t intrinsic__bw_or(runtime_t* frp, rt_pod_t a, rt_pod_t b){
 #if DEBUG
 	auto& backend = get_backend(frp);
@@ -1653,6 +1678,7 @@ rt_pod_t intrinsic__bw_or(runtime_t* frp, rt_pod_t a, rt_pod_t b){
 	const int64_t result = a.int_value | b.int_value;
 	return rt_pod_t { .int_value = result };
 }
+
 rt_pod_t intrinsic__bw_xor(runtime_t* frp, rt_pod_t a, rt_pod_t b){
 #if DEBUG
 	auto& backend = get_backend(frp);
@@ -1662,6 +1688,7 @@ rt_pod_t intrinsic__bw_xor(runtime_t* frp, rt_pod_t a, rt_pod_t b){
 	const int64_t result = a.int_value ^ b.int_value;
 	return rt_pod_t { .int_value = result };
 }
+
 rt_pod_t intrinsic__bw_shift_left(runtime_t* frp, rt_pod_t v, rt_pod_t count){
 #if DEBUG
 	auto& backend = get_backend(frp);
@@ -1671,6 +1698,7 @@ rt_pod_t intrinsic__bw_shift_left(runtime_t* frp, rt_pod_t v, rt_pod_t count){
 	const int64_t result = v.int_value << count.int_value;
 	return rt_pod_t { .int_value = result };
 }
+
 rt_pod_t intrinsic__bw_shift_right(runtime_t* frp, rt_pod_t v, rt_pod_t count){
 #if DEBUG
 	auto& backend = get_backend(frp);
@@ -1680,6 +1708,7 @@ rt_pod_t intrinsic__bw_shift_right(runtime_t* frp, rt_pod_t v, rt_pod_t count){
 	const int64_t result = v.int_value >> count.int_value;
 	return rt_pod_t { .int_value = result };
 }
+
 rt_pod_t intrinsic__bw_shift_right_arithmetic(runtime_t* frp, rt_pod_t v, rt_pod_t count){
 #if DEBUG
 	auto& backend = get_backend(frp);
@@ -1689,9 +1718,6 @@ rt_pod_t intrinsic__bw_shift_right_arithmetic(runtime_t* frp, rt_pod_t v, rt_pod
 	const int64_t result = v.int_value >> count.int_value;
 	return rt_pod_t { .int_value = result };
 }
-
-
-
 
 
 } // floyd

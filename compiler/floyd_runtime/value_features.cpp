@@ -40,26 +40,6 @@ int64_t analyse_samples(const int64_t* samples, int64_t count){
 
 
 
-std::string gen_to_string(value_backend_t& backend, rt_pod_t arg_value, type_t arg_type){
-	QUARK_ASSERT(backend.check_invariant());
-
-	const auto& types = backend.types;
-
-	if(peek2(types, arg_type).is_typeid()){
-		const auto value = from_runtime_value2(backend, arg_value, arg_type);
-		const auto type2 = value.get_typeid_value();
-		const auto type3 = peek2(types, type2);
-		const auto a = type_to_compact_string(types, type3);
-		return a;
-	}
-	else{
-		const auto value = from_runtime_value2(backend, arg_value, arg_type);
-		const auto a = to_compact_string2(backend.types, value);
-		return a;
-	}
-}
-
-
 
 
 
