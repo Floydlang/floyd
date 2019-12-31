@@ -194,7 +194,7 @@ static void trace_command_line_args(const command_line_args_t& v){
 				QUARK_TRACE_SS(e.first + ": [flag_missing_parameter] = " + e.second.parameter);
 			}
 			else{
-				QUARK_ASSERT(false);
+				quark::throw_defective_request();
 			}
 		}
 	}

@@ -168,7 +168,7 @@ llvm::Value* generate_floyd_call(
 		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_type){
 		}
 		else{
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 	}
 	QUARK_ASSERT(arg_regs.size() == callee_mapping.args.size());

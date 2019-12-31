@@ -82,12 +82,10 @@ static expression_t visit_ast_expression(visit_ast_t& acc, const expression_t& e
 
 
 		expression_t operator()(const expression_t::struct_definition_expr_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		expression_t operator()(const expression_t::function_definition_expr_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		expression_t operator()(const expression_t::load_t& e) const{
 			return expression;

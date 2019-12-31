@@ -388,7 +388,7 @@ QUARK_TEST("parser", "parse_string_literal()", "Escape \0", ""){
 QUARK_TEST("parser", "parse_character_literal()", "", ""){
 	try {
 		parse_character_literal(seq_t(R"('AB' xxx)"));
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 	catch(const compiler_error& e){
 		const auto w = e.what();
@@ -661,7 +661,7 @@ static std::pair<value_t, seq_t> parse_binary_literal(const seq_t& p) {
 QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 	try {
 		const auto a = parse_binary_literal(seq_t("0b xxx"));
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 	catch(...){
 	}
@@ -704,7 +704,7 @@ QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 	try {
 		const auto a = parse_binary_literal(seq_t("0b000011112 xxx"));
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 	catch(...){
 	}
@@ -712,7 +712,7 @@ QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 	try {
 		const auto a = parse_binary_literal(seq_t("0b00001111a xxx"));
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 	catch(...){
 	}
@@ -762,7 +762,7 @@ QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 	try {
 		const auto a = parse_binary_literal(seq_t("0b1'10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001 xxx"));
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 	catch(...){
 	}
@@ -865,7 +865,7 @@ QUARK_TEST("parser", "parse_hexadecimal_literal()", "", ""){
 QUARK_TEST("parser", "parse_binary_literal()", "", ""){
 	try {
 		const auto a = parse_hexadecimal_literal(seq_t("0xf'abcdef01'23456789 xxx"));
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 	catch(...){
 	}

@@ -775,7 +775,7 @@ struct interpreter_stack_t {
 				}
 			}
 			else if(symbol._symbol_type == symbol_t::symbol_type::immutable_arg){
-				QUARK_ASSERT(false);
+				quark::throw_defective_request();
 			}
 			else if(symbol._symbol_type == symbol_t::symbol_type::immutable_precalc){
 //				QUARK_ASSERT(ext == false || (type.is_json() && symbol._init.get_json().is_null()));
@@ -799,8 +799,7 @@ struct interpreter_stack_t {
 				}
 			}
 			else {
-				QUARK_ASSERT(false);
-				throw std::exception();
+				quark::throw_defective_request();
 			}
 		}
 		_current_static_frame = &frame;

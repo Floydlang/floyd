@@ -100,8 +100,7 @@ compilation_unit_t make_compilation_unit(const std::string& source_code, const s
 		return make_compilation_unit_nolib(source_code, source_path);
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 

@@ -230,6 +230,8 @@ inline void on_problem___put_breakpoint_here(){
 
 void throw_defective_request() QUARK_NO_RETURN;
 inline void throw_defective_request(){
+	on_problem___put_breakpoint_here();
+
 	QUARK_ASSERT(false);
 	throw std::exception();
 }
@@ -247,6 +249,8 @@ inline void throw_defective_request(){
 
 void throw_feature_not_implemented_yet() QUARK_NO_RETURN;
 inline void throw_feature_not_implemented_yet(){
+	on_problem___put_breakpoint_here();
+
 	QUARK_ASSERT(false);
 	throw std::exception();
 }

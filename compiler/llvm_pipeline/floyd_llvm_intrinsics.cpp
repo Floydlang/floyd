@@ -116,8 +116,7 @@ static bool matches_specialization(const config_t& config, const types_t& types,
 	}
 
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -140,8 +139,7 @@ static const llvm_codegen_function_type_t& codegen_lookup_specialization(
 		[&](const specialization_t& s) { return matches_specialization(config, types, s.required_arg_type, type); }
 	);
 	if(it == specialisations.end()){
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 	const auto& res = find_function_def_from_link_name(link_map, it->bind.name);
 	return res;
@@ -264,8 +262,7 @@ llvm::Value* generate_instrinsic_push_back(llvm_function_generator_t& gen_acc, c
 		);
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -438,8 +435,7 @@ llvm::Value* generate_instrinsic_update(llvm_function_generator_t& gen_acc, cons
 		);
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 

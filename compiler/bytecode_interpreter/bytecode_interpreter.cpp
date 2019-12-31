@@ -233,8 +233,7 @@ bc_static_frame_t::bc_static_frame_t(const types_t& types, const std::vector<bc_
 			_symbol_effective_type.push_back(type);
 		}
 		else {
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 	}
 
@@ -444,8 +443,7 @@ reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
 	}
 
 	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -553,8 +551,7 @@ type_t interpreter_t::runtime_basics__get_global_symbol_type(const std::string& 
 
 	const auto it = std::find_if(symbols._symbols.begin(), symbols._symbols.end(), [&s](const auto& e){ return e.first == s; });
 	if(it == symbols._symbols.end()){
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 
 	return it->second._value_type;
@@ -1089,8 +1086,7 @@ static cif_t make_cif(const value_backend_t& backend, const type_t& function_typ
 	result.return_type = return_type_peek.is_any() ? make_ffi_type(type_t::make_int()) : make_ffi_type(return_type_peek);
 
 	if (ffi_prep_cif(&result.cif, FFI_DEFAULT_ABI, (int)result.arg_types.size(), result.return_type, &result.arg_types[0]) != FFI_OK) {
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 	return result;
 }
@@ -1254,7 +1250,7 @@ rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_val
 	const auto& func_link = *func_link_ptr;
 
 	if(func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc){
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 
 		//	arity
 //		QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
@@ -1276,7 +1272,7 @@ rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_val
 
 		for(int i = 0 ; i < arg_count; i++){
 			if(peek2(types, args[i]._type) != peek2(types, arg_types[i])){
-				QUARK_ASSERT(false);
+				quark::throw_defective_request();
 			}
 		}
 #endif
@@ -2197,8 +2193,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 
 		default:
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			quark::throw_defective_request();
 		}
 		pc++;
 

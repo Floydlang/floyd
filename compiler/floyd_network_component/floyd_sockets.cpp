@@ -235,7 +235,7 @@ ip_address_t from_ipv4_dotted_decimal_string(const std::string& s){
 	int r = ::inet_aton(s.c_str(), &result);
 
 	if(r == 0){
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 		throw std::runtime_error("inet_aton() failed");
 	}
 	return ip_address_t { result };

@@ -91,8 +91,7 @@ static std::pair<bool, uint32_t> sysctlbyname_uint32(const std::string& key){
 		return { true, static_cast<uint32_t>(result64) };
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 

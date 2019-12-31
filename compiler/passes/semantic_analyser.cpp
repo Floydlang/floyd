@@ -397,7 +397,7 @@ static const type_t figure_out_callee_return_type(analyser_t& a, const statement
 
 
 		default:
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 			break;
 	}
 }
@@ -916,12 +916,10 @@ static std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(con
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::assign2_t& s) const{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			quark::throw_defective_request();
 		}
 		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::init2_t& s) const{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			quark::throw_defective_request();
 		}
 		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::block_statement_t& s) const{
 			const auto e = analyse_block_statement(a, statement, return_type);
@@ -2520,8 +2518,7 @@ static std::pair<analyser_t, expression_t> analyse_function_definition_expressio
 			return { a_acc, r };
 		}
 		std::pair<analyser_t, expression_t> operator()(const function_definition_t::host_func_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 	};
 	const auto result = std::visit(visitor_t{ a_acc, func_def_expr.second, *func_def_expr2 }, func_def_expr2->def._contents);
@@ -2559,8 +2556,7 @@ static std::pair<analyser_t, expression_t> analyse_expression__operation_specifi
 			return analyse_call_expression(a, parent, e, expr);
 		}
 		std::pair<analyser_t, expression_t> operator()(const expression_t::intrinsic_t& expr) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 
 
@@ -2581,9 +2577,7 @@ static std::pair<analyser_t, expression_t> analyse_expression__operation_specifi
 			return analyse_resolve_member_expression(a, parent, e, expr);
 		}
 		std::pair<analyser_t, expression_t> operator()(const expression_t::update_member_t& expr) const{
-			QUARK_ASSERT(false);
-//			return analyse_resolve_member_expression(a, parent, e, expr);
-			return { a, e };
+			quark::throw_defective_request();
 		}
 		std::pair<analyser_t, expression_t> operator()(const expression_t::lookup_t& expr) const{
 			return analyse_lookup_element_expression(a, parent, e, expr);
@@ -2690,8 +2684,7 @@ static std::pair<analyser_t, expression_t> analyse_expression_to_target(const an
 	else if(e4_output_type == target_type0){
 	}
 	else if(e4_output_type.is_undefined()){
-		QUARK_ASSERT(false);
-		throw_compiler_error(parent.location, "Expression type mismatch.");
+		quark::throw_defective_request();
 	}
 	else{
 		std::stringstream what;

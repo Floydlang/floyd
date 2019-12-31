@@ -95,7 +95,7 @@ bool json_t::check_invariant() const {
 		QUARK_ASSERT(_number == 0.0);
 	}
 	else{
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 	return true;
 }
@@ -408,8 +408,7 @@ bool exists_in(const json_t& parent, const std::vector<json_t>& path){
 			);
 		}
 		else{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			quark::throw_defective_request();
 		}
 	}
 	else if(parent.is_array()){
@@ -426,8 +425,7 @@ bool exists_in(const json_t& parent, const std::vector<json_t>& path){
 			);
 		}
 		else{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			quark::throw_defective_request();
 		}
 	}
 	else{
@@ -489,8 +487,7 @@ json_t get_in(const json_t& parent, const std::vector<json_t>& path){
 			);
 		}
 		else{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			quark::throw_defective_request();
 		}
 	}
 	else if(parent.is_array()){
@@ -507,8 +504,7 @@ json_t get_in(const json_t& parent, const std::vector<json_t>& path){
 			);
 		}
 		else{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			quark::throw_defective_request();
 		}
 	}
 	else{
@@ -711,8 +707,7 @@ json_t assoc_in(const json_t& parent, const std::vector<json_t>& path, const jso
 			return store_object_member(parent, member_name, member_value2);
 		}
 		else{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			quark::throw_defective_request();
 		}
 	}
 	else if(parent.is_array()){
@@ -737,13 +732,11 @@ json_t assoc_in(const json_t& parent, const std::vector<json_t>& path, const jso
 			return json_t(array2);
 		}
 		else{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			quark::throw_defective_request();
 		}
 	}
 	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -1215,8 +1208,7 @@ std::string json_to_compact_string2(const json_t& v, bool quote_fields){
 		return "null";
 	}
 	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -1423,8 +1415,7 @@ static std::string json_to_pretty_string_internal(const string& key, const json_
 		return string(indent, '\t') + key_str + "null";
 	}
 	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
+		quark::throw_defective_request();
 	}
 }
 

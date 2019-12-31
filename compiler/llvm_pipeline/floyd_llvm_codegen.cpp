@@ -320,10 +320,10 @@ static llvm::Value* generate_llvm_simple_constant_value(llvm_function_generator_
 			return llvm::ConstantPointerNull::get(ptr_type);
 		}
 		llvm::Value* operator()(const symbol_ref_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const named_type_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			quark::throw_defective_request();
 		}
 	};
 	return std::visit(visitor_t{ gen_acc, builder, context, itype, value }, get_type_variant(types, type));
@@ -399,8 +399,7 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_genera
 					}
 				}
 				else if(symbol._symbol_type == symbol_t::symbol_type::immutable_arg){
-					QUARK_ASSERT(false);
-					throw std::exception();
+					quark::throw_defective_request();
 				}
 				else if(symbol._symbol_type == symbol_t::symbol_type::immutable_precalc){
 					QUARK_ASSERT(symbol._init.is_undefined() == false);
@@ -423,8 +422,7 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_genera
 					}
 				}
 				else{
-					QUARK_ASSERT(false);
-					throw std::exception();
+					quark::throw_defective_request();
 				}
 				const auto debug_str = "<LOCAL> name:" + symbol_kv.first + " symbol_t: " + symbol_to_string(types, symbol);
 				return make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_local, symbol_kv.first, symbol_kv.second);
@@ -703,8 +701,7 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 		return result_reg;
 	}
 	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
+		quark::throw_defective_request();
 	}
 	return nullptr;
 }
@@ -793,7 +790,7 @@ static llvm::Value* generate_arithmetic_expression(llvm_function_generator_t& ge
 			UNSUPPORTED();
 		}
 		else{
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 	}
 	else if(type_peek.is_string() || type_peek.is_vector()){
@@ -962,7 +959,7 @@ static llvm::Value* generate_bitwize_expression(llvm_function_generator_t& gen_a
 			return gen_acc.get_builder().CreateNot(a);
 		}
 		else{
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 	}
 	else if(operands.size() == 2){
@@ -973,7 +970,7 @@ static llvm::Value* generate_bitwize_expression(llvm_function_generator_t& gen_a
 		auto b = generate_expression(gen_acc, operands[1]);
 
 		if(op == bitwize_operator::bw_not){
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 		else if(op == bitwize_operator::bw_and){
 			return gen_acc.get_builder().CreateAnd(a, b);
@@ -995,11 +992,11 @@ static llvm::Value* generate_bitwize_expression(llvm_function_generator_t& gen_a
 			return gen_acc.get_builder().CreateAShr(a, b);
 		}
 		else{
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 	}
 	else{
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 	throw std::exception();
 }
@@ -1383,9 +1380,8 @@ static llvm::Value* generate_intrinsic_expression(llvm_function_generator_t& gen
 
 
 	else{
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
-	throw std::exception();
 }
 
 static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc, const expression_t::value_constructor_t& details){
@@ -1456,8 +1452,7 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 		return vec_ptr_reg;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -1815,16 +1810,13 @@ static llvm::Value* generate_expression(llvm_function_generator_t& gen_acc, cons
 
 
 		llvm::Value* operator()(const expression_t::struct_definition_expr_t& expr) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const expression_t::function_definition_expr_t& expr) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const expression_t::load_t& expr) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const expression_t::load2_t& expr) const{
 			//	No need / must not load function arguments.
@@ -2261,8 +2253,7 @@ static llvm::Value* generate_global(llvm_function_generator_t& gen_acc, const st
 		return generate_global0(module, symbol_name, *itype, nullptr);
 	}
 	else if(symbol._symbol_type == symbol_t::symbol_type::immutable_arg){
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 	else if(symbol._symbol_type == symbol_t::symbol_type::immutable_precalc){
 		QUARK_ASSERT(symbol._init.is_undefined() == false);
@@ -2286,8 +2277,7 @@ static llvm::Value* generate_global(llvm_function_generator_t& gen_acc, const st
 		return generate_global0(module, symbol_name, *itype, nullptr);
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -2480,8 +2470,7 @@ static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const 
 				else if(e.symbol._symbol_type == symbol_t::symbol_type::mutable_reserve){
 				}
 				else{
-					QUARK_ASSERT(false);
-					throw std::exception();
+					quark::throw_defective_request();
 				}
 */
 				if(e.symtype == resolved_symbol_t::esymtype::k_global || e.symtype == resolved_symbol_t::esymtype::k_local){

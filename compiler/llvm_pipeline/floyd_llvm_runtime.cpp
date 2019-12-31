@@ -130,8 +130,7 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const module_symbol_t& n
 	if(f != nullptr){
 		const auto def = find_function_by_name2(ee.backend, name);
 		if(def == nullptr){
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		const auto function_type = def->function_type_optional;
 		return llvm_bind_t {
@@ -621,8 +620,7 @@ type_t llvm_process_t::runtime_basics__get_global_symbol_type(const std::string&
 }
 
 rt_value_t llvm_process_t::runtime_basics__call_thunk(const rt_value_t& f, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(false);
-	throw std::exception();
+	quark::throw_defective_request();
 }
 
 

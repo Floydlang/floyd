@@ -132,7 +132,7 @@ bool check_invariant__function(const llvm::Function* f){
 		QUARK_TRACE_SS("================================================================================");
 		QUARK_TRACE_SS("\n" << stream2.str());
 
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 	return !errors;
 }
@@ -152,8 +152,7 @@ bool check_invariant__module(llvm::Module* module){
 			llvm::verifyFunction(e);
 		}
 
-		QUARK_ASSERT(false);
-		return false;
+		quark::throw_defective_request();
 	}
 
 	return true;
@@ -413,7 +412,7 @@ llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const l
 			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(type_lookup), "");
 		}
 		llvm::Value* operator()(const symbol_ref_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const named_type_t& e) const {
 			return generate_cast_to_runtime_value2(builder, type_lookup, value, peek2(type_lookup.state.types, type));
@@ -478,7 +477,7 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const
 			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, get_llvm_type_as_arg(type_lookup, type), "");
 		}
 		llvm::Value* operator()(const symbol_ref_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const named_type_t& e) const {
 			return generate_cast_from_runtime_value2(builder, type_lookup, runtime_value_reg, peek2(type_lookup.state.types, type));

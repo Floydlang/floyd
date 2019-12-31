@@ -121,8 +121,7 @@ llvm::Value* generate_allocate_vector(llvm_function_generator_t& gen_acc, const 
 		n = "allocate_vector_hamt";
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 
 	const auto res = resolve_func(gen_acc.gen.link_map, module_symbol_t(n));
@@ -145,8 +144,7 @@ static rt_pod_t floydrt_allocate_vector_fill(runtime_t* frp, rt_type_t type, rt_
 		return alloc_vector_hamt(backend.heap, element_count, element_count, type_t(type));
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -279,8 +277,7 @@ static const rt_pod_t floydrt_allocate_dict(runtime_t* frp, rt_type_t type){
 		return alloc_dict_hamt(backend.heap, type_t(type));
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -988,7 +985,7 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
 			else{
-				QUARK_ASSERT(false);
+				quark::throw_defective_request();
 			}
 		}
 		else if(type_peek.is_dict()){
@@ -1001,7 +998,7 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg }, "");
 			}
 			else{
-				QUARK_ASSERT(false);
+				quark::throw_defective_request();
 			}
 		}
 		else if(type_peek.is_json()){
@@ -1014,7 +1011,7 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, generic_vec_reg, &itype_reg }, "");
 		}
 		else{
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 	}
 	else{
@@ -1227,7 +1224,7 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}
 			else{
-				QUARK_ASSERT(false);
+				quark::throw_defective_request();
 			}
 		}
 		else if(peek.is_dict()){
@@ -1240,7 +1237,7 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 				builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 			}
 			else{
-				QUARK_ASSERT(false);
+				quark::throw_defective_request();
 			}
 		}
 		else if(peek.is_json()){
@@ -1252,7 +1249,7 @@ void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg
 			builder.CreateCall(res.llvm_codegen_f, { &frp_reg, &value_reg, &itype_reg });
 		}
 		else{
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 	}
 	else{

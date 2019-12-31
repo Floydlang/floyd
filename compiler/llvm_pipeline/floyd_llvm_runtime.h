@@ -147,8 +147,7 @@ struct route_t : public runtime_basics_i, runtime_process_i {
 		QUARK_ASSERT(_symbol_table != nullptr);
 	}
 	rt_value_t runtime_basics__call_thunk(const rt_value_t& f, const rt_value_t args[], int arg_count) override {
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 
 

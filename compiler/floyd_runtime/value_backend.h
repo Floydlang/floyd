@@ -1089,8 +1089,7 @@ inline int32_t dec_rc(const heap_alloc_64_t& alloc){
 	const auto rc2 = prev_rc - 1;
 
 	if(rc2 < 0){
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 
 	return rc2;

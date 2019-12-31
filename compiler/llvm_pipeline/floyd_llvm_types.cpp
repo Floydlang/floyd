@@ -46,8 +46,7 @@ llvm::Type* deref_ptr(llvm::Type* type){
   		return element_type;
 	}
 	else{
-		QUARK_ASSERT(false);
-		return type;
+		quark::throw_defective_request();
 	}
 }
 
@@ -92,7 +91,7 @@ llvm_function_signature_t name_args(const llvm_function_signature_t& def, const 
 				arg_copy.floyd_name = arg_name + "-dyntype";
 			}
 			else{
-				QUARK_ASSERT(false);
+				quark::throw_defective_request();
 			}
 			arg_results.push_back(arg_copy);
 		}

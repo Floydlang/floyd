@@ -369,7 +369,7 @@ static void generate_copy_value_local_global(
 	const auto dest_reg_normalized = normalize_symbol_pos(dest_reg, gen._scope_stack.size());
 
 	if(source_reg_normalized == dest_reg_normalized){
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 	else {
 		const auto& types = gen._ast_imm->_tree._types;
@@ -614,12 +614,10 @@ static void generate_block_statements(bcgenerator_t& gen, const std::vector<stat
 				}
 
 				void operator()(const statement_t::bind_local_t& s) const{
-					QUARK_ASSERT(false);
-					quark::throw_exception();
+					quark::throw_defective_request();
 				}
 				void operator()(const statement_t::assign_t& s) const{
-					QUARK_ASSERT(false);
-					quark::throw_exception();
+					quark::throw_defective_request();
 				}
 				void operator()(const statement_t::assign2_t& s) const{
 					generate_assign2_statement(_gen, s);
@@ -982,8 +980,7 @@ static gen_expr_out_t generate_lookup_element_expression(
 			return bc_opcode::k_lookup_element_dict_w_external_values;
 		}
 		else{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			quark::throw_defective_request();
 		}
 	}();
 
@@ -1341,9 +1338,8 @@ static gen_expr_out_t generate_intrinsic_expression(
 
 
 	else{
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
-	throw std::exception();
 }
 
 //??? Submit dest-register to all gen-functions = minimize temps.
@@ -1479,8 +1475,7 @@ static gen_expr_out_t generate_arithmetic_unary_minus_expression(
 		return generate_expression(gen, target_reg, e2);
 	}
 	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -1718,8 +1713,7 @@ static gen_expr_out_t generate_arithmetic_expression(
 			return conv_opcode.at(details.op);
 		}
 		else{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			quark::throw_defective_request();
 		}
 	}();
 
@@ -1804,16 +1798,13 @@ static gen_expr_out_t generate_expression(
 		}
 
 		gen_expr_out_t operator()(const expression_t::struct_definition_expr_t& expr) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		gen_expr_out_t operator()(const expression_t::function_definition_expr_t& expr) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		gen_expr_out_t operator()(const expression_t::load_t& expr) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		gen_expr_out_t operator()(const expression_t::load2_t& expr) const{
 			return generate_load2_expression(gen, target_reg, e, expr);

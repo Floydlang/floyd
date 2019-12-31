@@ -108,7 +108,7 @@ struct symbol_t {
 			QUARK_ASSERT(_init.is_undefined());
 		}
 		else{
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 		return true;
 	}

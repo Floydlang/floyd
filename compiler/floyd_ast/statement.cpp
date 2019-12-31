@@ -36,8 +36,7 @@ static std::string symbol_type_to_string(symbol_t::symbol_type type){
 		case symbol_t::symbol_type::mutable_reserve:
 			return "mutable_reserve";
 		default:
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 	}
 }
 
@@ -62,8 +61,7 @@ static symbol_t::symbol_type symbol_type_from_string(const std::string& s){
 		return symbol_t::symbol_type::mutable_reserve;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 

@@ -193,7 +193,7 @@ bool heap_alloc_64_t::check_invariant() const{
 			QUARK_ASSERT(this->alloc_id >= k_alloc_start_id && this->alloc_id < heap->allocation_id_generator);
 		}
 		else{
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 	}
 	return true;
@@ -898,10 +898,10 @@ rt_pod_t load_via_ptr2(const types_t& types, const void* value_ptr, const type_t
 			return *static_cast<const rt_pod_t*>(value_ptr);
 		}
 		rt_pod_t operator()(const symbol_ref_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			quark::throw_defective_request();
 		}
 		rt_pod_t operator()(const named_type_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			quark::throw_defective_request();
 		}
 	};
 	return std::visit(visitor_t{ value_ptr }, get_type_variant(types, type));
@@ -957,10 +957,10 @@ void store_via_ptr2(const types_t& types, void* value_ptr, const type_t& type, c
 			*static_cast<rt_pod_t*>(value_ptr) = value;
 		}
 		void operator()(const symbol_ref_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			quark::throw_defective_request();
 		}
 		void operator()(const named_type_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			quark::throw_defective_request();
 		}
 	};
 	std::visit(visitor_t{ value_ptr, value }, get_type_variant(types, type_peek));
@@ -1282,7 +1282,7 @@ rt_value_t::rt_value_t(value_backend_t& backend, const type_t& type, const rt_po
 		retain_value(backend, internals, type);
 	}
 	else{
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 
 	QUARK_ASSERT(check_invariant());
@@ -1364,8 +1364,7 @@ const immer::vector<rt_value_t> get_vector_elements(value_backend_t& backend, co
 		return elements;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -1416,8 +1415,7 @@ rt_value_t make_vector_value(value_backend_t& backend, const type_t& element_typ
 		return result2;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -1451,8 +1449,7 @@ const immer::map<std::string, rt_value_t> get_dict_values(value_backend_t& backe
 		return values;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -1493,8 +1490,7 @@ rt_value_t make_dict_value(value_backend_t& backend, const type_t& value_type, c
 		return result2;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -1924,7 +1920,7 @@ bool check_invariant(const value_backend_t& backend, rt_pod_t value, const type_
 			QUARK_ASSERT(a.check_invariant());
 		}
 		else{
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 	}
 	else{
@@ -2293,7 +2289,7 @@ void retain_value(value_backend_t& backend, rt_pod_t value, type_t type){
 			retain_struct(backend, value, type);
 		}
 		else{
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 	}
 
@@ -2361,7 +2357,7 @@ void release_dict(value_backend_t& backend, rt_pod_t dict, type_t type){
 		release_dict_hamt(backend, dict, type);
 	}
 	else{
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 
 	QUARK_ASSERT(backend.check_invariant());
@@ -2460,7 +2456,7 @@ void release_vec(value_backend_t& backend, rt_pod_t vec, type_t type){
 		}
 	}
 	else{
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 
 	QUARK_ASSERT(backend.check_invariant());
@@ -2739,8 +2735,7 @@ rt_pod_t to_runtime_vector(value_backend_t& backend, const value_t& value){
 		return result;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -2783,8 +2778,7 @@ value_t from_runtime_vector(const value_backend_t& backend, const rt_pod_t encod
 		return val;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -2826,8 +2820,7 @@ rt_pod_t to_runtime_dict(value_backend_t& backend, const dict_t& exact_type, con
 		return result;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -2866,8 +2859,7 @@ value_t from_runtime_dict(const value_backend_t& backend, const rt_pod_t encoded
 		return val;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -2926,7 +2918,7 @@ rt_pod_t to_runtime_value2(value_backend_t& backend, const value_t& value){
 			return rt_pod_t { .function_link_id = id };
 		}
 		rt_pod_t operator()(const symbol_ref_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			quark::throw_defective_request();
 		}
 		rt_pod_t operator()(const named_type_t& e) const {
 			const auto temp = value_t::replace_logical_type(value, peek2(backend.types, value.get_type()));
@@ -3000,7 +2992,7 @@ value_t from_runtime_value2(const value_backend_t& backend, const rt_pod_t encod
 			return value_t::make_function_value(backend.types, type, func_link_ptr ? func_link_ptr->module_symbol : k_no_module_symbol);
 		}
 		value_t operator()(const symbol_ref_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			quark::throw_defective_request();
 		}
 		value_t operator()(const named_type_t& e) const {
 			const auto result = from_runtime_value2(backend, encoded_value, e.destination_type);
@@ -3045,12 +3037,11 @@ static rt_pod_t make_runtime_non_rc(const value_t& value){
 		return make_runtime_typeid(t0);
 	}
 	else if(type.is_json() && value.get_json().is_null()){
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 		return rt_pod_t { .json_ptr = nullptr };
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 rt_value_t make_non_rc(const value_t& value){
@@ -3359,8 +3350,7 @@ static int bc_compare_dicts_obj(const types_t& types, const immer::map<std::stri
 	else if(left_it != left_end_it && right_it == right_end_it){
 		return -1;
 	}
-	QUARK_ASSERT(false)
-	quark::throw_exception();
+	quark::throw_defective_request()
 }
 
 //??? make template.
@@ -3398,8 +3388,7 @@ static int bc_compare_dicts_bool(const immer::map<std::string, bc_inplace_value_
 	else if(left_it != left_end_it && right_it == right_end_it){
 		return -1;
 	}
-	QUARK_ASSERT(false)
-	quark::throw_exception();
+	quark::throw_defective_request()
 }
 
 static int bc_compare_dicts_int(const immer::map<std::string, bc_inplace_value_t>& left, const immer::map<std::string, bc_inplace_value_t>& right){
@@ -3436,8 +3425,7 @@ static int bc_compare_dicts_int(const immer::map<std::string, bc_inplace_value_t
 	else if(left_it != left_end_it && right_it == right_end_it){
 		return -1;
 	}
-	QUARK_ASSERT(false)
-	quark::throw_exception();
+	quark::throw_defective_request()
 }
 
 static int bc_compare_dicts_double(const immer::map<std::string, bc_inplace_value_t>& left, const immer::map<std::string, bc_inplace_value_t>& right){
@@ -3474,8 +3462,7 @@ static int bc_compare_dicts_double(const immer::map<std::string, bc_inplace_valu
 	else if(left_it != left_end_it && right_it == right_end_it){
 		return -1;
 	}
-	QUARK_ASSERT(false)
-	quark::throw_exception();
+	quark::throw_defective_request();
 }
 
 static int bc_compare_jsons(const json_t& lhs, const json_t& rhs){
@@ -3491,14 +3478,10 @@ static int bc_compare_jsons(const json_t& lhs, const json_t& rhs){
 		}
 		else{
 			if(lhs.is_object()){
-				//??? NOT IMPLEMENTED YET
-				QUARK_ASSERT(false);
-				quark::throw_exception();
+				quark::throw_feature_not_implemented_yet();
 			}
 			else if(lhs.is_array()){
-				//??? NOT IMPLEMENTED YET
-				QUARK_ASSERT(false);
-				quark::throw_exception();
+				quark::throw_feature_not_implemented_yet();
 			}
 			else if(lhs.is_string()){
 				const auto diff = std::strcmp(lhs.get_string().c_str(), rhs.get_string().c_str());
@@ -3519,8 +3502,7 @@ static int bc_compare_jsons(const json_t& lhs, const json_t& rhs){
 				return 0;
 			}
 			else{
-				QUARK_ASSERT(false);
-				quark::throw_exception();
+				quark::throw_defective_request();
 			}
 		}
 	}
@@ -3627,12 +3609,11 @@ int compare_value_true_deep(value_backend_t& backend, const rt_value_t& left, co
 		}
 	}
 	else if(peek2(types, type).is_function()){
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 		return 0;
 	}
 	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
+		quark::throw_defective_request();
 	}
 }
 #endif
@@ -3676,8 +3657,7 @@ int compare_values(value_backend_t& backend, int64_t op, const rt_type_t type, r
 		return result != 0 ? 1 : 0;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -4294,8 +4274,7 @@ bool exists_dict_value(value_backend_t& backend, rt_pod_t coll_value, rt_type_t 
 		return it != nullptr ? 1 : 0;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -4348,8 +4327,7 @@ rt_pod_t erase_dict_value(value_backend_t& backend, rt_pod_t coll_value, rt_type
 		return dict2;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -4368,8 +4346,7 @@ rt_pod_t get_keys(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_
 			return get_keys__cppmap_hamt(backend, coll_value, coll_type);
 		}
 		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 	}
 	else if(is_dict_hamt(types, backend.config, type0)){
@@ -4380,13 +4357,11 @@ rt_pod_t get_keys(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_
 			return get_keys__hamtmap_hamt(backend, coll_value, coll_type);
 		}
 		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -4609,8 +4584,7 @@ rt_pod_t concatunate_vectors(value_backend_t& backend, const type_t& type, rt_po
 		return concat_vector_hamt(backend, type, lhs, rhs);
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -4630,8 +4604,7 @@ uint64_t get_vector_size(value_backend_t& backend, const type_t& vector_type, rt
 		return vec.vector_hamt_ptr->get_element_count();
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -4663,8 +4636,7 @@ rt_pod_t lookup_vector_element(value_backend_t& backend, const type_t& vector_ty
 		return vec.vector_hamt_ptr->load_element(index);
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -4715,8 +4687,7 @@ rt_pod_t lookup_dict(value_backend_t& backend, rt_pod_t dict, const type_t& dict
 		return lookup_dict_cppmap(backend, dict, dict_type, key);
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -4735,8 +4706,7 @@ uint64_t get_dict_size(value_backend_t& backend, const type_t& dict_type, rt_pod
 		return dict.dict_cppmap_ptr->size();
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -4829,8 +4799,7 @@ rt_pod_t push_back_vector_element(value_backend_t& backend, rt_pod_t vec, const 
 		}
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 

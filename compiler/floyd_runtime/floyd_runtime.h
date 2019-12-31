@@ -84,14 +84,14 @@ struct route_process_handler_t : public runtime_process_i {
 	}
 
 	void runtime_process__on_send_message(const std::string& dest_process_id, const rt_pod_t& message, const type_t& message_type) override {
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 	void runtime_process__on_exit_process() override {
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 
 	type_t runtime_process__get_global_symbol_type(const std::string& s) override {
-		QUARK_ASSERT(false); return type_t::make_undefined();
+		quark::throw_defective_request(); return type_t::make_undefined();
 	}
 
 

@@ -32,13 +32,11 @@ value_t unflatten_json_to_specific_type(types_t& types, const json_t& v, const t
 			quark::throw_runtime_error("Invalid json schema, found null - unsupported by Floyd.");
 		}
 		value_t operator()(const any_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 
 		value_t operator()(const void_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		value_t operator()(const bool_t& e) const{
 			if(v.is_true()){
@@ -138,7 +136,7 @@ value_t unflatten_json_to_specific_type(types_t& types, const json_t& v, const t
 			quark::throw_runtime_error("Invalid json schema, cannot unflatten functions.");
 		}
 		value_t operator()(const symbol_ref_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			quark::throw_defective_request();
 		}
 		value_t operator()(const named_type_t& e) const {
 			return unflatten_json_to_specific_type(types, v, e.destination_type);

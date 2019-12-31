@@ -252,12 +252,10 @@ static rt_value_t update_element(value_backend_t& backend, const rt_value_t& obj
 	else if(obj1_peek.is_json()){
 		const auto json0 = obj1.get_json();
 		if(json0.is_array()){
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		else if(json0.is_object()){
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		else{
 			quark::throw_runtime_error("Can only update string, vector, dict or struct.");
@@ -602,7 +600,7 @@ rt_pod_t intrinsic__map__carray(runtime_t* frp, rt_pod_t elements_vec, rt_type_t
 			result_vec.vector_carray_ptr->get_element_ptr()[i] = a;
 		}
 		else{
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 	}
 	return result_vec;
@@ -650,7 +648,7 @@ rt_pod_t intrinsic__map__hamt(runtime_t* frp, rt_pod_t elements_vec, rt_type_t e
 			result_vec.vector_hamt_ptr->store_mutate(i, a);
 		}
 		else{
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 	}
 	return result_vec;
@@ -675,8 +673,7 @@ rt_pod_t intrinsic__map(runtime_t* frp, rt_pod_t elements_vec, rt_type_t element
 		return intrinsic__map__hamt(frp, elements_vec, elements_vec_type, f_value, f_type, context_value, context_type, vec_r_type.get_data());
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -930,7 +927,7 @@ rt_pod_t intrinsic__map_dag__carray(
 				result1 = (*f2)(frp, e, solved_deps3, context);
 			}
 			else{
-				QUARK_ASSERT(false);
+				quark::throw_defective_request();
 			}
 
 			//	Warning: optimization trick.
@@ -1079,7 +1076,7 @@ rt_pod_t intrinsic__map_dag__hamt(
 				result1 = (*f2)(frp, e, solved_deps3, context);
 			}
 			else{
-				QUARK_ASSERT(false);
+				quark::throw_defective_request();
 			}
 
 			//	Warning: optimization trick.
@@ -1131,8 +1128,7 @@ rt_pod_t intrinsic__map_dag(
 		return intrinsic__map_dag__hamt(frp, elements_vec, elements_vec_type, depends_on_vec, depends_on_vec_type, f_value, f_value_type, context, context_type);
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -1193,8 +1189,7 @@ rt_pod_t intrinsic__filter_carray(
 			keep = (*f)(frp, value, context);
 		}
 		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 
 		if(keep.bool_value != 0){
@@ -1267,8 +1262,7 @@ rt_pod_t intrinsic__filter_hamt(
 			keep = (*f)(frp, value, context);
 		}
 		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 
 		if(keep.bool_value != 0){
@@ -1306,8 +1300,7 @@ rt_pod_t intrinsic__filter(
 		return intrinsic__filter_hamt(frp, elements_vec, elements_vec_type, f_value, f_value_type, arg2_value, arg2_type);
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -1372,8 +1365,7 @@ rt_pod_t intrinsic__reduce_carray(
 			accumulator2 = (*f)(frp, accumulator, value, context);
 		}
 		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 
 		if(is_rc_value(backend.types, type_t(init_value_type))){
@@ -1439,8 +1431,7 @@ rt_pod_t intrinsic__reduce_hamt(
 			accumulator2 = (*f)(frp, accumulator, value, context);
 		}
 		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 
 		if(is_rc_value(backend.types, type_t(init_value_type))){
@@ -1472,8 +1463,7 @@ rt_pod_t intrinsic__reduce(
 		return intrinsic__reduce_hamt(frp, elements_vec, elements_vec_type, init_value, init_value_type, f_value, f_type, context, context_type);
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -1500,8 +1490,7 @@ rt_pod_t intrinsic__stable_sort(
 	else if(is_vector_hamt(backend.types, backend.config, type_t(elements_vec_type))){
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 
 	const auto& vec_t_type = lookup_type_ref(backend, elements_vec_type);
@@ -1582,8 +1571,7 @@ rt_pod_t intrinsic__stable_sort(
 		return result;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
