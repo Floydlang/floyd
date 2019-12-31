@@ -1178,7 +1178,7 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 //	This is a floyd function, with a frame_ptr to execute.
 //	The arguments are already on the floyd stack.
 //	Returns the call's return value or void.
-static rt_value_t call_bc2(interpreter_t& vm, const func_link_t& func_link, int callee_arg_count){
+static rt_value_t open_frame_and_make_call(interpreter_t& vm, const func_link_t& func_link, int callee_arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	const auto& backend = vm._backend;
 	const auto& types = backend.types;
@@ -1205,7 +1205,6 @@ static rt_value_t call_bc2(interpreter_t& vm, const func_link_t& func_link, int 
 	}
 }
 
-
 //	This is a floyd function, with a frame_ptr to execute.
 //	The arguments are already on the floyd stack.
 static void call_bc(interpreter_t& vm, int target_reg, const func_link_t& func_link, int callee_arg_count){
@@ -1224,7 +1223,7 @@ static void call_bc(interpreter_t& vm, int target_reg, const func_link_t& func_l
 	//	We need to remember the global pos where to store return value, since we're switching frame to call function.
 	int result_reg_pos = static_cast<int>(stack._current_frame_start_ptr - &stack._entries[0]) + target_reg;
 
-	const auto result = call_bc2(vm, func_link, callee_arg_count);
+	const auto result = open_frame_and_make_call(vm, func_link, callee_arg_count);
 
 	const auto return_type_peek = peek2(types, return_type);
 	if(return_type_peek.is_void() == false){
@@ -1234,7 +1233,6 @@ static void call_bc(interpreter_t& vm, int target_reg, const func_link_t& func_l
 	}
 }
 
-//	We need to examine the callee, since we support magic argument lists of varying size.
 static void do_call_instruction(interpreter_t& vm, int target_reg, const rt_pod_t callee, int callee_arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	const auto& backend = vm._backend;
@@ -1256,7 +1254,6 @@ static void do_call_instruction(interpreter_t& vm, int target_reg, const rt_pod_
 	}
 }
 
-//??? use code from do_call_instruction() -- share code.
 rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_value_t args[], int callee_arg_count){
 	const auto& backend = vm._backend;
 	const auto& types = backend.types;
@@ -1266,8 +1263,7 @@ rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_val
 	QUARK_ASSERT(f.check_invariant());
 	for(int i = 0 ; i < callee_arg_count ; i++){ QUARK_ASSERT(args[i].check_invariant()); };
 	QUARK_ASSERT(peek2(types, f._type).is_function());
-#endif
-#if DEBUG
+
 	const auto& arg_types = peek2(types, f._type).get_function_args(types);
 
 	//	arity
@@ -1300,7 +1296,7 @@ rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_val
 			vm._stack.push_external_value(bc);
 		}
 
-		const auto result = call_bc2(vm, func_link, callee_arg_count);
+		const auto result = open_frame_and_make_call(vm, func_link, callee_arg_count);
 
 		vm._stack.pop_batch(arg_types2);
 		vm._stack.restore_frame();
