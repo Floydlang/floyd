@@ -798,8 +798,6 @@ std::pair<location2_t, std::string> refine_compiler_error_with_loc2(const compil
 
 
 
-void NOT_IMPLEMENTED_YET() QUARK_NO_RETURN;
-void UNSUPPORTED() QUARK_NO_RETURN;
 
 
 

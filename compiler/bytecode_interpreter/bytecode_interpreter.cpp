@@ -1229,8 +1229,7 @@ static void do_call(interpreter_t& vm, int target_reg, const rt_pod_t callee, in
 		call_via_libffi(vm, target_reg, func_link, callee_arg_count);
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 

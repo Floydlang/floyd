@@ -1044,14 +1044,6 @@ location_t unpack_loc2(const json_t& s){
 
 
 
-void NOT_IMPLEMENTED_YET() {
-	throw std::exception();
-}
-
-void UNSUPPORTED() {
-	QUARK_ASSERT(false);
-	throw std::exception();
-}
 
 
 //	Return one entry per source line PLUS one extra end-marker. int tells byte offset of files that maps to this line-start.
