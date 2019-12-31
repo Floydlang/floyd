@@ -458,7 +458,7 @@ static func_link_t make_intri(const llvm_type_lookup& type_lookup, const intrins
 		"intrinsic",
 		module_symbol_t(sign.name),
 		function_type,
-		func_link_t::emachine::k_native2,
+		func_link_t::emachine::k_native__floydcc,
 		f,
 		{},
 		(native_type_t*)function_type2
@@ -550,7 +550,7 @@ static std::vector<func_link_t> make_specialized_link_entries(const intrinsic_si
 				"intrinsic-specialization",
 				link_name,
 				function_type,
-				func_link_t::emachine::k_native,
+				func_link_t::emachine::k_native__ccc,
 				bind.native_f,
 				{},
 				(native_type_t*)bind.llvm_function_type,

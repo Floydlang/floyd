@@ -1957,7 +1957,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 					"user floyd function: " + function_def._definition_name,
 					module_symbol_t(function_def._definition_name),
 					function_def._function_type,
-					func_link_t::emachine::k_bytecode,
+					func_link_t::emachine::k_bytecode__floydcc,
 					frame2.get(),
 					get_member_names(function_def._named_args),
 					nullptr
@@ -1972,7 +1972,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 					"user floyd function: " + function_def._definition_name,
 					module_symbol_t(function_def._definition_name),
 					function_def._function_type,
-					func_link_t::emachine::k_bytecode,
+					func_link_t::emachine::k_bytecode__floydcc,
 					nullptr,
 					get_member_names(function_def._named_args),
 					nullptr

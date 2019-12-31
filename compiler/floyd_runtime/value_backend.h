@@ -741,7 +741,18 @@ struct native_type_t {};
 
 //	Every function has a func_entry_t. It may not yet be linked to a function.
 struct func_link_t {
-	enum class emachine { k_native, k_bytecode, k_native2 };
+	// Better name: "execution model"
+	enum class emachine {
+
+		//	This function is floyd byte code, using floyd calling conventions
+		k_bytecode__floydcc,
+
+		//	This function is machine code and can have any C-compatible calling convention.
+		k_native__ccc,
+
+		//	This function is native, using floyd calling conventions
+		k_native__floydcc
+	};
 
 	func_link_t(
 		const std::string& module,

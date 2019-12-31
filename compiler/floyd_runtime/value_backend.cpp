@@ -1652,14 +1652,14 @@ int count_dyn_args(const types_t& types, const type_t& function_type){
 }
 
 static std::string machine_to_string(func_link_t::emachine machine){
-	if(machine == func_link_t::emachine::k_bytecode){
-		return "bytecode";
+	if(machine == func_link_t::emachine::k_bytecode__floydcc){
+		return "bytecode__floydcc";
 	}
-	else if(machine == func_link_t::emachine::k_native){
-		return "native";
+	else if(machine == func_link_t::emachine::k_native__ccc){
+		return "native__ccc";
 	}
-	else if(machine == func_link_t::emachine::k_native2){
-		return "native2";
+	else if(machine == func_link_t::emachine::k_native__floydcc){
+		return "native__floydcc";
 	}
 	else{
 		return "";

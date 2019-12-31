@@ -501,13 +501,13 @@ static std::vector<func_link_t> link_functions(const bc_program_t& program){
 		const auto& function_name_symbol = e.func_link.module_symbol;
 		const auto it = corelib_native_funcs.find(function_name_symbol.s);
 
-		//	There us a native implementation of this function:
+		//	There is a native implementation of this function:
 		if(it != corelib_native_funcs.end()){
 			return func_link_t {
 				e.func_link.module,
 				function_name_symbol,
 				e.func_link.function_type_optional,
-				func_link_t::emachine::k_native2,
+				func_link_t::emachine::k_native__floydcc,
 				(void*)it->second,
 				{},
 				nullptr
@@ -529,7 +529,7 @@ static std::vector<func_link_t> link_functions(const bc_program_t& program){
 
 		//	No implementation.
 		else{
-			return func_link_t { "", k_no_module_symbol, {}, func_link_t::emachine::k_bytecode, nullptr, {}, nullptr };
+			return func_link_t { "", k_no_module_symbol, {}, func_link_t::emachine::k_bytecode__floydcc, nullptr, {}, nullptr };
 		}
 	});
 
@@ -1105,7 +1105,6 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 
 	interpreter_stack_t& stack = vm._stack;
 
-
 	QUARK_ASSERT(func_link.f != nullptr);
 
 	const auto function_type_peek = peek2(types, func_link.function_type_optional);
@@ -1200,7 +1199,7 @@ static void do_call(interpreter_t& vm, int target_reg, const rt_pod_t callee, in
 		quark::throw_runtime_error("Attempting to calling unimplemented function.");
 	}
 
-	if(func_link.machine == func_link_t::emachine::k_bytecode){
+	if(func_link.machine == func_link_t::emachine::k_bytecode__floydcc){
 		//	This is a floyd function, with a frame_ptr to execute.
 		QUARK_ASSERT(func_link.f != nullptr);
 		QUARK_ASSERT(func_link.function_type_optional.get_function_args(types).size() == callee_arg_count);
@@ -1226,7 +1225,7 @@ static void do_call(interpreter_t& vm, int target_reg, const rt_pod_t callee, in
 			stack.replace_external_value(result_reg_pos, result.second);
 		}
 	}
-	else if(func_link.machine == func_link_t::emachine::k_native2){
+	else if(func_link.machine == func_link_t::emachine::k_native__floydcc){
 		call_via_libffi(vm, target_reg, func_link, callee_arg_count);
 	}
 	else{
@@ -1255,7 +1254,7 @@ rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_val
 	}
 	const auto& func_link = *func_link_ptr;
 
-	if(func_link.machine == func_link_t::emachine::k_native){
+	if(func_link.machine == func_link_t::emachine::k_native__floydcc){
 		QUARK_ASSERT(false);
 
 		//	arity
@@ -1266,10 +1265,10 @@ rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_val
 		QUARK_ASSERT(result.check_invariant());
 		return result;
 	}
-	else if(func_link.machine == func_link_t::emachine::k_native2){
+	else if(func_link.machine == func_link_t::emachine::k_native__ccc){
 		NOT_IMPLEMENTED_YET();
 	}
-	else if(func_link.machine == func_link_t::emachine::k_bytecode){
+	else if(func_link.machine == func_link_t::emachine::k_bytecode__floydcc){
 #if DEBUG
 		const auto& arg_types = peek2(types, f._type).get_function_args(types);
 

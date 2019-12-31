@@ -577,7 +577,7 @@ rt_pod_t intrinsic__map__carray(runtime_t* frp, rt_pod_t elements_vec, rt_type_t
 	const auto e_type = peek2(types, type_t(elements_vec_type)).get_vector_element_type(types);
 
 	const auto& func_link = lookup_func_link_required(backend, f_value);
-	QUARK_ASSERT(func_link.machine == func_link_t::emachine::k_native || func_link.machine == func_link_t::emachine::k_native2);
+	QUARK_ASSERT(func_link.machine == func_link_t::emachine::k_bytecode__floydcc || func_link.machine == func_link_t::emachine::k_native__floydcc);
 	const auto f = reinterpret_cast<MAP_F>(func_link.f);
 
 	const auto count = elements_vec.vector_carray_ptr->get_element_count();
@@ -585,7 +585,8 @@ rt_pod_t intrinsic__map__carray(runtime_t* frp, rt_pod_t elements_vec, rt_type_t
 	for(int i = 0 ; i < count ; i++){
 		const auto& element = elements_vec.vector_carray_ptr->get_element_ptr()[i];
 
-		if(func_link.machine == func_link_t::emachine::k_bytecode){
+		// ??? This thunking must be moved of inner loop. Use ffi to make bridge for k_native__floydcc?
+		if(func_link.machine == func_link_t::emachine::k_bytecode__floydcc){
 			const rt_value_t f_args[] = {
 				rt_value_t(backend, type_t(e_type), element, rt_value_t::rc_mode::bump),
 				rt_value_t(backend, type_t(context_type), context_value, rt_value_t::rc_mode::bump)
@@ -596,9 +597,12 @@ rt_pod_t intrinsic__map__carray(runtime_t* frp, rt_pod_t elements_vec, rt_type_t
 
 			result_vec.vector_carray_ptr->get_element_ptr()[i] = a._pod;
 		}
-		else{
+		else if(func_link.machine == func_link_t::emachine::k_native__floydcc){
 			const auto a = (*f)(frp, element, context_value);
 			result_vec.vector_carray_ptr->get_element_ptr()[i] = a;
+		}
+		else{
+			QUARK_ASSERT(false);
 		}
 	}
 	return result_vec;
@@ -621,7 +625,7 @@ rt_pod_t intrinsic__map__hamt(runtime_t* frp, rt_pod_t elements_vec, rt_type_t e
 	const auto e_type = peek2(types, type_t(elements_vec_type)).get_vector_element_type(types);
 
 	const auto& func_link = lookup_func_link_required(backend, f_value);
-//	QUARK_ASSERT(func_link.machine == func_link_t::emachine::k_native || func_link.machine == func_link_t::emachine::k_native2);
+	QUARK_ASSERT(func_link.machine == func_link_t::emachine::k_bytecode__floydcc || func_link.machine == func_link_t::emachine::k_native__floydcc);
 	const auto f = reinterpret_cast<MAP_F>(func_link.f);
 
 	const auto count = elements_vec.vector_hamt_ptr->get_element_count();
@@ -629,7 +633,8 @@ rt_pod_t intrinsic__map__hamt(runtime_t* frp, rt_pod_t elements_vec, rt_type_t e
 	for(int i = 0 ; i < count ; i++){
 		const auto& element = elements_vec.vector_hamt_ptr->load_element(i);
 
-		if(func_link.machine == func_link_t::emachine::k_bytecode){
+		// ??? This thunking must be moved of inner loop. Use ffi to make bridge for k_native__floydcc?
+		if(func_link.machine == func_link_t::emachine::k_bytecode__floydcc){
 			const rt_value_t f_args[] = {
 				rt_value_t(backend, type_t(e_type), element, rt_value_t::rc_mode::bump),
 				rt_value_t(backend, type_t(context_type), context_value, rt_value_t::rc_mode::bump)
@@ -640,9 +645,12 @@ rt_pod_t intrinsic__map__hamt(runtime_t* frp, rt_pod_t elements_vec, rt_type_t e
 
 			result_vec.vector_hamt_ptr->store_mutate(i, a._pod);
 		}
-		else{
+		else if(func_link.machine == func_link_t::emachine::k_native__floydcc){
 			const auto a = (*f)(frp, element, context_value);
 			result_vec.vector_hamt_ptr->store_mutate(i, a);
+		}
+		else{
+			QUARK_ASSERT(false);
 		}
 	}
 	return result_vec;
@@ -837,6 +845,7 @@ rt_pod_t intrinsic__map_dag__carray(
 	const auto vec_r_type = type_t::make_vector(types, r_type);
 
 	const auto& func_link = lookup_func_link_required(backend, f);
+	QUARK_ASSERT(func_link.machine == func_link_t::emachine::k_bytecode__floydcc || func_link.machine == func_link_t::emachine::k_native__floydcc);
 	const auto f2 = reinterpret_cast<map_dag_F>(func_link.f);
 
 	const auto elements2 = elements.vector_carray_ptr;
@@ -904,7 +913,8 @@ rt_pod_t intrinsic__map_dag__carray(
 
 			rt_pod_t result1 = make_uninitialized_magic();
 
-			if(func_link.machine == func_link_t::emachine::k_bytecode){
+			// ??? This thunking must be moved of inner loop. Use ffi to make bridge for k_native__floydcc?
+			if(func_link.machine == func_link_t::emachine::k_bytecode__floydcc){
 				const rt_value_t f_args[] = {
 					rt_value_t(backend, type_t(e_type), e, rt_value_t::rc_mode::bump),
 					rt_value_t(backend, type_t(vec_r_type), solved_deps3, rt_value_t::rc_mode::bump),
@@ -916,8 +926,11 @@ rt_pod_t intrinsic__map_dag__carray(
 
 				result1 = a._pod;
 			}
-			else{
+			else if(func_link.machine == func_link_t::emachine::k_native__floydcc){
 				result1 = (*f2)(frp, e, solved_deps3, context);
+			}
+			else{
+				QUARK_ASSERT(false);
 			}
 
 			//	Warning: optimization trick.
@@ -981,6 +994,7 @@ rt_pod_t intrinsic__map_dag__hamt(
 	const auto vec_r_type = type_t::make_vector(types, r_type);
 
 	const auto& func_link = lookup_func_link_required(backend, f);
+	QUARK_ASSERT(func_link.machine == func_link_t::emachine::k_bytecode__floydcc || func_link.machine == func_link_t::emachine::k_native__floydcc);
 	const auto f2 = reinterpret_cast<map_dag_F>(func_link.f);
 
 	const auto elements2 = elements.vector_hamt_ptr;
@@ -1047,8 +1061,9 @@ rt_pod_t intrinsic__map_dag__hamt(
 			}
 			rt_pod_t solved_deps3 = solved_deps2;
 
+			// ??? This thunking must be moved of inner loop. Use ffi to make bridge for k_native__floydcc?
 			rt_pod_t result1 = make_uninitialized_magic();
-			if(func_link.machine == func_link_t::emachine::k_bytecode){
+			if(func_link.machine == func_link_t::emachine::k_bytecode__floydcc){
 				const rt_value_t f_args[] = {
 					rt_value_t(backend, type_t(e_type), e, rt_value_t::rc_mode::bump),
 					rt_value_t(backend, type_t(vec_r_type), solved_deps3, rt_value_t::rc_mode::bump),
@@ -1060,8 +1075,11 @@ rt_pod_t intrinsic__map_dag__hamt(
 
 				result1 = a._pod;
 			}
-			else{
+			else if(func_link.machine == func_link_t::emachine::k_native__floydcc){
 				result1 = (*f2)(frp, e, solved_deps3, context);
+			}
+			else{
+				QUARK_ASSERT(false);
 			}
 
 			//	Warning: optimization trick.
@@ -1146,6 +1164,7 @@ rt_pod_t intrinsic__filter_carray(
 	const auto& vec = *elements_vec.vector_carray_ptr;
 
 	const auto& func_link = lookup_func_link_required(backend, f_value);
+	QUARK_ASSERT(func_link.machine == func_link_t::emachine::k_bytecode__floydcc || func_link.machine == func_link_t::emachine::k_native__floydcc);
 	const auto f = reinterpret_cast<FILTER_F>(func_link.f);
 
 	auto count = vec.get_element_count();
@@ -1157,7 +1176,9 @@ rt_pod_t intrinsic__filter_carray(
 		const auto value = vec.get_element_ptr()[i];
 
 		rt_pod_t keep = make_uninitialized_magic();
-		if(func_link.machine == func_link_t::emachine::k_bytecode){
+
+		// ??? This thunking must be moved of inner loop. Use ffi to make bridge for k_native__floydcc?
+		if(func_link.machine == func_link_t::emachine::k_bytecode__floydcc){
 			const rt_value_t f_args[] = {
 				rt_value_t(backend, type_t(e_type), value, rt_value_t::rc_mode::bump),
 				rt_value_t(backend, type_t(context_type), context, rt_value_t::rc_mode::bump)
@@ -1168,8 +1189,12 @@ rt_pod_t intrinsic__filter_carray(
 
 			keep = a._pod;
 		}
-		else{
+		else if(func_link.machine == func_link_t::emachine::k_native__floydcc){
 			keep = (*f)(frp, value, context);
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 
 		if(keep.bool_value != 0){
@@ -1215,6 +1240,7 @@ rt_pod_t intrinsic__filter_hamt(
 	const auto& vec = *elements_vec.vector_hamt_ptr;
 
 	const auto& func_link = lookup_func_link_required(backend, f_value);
+	QUARK_ASSERT(func_link.machine == func_link_t::emachine::k_bytecode__floydcc || func_link.machine == func_link_t::emachine::k_native__floydcc);
 	const auto f = reinterpret_cast<FILTER_F>(func_link.f);
 
 	auto count = vec.get_element_count();
@@ -1224,7 +1250,9 @@ rt_pod_t intrinsic__filter_hamt(
 		const auto value = vec.load_element(i);
 
 		rt_pod_t keep = make_uninitialized_magic();
-		if(func_link.machine == func_link_t::emachine::k_bytecode){
+
+		// ??? This thunking must be moved of inner loop. Use ffi to make bridge for k_native__floydcc?
+		if(func_link.machine == func_link_t::emachine::k_bytecode__floydcc){
 			const rt_value_t f_args[] = {
 				rt_value_t(backend, type_t(e_type), value, rt_value_t::rc_mode::bump),
 				rt_value_t(backend, type_t(context_type), context, rt_value_t::rc_mode::bump)
@@ -1235,8 +1263,12 @@ rt_pod_t intrinsic__filter_hamt(
 
 			keep = a._pod;
 		}
-		else{
+		else if(func_link.machine == func_link_t::emachine::k_native__floydcc){
 			keep = (*f)(frp, value, context);
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 
 		if(keep.bool_value != 0){
@@ -1311,6 +1343,7 @@ rt_pod_t intrinsic__reduce_carray(
 	const auto& init = init_value;
 
 	const auto& func_link = lookup_func_link_required(backend, f_value);
+	QUARK_ASSERT(func_link.machine == func_link_t::emachine::k_bytecode__floydcc || func_link.machine == func_link_t::emachine::k_native__floydcc);
 	const auto f = reinterpret_cast<REDUCE_F>(func_link.f);
 
 	auto count = vec.get_element_count();
@@ -1321,7 +1354,9 @@ rt_pod_t intrinsic__reduce_carray(
 		const auto value = vec.get_element_ptr()[i];
 
 		rt_pod_t accumulator2 = make_uninitialized_magic();
-		if(func_link.machine == func_link_t::emachine::k_bytecode){
+
+		// ??? This thunking must be moved of inner loop. Use ffi to make bridge for k_native__floydcc?
+		if(func_link.machine == func_link_t::emachine::k_bytecode__floydcc){
 			const rt_value_t f_args[] = {
 				rt_value_t(backend, type_t(r_type), accumulator, rt_value_t::rc_mode::bump),
 				rt_value_t(backend, type_t(e_type), value, rt_value_t::rc_mode::bump),
@@ -1333,8 +1368,12 @@ rt_pod_t intrinsic__reduce_carray(
 
 			accumulator2 = a._pod;
 		}
-		else{
+		else if(func_link.machine == func_link_t::emachine::k_native__floydcc){
 			accumulator2 = (*f)(frp, accumulator, value, context);
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 
 		if(is_rc_value(backend.types, type_t(init_value_type))){
@@ -1371,6 +1410,7 @@ rt_pod_t intrinsic__reduce_hamt(
 	const auto& init = init_value;
 
 	const auto& func_link = lookup_func_link_required(backend, f_value);
+	QUARK_ASSERT(func_link.machine == func_link_t::emachine::k_bytecode__floydcc || func_link.machine == func_link_t::emachine::k_native__floydcc);
 	const auto f = reinterpret_cast<REDUCE_F>(func_link.f);
 
 	auto count = vec.get_element_count();
@@ -1381,7 +1421,9 @@ rt_pod_t intrinsic__reduce_hamt(
 		const auto value = vec.load_element(i);
 
 		rt_pod_t accumulator2 = make_uninitialized_magic();
-		if(func_link.machine == func_link_t::emachine::k_bytecode){
+
+		// ??? This thunking must be moved of inner loop. Use ffi to make bridge for k_native__floydcc?
+		if(func_link.machine == func_link_t::emachine::k_bytecode__floydcc){
 			const rt_value_t f_args[] = {
 				rt_value_t(backend, type_t(r_type), accumulator, rt_value_t::rc_mode::bump),
 				rt_value_t(backend, type_t(e_type), value, rt_value_t::rc_mode::bump),
@@ -1393,9 +1435,14 @@ rt_pod_t intrinsic__reduce_hamt(
 
 			accumulator2 = a._pod;
 		}
-		else{
+		else if(func_link.machine == func_link_t::emachine::k_native__floydcc){
 			accumulator2 = (*f)(frp, accumulator, value, context);
 		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+
 		if(is_rc_value(backend.types, type_t(init_value_type))){
 			release_value(backend, accumulator, type_t(init_value_type));
 		}
@@ -1462,12 +1509,14 @@ rt_pod_t intrinsic__stable_sort(
 	const auto& f_value_type2 = lookup_type_ref(backend, f_value_type);
 
 	const auto& func_link = lookup_func_link_required(backend, f_value);
+	QUARK_ASSERT(func_link.machine == func_link_t::emachine::k_bytecode__floydcc || func_link.machine == func_link_t::emachine::k_native__floydcc);
 	const auto f2 = reinterpret_cast<stable_sort_F>(func_link.f);
 
 	//??? Expensive deep-copy of all elements!
 	const auto elements2 = from_runtime_value2(backend, elements_vec, vec_t_type);
 
-	if(func_link.machine == func_link_t::emachine::k_bytecode){
+	// ??? This thunking must be moved of inner loop. Use ffi to make bridge for k_native__floydcc?
+	if(func_link.machine == func_link_t::emachine::k_bytecode__floydcc){
 		struct sort_functor_r {
 			bool operator() (const value_t &a, const value_t &b) {
 				auto& backend = get_backend(frp);
@@ -1504,8 +1553,7 @@ rt_pod_t intrinsic__stable_sort(
 		const auto result = to_runtime_value2(backend, value_t::make_vector_value(types, t_type, mutate_inplace_elements));
 		return result;
 	}
-	else{
-
+	else if(func_link.machine == func_link_t::emachine::k_native__floydcc){
 		struct sort_functor_r {
 			bool operator() (const value_t &a, const value_t &b) {
 				auto& backend = get_backend(frp);
@@ -1532,6 +1580,10 @@ rt_pod_t intrinsic__stable_sort(
 		//??? optimize
 		const auto result = to_runtime_value2(backend, value_t::make_vector_value(types, t_type, mutate_inplace_elements));
 		return result;
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 

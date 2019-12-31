@@ -173,7 +173,7 @@ static std::vector<func_link_t> make_init_deinit_link_map(llvm::LLVMContext& con
 			"runtime",
 			link_name,
 			type_t::make_undefined(),
-			func_link_t::emachine::k_native,
+			func_link_t::emachine::k_native__ccc,
 			nullptr,
 			{},
 			(native_type_t*)function_type
@@ -195,7 +195,7 @@ static std::vector<func_link_t> make_init_deinit_link_map(llvm::LLVMContext& con
 			"runtime",
 			link_name,
 			type_t::make_undefined(),
-			func_link_t::emachine::k_native,
+			func_link_t::emachine::k_native__ccc,
 			nullptr,
 			{},
 			(native_type_t*)function_type
@@ -243,7 +243,7 @@ static std::vector<func_link_t> make_floyd_code_and_corelib_link_map(llvm::LLVMC
 				"program",
 				link_name,
 				function_def._function_type,
-				func_link_t::emachine::k_native,
+				func_link_t::emachine::k_native__floydcc,
 				nullptr,
 				get_member_names(function_def._named_args),
 				(native_type_t*)function_type
