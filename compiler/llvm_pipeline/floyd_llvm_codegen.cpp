@@ -264,7 +264,7 @@ static llvm::Value* generate_llvm_simple_constant_value(llvm_function_generator_
 
 
 		llvm::Value* operator()(const undefined_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 			return llvm::ConstantInt::get(itype, 17);
 		}
 		llvm::Value* operator()(const any_t& e) const{
@@ -272,7 +272,7 @@ static llvm::Value* generate_llvm_simple_constant_value(llvm_function_generator_
 		}
 
 		llvm::Value* operator()(const void_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const bool_t& e) const{
 			return llvm::ConstantInt::get(itype, value.get_bool_value() ? 1 : 0);
@@ -284,7 +284,7 @@ static llvm::Value* generate_llvm_simple_constant_value(llvm_function_generator_
 			return llvm::ConstantFP::get(itype, value.get_double_value());
 		}
 		llvm::Value* operator()(const string_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const json_type_t& e) const{
 			const auto& json0 = value.get_json();
@@ -292,7 +292,7 @@ static llvm::Value* generate_llvm_simple_constant_value(llvm_function_generator_
 				return generate_json_nullptr_placeholder(gen_acc);
 			}
 			else{
-				UNSUPPORTED();
+				quark::throw_defective_request();
 			}
 		}
 
@@ -301,13 +301,13 @@ static llvm::Value* generate_llvm_simple_constant_value(llvm_function_generator_
 		}
 
 		llvm::Value* operator()(const struct_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const vector_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const dict_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const function_t& e2) const{
 			const auto link_name = value.get_function_value();
@@ -533,7 +533,7 @@ static llvm::Value* generate_literal_expression(llvm_function_generator_t& gen_a
 			return generate_json_null_value(gen_acc);
 		}
 		else{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 	}
 	else{
@@ -737,7 +737,7 @@ static llvm::Value* generate_arithmetic_expression(llvm_function_generator_t& ge
 			return gen_acc.get_builder().CreateOr(lhs_temp, rhs_temp, "logical_or_tmp");
 		}
 		else{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 	}
 	else if(type_peek.is_int()){
@@ -764,7 +764,7 @@ static llvm::Value* generate_arithmetic_expression(llvm_function_generator_t& ge
 			return gen_acc.get_builder().CreateOr(lhs_temp, rhs_temp, "logical_or_tmp");
 		}
 		else{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 	}
 	else if(type_peek.is_double()){
@@ -781,13 +781,13 @@ static llvm::Value* generate_arithmetic_expression(llvm_function_generator_t& ge
 			return gen_acc.get_builder().CreateFDiv(lhs_temp, rhs_temp, "divide_tmp");
 		}
 		else if(details.op == expression_type::k_arithmetic_remainder){
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		else if(details.op == expression_type::k_logical_and){
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		else if(details.op == expression_type::k_logical_or){
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		else{
 			quark::throw_defective_request();
@@ -812,7 +812,7 @@ static llvm::Value* generate_arithmetic_expression(llvm_function_generator_t& ge
 		//	No other types allowed.
 		throw std::exception();
 	}
-	UNSUPPORTED();
+	quark::throw_defective_request();
 }
 
 static llvm::Value* generate_compare_values(llvm_function_generator_t& gen_acc, expression_type op, const type_t& type, llvm::Value& lhs_reg, llvm::Value& rhs_reg){
@@ -928,7 +928,7 @@ static llvm::Value* generate_comparison_expression(llvm_function_generator_t& ge
 		return result_reg;
 	}
 	else{
-		UNSUPPORTED();
+		quark::throw_defective_request();
 	}
 }
 
@@ -1017,7 +1017,7 @@ static llvm::Value* generate_arithmetic_unary_minus_expression(llvm_function_gen
 		return generate_expression(gen_acc, e2);
 	}
 	else{
-		UNSUPPORTED();
+		quark::throw_defective_request();
 	}
 }
 
@@ -2144,10 +2144,10 @@ static function_return_mode generate_statement(llvm_function_generator_t& gen_ac
 		}
 
 		function_return_mode operator()(const statement_t::bind_local_t& s) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		function_return_mode operator()(const statement_t::assign_t& s) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		function_return_mode operator()(const statement_t::assign2_t& s) const{
 			generate_assign2_statement(acc0, s);
@@ -2177,16 +2177,16 @@ static function_return_mode generate_statement(llvm_function_generator_t& gen_ac
 			return function_return_mode::some_path_not_returned;
 		}
 		function_return_mode operator()(const statement_t::software_system_statement_t& s) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		function_return_mode operator()(const statement_t::container_def_statement_t& s) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		function_return_mode operator()(const statement_t::benchmark_def_statement_t& s) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		function_return_mode operator()(const statement_t::test_def_statement_t& s) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 	};
 

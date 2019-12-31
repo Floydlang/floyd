@@ -851,14 +851,14 @@ rt_pod_t load_via_ptr2(const types_t& types, const void* value_ptr, const type_t
 		const void* value_ptr;
 
 		rt_pod_t operator()(const undefined_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		rt_pod_t operator()(const any_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 
 		rt_pod_t operator()(const void_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		rt_pod_t operator()(const bool_t& e) const{
 			const auto temp = *static_cast<const uint8_t*>(value_ptr);
@@ -915,14 +915,14 @@ void store_via_ptr2(const types_t& types, void* value_ptr, const type_t& type, c
 		const rt_pod_t& value;
 
 		void operator()(const undefined_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		void operator()(const any_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 
 		void operator()(const void_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		void operator()(const bool_t& e) const{
 			*static_cast<uint8_t*>(value_ptr) = value.bool_value;
@@ -2945,14 +2945,14 @@ value_t from_runtime_value2(const value_backend_t& backend, const rt_pod_t encod
 		const type_t& type;
 
 		value_t operator()(const undefined_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		value_t operator()(const any_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 
 		value_t operator()(const void_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		value_t operator()(const bool_t& e) const{
 			return value_t::make_bool(encoded_value.bool_value == 0 ? false : true);
@@ -3684,7 +3684,7 @@ rt_pod_t update_element__vector(value_backend_t& backend, rt_pod_t obj1, rt_type
 		}
 	}
 	else{
-		UNSUPPORTED();
+		quark::throw_defective_request();
 	}
 }
 
@@ -3699,7 +3699,7 @@ rt_pod_t update_dict(value_backend_t& backend, rt_pod_t obj1, rt_type_t coll_typ
 		return update__dict_hamt(backend, obj1, coll_type, key_value, value);
 	}
 	else{
-		UNSUPPORTED();
+		quark::throw_defective_request();
 	}
 }
 
@@ -4245,7 +4245,7 @@ int64_t find_vector_element(value_backend_t& backend, rt_pod_t coll_value, rt_ty
 	}
 	else{
 		//	No other types allowed.
-		UNSUPPORTED();
+		quark::throw_defective_request();
 	}
 }
 

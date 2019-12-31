@@ -236,10 +236,6 @@ inline void throw_defective_request(){
 	throw std::exception();
 }
 
-//	Compatibiility macro
-#define UNSUPPORTED ::quark::throw_defective_request
-
-
 
 
 ////////////////////////////////	throw_feature_not_implemented_yet()
@@ -255,8 +251,6 @@ inline void throw_feature_not_implemented_yet(){
 	throw std::exception();
 }
 
-//	Compatibiility macro
-#define NOT_IMPLEMENTED_YET ::quark::throw_feature_not_implemented_yet
 
 
 

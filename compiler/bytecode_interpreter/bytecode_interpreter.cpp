@@ -1047,7 +1047,7 @@ static ffi_type* make_ffi_type(const type_t& type){
 		return &ffi_type_pointer;
 	}
 	else{
-		UNSUPPORTED();
+		quark::throw_defective_request();
 	}
 }
 
@@ -1261,7 +1261,7 @@ rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_val
 		return result;
 	}
 	else if(func_link.execution_model == func_link_t::eexecution_model::k_native__ccc){
-		NOT_IMPLEMENTED_YET();
+		quark::throw_defective_request();
 	}
 	else if(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc){
 #if DEBUG
@@ -1304,7 +1304,7 @@ rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_val
 		}
 	}
 	else{
-		UNSUPPORTED();
+		quark::throw_defective_request();
 	}
 }
 

@@ -310,8 +310,7 @@ static rt_value_t update_element(value_backend_t& backend, const rt_value_t& obj
 		}
 	}
 	else {
-		UNSUPPORTED();
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -404,7 +403,7 @@ int64_t intrinsic__size(runtime_t* frp, rt_pod_t coll_value, rt_type_t coll_type
 #endif
 
 	//	BC and LLVM inlines size()
-	NOT_IMPLEMENTED_YET();
+	quark::throw_feature_not_implemented_yet();
 }
 
 
@@ -500,7 +499,7 @@ rt_pod_t intrinsic__push_back(
 #endif
 
 	//	BC and LLVM inlines push_back()
-	NOT_IMPLEMENTED_YET();
+	quark::throw_feature_not_implemented_yet();
 }
 
 
@@ -521,7 +520,7 @@ const rt_pod_t intrinsic__subset(runtime_t* frp, rt_pod_t elements_vec, rt_type_
 	}
 	else{
 		//	No other types allowed.
-		UNSUPPORTED();
+		quark::throw_defective_request();
 	}
 }
 
@@ -546,7 +545,7 @@ const rt_pod_t intrinsic__replace(runtime_t* frp, rt_pod_t elements_vec, rt_type
 	}
 	else{
 		//	No other types allowed.
-		UNSUPPORTED();
+		quark::throw_defective_request();
 	}
 }
 

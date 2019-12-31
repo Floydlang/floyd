@@ -370,14 +370,14 @@ llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const l
 		const type_t type;
 
 		llvm::Value* operator()(const undefined_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const any_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 
 		llvm::Value* operator()(const void_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const bool_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, make_runtime_value_type(type_lookup), "");
@@ -434,14 +434,14 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const
 		const type_t& type;
 
 		llvm::Value* operator()(const undefined_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const any_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 
 		llvm::Value* operator()(const void_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const bool_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::Trunc, &runtime_value_reg, llvm::Type::getInt1Ty(context), "");
