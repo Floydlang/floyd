@@ -408,83 +408,6 @@ json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend)
 //////////////////////////////////////////		GLOBAL FUNCTIONS
 
 
-//??? support k_native_2
-//??? use code from do_call() -- share code.
-rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_value_t args[], int arg_count){
-	const auto& backend = vm._backend;
-	const auto& types = backend.types;
-
-#if DEBUG
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(f.check_invariant());
-	for(int i = 0 ; i < arg_count ; i++){ QUARK_ASSERT(args[i].check_invariant()); };
-	QUARK_ASSERT(peek2(types, f._type).is_function());
-#endif
-
-	const auto func_link_ptr = lookup_func_link(backend, f._pod);
-	if(func_link_ptr == nullptr){
-		quark::throw_runtime_error("Attempting to calling unimplemented function.");
-	}
-	const auto& func_link = *func_link_ptr;
-
-	if(func_link.machine == func_link_t::emachine::k_native){
-		//	arity
-//		QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
-		QUARK_ASSERT(func_link.f != nullptr)
-		const auto f2 = (BC_NATIVE_FUNCTION_PTR)func_link.f;
-		const auto& result = (*f2)(vm, &args[0], arg_count);
-		QUARK_ASSERT(result.check_invariant());
-		return result;
-	}
-	else if(func_link.machine == func_link_t::emachine::k_native2){
-		NOT_IMPLEMENTED_YET();
-	}
-	else if(func_link.machine == func_link_t::emachine::k_bytecode){
-#if DEBUG
-		const auto& arg_types = peek2(types, f._type).get_function_args(types);
-
-		//	arity
-		QUARK_ASSERT(arg_count == arg_types.size());
-
-		for(int i = 0 ; i < arg_count; i++){
-			if(peek2(types, args[i]._type) != peek2(types, arg_types[i])){
-				QUARK_ASSERT(false);
-			}
-		}
-#endif
-
-		vm._stack.save_frame();
-
-		//	We push the values to the stack = the stack will take RC ownership of the values.
-		std::vector<type_t> arg_types2;
-		for(int i = 0 ; i < arg_count ; i++){
-			const auto& bc = args[i];
-			const auto is_ext = args[i]._type;
-			arg_types2.push_back(is_ext);
-			vm._stack.push_external_value(bc);
-		}
-
-		QUARK_ASSERT(func_link.f != nullptr);
-		auto frame_ptr = (const bc_static_frame_t*)func_link.f;
-		vm._stack.open_frame_except_args(*frame_ptr, arg_count);
-		const auto& result = execute_instructions(vm, frame_ptr->_instructions);
-		vm._stack.close_frame(*frame_ptr);
-		vm._stack.pop_batch(arg_types2);
-		vm._stack.restore_frame();
-
-		if(peek2(types, lookup_type_from_index(types, result.first)).is_void() == false){
-			QUARK_ASSERT(result.second.check_invariant());
-			return result.second;
-		}
-		else{
-			return rt_value_t::make_undefined();
-		}
-	}
-	else{
-		UNSUPPORTED();
-	}
-}
-
 
 //??? Use enum with register / immediate / unused, current info is not enough.
 
@@ -1303,9 +1226,6 @@ static void do_call(interpreter_t& vm, int target_reg, const rt_pod_t callee, in
 			stack.replace_external_value(result_reg_pos, result.second);
 		}
 	}
-	else if(func_link.machine == func_link_t::emachine::k_native){
-		QUARK_ASSERT(false);
-	}
 	else if(func_link.machine == func_link_t::emachine::k_native2){
 		call_via_libffi(vm, target_reg, func_link, callee_arg_count);
 	}
@@ -1314,6 +1234,86 @@ static void do_call(interpreter_t& vm, int target_reg, const rt_pod_t callee, in
 		throw std::exception();
 	}
 }
+
+
+//??? support k_native_2
+//??? use code from do_call() -- share code.
+rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_value_t args[], int arg_count){
+	const auto& backend = vm._backend;
+	const auto& types = backend.types;
+
+#if DEBUG
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(f.check_invariant());
+	for(int i = 0 ; i < arg_count ; i++){ QUARK_ASSERT(args[i].check_invariant()); };
+	QUARK_ASSERT(peek2(types, f._type).is_function());
+#endif
+
+	const auto func_link_ptr = lookup_func_link(backend, f._pod);
+	if(func_link_ptr == nullptr){
+		quark::throw_runtime_error("Attempting to calling unimplemented function.");
+	}
+	const auto& func_link = *func_link_ptr;
+
+	if(func_link.machine == func_link_t::emachine::k_native){
+		QUARK_ASSERT(false);
+
+		//	arity
+//		QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
+		QUARK_ASSERT(func_link.f != nullptr)
+		const auto f2 = (BC_NATIVE_FUNCTION_PTR)func_link.f;
+		const auto& result = (*f2)(vm, &args[0], arg_count);
+		QUARK_ASSERT(result.check_invariant());
+		return result;
+	}
+	else if(func_link.machine == func_link_t::emachine::k_native2){
+		NOT_IMPLEMENTED_YET();
+	}
+	else if(func_link.machine == func_link_t::emachine::k_bytecode){
+#if DEBUG
+		const auto& arg_types = peek2(types, f._type).get_function_args(types);
+
+		//	arity
+		QUARK_ASSERT(arg_count == arg_types.size());
+
+		for(int i = 0 ; i < arg_count; i++){
+			if(peek2(types, args[i]._type) != peek2(types, arg_types[i])){
+				QUARK_ASSERT(false);
+			}
+		}
+#endif
+		vm._stack.save_frame();
+
+		//	We push the values to the stack = the stack will take RC ownership of the values.
+		std::vector<type_t> arg_types2;
+		for(int i = 0 ; i < arg_count ; i++){
+			const auto& bc = args[i];
+			const auto is_ext = args[i]._type;
+			arg_types2.push_back(is_ext);
+			vm._stack.push_external_value(bc);
+		}
+
+		QUARK_ASSERT(func_link.f != nullptr);
+		auto frame_ptr = (const bc_static_frame_t*)func_link.f;
+		vm._stack.open_frame_except_args(*frame_ptr, arg_count);
+		const auto& result = execute_instructions(vm, frame_ptr->_instructions);
+		vm._stack.close_frame(*frame_ptr);
+		vm._stack.pop_batch(arg_types2);
+		vm._stack.restore_frame();
+
+		if(peek2(types, lookup_type_from_index(types, result.first)).is_void() == false){
+			QUARK_ASSERT(result.second.check_invariant());
+			return result.second;
+		}
+		else{
+			return rt_value_t::make_undefined();
+		}
+	}
+	else{
+		UNSUPPORTED();
+	}
+}
+
 
 inline void write_reg_rc(value_backend_t& backend, rt_pod_t regs[], int dest_reg, const type_t& dest_type, rt_pod_t value){
 	QUARK_ASSERT(backend.check_invariant());
