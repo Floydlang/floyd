@@ -1055,58 +1055,6 @@ static void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t targ
 
 //	??? Make stub bc_static_frame_t for each host function to make call conventions same as Floyd functions.
 
-//	Notice: host calls and floyd calls have the same type -- we cannot detect host calls until we have a callee value.
-static void call_native(interpreter_t& vm, int target_reg, const func_link_t& func_link, int callee_arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-
-	const auto& backend = vm._backend;
-	const auto& types = backend.types;
-
-	interpreter_stack_t& stack = vm._stack;
-
-	QUARK_ASSERT(func_link.f != nullptr);
-	const auto f = (BC_NATIVE_FUNCTION_PTR)func_link.f;
-
-	const auto function_type_peek = peek2(types, func_link.function_type_optional);
-
-	const auto function_type_args = function_type_peek.get_function_args(types);
-	const auto function_def_dynamic_arg_count = count_dyn_args(types, func_link.function_type_optional);
-
-	const int arg0_stack_pos = (int)(stack.size() - (function_def_dynamic_arg_count + callee_arg_count));
-	int stack_pos = arg0_stack_pos;
-
-	//	Notice that dynamic functions will have each DYN argument with a leading itype as an extra argument.
-	const auto function_type_args_size = function_type_args.size();
-	std::vector<rt_value_t> arg_values;
-	for(int a = 0 ; a < function_type_args_size ; a++){
-		const auto func_arg_type = function_type_args[a];
-		if(peek2(types, func_arg_type).is_any()){
-			const auto arg_itype = stack.load_intq(stack_pos);
-			const auto& arg_type = lookup_full_type(vm, static_cast<int16_t>(arg_itype));
-			const auto arg_value = stack.load_value(stack_pos + 1, arg_type);
-			arg_values.push_back(arg_value);
-			stack_pos += 2;
-		}
-		else{
-			const auto arg_value = stack.load_value(stack_pos + 0, func_arg_type);
-			arg_values.push_back(arg_value);
-			stack_pos++;
-		}
-	}
-
-	const auto& result = (*f)(vm, &arg_values[0], static_cast<int>(arg_values.size()));
-	const auto bc_result = result;
-
-	const auto& function_return_type = function_type_peek.get_function_return(types);
-	const auto function_return_type_peek = peek2(types, function_return_type);
-	if(function_return_type_peek.is_void() == true){
-	}
-	else{
-		stack.write_register(target_reg, bc_result);
-	}
-}
-
-typedef void(*VOID_VOID_F)(void);
 
 struct cif_t {
 	ffi_cif cif;
@@ -1293,7 +1241,7 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 
 	ffi_arg return_value;
 
-	ffi_call(&cif.cif, (VOID_VOID_F)func_link.f, &return_value, &values[0]);
+	ffi_call(&cif.cif, FFI_FN(func_link.f), &return_value, &values[0]);
 
 	const auto& function_return_type = function_type_peek.get_function_return(types);
 	const auto function_return_type_peek = peek2(types, function_return_type);
@@ -1356,7 +1304,7 @@ static void do_call(interpreter_t& vm, int target_reg, const rt_pod_t callee, in
 		}
 	}
 	else if(func_link.machine == func_link_t::emachine::k_native){
-		call_native(vm, target_reg, func_link, callee_arg_count);
+		QUARK_ASSERT(false);
 	}
 	else if(func_link.machine == func_link_t::emachine::k_native2){
 		call_via_libffi(vm, target_reg, func_link, callee_arg_count);
