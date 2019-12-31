@@ -19,7 +19,7 @@ static func_link_t make_intr(const intrinsic_signature_t& sign, void* f){
 		std::string() + "bc-intrinsics-impl:" + sign.name,
 		module_symbol_t(sign.name),
 		sign._function_type,
-		func_link_t::emachine::k_native__floydcc,
+		func_link_t::eexecution_model::k_native__floydcc,
 		(void*)f,
 		{},
 		nullptr

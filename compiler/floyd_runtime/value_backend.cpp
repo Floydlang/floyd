@@ -1651,14 +1651,14 @@ int count_dyn_args(const types_t& types, const type_t& function_type){
 	return dyn_arg_count;
 }
 
-static std::string machine_to_string(func_link_t::emachine machine){
-	if(machine == func_link_t::emachine::k_bytecode__floydcc){
+static std::string execution_model_to_string(func_link_t::eexecution_model execution_model){
+	if(execution_model == func_link_t::eexecution_model::k_bytecode__floydcc){
 		return "bytecode__floydcc";
 	}
-	else if(machine == func_link_t::emachine::k_native__ccc){
+	else if(execution_model == func_link_t::eexecution_model::k_native__ccc){
 		return "native__ccc";
 	}
-	else if(machine == func_link_t::emachine::k_native__floydcc){
+	else if(execution_model == func_link_t::eexecution_model::k_native__floydcc){
 		return "native__floydcc";
 	}
 	else{
@@ -1674,7 +1674,7 @@ json_t func_link_to_json(const types_t& types, const func_link_t& def){
 		json_t(def.module_symbol.s),
 		json_t(def.module),
 		json_t(type_to_compact_string(types, def.function_type_optional)),
-		json_t(machine_to_string(def.machine)),
+		json_t(execution_model_to_string(def.execution_model)),
 		json_t(ptr_to_hexstring(def.f)),
 	});
 }
@@ -1702,7 +1702,7 @@ std::string print_function_link_map(const types_t& types, const std::vector<func
 		const auto ftype1 = ftype0.substr(0, 100);
 		const auto ftype = ftype1.size() != ftype0.size() ? (ftype1 + "...") : ftype1;
 
-		const auto machine = machine_to_string(e.machine);
+		const auto execution_model = execution_model_to_string(e.execution_model);
 
 		const auto f_str = e.f != nullptr ? ptr_to_hexstring(e.f) : "";
 
@@ -1712,7 +1712,7 @@ std::string print_function_link_map(const types_t& types, const std::vector<func
 			e.module_symbol.s,
 			e.module,
 			ftype,
-			machine,
+			execution_model,
 			f_str,
 			arg_names,
 			native_type_str
@@ -1721,7 +1721,7 @@ std::string print_function_link_map(const types_t& types, const std::vector<func
 	}
 
 	const auto result = generate_table_type1(
-		{ "LINK-NAME", "MODULE", "FUNCTION TYPE", "MACHINE", "F", "ARG NAMES", "NATIVE TYPE" },
+		{ "LINK-NAME", "MODULE", "FUNCTION TYPE", "EXEC.MODEL", "F", "ARG NAMES", "NATIVE TYPE" },
 		matrix
 	);
 	return result;

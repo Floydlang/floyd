@@ -1311,7 +1311,7 @@ std::vector<func_link_t> make_runtime_function_link_map(llvm::LLVMContext& conte
 			"runtime",
 			link_name,
 			type_t::make_undefined(),
-			func_link_t::emachine::k_native__ccc,
+			func_link_t::eexecution_model::k_native__ccc,
 			e.native_f,
 			{},
 			(native_type_t*)e.llvm_function_type

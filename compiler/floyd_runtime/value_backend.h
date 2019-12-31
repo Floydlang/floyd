@@ -741,8 +741,7 @@ struct native_type_t {};
 
 //	Every function has a func_entry_t. It may not yet be linked to a function.
 struct func_link_t {
-	// Better name: "execution model"
-	enum class emachine {
+	enum class eexecution_model {
 
 		//	This function is floyd byte code, using floyd calling conventions
 		k_bytecode__floydcc,
@@ -759,7 +758,7 @@ struct func_link_t {
 		const module_symbol_t& module_symbol,
 		const type_t& function_type_optional,
 
-		func_link_t::emachine machine,
+		func_link_t::eexecution_model execution_model,
 
 		void* f,
 		std::vector<std::string> arg_names,
@@ -768,7 +767,7 @@ struct func_link_t {
 		module(module),
 		module_symbol(module_symbol),
 		function_type_optional(function_type_optional),
-		machine(machine),
+		execution_model(execution_model),
 		f(f),
 		arg_names(arg_names),
 		native_type(native_type)
@@ -796,7 +795,7 @@ struct func_link_t {
 	module_symbol_t module_symbol;
 	type_t function_type_optional;
 
-	emachine machine;
+	eexecution_model execution_model;
 
 	//	Points to a native function or to a bc_static_frame_t. Nullptr: only a prototype, no implementation.
 	void* f;
@@ -818,7 +817,7 @@ inline func_link_t set_f(const func_link_t& e, void* f){
 		e.module,
 		e.module_symbol,
 		e.function_type_optional,
-		e.machine,
+		e.execution_model,
 		f,
 		e.arg_names,
 		e.native_type
