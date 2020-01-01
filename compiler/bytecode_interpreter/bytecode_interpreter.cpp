@@ -1237,7 +1237,7 @@ static void do_call_instruction(interpreter_t& vm, int target_reg, const rt_pod_
 	QUARK_ASSERT(vm.check_invariant());
 	const auto& backend = vm._backend;
 
-	const auto func_link_ptr = lookup_func_link(backend, callee);
+	const auto func_link_ptr = lookup_func_link_by_pod(backend, callee);
 	if(func_link_ptr == nullptr || func_link_ptr->f == nullptr){
 		quark::throw_runtime_error("Attempting to calling unimplemented function.");
 	}
@@ -1283,7 +1283,7 @@ rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_val
 	}
 #endif
 
-	const auto func_link_ptr = lookup_func_link(backend, f._pod);
+	const auto func_link_ptr = lookup_func_link_by_pod(backend, f._pod);
 	if(func_link_ptr == nullptr || func_link_ptr->f == nullptr){
 		quark::throw_runtime_error("Attempting to calling unimplemented function.");
 	}

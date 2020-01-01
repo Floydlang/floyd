@@ -128,7 +128,7 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const module_symbol_t& n
 
 	const auto f = get_function_ptr(ee, name);
 	if(f != nullptr){
-		const auto def = find_function_by_name2(ee.backend, name);
+		const auto def = lookup_func_link_by_symbol(ee.backend, name);
 		if(def == nullptr){
 			quark::throw_defective_request();
 		}

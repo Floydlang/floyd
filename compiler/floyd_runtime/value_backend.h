@@ -267,7 +267,6 @@ union rt_pod_t {
 	JSON_T* json_ptr;
 	STRUCT_T* struct_ptr;
 
-	//	In the future a function should hold its context too = needs to alloc.
 	int64_t function_link_id;
 
 	void* frame_ptr;
@@ -660,9 +659,9 @@ struct rt_value_t {
 	public: static rt_value_t make_function_value(
 		value_backend_t& backend,
 		const type_t& function_type,
-		const module_symbol_t& function_id
+		const module_symbol_t& function
 	);
-	public: int64_t get_function_value() const;
+	public: int64_t get_function_value_id() const;
 
 
 	//////////////////////////////////////		bc_static_frame_t
@@ -684,7 +683,7 @@ struct rt_value_t {
 		const std::vector<rt_value_t>& values,
 		bool struct_tag
 	);
-	private: explicit rt_value_t(value_backend_t& backend, const type_t& function_type, const module_symbol_t& function_id);
+	private: explicit rt_value_t(value_backend_t& backend, const type_t& function_type, const module_symbol_t& function);
 
 
 	//////////////////////////////////////		STATE
@@ -878,16 +877,9 @@ void trace_value_backend(const value_backend_t& backend);
 //	Traces only the non-const data of the backend.
 void trace_value_backend_dynamic(const value_backend_t& backend);
 
-const func_link_t* find_function_by_name2(const value_backend_t& backend, const module_symbol_t& s);
-
-//	Returns index into func_link_t array of backend, or -1 of not found.
-int64_t find_function_by_name0(const value_backend_t& backend, const module_symbol_t& s);
-
-
-const func_link_t* lookup_func_link(const value_backend_t& backend, rt_pod_t value);
+const func_link_t* lookup_func_link_by_symbol(const value_backend_t& backend, const module_symbol_t& s);
+const func_link_t* lookup_func_link_by_pod(const value_backend_t& backend, rt_pod_t value);
 const func_link_t& lookup_func_link_required(const value_backend_t& backend, rt_pod_t value);
-const func_link_t& lookup_func_link_from_id(const value_backend_t& backend, rt_pod_t value);
-const func_link_t& lookup_func_link_from_native(const value_backend_t& backend, rt_pod_t value);
 
 //??? kill this function
 inline type_t lookup_type_ref(const value_backend_t& backend, rt_type_t type){
