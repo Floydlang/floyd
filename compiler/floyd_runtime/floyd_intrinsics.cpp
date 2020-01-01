@@ -555,26 +555,32 @@ const rt_pod_t intrinsic__replace(runtime_t* frp, rt_pod_t elements_vec, rt_type
 //	[R] map([E] elements, func R (E e, C context) f, C context)
 
 
-rt_pod_t intrinsic__map__carray(runtime_t* frp, rt_pod_t elements_vec, rt_type_t elements_vec_type, rt_pod_t f_value, rt_type_t f_type, rt_pod_t context_value, rt_type_t context_type, rt_type_t result_vec_type){
+rt_pod_t intrinsic__map__carray(
+	runtime_t* frp,
+	rt_pod_t elements_vec,
+	rt_type_t elements_vec_type,
+	rt_pod_t f_value,
+	rt_type_t f_type,
+	rt_pod_t context_value,
+	rt_type_t context_type,
+	rt_type_t result_vec_type
+){
 	auto& backend = get_backend(frp);
 	const auto& types = backend.types;
 
 	QUARK_ASSERT(backend.check_invariant());
 
 #if DEBUG
-	const auto& type1 = lookup_type_ref(backend, f_type);
-
-//	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
-//	const auto& type2 = lookup_type_ref(backend, context_type);
-//	QUARK_ASSERT(check_map_func_type(type0, type1, type2));
-
-//	const auto e_type = peek2(types, type0).get_vector_element_type(types);
-	const auto f_arg_types = peek2(types, type1).get_function_args(types);
+	const auto& f_type2 = lookup_type_ref(backend, f_type);
+	const auto f_arg_types = peek2(types, f_type2).get_function_args(types);
 #endif
 	const auto e_type = peek2(types, type_t(elements_vec_type)).get_vector_element_type(types);
 
 	const auto& func_link = lookup_func_link_required(backend, f_value);
-	QUARK_ASSERT(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc || func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc);
+	QUARK_ASSERT(
+		func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc
+		|| func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc
+	);
 	const auto f = reinterpret_cast<MAP_F>(func_link.f);
 
 	const auto count = elements_vec.vector_carray_ptr->get_element_count();
@@ -605,50 +611,69 @@ rt_pod_t intrinsic__map__carray(runtime_t* frp, rt_pod_t elements_vec, rt_type_t
 	return result_vec;
 }
 
-rt_pod_t intrinsic__map__hamt(runtime_t* frp, rt_pod_t elements_vec, rt_type_t elements_vec_type, rt_pod_t f_value, rt_type_t f_type, rt_pod_t context_value, rt_type_t context_type, rt_type_t result_vec_type){
+struct f_env_t {
+	runtime_t runtime;
+
+	type_t e_type;
+	type_t context_type;
+	type_t f_type;
+	rt_pod_t f_value;
+	const func_link_t* func_link;
+};
+
+static rt_pod_t map_f_thunk(runtime_t* frp, rt_pod_t e_value, rt_pod_t context_value){
+	auto& backend = get_backend(frp);
+	QUARK_ASSERT(backend.check_invariant());
+
+	const auto& env = *(const f_env_t*)frp;
+
+	const rt_value_t f_args[] = {
+		rt_value_t(backend, env.e_type, e_value, rt_value_t::rc_mode::bump),
+		rt_value_t(backend, env.context_type, context_value, rt_value_t::rc_mode::bump)
+	};
+	const auto a = call_thunk(frp, rt_value_t(backend, env.f_type, env.f_value, rt_value_t::rc_mode::bump), f_args, 2);
+	QUARK_ASSERT(a.check_invariant());
+	retain_value(backend, a._pod, a._type);
+
+	return a._pod;
+}
+
+rt_pod_t intrinsic__map__hamt(
+	runtime_t* frp,
+	rt_pod_t elements_vec,
+	rt_type_t elements_vec_type,
+	rt_pod_t f_value,
+	rt_type_t f_type,
+	rt_pod_t context_value,
+	rt_type_t context_type,
+	rt_type_t vec_r_type
+){
 	auto& backend = get_backend(frp);
 	QUARK_ASSERT(backend.check_invariant());
 	const auto& types = backend.types;
 
 #if DEBUG
-	const auto& type1 = lookup_type_ref(backend, f_type);
-
-//	const auto& type0 = lookup_type_ref(backend, elements_vec_type);
-//	const auto& type2 = lookup_type_ref(backend, context_type);
-//	QUARK_ASSERT(check_map_func_type(type0, type1, type2));
-
-	const auto f_arg_types = peek2(types, type1).get_function_args(types);
+	const auto& f_type2 = lookup_type_ref(backend, f_type);
+	const auto f_arg_types = peek2(types, f_type2).get_function_args(types);
 #endif
 	const auto e_type = peek2(types, type_t(elements_vec_type)).get_vector_element_type(types);
 
 	const auto& func_link = lookup_func_link_required(backend, f_value);
-	QUARK_ASSERT(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc || func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc);
-	const auto f = reinterpret_cast<MAP_F>(func_link.f);
+	QUARK_ASSERT(
+		func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc
+		|| func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc
+	);
+	const auto f0 = reinterpret_cast<MAP_F>(func_link.f);
+
+	f_env_t env = { *frp, e_type, type_t(context_type), f_type2, f_value, &func_link };
+	const auto f = func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc ? map_f_thunk : f0;
 
 	const auto count = elements_vec.vector_hamt_ptr->get_element_count();
-	auto result_vec = alloc_vector_hamt(backend.heap, count, count, type_t(result_vec_type));
+	auto result_vec = alloc_vector_hamt(backend.heap, count, count, type_t(vec_r_type));
 	for(int i = 0 ; i < count ; i++){
 		const auto& element = elements_vec.vector_hamt_ptr->load_element(i);
-
-		// ??? This thunking must be moved of inner loop. Use ffi to make bridge for k_native__floydcc?
-		if(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc){
-			const rt_value_t f_args[] = {
-				rt_value_t(backend, type_t(e_type), element, rt_value_t::rc_mode::bump),
-				rt_value_t(backend, type_t(context_type), context_value, rt_value_t::rc_mode::bump)
-			};
-			const auto a = call_thunk(frp, rt_value_t(backend, type_t(f_type), f_value, rt_value_t::rc_mode::bump), f_args, 2);
-			QUARK_ASSERT(a.check_invariant());
-			retain_value(backend, a._pod, a._type);
-
-			result_vec.vector_hamt_ptr->store_mutate(i, a._pod);
-		}
-		else if(func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc){
-			const auto a = (*f)(frp, element, context_value);
-			result_vec.vector_hamt_ptr->store_mutate(i, a);
-		}
-		else{
-			quark::throw_defective_request();
-		}
+		const auto a = (*f)((runtime_t*)&env, element, context_value);
+		result_vec.vector_hamt_ptr->store_mutate(i, a);
 	}
 	return result_vec;
 }

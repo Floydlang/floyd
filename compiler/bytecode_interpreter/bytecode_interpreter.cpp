@@ -1254,6 +1254,13 @@ static void do_call_instruction(interpreter_t& vm, int target_reg, const rt_pod_
 	}
 }
 
+#if FFI_CLOSURES
+#else
+	???
+#endif
+
+
+
 rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_value_t args[], int callee_arg_count){
 	const auto& backend = vm._backend;
 	const auto& types = backend.types;

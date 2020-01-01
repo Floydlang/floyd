@@ -119,6 +119,7 @@ struct runtime_t {
 	value_backend_t* backend;
 	runtime_basics_i* basics;
 	runtime_process_i* handler;
+	void* temp;
 };
 
 inline value_backend_t& get_backend(runtime_t* runtime){
