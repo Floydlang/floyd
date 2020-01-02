@@ -102,7 +102,6 @@ static const std::string k_network_component_header = R"(
 	func string pack_http_request(http_request_t r)
 	func http_request_t unpack_http_request(string r)
 
-	func string execute_http_request(network_component_t c, ip_address_and_port_t addr, string request) impure
 
 
 	struct http_response_status_line_t {
@@ -129,6 +128,7 @@ static const std::string k_network_component_header = R"(
 
 
 	//	Blocks for reply.
+	func string execute_http_request(network_component_t c, ip_address_and_port_t addr, string request) impure
 
 	//	Blocks forever. ??? how to ask it to stop?
 //	func void execute_http_server(network_component_t c, server_params_t params, string process_id) impure
