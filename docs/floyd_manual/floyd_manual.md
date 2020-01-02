@@ -132,6 +132,7 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 		- [struct network\_component\_t](#struct-networkcomponentt)
 		- [struct ip\_address\_and\_port_t](#struct-ipaddress_and_portt)
 		- [struct host\_info\_t](#struct-hostinfot)
+		- [lookup\_host\_from\_ip\(\) impure](#lookuphost_fromip-impure)
 		- [lookup\_host\_from\_name\(\) impure](#lookuphost_fromname-impure)
 		- [struct http\-header\_t](#struct-http-header_t)
 		- [struct http\_request\_line\_t](#struct-httprequest_linet)
@@ -3754,6 +3755,21 @@ Holds information about one specific Internet host. Use lookup_host_from_name().
 		[string] name_aliases
 		[ip_address_t] addresses_IPv4
 	}
+
+
+
+
+<a id="lookuphost_fromip-impure"></a>
+### lookup\_host\_from\_ip() impure
+
+This function lookups up information about an Internet host, based on the host's IP address. The OS gets this info from a DNS. Use this function to find the IP addresses of an Internet domain.
+
+Warning: Blocks, impure
+
+	func host_info_t lookup_host_from_ip(ip_address_t addr) impure
+
+
+
 
 
 <a id="lookuphost_fromname-impure"></a>

@@ -7938,7 +7938,7 @@ FLOYD_LANG_PROOF("generics", "", "", ""){
 //	NETWORK COMPONENT
 //######################################################################################################################
 
-//#define FLOYD_LANG_PROOF FLOYD_LANG_PROOF_VIP
+#define FLOYD_LANG_PROOF FLOYD_LANG_PROOF_VIP
 
 FLOYD_LANG_PROOF("network component", "network_component_t()", "", ""){
 	ut_run_closed_lib(
@@ -7979,6 +7979,18 @@ FLOYD_LANG_PROOF("network component", "host_info_t()", "", ""){
 			assert(a.name_aliases[1] == "example3.com")
 			assert(a.addresses_IPv4[0].data == "abcd")
 			assert(a.addresses_IPv4[1].data == "zxyz")
+
+		)"
+	);
+}
+
+FLOYD_LANG_PROOF("network component", "lookup_host_from_ip()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let x = ip_address_t("abcd")
+//			let a = lookup_host_from_ip(x)
 
 		)"
 	);

@@ -66,7 +66,13 @@ struct DICT_HAMT_T;
 struct JSON_T;
 struct STRUCT_T;
 struct bc_static_frame_t;
+
 struct value_backend_t;
+union rt_pod_t;
+
+
+void retain_value(value_backend_t& backend, rt_pod_t value, type_t type);
+void release_value(value_backend_t& backend, rt_pod_t value, type_t type);
 
 
 ////////////////////////////////	rt_type_t
@@ -605,6 +611,20 @@ struct rt_value_t {
 	//	Only works for simple values.
 	public: explicit rt_value_t(const type_t& type, const rt_pod_t& internals);
 
+	public: void retain() const {
+		if(_backend){
+			retain_value(*_backend, _pod, _type);
+		}
+		else{
+		}
+	}
+	public: void release() const {
+		if(_backend){
+			release_value(*_backend, _pod, _type);
+		}
+		else{
+		}
+	}
 
 
 	//////////////////////////////////////		internal-undefined type
