@@ -310,6 +310,16 @@ static http_request_t from_runtime__http_request_t(value_backend_t& backend, rt_
 	return req;
 }
 
+static ip_address_and_port_t from_runtime__ip_address_and_port_t(value_backend_t& backend, rt_pod_t addr){
+	auto& types = backend.types;
+
+	const auto ip_address_and_port_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "ip_address_and_port_t" }});
+
+	const auto addr1 = from_runtime_value2(backend, addr, ip_address_and_port_t__type).get_struct_value();
+	const auto addr2 = ip_address_t { make_ipv4(addr1->_member_values[0].get_struct_value()->_member_values[0].get_string_value()) };
+	return ip_address_and_port_t { addr2, (int)addr1->_member_values[1].get_int_value() };
+}
+
 
 
 
@@ -525,16 +535,10 @@ static void unified_corelib__unpack_http_response(runtime_t* frp){
 
 static rt_pod_t unified_corelib__execute_http_request(runtime_t* frp, rt_pod_t c, rt_pod_t addr, rt_pod_t request_string){
 	auto& backend = get_backend(frp);
-	auto& types = backend.types;
 
-//	const auto network_component_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "network_component_t" }});
-	const auto ip_address_and_port_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "ip_address_and_port_t" }});
-
-	const auto addr1 = from_runtime_value2(backend, addr, ip_address_and_port_t__type).get_struct_value();
-	const auto request = from_runtime_string2(backend, request_string);
-
-	const auto addr2 = ip_address_t { make_ipv4(addr1->_member_values[0].get_struct_value()->_member_values[0].get_string_value()) };
-	const auto response = execute_http_request(ip_address_and_port_t { addr2, (int)addr1->_member_values[1].get_int_value() }, request);
+	const auto addr2 = from_runtime__ip_address_and_port_t(backend, addr);
+	const auto request2 = from_runtime_string2(backend, request_string);
+	const auto response = execute_http_request(addr2, request2);
 	return to_runtime_string2(backend, response);
 }
 
