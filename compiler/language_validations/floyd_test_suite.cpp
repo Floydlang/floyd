@@ -4809,7 +4809,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "mutate struct member using updat
 
 #if 0
 //	Not supported yet, should support nested indexes and lookups etc.
-FLOYD_LANG_PROOF("Floyd test suite", "struct", "mutate nested member", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "struct", "update nested member", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
