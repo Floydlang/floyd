@@ -240,7 +240,7 @@ static type_t make__http_response_t__type(types_t& types){
 
 
 
-static rt_value_t make__ip_address_t(value_backend_t& backend, const ip_address_t& value){
+static rt_value_t to_runtime__ip_address_t(value_backend_t& backend, const ip_address_t& value){
 	const auto& types = backend.types;
 	const auto ip_address_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "ip_address_t" }});
 
@@ -249,7 +249,7 @@ static rt_value_t make__ip_address_t(value_backend_t& backend, const ip_address_
 	return rt_value_t::make_struct_value(backend, ip_address_t__type, values);
 }
 
-static ip_address_t unpack_ip_address(value_backend_t& backend, rt_pod_t ip_address){
+static ip_address_t from_runtime_ip_address_t(value_backend_t& backend, rt_pod_t ip_address){
 	const auto& types = backend.types;
 
 	const auto members = from_runtime_struct(backend, ip_address, make__ip_address_t__type(types));
@@ -258,12 +258,12 @@ static ip_address_t unpack_ip_address(value_backend_t& backend, rt_pod_t ip_addr
 	return addr2;
 }
 
-static rt_value_t make__host_info_t(value_backend_t& backend, const hostent_t& value){
+static rt_value_t to_runtime__host_info_t(value_backend_t& backend, const hostent_t& value){
 	const auto& types = backend.types;
 
 	const auto name_aliases = mapf<rt_value_t>(value.name_aliases, [&](const auto& e){ return rt_value_t::make_string(backend, e); });
 
-	const auto addresses_IPv4 = mapf<rt_value_t>(value.addresses_IPv4, [&](const auto& e){ return make__ip_address_t(backend, e); });
+	const auto addresses_IPv4 = mapf<rt_value_t>(value.addresses_IPv4, [&](const auto& e){ return to_runtime__ip_address_t(backend, e); });
 	const auto ip_address_t__type = peek2(types, lookup_type_from_name(types, type_name_t{{ "global_scope", "ip_address_t" }}));
 
 	const auto host_info_t__type = peek2(types, lookup_type_from_name(types, type_name_t{{ "global_scope", "host_info_t" }}));
@@ -279,73 +279,12 @@ static rt_value_t make__host_info_t(value_backend_t& backend, const hostent_t& v
 	return result;
 }
 
-
-
-
-static rt_value_t bc_corelib__read_socket(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-
-	auto& backend = vm._backend;
-	const auto& types = backend.types;
-
-	QUARK_ASSERT(peek2(types, args[0]._type).is_int());
-
-	const auto socket_id = args[0].get_int_value();
-	const auto r = read_socket_string((int)socket_id);
-	return rt_value_t::make_string(backend, r);
-}
-static void unified_corelib__read_socket(runtime_t* frp){
-}
-
-
-static rt_value_t bc_corelib__write_socket(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(arg_count == 2);
-
-	auto& backend = vm._backend;
-	const auto& types = backend.types;
-
-	QUARK_ASSERT(peek2(types, args[0]._type).is_int());
-	QUARK_ASSERT(peek2(types, args[1]._type).is_string());
-
-	const auto socket_id = args[0].get_int_value();
-	const auto& data = args[1].get_string_value(backend);
-	write_socket_string((int)socket_id, data);
-	return rt_value_t::make_void();
-}
-static void unified_corelib__write_socket(runtime_t* frp){
-}
-
-
-static rt_pod_t unified_corelib__lookup_host_from_ip(runtime_t* frp, rt_pod_t ip){
-	auto& backend = get_backend(frp);
-
-	const auto ip2 = unpack_ip_address(backend, ip);
-	const auto info = lookup_host(ip2);
-	const auto info2 = make__host_info_t(backend, info);
-	info2.retain();
-	return info2._pod;
-}
-
-static rt_pod_t unified_corelib__lookup_host_from_name(runtime_t* frp, rt_pod_t name_str){
-	auto& backend = get_backend(frp);
-
-	const auto name = from_runtime_string2(backend, name_str);
-	const auto info = lookup_host(name);
-	const auto info2 = make__host_info_t(backend, info);
-	info2.retain();
-	return info2._pod;
-}
-
-//??? Split into several pack/unpack functions.
-static rt_pod_t unified_corelib__pack_http_request(runtime_t* frp, rt_pod_t s){
-	auto& backend = get_backend(frp);
+static http_request_t from_runtime__http_request_t(value_backend_t& backend, rt_pod_t s){
 	auto& types = backend.types;
 
 	const auto http_request_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_request_t" }});
 
+	//??? Avoid passing via value_t
 	const auto request = from_runtime_value2(backend, s, http_request_t__type).get_struct_value();
 
 	const auto request_line = request->_member_values[0].get_struct_value();
@@ -368,11 +307,86 @@ static rt_pod_t unified_corelib__pack_http_request(runtime_t* frp, rt_pod_t s){
 		headers2,
 		optional_body
 	};
+	return req;
+}
+
+
+
+
+//////////////////////////////////////////		PACK & UNPACK
+
+
+/*
+static rt_value_t bc_corelib__read_socket(interpreter_t& vm, const rt_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+
+	auto& backend = vm._backend;
+	const auto& types = backend.types;
+
+	QUARK_ASSERT(peek2(types, args[0]._type).is_int());
+
+	const auto socket_id = args[0].get_int_value();
+	const auto r = read_socket_string((int)socket_id);
+	return rt_value_t::make_string(backend, r);
+}
+*/
+static void unified_corelib__read_socket(runtime_t* frp){
+}
+
+
+/*
+static rt_value_t bc_corelib__write_socket(interpreter_t& vm, const rt_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(arg_count == 2);
+
+	auto& backend = vm._backend;
+	const auto& types = backend.types;
+
+	QUARK_ASSERT(peek2(types, args[0]._type).is_int());
+	QUARK_ASSERT(peek2(types, args[1]._type).is_string());
+
+	const auto socket_id = args[0].get_int_value();
+	const auto& data = args[1].get_string_value(backend);
+	write_socket_string((int)socket_id, data);
+	return rt_value_t::make_void();
+}
+*/
+static void unified_corelib__write_socket(runtime_t* frp){
+}
+
+
+static rt_pod_t unified_corelib__lookup_host_from_ip(runtime_t* frp, rt_pod_t ip){
+	auto& backend = get_backend(frp);
+
+	const auto ip2 = from_runtime_ip_address_t(backend, ip);
+	const auto info = lookup_host(ip2);
+	const auto info2 = to_runtime__host_info_t(backend, info);
+	info2.retain();
+	return info2._pod;
+}
+
+static rt_pod_t unified_corelib__lookup_host_from_name(runtime_t* frp, rt_pod_t name_str){
+	auto& backend = get_backend(frp);
+
+	const auto name = from_runtime_string2(backend, name_str);
+	const auto info = lookup_host(name);
+	const auto info2 = to_runtime__host_info_t(backend, info);
+	info2.retain();
+	return info2._pod;
+}
+
+static rt_pod_t unified_corelib__pack_http_request(runtime_t* frp, rt_pod_t s){
+	auto& backend = get_backend(frp);
+
+	const auto req = from_runtime__http_request_t(backend, s);
 	const auto request_string = pack_http_request(req);
 	return to_runtime_string2(backend, request_string);
 }
 
 //??? Split into several pack/unpack functions.
+/*
 static rt_value_t bc_corelib__unpack_http_request(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
@@ -418,11 +432,11 @@ static rt_value_t bc_corelib__unpack_http_request(interpreter_t& vm, const rt_va
 		}
 	);
 }
-//??? Split into several pack/unpack functions.
+*/
 static void unified_corelib__unpack_http_request(runtime_t* frp){
 }
 
-
+/*
 //??? Split into several pack/unpack functions.
 static rt_value_t bc_corelib__pack_http_response(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
@@ -453,12 +467,14 @@ static rt_value_t bc_corelib__pack_http_response(interpreter_t& vm, const rt_val
 	const auto r = pack_http_response(req);
 	return rt_value_t::make_string(backend, r);
 }
+*/
 static void unified_corelib__pack_http_response(runtime_t* frp){
 }
 
 
 
 //??? Split into several pack/unpack functions.
+/*
 static rt_value_t bc_corelib__unpack_http_response(interpreter_t& vm, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
@@ -503,6 +519,7 @@ static rt_value_t bc_corelib__unpack_http_response(interpreter_t& vm, const rt_v
 		}
 	);
 }
+*/
 static void unified_corelib__unpack_http_response(runtime_t* frp){
 }
 
@@ -520,6 +537,8 @@ static rt_pod_t unified_corelib__execute_http_request(runtime_t* frp, rt_pod_t c
 	const auto response = execute_http_request(ip_address_and_port_t { addr2, (int)addr1->_member_values[1].get_int_value() }, request);
 	return to_runtime_string2(backend, response);
 }
+
+//??? rename unified_corelib__ -> network_compeonent_*
 
 std::map<std::string, void*> get_network_component_binds(){
 	const std::map<std::string, void*> host_functions_map = {
