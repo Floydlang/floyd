@@ -122,7 +122,7 @@ static const std::string k_network_component_header = R"(
 */
 
 //	func string pack_http_response(http_response_t r)
-//	func http_response_t unpack_http_response(string s)
+	func http_response_t unpack_http_response(string s)
 
 
 	///////////////////////////////		EXECUTE HTTP
@@ -360,6 +360,48 @@ static ip_address_and_port_t from_runtime__ip_address_and_port_t(value_backend_t
 
 
 
+
+
+//??? Split into several pack/unpack functions.
+static rt_value_t to_runtime__http_response_t(value_backend_t& backend, const http_response_t& response){
+	QUARK_ASSERT(backend.check_invariant());
+
+	const auto& types = backend.types;
+
+	const auto http_header_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_header_t" }});
+	const auto http_response_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_response_t" }});
+	const auto http_response_status_line_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_response_status_line_t" }});
+
+	const auto headers2 = mapf<rt_value_t>(response.headers, [&](const auto& e){
+		return rt_value_t::make_struct_value(
+			backend,
+			http_header_t__type,
+			{
+				rt_value_t::make_string(backend, e.key),
+				rt_value_t::make_string(backend, e.value)
+			}
+		);
+	});
+
+	return rt_value_t::make_struct_value(
+		backend,
+		http_response_t__type,
+		{
+			rt_value_t::make_struct_value(
+				backend,
+				http_response_status_line_t__type,
+				{
+					rt_value_t::make_string(backend, response.status_line.http_version),
+					rt_value_t::make_string(backend, response.status_line.status_code),
+				}
+			),
+			make_vector_value(backend, http_header_t__type, immer::vector<rt_value_t>(headers2.begin(), headers2.end())),
+			rt_value_t::make_string(backend, response.optional_body)
+		}
+	);
+}
+
+
 //////////////////////////////////////////		PACK & UNPACK
 
 
@@ -524,56 +566,13 @@ static rt_value_t bc_corelib__pack_http_response(interpreter_t& vm, const rt_val
 static void unified_corelib__pack_http_response(runtime_t* frp){
 }
 
-
-
-//??? Split into several pack/unpack functions.
-/*
-static rt_value_t bc_corelib__unpack_http_response(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-
-	auto& backend = vm._backend;
-	const auto& types = backend.types;
-
-	QUARK_ASSERT(peek2(types, args[0]._type).is_string());
-
-	const auto s = args[0].get_string_value(backend);
-	const http_response_t response = unpack_http_response(s);
-
-	const auto http_header_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_header_t" }});
-	const auto http_response_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_response_t" }});
-	const auto http_response_status_line_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_response_status_line_t" }});
-
-	const auto headers2 = mapf<rt_value_t>(response.headers, [&](const auto& e){
-		return rt_value_t::make_struct_value(
-			backend,
-			http_header_t__type,
-			{
-				rt_value_t::make_string(backend, e.key),
-				rt_value_t::make_string(backend, e.value)
-			}
-		);
-	});
-
-	return rt_value_t::make_struct_value(
-		backend,
-		http_response_t__type,
-		{
-			rt_value_t::make_struct_value(
-				backend,
-				http_response_status_line_t__type,
-				{
-					rt_value_t::make_string(backend, response.status_line.http_version),
-					rt_value_t::make_string(backend, response.status_line.status_code),
-				}
-			),
-			make_vector_value(backend, http_header_t__type, immer::vector<rt_value_t>(headers2.begin(), headers2.end())),
-			rt_value_t::make_string(backend, response.optional_body)
-		}
-	);
-}
-*/
-static void unified_corelib__unpack_http_response(runtime_t* frp){
+static rt_pod_t unified_corelib__unpack_http_response(runtime_t* frp, rt_pod_t response_str){
+	auto& backend = get_backend(frp);
+	const auto response = from_runtime_string2(backend, response_str);
+	const auto a = unpack_http_response(response);
+	const auto result = to_runtime__http_response_t(backend, a);
+	result.retain();
+	return result._pod;
 }
 
 static rt_pod_t unified_corelib__execute_http_request(runtime_t* frp, rt_pod_t c, rt_pod_t addr, rt_pod_t request_string){
@@ -598,7 +597,7 @@ std::map<std::string, void*> get_network_component_binds(){
 		{ "pack_http_request", reinterpret_cast<void *>(&unified_corelib__pack_http_request) },
 		{ "unpack_http_request", reinterpret_cast<void *>(&unified_corelib__unpack_http_request) },
 //		{ "pack_http_response", reinterpret_cast<void *>(&unified_corelib__pack_http_response) },
-//		{ "unpack_http_response", reinterpret_cast<void *>(&unified_corelib__unpack_http_response) },
+		{ "unpack_http_response", reinterpret_cast<void *>(&unified_corelib__unpack_http_response) },
 		{ "execute_http_request", reinterpret_cast<void *>(&unified_corelib__execute_http_request) }
 	};
 	return host_functions_map;
