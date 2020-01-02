@@ -137,7 +137,8 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 		- [struct http\-header\_t](#struct-http-header_t)
 		- [struct http\_request\_line\_t](#struct-httprequest_linet)
 		- [struct http\_request\_t](#struct-httprequestt)
-		- [pack_http_request\(\)](#packhttprequest)
+		- [pack\_http\_request\(\)](#packhttprequest)
+		- [unpack\_http\_request\(\)](#unpackhttprequest)
 		- [execute_http_request\(\) impure](#executehttprequest-impure)
 	- [3.7 STANDARD TYPES](#37-standard-types)
 		- [uuid_t](#uuid_t)
@@ -3829,11 +3830,20 @@ Represents a complete HTTP request, including GET or PUT etc, the path, query st
 
 
 <a id="packhttprequest"></a>
-### pack_http_request()
+### pack\_http\_request()
 
-This function pack a http_request_t-structure, filled out with informations and packs it into a proper HTTP message string. It will insert CR+LF etc.
+This function packs a http_request_t-structure, filled out with informations and packs it into a proper HTTP message string. It will insert CR+LF etc.
 
 	func string pack_http_request(http_request_t r)
+
+
+
+<a id="unpackhttprequest"></a>
+### unpack\_http\_request()
+
+This function unpacks a http_request_t-structure. It will insert CR+LF etc.
+
+	func http_request_t unpack_http_request(string r)
 
 
 

@@ -7938,7 +7938,7 @@ FLOYD_LANG_PROOF("generics", "", "", ""){
 //	NETWORK COMPONENT
 //######################################################################################################################
 
-#define FLOYD_LANG_PROOF FLOYD_LANG_PROOF_VIP
+//#define FLOYD_LANG_PROOF FLOYD_LANG_PROOF_VIP
 
 FLOYD_LANG_PROOF("network component", "network_component_t()", "", ""){
 	ut_run_closed_lib(
@@ -8054,6 +8054,24 @@ FLOYD_LANG_PROOF("network component", "pack_http_request()", "", ""){
 		)"
 	);
 }
+
+FLOYD_LANG_PROOF_VIP("network component", "unpack_http_request()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let r = unpack_http_request("GET /test.html HTTP/1.1")
+
+			assert(r.request_line.method == "GET")
+			assert(r.request_line.uri == "/test.html")
+			assert(r.request_line.http_version == "HTTP/1.1")
+			assert(r.headers == [])
+			assert(r.optional_body == "")
+
+		)"
+	);
+}
+
 
 FLOYD_LANG_PROOF("network component", "execute_http_request()", "", ""){
 	ut_run_closed_lib(
