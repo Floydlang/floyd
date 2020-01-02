@@ -58,9 +58,7 @@ struct semast_lexical_scope_t {
 
 struct analyser_t {
 	public: analyser_t(const unchecked_ast_t& ast);
-#if DEBUG
 	public: bool check_invariant() const;
-#endif
 
 
 	////////////////////////		STATE

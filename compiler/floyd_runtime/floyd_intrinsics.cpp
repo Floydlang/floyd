@@ -652,8 +652,8 @@ rt_pod_t intrinsic__map__hamt(
 	QUARK_ASSERT(backend.check_invariant());
 	const auto& types = backend.types;
 
+const auto& f_type2 = lookup_type_ref(backend, f_type);
 #if DEBUG
-	const auto& f_type2 = lookup_type_ref(backend, f_type);
 	const auto f_arg_types = peek2(types, f_type2).get_function_args(types);
 #endif
 	const auto e_type = peek2(types, type_t(elements_vec_type)).get_vector_element_type(types);
@@ -851,9 +851,7 @@ rt_pod_t intrinsic__map_dag__carray(
 //	QUARK_ASSERT(check_map_dag_func_type(type0, type1, f_value_type2, lookup_type_ref(backend, context_type)));
 
 	const auto& elements = elements_vec;
-#if DEBUG
 	const auto& e_type = peek2(types, type0).get_vector_element_type(types);
-#endif
 	const auto& parents = depends_on_vec;
 	const auto& f = f_value;
 	const auto& r_type = peek2(types, f_value_type2).get_function_return(types);
@@ -1000,9 +998,7 @@ rt_pod_t intrinsic__map_dag__hamt(
 //	QUARK_ASSERT(check_map_dag_func_type(type0, type1, f_value_type2, lookup_type_ref(backend, context_type)));
 
 	const auto& elements = elements_vec;
-#if DEBUG
 	const auto& e_type = peek2(types, type0).get_vector_element_type(types);
-#endif
 	const auto& parents = depends_on_vec;
 	const auto& f = f_value;
 	const auto& r_type = peek2(types, f_value_type2).get_function_return(types);

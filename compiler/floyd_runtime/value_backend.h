@@ -169,9 +169,7 @@ struct heap_alloc_64_t {
 		data[2] = 0x00000000'00000000;
 		data[3] = 0x00000000'00000000;
 
-#if DEBUG
 		debug_info = std::string(debug_string);
-#endif
 
 		QUARK_ASSERT(check_invariant());
 	}
@@ -195,11 +193,13 @@ struct heap_alloc_64_t {
 
 	heap_t* heap;
 
-#if DEBUG
+
+	//??? remove from non-debug builds
 	std::string debug_info;
+
+	//??? remove from non-debug builds
 	type_t debug_value_type;
-//	std::string debug_value_type_str;
-#endif
+
 	int64_t alloc_id;
 
 };
@@ -590,9 +590,7 @@ void store_via_ptr2(const types_t& types, void* value_ptr, const type_t& type, c
 */
 
 struct rt_value_t {
-#if DEBUG
 	public: bool check_invariant() const;
-#endif
 	public: rt_value_t();
 	public: ~rt_value_t();
 	public: rt_value_t(const rt_value_t& other);

@@ -1297,7 +1297,6 @@ rt_value_t::rt_value_t(const type_t& type, const rt_pod_t& internals) :
 }
 
 
-#if DEBUG
 bool rt_value_t::check_invariant() const {
 	QUARK_ASSERT(_type.check_invariant());
 
@@ -1311,7 +1310,6 @@ bool rt_value_t::check_invariant() const {
 
 	return true;
 }
-#endif
 
 
 QUARK_TEST("rt_value_t", "", "", ""){

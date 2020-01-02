@@ -75,9 +75,8 @@ struct gen_instruction_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-#if DEBUG
 	public: bool check_invariant() const;
-#endif
+
 
 	//////////////////////////////////////		STATE
 	bc_opcode _opcode;

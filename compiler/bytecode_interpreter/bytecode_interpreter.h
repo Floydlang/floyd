@@ -520,9 +520,7 @@ reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e);
 
 struct bc_instruction_t {
 	bc_instruction_t(bc_opcode opcode, int16_t a, int16_t b, int16_t c);
-#if DEBUG
 	public: bool check_invariant() const;
-#endif
 
 
 	//////////////////////////////////////		STATE
@@ -571,9 +569,7 @@ struct bc_static_frame_t {
 	The interpreter doesn't use a flat list of instructions for programs, rather a list of functions.
 */
 struct bc_function_definition_t {
-#if DEBUG
 	public: bool check_invariant() const;
-#endif
 
 
 	//////////////////////////////////////		STATE
@@ -827,7 +823,7 @@ struct interpreter_stack_t {
 	public: bool check_stack_frame(const frame_pos_t& in_frame) const;
 #endif
 
-	struct active_frame_t {
+	public: struct active_frame_t {
 		size_t start_pos;
 		size_t end_pos;
 		const bc_static_frame_t* static_frame;
@@ -864,7 +860,12 @@ struct interpreter_stack_t {
 		);
 #else
 //			const auto result = rt_value_t(_current_frame_start_ptr[reg], is_ext);
-		const auto result = rt_value_t(_current_static_frame->_symbol_effective_type[reg], _current_frame_start_ptr[reg], is_ext);
+		const auto result = rt_value_t(
+			*_backend,
+			_current_static_frame->_symbol_effective_type[reg],
+			_current_frame_start_ptr[reg],
+			rt_value_t::rc_mode::bump
+		);
 #endif
 		QUARK_ASSERT(result.check_invariant());
 		return result;
@@ -1185,9 +1186,7 @@ struct interpreter_t : runtime_basics_i {
 	public: void unwind_stack();
 
 	public: const interpreter_t& operator=(const interpreter_t& other)= delete;
-#if DEBUG
 	public: bool check_invariant() const;
-#endif
 	public: void swap(interpreter_t& other) throw();
 
 	void runtime_basics__on_print(const std::string& s) override;
