@@ -105,7 +105,6 @@ static const std::string k_network_component_header = R"(
 	func string execute_http_request(network_component_t c, ip_address_and_port_t addr, string request) impure
 
 
-/*
 	struct http_response_status_line_t {
 		string http_version
 		string status_code
@@ -122,10 +121,8 @@ static const std::string k_network_component_header = R"(
 	}
 */
 
-
-	func string pack_http_response(http_response_t r)
-	func http_response_t unpack_http_response(string s)
-*/
+//	func string pack_http_response(http_response_t r)
+//	func http_response_t unpack_http_response(string s)
 
 
 	///////////////////////////////		EXECUTE HTTP

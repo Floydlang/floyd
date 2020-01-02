@@ -8055,7 +8055,7 @@ FLOYD_LANG_PROOF("network component", "pack_http_request()", "", ""){
 	);
 }
 
-FLOYD_LANG_PROOF_VIP("network component", "unpack_http_request()", "", ""){
+FLOYD_LANG_PROOF("network component", "unpack_http_request()", "", ""){
 	ut_run_closed_lib(
 		QUARK_POS,
 		R"(
