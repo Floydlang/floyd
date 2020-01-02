@@ -8072,6 +8072,42 @@ FLOYD_LANG_PROOF("network component", "unpack_http_request()", "", ""){
 	);
 }
 
+FLOYD_LANG_PROOF("network component", "pack_http_response()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let r = pack_http_response(
+				http_response_t(
+					http_response_status_line_t("HTTP/1.1", "301 Moved Permanently"),
+					[ http_header_t("Server", "Varnish"), http_header_t("X-Cache-Hits", "0") ],
+					""
+				)
+			)
+			assert(r == "HTTP/1.1 301 Moved Permanently\r\nServer: Varnish\r\nX-Cache-Hits: 0\r\n\r\n")
+
+		)"
+	);
+}
+
+
+FLOYD_LANG_PROOF("network component", "unpack_http_response()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let r = unpack_http_response("HTTP/1.1 301 Moved Permanently\r\n	Server: Varnish\r\n	X-Cache-Hits: 0\r\n\r\n")
+			assert(r.status_line == http_response_status_line_t ( "HTTP/1.1", "301 Moved Permanently" ))
+			assert(size(r.headers) == 2)
+			assert(r.headers[0] == http_header_t ( "Server", "Varnish" ))
+			assert(r.headers[1] == http_header_t ( "X-Cache-Hits", "0" ))
+			assert(r.optional_body == "")
+
+		)"
+	);
+}
+
+
 FLOYD_LANG_PROOF("network component", "execute_http_request()", "", ""){
 	ut_run_closed_lib(
 		QUARK_POS,
@@ -8089,22 +8125,5 @@ FLOYD_LANG_PROOF("network component", "execute_http_request()", "", ""){
 		)"
 	);
 }
-
-FLOYD_LANG_PROOF("network component", "unpack_http_response()", "", ""){
-	ut_run_closed_lib(
-		QUARK_POS,
-		R"(
-
-			let r = unpack_http_response("	HTTP/1.1 301 Moved Permanently\r\n	Server: Varnish\r\n	X-Cache-Hits: 0\r\n\r\n");
-			assert(r.status_line == http_response_status_line_t ( "HTTP/1.1", "301 Moved Permanently" ));
-			assert(size(r.headers) == 2);
-			assert(r.headers[0] == http_header_t ( "Server", "Varnish" ));
-			assert(r.headers[1] == http_header_t ( "X-Cache-Hits", "0" ));
-			assert(r.optional_body == "");
-
-		)"
-	);
-}
-
 
 

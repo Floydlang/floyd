@@ -675,6 +675,8 @@ struct rt_value_t {
 		const type_t& struct_type,
 		const std::vector<rt_value_t>& values
 	);
+
+	//??? backend arg not needed, we have _backend.
 	public: const std::vector<rt_value_t> get_struct_value(value_backend_t& backend) const;
 
 
