@@ -7938,12 +7938,116 @@ FLOYD_LANG_PROOF("generics", "", "", ""){
 //	NETWORK COMPONENT
 //######################################################################################################################
 
+//#define FLOYD_LANG_PROOF FLOYD_LANG_PROOF_VIP
 
-
-FLOYD_LANG_PROOF("network component", "", "", ""){
+FLOYD_LANG_PROOF("network component", "network_component_t()", "", ""){
 	ut_run_closed_lib(
 		QUARK_POS,
 		R"(
+
+			let c = network_component_t(100)
+			assert(c.internal == 100)
+
+		)"
+	);
+}
+FLOYD_LANG_PROOF("network component", "ip_address_and_port_t()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let a = ip_address_and_port_t(ip_address_t("abcd"), 8080)
+			assert(a.addr.data == "abcd")
+			assert(a.port == 8080)
+
+		)"
+	);
+}
+
+FLOYD_LANG_PROOF("network component", "host_info_t()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let a = host_info_t(
+				"example.com",
+				[ "example2.com", "example3.com"],
+				[ ip_address_t("abcd"), ip_address_t("zxyz") ]
+			)
+			assert(a.official_host_name == "example.com")
+			assert(a.name_aliases[0] == "example2.com")
+			assert(a.name_aliases[1] == "example3.com")
+			assert(a.addresses_IPv4[0].data == "abcd")
+			assert(a.addresses_IPv4[1].data == "zxyz")
+
+		)"
+	);
+}
+
+FLOYD_LANG_PROOF("network component", "lookup_host_from_name()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let a = lookup_host_from_name("example.com")
+
+			print(a)
+			assert(a.official_host_name == "example.com")
+//			assert(size(a.name_aliases[0]) > 0)
+			assert(size(a.addresses_IPv4) > 0)
+//			assert(a.addresses_IPv4[0].data == "abcd")
+
+		)"
+	);
+}
+
+FLOYD_LANG_PROOF("network component", "http_header_t()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let a = http_header_t("Content-Type", "text/html")
+			assert(a.key == "Content-Type")
+			assert(a.value == "text/html")
+
+		)"
+	);
+}
+
+FLOYD_LANG_PROOF("network component", "http_request_line_t()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let a = http_request_line_t("POST", "/test/demo_form.php", "HTTP/1.1")
+			assert(a.method == "POST")
+			assert(a.uri == "/test/demo_form.php")
+			assert(a.http_version == "HTTP/1.1")
+
+		)"
+	);
+}
+
+FLOYD_LANG_PROOF("network component", "pack_http_request()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let request_line = http_request_line_t ( "GET", "/index.html", "HTTP/1.0" )
+			let a = http_request_t ( request_line, [], "" )
+			let r = pack_http_request(a)
+			print(r)
+			assert(r == "GET /index.html HTTP/1.0\r\n\r\n")
+
+		)"
+	);
+}
+
+FLOYD_LANG_PROOF("network component", "execute_http_request()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
 			let c = network_component_t(666)
 
 			let request_line = http_request_line_t ( "GET", "/index.html", "HTTP/1.0" )
@@ -7956,5 +8060,4 @@ FLOYD_LANG_PROOF("network component", "", "", ""){
 		)"
 	);
 }
-
 

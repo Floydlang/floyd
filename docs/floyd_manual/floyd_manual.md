@@ -3761,7 +3761,7 @@ Holds information about one specific Internet host. Use lookup_host_from_name().
 
 This function lookups up information about an Internet host, based on the host's name. The OS gets this info from a DNS. Use this function to find the IP addresses of an Internet domain.
 
-Warning: Blocksm, impure
+Warning: Blocks, impure
 
 	func host_info_t lookup_host_from_name(string name) impure
 

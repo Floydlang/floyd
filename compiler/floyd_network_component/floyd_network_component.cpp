@@ -10,6 +10,44 @@
 
 #include "floyd_corelib.h"
 
+#include "compiler_basics.h"
+#include "floyd_sockets.h"
+#include "floyd_http.h"
+
+
+
+/*
+std::string read_socket(int socket);
+void write_socket(int socket, const std::string& data);
+
+
+hostent_t lookup_host_from_ip(ip_address_t addr);
+hostent_t lookup_host_from_name(const std::string& name);
+
+std::string to_ipv4_dotted_decimal_string(const ip_address_t& a);
+ip_address_t from_ipv4_dotted_decimal_string(const std::string& s);
+
+
+//	func int connect_to_server(network_component_t c, ip_address_and_port_t server_addr)
+//	func void close_socket(int socket)
+
+
+///////////////////////////////		HTTP
+
+
+std::string pack_http_request(const http_request_t& r);
+http_request_t unpack_http_request(const std::string& r);
+
+std::string pack_http_response(const http_response_t& r);
+http_response_t unpack_http_response(const std::string& s);
+
+
+///////////////////////////////		EXECUTE HTTP
+
+
+//	Blocks for reply.
+std::string execute_http_request(ip_address_and_port_t addr, const std::string& request);
+*/
 
 //??? temporary
 #include "bytecode_interpreter.h"
@@ -17,7 +55,14 @@
 
 namespace floyd {
 
-
+type_t make__network_component_t__type(types_t& types);
+type_t make__ip_address_and_port_t__type(types_t& types);
+type_t make__host_info_t__type(types_t& types);
+type_t make__http_header_t__type(types_t& types);
+type_t make__http_request_line_t__type(types_t& types);
+type_t make__http_request_t__type(types_t& types);
+type_t make__http_response_status_line_t__type(types_t& types);
+type_t make__http_response_t__type(types_t& types);
 
 static const std::string k_network_component_header = R"(
 
@@ -38,8 +83,8 @@ static const std::string k_network_component_header = R"(
 		int port
 	}
 
-	func string read_socket(int socket)
-	func void write_socket(int socket, string data)
+//	func string read_socket(int socket)
+//	func void write_socket(int socket, string data)
 
 	struct host_info_t {
 		string official_host_name
@@ -47,11 +92,11 @@ static const std::string k_network_component_header = R"(
 		[ip_address_t] addresses_IPv4
 	}
 
-	func host_info_t lookup_host_from_ip(ip_address_t addr) impure
+//	func host_info_t lookup_host_from_ip(ip_address_t addr) impure
 	func host_info_t lookup_host_from_name(string name) impure
 
-	func string to_ipv4_dotted_decimal_string(ip_address_t a)
-	func ip_address_t from_ipv4_dotted_decimal_string(string s)
+//	func string to_ipv4_dotted_decimal_string(ip_address_t a)
+//	func ip_address_t from_ipv4_dotted_decimal_string(string s)
 
 
 	//////////////////////////////////////		TCP CLIENT
@@ -84,19 +129,23 @@ static const std::string k_network_component_header = R"(
 		string value
 	}
 
-
 	struct http_request_line_t {
 		string method
 		string uri
 		string http_version
 	}
+
 	struct http_request_t {
 		http_request_line_t request_line
 		[http_header_t] headers
 		string optional_body
 	}
 
+	func string pack_http_request(http_request_t r)
+	func string execute_http_request(network_component_t c, ip_address_and_port_t addr, string request) impure
 
+
+/*
 	struct http_response_status_line_t {
 		string http_version
 		string status_code
@@ -107,23 +156,23 @@ static const std::string k_network_component_header = R"(
 		string optional_body
 	}
 
+/*
 	func int get_time_ns() impure {
 		return get_time_of_day() * 1000
 	}
+*/
 
-	func string pack_http_request(http_request_t r)
 	func http_request_t unpack_http_request(string r)
 
 	func string pack_http_response(http_response_t r)
 	func http_response_t unpack_http_response(string s)
-
+*/
 
 
 	///////////////////////////////		EXECUTE HTTP
 
 
 	//	Blocks for reply.
-	func string execute_http_request(network_component_t c, ip_address_and_port_t addr, string request) impure
 
 	//	Blocks forever. ??? how to ask it to stop?
 //	func void execute_http_server(network_component_t c, server_params_t params, string process_id) impure
@@ -498,16 +547,16 @@ static rt_pod_t unified_corelib__execute_http_request(runtime_t* frp, rt_pod_t c
 
 std::map<std::string, void*> get_network_component_binds(){
 	const std::map<std::string, void*> host_functions_map = {
-		{ "read_socket", reinterpret_cast<void *>(&unified_corelib__read_socket) },
-		{ "write_socket", reinterpret_cast<void *>(&unified_corelib__write_socket) },
-		{ "lookup_host_from_ip", reinterpret_cast<void *>(&unified_corelib__lookup_host_from_ip) },
+//		{ "read_socket", reinterpret_cast<void *>(&unified_corelib__read_socket) },
+//		{ "write_socket", reinterpret_cast<void *>(&unified_corelib__write_socket) },
+//		{ "lookup_host_from_ip", reinterpret_cast<void *>(&unified_corelib__lookup_host_from_ip) },
 		{ "lookup_host_from_name", reinterpret_cast<void *>(&unified_corelib__lookup_host_from_name) },
-		{ "to_ipv4_dotted_decimal_string", nullptr },
-		{ "from_ipv4_dotted_decimal_string", nullptr },
+//		{ "to_ipv4_dotted_decimal_string", nullptr },
+//		{ "from_ipv4_dotted_decimal_string", nullptr },
 		{ "pack_http_request", reinterpret_cast<void *>(&unified_corelib__pack_http_request) },
-		{ "unpack_http_request", reinterpret_cast<void *>(&unified_corelib__unpack_http_request) },
-		{ "pack_http_response", reinterpret_cast<void *>(&unified_corelib__pack_http_response) },
-		{ "unpack_http_response", reinterpret_cast<void *>(&unified_corelib__unpack_http_response) },
+//		{ "unpack_http_request", reinterpret_cast<void *>(&unified_corelib__unpack_http_request) },
+//		{ "pack_http_response", reinterpret_cast<void *>(&unified_corelib__pack_http_response) },
+//		{ "unpack_http_response", reinterpret_cast<void *>(&unified_corelib__unpack_http_response) },
 		{ "execute_http_request", reinterpret_cast<void *>(&unified_corelib__execute_http_request) }
 	};
 	return host_functions_map;
