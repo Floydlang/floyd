@@ -267,7 +267,12 @@ union rt_pod_t {
 	JSON_T* json_ptr;
 	STRUCT_T* struct_ptr;
 
-	int64_t function_link_id;
+	/*
+		Native code, this is a pointer to the instruction
+		Bytecode: this is an ID to lookup in the value_backend_t.
+		-1: none.
+	*/
+	int64_t function_data;
 
 	void* frame_ptr;
 
@@ -661,7 +666,7 @@ struct rt_value_t {
 		const type_t& function_type,
 		const module_symbol_t& function
 	);
-	public: int64_t get_function_value_id() const;
+	public: int64_t get_function_value_data() const;
 
 
 	//////////////////////////////////////		bc_static_frame_t
@@ -697,9 +702,11 @@ struct rt_value_t {
 ////////////////////////////////////////////			FREE
 
 
+//??? All functions like this should take type of *collection*, not its element / value.
+
+
 const immer::vector<rt_value_t> get_vector_elements(value_backend_t& backend, const rt_value_t& value);
 
-//??? All functions like this should take type of *collection*, not its element / value.
 rt_value_t make_vector_value(value_backend_t& backend, const type_t& element_type, const immer::vector<rt_value_t>& elements);
 
 const immer::map<std::string, rt_value_t> get_dict_values(value_backend_t& backend, const rt_value_t& value);
@@ -771,18 +778,13 @@ struct func_link_t {
 		arg_names(arg_names),
 		native_type(native_type)
 	{
-//		QUARK_ASSERT(module_symbol.s.empty() == false);
 		QUARK_ASSERT(function_type_optional.is_function() || function_type_optional.is_undefined());
-//		QUARK_ASSERT(f != nullptr);
 
 		QUARK_ASSERT(check_invariant());
 	}
 
 	bool check_invariant() const {
-//		QUARK_ASSERT(module_symbol.s.empty() == false);
 		QUARK_ASSERT(function_type_optional.is_function() || function_type_optional.is_undefined());
-//		QUARK_ASSERT(dynamic_arg_count >= 0 && dynamic_arg_count < 1000);
-//		QUARK_ASSERT(f != nullptr);
 		return true;
 	}
 
@@ -809,7 +811,7 @@ json_t func_link_to_json(const types_t& types, const func_link_t& def);
 std::string print_function_link_map(const types_t& types, const std::vector<func_link_t>& defs);
 void trace_function_link_map(const types_t& types, const std::vector<func_link_t>& defs);
 
-const func_link_t* find_function_by_name3(const std::vector<func_link_t>& v, const module_symbol_t& s);
+const func_link_t* lookup_func_link_by_symbol(const std::vector<func_link_t>& v, const module_symbol_t& s);
 
 inline func_link_t set_f(const func_link_t& e, void* f){
 	const auto v2 = func_link_t {
@@ -879,7 +881,9 @@ void trace_value_backend_dynamic(const value_backend_t& backend);
 
 const func_link_t* lookup_func_link_by_symbol(const value_backend_t& backend, const module_symbol_t& s);
 const func_link_t* lookup_func_link_by_pod(const value_backend_t& backend, rt_pod_t value);
-const func_link_t& lookup_func_link_required(const value_backend_t& backend, rt_pod_t value);
+
+//	Helper that throws if pod can't be resolved.
+const func_link_t& lookup_func_link_by_pod_required(const value_backend_t& backend, rt_pod_t value);
 
 //??? kill this function
 inline type_t lookup_type_ref(const value_backend_t& backend, rt_type_t type){
@@ -1262,9 +1266,6 @@ inline rt_pod_t update_element__vector_hamt_nonpod(value_backend_t& backend, rt_
 	}
 	return result;
 }
-
-
-
 
 
 }	// floyd

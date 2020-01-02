@@ -576,7 +576,7 @@ rt_pod_t intrinsic__map__carray(
 #endif
 	const auto e_type = peek2(types, type_t(elements_vec_type)).get_vector_element_type(types);
 
-	const auto& func_link = lookup_func_link_required(backend, f_value);
+	const auto& func_link = lookup_func_link_by_pod_required(backend, f_value);
 	QUARK_ASSERT(
 		func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc
 		|| func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc
@@ -658,7 +658,7 @@ rt_pod_t intrinsic__map__hamt(
 #endif
 	const auto e_type = peek2(types, type_t(elements_vec_type)).get_vector_element_type(types);
 
-	const auto& func_link = lookup_func_link_required(backend, f_value);
+	const auto& func_link = lookup_func_link_by_pod_required(backend, f_value);
 	QUARK_ASSERT(
 		func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc
 		|| func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc
@@ -865,7 +865,7 @@ rt_pod_t intrinsic__map_dag__carray(
 
 	const auto vec_r_type = type_t::make_vector(types, r_type);
 
-	const auto& func_link = lookup_func_link_required(backend, f);
+	const auto& func_link = lookup_func_link_by_pod_required(backend, f);
 	QUARK_ASSERT(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc || func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc);
 	const auto f2 = reinterpret_cast<map_dag_F>(func_link.f);
 
@@ -1014,7 +1014,7 @@ rt_pod_t intrinsic__map_dag__hamt(
 
 	const auto vec_r_type = type_t::make_vector(types, r_type);
 
-	const auto& func_link = lookup_func_link_required(backend, f);
+	const auto& func_link = lookup_func_link_by_pod_required(backend, f);
 	QUARK_ASSERT(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc || func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc);
 	const auto f2 = reinterpret_cast<map_dag_F>(func_link.f);
 
@@ -1183,7 +1183,7 @@ rt_pod_t intrinsic__filter_carray(
 
 	const auto& vec = *elements_vec.vector_carray_ptr;
 
-	const auto& func_link = lookup_func_link_required(backend, f_value);
+	const auto& func_link = lookup_func_link_by_pod_required(backend, f_value);
 	QUARK_ASSERT(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc || func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc);
 	const auto f = reinterpret_cast<FILTER_F>(func_link.f);
 
@@ -1258,7 +1258,7 @@ rt_pod_t intrinsic__filter_hamt(
 
 	const auto& vec = *elements_vec.vector_hamt_ptr;
 
-	const auto& func_link = lookup_func_link_required(backend, f_value);
+	const auto& func_link = lookup_func_link_by_pod_required(backend, f_value);
 	QUARK_ASSERT(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc || func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc);
 	const auto f = reinterpret_cast<FILTER_F>(func_link.f);
 
@@ -1359,7 +1359,7 @@ rt_pod_t intrinsic__reduce_carray(
 	const auto& vec = *elements_vec.vector_carray_ptr;
 	const auto& init = init_value;
 
-	const auto& func_link = lookup_func_link_required(backend, f_value);
+	const auto& func_link = lookup_func_link_by_pod_required(backend, f_value);
 	QUARK_ASSERT(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc || func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc);
 	const auto f = reinterpret_cast<REDUCE_F>(func_link.f);
 
@@ -1425,7 +1425,7 @@ rt_pod_t intrinsic__reduce_hamt(
 	const auto& vec = *elements_vec.vector_hamt_ptr;
 	const auto& init = init_value;
 
-	const auto& func_link = lookup_func_link_required(backend, f_value);
+	const auto& func_link = lookup_func_link_by_pod_required(backend, f_value);
 	QUARK_ASSERT(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc || func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc);
 	const auto f = reinterpret_cast<REDUCE_F>(func_link.f);
 
@@ -1521,7 +1521,7 @@ rt_pod_t intrinsic__stable_sort(
 	const auto t_type = vec_t_type.get_vector_element_type(types);
 	const auto& f_value_type2 = lookup_type_ref(backend, f_value_type);
 
-	const auto& func_link = lookup_func_link_required(backend, f_value);
+	const auto& func_link = lookup_func_link_by_pod_required(backend, f_value);
 	QUARK_ASSERT(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc || func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc);
 	const auto f2 = reinterpret_cast<stable_sort_F>(func_link.f);
 

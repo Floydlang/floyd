@@ -29,7 +29,7 @@ const bool k_keep_deleted_allocs = true;
 
 
 static void dispose_alloc(heap_alloc_64_t& alloc);
-static rt_pod_t find_function(const value_backend_t& backend, const module_symbol_t& s);
+static rt_pod_t pod_from_symbol(const value_backend_t& backend, const module_symbol_t& s);
 
 
 ////////////////////////////////		heap_t
@@ -1251,10 +1251,10 @@ rt_value_t rt_value_t::make_function_value(value_backend_t& backend, const type_
 
 	return rt_value_t{ backend, function_type, function };
 }
-int64_t rt_value_t::get_function_value_id() const{
+int64_t rt_value_t::get_function_value_data() const{
 	QUARK_ASSERT(check_invariant());
 
-	return _pod.function_link_id;
+	return _pod.function_data;
 }
 rt_value_t::rt_value_t(value_backend_t& backend, const type_t& function_type, const module_symbol_t& function) :
 	_backend(nullptr),
@@ -1263,7 +1263,7 @@ rt_value_t::rt_value_t(value_backend_t& backend, const type_t& function_type, co
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(function_type.is_function());
 
-	_pod = find_function(backend, function);
+	_pod = pod_from_symbol(backend, function);
 
 	QUARK_ASSERT(check_invariant());
 }
@@ -1302,7 +1302,7 @@ bool rt_value_t::check_invariant() const {
 	QUARK_ASSERT(_type.check_invariant());
 
 	if(_type.is_function()){
-		QUARK_ASSERT(_pod.function_link_id == -1 || (_pod.function_link_id >= 0 && _pod.function_link_id < 10000));
+		QUARK_ASSERT(_pod.function_data == -1 || (_pod.function_data >= 0 && _pod.function_data < 10000));
 	}
 
 	if(_backend != nullptr){
@@ -1730,7 +1730,7 @@ void trace_function_link_map(const types_t& types, const std::vector<func_link_t
 	QUARK_TRACE(print_function_link_map(types, defs));
 }
 
-const func_link_t* find_function_by_name3(const std::vector<func_link_t>& v, const module_symbol_t& s){
+const func_link_t* lookup_func_link_by_symbol(const std::vector<func_link_t>& v, const module_symbol_t& s){
 	const auto it = std::find_if(v.begin(), v.end(), [&] (auto& m) { return m.module_symbol == s; });
 	if(it != v.end()){
 		return &(*it);
@@ -1747,24 +1747,23 @@ const func_link_t* find_function_by_name3(const std::vector<func_link_t>& v, con
 
 
 
-static rt_pod_t find_function(const value_backend_t& backend, const module_symbol_t& s){
-	const auto& v = backend.func_link_lookup;
-	const auto it = std::find_if(v.begin(), v.end(), [&] (auto& m) { return m.module_symbol == s; });
-	if(it != v.end()){
-		const auto result = (int64_t)(it - v.begin());
-		return rt_pod_t { .function_link_id = result };
+static rt_pod_t pod_from_symbol(const value_backend_t& backend, const module_symbol_t& s){
+	const auto link = lookup_func_link_by_symbol(backend, s);
+	if(link){
+		const auto result = (int64_t)(link - &backend.func_link_lookup[0]);
+		return rt_pod_t { .function_data = result };
 	}
 	else{
-		return rt_pod_t { .function_link_id = -1 };
+		return rt_pod_t { .function_data = -1 };
 	}
 }
 
 const func_link_t* lookup_func_link_by_symbol(const value_backend_t& backend, const module_symbol_t& s){
-	return find_function_by_name3(backend.func_link_lookup, s);
+	return lookup_func_link_by_symbol(backend.func_link_lookup, s);
 }
 
 const func_link_t* lookup_func_link_by_pod(const value_backend_t& backend, rt_pod_t value){
-	auto func_id = value.function_link_id;
+	auto func_id = value.function_data;
 	if(func_id == -1){
 		return nullptr;
 	}
@@ -1773,7 +1772,7 @@ const func_link_t* lookup_func_link_by_pod(const value_backend_t& backend, rt_po
 		return &e;
 	}
 
-	const void* f = (const void*)value.function_link_id;
+	const void* f = (const void*)value.function_data;
 	const auto& v = backend.func_link_lookup;
 	const auto it = std::find_if(v.begin(), v.end(), [&] (auto& m) { return m.f == f; });
 	if(it != v.end()){
@@ -1783,7 +1782,7 @@ const func_link_t* lookup_func_link_by_pod(const value_backend_t& backend, rt_po
 	return nullptr;
 }
 
-const func_link_t& lookup_func_link_required(const value_backend_t& backend, rt_pod_t value){
+const func_link_t& lookup_func_link_by_pod_required(const value_backend_t& backend, rt_pod_t value){
 	const auto result = lookup_func_link_by_pod(backend, value);
 	if(result == nullptr){
 		throw std::runtime_error("");
@@ -2896,7 +2895,7 @@ rt_pod_t to_runtime_value2(value_backend_t& backend, const value_t& value){
 			return to_runtime_dict(backend, e, value);
 		}
 		rt_pod_t operator()(const function_t& e) const{
-			return find_function(backend, value.get_function_value());
+			return pod_from_symbol(backend, value.get_function_value());
 		}
 		rt_pod_t operator()(const symbol_ref_t& e) const {
 			quark::throw_defective_request();
@@ -2970,7 +2969,10 @@ value_t from_runtime_value2(const value_backend_t& backend, const rt_pod_t encod
 		}
 		value_t operator()(const function_t& e) const{
 			const auto func_link_ptr = lookup_func_link_by_pod(backend, encoded_value);
-			return value_t::make_function_value(backend.types, type, func_link_ptr ? func_link_ptr->module_symbol : k_no_module_symbol);
+			return value_t::make_function_value(
+				backend.types, type,
+				func_link_ptr ? func_link_ptr->module_symbol : k_no_module_symbol
+			);
 		}
 		value_t operator()(const symbol_ref_t& e) const {
 			quark::throw_defective_request();

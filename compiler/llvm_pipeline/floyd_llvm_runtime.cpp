@@ -500,7 +500,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			const auto s2 = strip_link_name(s);
 
 			const auto& function_link_map = program_breaks.function_link_map;
-			const auto found = find_function_by_name3(function_link_map, module_symbol_t(s2));
+			const auto found = lookup_func_link_by_symbol(function_link_map, module_symbol_t(s2));
 			if(found != nullptr && found->f != nullptr){
 				return found->f;
 			}
