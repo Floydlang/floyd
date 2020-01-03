@@ -606,10 +606,17 @@ struct rt_value_t {
 
 	//	Bumps RC if needed.
 	enum class rc_mode { adopt, bump };
-	public: explicit rt_value_t(value_backend_t& backend, const type_t& type, const rt_pod_t& internals, rc_mode mode);
+	public: explicit rt_value_t(value_backend_t& backend, const rt_pod_t& pod, const type_t& type, rc_mode mode);
+
+	//	Funky order of type vs pod -- different to all other places. Keep this wrapper for compatibility.
+	public: explicit rt_value_t(value_backend_t& backend, const type_t& type, const rt_pod_t& pod, rc_mode mode) :
+		rt_value_t(backend, pod, type, mode)
+	{
+	}
+
 
 	//	Only works for simple values.
-	public: explicit rt_value_t(const type_t& type, const rt_pod_t& internals);
+	public: explicit rt_value_t(const type_t& type, const rt_pod_t& pod);
 
 	public: void retain() const {
 		if(_backend){

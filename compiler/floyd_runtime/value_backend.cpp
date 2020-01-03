@@ -1273,10 +1273,10 @@ rt_value_t::rt_value_t(value_backend_t& backend, const type_t& function_type, co
 	QUARK_ASSERT(check_invariant());
 }
 
-rt_value_t::rt_value_t(value_backend_t& backend, const type_t& type, const rt_pod_t& internals, rc_mode mode) :
+rt_value_t::rt_value_t(value_backend_t& backend, const rt_pod_t& pod, const type_t& type, rc_mode mode) :
 	_backend(&backend),
 	_type(type),
-	_pod(internals)
+	_pod(pod)
 {
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -1284,7 +1284,7 @@ rt_value_t::rt_value_t(value_backend_t& backend, const type_t& type, const rt_po
 	if(mode == rc_mode::adopt){
 	}
 	else if(mode == rc_mode::bump){
-		retain_value(backend, internals, type);
+		retain_value(backend, pod, type);
 	}
 	else{
 		quark::throw_defective_request();
@@ -1292,10 +1292,10 @@ rt_value_t::rt_value_t(value_backend_t& backend, const type_t& type, const rt_po
 
 	QUARK_ASSERT(check_invariant());
 }
-rt_value_t::rt_value_t(const type_t& type, const rt_pod_t& internals) :
+rt_value_t::rt_value_t(const type_t& type, const rt_pod_t& pod) :
 	_backend(nullptr),
 	_type(type),
-	_pod(internals)
+	_pod(pod)
 {
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(check_invariant());

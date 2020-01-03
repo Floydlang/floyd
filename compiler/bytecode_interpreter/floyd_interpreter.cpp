@@ -196,11 +196,13 @@ static void process_process(bc_processes_runtime_t& runtime, int process_id){
 	const auto& types = backend.types;
 	const auto trace_header = make_trace_process_header(process);
 
+	//	Call process init()
 	{
 		const std::vector<value_t> args = {};
 		process._process_state = call_function(*process._interpreter, rt_to_value(backend, process._init_function->_value), args);
 	}
 
+	//	Handle process messages until exit.
 	while(process._exiting_flag == false){
 		rt_value_t message;
 		{

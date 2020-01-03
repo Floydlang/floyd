@@ -29,6 +29,14 @@ struct compilation_unit_t;
 
 
 
+//////////////////////////////////////		bc_execution_engine_t
+
+
+
+struct bc_execution_engine_t {
+};
+
+
 //////////////////////////////////////		Free functions
 
 

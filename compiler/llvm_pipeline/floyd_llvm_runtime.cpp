@@ -462,7 +462,7 @@ static std::string strip_link_name(const std::string& platform_link_name){
 
 
 
-//	Destroys program, can only called once!
+//	Destroys program_breaks, can only called once!
 static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks, runtime_handler_i& runtime_handler, bool trace_processes){
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(program_breaks.check_invariant());
@@ -563,8 +563,8 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 	return ee2;
 }
 
-//	Destroys program, can only run it once!
-//	Automatically runs floyd_runtime_init() to execute Floyd's global functions and initialize global constants.
+//	Destroys program_breaks, can only run it once!
+//	Also runs floyd_runtime_init() - to execute Floyd's global functions and initialize global constants.
 std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& program_breaks, runtime_handler_i& handler, bool trace_processes){
 	QUARK_ASSERT(program_breaks.check_invariant());
 
@@ -594,7 +594,6 @@ std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& progra
 
 	int64_t init_result = (*a_func)(&runtime_ptr);
 	QUARK_ASSERT(init_result == 667);
-
 
 	QUARK_ASSERT(init_result == 667);
 	ee->inited = true;
@@ -706,6 +705,7 @@ void llvm_process_t::runtime_process__on_exit_process(){
 }
 
 
+//??? Easier to store rc_value_t inside inbox instead of pod.
 
 static void run_process(llvm_execution_engine_t& ee, int process_id){
 	auto& backend = ee.backend;
@@ -727,9 +727,10 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 		release_value(backend, init_state, process._state_type);
 	}
 
+	//	Handle process messages until exit.
 	while(process._exiting_flag == false){
 		//	Block until we get a message
-		rt_pod_t message_with_rc;
+		rt_value_t message_with_rc;
 		{
 			std::unique_lock<std::mutex> lk(process._inbox_mutex);
 
@@ -740,10 +741,12 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 
 			//	Pop message.
 			QUARK_ASSERT(process._inbox.empty() == false);
-			message_with_rc = process._inbox.back();
+			const auto msg = process._inbox.back();
 			process._inbox.pop_back();
 
 			// NOTICE: local variable "message_with_rc" has an RC (potentially 1) on the value.
+			rt_value_t temp(backend, process._message_type, msg, rt_value_t::rc_mode::adopt);
+			temp.swap(message_with_rc);
 		}
 
 		//	Handle message.
@@ -752,7 +755,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 		if(trace){
 			{
 				QUARK_SCOPED_TRACE("Input message");
-				const auto v = from_runtime_value2(context.ee->backend, message_with_rc, process._message_type);
+				const auto v = from_runtime_value2(context.ee->backend, message_with_rc._pod, message_with_rc._type);
 				const auto message2 = value_to_json(types, v);
 				QUARK_TRACE_SS(json_to_pretty_string(message2));
 			}
@@ -769,7 +772,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 			QUARK_SCOPED_TRACE_OPTIONAL("Call msg handler", trace);
 			auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE>(process._msg_function->address);
 			const auto state2 = to_runtime_value2(context.ee->backend, process._process_state);
-			result = (*f)(&runtime_ptr, state2, message_with_rc);
+			result = (*f)(&runtime_ptr, state2, message_with_rc._pod);
 			release_value(backend, state2, process._state_type);
 		}
 
@@ -781,9 +784,6 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 			const auto s = value_to_json(types, process._process_state);
 			QUARK_TRACE_SS(json_to_pretty_string(s));
 		}
-
-		//	Release the message_with_rc.
-		release_value(backend, message_with_rc, process._message_type);
 	}
 }
 
