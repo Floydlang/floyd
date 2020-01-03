@@ -28,10 +28,6 @@ static const bool k_trace_messaging = true;
 
 
 
-
-
-
-
 value_t find_global_symbol(interpreter_t& vm, const module_symbol_t& name){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -68,20 +64,7 @@ bc_program_t compile_to_bytecode(const compilation_unit_t& cu){
 	return bc;
 }
 
-
-
-
-
-//////////////////////////////////////		container_runner_t
-
-/*
-REFS:
-
-std::packaged_task
-*/
-
-//	https://en.cppreference.com/w/cpp/thread/condition_variable/wait
-
+//////////////////////////////////////		bc_process_t
 
 
 
@@ -166,6 +149,50 @@ struct bc_process_t : public runtime_process_i {
 };
 
 
+
+
+//////////////////////////////////////		container_runner_t
+
+
+bool bc_execution_engine_t::check_invariant() const {
+	QUARK_ASSERT(main_temp.check_invariant());
+	QUARK_ASSERT(handler != nullptr);
+//	QUARK_ASSERT(_main_thread_id != std::thread::id());
+	for(const auto& e: _processes){
+		QUARK_ASSERT(e && e->check_invariant());
+	}
+	return true;
+}
+
+
+std::unique_ptr<bc_execution_engine_t> make_bytecode_execution_engine(const bc_program_t& program, const config_t& config, runtime_handler_i& runtime_handler){
+	return std::unique_ptr<bc_execution_engine_t>(
+		new bc_execution_engine_t {
+			interpreter_t(program, config, nullptr, runtime_handler),
+			program._container_def,
+			&runtime_handler,
+			{},
+			{},
+			{},
+			{}
+		}
+	);
+}
+
+
+
+
+/*
+REFS:
+
+std::packaged_task
+*/
+
+//	https://en.cppreference.com/w/cpp/thread/condition_variable/wait
+
+
+
+
 static std::string make_trace_process_header(const bc_process_t& process){
 	const auto process_name = process._name_key;
 	const auto os_thread_name = get_current_thread_name();
@@ -223,19 +250,18 @@ static void process_process(bc_execution_engine_t& runtime, int process_id){
 
 //	NOTICE: Will not run the input VM, it makes new VMs for every thread run(!?)
 //??? No need for args
-static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& vm, const std::vector<std::string>& args, const config_t& config){
-	const auto& container_def = vm._imm->_program._container_def;
+static std::map<std::string, value_t> run_floyd_processes(bc_execution_engine_t& ee, const std::vector<std::string>& args, const config_t& config){
+	const auto& container_def = ee.main_temp._imm->_program._container_def;
 
 	if(container_def._clock_busses.empty()){
 		return {};
 	}
 	else{
-		bc_execution_engine_t runtime;
-		runtime.handler = vm._runtime_handler;
-		runtime._main_thread_id = std::this_thread::get_id();
-		runtime._container = container_def;
-		runtime._process_infos = reduce(
-			runtime._container._clock_busses,
+		ee.handler = ee.main_temp._runtime_handler;
+		ee._main_thread_id = std::this_thread::get_id();
+		ee._container = container_def;
+		ee._process_infos = reduce(
+			ee._container._clock_busses,
 			std::map<std::string, process_def_t>(),
 			[](const std::map<std::string, process_def_t>& acc, const std::pair<std::string, clock_bus_t>& e){
 				auto acc2 = acc;
@@ -244,13 +270,13 @@ static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& v
 			}
 		);
 
-		for(const auto& t: runtime._process_infos){
+		for(const auto& t: ee._process_infos){
 			auto process = std::make_shared<bc_process_t>();
 			process->_exiting_flag = false;
 			process->_message_type = t.second.msg_type;
-			process->_owning_runtime = &runtime;
+			process->_owning_runtime = &ee;
 			process->_name_key = t.first;
-			process->_interpreter = std::make_shared<interpreter_t>(vm._imm->_program, config, process.get(), *runtime.handler);
+			process->_interpreter = std::make_shared<interpreter_t>(ee.main_temp._imm->_program, config, process.get(), *ee.handler);
 			process->_init_function = find_global_symbol2(*process->_interpreter, t.second.init_func_linkname);
 			process->_msg_function = find_global_symbol2(*process->_interpreter, t.second.msg_func_linkname);
 
@@ -261,14 +287,14 @@ static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& v
 				throw std::runtime_error("Cannot link floyd message function: \"" + t.second.msg_func_linkname.s + "\"");
 			}
 
-			runtime._processes.push_back(process);
+			ee._processes.push_back(process);
 		}
 
 		//	Remember that current thread (main) is also a thread, no need to create a worker thread for that process.
-		runtime._processes[0]->_thread_id = runtime._main_thread_id;
+		ee._processes[0]->_thread_id = ee._main_thread_id;
 
-		for(int process_id = 1 ; process_id < runtime._processes.size() ; process_id++){
-			runtime._worker_threads.push_back(
+		for(int process_id = 1 ; process_id < ee._processes.size() ; process_id++){
+			ee._worker_threads.push_back(
 				std::thread([&](int process_id){
 		//			const auto native_thread = thread::native_handle();
 
@@ -276,22 +302,22 @@ static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& v
 					thread_name << std::string() << "process " << process_id << " thread";
 					set_current_threads_name(thread_name.str());
 
-					process_process(runtime, process_id);
+					process_process(ee, process_id);
 				},
 				process_id
 				)
 			);
 		}
 
-		process_process(runtime, 0);
+		process_process(ee, 0);
 
-		for(auto &t: runtime._worker_threads){
+		for(auto &t: ee._worker_threads){
 			t.join();
 		}
 
 	#if 0
 		const auto result_vec = mapf<pair<string, value_t>>(
-			runtime._processes,
+			ee._processes,
 			[](const auto& process){ return pair<string, value_t>{ process->_name_key, process->_process_state };}
 		);
 		std::map<string, value_t> result_map;
@@ -303,7 +329,7 @@ static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& v
 		return result_map;
 	#endif
 		return {};
-	//	QUARK_VERIFY(runtime._processes[0]->_process_state.get_struct_value()->_member_values[0].get_int_value() == 998);
+	//	QUARK_VERIFY(ee._processes[0]->_process_state.get_struct_value()->_member_values[0].get_int_value() == 998);
 	}
 }
 
@@ -333,16 +359,16 @@ static int64_t bc_call_main(interpreter_t& interpreter, const floyd::value_t& f,
 	}
 }
 
-run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& main_args, const config_t& config){
-	QUARK_ASSERT(vm.check_invariant());
+run_output_t run_program_bc(bc_execution_engine_t& ee, const std::vector<std::string>& main_args, const config_t& config){
+	QUARK_ASSERT(ee.check_invariant());
 
-	const auto& main_function = find_global_symbol2(vm, module_symbol_t("main"));
+	const auto& main_function = find_global_symbol2(ee.main_temp, module_symbol_t("main"));
 	if(main_function != nullptr){
-		const auto main_result_int = bc_call_main(vm, rt_to_value(vm._backend, main_function->_value), main_args);
+		const auto main_result_int = bc_call_main(ee.main_temp, rt_to_value(ee.main_temp._backend, main_function->_value), main_args);
 		return { main_result_int, {} };
 	}
 	else{
-		const auto output = run_floyd_processes(vm, main_args, config);
+		const auto output = run_floyd_processes(ee, main_args, config);
 		return run_output_t(0, output);
 	}
 }

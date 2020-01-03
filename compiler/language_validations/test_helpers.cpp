@@ -116,26 +116,27 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 		test_handler_t handler;
 
 		//	Runs global code.
-		auto interpreter = interpreter_t(exe, config, nullptr, handler);
+		auto interpreter = make_bytecode_execution_engine(exe, config, handler);
 
-		std::vector<test_t> all_tests = collect_tests(interpreter);
+		std::vector<test_t> all_tests = collect_tests(interpreter->main_temp);
 		const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
-		const auto test_results = run_tests_bc(interpreter, all_tests, all_test_ids);
+		const auto test_results = run_tests_bc(interpreter->main_temp, all_tests, all_test_ids);
 
 		if(count_fails(test_results) > 0){
 			const auto report = make_report(test_results);
 			return test_report_t{ {}, {}, {}, report };
 		}
 
-		auto run_output = run_program_bc(interpreter, main_args, config);
+		auto run_output = run_program_bc(*interpreter, main_args, config);
 
-		const auto result_variable = find_global_symbol2(interpreter, module_symbol_t("result"));
+		const auto result_variable = find_global_symbol2(interpreter->main_temp, module_symbol_t("result"));
 		value_t result_global;
 		if(result_variable != nullptr){
-			result_global = rt_to_value(*interpreter._stack._backend, result_variable->_value);
+			//??? really
+			result_global = rt_to_value(*interpreter->main_temp._stack._backend, result_variable->_value);
 		}
 
-		interpreter.unwind_stack();
+		interpreter->main_temp.unwind_stack();
 
 		return test_report_t{
 			result_global.is_undefined() ? json_t() : value_and_type_to_json(exe._types, result_global),
@@ -143,7 +144,7 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 			handler._print_output,
 			""
 		};
-		if(detect_leaks(interpreter._backend)){
+		if(detect_leaks(interpreter->main_temp._backend)){
 			quark::throw_defective_request();
 		}
 	}

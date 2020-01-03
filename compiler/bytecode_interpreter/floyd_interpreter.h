@@ -36,7 +36,16 @@ struct bc_process_t;
 
 
 struct bc_execution_engine_t {
+
+	bool check_invariant() const;
+
+
+	//////////////////////////////////////		STATE
+	interpreter_t main_temp;
+
+	//??? Instead, store bc_program_t.
 	container_t _container;
+
 	runtime_handler_i* handler;
 	std::map<std::string, process_def_t> _process_infos;
 	std::thread::id _main_thread_id;
@@ -44,6 +53,9 @@ struct bc_execution_engine_t {
 	std::vector<std::shared_ptr<bc_process_t>> _processes;
 	std::vector<std::thread> _worker_threads;
 };
+
+std::unique_ptr<bc_execution_engine_t> make_bytecode_execution_engine(const bc_program_t& program, const config_t& config, runtime_handler_i& runtime_handler);
+
 
 
 //////////////////////////////////////		Free functions
@@ -53,7 +65,7 @@ value_t find_global_symbol(interpreter_t& vm, const module_symbol_t& s);
 value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vector<value_t>& args);
 bc_program_t compile_to_bytecode(const compilation_unit_t& cu);
 
-run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& main_args, const config_t& config);
+run_output_t run_program_bc(bc_execution_engine_t& ee, const std::vector<std::string>& main_args, const config_t& config);
 
 std::vector<test_t> collect_tests(interpreter_t& vm);
 

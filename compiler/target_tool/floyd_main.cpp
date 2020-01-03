@@ -386,13 +386,13 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 			std::ostream& out;
 		};
 		handler_t handler { out };
-		auto interpreter = floyd::interpreter_t(program, command2.compiler_settings.config, nullptr, handler);
+		auto interpreter = make_bytecode_execution_engine(program, command2.compiler_settings.config, handler);
 
 		//	Run tests before calling main()?
 		if(command2.run_tests){
-			const auto all_tests = collect_tests(interpreter);
+			const auto all_tests = collect_tests(interpreter->main_temp);
 			const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
-			const auto test_results = run_tests_bc(interpreter, all_tests, all_test_ids);
+			const auto test_results = run_tests_bc(interpreter->main_temp, all_tests, all_test_ids);
 
 			if(count_fails(test_results) > 0){
 				const auto report = make_report(test_results);
@@ -403,7 +403,7 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 			}
 		}
 
-		const auto result = floyd::run_program_bc(interpreter, command2.floyd_main_args, command2.compiler_settings.config);
+		const auto result = floyd::run_program_bc(*interpreter, command2.floyd_main_args, command2.compiler_settings.config);
 		if(result.process_results.size() == 0){
 			return static_cast<int>(result.main_result);
 		}
