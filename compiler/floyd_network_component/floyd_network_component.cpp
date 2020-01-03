@@ -41,8 +41,8 @@ static const std::string k_network_component_header = R"(
 		int port
 	}
 
-//	func string read_socket(int socket)
-//	func void write_socket(int socket, string data)
+	func string read_socket(int socket) impure
+	func void write_socket(int socket, string data) impure
 
 	struct host_info_t {
 		string official_host_name
@@ -432,44 +432,24 @@ static http_response_t from_runtime__http_response_t(value_backend_t& backend, c
 //////////////////////////////////////////		PACK & UNPACK
 
 
-/*
-static rt_value_t bc_corelib__read_socket(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
+// func string read_socket(int socket)
+static rt_pod_t network_component__read_socket(runtime_t* frp, rt_pod_t socket_id){
+	auto& backend = get_backend(frp);
 
-	auto& backend = vm._backend;
-	const auto& types = backend.types;
-
-	QUARK_ASSERT(peek2(types, args[0]._type).is_int());
-
-	const auto socket_id = args[0].get_int_value();
-	const auto r = read_socket_string((int)socket_id);
-	return rt_value_t::make_string(backend, r);
-}
-*/
-static void network_component__read_socket(runtime_t* frp){
+	const auto socket_id2 = (int)socket_id.int_value;
+	const auto r = read_socket_string(socket_id2);
+	const auto r2 = rt_value_t::make_string(backend, r);
+	r2.retain();
+	return r2._pod;
 }
 
+// func void write_socket(int socket, string data)
+static void network_component__write_socket(runtime_t* frp, rt_pod_t socket_id, rt_pod_t data){
+	auto& backend = get_backend(frp);
 
-/*
-static rt_value_t bc_corelib__write_socket(interpreter_t& vm, const rt_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(arg_count == 2);
-
-	auto& backend = vm._backend;
-	const auto& types = backend.types;
-
-	QUARK_ASSERT(peek2(types, args[0]._type).is_int());
-	QUARK_ASSERT(peek2(types, args[1]._type).is_string());
-
-	const auto socket_id = args[0].get_int_value();
-	const auto& data = args[1].get_string_value(backend);
-	write_socket_string((int)socket_id, data);
-	return rt_value_t::make_void();
-}
-*/
-static void network_component__write_socket(runtime_t* frp){
+	const auto socket_id2 = (int)socket_id.int_value;
+	const auto& data2 = from_runtime_string2(backend, data);
+	write_socket_string(socket_id2, data2);
 }
 
 
@@ -538,22 +518,61 @@ static rt_pod_t network_component__execute_http_request(runtime_t* frp, rt_pod_t
 }
 
 
+
+typedef void (*HTTP_SERVER_F)(runtime_t* frp, rt_pod_t socket_id);
+
+struct server_connection_t : public connection_i {
+	server_connection_t(runtime_t* frp, rt_pod_t f) :
+		frp(frp),
+		f(f)
+	{
+	}
+
+	void connection_i__on_accept(int socket2) override {
+		auto& backend = get_backend(frp);
+		const auto& func_link = lookup_func_link_by_pod_required(backend, f);
+
+		// ??? This thunking must be moved of inner loop. Use ffi to make bridge for k_native__floydcc?
+		if(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc){
+			const rt_value_t f_args[] = {
+				rt_value_t::make_int(socket2)
+			};
+			const auto a = call_thunk(frp, rt_value_t(backend, func_link.function_type_optional, f, rt_value_t::rc_mode::bump), f_args, 1);
+			QUARK_ASSERT(a._type.is_void());
+		}
+		else if(func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc){
+			const auto f2 = reinterpret_cast<HTTP_SERVER_F>(func_link.f);
+			(*f2)(frp, make_runtime_int(socket2));
+		}
+		else{
+			quark::throw_defective_request();
+		}
+	}
+
+
+	///////////////////////////////		STATE
+
+	runtime_t* frp;
+	rt_pod_t f;
+};
+
 //	Blocks forever.
 //	func void execute_http_server(network_component_t c, int port, func void f(int socket)) impure
+static void network_component__execute_http_server(runtime_t* frp, rt_pod_t c, rt_pod_t port, rt_pod_t f){
+	const auto port2 = port.int_value;
 
-static rt_pod_t network_component__execute_http_server(runtime_t* frp, rt_pod_t port, rt_pod_t addr, rt_pod_t request_string){
-	auto& backend = get_backend(frp);
-
-	const auto addr2 = from_runtime__ip_address_and_port_t(backend, addr);
-	const auto request2 = from_runtime_string2(backend, request_string);
-	const auto response = execute_http_request(addr2, request2);
-	return to_runtime_string2(backend, response);
+	server_connection_t connection { frp, f };
+	execute_http_server(server_params_t { (int)port2 }, connection);
 }
+
+
+
+
 
 std::map<std::string, void*> get_network_component_binds(){
 	const std::map<std::string, void*> host_functions_map = {
-//		{ "read_socket", reinterpret_cast<void *>(&network_component__read_socket) },
-//		{ "write_socket", reinterpret_cast<void *>(&network_component__write_socket) },
+		{ "read_socket", reinterpret_cast<void *>(&network_component__read_socket) },
+		{ "write_socket", reinterpret_cast<void *>(&network_component__write_socket) },
 		{ "lookup_host_from_ip", reinterpret_cast<void *>(&network_component__lookup_host_from_ip) },
 		{ "lookup_host_from_name", reinterpret_cast<void *>(&network_component__lookup_host_from_name) },
 //		{ "to_ipv4_dotted_decimal_string", nullptr },

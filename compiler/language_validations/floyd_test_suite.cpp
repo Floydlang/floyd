@@ -8127,3 +8127,59 @@ FLOYD_LANG_PROOF("network component", "execute_http_request()", "", ""){
 }
 
 
+#if 0
+//	WARNING: This test never completes + is impure.
+FLOYD_LANG_PROOF_VIP("network component", "execute_http_request()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let c = network_component_t(666)
+
+			func void f(int socket_id){
+				let read_data = read_socket(socket_id)
+				if(read_data == ""){
+					print("empty request\n")
+				}
+				else{
+					let request = unpack_http_request(read_data)
+
+					if(request.request_line == http_request_line_t( "GET", "/info.html", "HTTP/1.1" )){
+						print("Serving page\n")
+						let doc = "
+							<head>
+								<title>Hello Floyd Server</title>
+							</head>
+							<body>
+								<h1>Hello Floyd Server</h1>
+								This document may be found <a HREF=\"https://stackoverflow.com/index.html\">here</a>
+							</body>
+						"
+
+						let r = pack_http_response(
+							http_response_t (
+								http_response_status_line_t ( "HTTP/1.1", "200 OK" ),
+								[
+									http_header_t( "Content-Type", "text/html" ),
+									http_header_t( "Content-Length", to_string(size(doc)) )
+								],
+								doc
+							)
+						)
+						write_socket(socket_id, r)
+					}
+					else {
+						let r = pack_http_response(http_response_t ( http_response_status_line_t ( "HTTP/1.1", "404 OK" ), {}, "" ))
+						write_socket(socket_id, r)
+					}
+				}
+
+			}
+
+			execute_http_server(c, 8080, f)
+
+		)"
+	);
+}
+#endif
+

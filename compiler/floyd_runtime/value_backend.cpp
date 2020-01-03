@@ -1050,7 +1050,12 @@ rt_value_t rt_value_t::make_any(){
 }
 
 rt_value_t rt_value_t::make_void(){
-	return rt_value_t();
+	return rt_value_t(type_t::make_void(), make_uninitialized_magic());
+}
+
+QUARK_TEST("rt_value_t", "make_void()", "", ""){
+	const auto a = rt_value_t::make_void();
+	QUARK_VERIFY(a._type.is_void());
 }
 
 rt_value_t rt_value_t::make_bool(bool v){

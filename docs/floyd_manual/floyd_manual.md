@@ -131,6 +131,8 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 	- [3.6 NETWORK FEATURES \(SOCKETS, TCP, HTTP\)](#36-network-features-sockets-tcp-http)
 		- [struct network\_component\_t](#struct-networkcomponentt)
 		- [struct ip\_address\_and\_port_t](#struct-ipaddress_and_portt)
+		- [read\_socket\(\) impure](#read_socket-impure)
+		- [write\_socket\(\) impure](#write_socket-impure)
 		- [struct host\_info\_t](#struct-hostinfot)
 		- [lookup\_host\_from\_ip\(\) impure](#lookuphost_fromip-impure)
 		- [lookup\_host\_from\_name\(\) impure](#lookuphost_fromname-impure)
@@ -141,7 +143,8 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 		- [unpack\_http\_request\(\)](#unpackhttprequest)
 		- [pack\_http\_response\(\)](#packhttpresponse)
 		- [unpack\_http\_response\(\)](#unpackhttpresponse)
-		- [execute_http_request\(\) impure](#executehttprequest-impure)
+		- [execute\_http\_request\(\)](#executehttprequest)
+		- [execute\_http\_server\(\)](#executehttpserver)
 	- [3.7 STANDARD TYPES](#37-standard-types)
 		- [uuid_t](#uuid_t)
 		- [ip\_address\_t](#ipaddresst)
@@ -3740,12 +3743,38 @@ Represents the network component -- create one instance for your entire program.
 
 This value defines an IP address and which port to use. This often used when making requests via TCP. This is a basic building block.
 
-Notice that ip\_address\_t is used here and it is part of the Floyd language itself.
+Notice that ip\_address\_t is used here - it is part of the Floyd language itself.
 
 	struct ip_address_and_port_t {
 		ip_address_t addr
 		int port
 	}
+
+
+
+
+<a id="read_socket-impure"></a>
+### read\_socket() impure
+
+Reads data from the socket. It supports both binary data and text in the string.
+
+Warning: Blocks, impure
+
+	func string read_socket(int socket)
+
+
+
+<a id="write_socket-impure"></a>
+### write\_socket() impure
+
+Writes data from the socket. It supports both binary data and text in the string.
+
+Warning: Blocks, impure
+
+	func void write_socket(int socket, string data)
+
+
+
 
 
 <a id="struct-hostinfot"></a>
@@ -3871,8 +3900,8 @@ This function unpacks a http_response_t-structure, filled out with informations 
 
 
 
-<a id="executehttprequest-impure"></a>
-### execute_http_request() impure
+<a id="executehttprequest"></a>
+### execute\_http\_request()
 
 Performs a complete HTTP request and returns the response. Messages are encoded as strings. Use the pack-unpack functions to work with their contents.
 
@@ -3881,9 +3910,14 @@ Warning: Blocks, impure
 	func string execute_http_request(network_component_t c, ip_address_and_port_t addr, string request) impure
 
 
+<a id="executehttpserver"></a>
+### execute\_http\_server()
 
+Starts a local HTTP server on the supplied port. When an incoming connection is requested, the function f is called. Inside f, you should use read_socket() and write_socket() to talk to the client. Return from f when a connection is over.
 
+Warning: Blocks forever, impure
 
+	func void execute_http_server(network_component_t c, int port, func void f(int socket)) impure
 
 
 

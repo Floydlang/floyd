@@ -554,15 +554,6 @@ const rt_pod_t intrinsic__replace(runtime_t* frp, rt_pod_t elements_vec, rt_type
 /////////////////////////////////////////		map()
 //	[R] map([E] elements, func R (E e, C context) f, C context)
 
-struct f_env_t {
-	runtime_t runtime;
-
-	type_t e_type;
-	type_t context_type;
-	type_t f_type;
-	rt_pod_t f_value;
-	const func_link_t* func_link;
-};
 
 rt_pod_t intrinsic__map__carray(
 	runtime_t* frp,
@@ -619,6 +610,16 @@ rt_pod_t intrinsic__map__carray(
 	}
 	return result_vec;
 }
+
+struct f_env_t {
+	runtime_t runtime;
+
+	type_t e_type;
+	type_t context_type;
+	type_t f_type;
+	rt_pod_t f_value;
+	const func_link_t* func_link;
+};
 
 static rt_pod_t map_f_thunk(runtime_t* frp, rt_pod_t e_value, rt_pod_t context_value){
 	auto& backend = get_backend(frp);
