@@ -9,7 +9,7 @@
 #include "test_helpers.h"
 
 
-#include "floyd_interpreter.h"
+#include "bytecode_execution_engine.h"
 #include "bytecode_generator.h"
 
 #include "json_support.h"

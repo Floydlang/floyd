@@ -14,7 +14,7 @@
 #include <map>
 
 #include "floyd_runtime.h"
-#include "floyd_interpreter.h"
+#include "bytecode_execution_engine.h"
 #include "floyd_parser.h"
 
 #include "floyd_llvm.h"
@@ -104,7 +104,7 @@ static void run_tests(){
 
 
 			"parse_statement.cpp",
-			"floyd_interpreter.cpp",
+			"bytecode_execution_engine.cpp",
 
 		},
 		g_trace_on ? false: true

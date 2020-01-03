@@ -21,7 +21,7 @@
 		2C085CF423140CA6009E6D24 /* bytecode_intrinsics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C557C362040173E006F6818 /* bytecode_intrinsics.cpp */; };
 		2C085CF523140CA6009E6D24 /* bytecode_generator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C982D3520603FE2002002FF /* bytecode_generator.cpp */; };
 		2C085CF623140CA6009E6D24 /* bytecode_interpreter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5372B8207A9EBA00647AD1 /* bytecode_interpreter.cpp */; };
-		2C085CF723140CA6009E6D24 /* floyd_interpreter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C81894B1D47B62400030C96 /* floyd_interpreter.cpp */; };
+		2C085CF723140CA6009E6D24 /* bytecode_execution_engine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C81894B1D47B62400030C96 /* bytecode_execution_engine.cpp */; };
 		2C085CF823140CA6009E6D24 /* format_table.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4DA09023035A0100190C37 /* format_table.cpp */; };
 		2C085CF923140CA6009E6D24 /* cpp_experiments.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00BC411F2428FF0087B8BB /* cpp_experiments.cpp */; };
 		2C085CFA23140CA6009E6D24 /* desugar_pass.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CE0FE7622EE54B100018A96 /* desugar_pass.cpp */; };
@@ -106,7 +106,7 @@
 		2C7005D1238C4168005298C2 /* tests.floyd in Copy Files - examples */ = {isa = PBXBuildFile; fileRef = 2C7005D0238C40EF005298C2 /* tests.floyd */; };
 		2C7005D4238FF3BD005298C2 /* floyd_sockets.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7005D2238FF3BD005298C2 /* floyd_sockets.cpp */; };
 		2C7200B421E8FB750013003B /* file_handling.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7200B321E8FB750013003B /* file_handling.cpp */; };
-		2C81894D1D47B62400030C96 /* floyd_interpreter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C81894B1D47B62400030C96 /* floyd_interpreter.cpp */; };
+		2C81894D1D47B62400030C96 /* bytecode_execution_engine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C81894B1D47B62400030C96 /* bytecode_execution_engine.cpp */; };
 		2C8C039B2221D90A0085EBBE /* gtest-all.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2C69C5722221D47800E9D03E /* gtest-all.cc */; };
 		2C8C039C2221D9120085EBBE /* gmock-all.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2C69C5D22221D47800E9D03E /* gmock-all.cc */; };
 		2C8C039D2221D95F0085EBBE /* timers.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2C69C5D72221D47800E9D03E /* timers.cc */; };
@@ -673,8 +673,8 @@
 		2C7200B321E8FB750013003B /* file_handling.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = file_handling.cpp; sourceTree = "<group>"; };
 		2C7E4246231AB9E6006570A2 /* floyd_llvm_codegen_basics.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_llvm_codegen_basics.cpp; sourceTree = "<group>"; };
 		2C7E4247231AB9E6006570A2 /* floyd_llvm_codegen_basics.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_llvm_codegen_basics.h; sourceTree = "<group>"; };
-		2C81894B1D47B62400030C96 /* floyd_interpreter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_interpreter.cpp; sourceTree = "<group>"; };
-		2C81894C1D47B62400030C96 /* floyd_interpreter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = floyd_interpreter.h; sourceTree = "<group>"; };
+		2C81894B1D47B62400030C96 /* bytecode_execution_engine.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = bytecode_execution_engine.cpp; sourceTree = "<group>"; };
+		2C81894C1D47B62400030C96 /* bytecode_execution_engine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bytecode_execution_engine.h; sourceTree = "<group>"; };
 		2C8C03FF2221DBD70085EBBE /* benchmark */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = benchmark; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C915FDA2308722700BFD5F9 /* libLLVM.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libLLVM.dylib; path = ../../../../../../usr/local/Cellar/llvm/8.0.1/lib/libLLVM.dylib; sourceTree = "<group>"; };
 		2C982D3520603FE2002002FF /* bytecode_generator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = bytecode_generator.cpp; sourceTree = "<group>"; };
@@ -1055,8 +1055,8 @@
 				2C982D3720604002002002FF /* bytecode_generator.h */,
 				2C5372B8207A9EBA00647AD1 /* bytecode_interpreter.cpp */,
 				2C5372B7207A9EAD00647AD1 /* bytecode_interpreter.h */,
-				2C81894B1D47B62400030C96 /* floyd_interpreter.cpp */,
-				2C81894C1D47B62400030C96 /* floyd_interpreter.h */,
+				2C81894B1D47B62400030C96 /* bytecode_execution_engine.cpp */,
+				2C81894C1D47B62400030C96 /* bytecode_execution_engine.h */,
 			);
 			path = bytecode_interpreter;
 			sourceTree = "<group>";
@@ -1865,7 +1865,7 @@
 				2C557C382040173E006F6818 /* bytecode_intrinsics.cpp in Sources */,
 				2C180492208B947C00F62480 /* expression.cpp in Sources */,
 				2C18047D208B939800F62480 /* parse_statement.cpp in Sources */,
-				2C81894D1D47B62400030C96 /* floyd_interpreter.cpp in Sources */,
+				2C81894D1D47B62400030C96 /* bytecode_execution_engine.cpp in Sources */,
 				2C8C03B12221DA9B0085EBBE /* floyd_main.cpp in Sources */,
 				2C00DEC822198C6300DB322E /* floyd_runtime.cpp in Sources */,
 				2C8C039E2221D95F0085EBBE /* commandlineflags.cc in Sources */,
@@ -1940,7 +1940,7 @@
 				2C8C03D42221DBD70085EBBE /* statistics.cc in Sources */,
 				2C085CF623140CA6009E6D24 /* bytecode_interpreter.cpp in Sources */,
 				2C085CF023140C5E009E6D24 /* statement.cpp in Sources */,
-				2C085CF723140CA6009E6D24 /* floyd_interpreter.cpp in Sources */,
+				2C085CF723140CA6009E6D24 /* bytecode_execution_engine.cpp in Sources */,
 				2C1CEFC823140F7D00DE9A77 /* json_support.cpp in Sources */,
 				2C8C03D62221DBD70085EBBE /* sysinfo.cc in Sources */,
 				2C085CFE23140CA6009E6D24 /* floyd_parser.cpp in Sources */,

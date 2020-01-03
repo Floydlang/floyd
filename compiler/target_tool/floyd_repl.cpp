@@ -15,7 +15,7 @@
 #include <vector>
 #include <string>
 
-#include "floyd_interpreter.h"
+#include "bytecode_execution_engine.h"
 #include "floyd_parser.h"
 #include "ast_value.h"
 #include "compiler_helpers.h"

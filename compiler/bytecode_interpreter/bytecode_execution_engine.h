@@ -6,8 +6,8 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-#ifndef floyd_interpreter_hpp
-#define floyd_interpreter_hpp
+#ifndef bytecode_execution_engine_hpp
+#define bytecode_execution_engine_hpp
 
 /*
 	High-level access to the byte code interpreter.
@@ -80,4 +80,4 @@ std::vector<test_result_t> run_tests_bc(
 } //	floyd
 
 
-#endif /* floyd_interpreter_hpp */
+#endif /* bytecode_execution_engine_hpp */
