@@ -690,10 +690,9 @@ void llvm_process_t::runtime_process__on_send_message(const std::string& dest_pr
 		}
 
 		{
-			retain_value(backend, message, message_type);
-
+			rt_value_t message2(backend, message, message_type, rt_value_t::rc_mode::bump);
 			std::lock_guard<std::mutex> lk(dest_process._inbox_mutex);
-			dest_process._inbox.push_front(message);
+			dest_process._inbox.push_front(message2);
 		}
 		dest_process._inbox_condition_variable.notify_one();
 	//    dest_process._inbox_condition_variable.notify_all();
@@ -703,9 +702,6 @@ void llvm_process_t::runtime_process__on_send_message(const std::string& dest_pr
 void llvm_process_t::runtime_process__on_exit_process(){
 	_exiting_flag = true;
 }
-
-
-//??? Easier to store rc_value_t inside inbox instead of pod.
 
 static void run_process(llvm_execution_engine_t& ee, int process_id){
 	auto& backend = ee.backend;
@@ -730,7 +726,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 	//	Handle process messages until exit.
 	while(process._exiting_flag == false){
 		//	Block until we get a message
-		rt_value_t message_with_rc;
+		rt_value_t message;
 		{
 			std::unique_lock<std::mutex> lk(process._inbox_mutex);
 
@@ -741,12 +737,10 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 
 			//	Pop message.
 			QUARK_ASSERT(process._inbox.empty() == false);
-			const auto msg = process._inbox.back();
+			auto temp = process._inbox.back();
 			process._inbox.pop_back();
 
-			// NOTICE: local variable "message_with_rc" has an RC (potentially 1) on the value.
-			rt_value_t temp(backend, msg, process._message_type, rt_value_t::rc_mode::adopt);
-			temp.swap(message_with_rc);
+			temp.swap(message);
 		}
 
 		//	Handle message.
@@ -755,7 +749,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 		if(trace){
 			{
 				QUARK_SCOPED_TRACE("Input message");
-				const auto v = from_runtime_value2(context.ee->backend, message_with_rc._pod, message_with_rc._type);
+				const auto v = from_runtime_value2(context.ee->backend, message._pod, message._type);
 				const auto message2 = value_to_json(types, v);
 				QUARK_TRACE_SS(json_to_pretty_string(message2));
 			}
@@ -772,7 +766,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 			QUARK_SCOPED_TRACE_OPTIONAL("Call msg handler", trace);
 			auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE>(process._msg_function->address);
 			const auto state2 = to_runtime_value2(context.ee->backend, process._process_state);
-			result = (*f)(&runtime_ptr, state2, message_with_rc._pod);
+			result = (*f)(&runtime_ptr, state2, message._pod);
 			release_value(backend, state2, process._state_type);
 		}
 

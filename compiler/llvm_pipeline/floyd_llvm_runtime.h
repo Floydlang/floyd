@@ -99,7 +99,7 @@ struct llvm_process_t : public runtime_basics_i, runtime_process_i {
 
 	std::condition_variable _inbox_condition_variable;
 	std::mutex _inbox_mutex;
-	std::deque<rt_pod_t> _inbox;
+	std::deque<rt_value_t> _inbox;
 
 	//	Notice: before init() is called, this value is an undefined.
 	value_t _process_state;
