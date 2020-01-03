@@ -1165,7 +1165,7 @@ json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend)
 */
 
 struct interpreter_t : runtime_basics_i {
-	public: explicit interpreter_t(const std::shared_ptr<bc_program_t>& program, const config_t& config, runtime_process_i* process_handler, runtime_handler_i& runtime_handler);
+	public: explicit interpreter_t(const std::shared_ptr<bc_program_t>& program, value_backend_t& backend, const config_t& config, runtime_process_i* process_handler, runtime_handler_i& runtime_handler);
 	public: interpreter_t(const interpreter_t& other) = delete;
 	public: ~interpreter_t();
 
@@ -1185,7 +1185,7 @@ struct interpreter_t : runtime_basics_i {
 	public: runtime_process_i* _process_handler;
 	public: runtime_handler_i* _runtime_handler;
 
-	public: value_backend_t _backend;
+	public: value_backend_t& _backend;
 
 	//	Holds all values for all environments.
 	//	Notice: stack holds refs to RC-counted objects!
@@ -1198,6 +1198,7 @@ void trace_interpreter(interpreter_t& vm, int pc);
 //////////////////////////////////////		Free functions
 
 
+std::vector<func_link_t> link_functions(const bc_program_t& program);
 
 rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_value_t args[], int arg_count);
 json_t interpreter_to_json(interpreter_t& vm);

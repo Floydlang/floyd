@@ -33,11 +33,13 @@ struct bc_process_t;
 
 
 struct bc_execution_engine_t {
+	bc_execution_engine_t(const bc_program_t& program, const config_t& config, runtime_handler_i& runtime_handler);
 	bool check_invariant() const;
 
 
 	//////////////////////////////////////		STATE
 	std::shared_ptr<bc_program_t> _program;
+	value_backend_t backend;
 	interpreter_t main_temp;
 
 	runtime_handler_i* handler;

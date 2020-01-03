@@ -175,6 +175,8 @@ static void send(bc_process_t& process, const std::string& dest_process_id, cons
 
 
 bool bc_execution_engine_t::check_invariant() const {
+	QUARK_ASSERT(_program->check_invariant());
+	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(main_temp.check_invariant());
 	QUARK_ASSERT(handler != nullptr);
 //	QUARK_ASSERT(_main_thread_id != std::thread::id());
@@ -184,19 +186,23 @@ bool bc_execution_engine_t::check_invariant() const {
 	return true;
 }
 
-std::unique_ptr<bc_execution_engine_t> make_bytecode_execution_engine(const bc_program_t& program, const config_t& config, runtime_handler_i& runtime_handler){
-	auto program2 = std::make_shared<bc_program_t>(program);
+bc_execution_engine_t::bc_execution_engine_t(const bc_program_t& program, const config_t& config, runtime_handler_i& runtime_handler) :
+	_program(std::make_shared<bc_program_t>(program)),
+	backend(link_functions(*_program), bc_make_struct_layouts(_program->_types), _program->_types, config),
+	main_temp(_program, backend, config, nullptr, runtime_handler),
+	handler(&runtime_handler),
+	_main_thread_id(),
+	_processes(),
+	_worker_threads()
+{
+	QUARK_ASSERT(program.check_invariant());
 
-	return std::unique_ptr<bc_execution_engine_t>(
-		new bc_execution_engine_t {
-			program2,
-			interpreter_t(program2, config, nullptr, runtime_handler),
-			&runtime_handler,
-			{},
-			{},
-			{}
-		}
-	);
+	QUARK_ASSERT(check_invariant());
+}
+
+
+std::unique_ptr<bc_execution_engine_t> make_bytecode_execution_engine(const bc_program_t& program, const config_t& config, runtime_handler_i& runtime_handler){
+	return std::make_unique<bc_execution_engine_t>(program, config, runtime_handler);
 }
 
 static std::string make_trace_process_header(const bc_process_t& process){
@@ -280,7 +286,7 @@ static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& confi
 			process->_message_type = t.second.msg_type;
 			process->_ee = &ee;
 			process->_name_key = t.first;
-			process->_interpreter = std::make_shared<interpreter_t>(ee._program, config, process.get(), *ee.handler);
+			process->_interpreter = std::make_shared<interpreter_t>(ee._program, ee.backend, config, process.get(), *ee.handler);
 			process->_init_function = find_global_symbol2(*process->_interpreter, t.second.init_func_linkname);
 			process->_msg_function = find_global_symbol2(*process->_interpreter, t.second.msg_func_linkname);
 

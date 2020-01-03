@@ -488,7 +488,7 @@ std::vector<std::pair<type_t, struct_layout_t>> bc_make_struct_layouts(const typ
 		return merge;
 	}
 
-static std::vector<func_link_t> link_functions(const bc_program_t& program){
+std::vector<func_link_t> link_functions(const bc_program_t& program){
 	QUARK_ASSERT(program.check_invariant());
 
 	auto temp_types = program._types;
@@ -564,11 +564,11 @@ rt_value_t interpreter_t::runtime_basics__call_thunk(const rt_value_t& f, const 
 
 //???std::chrono::high_resolution_clock::now()
 
-interpreter_t::interpreter_t(const std::shared_ptr<bc_program_t>& program, const config_t& config, runtime_process_i* process_handler, runtime_handler_i& runtime_handler) :
+interpreter_t::interpreter_t(const std::shared_ptr<bc_program_t>& program, value_backend_t& backend, const config_t& config, runtime_process_i* process_handler, runtime_handler_i& runtime_handler) :
 	_program(program),
 	_process_handler(process_handler),
 	_runtime_handler(&runtime_handler),
-	_backend { link_functions(*program), bc_make_struct_layouts(program->_types), program->_types, config },
+	_backend(backend),
 	_stack { &_backend, &_program->_globals }
 {
 	QUARK_ASSERT(program && program->check_invariant());
