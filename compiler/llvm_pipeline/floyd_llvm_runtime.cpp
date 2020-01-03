@@ -745,7 +745,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 			process._inbox.pop_back();
 
 			// NOTICE: local variable "message_with_rc" has an RC (potentially 1) on the value.
-			rt_value_t temp(backend, process._message_type, msg, rt_value_t::rc_mode::adopt);
+			rt_value_t temp(backend, msg, process._message_type, rt_value_t::rc_mode::adopt);
 			temp.swap(message_with_rc);
 		}
 

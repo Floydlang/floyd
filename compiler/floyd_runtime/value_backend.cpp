@@ -1189,7 +1189,7 @@ std::vector<rt_value_t> from_runtime_struct(value_backend_t& backend, const rt_p
 	for(const auto& e: struct_def._members){
 		const auto offset = struct_layout.second.members[member_index].offset;
 		const auto member_ptr = reinterpret_cast<const rt_pod_t*>(struct_base_ptr + offset);
-		const auto member_value = rt_value_t(backend, e._type, *member_ptr, rt_value_t::rc_mode::bump);
+		const auto member_value = rt_value_t(backend, *member_ptr, e._type, rt_value_t::rc_mode::bump);
 		members.push_back(member_value);
 		member_index++;
 	}
@@ -1348,7 +1348,7 @@ const immer::vector<rt_value_t> get_vector_elements(value_backend_t& backend, co
 		auto p = vec->get_element_ptr();
 		for(int i = 0 ; i < count ; i++){
 			const auto value_encoded = p[i];
-			const auto value = rt_value_t(backend, element_type, value_encoded, rt_value_t::rc_mode::bump);
+			const auto value = rt_value_t(backend, value_encoded, element_type, rt_value_t::rc_mode::bump);
 			elements = elements.push_back(value);
 		}
 		return elements;
@@ -1361,7 +1361,7 @@ const immer::vector<rt_value_t> get_vector_elements(value_backend_t& backend, co
 		const auto count = vec->get_element_count();
 		for(int i = 0 ; i < count ; i++){
 			const auto& value_encoded = vec->load_element(i);
-			const auto value = rt_value_t(backend, element_type, value_encoded, rt_value_t::rc_mode::bump);
+			const auto value = rt_value_t(backend, value_encoded, element_type, rt_value_t::rc_mode::bump);
 			elements = elements.push_back(value);
 		}
 		return elements;
@@ -1398,7 +1398,7 @@ rt_value_t make_vector_value(value_backend_t& backend, const type_t& element_typ
 			p[i] = e._pod;
 			retain_value(backend, e._pod, element_type);
 		}
-		const auto result2 = rt_value_t(backend, type, result, rt_value_t::rc_mode::adopt);
+		const auto result2 = rt_value_t(backend, result, type, rt_value_t::rc_mode::adopt);
 		QUARK_ASSERT(result2.check_invariant());
 		return result2;
 	}
@@ -1413,7 +1413,7 @@ rt_value_t make_vector_value(value_backend_t& backend, const type_t& element_typ
 			temp.push_back(e._pod);
 		}
 		auto result = alloc_vector_hamt(backend.heap, &temp[0], temp.size(), type);
-		const auto result2 = rt_value_t(backend, type, result, rt_value_t::rc_mode::adopt);
+		const auto result2 = rt_value_t(backend, result, type, rt_value_t::rc_mode::adopt);
 		QUARK_ASSERT(result2.check_invariant());
 		return result2;
 	}
@@ -1434,7 +1434,7 @@ const immer::map<std::string, rt_value_t> get_dict_values(value_backend_t& backe
 		for(const auto& e: map2){
 			QUARK_ASSERT(e.second.check_invariant());
 
-			const auto value = rt_value_t(backend, value_type, e.second, rt_value_t::rc_mode::bump);
+			const auto value = rt_value_t(backend, e.second, value_type, rt_value_t::rc_mode::bump);
 			values = values.insert({ e.first, value} );
 		}
 		return values;
@@ -1446,7 +1446,7 @@ const immer::map<std::string, rt_value_t> get_dict_values(value_backend_t& backe
 		for(const auto& e: map2){
 			QUARK_ASSERT(e.second.check_invariant());
 
-			const auto value = rt_value_t(backend, value_type, e.second, rt_value_t::rc_mode::bump);
+			const auto value = rt_value_t(backend, e.second, value_type, rt_value_t::rc_mode::bump);
 			values = values.insert({ e.first, value} );
 		}
 		return values;
@@ -1474,7 +1474,7 @@ rt_value_t make_dict_value(value_backend_t& backend, const type_t& value_type, c
 			retain_value(backend, e.second._pod, value_type);
 			m.insert({ e.first, e.second._pod });
 		}
-		const auto result2 = rt_value_t(backend, dict_type, result, rt_value_t::rc_mode::adopt);
+		const auto result2 = rt_value_t(backend, result, dict_type, rt_value_t::rc_mode::adopt);
 		QUARK_ASSERT(result2.check_invariant());
 		return result2;
 	}
@@ -1488,7 +1488,7 @@ rt_value_t make_dict_value(value_backend_t& backend, const type_t& value_type, c
 			retain_value(backend, e.second._pod, value_type);
 			m = m.set(e.first, e.second._pod);
 		}
-		const auto result2 = rt_value_t(backend, dict_type, result, rt_value_t::rc_mode::adopt);
+		const auto result2 = rt_value_t(backend, result, dict_type, rt_value_t::rc_mode::adopt);
 		QUARK_ASSERT(result2.check_invariant());
 		return result2;
 	}
@@ -3050,7 +3050,7 @@ rt_value_t value_to_rt(value_backend_t& backend, const value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 
 	const auto a = to_runtime_value2(backend, value);
-	return rt_value_t(backend, value.get_type(), a, rt_value_t::rc_mode::adopt);
+	return rt_value_t(backend, a, value.get_type(), rt_value_t::rc_mode::adopt);
 }
 
 rt_value_t make_rt_value(value_backend_t& backend, rt_pod_t value, const type_t& type, rt_value_t::rc_mode mode){
@@ -3058,7 +3058,7 @@ rt_value_t make_rt_value(value_backend_t& backend, rt_pod_t value, const type_t&
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	return rt_value_t(backend, type, value, mode);
+	return rt_value_t(backend, value, type, mode);
 }
 
 rt_pod_t get_rt_value(value_backend_t& backend, const rt_value_t& value){
@@ -3863,7 +3863,7 @@ rt_pod_t update_struct_member(value_backend_t& backend, rt_pod_t struct_value, c
 	QUARK_ASSERT(struct_value.struct_ptr->check_invariant());
 
 	const auto& struct_type_peek = peek2(backend.types, struct_type0);
-	const auto& value2 = rt_value_t(backend, peek2(backend.types, member_type), value, rt_value_t::rc_mode::bump);
+	const auto& value2 = rt_value_t(backend, value, peek2(backend.types, member_type), rt_value_t::rc_mode::bump);
 	const auto& values = from_runtime_struct(backend, struct_value, struct_type_peek);
 
 	auto values2 = values;

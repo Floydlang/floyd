@@ -385,7 +385,7 @@ json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend)
 		const auto debug_type = stack._entry_types[i];
 //		const auto ext = encode_as_external(_types, debug_type);
 		const auto bc_pod = stack._entries[i];
-		const auto bc = rt_value_t(backend, debug_type, bc_pod, rt_value_t::rc_mode::bump);
+		const auto bc = rt_value_t(backend, bc_pod, debug_type, rt_value_t::rc_mode::bump);
 
 		auto a = json_t::make_array({
 			json_t(i),
@@ -638,13 +638,13 @@ static std::vector<std::string> make(value_backend_t& backend, size_t i, rt_pod_
 				value_str = "***RC VALUE: DELETED***";
 			}
 			else {
-				const auto bc_that_owns_rc = rt_value_t(backend, debug_type, bc_pod, rt_value_t::rc_mode::bump);
+				const auto bc_that_owns_rc = rt_value_t(backend, bc_pod, debug_type, rt_value_t::rc_mode::bump);
 				value_str = json_to_compact_string(bcvalue_to_json(backend, bc_that_owns_rc));
 			}
 		}
 	}
 	else{
-		const auto bc_that_owns_rc = rt_value_t(backend, debug_type, bc_pod, rt_value_t::rc_mode::bump);
+		const auto bc_that_owns_rc = rt_value_t(backend, bc_pod, debug_type, rt_value_t::rc_mode::bump);
 		value_str = json_to_compact_string(bcvalue_to_json(backend, bc_that_owns_rc));
 	}
 
@@ -875,7 +875,7 @@ static void execute_new_vector_obj(interpreter_t& vm, int16_t dest_reg, int16_t 
 		const auto pos = arg0_stack_pos + i;
 		QUARK_ASSERT(peek2(types, vm._stack._entry_types[pos]) == type_t(peek2(types, element_type)));
 		const auto& e = vm._stack._entries[pos];
-		const auto e2 = rt_value_t(backend, element_type, e, rt_value_t::rc_mode::bump);
+		const auto e2 = rt_value_t(backend, e, element_type, rt_value_t::rc_mode::bump);
 		elements2 = elements2.push_back(e2);
 	}
 
@@ -1169,7 +1169,7 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 
 		//	Cast the result to the destination symbol's type.
 		const auto dest_type = stack._current_static_frame->_symbol_effective_type[target_reg];
-		const auto result3 = rt_value_t(backend, dest_type, result2, rt_value_t::rc_mode::adopt);
+		const auto result3 = rt_value_t(backend, result2, dest_type, rt_value_t::rc_mode::adopt);
 		stack.write_register(target_reg, result3);
 	}
 }
@@ -1449,7 +1449,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_return: {
 			const auto& type = frame_ptr->_symbols._symbols[i._a].second._value_type;
-			return { true, rt_value_t(backend, type, regs[i._a], rt_value_t::rc_mode::bump) };
+			return { true, rt_value_t(backend, regs[i._a], type, rt_value_t::rc_mode::bump) };
 		}
 
 		case bc_opcode::k_stop: {
@@ -2077,7 +2077,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 			const auto& vector_type = frame_ptr->_symbols._symbols[i._a].second._value_type;
 			const auto r = concatunate_vectors(backend, vector_type, regs[i._b], regs[i._c]);
-			const auto& result = rt_value_t(backend, vector_type, r, rt_value_t::rc_mode::adopt);
+			const auto& result = rt_value_t(backend, r, vector_type, rt_value_t::rc_mode::adopt);
 			stack.write_register(i._a, result);
 			break;
 		}

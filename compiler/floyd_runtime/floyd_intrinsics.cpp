@@ -245,7 +245,7 @@ static rt_value_t update_element(value_backend_t& backend, const rt_value_t& obj
 				quark::throw_runtime_error("Update element must be a character in an int.");
 			}
 			else{
-				return rt_value_t(backend, obj1._type, update__string(backend, obj1._pod, lookup_key._pod, new_value._pod), rt_value_t::rc_mode::adopt);
+				return rt_value_t(backend, update__string(backend, obj1._pod, lookup_key._pod, new_value._pod), obj1._type, rt_value_t::rc_mode::adopt);
 			}
 		}
 	}
@@ -270,7 +270,7 @@ static rt_value_t update_element(value_backend_t& backend, const rt_value_t& obj
 			quark::throw_runtime_error("Update element must match vector type.");
 		}
 		else{
-			return rt_value_t(backend, obj1._type, update_element__vector(backend, obj1._pod, obj1_peek.get_data(), lookup_key._pod, new_value._pod), rt_value_t::rc_mode::adopt);
+			return rt_value_t(backend, update_element__vector(backend, obj1._pod, obj1_peek.get_data(), lookup_key._pod, new_value._pod), obj1._type, rt_value_t::rc_mode::adopt);
 		}
 	}
 	else if(obj1_peek.is_dict()){
@@ -283,7 +283,7 @@ static rt_value_t update_element(value_backend_t& backend, const rt_value_t& obj
 				quark::throw_runtime_error("Update element must match dict value type.");
 			}
 			else{
-				return rt_value_t(backend, obj1._type, update_dict(backend, obj1._pod, obj1_peek.get_data(), lookup_key._pod, new_value._pod), rt_value_t::rc_mode::adopt);
+				return rt_value_t(backend, update_dict(backend, obj1._pod, obj1_peek.get_data(), lookup_key._pod, new_value._pod), obj1._type, rt_value_t::rc_mode::adopt);
 			}
 		}
 	}
@@ -302,7 +302,7 @@ static rt_value_t update_element(value_backend_t& backend, const rt_value_t& obj
 
 //			trace_heap(backend.heap);
 
-			const auto result = rt_value_t(backend, obj1._type, update_struct_member(backend, obj1._pod, obj1._type, member_index, new_value._pod, new_value_peek), rt_value_t::rc_mode::adopt);
+			const auto result = rt_value_t(backend, update_struct_member(backend, obj1._pod, obj1._type, member_index, new_value._pod, new_value_peek), obj1._type, rt_value_t::rc_mode::adopt);
 
 //			trace_heap(backend.heap);
 
@@ -331,9 +331,9 @@ rt_pod_t intrinsic__update(
 ){
 	auto& backend = get_backend(frp);
 
-	const auto collection = rt_value_t(backend, type_t(collection_type), collection_value, rt_value_t::rc_mode::bump);
-	const auto key = rt_value_t(backend, type_t(key_type), key_value, rt_value_t::rc_mode::bump);
-	const auto newvalue = rt_value_t(backend, type_t(newvalue_type), newvalue_value, rt_value_t::rc_mode::bump);
+	const auto collection = rt_value_t(backend, collection_value, type_t(collection_type), rt_value_t::rc_mode::bump);
+	const auto key = rt_value_t(backend, key_value, type_t(key_type), rt_value_t::rc_mode::bump);
+	const auto newvalue = rt_value_t(backend, newvalue_value, type_t(newvalue_type), rt_value_t::rc_mode::bump);
 
 	const auto result = update_element(backend, collection, key, newvalue);
 	retain_value(backend, result._pod, result._type);
@@ -591,10 +591,10 @@ rt_pod_t intrinsic__map__carray(
 		// ??? This thunking must be moved of inner loop. Use ffi to make bridge for k_native__floydcc?
 		if(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc){
 			const rt_value_t f_args[] = {
-				rt_value_t(backend, type_t(e_type), element, rt_value_t::rc_mode::bump),
-				rt_value_t(backend, type_t(context_type), context_value, rt_value_t::rc_mode::bump)
+				rt_value_t(backend, element, e_type, rt_value_t::rc_mode::bump),
+				rt_value_t(backend, context_value, type_t(context_type), rt_value_t::rc_mode::bump)
 			};
-			const auto a = call_thunk(frp, rt_value_t(backend, type_t(f_type), f_value, rt_value_t::rc_mode::bump), f_args, 2);
+			const auto a = call_thunk(frp, rt_value_t(backend, f_value, f_type2, rt_value_t::rc_mode::bump), f_args, 2);
 			QUARK_ASSERT(a.check_invariant());
 			retain_value(backend, a._pod, a._type);
 
@@ -628,10 +628,10 @@ static rt_pod_t map_f_thunk(runtime_t* frp, rt_pod_t e_value, rt_pod_t context_v
 	const auto& env = *(const f_env_t*)frp;
 
 	const rt_value_t f_args[] = {
-		rt_value_t(backend, env.e_type, e_value, rt_value_t::rc_mode::bump),
-		rt_value_t(backend, env.context_type, context_value, rt_value_t::rc_mode::bump)
+		rt_value_t(backend, e_value, env.e_type, rt_value_t::rc_mode::bump),
+		rt_value_t(backend, context_value, env.context_type, rt_value_t::rc_mode::bump)
 	};
-	const auto a = call_thunk(frp, rt_value_t(backend, env.f_type, env.f_value, rt_value_t::rc_mode::bump), f_args, 2);
+	const auto a = call_thunk(frp, rt_value_t(backend, env.f_value, env.f_type, rt_value_t::rc_mode::bump), f_args, 2);
 	QUARK_ASSERT(a.check_invariant());
 	retain_value(backend, a._pod, a._type);
 
@@ -950,11 +950,11 @@ rt_pod_t intrinsic__map_dag__carray(
 			// ??? This thunking must be moved of inner loop. Use ffi to make bridge for k_native__floydcc?
 			if(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc){
 				const rt_value_t f_args[] = {
-					rt_value_t(backend, type_t(e_type), e, rt_value_t::rc_mode::bump),
-					rt_value_t(backend, type_t(vec_r_type), solved_deps3, rt_value_t::rc_mode::bump),
-					rt_value_t(backend, type_t(context_type), context, rt_value_t::rc_mode::bump)
+					rt_value_t(backend, e, e_type, rt_value_t::rc_mode::bump),
+					rt_value_t(backend, solved_deps3, vec_r_type, rt_value_t::rc_mode::bump),
+					rt_value_t(backend, context, type_t(context_type), rt_value_t::rc_mode::bump)
 				};
-				const auto a = call_thunk(frp, rt_value_t(backend, f_value_type2, f_value, rt_value_t::rc_mode::bump), f_args, 3);
+				const auto a = call_thunk(frp, rt_value_t(backend, f_value, f_value_type2, rt_value_t::rc_mode::bump), f_args, 3);
 				QUARK_ASSERT(a.check_invariant());
 				retain_value(backend, a._pod, a._type);
 
@@ -1097,11 +1097,11 @@ rt_pod_t intrinsic__map_dag__hamt(
 			rt_pod_t result1 = make_uninitialized_magic();
 			if(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc){
 				const rt_value_t f_args[] = {
-					rt_value_t(backend, type_t(e_type), e, rt_value_t::rc_mode::bump),
-					rt_value_t(backend, type_t(vec_r_type), solved_deps3, rt_value_t::rc_mode::bump),
-					rt_value_t(backend, type_t(context_type), context, rt_value_t::rc_mode::bump)
+					rt_value_t(backend, e, e_type, rt_value_t::rc_mode::bump),
+					rt_value_t(backend, solved_deps3, vec_r_type, rt_value_t::rc_mode::bump),
+					rt_value_t(backend, context, type_t(context_type), rt_value_t::rc_mode::bump)
 				};
-				const auto a = call_thunk(frp, rt_value_t(backend, f_value_type2, f_value, rt_value_t::rc_mode::bump), f_args, 3);
+				const auto a = call_thunk(frp, rt_value_t(backend, f_value, f_value_type2, rt_value_t::rc_mode::bump), f_args, 3);
 				QUARK_ASSERT(a.check_invariant());
 				retain_value(backend, a._pod, a._type);
 
@@ -1211,10 +1211,10 @@ rt_pod_t intrinsic__filter_carray(
 		// ??? This thunking must be moved of inner loop. Use ffi to make bridge for k_native__floydcc?
 		if(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc){
 			const rt_value_t f_args[] = {
-				rt_value_t(backend, type_t(e_type), value, rt_value_t::rc_mode::bump),
-				rt_value_t(backend, type_t(context_type), context, rt_value_t::rc_mode::bump)
+				rt_value_t(backend, value, e_type, rt_value_t::rc_mode::bump),
+				rt_value_t(backend, context, type_t(context_type), rt_value_t::rc_mode::bump)
 			};
-			const auto a = call_thunk(frp, rt_value_t(backend, f_value_type2, f_value, rt_value_t::rc_mode::bump), f_args, 2);
+			const auto a = call_thunk(frp, rt_value_t(backend, f_value, f_value_type2, rt_value_t::rc_mode::bump), f_args, 2);
 			QUARK_ASSERT(a.check_invariant());
 			retain_value(backend, a._pod, a._type);
 
@@ -1284,10 +1284,10 @@ rt_pod_t intrinsic__filter_hamt(
 		// ??? This thunking must be moved of inner loop. Use ffi to make bridge for k_native__floydcc?
 		if(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc){
 			const rt_value_t f_args[] = {
-				rt_value_t(backend, type_t(e_type), value, rt_value_t::rc_mode::bump),
-				rt_value_t(backend, type_t(context_type), context, rt_value_t::rc_mode::bump)
+				rt_value_t(backend, value, e_type, rt_value_t::rc_mode::bump),
+				rt_value_t(backend, context, type_t(context_type), rt_value_t::rc_mode::bump)
 			};
-			const auto a = call_thunk(frp, rt_value_t(backend, f_value_type2, f_value, rt_value_t::rc_mode::bump), f_args, 2);
+			const auto a = call_thunk(frp, rt_value_t(backend, f_value, f_value_type2, rt_value_t::rc_mode::bump), f_args, 2);
 			QUARK_ASSERT(a.check_invariant());
 			retain_value(backend, a._pod, a._type);
 
@@ -1386,11 +1386,11 @@ rt_pod_t intrinsic__reduce_carray(
 		// ??? This thunking must be moved of inner loop. Use ffi to make bridge for k_native__floydcc?
 		if(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc){
 			const rt_value_t f_args[] = {
-				rt_value_t(backend, type_t(r_type), accumulator, rt_value_t::rc_mode::bump),
-				rt_value_t(backend, type_t(e_type), value, rt_value_t::rc_mode::bump),
-				rt_value_t(backend, type_t(context_type), context, rt_value_t::rc_mode::bump)
+				rt_value_t(backend, accumulator, r_type, rt_value_t::rc_mode::bump),
+				rt_value_t(backend, value, e_type, rt_value_t::rc_mode::bump),
+				rt_value_t(backend, context, type_t(context_type), rt_value_t::rc_mode::bump)
 			};
-			const auto a = call_thunk(frp, rt_value_t(backend, f_value_type2, f_value, rt_value_t::rc_mode::bump), f_args, 3);
+			const auto a = call_thunk(frp, rt_value_t(backend, f_value, f_value_type2, rt_value_t::rc_mode::bump), f_args, 3);
 			QUARK_ASSERT(a.check_invariant());
 			retain_value(backend, a._pod, a._type);
 
@@ -1452,11 +1452,11 @@ rt_pod_t intrinsic__reduce_hamt(
 		// ??? This thunking must be moved of inner loop. Use ffi to make bridge for k_native__floydcc?
 		if(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc){
 			const rt_value_t f_args[] = {
-				rt_value_t(backend, type_t(r_type), accumulator, rt_value_t::rc_mode::bump),
-				rt_value_t(backend, type_t(e_type), value, rt_value_t::rc_mode::bump),
-				rt_value_t(backend, type_t(context_type), context, rt_value_t::rc_mode::bump)
+				rt_value_t(backend, accumulator, r_type, rt_value_t::rc_mode::bump),
+				rt_value_t(backend, value, e_type, rt_value_t::rc_mode::bump),
+				rt_value_t(backend, context, type_t(context_type), rt_value_t::rc_mode::bump)
 			};
-			const auto a = call_thunk(frp, rt_value_t(backend, f_value_type2, f_value, rt_value_t::rc_mode::bump), f_args, 3);
+			const auto a = call_thunk(frp, rt_value_t(backend, f_value, f_value_type2, rt_value_t::rc_mode::bump), f_args, 3);
 			QUARK_ASSERT(a.check_invariant());
 			retain_value(backend, a._pod, a._type);
 
@@ -1549,11 +1549,11 @@ rt_pod_t intrinsic__stable_sort(
 				const auto right = to_runtime_value2(backend, b);
 
 				const rt_value_t f_args[] = {
-					rt_value_t(backend, t_type, left, rt_value_t::rc_mode::bump),
-					rt_value_t(backend, t_type, right, rt_value_t::rc_mode::bump),
-					rt_value_t(backend, context_type, context, rt_value_t::rc_mode::bump)
+					rt_value_t(backend, left, t_type, rt_value_t::rc_mode::bump),
+					rt_value_t(backend, right, t_type, rt_value_t::rc_mode::bump),
+					rt_value_t(backend, context, context_type, rt_value_t::rc_mode::bump)
 				};
-				const auto result = call_thunk(frp, rt_value_t(backend, f_type, f_value, rt_value_t::rc_mode::bump), f_args, 3);
+				const auto result = call_thunk(frp, rt_value_t(backend, f_value, f_type, rt_value_t::rc_mode::bump), f_args, 3);
 				QUARK_ASSERT(result.check_invariant());
 				return result.get_bool_value();
 			}

@@ -403,7 +403,7 @@ static http_response_t from_runtime__http_response_t(value_backend_t& backend, c
 	auto& types = backend.types;
 
 	const auto http_response_t__type = lookup_type_from_name(types, type_name_t{{ "global_scope", "http_response_t" }});
-	const auto response2 = rt_value_t(backend, http_response_t__type, response, rt_value_t::rc_mode::bump);
+	const auto response2 = rt_value_t(backend, response, http_response_t__type, rt_value_t::rc_mode::bump);
 
 	const auto members = response2.get_struct_value(backend);
 
@@ -537,7 +537,7 @@ struct server_connection_t : public connection_i {
 			const rt_value_t f_args[] = {
 				rt_value_t::make_int(socket2)
 			};
-			const auto a = call_thunk(frp, rt_value_t(backend, func_link.function_type_optional, f, rt_value_t::rc_mode::bump), f_args, 1);
+			const auto a = call_thunk(frp, rt_value_t(backend, f, func_link.function_type_optional, rt_value_t::rc_mode::bump), f_args, 1);
 			QUARK_ASSERT(a._type.is_void());
 		}
 		else if(func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc){

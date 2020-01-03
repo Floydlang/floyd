@@ -854,8 +854,8 @@ struct interpreter_stack_t {
 #if DEBUG
 		const auto result = rt_value_t(
 			*_backend,
-			_current_static_frame->_symbol_effective_type[reg],
 			_current_frame_start_ptr[reg],
+			_current_static_frame->_symbol_effective_type[reg],
 			rt_value_t::rc_mode::bump
 		);
 #else
@@ -1063,7 +1063,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(peek2(_backend->types, type) == peek2(_backend->types, _entry_types[pos]));
 
 		const auto& e = _entries[pos];
-		const auto result = rt_value_t(*_backend, type, e, rt_value_t::rc_mode::bump);
+		const auto result = rt_value_t(*_backend, e, type, rt_value_t::rc_mode::bump);
 		return result;
 	}
 
