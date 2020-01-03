@@ -32,8 +32,17 @@ struct compilation_unit_t;
 //////////////////////////////////////		bc_execution_engine_t
 
 
+struct bc_process_t;
+
 
 struct bc_execution_engine_t {
+	container_t _container;
+	runtime_handler_i* handler;
+	std::map<std::string, process_def_t> _process_infos;
+	std::thread::id _main_thread_id;
+
+	std::vector<std::shared_ptr<bc_process_t>> _processes;
+	std::vector<std::thread> _worker_threads;
 };
 
 

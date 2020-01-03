@@ -84,18 +84,6 @@ std::packaged_task
 
 
 
-struct bc_process_t;
-
-struct bc_processes_runtime_t {
-	container_t _container;
-	runtime_handler_i* handler;
-	std::map<std::string, process_def_t> _process_infos;
-	std::thread::id _main_thread_id;
-
-	std::vector<std::shared_ptr<bc_process_t>> _processes;
-	std::vector<std::thread> _worker_threads;
-};
-
 
 //	NOTICE: Each process inbox has its own mutex + condition variable. No mutex protects cout.
 struct bc_process_t : public runtime_process_i {
@@ -160,7 +148,7 @@ struct bc_process_t : public runtime_process_i {
 
 	//////////////////////////////////////		STATE
 
-	bc_processes_runtime_t* _owning_runtime;
+	bc_execution_engine_t* _owning_runtime;
 	std::condition_variable _inbox_condition_variable;
 	std::mutex _inbox_mutex;
 	std::deque<rt_value_t> _inbox;
@@ -187,7 +175,7 @@ static std::string make_trace_process_header(const bc_process_t& process){
 }
 
 
-static void process_process(bc_processes_runtime_t& runtime, int process_id){
+static void process_process(bc_execution_engine_t& runtime, int process_id){
 	auto& process = *runtime._processes[process_id];
 
 	QUARK_ASSERT(process.check_invariant());
@@ -242,7 +230,7 @@ static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& v
 		return {};
 	}
 	else{
-		bc_processes_runtime_t runtime;
+		bc_execution_engine_t runtime;
 		runtime.handler = vm._runtime_handler;
 		runtime._main_thread_id = std::this_thread::get_id();
 		runtime._container = container_def;
