@@ -40,9 +40,6 @@ struct bc_execution_engine_t {
 	std::shared_ptr<bc_program_t> _program;
 	interpreter_t main_temp;
 
-	//??? Instead, store bc_program_t.
-	container_t _container;
-
 	runtime_handler_i* handler;
 	std::thread::id _main_thread_id;
 

@@ -191,7 +191,6 @@ std::unique_ptr<bc_execution_engine_t> make_bytecode_execution_engine(const bc_p
 		new bc_execution_engine_t {
 			program2,
 			interpreter_t(program2, config, nullptr, runtime_handler),
-			program._container_def,
 			&runtime_handler,
 			{},
 			{},
@@ -264,10 +263,9 @@ static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& confi
 	else{
 		ee.handler = ee.main_temp._runtime_handler;
 		ee._main_thread_id = std::this_thread::get_id();
-		ee._container = container_def;
 
 		std::map<std::string, process_def_t> process_infos = reduce(
-			ee._container._clock_busses,
+			ee._program->_container_def._clock_busses,
 			std::map<std::string, process_def_t>(),
 			[](const std::map<std::string, process_def_t>& acc, const std::pair<std::string, clock_bus_t>& e){
 				auto acc2 = acc;
