@@ -622,8 +622,6 @@ rt_value_t llvm_process_t::runtime_basics__call_thunk(const rt_value_t& f, const
 }
 
 
-
-
 static std::string make_trace_process_header(const llvm_process_t& process){
 	const auto process_name = process._name_key;
 	const auto os_thread_name = get_current_thread_name();
@@ -633,9 +631,10 @@ static std::string make_trace_process_header(const llvm_process_t& process){
 	return header;
 }
 
-void llvm_process_t::runtime_process__on_send_message(const std::string& dest_process_id, const rt_pod_t& message, const type_t& message_type){
-	QUARK_ASSERT(check_invariant());
-	auto& backend = ee->backend;
+
+static void send(llvm_process_t& process, const std::string& dest_process_id, const rt_pod_t& message, const type_t& message_type){
+	QUARK_ASSERT(process.check_invariant());
+	auto& backend = process.ee->backend;
 	const auto& types = backend.types;
 
 /*
@@ -645,23 +644,23 @@ void llvm_process_t::runtime_process__on_send_message(const std::string& dest_pr
 	}
 */
 
-	const auto trace = ee->_trace_processes;
-	const auto trace_header = trace ? make_trace_process_header(*this) : "";
+	const auto trace = process.ee->_trace_processes;
+	const auto trace_header = trace ? make_trace_process_header(process) : "";
 	QUARK_SCOPED_TRACE_OPTIONAL(trace_header + ": Send message to dest process ID: " + dest_process_id, trace);
 
 	if(trace){
 		QUARK_SCOPED_TRACE("Message:");
-		const auto v = from_runtime_value2(ee->backend, message, message_type);
+		const auto v = from_runtime_value2(process.ee->backend, message, message_type);
 		const auto message2 = value_to_json(types, v);
 		QUARK_TRACE_SS(json_to_pretty_string(message2));
 	}
 
 	const auto dest_process_it = std::find_if(
-		ee->_processes.begin(),
-		ee->_processes.end(),
+		process.ee->_processes.begin(),
+		process.ee->_processes.end(),
 		[&](const std::shared_ptr<llvm_process_t>& process){ return process->_name_key == dest_process_id; }
 	);
-	if(dest_process_it == ee->_processes.end()){
+	if(dest_process_it == process.ee->_processes.end()){
 		if(trace){
 			QUARK_TRACE("Cannot find floyd process: \"" + dest_process_id + "\", message not sent.");
 		}
@@ -697,6 +696,10 @@ void llvm_process_t::runtime_process__on_send_message(const std::string& dest_pr
 		dest_process._inbox_condition_variable.notify_one();
 	//    dest_process._inbox_condition_variable.notify_all();
 	}
+}
+
+void llvm_process_t::runtime_process__on_send_message(const std::string& dest_process_id, const rt_pod_t& message, const type_t& message_type){
+	return send(*this, dest_process_id, message, message_type);
 }
 
 void llvm_process_t::runtime_process__on_exit_process(){

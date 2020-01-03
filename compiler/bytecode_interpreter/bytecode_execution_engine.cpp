@@ -26,6 +26,13 @@ namespace floyd {
 
 static const bool k_trace_messaging = true;
 
+/*
+REFS:
+
+std::packaged_task
+
+https://en.cppreference.com/w/cpp/thread/condition_variable/wait
+*/
 
 
 static value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vector<value_t>& args){
@@ -69,8 +76,12 @@ bc_program_t compile_to_bytecode(const compilation_unit_t& cu){
 	return bc;
 }
 
+
+
 //////////////////////////////////////		bc_process_t
 
+
+static void send(bc_process_t& process, const std::string& dest_process_id, const rt_pod_t& message0, const type_t& type);
 
 
 //	NOTICE: Each process inbox has its own mutex + condition variable. No mutex protects cout.
@@ -81,52 +92,8 @@ struct bc_process_t : public runtime_process_i {
 		return true;
 	}
 
-
 	void runtime_process__on_send_message(const std::string& dest_process_id, const rt_pod_t& message0, const type_t& type) override {
-		auto& backend = _interpreter->_backend;
-		const auto& types = backend.types;
-		const auto message = make_rt_value(backend, message0, type, rt_value_t::rc_mode::bump);
-
-		const auto it = std::find_if(
-			_owning_runtime->_processes.begin(),
-			_owning_runtime->_processes.end(),
-			[&](const std::shared_ptr<bc_process_t>& process){ return process->_name_key == dest_process_id; }
-		);
-		if(it == _owning_runtime->_processes.end()){
-		}
-		else{
-			auto& dest_process = **it;
-
-			if(message._type != dest_process._message_type){
-				const auto send_message_type_str = type_to_compact_string(
-					types,
-					message._type,
-					enamed_type_mode::short_names
-				);
-
-				const auto msg_message_type_str = type_to_compact_string(
-					types,
-					dest_process._message_type,
-					enamed_type_mode::short_names
-				);
-
-				quark::throw_runtime_error(
-					"[Floyd runtime] Message type to send() is <" + send_message_type_str + ">"
-					+ " but ___msg() requires message type <" + msg_message_type_str + ">"
-					+ "."
-				);
-			}
-
-			{
-				std::lock_guard<std::mutex> lk(dest_process._inbox_mutex);
-				dest_process._inbox.push_front(message);
-				if(k_trace_messaging){
-//					QUARK_TRACE("Notifying...");
-				}
-			}
-			dest_process._inbox_condition_variable.notify_one();
-		//    dest_process._inbox_condition_variable.notify_all();
-		}
+		send(*this, dest_process_id, message0, type);
 	}
 
 	void runtime_process__on_exit_process() override {
@@ -136,7 +103,7 @@ struct bc_process_t : public runtime_process_i {
 
 	//////////////////////////////////////		STATE
 
-	bc_execution_engine_t* _owning_runtime;
+	bc_execution_engine_t* _ee;
 	std::condition_variable _inbox_condition_variable;
 	std::mutex _inbox_mutex;
 	std::deque<rt_value_t> _inbox;
@@ -154,9 +121,57 @@ struct bc_process_t : public runtime_process_i {
 };
 
 
+static void send(bc_process_t& process, const std::string& dest_process_id, const rt_pod_t& message0, const type_t& type){
+	auto& backend = process._interpreter->_backend;
+	const auto& types = backend.types;
+	const auto message = make_rt_value(backend, message0, type, rt_value_t::rc_mode::bump);
+
+	const auto it = std::find_if(
+		process._ee->_processes.begin(),
+		process._ee->_processes.end(),
+		[&](const std::shared_ptr<bc_process_t>& process){ return process->_name_key == dest_process_id; }
+	);
+	if(it == process._ee->_processes.end()){
+	}
+	else{
+		auto& dest_process = **it;
+
+		if(message._type != dest_process._message_type){
+			const auto send_message_type_str = type_to_compact_string(
+				types,
+				message._type,
+				enamed_type_mode::short_names
+			);
+
+			const auto msg_message_type_str = type_to_compact_string(
+				types,
+				dest_process._message_type,
+				enamed_type_mode::short_names
+			);
+
+			quark::throw_runtime_error(
+				"[Floyd runtime] Message type to send() is <" + send_message_type_str + ">"
+				+ " but ___msg() requires message type <" + msg_message_type_str + ">"
+				+ "."
+			);
+		}
+
+		{
+			std::lock_guard<std::mutex> lk(dest_process._inbox_mutex);
+			dest_process._inbox.push_front(message);
+			if(k_trace_messaging){
+//					QUARK_TRACE("Notifying...");
+			}
+		}
+		dest_process._inbox_condition_variable.notify_one();
+	//    dest_process._inbox_condition_variable.notify_all();
+	}
+}
+
 
 
 //////////////////////////////////////		container_runner_t
+
 
 
 bool bc_execution_engine_t::check_invariant() const {
@@ -169,7 +184,6 @@ bool bc_execution_engine_t::check_invariant() const {
 	return true;
 }
 
-
 std::unique_ptr<bc_execution_engine_t> make_bytecode_execution_engine(const bc_program_t& program, const config_t& config, runtime_handler_i& runtime_handler){
 	return std::unique_ptr<bc_execution_engine_t>(
 		new bc_execution_engine_t {
@@ -178,25 +192,10 @@ std::unique_ptr<bc_execution_engine_t> make_bytecode_execution_engine(const bc_p
 			&runtime_handler,
 			{},
 			{},
-			{},
 			{}
 		}
 	);
 }
-
-
-
-
-/*
-REFS:
-
-std::packaged_task
-*/
-
-//	https://en.cppreference.com/w/cpp/thread/condition_variable/wait
-
-
-
 
 static std::string make_trace_process_header(const bc_process_t& process){
 	const auto process_name = process._name_key;
@@ -207,7 +206,7 @@ static std::string make_trace_process_header(const bc_process_t& process){
 }
 
 
-static void process_process(bc_execution_engine_t& runtime, int process_id){
+static void run_process(bc_execution_engine_t& runtime, int process_id){
 	auto& process = *runtime._processes[process_id];
 
 	QUARK_ASSERT(process.check_invariant());
@@ -253,19 +252,18 @@ static void process_process(bc_execution_engine_t& runtime, int process_id){
 	}
 }
 
-//	NOTICE: Will not run the input VM, it makes new VMs for every thread run(!?)
-//??? No need for args
-static std::map<std::string, value_t> run_floyd_processes(bc_execution_engine_t& ee, const std::vector<std::string>& args, const config_t& config){
+//	NOTICE: Will not run the main_temp VM, it makes new VMs for every thread run(!?) ???
+static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& config){
 	const auto& container_def = ee.main_temp._imm->_program._container_def;
 
 	if(container_def._clock_busses.empty()){
-		return {};
 	}
 	else{
 		ee.handler = ee.main_temp._runtime_handler;
 		ee._main_thread_id = std::this_thread::get_id();
 		ee._container = container_def;
-		ee._process_infos = reduce(
+
+		std::map<std::string, process_def_t> process_infos = reduce(
 			ee._container._clock_busses,
 			std::map<std::string, process_def_t>(),
 			[](const std::map<std::string, process_def_t>& acc, const std::pair<std::string, clock_bus_t>& e){
@@ -275,11 +273,11 @@ static std::map<std::string, value_t> run_floyd_processes(bc_execution_engine_t&
 			}
 		);
 
-		for(const auto& t: ee._process_infos){
+		for(const auto& t: process_infos	){
 			auto process = std::make_shared<bc_process_t>();
 			process->_exiting_flag = false;
 			process->_message_type = t.second.msg_type;
-			process->_owning_runtime = &ee;
+			process->_ee = &ee;
 			process->_name_key = t.first;
 			process->_interpreter = std::make_shared<interpreter_t>(ee.main_temp._imm->_program, config, process.get(), *ee.handler);
 			process->_init_function = find_global_symbol2(*process->_interpreter, t.second.init_func_linkname);
@@ -301,44 +299,25 @@ static std::map<std::string, value_t> run_floyd_processes(bc_execution_engine_t&
 		for(int process_id = 1 ; process_id < ee._processes.size() ; process_id++){
 			ee._worker_threads.push_back(
 				std::thread([&](int process_id){
-		//			const auto native_thread = thread::native_handle();
-
 					std::stringstream thread_name;
 					thread_name << std::string() << "process " << process_id << " thread";
 					set_current_threads_name(thread_name.str());
 
-					process_process(ee, process_id);
+					run_process(ee, process_id);
 				},
 				process_id
 				)
 			);
 		}
 
-		process_process(ee, 0);
+		//	Run main process.
+		run_process(ee, 0);
 
 		for(auto &t: ee._worker_threads){
 			t.join();
 		}
-
-	#if 0
-		const auto result_vec = mapf<pair<string, value_t>>(
-			ee._processes,
-			[](const auto& process){ return pair<string, value_t>{ process->_name_key, process->_process_state };}
-		);
-		std::map<string, value_t> result_map;
-		for(const auto& e: result_vec){
-			const pair<string, value_t> v(e.first, e.second);
-			result_map.insert(v);
-		}
-
-		return result_map;
-	#endif
-		return {};
-	//	QUARK_VERIFY(ee._processes[0]->_process_state.get_struct_value()->_member_values[0].get_int_value() == 998);
 	}
 }
-
-
 
 static int64_t bc_call_main(interpreter_t& interpreter, const floyd::value_t& f, const std::vector<std::string>& main_args){
 	QUARK_ASSERT(interpreter.check_invariant());
@@ -346,7 +325,7 @@ static int64_t bc_call_main(interpreter_t& interpreter, const floyd::value_t& f,
 
 	auto types = interpreter._imm->_program._types;
 
-	//??? Check this earlier.
+	//??? Check types earlier in pipeline
 	if(f.get_type() == get_main_signature_arg_impure(types) || f.get_type() == get_main_signature_arg_pure(types)){
 		const auto main_args2 = mapf<value_t>(main_args, [](auto& e){ return value_t::make_string(e); });
 		const auto main_args3 = value_t::make_vector_value(types, type_t::make_string(), main_args2);
@@ -373,8 +352,8 @@ run_output_t run_program_bc(bc_execution_engine_t& ee, const std::vector<std::st
 		return { main_result_int, {} };
 	}
 	else{
-		const auto output = run_floyd_processes(ee, main_args, config);
-		return run_output_t(0, output);
+		run_floyd_processes(ee, config);
+		return run_output_t(0, {});
 	}
 }
 
@@ -460,8 +439,6 @@ std::vector<test_result_t> run_tests_bc(
 
 
 
-
-
 }	//	floyd
 #ifdef  __EMSCRIPTEN__
 
@@ -477,8 +454,6 @@ int runFloyd(std::string inStr) {
     //const std::string& container_key;
 
     floyd::run_container2(inStr,{},"");
-
-
     return 1;
 }
 
@@ -488,4 +463,3 @@ EMSCRIPTEN_BINDINGS(my_module) {
 }
 
 #endif
-
