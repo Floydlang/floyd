@@ -547,7 +547,7 @@ void interpreter_t::runtime_basics__on_print(const std::string& s){
 }
 
 type_t interpreter_t::runtime_basics__get_global_symbol_type(const std::string& s){
-	const auto& symbols = _imm->_program._globals._symbols;
+	const auto& symbols = _program->_globals._symbols;
 
 	const auto it = std::find_if(symbols._symbols.begin(), symbols._symbols.end(), [&s](const auto& e){ return e.first == s; });
 	if(it == symbols._symbols.end()){
@@ -562,32 +562,32 @@ rt_value_t interpreter_t::runtime_basics__call_thunk(const rt_value_t& f, const 
 }
 
 
+//???std::chrono::high_resolution_clock::now()
 
-
-interpreter_t::interpreter_t(const bc_program_t& program, const config_t& config, runtime_process_i* process_handler, runtime_handler_i& runtime_handler) :
-	_imm(std::make_shared<interpreter_imm_t>(interpreter_imm_t{ std::chrono::high_resolution_clock::now(), program })),
+interpreter_t::interpreter_t(const std::shared_ptr<bc_program_t>& program, const config_t& config, runtime_process_i* process_handler, runtime_handler_i& runtime_handler) :
+	_program(program),
 	_process_handler(process_handler),
 	_runtime_handler(&runtime_handler),
-	_backend{ link_functions(program), bc_make_struct_layouts(program._types), program._types, config },
-	_stack { &_backend, &_imm->_program._globals }
+	_backend { link_functions(*program), bc_make_struct_layouts(program->_types), program->_types, config },
+	_stack { &_backend, &_program->_globals }
 {
-	QUARK_ASSERT(program.check_invariant());
+	QUARK_ASSERT(program && program->check_invariant());
 	QUARK_ASSERT(check_invariant());
 
 	{
 		_stack.save_frame();
-		_stack.open_frame_except_args(_imm->_program._globals, 0);
+		_stack.open_frame_except_args(_program->_globals, 0);
 
 		QUARK_ASSERT(check_invariant());
 		if(false) trace_interpreter(*this, 0);
 
 		//	Run static intialization (basically run global instructions before calling main()).
-		execute_instructions(*this, _imm->_program._globals._instructions);
+		execute_instructions(*this, _program->_globals._instructions);
 
 		if(false) trace_interpreter(*this, 0);
 
 		//	close_frame() is called in destructor. This allows clients to read globals etc before interpreter is destructed.
-//		_stack.close_frame(_imm->_program._globals);
+//		_stack.close_frame(_program->_globals);
 	}
 	QUARK_ASSERT(check_invariant());
 }
@@ -599,8 +599,8 @@ interpreter_t::~interpreter_t(){
 void interpreter_t::unwind_stack(){
 	QUARK_ASSERT(check_invariant());
 
-	QUARK_ASSERT(_stack._current_static_frame == &_imm->_program._globals);
-	_stack.close_frame(_imm->_program._globals);
+	QUARK_ASSERT(_stack._current_static_frame == &_program->_globals);
+	_stack.close_frame(_program->_globals);
 
 	QUARK_ASSERT(check_invariant());
 }
@@ -789,7 +789,7 @@ void trace_interpreter(interpreter_t& vm, int pc){
 }
 
 void interpreter_t::swap(interpreter_t& other) throw(){
-	other._imm.swap(this->_imm);
+	other._program.swap(this->_program);
 	std::swap(other._process_handler, this->_process_handler);
 	std::swap(other._runtime_handler, this->_runtime_handler);
 	other._stack.swap(this->_stack);
@@ -797,7 +797,7 @@ void interpreter_t::swap(interpreter_t& other) throw(){
 
 #if DEBUG
 bool interpreter_t::check_invariant() const {
-	QUARK_ASSERT(_imm->_program.check_invariant());
+	QUARK_ASSERT(_program && _program->check_invariant());
 	QUARK_ASSERT(_stack.check_invariant());
 //	QUARK_ASSERT(_process_handler != nullptr);
 	QUARK_ASSERT(_runtime_handler != nullptr);
@@ -2227,7 +2227,7 @@ std::shared_ptr<value_entry_t> find_global_symbol2(interpreter_t& vm, const modu
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s.s.size() > 0);
 
-	const auto& symbols = vm._imm->_program._globals._symbols;
+	const auto& symbols = vm._program->_globals._symbols;
     const auto& it = std::find_if(
     	symbols._symbols.begin(),
     	symbols._symbols.end(),
@@ -2266,7 +2266,7 @@ json_t interpreter_to_json(interpreter_t& vm){
 	const auto stack = stack_to_json(vm._stack, vm._backend);
 
 	return json_t::make_object({
-		{ "ast", bcprogram_to_json(vm._imm->_program) },
+		{ "program", bcprogram_to_json(*vm._program) },
 		{ "callstack", stack }
 	});
 }

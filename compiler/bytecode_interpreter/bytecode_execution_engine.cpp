@@ -185,9 +185,12 @@ bool bc_execution_engine_t::check_invariant() const {
 }
 
 std::unique_ptr<bc_execution_engine_t> make_bytecode_execution_engine(const bc_program_t& program, const config_t& config, runtime_handler_i& runtime_handler){
+	auto program2 = std::make_shared<bc_program_t>(program);
+
 	return std::unique_ptr<bc_execution_engine_t>(
 		new bc_execution_engine_t {
-			interpreter_t(program, config, nullptr, runtime_handler),
+			program2,
+			interpreter_t(program2, config, nullptr, runtime_handler),
 			program._container_def,
 			&runtime_handler,
 			{},
@@ -254,7 +257,7 @@ static void run_process(bc_execution_engine_t& runtime, int process_id){
 
 //	NOTICE: Will not run the main_temp VM, it makes new VMs for every thread run(!?) ???
 static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& config){
-	const auto& container_def = ee.main_temp._imm->_program._container_def;
+	const auto& container_def = ee._program->_container_def;
 
 	if(container_def._clock_busses.empty()){
 	}
@@ -279,7 +282,7 @@ static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& confi
 			process->_message_type = t.second.msg_type;
 			process->_ee = &ee;
 			process->_name_key = t.first;
-			process->_interpreter = std::make_shared<interpreter_t>(ee.main_temp._imm->_program, config, process.get(), *ee.handler);
+			process->_interpreter = std::make_shared<interpreter_t>(ee._program, config, process.get(), *ee.handler);
 			process->_init_function = find_global_symbol2(*process->_interpreter, t.second.init_func_linkname);
 			process->_msg_function = find_global_symbol2(*process->_interpreter, t.second.msg_func_linkname);
 
@@ -323,7 +326,7 @@ static int64_t bc_call_main(interpreter_t& interpreter, const floyd::value_t& f,
 	QUARK_ASSERT(interpreter.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
 
-	auto types = interpreter._imm->_program._types;
+	auto types = interpreter._program->_types;
 
 	//??? Check types earlier in pipeline
 	if(f.get_type() == get_main_signature_arg_impure(types) || f.get_type() == get_main_signature_arg_pure(types)){
@@ -375,7 +378,7 @@ static std::string run_test(bc_execution_engine_t& ee, const test_t& test){
 	const auto function_id = test.f;
 
 	const auto f_type = type_t::make_function(
-		ee.main_temp._imm->_program._types,
+		ee._program->_types,
 		type_t::make_void(),
 		{},
 		epure::pure

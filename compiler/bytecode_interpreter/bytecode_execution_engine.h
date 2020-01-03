@@ -33,11 +33,11 @@ struct bc_process_t;
 
 
 struct bc_execution_engine_t {
-
 	bool check_invariant() const;
 
 
 	//////////////////////////////////////		STATE
+	std::shared_ptr<bc_program_t> _program;
 	interpreter_t main_temp;
 
 	//??? Instead, store bc_program_t.

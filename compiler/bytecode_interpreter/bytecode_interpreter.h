@@ -1155,20 +1155,6 @@ struct interpreter_stack_t {
 json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend);
 
 
-//////////////////////////////////////		interpreter_imm_t
-
-//	Holds static = immutable state the interpreter wants to keep around.
-
-struct interpreter_imm_t {
-	public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
-	public: const bc_program_t _program;
-};
-
-
-
-
-
-
 
 //////////////////////////////////////		interpreter_t
 
@@ -1179,7 +1165,7 @@ struct interpreter_imm_t {
 */
 
 struct interpreter_t : runtime_basics_i {
-	public: explicit interpreter_t(const bc_program_t& program, const config_t& config, runtime_process_i* process_handler, runtime_handler_i& runtime_handler);
+	public: explicit interpreter_t(const std::shared_ptr<bc_program_t>& program, const config_t& config, runtime_process_i* process_handler, runtime_handler_i& runtime_handler);
 	public: interpreter_t(const interpreter_t& other) = delete;
 	public: ~interpreter_t();
 
@@ -1195,7 +1181,7 @@ struct interpreter_t : runtime_basics_i {
 
 
 	////////////////////////		STATE
-	public: std::shared_ptr<interpreter_imm_t> _imm;
+	public: std::shared_ptr<bc_program_t> _program;
 	public: runtime_process_i* _process_handler;
 	public: runtime_handler_i* _runtime_handler;
 
