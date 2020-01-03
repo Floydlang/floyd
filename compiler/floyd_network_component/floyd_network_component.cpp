@@ -130,8 +130,8 @@ static const std::string k_network_component_header = R"(
 	//	Blocks for reply.
 	func string execute_http_request(network_component_t c, ip_address_and_port_t addr, string request) impure
 
-	//	Blocks forever. ??? how to ask it to stop?
-//	func void execute_http_server(network_component_t c, server_params_t params, string process_id) impure
+	//	Blocks forever.
+	func void execute_http_server(network_component_t c, int port, func void f(int socket)) impure
 
 )";
 
@@ -447,7 +447,7 @@ static rt_value_t bc_corelib__read_socket(interpreter_t& vm, const rt_value_t ar
 	return rt_value_t::make_string(backend, r);
 }
 */
-static void unified_corelib__read_socket(runtime_t* frp){
+static void network_component__read_socket(runtime_t* frp){
 }
 
 
@@ -469,11 +469,11 @@ static rt_value_t bc_corelib__write_socket(interpreter_t& vm, const rt_value_t a
 	return rt_value_t::make_void();
 }
 */
-static void unified_corelib__write_socket(runtime_t* frp){
+static void network_component__write_socket(runtime_t* frp){
 }
 
 
-static rt_pod_t unified_corelib__lookup_host_from_ip(runtime_t* frp, rt_pod_t ip){
+static rt_pod_t network_component__lookup_host_from_ip(runtime_t* frp, rt_pod_t ip){
 	auto& backend = get_backend(frp);
 
 	const auto ip2 = from_runtime_ip_address_t(backend, ip);
@@ -483,7 +483,7 @@ static rt_pod_t unified_corelib__lookup_host_from_ip(runtime_t* frp, rt_pod_t ip
 	return info2._pod;
 }
 
-static rt_pod_t unified_corelib__lookup_host_from_name(runtime_t* frp, rt_pod_t name_str){
+static rt_pod_t network_component__lookup_host_from_name(runtime_t* frp, rt_pod_t name_str){
 	auto& backend = get_backend(frp);
 
 	const auto name = from_runtime_string2(backend, name_str);
@@ -493,7 +493,7 @@ static rt_pod_t unified_corelib__lookup_host_from_name(runtime_t* frp, rt_pod_t 
 	return info2._pod;
 }
 
-static rt_pod_t unified_corelib__pack_http_request(runtime_t* frp, rt_pod_t s){
+static rt_pod_t network_component__pack_http_request(runtime_t* frp, rt_pod_t s){
 	auto& backend = get_backend(frp);
 
 	const auto req = from_runtime__http_request_t(backend, s);
@@ -501,7 +501,7 @@ static rt_pod_t unified_corelib__pack_http_request(runtime_t* frp, rt_pod_t s){
 	return to_runtime_string2(backend, request_string);
 }
 
-static rt_pod_t unified_corelib__unpack_http_request(runtime_t* frp, rt_pod_t s){
+static rt_pod_t network_component__unpack_http_request(runtime_t* frp, rt_pod_t s){
 	auto& backend = get_backend(frp);
 
 	const auto s2 = from_runtime_string2(backend, s);
@@ -511,7 +511,7 @@ static rt_pod_t unified_corelib__unpack_http_request(runtime_t* frp, rt_pod_t s)
 	return result._pod;
 }
 
-static rt_pod_t unified_corelib__pack_http_response(runtime_t* frp, rt_pod_t s){
+static rt_pod_t network_component__pack_http_response(runtime_t* frp, rt_pod_t s){
 	auto& backend = get_backend(frp);
 
 	const auto response = from_runtime__http_response_t(backend, s);
@@ -519,7 +519,7 @@ static rt_pod_t unified_corelib__pack_http_response(runtime_t* frp, rt_pod_t s){
 	return to_runtime_string2(backend, response_string);
 }
 
-static rt_pod_t unified_corelib__unpack_http_response(runtime_t* frp, rt_pod_t response_str){
+static rt_pod_t network_component__unpack_http_response(runtime_t* frp, rt_pod_t response_str){
 	auto& backend = get_backend(frp);
 	const auto response = from_runtime_string2(backend, response_str);
 	const auto a = unpack_http_response(response);
@@ -528,7 +528,7 @@ static rt_pod_t unified_corelib__unpack_http_response(runtime_t* frp, rt_pod_t r
 	return result._pod;
 }
 
-static rt_pod_t unified_corelib__execute_http_request(runtime_t* frp, rt_pod_t c, rt_pod_t addr, rt_pod_t request_string){
+static rt_pod_t network_component__execute_http_request(runtime_t* frp, rt_pod_t c, rt_pod_t addr, rt_pod_t request_string){
 	auto& backend = get_backend(frp);
 
 	const auto addr2 = from_runtime__ip_address_and_port_t(backend, addr);
@@ -537,21 +537,33 @@ static rt_pod_t unified_corelib__execute_http_request(runtime_t* frp, rt_pod_t c
 	return to_runtime_string2(backend, response);
 }
 
-//??? rename unified_corelib__ -> network_compeonent_*
+
+//	Blocks forever.
+//	func void execute_http_server(network_component_t c, int port, func void f(int socket)) impure
+
+static rt_pod_t network_component__execute_http_server(runtime_t* frp, rt_pod_t port, rt_pod_t addr, rt_pod_t request_string){
+	auto& backend = get_backend(frp);
+
+	const auto addr2 = from_runtime__ip_address_and_port_t(backend, addr);
+	const auto request2 = from_runtime_string2(backend, request_string);
+	const auto response = execute_http_request(addr2, request2);
+	return to_runtime_string2(backend, response);
+}
 
 std::map<std::string, void*> get_network_component_binds(){
 	const std::map<std::string, void*> host_functions_map = {
-//		{ "read_socket", reinterpret_cast<void *>(&unified_corelib__read_socket) },
-//		{ "write_socket", reinterpret_cast<void *>(&unified_corelib__write_socket) },
-		{ "lookup_host_from_ip", reinterpret_cast<void *>(&unified_corelib__lookup_host_from_ip) },
-		{ "lookup_host_from_name", reinterpret_cast<void *>(&unified_corelib__lookup_host_from_name) },
+//		{ "read_socket", reinterpret_cast<void *>(&network_component__read_socket) },
+//		{ "write_socket", reinterpret_cast<void *>(&network_component__write_socket) },
+		{ "lookup_host_from_ip", reinterpret_cast<void *>(&network_component__lookup_host_from_ip) },
+		{ "lookup_host_from_name", reinterpret_cast<void *>(&network_component__lookup_host_from_name) },
 //		{ "to_ipv4_dotted_decimal_string", nullptr },
 //		{ "from_ipv4_dotted_decimal_string", nullptr },
-		{ "pack_http_request", reinterpret_cast<void *>(&unified_corelib__pack_http_request) },
-		{ "unpack_http_request", reinterpret_cast<void *>(&unified_corelib__unpack_http_request) },
-		{ "pack_http_response", reinterpret_cast<void *>(&unified_corelib__pack_http_response) },
-		{ "unpack_http_response", reinterpret_cast<void *>(&unified_corelib__unpack_http_response) },
-		{ "execute_http_request", reinterpret_cast<void *>(&unified_corelib__execute_http_request) }
+		{ "pack_http_request", reinterpret_cast<void *>(&network_component__pack_http_request) },
+		{ "unpack_http_request", reinterpret_cast<void *>(&network_component__unpack_http_request) },
+		{ "pack_http_response", reinterpret_cast<void *>(&network_component__pack_http_response) },
+		{ "unpack_http_response", reinterpret_cast<void *>(&network_component__unpack_http_response) },
+		{ "execute_http_request", reinterpret_cast<void *>(&network_component__execute_http_request) },
+		{ "execute_http_server", reinterpret_cast<void *>(&network_component__execute_http_server) }
 	};
 	return host_functions_map;
 }
