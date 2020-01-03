@@ -33,10 +33,7 @@ struct compilation_unit_t;
 
 
 value_t find_global_symbol(interpreter_t& vm, const module_symbol_t& s);
-value_t get_global(interpreter_t& vm, const module_symbol_t& name);
-
 value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vector<value_t>& args);
-
 bc_program_t compile_to_bytecode(const compilation_unit_t& cu);
 
 run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& main_args, const config_t& config);

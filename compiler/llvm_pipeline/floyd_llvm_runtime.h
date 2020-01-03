@@ -174,7 +174,6 @@ struct llvm_execution_engine_t {
 	llvm_instance_t* instance;
 	std::shared_ptr<llvm::ExecutionEngine> ee;
 	symbol_table_t global_symbols;
-	std::vector<func_link_t> function_link_map;
 
 	route_t _handler_router;
 

@@ -535,7 +535,6 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			&instance,
 			ee1,
 			program_breaks.debug_globals,
-			final_link_map,
 			route_t(&runtime_handler, nullptr),
 			start_time,
 			llvm_bind_t{ k_no_module_symbol, nullptr, type_t::make_undefined() },
@@ -558,7 +557,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 
 	if(k_trace_function_link_map){
 		const auto& types = program_breaks.type_lookup.state.types;
-		trace_function_link_map(types, ee2->function_link_map);
+		trace_function_link_map(types, ee2->backend.func_link_lookup);
 	}
 
 	return ee2;
@@ -720,6 +719,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 	auto context = llvm_context_t{ &ee, &process };
 	auto runtime_ptr = make_runtime_ptr(&context);
 
+	//	Call process init()
 	{
 		auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_INIT>(process._init_function->address);
 		const auto init_state = (*f)(&runtime_ptr);

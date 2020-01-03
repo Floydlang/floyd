@@ -31,13 +31,8 @@ static const bool k_trace_messaging = true;
 
 
 
-floyd::value_t find_global_symbol(interpreter_t& vm, const module_symbol_t& s){
-	QUARK_ASSERT(vm.check_invariant());
 
-	return get_global(vm, s);
-}
-
-value_t get_global(interpreter_t& vm, const module_symbol_t& name){
+value_t find_global_symbol(interpreter_t& vm, const module_symbol_t& name){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& result = find_global_symbol2(vm, name);
@@ -66,9 +61,6 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vec
 	const auto result = call_function_bc(vm, f2, &args2[0], static_cast<int>(args2.size()));
 	return rt_to_value(vm._backend, result);
 }
-
-
-
 
 bc_program_t compile_to_bytecode(const compilation_unit_t& cu){
 	const auto sem_ast = compile_to_sematic_ast__errors(cu);
