@@ -3754,7 +3754,7 @@ Notice that ip\_address\_t is used here - it is part of the Floyd language itsel
 
 
 <a id="read_socket-impure"></a>
-### read\_socket() impure
+### read\_socket(
 
 Reads data from the socket. It supports both binary data and text in the string.
 
@@ -3765,7 +3765,7 @@ Warning: Blocks, impure
 
 
 <a id="write_socket-impure"></a>
-### write\_socket() impure
+### write\_socket(
 
 Writes data from the socket. It supports both binary data and text in the string.
 
@@ -3792,7 +3792,7 @@ Holds information about one specific Internet host. Use lookup_host_from_name().
 
 
 <a id="lookuphost_fromip-impure"></a>
-### lookup\_host\_from\_ip() impure
+### lookup\_host\_from\_ip(
 
 This function lookups up information about an Internet host, based on the host's IP address. The OS gets this info from a DNS. Use this function to find the IP addresses of an Internet domain.
 
@@ -3805,7 +3805,7 @@ Warning: Blocks, impure
 
 
 <a id="lookuphost_fromname-impure"></a>
-### lookup\_host\_from\_name() impure
+### lookup\_host\_from\_name(
 
 This function lookups up information about an Internet host, based on the host's name. The OS gets this info from a DNS. Use this function to find the IP addresses of an Internet domain.
 
@@ -3923,7 +3923,7 @@ Warning: Blocks forever, impure
 
 
 <a id="37-standard-types"></a>
-## 3.7 STANDARD TYPES
+## 3.7 STANDARD LIBRARY TYPES
 A bunch of common data types are built into Floyd's standard library. This is to make composition easier and avoid the noise of converting all simple types between different component's own versions.
 
 
