@@ -75,7 +75,7 @@ static std::pair<std::string, seq_t> read_to_crlf_skip_leads(const seq_t& p){
 	return { b.str(), a.second };
 }
 
-std::pair<std::vector<http_header_t>, seq_t> unpack_headers(const seq_t& p0){
+static std::pair<std::vector<http_header_t>, seq_t> unpack_headers(const seq_t& p0){
 	auto p = p0;
 	std::vector<http_header_t> headers;
 	while(p.empty() == false && is_first(p, kCRLF) == false){
@@ -91,7 +91,7 @@ std::pair<std::vector<http_header_t>, seq_t> unpack_headers(const seq_t& p0){
 	return { headers, p };
 }
 
-std::string pack_headers(const std::vector<http_header_t>& headers){
+static std::string pack_headers(const std::vector<http_header_t>& headers){
 	std::string result;
 	for(const auto& e: headers){
 		const auto line = e.key + ": " + e.value;

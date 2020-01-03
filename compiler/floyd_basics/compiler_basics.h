@@ -453,14 +453,11 @@ intrinsic_signature_t make_push_back_signature(types_t& types);
 intrinsic_signature_t make_subset_signature(types_t& types);
 intrinsic_signature_t make_replace_signature(types_t& types);
 
-intrinsic_signature_t make_parse_json_script_signature(types_t& types);
+intrinsic_signature_t make_get_json_type_signature(types_t& types);
 intrinsic_signature_t make_generate_json_script_signature(types_t& types);
+intrinsic_signature_t make_parse_json_script_signature(types_t& types);
 intrinsic_signature_t make_to_json_signature(types_t& types);
 intrinsic_signature_t make_from_json_signature(types_t& types);
-
-intrinsic_signature_t make_get_json_type_signature(types_t& types);
-
-
 
 
 //////////////////////////////////////		HIGHER-ORDER INTRINSICS
@@ -470,10 +467,6 @@ intrinsic_signature_t make_get_json_type_signature(types_t& types);
 intrinsic_signature_t make_map_signature(types_t& types);
 type_t harden_map_func_type(types_t& types, const type_t& resolved_call_type);
 bool check_map_func_type(types_t& types, const type_t& elements, const type_t& f, const type_t& context);
-
-intrinsic_signature_t make_map_string_signature(types_t& types);
-type_t harden_map_string_func_type(types_t& types, const type_t& resolved_call_type);
-bool check_map_string_func_type(types_t& types, const type_t& elements, const type_t& f, const type_t& context);
 
 intrinsic_signature_t make_map_dag_signature(types_t& types);
 type_t harden_map_dag_func_type(types_t& types, const type_t& resolved_call_type);
@@ -534,14 +527,11 @@ struct intrinsic_signatures_t {
 	intrinsic_signature_t subset;
 	intrinsic_signature_t replace;
 
-	intrinsic_signature_t parse_json_script;
+	intrinsic_signature_t get_json_type;
 	intrinsic_signature_t generate_json_script;
+	intrinsic_signature_t parse_json_script;
 	intrinsic_signature_t to_json;
 	intrinsic_signature_t from_json;
-
-	intrinsic_signature_t get_json_type;
-
-
 
 	intrinsic_signature_t map;
 	intrinsic_signature_t filter;
@@ -808,8 +798,6 @@ std::pair<location2_t, std::string> refine_compiler_error_with_loc2(const compil
 
 
 
-void NOT_IMPLEMENTED_YET() QUARK_NO_RETURN;
-void UNSUPPORTED() QUARK_NO_RETURN;
 
 
 

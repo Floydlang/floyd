@@ -200,7 +200,7 @@ bool value_ext_t::check_invariant() const{
 	else if(physical_base_type == base_type::k_named_type){
 	}
 	else {
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 	return true;
 }
@@ -291,8 +291,7 @@ bool value_ext_t::operator==(const value_ext_t& other) const{
 		return _function_id == other._function_id;
 	}
 	else {
-		QUARK_ASSERT(false);
-		quark::throw_exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -420,8 +419,7 @@ static int compare_dict_true_deep(const types_t& types, const std::map<std::stri
 		}
 	}
 	else{
-		QUARK_ASSERT(false)
-		quark::throw_exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -526,7 +524,7 @@ int value_t::compare_value_true_deep(const types_t& types, const value_t& left, 
 		}
 	}
 	else if(left.is_function()){
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 		return 0;
 	}
 	else if(left.get_type().is_named_type()){
@@ -541,8 +539,7 @@ int value_t::compare_value_true_deep(const types_t& types, const value_t& left, 
 		}
 	}
 	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -584,7 +581,7 @@ bool value_t::check_invariant() const{
 	else if(basetype == base_type::k_named_type){
 	}
 	else {
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 	return true;
 }
@@ -987,8 +984,7 @@ value_t make_default_value(const type_t& type){
 	else{
 	}
 
-	QUARK_ASSERT(false);
-	quark::throw_exception();
+	quark::throw_defective_request();
 }
 
 
@@ -1202,17 +1198,17 @@ value_t json_to_value(types_t& types, const type_t& type, const json_t& v){
 	}
 	else if(type.is_struct()){
 		//??? Add support!
-		QUARK_ASSERT(false);
+		quark::throw_feature_not_implemented_yet();
 		return make_default_value(type);
 	}
 	else if(type.is_vector()){
 		//??? Add support!
-		QUARK_ASSERT(false);
+		quark::throw_feature_not_implemented_yet();
 		return make_default_value(type);
 	}
 	else if(type.is_dict()){
 		//??? Add support!
-		QUARK_ASSERT(false);
+		quark::throw_feature_not_implemented_yet();
 		return make_default_value(type);
 	}
 	else if(type.is_function()){
@@ -1222,7 +1218,7 @@ value_t json_to_value(types_t& types, const type_t& type, const json_t& v){
 	}
 	else if(type.is_named_type()){
 		//??? Add support!
-		QUARK_ASSERT(false);
+		quark::throw_feature_not_implemented_yet();
 		quark::throw_exception();
 	}
 	else{

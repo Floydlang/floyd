@@ -46,8 +46,7 @@ llvm::Type* deref_ptr(llvm::Type* type){
   		return element_type;
 	}
 	else{
-		QUARK_ASSERT(false);
-		return type;
+		quark::throw_defective_request();
 	}
 }
 
@@ -92,7 +91,7 @@ llvm_function_signature_t name_args(const llvm_function_signature_t& def, const 
 				arg_copy.floyd_name = arg_name + "-dyntype";
 			}
 			else{
-				QUARK_ASSERT(false);
+				quark::throw_defective_request();
 			}
 			arg_results.push_back(arg_copy);
 		}
@@ -136,8 +135,8 @@ The non-first-class types are:
 
 //	### Also use for arguments, not only return.
 struct WIDE_RETURN_T {
-	runtime_value_t a;
-	runtime_value_t b;
+	rt_pod_t a;
+	rt_pod_t b;
 };
 
 enum class WIDE_RETURN_MEMBERS {
@@ -145,11 +144,11 @@ enum class WIDE_RETURN_MEMBERS {
 	b = 1
 };
 
-WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
+WIDE_RETURN_T make_wide_return_2x64(rt_pod_t a, rt_pod_t b);
 
 
 
-WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b){
+WIDE_RETURN_T make_wide_return_2x64(rt_pod_t a, rt_pod_t b){
 	return WIDE_RETURN_T{ a, b };
 }
 

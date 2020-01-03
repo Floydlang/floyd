@@ -31,8 +31,6 @@ bool target_t::check_invariant() const{
 	return true;
 }
 
-
-
 llvm_instance_t::llvm_instance_t(){
 	llvm::InitializeAllTargetInfos();
 	llvm::InitializeAllTargets();
@@ -49,10 +47,6 @@ bool llvm_instance_t::check_invariant() const {
 	QUARK_ASSERT(target.check_invariant());
 	return true;
 }
-
-
-
-
 
 target_t make_default_target(){
 	auto TargetTriple = llvm::sys::getDefaultTargetTriple();
@@ -77,12 +71,6 @@ target_t make_default_target(){
 //	auto data_layout = TargetMachine->createDataLayout();
 	return target_t { TargetTriple, TargetMachine };
 }
-
-
-
-
-
-
 
 /*
 LLVM return struct byvalue:
@@ -124,8 +112,6 @@ struct Big foo() {
 }
 */
 
-
-
 /// Check a function for errors, useful for use when debugging a
 /// pass.
 ///
@@ -146,7 +132,7 @@ bool check_invariant__function(const llvm::Function* f){
 		QUARK_TRACE_SS("================================================================================");
 		QUARK_TRACE_SS("\n" << stream2.str());
 
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 	return !errors;
 }
@@ -166,8 +152,7 @@ bool check_invariant__module(llvm::Module* module){
 			llvm::verifyFunction(e);
 		}
 
-		QUARK_ASSERT(false);
-		return false;
+		quark::throw_defective_request();
 	}
 
 	return true;
@@ -180,10 +165,6 @@ bool check_invariant__builder(llvm::IRBuilder<>* builder){
 	QUARK_ASSERT(check_invariant__module(module));
 	return true;
 }
-
-
-
-
 
 
 static bool replace(std::string& str, const std::string& from, const std::string& to) {
@@ -220,9 +201,6 @@ static std::string reformat_llvm_module_print(const std::string& s0){
     }
 	return temp;
 }
-
-
-
 
 std::string print_module(llvm::Module& module){
 	std::string dump;
@@ -320,7 +298,6 @@ std::string print_value(llvm::Value* value){
 }
 
 
-
 ////////////////////////////////	floyd_runtime_ptr
 
 
@@ -353,9 +330,7 @@ llvm::Value* get_callers_fcp(const llvm_type_lookup& type_lookup, llvm::Function
 
 
 
-
 ////////////////////////////////		HELPERS
-
 
 
 
@@ -377,7 +352,6 @@ void generate_array_element_store(llvm::IRBuilder<>& builder, llvm::Value& array
 
 
 
-
 ////////////////////////////////		VALUES
 
 
@@ -396,14 +370,14 @@ llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const l
 		const type_t type;
 
 		llvm::Value* operator()(const undefined_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const any_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 
 		llvm::Value* operator()(const void_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const bool_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, make_runtime_value_type(type_lookup), "");
@@ -438,7 +412,7 @@ llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const l
 			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(type_lookup), "");
 		}
 		llvm::Value* operator()(const symbol_ref_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const named_type_t& e) const {
 			return generate_cast_to_runtime_value2(builder, type_lookup, value, peek2(type_lookup.state.types, type));
@@ -460,14 +434,14 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const
 		const type_t& type;
 
 		llvm::Value* operator()(const undefined_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const any_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 
 		llvm::Value* operator()(const void_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const bool_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::Trunc, &runtime_value_reg, llvm::Type::getInt1Ty(context), "");
@@ -503,7 +477,7 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const
 			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, get_llvm_type_as_arg(type_lookup, type), "");
 		}
 		llvm::Value* operator()(const symbol_ref_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const named_type_t& e) const {
 			return generate_cast_from_runtime_value2(builder, type_lookup, runtime_value_reg, peek2(type_lookup.state.types, type));

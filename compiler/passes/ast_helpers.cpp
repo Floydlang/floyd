@@ -180,7 +180,7 @@ bool check_types_resolved(const types_t& types, const lexical_scope_t& body){
 			QUARK_ASSERT(_init.is_undefined());
 		}
 		else{
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 */
 

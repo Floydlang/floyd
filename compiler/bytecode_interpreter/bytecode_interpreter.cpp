@@ -51,7 +51,7 @@ QUARK_TEST("", "", "", ""){
 	const auto int_size = sizeof(int);
 	QUARK_ASSERT(int_size == 4);
 
-	const auto pod_size = sizeof(runtime_value_t);
+	const auto pod_size = sizeof(rt_pod_t);
 	QUARK_ASSERT(pod_size == 8);
 
 	const auto bcvalue_size = sizeof(rt_value_t);
@@ -233,8 +233,7 @@ bc_static_frame_t::bc_static_frame_t(const types_t& types, const std::vector<bc_
 			_symbol_effective_type.push_back(type);
 		}
 		else {
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 	}
 
@@ -292,7 +291,7 @@ bool interpreter_stack_t::check_stack_frame(const frame_pos_t& in_frame) const{
 		QUARK_ASSERT(in_frame._frame_ptr->_symbols.check_invariant());
 
 		for(int i = 0 ; i < in_frame._frame_ptr->_symbols._symbols.size() ; i++){
-			const auto& symbol = in_frame._frame_ptr->_symbols._symbols[i];
+//			const auto& symbol = in_frame._frame_ptr->_symbols._symbols[i];
 
 //			bool symbol_ext = encode_as_external(_types, symbol.second._value_type);
 //			int local_pos = get_local_n_pos(in_frame._frame_pos, i);
@@ -408,77 +407,6 @@ json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend)
 //////////////////////////////////////////		GLOBAL FUNCTIONS
 
 
-//??? support k_native_2
-//??? use code from do_call() -- share code.
-rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_value_t args[], int arg_count){
-	const auto& backend = vm._backend;
-	const auto& types = backend.types;
-
-#if DEBUG
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(f.check_invariant());
-	for(int i = 0 ; i < arg_count ; i++){ QUARK_ASSERT(args[i].check_invariant()); };
-	QUARK_ASSERT(peek2(types, f._type).is_function());
-#endif
-
-	const auto func_link_ptr = lookup_func_link(backend, f._pod);
-	if(func_link_ptr == nullptr){
-		quark::throw_runtime_error("Attempting to calling unimplemented function.");
-	}
-	const auto& func_link = *func_link_ptr;
-
-	if(func_link.machine == func_link_t::emachine::k_native){
-		//	arity
-//		QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
-		QUARK_ASSERT(func_link.f != nullptr)
-		const auto f2 = (BC_NATIVE_FUNCTION_PTR)func_link.f;
-		const auto& result = (*f2)(vm, &args[0], arg_count);
-		QUARK_ASSERT(result.check_invariant());
-		return result;
-	}
-	else{
-#if DEBUG
-		const auto& arg_types = peek2(types, f._type).get_function_args(types);
-
-		//	arity
-		QUARK_ASSERT(arg_count == arg_types.size());
-
-		for(int i = 0 ; i < arg_count; i++){
-			if(peek2(types, args[i]._type) != peek2(types, arg_types[i])){
-				QUARK_ASSERT(false);
-			}
-		}
-#endif
-
-		vm._stack.save_frame();
-
-		//	We push the values to the stack = the stack will take RC ownership of the values.
-		std::vector<type_t> arg_types2;
-		for(int i = 0 ; i < arg_count ; i++){
-			const auto& bc = args[i];
-			const auto is_ext = args[i]._type;
-			arg_types2.push_back(is_ext);
-			vm._stack.push_external_value(bc);
-		}
-
-		QUARK_ASSERT(func_link.f != nullptr);
-		auto frame_ptr = (const bc_static_frame_t*)func_link.f;
-		vm._stack.open_frame_except_args(*frame_ptr, arg_count);
-		const auto& result = execute_instructions(vm, frame_ptr->_instructions);
-		vm._stack.close_frame(*frame_ptr);
-		vm._stack.pop_batch(arg_types2);
-		vm._stack.restore_frame();
-
-		if(peek2(types, lookup_type_from_index(types, result.first)).is_void() == false){
-			QUARK_ASSERT(result.second.check_invariant());
-			return result.second;
-		}
-		else{
-			return rt_value_t::make_undefined();
-		}
-	}
-}
-
 
 //??? Use enum with register / immediate / unused, current info is not enough.
 
@@ -515,8 +443,7 @@ reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
 	}
 
 	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -572,13 +499,13 @@ static std::vector<func_link_t> link_functions(const bc_program_t& program){
 		const auto& function_name_symbol = e.func_link.module_symbol;
 		const auto it = corelib_native_funcs.find(function_name_symbol.s);
 
-		//	There us a native implementation of this function:
+		//	There is a native implementation of this function:
 		if(it != corelib_native_funcs.end()){
 			return func_link_t {
 				e.func_link.module,
 				function_name_symbol,
 				e.func_link.function_type_optional,
-				func_link_t::emachine::k_native2,
+				func_link_t::eexecution_model::k_native__floydcc,
 				(void*)it->second,
 				{},
 				nullptr
@@ -591,7 +518,7 @@ static std::vector<func_link_t> link_functions(const bc_program_t& program){
 				e.func_link.module,
 				function_name_symbol,
 				e.func_link.function_type_optional,
-				e.func_link.machine,
+				e.func_link.execution_model,
 				(void*)e._frame_ptr.get(),
 				{},
 				nullptr
@@ -600,7 +527,7 @@ static std::vector<func_link_t> link_functions(const bc_program_t& program){
 
 		//	No implementation.
 		else{
-			return func_link_t { "", k_no_module_symbol, {}, func_link_t::emachine::k_bytecode, nullptr, {}, nullptr };
+			return func_link_t { "", k_no_module_symbol, {}, func_link_t::eexecution_model::k_bytecode__floydcc, nullptr, {}, nullptr };
 		}
 	});
 
@@ -624,13 +551,15 @@ type_t interpreter_t::runtime_basics__get_global_symbol_type(const std::string& 
 
 	const auto it = std::find_if(symbols._symbols.begin(), symbols._symbols.end(), [&s](const auto& e){ return e.first == s; });
 	if(it == symbols._symbols.end()){
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 
 	return it->second._value_type;
 }
 
+rt_value_t interpreter_t::runtime_basics__call_thunk(const rt_value_t& f, const rt_value_t args[], int arg_count){
+	return call_function_bc(*this, f, args, arg_count);
+}
 
 
 
@@ -677,7 +606,7 @@ void interpreter_t::unwind_stack(){
 }
 
 //??? Unify this debug code with trace_value_backend()
-static std::vector<std::string> make(value_backend_t& backend, size_t i, runtime_value_t bc_pod, const type_t& debug_type, const interpreter_stack_t::active_frame_t& frame, int frame_index, int symbol_index, bool is_symbol){
+static std::vector<std::string> make(value_backend_t& backend, size_t i, rt_pod_t bc_pod, const type_t& debug_type, const interpreter_stack_t::active_frame_t& frame, int frame_index, int symbol_index, bool is_symbol){
 	const bool is_rc = is_rc_value(backend.types, debug_type);
 
 	std::string value_str = "";
@@ -1046,67 +975,15 @@ static void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t targ
 
 //	??? Make stub bc_static_frame_t for each host function to make call conventions same as Floyd functions.
 
-//	Notice: host calls and floyd calls have the same type -- we cannot detect host calls until we have a callee value.
-static void call_native(interpreter_t& vm, int target_reg, const func_link_t& func_link, int callee_arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-
-	const auto& backend = vm._backend;
-	const auto& types = backend.types;
-
-	interpreter_stack_t& stack = vm._stack;
-
-	QUARK_ASSERT(func_link.f != nullptr);
-	const auto f = (BC_NATIVE_FUNCTION_PTR)func_link.f;
-
-	const auto function_type_peek = peek2(types, func_link.function_type_optional);
-
-	const auto function_type_args = function_type_peek.get_function_args(types);
-	const auto function_def_dynamic_arg_count = count_dyn_args(types, func_link.function_type_optional);
-
-	const int arg0_stack_pos = (int)(stack.size() - (function_def_dynamic_arg_count + callee_arg_count));
-	int stack_pos = arg0_stack_pos;
-
-	//	Notice that dynamic functions will have each DYN argument with a leading itype as an extra argument.
-	const auto function_def_arg_count = function_type_args.size();
-	std::vector<rt_value_t> arg_values;
-	for(int a = 0 ; a < function_def_arg_count ; a++){
-		const auto func_arg_type = function_type_args[a];
-		if(peek2(types, func_arg_type).is_any()){
-			const auto arg_itype = stack.load_intq(stack_pos);
-			const auto& arg_type = lookup_full_type(vm, static_cast<int16_t>(arg_itype));
-			const auto arg_value = stack.load_value(stack_pos + 1, arg_type);
-			arg_values.push_back(arg_value);
-			stack_pos += k_frame_overhead;
-		}
-		else{
-			const auto arg_value = stack.load_value(stack_pos + 0, func_arg_type);
-			arg_values.push_back(arg_value);
-			stack_pos++;
-		}
-	}
-
-	const auto& result = (*f)(vm, &arg_values[0], static_cast<int>(arg_values.size()));
-	const auto bc_result = result;
-
-	const auto& function_return_type = function_type_peek.get_function_return(types);
-	const auto function_return_type_peek = peek2(types, function_return_type);
-	if(function_return_type_peek.is_void() == true){
-	}
-	else{
-		stack.write_register(target_reg, bc_result);
-	}
-}
-
-typedef void(*VOID_VOID_F)(void);
 
 struct cif_t {
 	ffi_cif cif;
-	std::vector<ffi_type*> args;
+	std::vector<ffi_type*> arg_types;
 
 	ffi_type* return_type;
 
 	//	Those type we need to malloc are owned by this vector so we can delete them.
-	std::vector<ffi_type*> args_owning;
+	std::vector<ffi_type*> args_types_owning;
 };
 
 /*
@@ -1170,64 +1047,60 @@ static ffi_type* make_ffi_type(const type_t& type){
 		return &ffi_type_pointer;
 	}
 	else{
-		UNSUPPORTED();
+		quark::throw_defective_request();
 	}
 }
 
-//??? Support any function types.
-static cif_t make_cif(interpreter_t& vm, const func_link_t& func_link, int callee_arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-
-	interpreter_stack_t& stack = vm._stack;
-
-	auto& backend = vm._backend;
+static cif_t make_cif(const value_backend_t& backend, const type_t& function_type){
+	QUARK_ASSERT(backend.check_invariant());
 	const auto& types = backend.types;
 
-	const auto function_type_peek = peek2(types, func_link.function_type_optional);
+	const auto function_type_peek = peek2(types, function_type);
 	const auto function_type_args = function_type_peek.get_function_args(types);
-	const auto function_def_dynamic_arg_count = count_dyn_args(types, func_link.function_type_optional);
 	const auto return_type = function_type_peek.get_function_return(types);
-
-	const int arg0_stack_pos = (int)(stack.size() - (function_def_dynamic_arg_count + callee_arg_count));
-	int stack_pos = arg0_stack_pos;
 
 	cif_t result;
 
 	//	This is the runtime pointer, passed as first argument to all functions.
-	result.args.push_back(&ffi_type_pointer);
+	result.arg_types.push_back(&ffi_type_pointer);
 
-	const auto function_def_arg_count = function_type_args.size();
-	for(int a = 0 ; a < function_def_arg_count ; a++){
-		const auto func_arg_type = function_type_args[a];
-		const auto arg_value = stack.load_value(stack_pos + 0, func_arg_type);
+	const auto function_type_args_size = function_type_args.size();
+	for(int arg_index = 0 ; arg_index < function_type_args_size ; arg_index++){
+		const auto func_arg_type = function_type_args[arg_index];
 
-		const auto f = make_ffi_type(peek2(types, func_arg_type));
-		result.args.push_back(f);
+		//	Notice that ANY will represent this function type arg as TWO elements in BC stack and in FFI argument list
+		if(func_arg_type.is_any()){
+			//	rt_pod_t
+			result.arg_types.push_back(&ffi_type_uint64);
 
-		stack_pos++;
+			//	rt_type_t
+			result.arg_types.push_back(&ffi_type_uint64);
+		}
+		else{
+			const auto f = make_ffi_type(peek2(types, func_arg_type));
+			result.arg_types.push_back(f);
+		}
 	}
 
-	result.return_type = make_ffi_type(peek2(types, return_type));
+	const auto return_type_peek = peek2(types, return_type);
+	result.return_type = return_type_peek.is_any() ? make_ffi_type(type_t::make_int()) : make_ffi_type(return_type_peek);
 
-	if (ffi_prep_cif(&result.cif, FFI_DEFAULT_ABI, (int)result.args.size(), result.return_type, &result.args[0]) != FFI_OK) {
-		QUARK_ASSERT(false);
-		throw std::exception();
+	if (ffi_prep_cif(&result.cif, FFI_DEFAULT_ABI, (int)result.arg_types.size(), result.return_type, &result.arg_types[0]) != FFI_OK) {
+		quark::throw_defective_request();
 	}
 	return result;
 }
 
-//??? Support ANY
 static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t& func_link, int callee_arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	auto cif = make_cif(vm, func_link, callee_arg_count);
-
-	interpreter_stack_t& stack = vm._stack;
+	QUARK_ASSERT(func_link.f != nullptr);
 
 	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
-	QUARK_ASSERT(func_link.f != nullptr);
+	auto cif = make_cif(backend, func_link.function_type_optional);
+
+	interpreter_stack_t& stack = vm._stack;
 
 	const auto function_type_peek = peek2(types, func_link.function_type_optional);
 
@@ -1237,7 +1110,7 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 	const int arg0_stack_pos = (int)(stack.size() - (function_def_dynamic_arg_count + callee_arg_count));
 	int stack_pos = arg0_stack_pos;
 
-	const auto runtime_ptr = floyd_runtime_t { &backend, &vm, vm._process_handler };
+	const auto runtime_ptr = runtime_t { &backend, &vm, vm._process_handler };
 
 	std::vector<void*> values;
 
@@ -1245,131 +1118,212 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 	auto runtime_ptr_ptr = &runtime_ptr;
 	values.push_back((void*)&runtime_ptr_ptr);
 
-	const auto function_def_arg_count = function_type_args.size();
-	std::vector<rt_value_t> arg_values;
-	arg_values.reserve(function_def_arg_count);
-	for(int a = 0 ; a < function_def_arg_count ; a++){
-		const auto func_arg_type = function_type_args[a];
-		const auto arg_value = stack.load_value(stack_pos + 0, func_arg_type);
-		arg_values.push_back(arg_value);
+	const auto function_type_args_size = function_type_args.size();
 
-		//	Use a pointer directly into arg_values. This is tricky. Requires reserve().
-		values.push_back(&arg_values[a]._pod);
+	std::vector<rt_value_t> storage;
+	storage.reserve(function_type_args_size + function_def_dynamic_arg_count);
 
-/*
-		if(func_arg_type.is_bool()){
-			result.args.push_back(&ffi_type_uint8);
-		}
-		else if(func_arg_type.is_int()){
-			result.args.push_back(&ffi_type_sint64);
-		}
-		else if(func_arg_type.is_double()){
-			result.args.push_back(&ffi_type_double);
-		}
-		else if(func_arg_type.is_string()){
-			result.args.push_back(&ffi_type_pointer);
-		}
-		else if(func_arg_type.is_json()){
-			result.args.push_back(&ffi_type_pointer);
-		}
-		else if(func_arg_type.is_typeid()){
-			result.args.push_back(&ffi_type_sint64);
-		}
-		else if(func_arg_type.is_struct()){
-			result.args.push_back(&ffi_type_pointer);
-		}
-		else if(func_arg_type.is_vector()){
-			result.args.push_back(&ffi_type_pointer);
-		}
-		else if(func_arg_type.is_dict()){
-			result.args.push_back(&ffi_type_pointer);
-		}
-		else if(func_arg_type.is_function()){
-			result.args.push_back(&ffi_type_pointer);
+	for(int arg_index = 0 ; arg_index < function_type_args_size ; arg_index++){
+		const auto func_arg_type = function_type_args[arg_index];
+
+		//	Notice that ANY will represent this function type arg as TWO elements in BC stack and in FFI argument list
+		if(func_arg_type.is_any()){
+			const auto arg_itype = stack._entries[stack_pos + 0].int_value;
+			const auto arg_pod = stack._entries[stack_pos + 1];
+
+			const auto arg_type = lookup_full_type(vm, static_cast<int16_t>(arg_itype));
+
+			storage.push_back(rt_value_t::make_int(arg_type.get_data()));
+
+			//	Store the value as a 64 bit integer always.
+			storage.push_back(rt_value_t::make_int(arg_pod.int_value));
+
+			//	Notice: in ABI, any is passed like: [ rt_pod_t value, rt_type_t value_type ], notice swapped order!
+			//	Use a pointer directly into storage. This is tricky. Requires reserve().
+			values.push_back(&storage[storage.size() - 1]._pod);
+			values.push_back(&storage[storage.size() - 2]._pod);
+
+			stack_pos++;
+			stack_pos++;
 		}
 		else{
-			UNSUPPORTED();
-		}
-*/
+			const auto arg_value = stack.load_value(stack_pos + 0, func_arg_type);
+			storage.push_back(arg_value);
 
-		stack_pos++;
+			//	Use a pointer directly into storage. This is tricky. Requires reserve().
+			values.push_back(&storage[storage.size() - 1]._pod);
+			stack_pos++;
+		}
 	}
-	QUARK_ASSERT(arg_values.size() == function_def_arg_count);
 
 	ffi_arg return_value;
 
-	ffi_call(&cif.cif, (VOID_VOID_F)func_link.f, &return_value, &values[0]);
+	ffi_call(&cif.cif, FFI_FN(func_link.f), &return_value, &values[0]);
 
 	const auto& function_return_type = function_type_peek.get_function_return(types);
 	const auto function_return_type_peek = peek2(types, function_return_type);
 	if(function_return_type_peek.is_void() == true){
 	}
 	else{
-		const auto result2 = *(runtime_value_t*)&return_value;
-		const auto result3 = rt_value_t(backend, function_return_type_peek, result2, rt_value_t::rc_mode::adopt);
+		const auto result2 = *(rt_pod_t*)&return_value;
+
+		//	Cast the result to the destination symbol's type.
+		const auto dest_type = stack._current_static_frame->_symbol_effective_type[target_reg];
+		const auto result3 = rt_value_t(backend, dest_type, result2, rt_value_t::rc_mode::adopt);
 		stack.write_register(target_reg, result3);
 	}
 }
 
-//	We need to examine the callee, since we support magic argument lists of varying size.
-static void do_call(interpreter_t& vm, int target_reg, const runtime_value_t callee, int callee_arg_count){
+
+//	This is a floyd function, with a frame_ptr to execute.
+//	The arguments are already on the floyd stack.
+//	Returns the call's return value or void.
+static rt_value_t open_frame_and_make_call(interpreter_t& vm, const func_link_t& func_link, int callee_arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	interpreter_stack_t& stack = vm._stack;
-
 	const auto& backend = vm._backend;
 	const auto& types = backend.types;
+	QUARK_ASSERT(func_link.f != nullptr);
+	QUARK_ASSERT(func_link.function_type_optional.get_function_args(types).size() == callee_arg_count);
 
-	const auto func_link_ptr = lookup_func_link(backend, callee);
-	if(func_link_ptr == nullptr){
-		quark::throw_runtime_error("Attempting to calling unimplemented function.");
-	}
+	QUARK_ASSERT(count_dyn_args(types, func_link.function_type_optional) == 0);
 
-	const auto& func_link = *func_link_ptr;
+	//	We need to remember the global pos where to store return value, since we're switching frame to call function.
+	auto frame_ptr = (const bc_static_frame_t*)func_link.f;
 
-	if(func_link.f == nullptr){
-		quark::throw_runtime_error("Attempting to calling unimplemented function.");
-	}
+	vm._stack.open_frame_except_args(*frame_ptr, callee_arg_count);
+	const auto& result = execute_instructions(vm, frame_ptr->_instructions);
+	QUARK_ASSERT(result.second.check_invariant());
+	vm._stack.close_frame(*frame_ptr);
 
-	if(func_link.machine == func_link_t::emachine::k_bytecode){
-		//	This is a floyd function, with a frame_ptr to execute.
-		QUARK_ASSERT(func_link.f != nullptr);
-		QUARK_ASSERT(func_link.function_type_optional.get_function_args(types).size() == callee_arg_count);
-
-		const auto& function_return_type = peek2(types, func_link.function_type_optional).get_function_return(types);
-
-		QUARK_ASSERT(count_dyn_args(types, func_link.function_type_optional) == 0);
-
-		//	We need to remember the global pos where to store return value, since we're switching frame to call function.
-		int result_reg_pos = static_cast<int>(stack._current_frame_start_ptr - &stack._entries[0]) + target_reg;
-
-		auto frame_ptr = (const bc_static_frame_t*)func_link.f;
-
-		stack.open_frame_except_args(*frame_ptr, callee_arg_count);
-		const auto& result = execute_instructions(vm, frame_ptr->_instructions);
-		QUARK_ASSERT(result.second.check_invariant());
-		stack.close_frame(*frame_ptr);
-
-		const auto function_return_type_peek = peek2(types, function_return_type);
-		if(function_return_type_peek.is_void() == false){
-			//	Cannot store via register, we store on absolute stacok pos (relative to start of
-			//	stack. We have not yet executed k_pop_frame_ptr that restores our frame.
-			stack.replace_external_value(result_reg_pos, result.second);
-		}
-	}
-	else if(func_link.machine == func_link_t::emachine::k_native){
-		call_native(vm, target_reg, func_link, callee_arg_count);
-	}
-	else if(func_link.machine == func_link_t::emachine::k_native2){
-		call_via_libffi(vm, target_reg, func_link, callee_arg_count);
+	const auto& return_type = peek2(types, func_link.function_type_optional).get_function_return(types);
+	const auto return_type_peek = peek2(types, return_type);
+	if(return_type_peek.is_void()){
+		return rt_value_t::make_void();
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		return result.second;
 	}
 }
 
-inline void write_reg_rc(value_backend_t& backend, runtime_value_t regs[], int dest_reg, const type_t& dest_type, runtime_value_t value){
+//	This is a floyd function, with a frame_ptr to execute.
+//	The arguments are already on the floyd stack.
+static void call_bc(interpreter_t& vm, int target_reg, const func_link_t& func_link, int callee_arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	const auto& backend = vm._backend;
+	const auto& types = backend.types;
+	QUARK_ASSERT(func_link.f != nullptr);
+	QUARK_ASSERT(func_link.function_type_optional.get_function_args(types).size() == callee_arg_count);
+
+	interpreter_stack_t& stack = vm._stack;
+
+	const auto& return_type = peek2(types, func_link.function_type_optional).get_function_return(types);
+
+	QUARK_ASSERT(count_dyn_args(types, func_link.function_type_optional) == 0);
+
+	//	We need to remember the global pos where to store return value, since we're switching frame to call function.
+	int result_reg_pos = static_cast<int>(stack._current_frame_start_ptr - &stack._entries[0]) + target_reg;
+
+	const auto result = open_frame_and_make_call(vm, func_link, callee_arg_count);
+
+	const auto return_type_peek = peek2(types, return_type);
+	if(return_type_peek.is_void() == false){
+		//	Cannot store via register, we store on absolute stack pos (relative to start of
+		//	stack. We have not yet executed k_pop_frame_ptr that restores our frame.
+		stack.replace_external_value(result_reg_pos, result);
+	}
+}
+
+static void do_call_instruction(interpreter_t& vm, int target_reg, const rt_pod_t callee, int callee_arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	const auto& backend = vm._backend;
+
+	const auto func_link_ptr = lookup_func_link_by_pod(backend, callee);
+	if(func_link_ptr == nullptr || func_link_ptr->f == nullptr){
+		quark::throw_runtime_error("Attempting to calling unimplemented function.");
+	}
+	const auto& func_link = *func_link_ptr;
+
+	if(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc){
+		call_bc(vm, target_reg, func_link, callee_arg_count);
+	}
+	else if(func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc){
+		call_via_libffi(vm, target_reg, func_link, callee_arg_count);
+	}
+	else{
+		quark::throw_defective_request();
+	}
+}
+
+#if FFI_CLOSURES
+#else
+	???
+#endif
+
+
+
+rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_value_t args[], int callee_arg_count){
+	const auto& backend = vm._backend;
+	const auto& types = backend.types;
+
+#if DEBUG
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(f.check_invariant());
+	for(int i = 0 ; i < callee_arg_count ; i++){ QUARK_ASSERT(args[i].check_invariant()); };
+	QUARK_ASSERT(peek2(types, f._type).is_function());
+
+	const auto& arg_types = peek2(types, f._type).get_function_args(types);
+
+	//	arity
+	QUARK_ASSERT(callee_arg_count == arg_types.size());
+
+	for(int i = 0 ; i < callee_arg_count; i++){
+		if(peek2(types, args[i]._type) != peek2(types, arg_types[i])){
+			quark::throw_defective_request();
+		}
+	}
+#endif
+
+	const auto func_link_ptr = lookup_func_link_by_pod(backend, f._pod);
+	if(func_link_ptr == nullptr || func_link_ptr->f == nullptr){
+		quark::throw_runtime_error("Attempting to calling unimplemented function.");
+	}
+	const auto& func_link = *func_link_ptr;
+
+	if(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc){
+		const auto& return_type = peek2(types, func_link.function_type_optional).get_function_return(types);
+
+		vm._stack.save_frame();
+
+		//	We push the values to the stack = the stack will take RC ownership of the values.
+		std::vector<type_t> arg_types2;
+		for(int i = 0 ; i < callee_arg_count ; i++){
+			const auto& bc = args[i];
+			const auto is_ext = args[i]._type;
+			arg_types2.push_back(is_ext);
+			vm._stack.push_external_value(bc);
+		}
+
+		const auto result = open_frame_and_make_call(vm, func_link, callee_arg_count);
+
+		vm._stack.pop_batch(arg_types2);
+		vm._stack.restore_frame();
+
+		const auto return_type_peek = peek2(types, return_type);
+		if(return_type_peek.is_void() == false){
+			QUARK_ASSERT(result.check_invariant());
+			return result;
+		}
+		else{
+			return rt_value_t::make_void();
+		}
+	}
+	else{
+		quark::throw_defective_request();
+	}
+}
+
+
+inline void write_reg_rc(value_backend_t& backend, rt_pod_t regs[], int dest_reg, const type_t& dest_type, rt_pod_t value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dest_type.check_invariant());
 
@@ -1895,7 +1849,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_function(i._b));
 
-			do_call(vm, i._a, regs[i._b], i._c);
+			do_call_instruction(vm, i._a, regs[i._b], i._c);
 
 			frame_ptr = stack._current_static_frame;
 			regs = stack._current_frame_start_ptr;
@@ -2253,8 +2207,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 
 		default:
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			quark::throw_defective_request();
 		}
 		pc++;
 

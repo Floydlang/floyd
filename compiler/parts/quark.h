@@ -98,6 +98,8 @@
 
 
 
+
+
 namespace quark {
 
 
@@ -220,8 +222,45 @@ inline void on_problem___put_breakpoint_here(){
 
 
 
+////////////////////////////////	throw_defective_request()
+
+
+
+//	Call this function to mark an defective code path. Never returns.
+
+void throw_defective_request() QUARK_NO_RETURN;
+inline void throw_defective_request(){
+	on_problem___put_breakpoint_here();
+
+	QUARK_ASSERT(false);
+	throw std::exception();
+}
+
+
+
+////////////////////////////////	throw_feature_not_implemented_yet()
+
+
+//	This is a valid code path, but the feature is not implemented yet. Never returns.
+
+void throw_feature_not_implemented_yet() QUARK_NO_RETURN;
+inline void throw_feature_not_implemented_yet(){
+	on_problem___put_breakpoint_here();
+
+	QUARK_ASSERT(false);
+	throw std::exception();
+}
+
+
+
+
+
+
+//	====================================================================================================================
 //	TRACE
 //	====================================================================================================================
+
+
 
 
 ////////////////////////////		trace_i
@@ -431,8 +470,18 @@ inline void set_trace(const trace_i* v){
 	}
 
 
+
+
+
+
+
+
+//	====================================================================================================================
 //	UNIT TEST SUPPORT
 //	====================================================================================================================
+
+
+
 
 
 struct call_context_t {

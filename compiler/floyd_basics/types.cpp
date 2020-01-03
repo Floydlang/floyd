@@ -84,8 +84,7 @@ std::string base_type_to_opcode(const base_type t){
 		return "named-type";
 	}
 	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
+		quark::throw_defective_request();
 	}
 	return "**impossible**";
 }
@@ -191,7 +190,7 @@ base_type opcode_to_base_type(const std::string& s){
 	}
 
 	else{
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 	return base_type::k_undefined;
 }
@@ -234,8 +233,7 @@ int get_json_type(const json_t& value){
 		return 7;
 	}
 	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
+		quark::throw_defective_request();
 	}
 	return 0;
 }
@@ -802,12 +800,10 @@ type_variant_t get_type_variant(const types_t& types, const type_t& type){
 			return symbol_ref_t { info.def.symbol_identifier };
 		}
 		else if(type.is_named_type()){
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 	}
 }
@@ -1420,8 +1416,7 @@ std::string type_to_compact_string(const types_t& types, const type_t& type, ena
 				return info.optional_name.lexical_path.back();
 			}
 			else{
-				QUARK_ASSERT(false);
-				throw std::exception();
+				quark::throw_defective_request();
 			}
 		}
 	};
@@ -1903,12 +1898,10 @@ type_t type_from_json(types_t& types, const json_t& t){
 			}
 		}
 		else if(s == "unknown-identifier"){
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			quark::throw_defective_request();
 		}
 		else {
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			quark::throw_defective_request();
 		}
 	}
 	else{

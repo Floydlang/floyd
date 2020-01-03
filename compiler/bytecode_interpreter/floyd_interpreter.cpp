@@ -114,7 +114,7 @@ struct bc_process_t : public runtime_process_i {
 	}
 
 
-	void runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message0, const type_t& type) override {
+	void runtime_process__on_send_message(const std::string& dest_process_id, const rt_pod_t& message0, const type_t& type) override {
 		auto& backend = _interpreter->_backend;
 		const auto& types = backend.types;
 		const auto message = make_rt_value(backend, message0, type, rt_value_t::rc_mode::bump);

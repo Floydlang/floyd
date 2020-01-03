@@ -128,10 +128,9 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const module_symbol_t& n
 
 	const auto f = get_function_ptr(ee, name);
 	if(f != nullptr){
-		const auto def = find_function_by_name2(ee.backend, name);
+		const auto def = lookup_func_link_by_symbol(ee.backend, name);
 		if(def == nullptr){
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		const auto function_type = def->function_type_optional;
 		return llvm_bind_t {
@@ -173,7 +172,7 @@ static std::vector<func_link_t> make_init_deinit_link_map(llvm::LLVMContext& con
 			"runtime",
 			link_name,
 			type_t::make_undefined(),
-			func_link_t::emachine::k_native,
+			func_link_t::eexecution_model::k_native__ccc,
 			nullptr,
 			{},
 			(native_type_t*)function_type
@@ -195,7 +194,7 @@ static std::vector<func_link_t> make_init_deinit_link_map(llvm::LLVMContext& con
 			"runtime",
 			link_name,
 			type_t::make_undefined(),
-			func_link_t::emachine::k_native,
+			func_link_t::eexecution_model::k_native__ccc,
 			nullptr,
 			{},
 			(native_type_t*)function_type
@@ -243,7 +242,7 @@ static std::vector<func_link_t> make_floyd_code_and_corelib_link_map(llvm::LLVMC
 				"program",
 				link_name,
 				function_def._function_type,
-				func_link_t::emachine::k_native,
+				func_link_t::eexecution_model::k_native__floydcc,
 				nullptr,
 				get_member_names(function_def._named_args),
 				(native_type_t*)function_type
@@ -364,7 +363,7 @@ static void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p
 }
 #endif
 
-static int64_t floyd_llvm_intrinsic__dummy(floyd_runtime_t* frp){
+static int64_t floyd_llvm_intrinsic__dummy(runtime_t* frp){
 	auto& r = get_backend(frp);
 	(void)r;
 	quark::throw_runtime_error("Attempting to calling unimplemented function.");
@@ -389,23 +388,14 @@ bool llvm_execution_engine_t::check_invariant() const {
 }
 
 //	NOTICE: LLVM strips out unused functions = nullptr = not all functions in our link map gets a native function pointer.
-static std::vector<func_link_t> resolve_function_ptrs(const types_t& types, llvm::ExecutionEngine& ee, const std::vector<llvm_codegen_function_type_t>& function_link_map){
+static std::vector<func_link_t> resolve_function_ptrs(const types_t& types, llvm::ExecutionEngine& ee, const std::vector<func_link_t>& function_link_map){
 	QUARK_ASSERT(types.check_invariant());
 
 	std::vector<func_link_t> result;
 	for(const auto& e: function_link_map){
-		if(e.func_link.function_type_optional.is_function()){
-			const auto f = (void*)ee.getFunctionAddress(e.func_link.module_symbol.s);
-	//		auto f = get_function_ptr(runtime, e.link_name);
-			result.push_back(func_link_t{
-				"llvm func: " + e.func_link.module_symbol.s,
-				e.func_link.module_symbol,
-				e.func_link.function_type_optional,
-				func_link_t::emachine::k_native,
-				f,
-				e.func_link.arg_names,
-				e.func_link.native_type
-			});
+		if(e.function_type_optional.is_function()){
+			const auto f = (void*)ee.getFunctionAddress(e.module_symbol.s);
+			result.push_back(set_f(e, f));
 		}
 	}
 
@@ -510,17 +500,12 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			const auto s2 = strip_link_name(s);
 
 			const auto& function_link_map = program_breaks.function_link_map;
-			const auto it = std::find_if(
-				function_link_map.begin(),
-				function_link_map.end(),
-				[&](const llvm_codegen_function_type_t& def){ return def.func_link.module_symbol.s == s2; }
-			);
-			if(it != function_link_map.end() && it->func_link.f != nullptr){
-				return it->func_link.f;
+			const auto found = lookup_func_link_by_symbol(function_link_map, module_symbol_t(s2));
+			if(found != nullptr && found->f != nullptr){
+				return found->f;
 			}
 			else {
 				return (void*)&floyd_llvm_intrinsic__dummy;
-//				throw std::exception();
 			}
 		};
 		std::function<void*(const std::string&)> on_lazy_function_creator2 = lambda;
@@ -626,6 +611,7 @@ std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& progra
 
 
 void llvm_process_t::runtime_basics__on_print(const std::string& s){
+	//??? needs mutex.
 	ee->_handler_router._runtime_handler->on_print(s);
 }
 
@@ -633,6 +619,9 @@ type_t llvm_process_t::runtime_basics__get_global_symbol_type(const std::string&
 	return find_symbol_required(ee->global_symbols, s)._value_type;
 }
 
+rt_value_t llvm_process_t::runtime_basics__call_thunk(const rt_value_t& f, const rt_value_t args[], int arg_count){
+	quark::throw_defective_request();
+}
 
 
 
@@ -646,7 +635,7 @@ static std::string make_trace_process_header(const llvm_process_t& process){
 	return header;
 }
 
-void llvm_process_t::runtime_process__on_send_message(const std::string& dest_process_id, const runtime_value_t& message, const type_t& message_type){
+void llvm_process_t::runtime_process__on_send_message(const std::string& dest_process_id, const rt_pod_t& message, const type_t& message_type){
 	QUARK_ASSERT(check_invariant());
 	auto& backend = ee->backend;
 	const auto& types = backend.types;
@@ -740,7 +729,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 
 	while(process._exiting_flag == false){
 		//	Block until we get a message
-		runtime_value_t message_with_rc;
+		rt_pod_t message_with_rc;
 		{
 			std::unique_lock<std::mutex> lk(process._inbox_mutex);
 
@@ -774,7 +763,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 			}
 		}
 
-		runtime_value_t result = make_uninitialized_magic();
+		rt_pod_t result = make_uninitialized_magic();
 
 		{
 			QUARK_SCOPED_TRACE_OPTIONAL("Call msg handler", trace);
@@ -897,7 +886,7 @@ void deinit_program(llvm_execution_engine_t& ee){
 }
 
 
-floyd_runtime_t make_runtime_ptr(llvm_context_t* p){
+runtime_t make_runtime_ptr(llvm_context_t* p){
 	QUARK_ASSERT(p != nullptr && p->check_invariant());
 
 	if(p->process){

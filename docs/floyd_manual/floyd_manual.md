@@ -132,11 +132,15 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 		- [struct network\_component\_t](#struct-networkcomponentt)
 		- [struct ip\_address\_and\_port_t](#struct-ipaddress_and_portt)
 		- [struct host\_info\_t](#struct-hostinfot)
+		- [lookup\_host\_from\_ip\(\) impure](#lookuphost_fromip-impure)
 		- [lookup\_host\_from\_name\(\) impure](#lookuphost_fromname-impure)
 		- [struct http\-header\_t](#struct-http-header_t)
 		- [struct http\_request\_line\_t](#struct-httprequest_linet)
 		- [struct http\_request\_t](#struct-httprequestt)
-		- [pack_http_request\(\)](#packhttprequest)
+		- [pack\_http\_request\(\)](#packhttprequest)
+		- [unpack\_http\_request\(\)](#unpackhttprequest)
+		- [pack\_http\_response\(\)](#packhttpresponse)
+		- [unpack\_http\_response\(\)](#unpackhttpresponse)
 		- [execute_http_request\(\) impure](#executehttprequest-impure)
 	- [3.7 STANDARD TYPES](#37-standard-types)
 		- [uuid_t](#uuid_t)
@@ -3756,12 +3760,27 @@ Holds information about one specific Internet host. Use lookup_host_from_name().
 	}
 
 
+
+
+<a id="lookuphost_fromip-impure"></a>
+### lookup\_host\_from\_ip() impure
+
+This function lookups up information about an Internet host, based on the host's IP address. The OS gets this info from a DNS. Use this function to find the IP addresses of an Internet domain.
+
+Warning: Blocks, impure
+
+	func host_info_t lookup_host_from_ip(ip_address_t addr) impure
+
+
+
+
+
 <a id="lookuphost_fromname-impure"></a>
 ### lookup\_host\_from\_name() impure
 
 This function lookups up information about an Internet host, based on the host's name. The OS gets this info from a DNS. Use this function to find the IP addresses of an Internet domain.
 
-Warning: Blocksm, impure
+Warning: Blocks, impure
 
 	func host_info_t lookup_host_from_name(string name) impure
 
@@ -3813,11 +3832,42 @@ Represents a complete HTTP request, including GET or PUT etc, the path, query st
 
 
 <a id="packhttprequest"></a>
-### pack_http_request()
+### pack\_http\_request()
 
-This function pack a http_request_t-structure, filled out with informations and packs it into a proper HTTP message string. It will insert CR+LF etc.
+This function packs a http_request_t-structure, filled out with informations and packs it into a proper HTTP message string. It will insert CR+LF etc.
 
 	func string pack_http_request(http_request_t r)
+
+
+
+<a id="unpackhttprequest"></a>
+### unpack\_http\_request()
+
+This function unpacks a http_request_t-structure. It will insert CR+LF etc.
+
+	func http_request_t unpack_http_request(string r)
+
+
+
+
+
+<a id="packhttpresponse"></a>
+### pack\_http\_response()
+
+This function packs a http_response_t-structure, filled out with informations and packs it into a proper HTTP message string. It will insert CR+LF etc.
+
+	func string pack_http_response(http_response_t r)
+
+
+<a id="unpackhttpresponse"></a>
+### unpack\_http\_response()
+
+This function unpacks a http_response_t-structure, filled out with informations and packs it into a proper HTTP message string. It will insert CR+LF etc.
+
+	func http_response_t unpack_http_response(string s)
+
+
+
 
 
 

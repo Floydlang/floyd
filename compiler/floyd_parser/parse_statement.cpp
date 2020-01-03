@@ -179,7 +179,7 @@ static a_result_t parse_a(types_t& types, const seq_t& p, const location_t& loc)
 		return a_result_t{ *optional_type_pos.first, identifier_pos.first, identifier_pos.second };
 	}
 	else if(!optional_type_pos.first && identifier_pos.first != ""){
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 		return a_result_t{ type_t::make_undefined(), optional_type_pos.first->get_symbol_ref(types), identifier_pos.second };
 	}
 	else if(optional_type_pos.first && optional_type_pos.first->is_symbol_ref() && identifier_pos.first == ""){

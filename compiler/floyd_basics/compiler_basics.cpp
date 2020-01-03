@@ -557,6 +557,8 @@ intrinsic_signature_t make_replace_signature(types_t& types){
 	return make_intrinsic("replace", type_t::make_function_dyn_return(types, { ANY_TYPE, type_t::make_int(), type_t::make_int(), ANY_TYPE }, epure::pure, return_dyn_type::arg0) );
 }
 
+
+
 intrinsic_signature_t make_parse_json_script_signature(types_t& types){
 	return make_intrinsic("parse_json_script", type_t::make_function(types, type_t::make_json(), { type_t::make_string() }, epure::pure) );
 }
@@ -632,56 +634,6 @@ bool check_map_func_type(types_t& types, const type_t& elements, const type_t& f
 	const auto f_peek = peek2(types, f);
 	QUARK_ASSERT(f_peek.get_function_args(types).size() == 2);
 	QUARK_ASSERT(f_peek.get_function_args(types)[0] == peek2(types, elements).get_vector_element_type(types));
-	QUARK_ASSERT(f_peek.get_function_args(types)[1] == context);
-	return true;
-}
-
-
-
-//	string map_string(string s, func int(int e, C context) f, C context)
-intrinsic_signature_t make_map_string_signature(types_t& types){
-	return make_intrinsic(
-		"map_string",
-		type_t::make_function(
-			types,
-			type_t::make_string(),
-			{
-				type_t::make_string(),
-				ANY_TYPE,
-				ANY_TYPE
-			},
-			epure::pure
-		)
-	);
-}
-
-type_t harden_map_string_func_type(types_t& types, const type_t& resolved_call_type0){
-	QUARK_ASSERT(resolved_call_type0.check_invariant());
-
-	const auto resolved_call_type = peek2(types, resolved_call_type0);
-	const auto sign = make_map_string_signature(types);
-	const auto context_type = resolved_call_type.get_function_args(types)[2];
-
-	const auto expected = type_t::make_function(
-		types,
-		type_t::make_string(),
-		{
-			type_t::make_string(),
-			type_t::make_function(types, type_t::make_int(), { type_t::make_int(), context_type }, epure::pure),
-			context_type
-		},
-		epure::pure
-	);
-	return expected;
-}
-
-bool check_map_string_func_type(types_t& types, const type_t& elements, const type_t& f, const type_t& context){
-	QUARK_ASSERT(peek2(types, elements).is_string());
-
-	const auto f_peek = peek2(types, f);
-	QUARK_ASSERT(f_peek.is_function());
-	QUARK_ASSERT(f_peek.get_function_args(types).size() == 2);
-	QUARK_ASSERT(f_peek.get_function_args(types)[0] == type_t::make_int());
 	QUARK_ASSERT(f_peek.get_function_args(types)[1] == context);
 	return true;
 }
@@ -974,16 +926,13 @@ intrinsic_signatures_t make_intrinsic_signatures(types_t& types){
 	result.subset = make_subset_signature(types);
 	result.replace = make_replace_signature(types);
 
-	result.parse_json_script = make_parse_json_script_signature(types);
+	result.get_json_type = make_get_json_type_signature(types);
 	result.generate_json_script = make_generate_json_script_signature(types);
+	result.parse_json_script = make_parse_json_script_signature(types);
 	result.to_json = make_to_json_signature(types);
 	result.from_json = make_from_json_signature(types);
 
-	result.get_json_type = make_get_json_type_signature(types);
-
-
 	result.map = make_map_signature(types);
-//	result.xxx = make_map_string_signature(types);
 	result.filter = make_filter_signature(types);
 	result.reduce = make_reduce_signature(types);
 	result.map_dag = make_map_dag_signature(types);
@@ -1019,15 +968,13 @@ intrinsic_signatures_t make_intrinsic_signatures(types_t& types){
 		make_subset_signature(types),
 		make_replace_signature(types),
 
-		make_parse_json_script_signature(types),
+		make_get_json_type_signature(types),
 		make_generate_json_script_signature(types),
+		make_parse_json_script_signature(types),
 		make_to_json_signature(types),
 		make_from_json_signature(types),
 
-		make_get_json_type_signature(types),
-
 		make_map_signature(types),
-//		make_map_string_signature(types),
 		make_filter_signature(types),
 		make_reduce_signature(types),
 		make_map_dag_signature(types),
@@ -1097,14 +1044,6 @@ location_t unpack_loc2(const json_t& s){
 
 
 
-void NOT_IMPLEMENTED_YET() {
-	throw std::exception();
-}
-
-void UNSUPPORTED() {
-	QUARK_ASSERT(false);
-	throw std::exception();
-}
 
 
 //	Return one entry per source line PLUS one extra end-marker. int tells byte offset of files that maps to this line-start.

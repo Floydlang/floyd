@@ -545,7 +545,7 @@ struct expression_t {
 	}
 
 	public: bool operator==(const expression_t& other) const{
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 

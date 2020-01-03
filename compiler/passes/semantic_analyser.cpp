@@ -58,9 +58,7 @@ struct semast_lexical_scope_t {
 
 struct analyser_t {
 	public: analyser_t(const unchecked_ast_t& ast);
-#if DEBUG
 	public: bool check_invariant() const;
-#endif
 
 
 	////////////////////////		STATE
@@ -397,7 +395,7 @@ static const type_t figure_out_callee_return_type(analyser_t& a, const statement
 
 
 		default:
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 			break;
 	}
 }
@@ -916,12 +914,10 @@ static std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(con
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::assign2_t& s) const{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			quark::throw_defective_request();
 		}
 		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::init2_t& s) const{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			quark::throw_defective_request();
 		}
 		std::pair<analyser_t, std::shared_ptr<statement_t>> operator()(const statement_t::block_statement_t& s) const{
 			const auto e = analyse_block_statement(a, statement, return_type);
@@ -1419,30 +1415,6 @@ static std::pair<analyser_t, expression_t> analyse_intrinsic_map_expression(cons
 
 	if(resolved_call.second.function_type != expected){
 		throw_compiler_error(parent.location, "Call to map() uses signature \"" + type_to_compact_string(a_acc._types, resolved_call.second.function_type) + "\", needs to be \"" + type_to_compact_string(a_acc._types, expected) + "\".");
-	}
-
-	return {
-		a_acc,
-		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, function_type.get_function_return(a_acc._types))
-	};
-}
-
-//	string map_string(string s, func string(string e, C context) f, C context)
-static std::pair<analyser_t, expression_t> analyse_intrinsic_map_string_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
-	QUARK_ASSERT(a.check_invariant());
-	QUARK_ASSERT(parent.check_invariant());
-
-	auto a_acc = a;
-	const auto sign = make_map_string_signature(a_acc._types);
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
-	a_acc = resolved_call.first;
-
-	//??? Fix this signature check!
-	const auto expected = resolved_call.second.function_type;
-	const auto function_type = dereference_type(a_acc._types, resolved_call.second.function_type);
-
-	if(resolved_call.second.function_type != expected){
-		throw_compiler_error(parent.location, "Call to map_string() uses signature \"" + type_to_compact_string(a_acc._types, resolved_call.second.function_type) + "\", needs to be \"" + type_to_compact_string(a_acc._types, expected) + "\".");
 	}
 
 	return {
@@ -2544,8 +2516,7 @@ static std::pair<analyser_t, expression_t> analyse_function_definition_expressio
 			return { a_acc, r };
 		}
 		std::pair<analyser_t, expression_t> operator()(const function_definition_t::host_func_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 	};
 	const auto result = std::visit(visitor_t{ a_acc, func_def_expr.second, *func_def_expr2 }, func_def_expr2->def._contents);
@@ -2583,8 +2554,7 @@ static std::pair<analyser_t, expression_t> analyse_expression__operation_specifi
 			return analyse_call_expression(a, parent, e, expr);
 		}
 		std::pair<analyser_t, expression_t> operator()(const expression_t::intrinsic_t& expr) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 
 
@@ -2605,9 +2575,7 @@ static std::pair<analyser_t, expression_t> analyse_expression__operation_specifi
 			return analyse_resolve_member_expression(a, parent, e, expr);
 		}
 		std::pair<analyser_t, expression_t> operator()(const expression_t::update_member_t& expr) const{
-			QUARK_ASSERT(false);
-//			return analyse_resolve_member_expression(a, parent, e, expr);
-			return { a, e };
+			quark::throw_defective_request();
 		}
 		std::pair<analyser_t, expression_t> operator()(const expression_t::lookup_t& expr) const{
 			return analyse_lookup_element_expression(a, parent, e, expr);
@@ -2714,8 +2682,7 @@ static std::pair<analyser_t, expression_t> analyse_expression_to_target(const an
 	else if(e4_output_type == target_type0){
 	}
 	else if(e4_output_type.is_undefined()){
-		QUARK_ASSERT(false);
-		throw_compiler_error(parent.location, "Expression type mismatch.");
+		quark::throw_defective_request();
 	}
 	else{
 		std::stringstream what;

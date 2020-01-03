@@ -16,6 +16,7 @@
 #include "compiler_basics.h"
 #include "quark.h"
 #include "format_table.h"
+#include "floyd_llvm_helpers.h"
 
 namespace floyd {
 
@@ -28,6 +29,7 @@ const bool k_keep_deleted_allocs = true;
 
 
 static void dispose_alloc(heap_alloc_64_t& alloc);
+static rt_pod_t pod_from_symbol(const value_backend_t& backend, const module_symbol_t& s);
 
 
 ////////////////////////////////		heap_t
@@ -192,7 +194,7 @@ bool heap_alloc_64_t::check_invariant() const{
 			QUARK_ASSERT(this->alloc_id >= k_alloc_start_id && this->alloc_id < heap->allocation_id_generator);
 		}
 		else{
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 	}
 	return true;
@@ -266,21 +268,21 @@ int heap_t::count_used() const {
 
 
 
-////////////////////////////////	runtime_type_t
+////////////////////////////////	rt_type_t
 
 
 
-runtime_type_t make_runtime_type(type_t type){
+rt_type_t make_runtime_type(type_t type){
 	return type.get_data();
 }
 
 
 
-////////////////////////////////	runtime_value_t
+////////////////////////////////	rt_pod_t
 
 
 QUARK_TEST("", "", "", ""){
-	const auto s = sizeof(runtime_value_t);
+	const auto s = sizeof(rt_pod_t);
 	QUARK_VERIFY(s == 8);
 }
 
@@ -292,7 +294,7 @@ QUARK_TEST("", "", "", ""){
 
 	y = a;
 
-	runtime_value_t c(y);
+	rt_pod_t c(y);
 	(void)c;
 }
 
@@ -300,42 +302,42 @@ QUARK_TEST("", "", "", ""){
 
 
 
-runtime_value_t make_uninitialized_magic(){
+rt_pod_t make_uninitialized_magic(){
 	return make_runtime_int(UNINITIALIZED_RUNTIME_VALUE);
 }
 
-runtime_value_t make_runtime_bool(bool value){
+rt_pod_t make_runtime_bool(bool value){
 	return { .bool_value = (uint8_t)(value ? 1 : 0) };
 }
 
-runtime_value_t make_runtime_int(int64_t value){
+rt_pod_t make_runtime_int(int64_t value){
 	return { .int_value = value };
 }
 
-runtime_value_t make_runtime_double(double value){
+rt_pod_t make_runtime_double(double value){
 	return { .double_value = value };
 }
 
-runtime_value_t make_runtime_typeid(type_t type){
+rt_pod_t make_runtime_typeid(type_t type){
 	return { .typeid_itype = type.get_data() };
 }
 
-runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr){
+rt_pod_t make_runtime_struct(STRUCT_T* struct_ptr){
 	return { .struct_ptr = struct_ptr };
 }
 
-runtime_value_t make_runtime_vector_carray(VECTOR_CARRAY_T* vector_ptr){
+rt_pod_t make_runtime_vector_carray(VECTOR_CARRAY_T* vector_ptr){
 	return { .vector_carray_ptr = vector_ptr };
 }
-runtime_value_t make_runtime_vector_hamt(VECTOR_HAMT_T* vector_hamt_ptr){
+rt_pod_t make_runtime_vector_hamt(VECTOR_HAMT_T* vector_hamt_ptr){
 	return { .vector_hamt_ptr = vector_hamt_ptr };
 }
 
-runtime_value_t make_runtime_dict_cppmap(DICT_CPPMAP_T* dict_cppmap_ptr){
+rt_pod_t make_runtime_dict_cppmap(DICT_CPPMAP_T* dict_cppmap_ptr){
 	return { .dict_cppmap_ptr = dict_cppmap_ptr };
 }
 
-runtime_value_t make_runtime_dict_hamt(DICT_HAMT_T* dict_hamt_ptr){
+rt_pod_t make_runtime_dict_hamt(DICT_HAMT_T* dict_hamt_ptr){
 	return { .dict_hamt_ptr = dict_hamt_ptr };
 }
 
@@ -345,13 +347,13 @@ runtime_value_t make_runtime_dict_hamt(DICT_HAMT_T* dict_hamt_ptr){
 
 
 
-uint64_t get_vec_string_size(runtime_value_t str){
+uint64_t get_vec_string_size(rt_pod_t str){
 	QUARK_ASSERT(str.vector_carray_ptr != nullptr);
 
 	return str.vector_carray_ptr->get_element_count();
 }
 
-void copy_elements(runtime_value_t dest[], runtime_value_t source[], uint64_t count){
+void copy_elements(rt_pod_t dest[], rt_pod_t source[], uint64_t count){
 	for(auto i = 0 ; i < count ; i++){
 		dest[i] = source[i];
 	}
@@ -384,7 +386,7 @@ bool VECTOR_CARRAY_T::check_invariant() const {
 	return true;
 }
 
-runtime_value_t alloc_vector_carray(heap_t& heap, uint64_t allocation_count, uint64_t element_count, type_t value_type){
+rt_pod_t alloc_vector_carray(heap_t& heap, uint64_t allocation_count, uint64_t element_count, type_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(value_type.is_vector() || value_type.is_string());
 
@@ -400,7 +402,7 @@ runtime_value_t alloc_vector_carray(heap_t& heap, uint64_t allocation_count, uin
 }
 
 
-void dispose_vector_carray(const runtime_value_t& value){
+void dispose_vector_carray(const rt_pod_t& value){
 	QUARK_ASSERT(sizeof(VECTOR_CARRAY_T) == sizeof(heap_alloc_64_t));
 
 	QUARK_ASSERT(value.check_invariant());
@@ -448,7 +450,7 @@ QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
 
 
 QUARK_TEST("", "", "", ""){
-	const auto vec_size = sizeof(immer::vector<runtime_value_t>);
+	const auto vec_size = sizeof(immer::vector<rt_pod_t>);
 	QUARK_VERIFY(vec_size == 32);
 }
 
@@ -467,14 +469,14 @@ bool VECTOR_HAMT_T::check_invariant() const {
 	return true;
 }
 
-runtime_value_t alloc_vector_hamt(heap_t& heap, uint64_t allocation_count, uint64_t element_count, type_t value_type){
+rt_pod_t alloc_vector_hamt(heap_t& heap, uint64_t allocation_count, uint64_t element_count, type_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(value_type.is_vector());
 
 	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc_64(heap, 0, value_type, "vechamt"));
 
-	QUARK_ASSERT(sizeof(immer::vector<runtime_value_t>) <= heap_alloc_64_t::k_data_bytes);
-    new (&vec->alloc.data[0]) immer::vector<runtime_value_t>(allocation_count, runtime_value_t{ .int_value = (int64_t)0xdeadbeef12345678 } );
+	QUARK_ASSERT(sizeof(immer::vector<rt_pod_t>) <= heap_alloc_64_t::k_data_bytes);
+    new (&vec->alloc.data[0]) immer::vector<rt_pod_t>(allocation_count, rt_pod_t{ .int_value = (int64_t)0xdeadbeef12345678 } );
 
 	QUARK_ASSERT(vec->check_invariant());
 	QUARK_ASSERT(heap.check_invariant());
@@ -482,7 +484,7 @@ runtime_value_t alloc_vector_hamt(heap_t& heap, uint64_t allocation_count, uint6
 	return { .vector_hamt_ptr = vec };
 }
 
-runtime_value_t alloc_vector_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count, type_t value_type){
+rt_pod_t alloc_vector_hamt(heap_t& heap, const rt_pod_t elements[], uint64_t element_count, type_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(element_count == 0 || elements != nullptr);
 	QUARK_ASSERT(value_type.is_vector());
@@ -490,10 +492,10 @@ runtime_value_t alloc_vector_hamt(heap_t& heap, const runtime_value_t elements[]
 	heap_alloc_64_t* alloc = alloc_64(heap, 0, value_type, "vechamt");
 
 	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
-	auto buffer_ptr = reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc->data[0]);
+	auto buffer_ptr = reinterpret_cast<immer::vector<rt_pod_t>*>(&alloc->data[0]);
 
-	QUARK_ASSERT(sizeof(immer::vector<runtime_value_t>) <= heap_alloc_64_t::k_data_bytes);
-    auto vec2 = new (buffer_ptr) immer::vector<runtime_value_t>(&elements[0], &elements[element_count]);
+	QUARK_ASSERT(sizeof(immer::vector<rt_pod_t>) <= heap_alloc_64_t::k_data_bytes);
+    auto vec2 = new (buffer_ptr) immer::vector<rt_pod_t>(&elements[0], &elements[element_count]);
 	QUARK_ASSERT(vec2 == buffer_ptr);
 
 	QUARK_ASSERT(vec->check_invariant());
@@ -502,7 +504,7 @@ runtime_value_t alloc_vector_hamt(heap_t& heap, const runtime_value_t elements[]
 	return { .vector_hamt_ptr = vec };
 }
 
-void dispose_vector_hamt(const runtime_value_t& vec){
+void dispose_vector_hamt(const rt_pod_t& vec){
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(sizeof(VECTOR_HAMT_T) == sizeof(heap_alloc_64_t));
 	QUARK_ASSERT(vec.vector_hamt_ptr != nullptr);
@@ -510,7 +512,7 @@ void dispose_vector_hamt(const runtime_value_t& vec){
 
 	if(k_keep_deleted_allocs == false){
 		auto& vec2 = vec.vector_hamt_ptr->get_vecref_mut();
-		vec2.~vector<runtime_value_t>();
+		vec2.~vector<rt_pod_t>();
 	}
 
 	auto heap = vec.vector_hamt_ptr->alloc.heap;
@@ -518,7 +520,7 @@ void dispose_vector_hamt(const runtime_value_t& vec){
 	QUARK_ASSERT(heap->check_invariant());
 }
 
-runtime_value_t store_immutable_hamt(const runtime_value_t& vec0, const uint64_t index, runtime_value_t value){
+rt_pod_t store_immutable_hamt(const rt_pod_t& vec0, const uint64_t index, rt_pod_t value){
 	QUARK_ASSERT(vec0.check_invariant());
 	const auto& vec1 = *vec0.vector_hamt_ptr;
 	QUARK_ASSERT(index < vec1.get_element_count());
@@ -528,10 +530,10 @@ runtime_value_t store_immutable_hamt(const runtime_value_t& vec0, const uint64_t
 
 	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
 
-	auto buffer_ptr = reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc->data[0]);
+	auto buffer_ptr = reinterpret_cast<immer::vector<rt_pod_t>*>(&alloc->data[0]);
 
-	QUARK_ASSERT(sizeof(immer::vector<runtime_value_t>) <= heap_alloc_64_t::k_data_bytes);
-    auto vec2 = new (buffer_ptr) immer::vector<runtime_value_t>();
+	QUARK_ASSERT(sizeof(immer::vector<rt_pod_t>) <= heap_alloc_64_t::k_data_bytes);
+    auto vec2 = new (buffer_ptr) immer::vector<rt_pod_t>();
 
 	const auto& v2 = vec1.get_vecref().set(index, value);
 	*vec2 = v2;
@@ -542,17 +544,17 @@ runtime_value_t store_immutable_hamt(const runtime_value_t& vec0, const uint64_t
 	return { .vector_hamt_ptr = vec };
 }
 
-runtime_value_t push_back_immutable_hamt(const runtime_value_t& vec0, runtime_value_t value){
+rt_pod_t push_back_immutable_hamt(const rt_pod_t& vec0, rt_pod_t value){
 	QUARK_ASSERT(vec0.check_invariant());
 	const auto& vec1 = *vec0.vector_hamt_ptr;
 	auto& heap = *vec1.alloc.heap;
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0, vec0.vector_hamt_ptr->alloc.debug_value_type, "vechamt");
 	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
-	auto buffer_ptr = reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc->data[0]);
+	auto buffer_ptr = reinterpret_cast<immer::vector<rt_pod_t>*>(&alloc->data[0]);
 
-	QUARK_ASSERT(sizeof(immer::vector<runtime_value_t>) <= heap_alloc_64_t::k_data_bytes);
-    auto vec2 = new (buffer_ptr) immer::vector<runtime_value_t>();
+	QUARK_ASSERT(sizeof(immer::vector<rt_pod_t>) <= heap_alloc_64_t::k_data_bytes);
+    auto vec2 = new (buffer_ptr) immer::vector<rt_pod_t>();
 
 	const auto& v2 = vec1.get_vecref().push_back(value);
 	*vec2 = v2;
@@ -575,7 +577,7 @@ QUARK_TEST("VECTOR_HAMT_T", "", "", ""){
 	auto backend = make_test_value_backend();
 	detect_leaks(backend.heap);
 
-	const runtime_value_t a[] = { make_runtime_int(1000), make_runtime_int(2000), make_runtime_int(3000) };
+	const rt_pod_t a[] = { make_runtime_int(1000), make_runtime_int(2000), make_runtime_int(3000) };
 	auto v = alloc_vector_hamt(backend.heap, a, 3, make_vector(backend.types, type_t::make_double()));
 	QUARK_VERIFY(v.vector_hamt_ptr != nullptr);
 
@@ -620,7 +622,7 @@ uint64_t DICT_CPPMAP_T::size() const {
 	return d.size();
 }
 
-runtime_value_t alloc_dict_cppmap(heap_t& heap, type_t value_type){
+rt_pod_t alloc_dict_cppmap(heap_t& heap, type_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(value_type.check_invariant());
 	QUARK_ASSERT(value_type.is_dict());
@@ -636,10 +638,10 @@ runtime_value_t alloc_dict_cppmap(heap_t& heap, type_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(dict->check_invariant());
 
-	return runtime_value_t { .dict_cppmap_ptr = dict };
+	return rt_pod_t { .dict_cppmap_ptr = dict };
 }
 
-static void dispose_dict_cppmap(runtime_value_t& d){
+static void dispose_dict_cppmap(rt_pod_t& d){
 	QUARK_ASSERT(sizeof(DICT_CPPMAP_T) == sizeof(heap_alloc_64_t));
 	QUARK_ASSERT(d.dict_cppmap_ptr != nullptr);
 	auto& dict = *d.dict_cppmap_ptr;
@@ -682,7 +684,7 @@ uint64_t DICT_HAMT_T::size() const {
 	return d.size();
 }
 
-runtime_value_t alloc_dict_hamt(heap_t& heap, type_t value_type){
+rt_pod_t alloc_dict_hamt(heap_t& heap, type_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(value_type.is_dict());
 
@@ -697,10 +699,10 @@ runtime_value_t alloc_dict_hamt(heap_t& heap, type_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(dict->check_invariant());
 
-	return runtime_value_t { .dict_hamt_ptr = dict };
+	return rt_pod_t { .dict_hamt_ptr = dict };
 }
 
-static void dispose_dict_hamt(runtime_value_t& d){
+static void dispose_dict_hamt(rt_pod_t& d){
 	QUARK_ASSERT(sizeof(DICT_HAMT_T) == sizeof(heap_alloc_64_t));
 	QUARK_ASSERT(d.dict_hamt_ptr != nullptr);
 	auto& dict = *d.dict_hamt_ptr;
@@ -737,7 +739,7 @@ bool JSON_T::check_invariant() const{
 	return true;
 }
 
-runtime_value_t alloc_json(heap_t& heap, const json_t& init){
+rt_pod_t alloc_json(heap_t& heap, const json_t& init){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(init.check_invariant());
 
@@ -749,7 +751,7 @@ runtime_value_t alloc_json(heap_t& heap, const json_t& init){
 
 	QUARK_ASSERT(json->check_invariant());
 	QUARK_ASSERT(heap.check_invariant());
-	return runtime_value_t { .json_ptr = json };
+	return rt_pod_t { .json_ptr = json };
 }
 
 static void dispose_json(JSON_T& json){
@@ -787,7 +789,7 @@ bool STRUCT_T::check_invariant() const {
 	return true;
 }
 
-runtime_value_t alloc_struct(heap_t& heap, std::size_t size, type_t value_type){
+rt_pod_t alloc_struct(heap_t& heap, std::size_t size, type_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(value_type.check_invariant());
 	QUARK_ASSERT(value_type.is_struct());
@@ -797,10 +799,10 @@ runtime_value_t alloc_struct(heap_t& heap, std::size_t size, type_t value_type){
 	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count, value_type, "struct");
 
 	auto vec = reinterpret_cast<STRUCT_T*>(alloc);
-	return runtime_value_t { .struct_ptr = vec };
+	return rt_pod_t { .struct_ptr = vec };
 }
 
-runtime_value_t alloc_struct_copy(heap_t& heap, const uint64_t data[], std::size_t size, type_t value_type){
+rt_pod_t alloc_struct_copy(heap_t& heap, const uint64_t data[], std::size_t size, type_t value_type){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(data != nullptr);
 	QUARK_ASSERT(value_type.check_invariant());
@@ -811,7 +813,7 @@ runtime_value_t alloc_struct_copy(heap_t& heap, const uint64_t data[], std::size
 
 	auto vec = reinterpret_cast<STRUCT_T*>(alloc);
 	std::memcpy(vec->get_data_ptr(), data, size);
-	return runtime_value_t { .struct_ptr = vec };
+	return rt_pod_t { .struct_ptr = vec };
 }
 
 static void dispose_struct(STRUCT_T& s){
@@ -842,86 +844,86 @@ bool is_rc_value(const types_t& types, const type_t& type){
 
 
 // IMPORTANT: Different types will access different number of bytes, for example a BYTE. We cannot dereference pointer as a uint64*!!
-runtime_value_t load_via_ptr2(const types_t& types, const void* value_ptr, const type_t& type){
+rt_pod_t load_via_ptr2(const types_t& types, const void* value_ptr, const type_t& type){
 	QUARK_ASSERT(value_ptr != nullptr);
 	QUARK_ASSERT(type.check_invariant());
 
 	struct visitor_t {
 		const void* value_ptr;
 
-		runtime_value_t operator()(const undefined_t& e) const{
-			UNSUPPORTED();
+		rt_pod_t operator()(const undefined_t& e) const{
+			quark::throw_defective_request();
 		}
-		runtime_value_t operator()(const any_t& e) const{
-			UNSUPPORTED();
+		rt_pod_t operator()(const any_t& e) const{
+			quark::throw_defective_request();
 		}
 
-		runtime_value_t operator()(const void_t& e) const{
-			UNSUPPORTED();
+		rt_pod_t operator()(const void_t& e) const{
+			quark::throw_defective_request();
 		}
-		runtime_value_t operator()(const bool_t& e) const{
+		rt_pod_t operator()(const bool_t& e) const{
 			const auto temp = *static_cast<const uint8_t*>(value_ptr);
 			return make_runtime_bool(temp == 0 ? false : true);
 		}
-		runtime_value_t operator()(const int_t& e) const{
+		rt_pod_t operator()(const int_t& e) const{
 			const auto temp = *static_cast<const uint64_t*>(value_ptr);
 			return make_runtime_int(temp);
 		}
-		runtime_value_t operator()(const double_t& e) const{
+		rt_pod_t operator()(const double_t& e) const{
 			const auto temp = *static_cast<const double*>(value_ptr);
 			return make_runtime_double(temp);
 		}
-		runtime_value_t operator()(const string_t& e) const{
-			return *static_cast<const runtime_value_t*>(value_ptr);
+		rt_pod_t operator()(const string_t& e) const{
+			return *static_cast<const rt_pod_t*>(value_ptr);
 		}
 
-		runtime_value_t operator()(const json_type_t& e) const{
-			return *static_cast<const runtime_value_t*>(value_ptr);
+		rt_pod_t operator()(const json_type_t& e) const{
+			return *static_cast<const rt_pod_t*>(value_ptr);
 		}
-		runtime_value_t operator()(const typeid_type_t& e) const{
+		rt_pod_t operator()(const typeid_type_t& e) const{
 			const auto value = *static_cast<const int32_t*>(value_ptr);
 			return make_runtime_typeid(type_t(value));
 		}
 
-		runtime_value_t operator()(const struct_t& e) const{
+		rt_pod_t operator()(const struct_t& e) const{
 			STRUCT_T* struct_ptr = *reinterpret_cast<STRUCT_T* const *>(value_ptr);
 			return make_runtime_struct(struct_ptr);
 		}
-		runtime_value_t operator()(const vector_t& e) const{
-			return *static_cast<const runtime_value_t*>(value_ptr);
+		rt_pod_t operator()(const vector_t& e) const{
+			return *static_cast<const rt_pod_t*>(value_ptr);
 		}
-		runtime_value_t operator()(const dict_t& e) const{
-			return *static_cast<const runtime_value_t*>(value_ptr);
+		rt_pod_t operator()(const dict_t& e) const{
+			return *static_cast<const rt_pod_t*>(value_ptr);
 		}
-		runtime_value_t operator()(const function_t& e) const{
-			return *static_cast<const runtime_value_t*>(value_ptr);
+		rt_pod_t operator()(const function_t& e) const{
+			return *static_cast<const rt_pod_t*>(value_ptr);
 		}
-		runtime_value_t operator()(const symbol_ref_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+		rt_pod_t operator()(const symbol_ref_t& e) const {
+			quark::throw_defective_request();
 		}
-		runtime_value_t operator()(const named_type_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+		rt_pod_t operator()(const named_type_t& e) const {
+			quark::throw_defective_request();
 		}
 	};
 	return std::visit(visitor_t{ value_ptr }, get_type_variant(types, type));
 }
 
 // IMPORTANT: Different types will access different number of bytes, for example a BYTE. We cannot dereference pointer as a uint64*!!
-void store_via_ptr2(const types_t& types, void* value_ptr, const type_t& type, const runtime_value_t& value){
+void store_via_ptr2(const types_t& types, void* value_ptr, const type_t& type, const rt_pod_t& value){
 	const auto type_peek = peek2(types, type);
 	struct visitor_t {
 		void* value_ptr;
-		const runtime_value_t& value;
+		const rt_pod_t& value;
 
 		void operator()(const undefined_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		void operator()(const any_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 
 		void operator()(const void_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		void operator()(const bool_t& e) const{
 			*static_cast<uint8_t*>(value_ptr) = value.bool_value;
@@ -933,11 +935,11 @@ void store_via_ptr2(const types_t& types, void* value_ptr, const type_t& type, c
 			*static_cast<double*>(value_ptr) = value.double_value;
 		}
 		void operator()(const string_t& e) const{
-			*static_cast<runtime_value_t*>(value_ptr) = value;
+			*static_cast<rt_pod_t*>(value_ptr) = value;
 		}
 
 		void operator()(const json_type_t& e) const{
-			*static_cast<runtime_value_t*>(value_ptr) = value;
+			*static_cast<rt_pod_t*>(value_ptr) = value;
 		}
 		void operator()(const typeid_type_t& e) const{
 			*static_cast<int32_t*>(value_ptr) = static_cast<int32_t>(value.typeid_itype);
@@ -947,19 +949,19 @@ void store_via_ptr2(const types_t& types, void* value_ptr, const type_t& type, c
 			*reinterpret_cast<STRUCT_T**>(value_ptr) = value.struct_ptr;
 		}
 		void operator()(const vector_t& e) const{
-			*static_cast<runtime_value_t*>(value_ptr) = value;
+			*static_cast<rt_pod_t*>(value_ptr) = value;
 		}
 		void operator()(const dict_t& e) const{
-			*static_cast<runtime_value_t*>(value_ptr) = value;
+			*static_cast<rt_pod_t*>(value_ptr) = value;
 		}
 		void operator()(const function_t& e) const{
-			*static_cast<runtime_value_t*>(value_ptr) = value;
+			*static_cast<rt_pod_t*>(value_ptr) = value;
 		}
 		void operator()(const symbol_ref_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			quark::throw_defective_request();
 		}
 		void operator()(const named_type_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			quark::throw_defective_request();
 		}
 	};
 	std::visit(visitor_t{ value_ptr, value }, get_type_variant(types, type_peek));
@@ -1035,7 +1037,7 @@ rt_value_t::rt_value_t(const bc_static_frame_t* frame_ptr) :
 	_backend(nullptr),
 	_type(type_t::make_void())
 {
-	_pod = runtime_value_t{ .frame_ptr = (void*)frame_ptr };
+	_pod = rt_pod_t{ .frame_ptr = (void*)frame_ptr };
 	QUARK_ASSERT(check_invariant());
 }
 
@@ -1166,7 +1168,7 @@ rt_value_t::rt_value_t(const type_t& type_id) :
 }
 
 
-std::vector<rt_value_t> from_runtime_struct(value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
+std::vector<rt_value_t> from_runtime_struct(value_backend_t& backend, const rt_pod_t encoded_value, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(encoded_value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -1181,7 +1183,7 @@ std::vector<rt_value_t> from_runtime_struct(value_backend_t& backend, const runt
 	int member_index = 0;
 	for(const auto& e: struct_def._members){
 		const auto offset = struct_layout.second.members[member_index].offset;
-		const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
+		const auto member_ptr = reinterpret_cast<const rt_pod_t*>(struct_base_ptr + offset);
 		const auto member_value = rt_value_t(backend, e._type, *member_ptr, rt_value_t::rc_mode::bump);
 		members.push_back(member_value);
 		member_index++;
@@ -1189,7 +1191,7 @@ std::vector<rt_value_t> from_runtime_struct(value_backend_t& backend, const runt
 	return members;
 }
 
-runtime_value_t to_runtime_struct(value_backend_t& backend, const type_t& struct_type, const std::vector<rt_value_t>& values){
+rt_pod_t to_runtime_struct(value_backend_t& backend, const type_t& struct_type, const std::vector<rt_value_t>& values){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& struct_layout = find_struct_layout(backend, struct_type);
@@ -1243,31 +1245,30 @@ rt_value_t::rt_value_t(value_backend_t& backend, const type_t& struct_type, cons
 	QUARK_ASSERT(check_invariant());
 }
 
-rt_value_t rt_value_t::make_function_value(value_backend_t& backend, const type_t& function_type, const module_symbol_t& function_id){
+rt_value_t rt_value_t::make_function_value(value_backend_t& backend, const type_t& function_type, const module_symbol_t& function){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(function_type.is_function());
 
-	return rt_value_t{ backend, function_type, function_id };
+	return rt_value_t{ backend, function_type, function };
 }
-int64_t rt_value_t::get_function_value() const{
+int64_t rt_value_t::get_function_value_data() const{
 	QUARK_ASSERT(check_invariant());
 
-	return _pod.function_link_id;
+	return _pod.function_data;
 }
-rt_value_t::rt_value_t(value_backend_t& backend, const type_t& function_type, const module_symbol_t& function_id) :
+rt_value_t::rt_value_t(value_backend_t& backend, const type_t& function_type, const module_symbol_t& function) :
 	_backend(nullptr),
 	_type(function_type)
 {
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(function_type.is_function());
 
-	const auto id = find_function_by_name0(backend, function_id);
-	_pod = runtime_value_t { .function_link_id = id };
+	_pod = pod_from_symbol(backend, function);
 
 	QUARK_ASSERT(check_invariant());
 }
 
-rt_value_t::rt_value_t(value_backend_t& backend, const type_t& type, const runtime_value_t& internals, rc_mode mode) :
+rt_value_t::rt_value_t(value_backend_t& backend, const type_t& type, const rt_pod_t& internals, rc_mode mode) :
 	_backend(&backend),
 	_type(type),
 	_pod(internals)
@@ -1281,12 +1282,12 @@ rt_value_t::rt_value_t(value_backend_t& backend, const type_t& type, const runti
 		retain_value(backend, internals, type);
 	}
 	else{
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 
 	QUARK_ASSERT(check_invariant());
 }
-rt_value_t::rt_value_t(const type_t& type, const runtime_value_t& internals) :
+rt_value_t::rt_value_t(const type_t& type, const rt_pod_t& internals) :
 	_backend(nullptr),
 	_type(type),
 	_pod(internals)
@@ -1296,12 +1297,11 @@ rt_value_t::rt_value_t(const type_t& type, const runtime_value_t& internals) :
 }
 
 
-#if DEBUG
 bool rt_value_t::check_invariant() const {
 	QUARK_ASSERT(_type.check_invariant());
 
 	if(_type.is_function()){
-		QUARK_ASSERT(_pod.function_link_id == -1 || (_pod.function_link_id >= 0 && _pod.function_link_id < 10000));
+		QUARK_ASSERT(_pod.function_data == -1 || (_pod.function_data >= 0 && _pod.function_data < 10000));
 	}
 
 	if(_backend != nullptr){
@@ -1310,7 +1310,6 @@ bool rt_value_t::check_invariant() const {
 
 	return true;
 }
-#endif
 
 
 QUARK_TEST("rt_value_t", "", "", ""){
@@ -1363,8 +1362,7 @@ const immer::vector<rt_value_t> get_vector_elements(value_backend_t& backend, co
 		return elements;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -1400,7 +1398,7 @@ rt_value_t make_vector_value(value_backend_t& backend, const type_t& element_typ
 		return result2;
 	}
 	else if(is_vector_hamt(backend.types, backend.config, type)){
-		std::vector<runtime_value_t> temp;
+		std::vector<rt_pod_t> temp;
 		for(int i = 0 ; i < count ; i++){
 			const auto& e = v0[i];
 			QUARK_ASSERT(e.check_invariant());
@@ -1415,8 +1413,7 @@ rt_value_t make_vector_value(value_backend_t& backend, const type_t& element_typ
 		return result2;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -1450,8 +1447,7 @@ const immer::map<std::string, rt_value_t> get_dict_values(value_backend_t& backe
 		return values;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -1492,8 +1488,7 @@ rt_value_t make_dict_value(value_backend_t& backend, const type_t& value_type, c
 		return result2;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -1640,64 +1635,6 @@ bool is_struct_pod(const types_t& types, const struct_type_desc_t& struct_def){
 
 
 
-bool matches_specialization(const config_t& config, const types_t& types, eresolved_type wanted, const type_t& arg_type){
-	QUARK_ASSERT(config.check_invariant());
-	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(arg_type.check_invariant());
-
-	const auto arg_type_peek = peek2(types, arg_type);
-	if(arg_type_peek.is_string()){
-		return wanted == eresolved_type::k_string;
-	}
-	else if(is_vector_carray(types, config, arg_type)){
-		const auto is_rc = is_rc_value(types, arg_type_peek.get_vector_element_type(types));
-		if(is_rc){
-			return wanted == eresolved_type::k_vector_carray_nonpod;
-		}
-		else{
-			return wanted == eresolved_type::k_vector_carray_pod;
-		}
-	}
-	else if(is_vector_hamt(types, config, arg_type)){
-		const auto is_rc = is_rc_value(types, arg_type_peek.get_vector_element_type(types));
-		if(is_rc){
-			return wanted == eresolved_type::k_vector_hamt_nonpod;
-		}
-		else{
-			return wanted == eresolved_type::k_vector_hamt_pod;
-		}
-	}
-
-	else if(is_dict_cppmap(types, config, arg_type)){
-		const auto is_rc = is_rc_value(types, arg_type_peek.get_dict_value_type(types));
-		if(is_rc){
-			return wanted == eresolved_type::k_dict_cppmap_nonpod;
-		}
-		else{
-			return wanted == eresolved_type::k_dict_cppmap_pod;
-		}
-	}
-	else if(is_dict_hamt(types, config, arg_type)){
-		const auto is_rc = is_rc_value(types, arg_type_peek.get_dict_value_type(types));
-		if(is_rc){
-			return wanted == eresolved_type::k_dict_hamt_nonpod;
-		}
-		else{
-			return wanted == eresolved_type::k_dict_hamt_pod;
-		}
-	}
-
-	else if(arg_type_peek.is_json()){
-		return wanted == eresolved_type::k_json;
-	}
-
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-}
-
-
 
 
 
@@ -1708,6 +1645,21 @@ int count_dyn_args(const types_t& types, const type_t& function_type){
 	return dyn_arg_count;
 }
 
+static std::string execution_model_to_string(func_link_t::eexecution_model execution_model){
+	if(execution_model == func_link_t::eexecution_model::k_bytecode__floydcc){
+		return "bytecode__floydcc";
+	}
+	else if(execution_model == func_link_t::eexecution_model::k_native__ccc){
+		return "native__ccc";
+	}
+	else if(execution_model == func_link_t::eexecution_model::k_native__floydcc){
+		return "native__floydcc";
+	}
+	else{
+		return "";
+	}
+}
+
 json_t func_link_to_json(const types_t& types, const func_link_t& def){
 	QUARK_ASSERT(types.check_invariant());
 	QUARK_ASSERT(def.check_invariant());
@@ -1716,20 +1668,67 @@ json_t func_link_to_json(const types_t& types, const func_link_t& def){
 		json_t(def.module_symbol.s),
 		json_t(def.module),
 		json_t(type_to_compact_string(types, def.function_type_optional)),
-		json_t(def.machine == func_link_t::emachine::k_native ? "native" : "bytecode"),
+		json_t(execution_model_to_string(def.execution_model)),
 		json_t(ptr_to_hexstring(def.f)),
 	});
 }
 
-void trace_function_link_map(const types_t& types, const std::vector<func_link_t>& defs){
+/*
+std::string print_function_link_map(const types_t& types, const std::vector<func_link_t>& defs){
 	QUARK_ASSERT(types.check_invariant());
 
 	const auto vec = mapf<json_t>(defs, [&](const auto& e){ return func_link_to_json(types, e); });
 	const auto vec2 = json_t::make_array(vec);
-	QUARK_TRACE(json_to_pretty_string(vec2));
+	return json_to_pretty_string(vec2);
+}
+*/
+std::string print_function_link_map(const types_t& types, const std::vector<func_link_t>& defs){
+	std::vector<std::vector<std::string>> matrix;
+	for(const auto& e: defs){
+		const auto ftype0 = e.function_type_optional.is_undefined() ? "" : json_to_compact_string(type_to_compact_string(types, e.function_type_optional));
+
+		std::string arg_names;
+		for(const auto& m: e.arg_names){
+			arg_names = m + ",";
+		}
+		arg_names = arg_names.empty() ? "" : arg_names.substr(0, arg_names.size() - 1);
+
+		const auto ftype1 = ftype0.substr(0, 100);
+		const auto ftype = ftype1.size() != ftype0.size() ? (ftype1 + "...") : ftype1;
+
+		const auto execution_model = execution_model_to_string(e.execution_model);
+
+		const auto f_str = e.f != nullptr ? ptr_to_hexstring(e.f) : "";
+
+		const std::string native_type_str = print_type((llvm::FunctionType*)e.native_type);
+
+		const auto line = std::vector<std::string>{
+			e.module_symbol.s,
+			e.module,
+			ftype,
+			execution_model,
+			f_str,
+			arg_names,
+			native_type_str
+		};
+		matrix.push_back(line);
+	}
+
+	const auto result = generate_table_type1(
+		{ "LINK-NAME", "MODULE", "FUNCTION TYPE", "EXEC.MODEL", "F", "ARG NAMES", "NATIVE TYPE" },
+		matrix
+	);
+	return result;
 }
 
-const func_link_t* find_function_by_name3(const std::vector<func_link_t>& v, const module_symbol_t& s){
+
+void trace_function_link_map(const types_t& types, const std::vector<func_link_t>& defs){
+	QUARK_ASSERT(types.check_invariant());
+
+	QUARK_TRACE(print_function_link_map(types, defs));
+}
+
+const func_link_t* lookup_func_link_by_symbol(const std::vector<func_link_t>& v, const module_symbol_t& s){
 	const auto it = std::find_if(v.begin(), v.end(), [&] (auto& m) { return m.module_symbol == s; });
 	if(it != v.end()){
 		return &(*it);
@@ -1744,47 +1743,25 @@ const func_link_t* find_function_by_name3(const std::vector<func_link_t>& v, con
 ////////////////////////////////		value_backend_t
 
 
-const func_link_t* find_function_by_name2(const value_backend_t& backend, const module_symbol_t& s){
-	return find_function_by_name3(backend.func_link_lookup, s);
-}
 
-int64_t find_function_by_name0(const value_backend_t& backend, const module_symbol_t& s){
-	const auto& v = backend.func_link_lookup;
-	const auto it = std::find_if(v.begin(), v.end(), [&] (auto& m) { return m.module_symbol == s; });
-	if(it != v.end()){
-		const auto result = (int64_t)(it - v.begin());
-		return result;
+
+static rt_pod_t pod_from_symbol(const value_backend_t& backend, const module_symbol_t& s){
+	const auto link = lookup_func_link_by_symbol(backend, s);
+	if(link){
+		const auto result = (int64_t)(link - &backend.func_link_lookup[0]);
+		return rt_pod_t { .function_data = result };
 	}
 	else{
-		return -1;
+		return rt_pod_t { .function_data = -1 };
 	}
 }
 
-
-const func_link_t& lookup_func_link_from_id(const value_backend_t& backend, runtime_value_t value){
-	auto func_id = value.function_link_id;
-	if(func_id == -1){
-		throw std::runtime_error("");
-	}
-	QUARK_ASSERT(func_id >= 0 && func_id < backend.func_link_lookup.size());
-	const auto& e = backend.func_link_lookup[func_id];
-	return e;
+const func_link_t* lookup_func_link_by_symbol(const value_backend_t& backend, const module_symbol_t& s){
+	return lookup_func_link_by_symbol(backend.func_link_lookup, s);
 }
 
-const func_link_t& lookup_func_link_from_native(const value_backend_t& backend, runtime_value_t value){
-	const void* f = (const void*)value.function_link_id;
-	const auto& v = backend.func_link_lookup;
-	const auto it = std::find_if(v.begin(), v.end(), [&] (auto& m) { return m.f == f; });
-	if(it == v.end()){
-		throw std::runtime_error("");
-	}
-	else{
-		return *it;
-	}
-}
-
-const func_link_t* lookup_func_link(const value_backend_t& backend, runtime_value_t value){
-	auto func_id = value.function_link_id;
+const func_link_t* lookup_func_link_by_pod(const value_backend_t& backend, rt_pod_t value){
+	auto func_id = value.function_data;
 	if(func_id == -1){
 		return nullptr;
 	}
@@ -1793,7 +1770,7 @@ const func_link_t* lookup_func_link(const value_backend_t& backend, runtime_valu
 		return &e;
 	}
 
-	const void* f = (const void*)value.function_link_id;
+	const void* f = (const void*)value.function_data;
 	const auto& v = backend.func_link_lookup;
 	const auto it = std::find_if(v.begin(), v.end(), [&] (auto& m) { return m.f == f; });
 	if(it != v.end()){
@@ -1803,13 +1780,16 @@ const func_link_t* lookup_func_link(const value_backend_t& backend, runtime_valu
 	return nullptr;
 }
 
-const func_link_t& lookup_func_link_required(const value_backend_t& backend, runtime_value_t value){
-	const auto result = lookup_func_link(backend, value);
+const func_link_t& lookup_func_link_by_pod_required(const value_backend_t& backend, rt_pod_t value){
+	const auto result = lookup_func_link_by_pod(backend, value);
 	if(result == nullptr){
 		throw std::runtime_error("");
 	}
 	return *result;
 }
+
+
+
 
 
 
@@ -1876,7 +1856,7 @@ bool detect_leaks(const value_backend_t& backend){
 }
 
 
-bool check_invariant(const value_backend_t& backend, runtime_value_t value, const type_t& type){
+bool check_invariant(const value_backend_t& backend, rt_pod_t value, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -1919,7 +1899,7 @@ bool check_invariant(const value_backend_t& backend, runtime_value_t value, cons
 			QUARK_ASSERT(a.check_invariant());
 		}
 		else{
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 	}
 	else{
@@ -1936,10 +1916,10 @@ struct structure_t {
 	std::vector<structure_t> children;
 };
 
-static structure_t get_value_structure(const value_backend_t& backend, runtime_value_t value, const type_t& type0);
+static structure_t get_value_structure(const value_backend_t& backend, rt_pod_t value, const type_t& type0);
 
 //??? make GP traversal function for values.
-static std::vector<structure_t> get_value_structure_children(const value_backend_t& backend, runtime_value_t value, const type_t& type0){
+static std::vector<structure_t> get_value_structure_children(const value_backend_t& backend, rt_pod_t value, const type_t& type0){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(check_invariant(backend, value, type0));
 	QUARK_ASSERT(type0.check_invariant());
@@ -1958,7 +1938,7 @@ static std::vector<structure_t> get_value_structure_children(const value_backend
 			const auto& member_peek = peek2(backend.types, e._type);
 			if(is_rc_value(backend.types, member_peek)){
 				const auto offset = struct_layout.second.members[member_index].offset;
-				const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
+				const auto member_ptr = reinterpret_cast<const rt_pod_t*>(struct_base_ptr + offset);
 				const auto m = get_value_structure(backend, *member_ptr, member_peek);
 				children.push_back(m);
 			}
@@ -2024,7 +2004,7 @@ static std::vector<structure_t> get_value_structure_children(const value_backend
 		return {};
 	}
 }
-static structure_t get_value_structure(const value_backend_t& backend, runtime_value_t value, const type_t& type0){
+static structure_t get_value_structure(const value_backend_t& backend, rt_pod_t value, const type_t& type0){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(check_invariant(backend, value, type0));
 	QUARK_ASSERT(type0.check_invariant());
@@ -2090,7 +2070,7 @@ static void trace_value_backend_dynamic__internal(const value_backend_t& backend
 		const uint64_t data3 = e.alloc_ptr->data[3];
 */
 
-		const auto value = runtime_value_t{ .gp_ptr = e.alloc_ptr };
+		const auto value = rt_pod_t{ .gp_ptr = e.alloc_ptr };
 		std::string value_summary_str = get_value_structure_str(backend, get_value_structure(backend, value, debug_value_type));
 
 		const auto is_rc = is_rc_value(backend.types, debug_value_type);
@@ -2149,7 +2129,7 @@ const std::pair<type_t, struct_layout_t>& find_struct_layout(const value_backend
 }
 
 //??? keep hash from struct-type-ID -> layout
-std::pair<runtime_value_t, type_t> load_struct_member(
+std::pair<rt_pod_t, type_t> load_struct_member(
 	const value_backend_t& backend,
 	uint8_t* data_ptr,
 	const type_t& struct_type,
@@ -2165,7 +2145,7 @@ std::pair<runtime_value_t, type_t> load_struct_member(
 	QUARK_ASSERT(member_index >= 0 && member_index < struct_layout_info.second.members.size());
 	const auto& member = struct_layout_info.second.members[member_index];
 	void* member_ptr = data_ptr + member.offset;
-	const auto value = *(runtime_value_t*)member_ptr;
+	const auto value = *(rt_pod_t*)member_ptr;
 
 	return { value, member.type };
 
@@ -2194,7 +2174,7 @@ value_backend_t make_test_value_backend(){
 
 
 
-void retain_vector_carray(value_backend_t& backend, runtime_value_t vec, type_t type){
+void retain_vector_carray(value_backend_t& backend, rt_pod_t vec, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -2208,7 +2188,7 @@ void retain_vector_carray(value_backend_t& backend, runtime_value_t vec, type_t 
 
 
 
-void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, type_t type){
+void retain_dict_cppmap(value_backend_t& backend, rt_pod_t dict, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dict.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -2219,7 +2199,7 @@ void retain_dict_cppmap(value_backend_t& backend, runtime_value_t dict, type_t t
 
 	QUARK_ASSERT(backend.check_invariant());
 }
-void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, type_t type){
+void retain_dict_hamt(value_backend_t& backend, rt_pod_t dict, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dict.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -2231,7 +2211,7 @@ void retain_dict_hamt(value_backend_t& backend, runtime_value_t dict, type_t typ
 	QUARK_ASSERT(backend.check_invariant());
 }
 
-void retain_struct(value_backend_t& backend, runtime_value_t s, type_t type){
+void retain_struct(value_backend_t& backend, rt_pod_t s, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(check_invariant(backend, s, type));
 	QUARK_ASSERT(type.check_invariant());
@@ -2243,7 +2223,7 @@ void retain_struct(value_backend_t& backend, runtime_value_t s, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 }
 
-void retain_json(value_backend_t& backend, runtime_value_t s){
+void retain_json(value_backend_t& backend, rt_pod_t s){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(check_invariant(backend, s, type_t::make_json()));
 
@@ -2252,7 +2232,7 @@ void retain_json(value_backend_t& backend, runtime_value_t s){
 	QUARK_ASSERT(backend.check_invariant());
 }
 
-void retain_value(value_backend_t& backend, runtime_value_t value, type_t type){
+void retain_value(value_backend_t& backend, rt_pod_t value, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -2288,7 +2268,7 @@ void retain_value(value_backend_t& backend, runtime_value_t value, type_t type){
 			retain_struct(backend, value, type);
 		}
 		else{
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 	}
 
@@ -2298,7 +2278,7 @@ void retain_value(value_backend_t& backend, runtime_value_t value, type_t type){
 
 
 
-void release_dict_cppmap(value_backend_t& backend, runtime_value_t dict0, type_t type){
+void release_dict_cppmap(value_backend_t& backend, rt_pod_t dict0, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dict0.check_invariant());
 	QUARK_ASSERT(peek2(backend.types, type).is_dict());
@@ -2321,7 +2301,7 @@ void release_dict_cppmap(value_backend_t& backend, runtime_value_t dict0, type_t
 	QUARK_ASSERT(backend.check_invariant());
 }
 
-void release_dict_hamt(value_backend_t& backend, runtime_value_t dict0, type_t type){
+void release_dict_hamt(value_backend_t& backend, rt_pod_t dict0, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dict0.check_invariant());
 	QUARK_ASSERT(peek2(backend.types, type).is_dict());
@@ -2344,7 +2324,7 @@ void release_dict_hamt(value_backend_t& backend, runtime_value_t dict0, type_t t
 	QUARK_ASSERT(backend.check_invariant());
 }
 
-void release_dict(value_backend_t& backend, runtime_value_t dict, type_t type){
+void release_dict(value_backend_t& backend, rt_pod_t dict, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dict.check_invariant());
 	QUARK_ASSERT(peek2(backend.types, type).is_dict());
@@ -2356,13 +2336,13 @@ void release_dict(value_backend_t& backend, runtime_value_t dict, type_t type){
 		release_dict_hamt(backend, dict, type);
 	}
 	else{
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 
 	QUARK_ASSERT(backend.check_invariant());
 }
 
-void release_vector_carray_pod(value_backend_t& backend, runtime_value_t vec, type_t type){
+void release_vector_carray_pod(value_backend_t& backend, rt_pod_t vec, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -2382,7 +2362,7 @@ void release_vector_carray_pod(value_backend_t& backend, runtime_value_t vec, ty
 	QUARK_ASSERT(backend.check_invariant());
 }
 
-void release_vector_carray_nonpod(value_backend_t& backend, runtime_value_t vec, type_t type){
+void release_vector_carray_nonpod(value_backend_t& backend, rt_pod_t vec, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -2406,7 +2386,7 @@ void release_vector_carray_nonpod(value_backend_t& backend, runtime_value_t vec,
 	QUARK_ASSERT(backend.check_invariant());
 }
 
-void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_value_t vec, type_t type){
+void release_vector_hamt_elements_internal(value_backend_t& backend, rt_pod_t vec, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -2421,7 +2401,7 @@ void release_vector_hamt_elements_internal(value_backend_t& backend, runtime_val
 	QUARK_ASSERT(backend.check_invariant());
 }
 
-void release_vec(value_backend_t& backend, runtime_value_t vec, type_t type){
+void release_vec(value_backend_t& backend, rt_pod_t vec, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -2455,14 +2435,14 @@ void release_vec(value_backend_t& backend, runtime_value_t vec, type_t type){
 		}
 	}
 	else{
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 
 	QUARK_ASSERT(backend.check_invariant());
 }
 
 //??? prep data, inluding member types -- so we don't need to acces struct_def and its type_t:s.
-void release_struct(value_backend_t& backend, runtime_value_t str, type_t type){
+void release_struct(value_backend_t& backend, rt_pod_t str, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(str.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -2481,7 +2461,7 @@ void release_struct(value_backend_t& backend, runtime_value_t str, type_t type){
 			const auto member_type = e._type;
 			if(is_rc_value(backend.types, member_type)){
 				const auto offset = struct_layout.second.members[member_index].offset;
-				const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
+				const auto member_ptr = reinterpret_cast<const rt_pod_t*>(struct_base_ptr + offset);
 				release_value(backend, *member_ptr, member_type);
 			}
 			member_index++;
@@ -2492,7 +2472,7 @@ void release_struct(value_backend_t& backend, runtime_value_t str, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 }
 
-void release_json(value_backend_t& backend, runtime_value_t s){
+void release_json(value_backend_t& backend, rt_pod_t s){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(s.check_invariant());
 	QUARK_ASSERT(check_invariant(backend, s, type_t::make_json()));
@@ -2508,7 +2488,7 @@ void release_json(value_backend_t& backend, runtime_value_t s){
 }
 
 
-void release_value(value_backend_t& backend, runtime_value_t value, type_t type){
+void release_value(value_backend_t& backend, rt_pod_t value, type_t type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -2555,10 +2535,10 @@ void release_value(value_backend_t& backend, runtime_value_t value, type_t type)
 
 
 
-//////////////////////////////////////////		runtime_value_t
+//////////////////////////////////////////		rt_pod_t
 
 
-runtime_value_t alloc_carray_8bit(value_backend_t& backend, const uint8_t data[], std::size_t count){
+rt_pod_t alloc_carray_8bit(value_backend_t& backend, const uint8_t data[], std::size_t count){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(data != nullptr || count == 0);
 
@@ -2585,7 +2565,7 @@ runtime_value_t alloc_carray_8bit(value_backend_t& backend, const uint8_t data[]
 	return result;
 }
 
-runtime_value_t to_runtime_string2(value_backend_t& backend, const std::string& s){
+rt_pod_t to_runtime_string2(value_backend_t& backend, const std::string& s){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const uint8_t* p = reinterpret_cast<const uint8_t*>(s.c_str());
@@ -2612,7 +2592,7 @@ QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
 
 
 // backend not used???
-std::string from_runtime_string2(const value_backend_t& backend, runtime_value_t encoded_value){
+std::string from_runtime_string2(const value_backend_t& backend, rt_pod_t encoded_value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(check_invariant(backend, encoded_value, type_t::make_string()));
 
@@ -2647,7 +2627,7 @@ QUARK_TEST("VECTOR_CARRAY_T", "", "", ""){
 	QUARK_VERIFY(r == "hello, world!");
 }
 
-runtime_value_t to_runtime_struct(value_backend_t& backend, const struct_t& exact_type, const value_t& value){
+rt_pod_t to_runtime_struct(value_backend_t& backend, const struct_t& exact_type, const value_t& value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(value.get_type().is_struct());
@@ -2670,7 +2650,7 @@ runtime_value_t to_runtime_struct(value_backend_t& backend, const struct_t& exac
 	return s;
 }
 
-value_t from_runtime_struct(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
+value_t from_runtime_struct(const value_backend_t& backend, const rt_pod_t encoded_value, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 //	QUARK_ASSERT(check_invariant(backend, encoded_value, type));
 	QUARK_ASSERT(type.check_invariant());
@@ -2686,7 +2666,7 @@ value_t from_runtime_struct(const value_backend_t& backend, const runtime_value_
 	int member_index = 0;
 	for(const auto& e: struct_def._members){
 		const auto offset = struct_layout.second.members[member_index].offset;
-		const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
+		const auto member_ptr = reinterpret_cast<const rt_pod_t*>(struct_base_ptr + offset);
 		const auto member_value = from_runtime_value2(backend, *member_ptr, e._type);
 		members.push_back(member_value);
 		member_index++;
@@ -2695,7 +2675,7 @@ value_t from_runtime_struct(const value_backend_t& backend, const runtime_value_
 }
 
 
-runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t& value){
+rt_pod_t to_runtime_vector(value_backend_t& backend, const value_t& value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(value.get_type().is_vector());
@@ -2723,7 +2703,7 @@ runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t& value
 		return result;
 	}
 	else if(is_vector_hamt(backend.types, backend.config, type)){
-		std::vector<runtime_value_t> temp;
+		std::vector<rt_pod_t> temp;
 		for(int i = 0 ; i < count ; i++){
 			const auto& e = v0[i];
 			const auto a = to_runtime_value2(backend, e);
@@ -2734,12 +2714,11 @@ runtime_value_t to_runtime_vector(value_backend_t& backend, const value_t& value
 		return result;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
-value_t from_runtime_vector(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
+value_t from_runtime_vector(const value_backend_t& backend, const rt_pod_t encoded_value, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(check_invariant(backend, encoded_value, type));
 	QUARK_ASSERT(type.check_invariant());
@@ -2778,12 +2757,11 @@ value_t from_runtime_vector(const value_backend_t& backend, const runtime_value_
 		return val;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
-runtime_value_t to_runtime_dict(value_backend_t& backend, const dict_t& exact_type, const value_t& value){
+rt_pod_t to_runtime_dict(value_backend_t& backend, const dict_t& exact_type, const value_t& value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(value.get_type().is_dict());
@@ -2821,12 +2799,11 @@ runtime_value_t to_runtime_dict(value_backend_t& backend, const dict_t& exact_ty
 		return result;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
-value_t from_runtime_dict(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
+value_t from_runtime_dict(const value_backend_t& backend, const rt_pod_t encoded_value, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(check_invariant(backend, encoded_value, type));
 	QUARK_ASSERT(type.check_invariant());
@@ -2861,12 +2838,11 @@ value_t from_runtime_dict(const value_backend_t& backend, const runtime_value_t 
 		return val;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
-runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value){
+rt_pod_t to_runtime_value2(value_backend_t& backend, const value_t& value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 
@@ -2876,54 +2852,53 @@ runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value
 		value_backend_t& backend;
 		const value_t& value;
 
-		runtime_value_t operator()(const undefined_t& e) const{
+		rt_pod_t operator()(const undefined_t& e) const{
 			return make_uninitialized_magic();
 		}
-		runtime_value_t operator()(const any_t& e) const{
+		rt_pod_t operator()(const any_t& e) const{
 			return make_uninitialized_magic();
 		}
 
-		runtime_value_t operator()(const void_t& e) const{
+		rt_pod_t operator()(const void_t& e) const{
 			return make_uninitialized_magic();
 		}
-		runtime_value_t operator()(const bool_t& e) const{
+		rt_pod_t operator()(const bool_t& e) const{
 			return make_runtime_bool(value.get_bool_value());
 		}
-		runtime_value_t operator()(const int_t& e) const{
+		rt_pod_t operator()(const int_t& e) const{
 			return make_runtime_int(value.get_int_value());
 		}
-		runtime_value_t operator()(const double_t& e) const{
+		rt_pod_t operator()(const double_t& e) const{
 			return make_runtime_double(value.get_double_value());
 		}
-		runtime_value_t operator()(const string_t& e) const{
+		rt_pod_t operator()(const string_t& e) const{
 			return to_runtime_string2(backend, value.get_string_value());
 		}
 
-		runtime_value_t operator()(const json_type_t& e) const{
+		rt_pod_t operator()(const json_type_t& e) const{
 			return alloc_json(backend.heap, value.get_json());
 		}
-		runtime_value_t operator()(const typeid_type_t& e) const{
+		rt_pod_t operator()(const typeid_type_t& e) const{
 			const auto t0 = value.get_typeid_value();
 			return make_runtime_typeid(t0);
 		}
 
-		runtime_value_t operator()(const struct_t& e) const{
+		rt_pod_t operator()(const struct_t& e) const{
 			return to_runtime_struct(backend, e, value);
 		}
-		runtime_value_t operator()(const vector_t& e) const{
+		rt_pod_t operator()(const vector_t& e) const{
 			return to_runtime_vector(backend, value);
 		}
-		runtime_value_t operator()(const dict_t& e) const{
+		rt_pod_t operator()(const dict_t& e) const{
 			return to_runtime_dict(backend, e, value);
 		}
-		runtime_value_t operator()(const function_t& e) const{
-			const auto id = find_function_by_name0(backend, value.get_function_value());
-			return runtime_value_t { .function_link_id = id };
+		rt_pod_t operator()(const function_t& e) const{
+			return pod_from_symbol(backend, value.get_function_value());
 		}
-		runtime_value_t operator()(const symbol_ref_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+		rt_pod_t operator()(const symbol_ref_t& e) const {
+			quark::throw_defective_request();
 		}
-		runtime_value_t operator()(const named_type_t& e) const {
+		rt_pod_t operator()(const named_type_t& e) const {
 			const auto temp = value_t::replace_logical_type(value, peek2(backend.types, value.get_type()));
 			const auto temp2 = to_runtime_value2(backend, temp);
 			return temp2;
@@ -2937,25 +2912,25 @@ runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value
 
 
 
-value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_t encoded_value, const type_t& type){
+value_t from_runtime_value2(const value_backend_t& backend, const rt_pod_t encoded_value, const type_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(check_invariant(backend, encoded_value, type));
 	QUARK_ASSERT(type.check_invariant());
 
 	struct visitor_t {
 		const value_backend_t& backend;
-		const runtime_value_t& encoded_value;
+		const rt_pod_t& encoded_value;
 		const type_t& type;
 
 		value_t operator()(const undefined_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		value_t operator()(const any_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 
 		value_t operator()(const void_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		value_t operator()(const bool_t& e) const{
 			return value_t::make_bool(encoded_value.bool_value == 0 ? false : true);
@@ -2991,11 +2966,14 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 			return from_runtime_dict(backend, encoded_value, type);
 		}
 		value_t operator()(const function_t& e) const{
-			const auto func_link_ptr = lookup_func_link(backend, encoded_value);
-			return value_t::make_function_value(backend.types, type, func_link_ptr ? func_link_ptr->module_symbol : k_no_module_symbol);
+			const auto func_link_ptr = lookup_func_link_by_pod(backend, encoded_value);
+			return value_t::make_function_value(
+				backend.types, type,
+				func_link_ptr ? func_link_ptr->module_symbol : k_no_module_symbol
+			);
 		}
 		value_t operator()(const symbol_ref_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			quark::throw_defective_request();
 		}
 		value_t operator()(const named_type_t& e) const {
 			const auto result = from_runtime_value2(backend, encoded_value, e.destination_type);
@@ -3011,7 +2989,7 @@ value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_
 //////////////////////////////////////////		value_t vs rt_value_t
 
 
-static runtime_value_t make_runtime_non_rc(const value_t& value){
+static rt_pod_t make_runtime_non_rc(const value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 
 	const auto& type = value.get_type();
@@ -3040,12 +3018,11 @@ static runtime_value_t make_runtime_non_rc(const value_t& value){
 		return make_runtime_typeid(t0);
 	}
 	else if(type.is_json() && value.get_json().is_null()){
-		QUARK_ASSERT(false);
-		return runtime_value_t { .json_ptr = nullptr };
+		quark::throw_defective_request();
+		return rt_pod_t { .json_ptr = nullptr };
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 rt_value_t make_non_rc(const value_t& value){
@@ -3071,7 +3048,7 @@ rt_value_t value_to_rt(value_backend_t& backend, const value_t& value){
 	return rt_value_t(backend, value.get_type(), a, rt_value_t::rc_mode::adopt);
 }
 
-rt_value_t make_rt_value(value_backend_t& backend, runtime_value_t value, const type_t& type, rt_value_t::rc_mode mode){
+rt_value_t make_rt_value(value_backend_t& backend, rt_pod_t value, const type_t& type, rt_value_t::rc_mode mode){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -3079,7 +3056,7 @@ rt_value_t make_rt_value(value_backend_t& backend, runtime_value_t value, const 
 	return rt_value_t(backend, type, value, mode);
 }
 
-runtime_value_t get_rt_value(value_backend_t& backend, const rt_value_t& value){
+rt_pod_t get_rt_value(value_backend_t& backend, const rt_value_t& value){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 
@@ -3097,7 +3074,7 @@ runtime_value_t get_rt_value(value_backend_t& backend, const rt_value_t& value){
 
 
 
-static VECTOR_CARRAY_T* unpack_vector_carray_arg(const value_backend_t& backend, runtime_value_t arg, runtime_type_t arg_type){
+static VECTOR_CARRAY_T* unpack_vector_carray_arg(const value_backend_t& backend, rt_pod_t arg, rt_type_t arg_type){
 	QUARK_ASSERT(backend.check_invariant());
 #if DEBUG
 	const auto& type = lookup_type_ref(backend, arg_type);
@@ -3109,7 +3086,7 @@ static VECTOR_CARRAY_T* unpack_vector_carray_arg(const value_backend_t& backend,
 	return arg.vector_carray_ptr;
 }
 
-static DICT_CPPMAP_T* unpack_dict_cppmap_arg(const value_backend_t& backend, runtime_value_t arg, runtime_type_t arg_type){
+static DICT_CPPMAP_T* unpack_dict_cppmap_arg(const value_backend_t& backend, rt_pod_t arg, rt_type_t arg_type){
 	QUARK_ASSERT(backend.check_invariant());
 #if DEBUG
 	const auto& type = lookup_type_ref(backend, arg_type);
@@ -3354,8 +3331,7 @@ static int bc_compare_dicts_obj(const types_t& types, const immer::map<std::stri
 	else if(left_it != left_end_it && right_it == right_end_it){
 		return -1;
 	}
-	QUARK_ASSERT(false)
-	quark::throw_exception();
+	quark::throw_defective_request()
 }
 
 //??? make template.
@@ -3393,8 +3369,7 @@ static int bc_compare_dicts_bool(const immer::map<std::string, bc_inplace_value_
 	else if(left_it != left_end_it && right_it == right_end_it){
 		return -1;
 	}
-	QUARK_ASSERT(false)
-	quark::throw_exception();
+	quark::throw_defective_request()
 }
 
 static int bc_compare_dicts_int(const immer::map<std::string, bc_inplace_value_t>& left, const immer::map<std::string, bc_inplace_value_t>& right){
@@ -3431,8 +3406,7 @@ static int bc_compare_dicts_int(const immer::map<std::string, bc_inplace_value_t
 	else if(left_it != left_end_it && right_it == right_end_it){
 		return -1;
 	}
-	QUARK_ASSERT(false)
-	quark::throw_exception();
+	quark::throw_defective_request()
 }
 
 static int bc_compare_dicts_double(const immer::map<std::string, bc_inplace_value_t>& left, const immer::map<std::string, bc_inplace_value_t>& right){
@@ -3469,8 +3443,7 @@ static int bc_compare_dicts_double(const immer::map<std::string, bc_inplace_valu
 	else if(left_it != left_end_it && right_it == right_end_it){
 		return -1;
 	}
-	QUARK_ASSERT(false)
-	quark::throw_exception();
+	quark::throw_defective_request();
 }
 
 static int bc_compare_jsons(const json_t& lhs, const json_t& rhs){
@@ -3486,14 +3459,10 @@ static int bc_compare_jsons(const json_t& lhs, const json_t& rhs){
 		}
 		else{
 			if(lhs.is_object()){
-				//??? NOT IMPLEMENTED YET
-				QUARK_ASSERT(false);
-				quark::throw_exception();
+				quark::throw_feature_not_implemented_yet();
 			}
 			else if(lhs.is_array()){
-				//??? NOT IMPLEMENTED YET
-				QUARK_ASSERT(false);
-				quark::throw_exception();
+				quark::throw_feature_not_implemented_yet();
 			}
 			else if(lhs.is_string()){
 				const auto diff = std::strcmp(lhs.get_string().c_str(), rhs.get_string().c_str());
@@ -3514,8 +3483,7 @@ static int bc_compare_jsons(const json_t& lhs, const json_t& rhs){
 				return 0;
 			}
 			else{
-				QUARK_ASSERT(false);
-				quark::throw_exception();
+				quark::throw_defective_request();
 			}
 		}
 	}
@@ -3622,12 +3590,11 @@ int compare_value_true_deep(value_backend_t& backend, const rt_value_t& left, co
 		}
 	}
 	else if(peek2(types, type).is_function()){
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 		return 0;
 	}
 	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
+		quark::throw_defective_request();
 	}
 }
 #endif
@@ -3640,7 +3607,7 @@ int compare_value_true_deep(value_backend_t& backend, const rt_value_t& left, co
 
 
 
-int compare_values(value_backend_t& backend, int64_t op, const runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
+int compare_values(value_backend_t& backend, int64_t op, const rt_type_t type, rt_pod_t lhs, rt_pod_t rhs){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& value_type = lookup_type_ref(backend, type);
@@ -3671,12 +3638,11 @@ int compare_values(value_backend_t& backend, int64_t op, const runtime_type_t ty
 		return result != 0 ? 1 : 0;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
-runtime_value_t update_element__vector(value_backend_t& backend, runtime_value_t obj1, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value){
+rt_pod_t update_element__vector(value_backend_t& backend, rt_pod_t obj1, rt_type_t coll_type, rt_pod_t index, rt_pod_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& types = backend.types;
@@ -3699,11 +3665,11 @@ runtime_value_t update_element__vector(value_backend_t& backend, runtime_value_t
 		}
 	}
 	else{
-		UNSUPPORTED();
+		quark::throw_defective_request();
 	}
 }
 
-runtime_value_t update_dict(value_backend_t& backend, runtime_value_t obj1, runtime_type_t coll_type, runtime_value_t key_value, runtime_value_t value){
+rt_pod_t update_dict(value_backend_t& backend, rt_pod_t obj1, rt_type_t coll_type, rt_pod_t key_value, rt_pod_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto backend_mode = backend.config.dict_backend_mode;
@@ -3714,7 +3680,7 @@ runtime_value_t update_dict(value_backend_t& backend, runtime_value_t obj1, runt
 		return update__dict_hamt(backend, obj1, coll_type, key_value, value);
 	}
 	else{
-		UNSUPPORTED();
+		quark::throw_defective_request();
 	}
 }
 
@@ -3722,7 +3688,7 @@ runtime_value_t update_dict(value_backend_t& backend, runtime_value_t obj1, runt
 
 
 
-runtime_value_t update_element__vector_carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t index, runtime_value_t value){
+rt_pod_t update_element__vector_carray(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, rt_pod_t index, rt_pod_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto vec = unpack_vector_carray_arg(backend, coll_value, coll_type);
@@ -3759,7 +3725,7 @@ runtime_value_t update_element__vector_carray(value_backend_t& backend, runtime_
 }
 
 
-const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_value_t value){
+const rt_pod_t update__dict_cppmap(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, rt_pod_t key_value, rt_pod_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
 	//??? move to compile time
@@ -3786,7 +3752,7 @@ const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_valu
 	return dict2;
 }
 
-const runtime_value_t update__dict_hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_value_t value){
+const rt_pod_t update__dict_hamt(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, rt_pod_t key_value, rt_pod_t value){
 	QUARK_ASSERT(backend.check_invariant());
 
 	//??? move to compile time
@@ -3883,7 +3849,7 @@ static rt_value_t update_struct_member_deep(interpreter_t& vm, const rt_value_t&
 */
 
 //??? Slow
-runtime_value_t update_struct_member(value_backend_t& backend, runtime_value_t struct_value, const type_t& struct_type0, int member_index, runtime_value_t value, const type_t& member_type){
+rt_pod_t update_struct_member(value_backend_t& backend, rt_pod_t struct_value, const type_t& struct_type0, int member_index, rt_pod_t value, const type_t& member_type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(peek2(backend.types, struct_type0).is_struct());
@@ -3911,7 +3877,7 @@ runtime_value_t update_struct_member(value_backend_t& backend, runtime_value_t s
 
 
 
-runtime_value_t subset_vector_range__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end){
+rt_pod_t subset_vector_range__string(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, uint64_t start, uint64_t end){
 	QUARK_ASSERT(backend.check_invariant());
 
 	if(start < 0 || end < 0){
@@ -3929,7 +3895,7 @@ runtime_value_t subset_vector_range__string(value_backend_t& backend, runtime_va
 	return result;
 }
 
-runtime_value_t subset_vector_range__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end){
+rt_pod_t subset_vector_range__carray(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, uint64_t start, uint64_t end){
 	QUARK_ASSERT(backend.check_invariant());
 
 	if(start < 0 || end < 0){
@@ -3964,7 +3930,7 @@ runtime_value_t subset_vector_range__carray(value_backend_t& backend, runtime_va
 	return vec2;
 }
 
-runtime_value_t subset_vector_range__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, uint64_t start, uint64_t end){
+rt_pod_t subset_vector_range__hamt(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, uint64_t start, uint64_t end){
 	QUARK_ASSERT(backend.check_invariant());
 
 	if(start < 0 || end < 0){
@@ -4000,7 +3966,7 @@ runtime_value_t subset_vector_range__hamt(value_backend_t& backend, runtime_valu
 
 
 //	assert(subset("abc", 1, 3) == "bc");
-runtime_value_t subset_vector_range(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, int64_t start, int64_t end){
+rt_pod_t subset_vector_range(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, int64_t start, int64_t end){
 	QUARK_ASSERT(backend.check_invariant());
 
 	//??? Move runtime checks like this to the client. Assert here.
@@ -4039,7 +4005,7 @@ static void check_replace_indexes(std::size_t start, std::size_t end){
 	}
 }
 
-runtime_value_t replace_vector_range__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t value0, runtime_type_t replacement_type){
+rt_pod_t replace_vector_range__string(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, size_t start, size_t end, rt_pod_t value0, rt_type_t replacement_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	check_replace_indexes(start, end);
@@ -4068,7 +4034,7 @@ runtime_value_t replace_vector_range__string(value_backend_t& backend, runtime_v
 	return result2;
 }
 
-runtime_value_t replace_vector_range__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t value0, runtime_type_t replacement_type){
+rt_pod_t replace_vector_range__carray(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, size_t start, size_t end, rt_pod_t value0, rt_type_t replacement_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	check_replace_indexes(start, end);
@@ -4102,7 +4068,7 @@ runtime_value_t replace_vector_range__carray(value_backend_t& backend, runtime_v
 
 	return vec2;
 }
-runtime_value_t replace_vector_range__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, size_t start, size_t end, runtime_value_t value0, runtime_type_t replacement_type){
+rt_pod_t replace_vector_range__hamt(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, size_t start, size_t end, rt_pod_t value0, rt_type_t replacement_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	check_replace_indexes(start, end);
@@ -4151,7 +4117,7 @@ runtime_value_t replace_vector_range__hamt(value_backend_t& backend, runtime_val
 
 
 //	assert(replace("One ring to rule them all", 4, 7, "rabbit") == "One rabbit to rule them all");
-runtime_value_t replace_vector_range(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, int64_t start, int64_t end, runtime_value_t value0, runtime_type_t replacement_type){
+rt_pod_t replace_vector_range(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, int64_t start, int64_t end, rt_pod_t value0, rt_type_t replacement_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	if(start < 0 || end < 0){
@@ -4183,7 +4149,7 @@ runtime_value_t replace_vector_range(value_backend_t& backend, runtime_value_t c
 
 
 
-int64_t find__string(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type){
+int64_t find__string(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, const rt_pod_t value, rt_type_t value_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& type1 = lookup_type_ref(backend, value_type);
@@ -4196,7 +4162,7 @@ int64_t find__string(value_backend_t& backend, runtime_value_t coll_value, runti
 	const auto result = pos == std::string::npos ? -1 : static_cast<int64_t>(pos);
 	return result;
 }
-int64_t find__carray(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type){
+int64_t find__carray(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, const rt_pod_t value, rt_type_t value_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& type0 = lookup_type_ref(backend, coll_type);
@@ -4210,7 +4176,7 @@ int64_t find__carray(value_backend_t& backend, runtime_value_t coll_value, runti
 	const auto it = std::find_if(
 		vec->get_element_ptr(),
 		vec->get_element_ptr() + vec->get_element_count(),
-		[&] (const runtime_value_t& e) {
+		[&] (const rt_pod_t& e) {
 			return compare_values(backend, static_cast<int64_t>(expression_type::k_logical_equal), value_type, e, value) == 1;
 		}
 	);
@@ -4222,7 +4188,7 @@ int64_t find__carray(value_backend_t& backend, runtime_value_t coll_value, runti
 		return pos;
 	}
 }
-int64_t find__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type){
+int64_t find__hamt(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, const rt_pod_t value, rt_type_t value_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& type0 = lookup_type_ref(backend, coll_type);
@@ -4247,7 +4213,7 @@ int64_t find__hamt(value_backend_t& backend, runtime_value_t coll_value, runtime
 }
 
 
-int64_t find_vector_element(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, const runtime_value_t value, runtime_type_t value_type){
+int64_t find_vector_element(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, const rt_pod_t value, rt_type_t value_type){
 	const auto& type0 = lookup_type_ref(backend, coll_type);
 	if(peek2(backend.types, type0).is_string()){
 		return find__string(backend, coll_value, coll_type, value, value_type);
@@ -4260,13 +4226,13 @@ int64_t find_vector_element(value_backend_t& backend, runtime_value_t coll_value
 	}
 	else{
 		//	No other types allowed.
-		UNSUPPORTED();
+		quark::throw_defective_request();
 	}
 }
 
 //??? use rt_value_t as primitive for all features.
 
-bool exists_dict_value(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t value, runtime_type_t value_type){
+bool exists_dict_value(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, rt_pod_t value, rt_type_t value_type){
 	const auto& types = backend.types;
 	const auto& type0 = lookup_type_ref(backend, coll_type);
 //	const auto& type1 = lookup_type_ref(backend, value_type);
@@ -4289,12 +4255,11 @@ bool exists_dict_value(value_backend_t& backend, runtime_value_t coll_value, run
 		return it != nullptr ? 1 : 0;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
-runtime_value_t erase_dict_value(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type, runtime_value_t key_value, runtime_type_t key_type){
+rt_pod_t erase_dict_value(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type, rt_pod_t key_value, rt_type_t key_type){
 	const auto& types = backend.types;
 	const auto& type0 = lookup_type_ref(backend, coll_type);
 	const auto& type1 = lookup_type_ref(backend, key_type);
@@ -4343,14 +4308,13 @@ runtime_value_t erase_dict_value(value_backend_t& backend, runtime_value_t coll_
 		return dict2;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
 //??? optimize prio 1
 //??? We need to figure out the return type *again*, knowledge we have already in semast.
-runtime_value_t get_keys(value_backend_t& backend, runtime_value_t coll_value, runtime_type_t coll_type){
+rt_pod_t get_keys(value_backend_t& backend, rt_pod_t coll_value, rt_type_t coll_type){
 	const auto& types = backend.types;
 	const auto& type0 = lookup_type_ref(backend, coll_type);
 	QUARK_ASSERT(peek2(types, type0).is_dict());
@@ -4363,8 +4327,7 @@ runtime_value_t get_keys(value_backend_t& backend, runtime_value_t coll_value, r
 			return get_keys__cppmap_hamt(backend, coll_value, coll_type);
 		}
 		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 	}
 	else if(is_dict_hamt(types, backend.config, type0)){
@@ -4375,13 +4338,11 @@ runtime_value_t get_keys(value_backend_t& backend, runtime_value_t coll_value, r
 			return get_keys__hamtmap_hamt(backend, coll_value, coll_type);
 		}
 		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -4389,7 +4350,7 @@ runtime_value_t get_keys(value_backend_t& backend, runtime_value_t coll_value, r
 
 
 ///??? Split into two passes so we don't get 2 x 2. Generate code mixup? Have one function with two checks?
-runtime_value_t get_keys__cppmap_carray(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type){
+rt_pod_t get_keys__cppmap_carray(value_backend_t& backend, rt_pod_t dict_value, rt_type_t dict_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& type0 = lookup_type_ref(backend, dict_type);
@@ -4412,7 +4373,7 @@ runtime_value_t get_keys__cppmap_carray(value_backend_t& backend, runtime_value_
 	}
 	return result_vec;
 }
-runtime_value_t get_keys__cppmap_hamt(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type){
+rt_pod_t get_keys__cppmap_hamt(value_backend_t& backend, rt_pod_t dict_value, rt_type_t dict_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& type0 = lookup_type_ref(backend, dict_type);
@@ -4437,7 +4398,7 @@ runtime_value_t get_keys__cppmap_hamt(value_backend_t& backend, runtime_value_t 
 }
 
 
-runtime_value_t get_keys__hamtmap_carray(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type){
+rt_pod_t get_keys__hamtmap_carray(value_backend_t& backend, rt_pod_t dict_value, rt_type_t dict_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& type0 = lookup_type_ref(backend, dict_type);
@@ -4460,7 +4421,7 @@ runtime_value_t get_keys__hamtmap_carray(value_backend_t& backend, runtime_value
 	}
 	return result_vec;
 }
-runtime_value_t get_keys__hamtmap_hamt(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type){
+rt_pod_t get_keys__hamtmap_hamt(value_backend_t& backend, rt_pod_t dict_value, rt_type_t dict_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto& type0 = lookup_type_ref(backend, dict_type);
@@ -4495,7 +4456,7 @@ runtime_value_t get_keys__hamtmap_hamt(value_backend_t& backend, runtime_value_t
 
 
 
-runtime_value_t concat_strings(value_backend_t& backend, const runtime_value_t& lhs, const runtime_value_t& rhs){
+rt_pod_t concat_strings(value_backend_t& backend, const rt_pod_t& lhs, const rt_pod_t& rhs){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(lhs.check_invariant());
 	QUARK_ASSERT(rhs.check_invariant());
@@ -4504,7 +4465,7 @@ runtime_value_t concat_strings(value_backend_t& backend, const runtime_value_t& 
 	return to_runtime_string2(backend, result);
 }
 
-runtime_value_t concat_vector_carray(value_backend_t& backend, const type_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs){
+rt_pod_t concat_vector_carray(value_backend_t& backend, const type_t& type, const rt_pod_t& lhs, const rt_pod_t& rhs){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(lhs.check_invariant());
@@ -4544,7 +4505,7 @@ runtime_value_t concat_vector_carray(value_backend_t& backend, const type_t& typ
 	return result;
 }
 
-runtime_value_t concat_vector_hamt(value_backend_t& backend, const type_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs){
+rt_pod_t concat_vector_hamt(value_backend_t& backend, const type_t& type, const rt_pod_t& lhs, const rt_pod_t& rhs){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(lhs.check_invariant());
@@ -4588,7 +4549,7 @@ runtime_value_t concat_vector_hamt(value_backend_t& backend, const type_t& type,
 }
 
 
-runtime_value_t concatunate_vectors(value_backend_t& backend, const type_t& type, runtime_value_t lhs, runtime_value_t rhs){
+rt_pod_t concatunate_vectors(value_backend_t& backend, const type_t& type, rt_pod_t lhs, rt_pod_t rhs){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(lhs.check_invariant());
@@ -4604,13 +4565,12 @@ runtime_value_t concatunate_vectors(value_backend_t& backend, const type_t& type
 		return concat_vector_hamt(backend, type, lhs, rhs);
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
 
-uint64_t get_vector_size(value_backend_t& backend, const type_t& vector_type, runtime_value_t vec){
+uint64_t get_vector_size(value_backend_t& backend, const type_t& vector_type, rt_pod_t vec){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vector_type.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
@@ -4625,12 +4585,11 @@ uint64_t get_vector_size(value_backend_t& backend, const type_t& vector_type, ru
 		return vec.vector_hamt_ptr->get_element_count();
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
-runtime_value_t lookup_vector_element(value_backend_t& backend, const type_t& vector_type, runtime_value_t vec, uint64_t index){
+rt_pod_t lookup_vector_element(value_backend_t& backend, const type_t& vector_type, rt_pod_t vec, uint64_t index){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vector_type.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
@@ -4639,7 +4598,7 @@ runtime_value_t lookup_vector_element(value_backend_t& backend, const type_t& ve
 	if(vector_type.is_string()){
 		//??? slow
 		const auto s = from_runtime_string2(backend, vec);
-		return runtime_value_t { .int_value = s[index] };
+		return rt_pod_t { .int_value = s[index] };
 	}
 	else if(is_vector_carray(backend.types, backend.config, vector_type)){
 #if DEBUG
@@ -4658,8 +4617,7 @@ runtime_value_t lookup_vector_element(value_backend_t& backend, const type_t& ve
 		return vec.vector_hamt_ptr->load_element(index);
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -4669,7 +4627,7 @@ runtime_value_t lookup_vector_element(value_backend_t& backend, const type_t& ve
 
 
 
-runtime_value_t lookup_dict_cppmap(value_backend_t& backend, runtime_value_t dict, const type_t& dict_type, runtime_value_t key){
+rt_pod_t lookup_dict_cppmap(value_backend_t& backend, rt_pod_t dict, const type_t& dict_type, rt_pod_t key){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dict_type.check_invariant());
 	QUARK_ASSERT(is_dict_cppmap(backend.types, backend.config, dict_type));
@@ -4686,7 +4644,7 @@ runtime_value_t lookup_dict_cppmap(value_backend_t& backend, runtime_value_t dic
 }
 
 //??? make faster key without creating std::string.
-runtime_value_t lookup_dict_hamt(value_backend_t& backend, runtime_value_t dict, const type_t& dict_type, runtime_value_t key){
+rt_pod_t lookup_dict_hamt(value_backend_t& backend, rt_pod_t dict, const type_t& dict_type, rt_pod_t key){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dict_type.check_invariant());
 	QUARK_ASSERT(is_dict_hamt(backend.types, backend.config, dict_type));
@@ -4702,7 +4660,7 @@ runtime_value_t lookup_dict_hamt(value_backend_t& backend, runtime_value_t dict,
 	}
 }
 
-runtime_value_t lookup_dict(value_backend_t& backend, runtime_value_t dict, const type_t& dict_type, runtime_value_t key){
+rt_pod_t lookup_dict(value_backend_t& backend, rt_pod_t dict, const type_t& dict_type, rt_pod_t key){
 	if(is_dict_hamt(backend.types, backend.config, dict_type)){
 		return lookup_dict_hamt(backend, dict, dict_type, key);
 	}
@@ -4710,14 +4668,13 @@ runtime_value_t lookup_dict(value_backend_t& backend, runtime_value_t dict, cons
 		return lookup_dict_cppmap(backend, dict, dict_type, key);
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
 
 
-uint64_t get_dict_size(value_backend_t& backend, const type_t& dict_type, runtime_value_t dict){
+uint64_t get_dict_size(value_backend_t& backend, const type_t& dict_type, rt_pod_t dict){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dict_type.check_invariant());
 	QUARK_ASSERT(dict_type.is_dict());
@@ -4730,8 +4687,7 @@ uint64_t get_dict_size(value_backend_t& backend, const type_t& dict_type, runtim
 		return dict.dict_cppmap_ptr->size();
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -4744,7 +4700,7 @@ uint64_t get_dict_size(value_backend_t& backend, const type_t& dict_type, runtim
 //??? Expensive to push_back since all elements in vector needs their RC bumped!
 // Could specialize further, for vector_hamt<string>, vector_hamt<vector<x>> etc. But it's probably better to inline push_back() instead.
 
-runtime_value_t push_back_vector_element__string(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
+rt_pod_t push_back_vector_element__string(value_backend_t& backend, rt_pod_t vec, const type_t& vec_type, rt_pod_t element){
 	QUARK_ASSERT(vec_type.is_string());
 
 	auto value = from_runtime_string2(backend, vec);
@@ -4754,7 +4710,7 @@ runtime_value_t push_back_vector_element__string(value_backend_t& backend, runti
 }
 
 //??? use memcpy()
-runtime_value_t push_back_vector_element__carray_pod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
+rt_pod_t push_back_vector_element__carray_pod(value_backend_t& backend, rt_pod_t vec, const type_t& vec_type, rt_pod_t element){
 	const auto element_count = vec.vector_carray_ptr->get_element_count();
 	auto source_ptr = vec.vector_carray_ptr->get_element_ptr();
 
@@ -4767,7 +4723,7 @@ runtime_value_t push_back_vector_element__carray_pod(value_backend_t& backend, r
 	return v2;
 }
 
-runtime_value_t push_back_vector_element__carray_nonpod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
+rt_pod_t push_back_vector_element__carray_nonpod(value_backend_t& backend, rt_pod_t vec, const type_t& vec_type, rt_pod_t element){
 	type_t element_itype = lookup_vector_element_type(backend, type_t(vec_type));
 	const auto element_count = vec.vector_carray_ptr->get_element_count();
 	auto source_ptr = vec.vector_carray_ptr->get_element_ptr();
@@ -4784,12 +4740,12 @@ runtime_value_t push_back_vector_element__carray_nonpod(value_backend_t& backend
 	return v2;
 }
 
-runtime_value_t push_back_vector_element__hamt_pod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
+rt_pod_t push_back_vector_element__hamt_pod(value_backend_t& backend, rt_pod_t vec, const type_t& vec_type, rt_pod_t element){
 	return push_back_immutable_hamt(vec, element);
 }
 
-runtime_value_t push_back_vector_element__hamt_nonpod(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
-	runtime_value_t vec2 = push_back_immutable_hamt(vec, element);
+rt_pod_t push_back_vector_element__hamt_nonpod(value_backend_t& backend, rt_pod_t vec, const type_t& vec_type, rt_pod_t element){
+	rt_pod_t vec2 = push_back_immutable_hamt(vec, element);
 	type_t element_itype = lookup_vector_element_type(backend, type_t(vec_type));
 
 	for(int i = 0 ; i < vec2.vector_hamt_ptr->get_element_count() ; i++){
@@ -4799,7 +4755,7 @@ runtime_value_t push_back_vector_element__hamt_nonpod(value_backend_t& backend, 
 	return vec2;
 }
 
-runtime_value_t push_back_vector_element(value_backend_t& backend, runtime_value_t vec, const type_t& vec_type, runtime_value_t element){
+rt_pod_t push_back_vector_element(value_backend_t& backend, rt_pod_t vec, const type_t& vec_type, rt_pod_t element){
 	if(vec_type.is_string()){
 		return push_back_vector_element__string(backend, vec, vec_type, element);
 	}
@@ -4824,8 +4780,7 @@ runtime_value_t push_back_vector_element(value_backend_t& backend, runtime_value
 		}
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 

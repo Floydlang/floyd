@@ -48,13 +48,13 @@ type_t make__sha1_t__type(types_t& types);
 
 //	Part of corelib / standard lib
 struct native_sha1_t {
-	runtime_value_t ascii40_string;
+	rt_pod_t ascii40_string;
 };
 
 
 //	Part of language
 struct native_binary_t {
-	runtime_value_t bytes_string;
+	rt_pod_t bytes_string;
 };
 
 /*

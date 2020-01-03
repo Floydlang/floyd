@@ -75,9 +75,8 @@ struct gen_instruction_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-#if DEBUG
 	public: bool check_invariant() const;
-#endif
+
 
 	//////////////////////////////////////		STATE
 	bc_opcode _opcode;
@@ -369,7 +368,7 @@ static void generate_copy_value_local_global(
 	const auto dest_reg_normalized = normalize_symbol_pos(dest_reg, gen._scope_stack.size());
 
 	if(source_reg_normalized == dest_reg_normalized){
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 	else {
 		const auto& types = gen._ast_imm->_tree._types;
@@ -614,12 +613,10 @@ static void generate_block_statements(bcgenerator_t& gen, const std::vector<stat
 				}
 
 				void operator()(const statement_t::bind_local_t& s) const{
-					QUARK_ASSERT(false);
-					quark::throw_exception();
+					quark::throw_defective_request();
 				}
 				void operator()(const statement_t::assign_t& s) const{
-					QUARK_ASSERT(false);
-					quark::throw_exception();
+					quark::throw_defective_request();
 				}
 				void operator()(const statement_t::assign2_t& s) const{
 					generate_assign2_statement(_gen, s);
@@ -702,19 +699,6 @@ static void generate_global_scope(bcgenerator_t& gen_acc, const lexical_scope_t&
 	generate_toplevel_scope(gen_acc, globals);
 }
 
-static gen_scope_t generate_function_definition(bcgenerator_t& gen, const floyd::function_definition_t& function_def){
-	QUARK_ASSERT(function_def._optional_body);
-
-	if(function_def._optional_body){
-		//	Copy the function's scope from the stack, then pop it. When we return we exect just ONE element on _scope_stack, the globals.
-		const auto dest_acc = generate_toplevel_scope(gen, *function_def._optional_body);
-		gen._scope_stack.pop_back();
-		return dest_acc;
-	}
-	else{
-		return gen_scope_t({});
-	}
-}
 
 
 //////////////////////////////////////		PROCESS EXPRESSIONS
@@ -995,8 +979,7 @@ static gen_expr_out_t generate_lookup_element_expression(
 			return bc_opcode::k_lookup_element_dict_w_external_values;
 		}
 		else{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			quark::throw_defective_request();
 		}
 	}();
 
@@ -1354,9 +1337,8 @@ static gen_expr_out_t generate_intrinsic_expression(
 
 
 	else{
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
-	throw std::exception();
 }
 
 //??? Submit dest-register to all gen-functions = minimize temps.
@@ -1492,8 +1474,7 @@ static gen_expr_out_t generate_arithmetic_unary_minus_expression(
 		return generate_expression(gen, target_reg, e2);
 	}
 	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -1731,8 +1712,7 @@ static gen_expr_out_t generate_arithmetic_expression(
 			return conv_opcode.at(details.op);
 		}
 		else{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			quark::throw_defective_request();
 		}
 	}();
 
@@ -1817,16 +1797,13 @@ static gen_expr_out_t generate_expression(
 		}
 
 		gen_expr_out_t operator()(const expression_t::struct_definition_expr_t& expr) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		gen_expr_out_t operator()(const expression_t::function_definition_expr_t& expr) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		gen_expr_out_t operator()(const expression_t::load_t& expr) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		gen_expr_out_t operator()(const expression_t::load2_t& expr) const{
 			return generate_load2_expression(gen, target_reg, e, expr);
@@ -1934,36 +1911,6 @@ static bc_static_frame_t make_frame(const types_t& types, const gen_scope_t& bod
 		instrs2.push_back(squeeze_instruction(e));
 	}
 
-/*
-	std::vector<std::pair<std::string, bc_symbol_t>> symbols2;
-	for(const auto& e: body._symbol_table._symbols){
-		const auto t0 = e.second.get_value_type();
-		const auto t = peek2(types, t0);
-		if(e.second._symbol_type == symbol_t::symbol_type::named_type){
-			const auto e2 = std::pair<std::string, bc_symbol_t>{
-				e.first,
-				bc_symbol_t{
-					bc_symbol_t::type::immutable,
-					t,
-					value_t::make_typeid_value(t)
-				}
-			};
-			symbols2.push_back(e2);
-		}
-		else{
-			const auto e2 = std::pair<std::string, bc_symbol_t>{
-				e.first,
-				bc_symbol_t{
-					is_mutable(e.second) ? bc_symbol_t::type::mutable1 : bc_symbol_t::type::immutable,
-					t,
-					e.second._init
-				}
-			};
-			symbols2.push_back(e2);
-		}
-	}
-*/
-
 	return bc_static_frame_t(types, instrs2, body._symbol_table, args);
 }
 
@@ -1987,21 +1934,22 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 		const auto& function_def = ast._tree._function_defs[function_id];
 
 		if(function_def._optional_body){
-			const auto body2 = generate_function_definition(gen, function_def);
 
-			const auto args2 = peek2(types, function_def._function_type).get_function_args(types);
+			//	Copy the function's scope from the stack, then pop it. When we return we have ONE element on _scope_stack, the globals.
+			const auto scope = generate_toplevel_scope(gen, *function_def._optional_body);
+			gen._scope_stack.pop_back();
 
-			const auto frame = make_frame(types, body2, args2);
-			const auto frame2 = std::make_shared<bc_static_frame_t>(frame);
+			const auto args = peek2(types, function_def._function_type).get_function_args(types);
+			const auto frame2 = std::make_shared<bc_static_frame_t>(make_frame(types, scope, args));
+
 			const auto f = bc_function_definition_t {
 				func_link_t {
 					"user floyd function: " + function_def._definition_name,
 					module_symbol_t(function_def._definition_name),
 					function_def._function_type,
-					func_link_t::emachine::k_bytecode,
-	//				function_def._named_args,
+					func_link_t::eexecution_model::k_bytecode__floydcc,
 					frame2.get(),
-					{},
+					get_member_names(function_def._named_args),
 					nullptr
 				},
 				frame2
@@ -2011,12 +1959,12 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 		else{
 			const auto f = bc_function_definition_t {
 				func_link_t {
-					"user function: " + function_def._definition_name,
+					"user floyd function: " + function_def._definition_name,
 					module_symbol_t(function_def._definition_name),
 					function_def._function_type,
-					func_link_t::emachine::k_native,
+					func_link_t::eexecution_model::k_bytecode__floydcc,
 					nullptr,
-					{},
+					get_member_names(function_def._named_args),
 					nullptr
 				},
 				nullptr

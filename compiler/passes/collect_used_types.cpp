@@ -66,16 +66,13 @@ static void collect_used_types_expression(types_t& acc, const expression_t& expr
 
 
 		void operator()(const expression_t::struct_definition_expr_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		void operator()(const expression_t::function_definition_expr_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		void operator()(const expression_t::load_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		void operator()(const expression_t::load2_t& e) const{
 		}

@@ -267,8 +267,7 @@ static int do_compile_command(tool_i& tool, std::ostream& out, const command_t& 
 			return EXIT_SUCCESS;
 		}
 		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 	}
 	if(command2.output_type == eoutput_type::object_file){
@@ -298,13 +297,11 @@ static int do_compile_command(tool_i& tool, std::ostream& out, const command_t& 
 			return EXIT_SUCCESS;
 		}
 		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -491,7 +488,7 @@ static int do_user_benchmarks(tool_i& tool, std::ostream& out, const command_t& 
 		return EXIT_SUCCESS;
 	}
 	else{
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 	return EXIT_FAILURE;
 }
@@ -548,7 +545,7 @@ static int do_user_tests(tool_i& tool, std::ostream& out, const command_t& comma
 		return EXIT_SUCCESS;
 	}
 	else{
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 	return EXIT_FAILURE;
 }

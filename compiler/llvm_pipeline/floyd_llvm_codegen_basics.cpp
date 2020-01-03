@@ -130,7 +130,7 @@ llvm::Value* generate_floyd_call(
 
 	auto& builder = gen_acc.get_builder();
 
-	//	Callee, as LLVM function signature. It gets the param #0 runtime pointer and each ANY is expanded to valye/type pairs.
+	//	Callee, as LLVM function signature. It gets the param #0 runtime pointer and each ANY is expanded to (value, type) pairs.
 	const auto& callee_mapping = *gen_acc.gen.type_lookup.find_from_type(callee_function_type).optional_function_signature;
 
 	//	Generate code that evaluates all argument expressions.
@@ -168,7 +168,7 @@ llvm::Value* generate_floyd_call(
 		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_type){
 		}
 		else{
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 	}
 	QUARK_ASSERT(arg_regs.size() == callee_mapping.args.size());
@@ -181,7 +181,7 @@ llvm::Value* generate_floyd_call(
 	//	??? Release callee?
 
 
-	//	If the return type is dynamic, cast the returned runtime_value_t to the correct type.
+	//	If the return type is dynamic, cast the returned rt_pod_t to the correct type.
 	//	It must be retained already.
 	llvm::Value* result_reg = result0_reg;
 	if(peek2(types, peek2(types, callee_function_type).get_function_return(types)).is_any()){

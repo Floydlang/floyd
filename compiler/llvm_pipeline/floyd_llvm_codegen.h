@@ -24,7 +24,7 @@
 
 namespace floyd {
 	struct semantic_ast_t;
-	struct llvm_codegen_function_type_t;
+	struct func_link_t;
 	struct llvm_execution_engine_t;
 }
 namespace llvm {
@@ -46,7 +46,7 @@ struct llvm_ir_program_t {
 		std::unique_ptr<llvm::Module>& module2_swap,
 		const llvm_type_lookup& type_lookup,
 		const symbol_table_t& globals,
-		const std::vector<llvm_codegen_function_type_t>& function_link_map,
+		const std::vector<func_link_t>& function_link_map,
 		const compiler_settings_t& settings
 	);
 
@@ -62,7 +62,7 @@ struct llvm_ir_program_t {
 
 	llvm_type_lookup type_lookup;
 	symbol_table_t debug_globals;
-	std::vector<llvm_codegen_function_type_t> function_link_map;
+	std::vector<func_link_t> function_link_map;
 
 	container_t container_def;
 	software_system_t software_system;
@@ -71,7 +71,12 @@ struct llvm_ir_program_t {
 
 
 //	Converts the semantic AST to LLVM IR code.
-std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& instance, const semantic_ast_t& ast, const std::string& module_name, const compiler_settings_t& settings);
+std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(
+	llvm_instance_t& instance,
+	const semantic_ast_t& ast,
+	const std::string& module_name,
+	const compiler_settings_t& settings
+);
 
 std::string print_llvm_ir_program(const llvm_ir_program_t& program);
 

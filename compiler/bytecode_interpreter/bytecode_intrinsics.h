@@ -9,21 +9,14 @@
 #ifndef bytecode_intrinsics_h
 #define bytecode_intrinsics_h
 
-/*
-	Provides bytecode implementation of the language built-in intrinsics.
-	Intrinsics are operators built into the language itself.
-*/
-
-#include "bytecode_interpreter.h"
-#include "quark.h"
-
+#include <vector>
 
 namespace floyd {
 
 struct types_t;
+struct func_link_t;
 
 std::vector<func_link_t> bc_get_intrinsics(types_t& types);
-
 
 }	//	floyd
 

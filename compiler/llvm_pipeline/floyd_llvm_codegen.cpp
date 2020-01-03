@@ -85,7 +85,7 @@ llvm_ir_program_t::llvm_ir_program_t(
 	std::unique_ptr<llvm::Module>& module2_swap,
 	const llvm_type_lookup& type_lookup,
 	const symbol_table_t& globals,
-	const std::vector<llvm_codegen_function_type_t>& function_link_map,
+	const std::vector<func_link_t>& function_link_map,
 	const compiler_settings_t& settings
 ) :
 	instance(instance),
@@ -264,7 +264,7 @@ static llvm::Value* generate_llvm_simple_constant_value(llvm_function_generator_
 
 
 		llvm::Value* operator()(const undefined_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 			return llvm::ConstantInt::get(itype, 17);
 		}
 		llvm::Value* operator()(const any_t& e) const{
@@ -272,7 +272,7 @@ static llvm::Value* generate_llvm_simple_constant_value(llvm_function_generator_
 		}
 
 		llvm::Value* operator()(const void_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const bool_t& e) const{
 			return llvm::ConstantInt::get(itype, value.get_bool_value() ? 1 : 0);
@@ -284,7 +284,7 @@ static llvm::Value* generate_llvm_simple_constant_value(llvm_function_generator_
 			return llvm::ConstantFP::get(itype, value.get_double_value());
 		}
 		llvm::Value* operator()(const string_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const json_type_t& e) const{
 			const auto& json0 = value.get_json();
@@ -292,7 +292,7 @@ static llvm::Value* generate_llvm_simple_constant_value(llvm_function_generator_
 				return generate_json_nullptr_placeholder(gen_acc);
 			}
 			else{
-				UNSUPPORTED();
+				quark::throw_defective_request();
 			}
 		}
 
@@ -301,13 +301,13 @@ static llvm::Value* generate_llvm_simple_constant_value(llvm_function_generator_
 		}
 
 		llvm::Value* operator()(const struct_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const vector_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const dict_t& e) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const function_t& e2) const{
 			const auto link_name = value.get_function_value();
@@ -320,10 +320,10 @@ static llvm::Value* generate_llvm_simple_constant_value(llvm_function_generator_
 			return llvm::ConstantPointerNull::get(ptr_type);
 		}
 		llvm::Value* operator()(const symbol_ref_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const named_type_t& e) const {
-			QUARK_ASSERT(false); throw std::exception();
+			quark::throw_defective_request();
 		}
 	};
 	return std::visit(visitor_t{ gen_acc, builder, context, itype, value }, get_type_variant(types, type));
@@ -399,8 +399,7 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_genera
 					}
 				}
 				else if(symbol._symbol_type == symbol_t::symbol_type::immutable_arg){
-					QUARK_ASSERT(false);
-					throw std::exception();
+					quark::throw_defective_request();
 				}
 				else if(symbol._symbol_type == symbol_t::symbol_type::immutable_precalc){
 					QUARK_ASSERT(symbol._init.is_undefined() == false);
@@ -423,8 +422,7 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_function_genera
 					}
 				}
 				else{
-					QUARK_ASSERT(false);
-					throw std::exception();
+					quark::throw_defective_request();
 				}
 				const auto debug_str = "<LOCAL> name:" + symbol_kv.first + " symbol_t: " + symbol_to_string(types, symbol);
 				return make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_local, symbol_kv.first, symbol_kv.second);
@@ -535,7 +533,7 @@ static llvm::Value* generate_literal_expression(llvm_function_generator_t& gen_a
 			return generate_json_null_value(gen_acc);
 		}
 		else{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 	}
 	else{
@@ -703,8 +701,7 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 		return result_reg;
 	}
 	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
+		quark::throw_defective_request();
 	}
 	return nullptr;
 }
@@ -740,7 +737,7 @@ static llvm::Value* generate_arithmetic_expression(llvm_function_generator_t& ge
 			return gen_acc.get_builder().CreateOr(lhs_temp, rhs_temp, "logical_or_tmp");
 		}
 		else{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 	}
 	else if(type_peek.is_int()){
@@ -767,7 +764,7 @@ static llvm::Value* generate_arithmetic_expression(llvm_function_generator_t& ge
 			return gen_acc.get_builder().CreateOr(lhs_temp, rhs_temp, "logical_or_tmp");
 		}
 		else{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 	}
 	else if(type_peek.is_double()){
@@ -784,16 +781,16 @@ static llvm::Value* generate_arithmetic_expression(llvm_function_generator_t& ge
 			return gen_acc.get_builder().CreateFDiv(lhs_temp, rhs_temp, "divide_tmp");
 		}
 		else if(details.op == expression_type::k_arithmetic_remainder){
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		else if(details.op == expression_type::k_logical_and){
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		else if(details.op == expression_type::k_logical_or){
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		else{
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 	}
 	else if(type_peek.is_string() || type_peek.is_vector()){
@@ -815,7 +812,7 @@ static llvm::Value* generate_arithmetic_expression(llvm_function_generator_t& ge
 		//	No other types allowed.
 		throw std::exception();
 	}
-	UNSUPPORTED();
+	quark::throw_defective_request();
 }
 
 static llvm::Value* generate_compare_values(llvm_function_generator_t& gen_acc, expression_type op, const type_t& type, llvm::Value& lhs_reg, llvm::Value& rhs_reg){
@@ -931,7 +928,7 @@ static llvm::Value* generate_comparison_expression(llvm_function_generator_t& ge
 		return result_reg;
 	}
 	else{
-		UNSUPPORTED();
+		quark::throw_defective_request();
 	}
 }
 
@@ -962,7 +959,7 @@ static llvm::Value* generate_bitwize_expression(llvm_function_generator_t& gen_a
 			return gen_acc.get_builder().CreateNot(a);
 		}
 		else{
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 	}
 	else if(operands.size() == 2){
@@ -973,7 +970,7 @@ static llvm::Value* generate_bitwize_expression(llvm_function_generator_t& gen_a
 		auto b = generate_expression(gen_acc, operands[1]);
 
 		if(op == bitwize_operator::bw_not){
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 		else if(op == bitwize_operator::bw_and){
 			return gen_acc.get_builder().CreateAnd(a, b);
@@ -995,11 +992,11 @@ static llvm::Value* generate_bitwize_expression(llvm_function_generator_t& gen_a
 			return gen_acc.get_builder().CreateAShr(a, b);
 		}
 		else{
-			QUARK_ASSERT(false);
+			quark::throw_defective_request();
 		}
 	}
 	else{
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
 	throw std::exception();
 }
@@ -1020,7 +1017,7 @@ static llvm::Value* generate_arithmetic_unary_minus_expression(llvm_function_gen
 		return generate_expression(gen_acc, e2);
 	}
 	else{
-		UNSUPPORTED();
+		quark::throw_defective_request();
 	}
 }
 
@@ -1383,9 +1380,8 @@ static llvm::Value* generate_intrinsic_expression(llvm_function_generator_t& gen
 
 
 	else{
-		QUARK_ASSERT(false);
+		quark::throw_defective_request();
 	}
-	throw std::exception();
 }
 
 static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc, const expression_t::value_constructor_t& details){
@@ -1456,8 +1452,7 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 		return vec_ptr_reg;
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -1815,16 +1810,13 @@ static llvm::Value* generate_expression(llvm_function_generator_t& gen_acc, cons
 
 
 		llvm::Value* operator()(const expression_t::struct_definition_expr_t& expr) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const expression_t::function_definition_expr_t& expr) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const expression_t::load_t& expr) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 		llvm::Value* operator()(const expression_t::load2_t& expr) const{
 			//	No need / must not load function arguments.
@@ -2152,10 +2144,10 @@ static function_return_mode generate_statement(llvm_function_generator_t& gen_ac
 		}
 
 		function_return_mode operator()(const statement_t::bind_local_t& s) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		function_return_mode operator()(const statement_t::assign_t& s) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		function_return_mode operator()(const statement_t::assign2_t& s) const{
 			generate_assign2_statement(acc0, s);
@@ -2185,16 +2177,16 @@ static function_return_mode generate_statement(llvm_function_generator_t& gen_ac
 			return function_return_mode::some_path_not_returned;
 		}
 		function_return_mode operator()(const statement_t::software_system_statement_t& s) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		function_return_mode operator()(const statement_t::container_def_statement_t& s) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		function_return_mode operator()(const statement_t::benchmark_def_statement_t& s) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 		function_return_mode operator()(const statement_t::test_def_statement_t& s) const{
-			UNSUPPORTED();
+			quark::throw_defective_request();
 		}
 	};
 
@@ -2261,8 +2253,7 @@ static llvm::Value* generate_global(llvm_function_generator_t& gen_acc, const st
 		return generate_global0(module, symbol_name, *itype, nullptr);
 	}
 	else if(symbol._symbol_type == symbol_t::symbol_type::immutable_arg){
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 	else if(symbol._symbol_type == symbol_t::symbol_type::immutable_precalc){
 		QUARK_ASSERT(symbol._init.is_undefined() == false);
@@ -2286,8 +2277,7 @@ static llvm::Value* generate_global(llvm_function_generator_t& gen_acc, const st
 		return generate_global0(module, symbol_name, *itype, nullptr);
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_defective_request();
 	}
 }
 
@@ -2480,8 +2470,7 @@ static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const 
 				else if(e.symbol._symbol_type == symbol_t::symbol_type::mutable_reserve){
 				}
 				else{
-					QUARK_ASSERT(false);
-					throw std::exception();
+					quark::throw_defective_request();
 				}
 */
 				if(e.symtype == resolved_symbol_t::esymtype::k_global || e.symtype == resolved_symbol_t::esymtype::k_local){
@@ -2627,7 +2616,14 @@ static std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program_internal(llvm
 	//???	Don't make a new llvm_type_lookup, generate_module() already created one.
 	const auto type_lookup = llvm_type_lookup(instance.context, ast0._tree._types);
 
-	auto result = std::make_unique<llvm_ir_program_t>(&instance, module, type_lookup, ast._tree._globals._symbol_table, result0.link_map, settings);
+	auto result = std::make_unique<llvm_ir_program_t>(
+		&instance,
+		module,
+		type_lookup,
+		ast._tree._globals._symbol_table,
+		mapf<func_link_t>(result0.link_map, [](const auto& e){ return e.func_link; }),
+		settings
+	);
 
 	result->container_def = ast0._tree._container_def;
 	result->software_system = ast0._tree._software_system;

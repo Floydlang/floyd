@@ -25,10 +25,7 @@ struct unchecked_ast_t;
 */
 struct semantic_ast_t {
 	public: explicit semantic_ast_t(const general_purpose_ast_t& tree, const intrinsic_signatures_t& intrinsic_signatures);
-
-#if DEBUG
 	public: bool check_invariant() const;
-#endif
 
 
 	////////////////////////////////	STATE

@@ -144,8 +144,7 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 			""
 		};
 		if(detect_leaks(interpreter._backend)){
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 	}
 	catch(const std::runtime_error& e){
@@ -193,8 +192,7 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 
 		deinit_program(*ee);
 		if(detect_leaks(ee->backend)){
-			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_defective_request();
 		}
 
 		return test_report_t{
