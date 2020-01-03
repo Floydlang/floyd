@@ -28,19 +28,7 @@ static const bool k_trace_messaging = true;
 
 
 
-value_t find_global_symbol(interpreter_t& vm, const module_symbol_t& name){
-	QUARK_ASSERT(vm.check_invariant());
-
-	const auto& result = find_global_symbol2(vm, name);
-	if(result == nullptr){
-		quark::throw_runtime_error(std::string() + "Cannot find global \"" + name.s + "\".");
-	}
-	else{
-		return rt_to_value(vm._backend, result->_value);
-	}
-}
-
-value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vector<value_t>& args){
+static value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vector<value_t>& args){
 #if DEBUG
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
@@ -57,6 +45,23 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vec
 	const auto result = call_function_bc(vm, f2, &args2[0], static_cast<int>(args2.size()));
 	return rt_to_value(vm._backend, result);
 }
+
+value_t find_global_symbol(bc_execution_engine_t& ee, const module_symbol_t& name){
+	QUARK_ASSERT(ee.check_invariant());
+
+	const auto& result = find_global_symbol2(ee.main_temp, name);
+	if(result == nullptr){
+		quark::throw_runtime_error(std::string() + "Cannot find global \"" + name.s + "\".");
+	}
+	else{
+		return rt_to_value(ee.main_temp._backend, result->_value);
+	}
+}
+
+value_t call_function(bc_execution_engine_t& ee, const floyd::value_t& f, const std::vector<value_t>& args){
+	return call_function(ee.main_temp, f, args);
+}
+
 
 bc_program_t compile_to_bytecode(const compilation_unit_t& cu){
 	const auto sem_ast = compile_to_sematic_ast__errors(cu);
@@ -373,35 +378,35 @@ run_output_t run_program_bc(bc_execution_engine_t& ee, const std::vector<std::st
 	}
 }
 
-std::vector<test_t> collect_tests(interpreter_t& vm){
-	QUARK_ASSERT(vm.check_invariant());
+std::vector<test_t> collect_tests(bc_execution_engine_t& ee){
+	QUARK_ASSERT(ee.check_invariant());
 
-	const auto& test_registry_bind = find_global_symbol2(vm, module_symbol_t(k_global_test_registry));
+	const auto& test_registry_bind = find_global_symbol2(ee.main_temp, module_symbol_t(k_global_test_registry));
 	QUARK_ASSERT(test_registry_bind != nullptr);
 
-	const auto vec = rt_to_value(vm._backend, test_registry_bind->_value);
+	const auto vec = rt_to_value(ee.main_temp._backend, test_registry_bind->_value);
 	const auto vec2 = vec.get_vector_value();
 	std::vector<test_t> a = unpack_test_registry(vec2);
 	return a;
 }
 
-static std::string run_test(interpreter_t& vm, const test_t& test){
-	QUARK_ASSERT(vm.check_invariant());
+static std::string run_test(bc_execution_engine_t& ee, const test_t& test){
+	QUARK_ASSERT(ee.check_invariant());
 
 	const auto function_id = test.f;
 
 	const auto f_type = type_t::make_function(
-		vm._imm->_program._types,
+		ee.main_temp._imm->_program._types,
 		type_t::make_void(),
 		{},
 		epure::pure
 	);
 
-	const auto f_value = rt_value_t::make_function_value(vm._backend, f_type, function_id);
+	const auto f_value = rt_value_t::make_function_value(ee.main_temp._backend, f_type, function_id);
 
 	try {
 		const std::vector<rt_value_t> args2;
-		call_function_bc(vm, f_value, &args2[0], static_cast<int>(args2.size()));
+		call_function_bc(ee.main_temp, f_value, &args2[0], static_cast<int>(args2.size()));
 
 		return "";
 	}
@@ -417,7 +422,7 @@ static std::string run_test(interpreter_t& vm, const test_t& test){
 }
 
 std::vector<test_result_t> run_tests_bc(
-	interpreter_t& vm,
+	bc_execution_engine_t& vm,
 	const std::vector<test_t>& all_tests,
 	const std::vector<test_id_t>& wanted
 ){

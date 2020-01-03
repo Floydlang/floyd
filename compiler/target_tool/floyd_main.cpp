@@ -390,9 +390,9 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 
 		//	Run tests before calling main()?
 		if(command2.run_tests){
-			const auto all_tests = collect_tests(interpreter->main_temp);
+			const auto all_tests = collect_tests(*interpreter);
 			const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
-			const auto test_results = run_tests_bc(interpreter->main_temp, all_tests, all_test_ids);
+			const auto test_results = run_tests_bc(*interpreter, all_tests, all_test_ids);
 
 			if(count_fails(test_results) > 0){
 				const auto report = make_report(test_results);

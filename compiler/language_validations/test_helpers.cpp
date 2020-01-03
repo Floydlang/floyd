@@ -118,9 +118,9 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 		//	Runs global code.
 		auto interpreter = make_bytecode_execution_engine(exe, config, handler);
 
-		std::vector<test_t> all_tests = collect_tests(interpreter->main_temp);
+		std::vector<test_t> all_tests = collect_tests(*interpreter);
 		const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
-		const auto test_results = run_tests_bc(interpreter->main_temp, all_tests, all_test_ids);
+		const auto test_results = run_tests_bc(*interpreter, all_tests, all_test_ids);
 
 		if(count_fails(test_results) > 0){
 			const auto report = make_report(test_results);
