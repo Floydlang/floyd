@@ -8136,7 +8136,7 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_request()", "", ""){
 
 			let c = network_component_t(666)
 
-			func void f(int socket_id){
+			func void f(int socket_id) impure{
 				let read_data = read_socket(socket_id)
 				if(read_data == ""){
 					print("empty request\n")
@@ -8177,6 +8177,131 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_request()", "", ""){
 			}
 
 			execute_http_server(c, 8080, f)
+
+		)"
+	);
+}
+#endif
+
+
+
+
+#if 0
+//	WARNING: This test never completes + is impure.
+FLOYD_LANG_PROOF_VIP("network component", "Multi-process HTTP server", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let c = network_component_t(666)
+
+
+			container-def {
+				"name": "",
+				"tech": "",
+				"desc": "",
+				"clocks": {
+					"main_clock": {
+						"main": "my_main"
+					},
+					"http-server": {
+						"server": "my_server"
+					}
+				}
+			}
+
+			struct doc_t { [double] audio }
+
+			struct gui_message_t { string type }
+			struct server_message_t { string type ; doc_t doc }
+
+
+			////////////////////////////////	SERVER
+
+
+			struct server_t { int audio ; doc_t doc }
+
+			func void f(int socket_id) impure{
+				let read_data = read_socket(socket_id)
+				if(read_data == ""){
+					print("empty request\n")
+				}
+				else{
+					let request = unpack_http_request(read_data)
+
+					if(request.request_line == http_request_line_t( "GET", "/info.html", "HTTP/1.1" )){
+						print("Serving page\n")
+						let doc = "
+							<head>
+								<title>Hello Floyd Server</title>
+							</head>
+							<body>
+								<h1>Hello Floyd Server</h1>
+								This document may be found <a HREF=\"https://stackoverflow.com/index.html\">here</a>
+							</body>
+						"
+
+						let r = pack_http_response(
+							http_response_t (
+								http_response_status_line_t ( "HTTP/1.1", "200 OK" ),
+								[
+									http_header_t( "Content-Type", "text/html" ),
+									http_header_t( "Content-Length", to_string(size(doc)) )
+								],
+								doc
+							)
+						)
+						write_socket(socket_id, r)
+					}
+					else {
+						let r = pack_http_response(http_response_t ( http_response_status_line_t ( "HTTP/1.1", "404 OK" ), {}, "" ))
+						write_socket(socket_id, r)
+					}
+				}
+
+			}
+
+			func server_t my_server__init() impure {
+				execute_http_server(c, 8080, f)
+			}
+
+			func server_t my_server__msg(server_t state, server_message_t m) impure {
+				assert(false)
+				return state
+			}
+
+
+
+			////////////////////////////////	MAIN
+
+			func void sleep(int ns){
+				mutable x = 0
+				for(i in 0 ..< ns){
+					x = x + 1
+				}
+			}
+
+			struct main_t { int count ; doc_t doc }
+
+			func main_t my_main__init() impure {
+				sleep(3000)
+				mutable x = 0
+				for(i in 0 ..< 100000){
+					print("main is running: ") ; print(x) ; print("\n")
+					x = x + 1
+					if(x == 40){
+						x = 0
+					}
+					sleep(10000)
+				}
+//				send("gui", gui_message_t("key_press"))
+				return main_t(1000, doc_t([ 0.0, 1.0, 2.0 ]))
+			}
+
+			func main_t my_main__msg(main_t state, gui_message_t m) impure {
+				assert(false)
+				return state
+			}
 
 		)"
 	);

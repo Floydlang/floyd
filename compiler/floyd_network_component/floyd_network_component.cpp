@@ -131,7 +131,7 @@ static const std::string k_network_component_header = R"(
 	func string execute_http_request(network_component_t c, ip_address_and_port_t addr, string request) impure
 
 	//	Blocks forever.
-	func void execute_http_server(network_component_t c, int port, func void f(int socket)) impure
+	func void execute_http_server(network_component_t c, int port, func void f(int socket) impure) impure
 
 )";
 
