@@ -6,8 +6,8 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-#ifndef floyd_llvm_runtime_hpp
-#define floyd_llvm_runtime_hpp
+#ifndef floyd_llvm_execution_engine_hpp
+#define floyd_llvm_execution_engine_hpp
 
 #include "value_backend.h"
 #include "floyd_runtime.h"
@@ -308,4 +308,4 @@ std::vector<test_t> collect_tests(llvm_execution_engine_t& ee);
 }	//	namespace floyd
 
 
-#endif /* floyd_llvm_runtime_hpp */
+#endif /* floyd_llvm_execution_engine_hpp */

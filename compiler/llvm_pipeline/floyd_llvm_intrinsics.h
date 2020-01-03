@@ -11,7 +11,7 @@
 
 
 #include "floyd_llvm_types.h"
-#include "floyd_llvm_runtime.h"
+#include "floyd_llvm_execution_engine.h"
 
 namespace floyd {
 

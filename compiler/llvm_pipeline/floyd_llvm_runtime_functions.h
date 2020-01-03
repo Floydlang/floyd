@@ -10,7 +10,7 @@
 #define floyd_llvm_runtime_functions_hpp
 
 #include "floyd_llvm_types.h"
-#include "floyd_llvm_runtime.h"
+#include "floyd_llvm_execution_engine.h"
 #include "floyd_llvm_helpers.h"
 
 namespace floyd {

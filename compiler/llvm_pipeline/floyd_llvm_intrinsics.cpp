@@ -10,7 +10,7 @@
 
 #include "floyd_intrinsics.h"
 #include "floyd_llvm_helpers.h"
-#include "floyd_llvm_runtime.h"
+#include "floyd_llvm_execution_engine.h"
 #include "floyd_llvm_codegen_basics.h"
 #include "value_features.h"
 #include "floyd_runtime.h"

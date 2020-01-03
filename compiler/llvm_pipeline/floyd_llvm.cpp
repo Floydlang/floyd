@@ -8,7 +8,7 @@
 
 #include "floyd_llvm.h"
 
-#include "floyd_llvm_runtime.h"
+#include "floyd_llvm_execution_engine.h"
 #include "value_backend.h"
 #include "compiler_basics.h"
 #include "floyd_llvm_codegen.h"

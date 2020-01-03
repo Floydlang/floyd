@@ -170,7 +170,7 @@ static void send(bc_process_t& process, const std::string& dest_process_id, cons
 
 
 
-//////////////////////////////////////		container_runner_t
+//////////////////////////////////////		bc_execution_engine_t
 
 
 

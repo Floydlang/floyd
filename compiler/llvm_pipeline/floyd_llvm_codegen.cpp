@@ -11,7 +11,7 @@ static const bool k_trace_pass_io = false;
 
 #include "floyd_llvm_optimization.h"
 #include "floyd_llvm_codegen_basics.h"
-#include "floyd_llvm_runtime.h"
+#include "floyd_llvm_execution_engine.h"
 #include "floyd_llvm_runtime_functions.h"
 #include "floyd_llvm_intrinsics.h"
 #include "floyd_llvm_helpers.h"

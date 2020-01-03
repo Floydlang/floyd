@@ -9,7 +9,7 @@
 #ifndef floyd_llvm_codegen_basics_hpp
 #define floyd_llvm_codegen_basics_hpp
 
-#include "floyd_llvm_runtime.h"
+#include "floyd_llvm_execution_engine.h"
 #include "floyd_llvm_runtime_functions.h"
 #include "floyd_llvm_helpers.h"
 

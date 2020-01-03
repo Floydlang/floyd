@@ -18,7 +18,7 @@
 #include "floyd_parser.h"
 
 #include "floyd_llvm.h"
-#include "floyd_llvm_runtime.h"
+#include "floyd_llvm_execution_engine.h"
 #include "floyd_llvm_helpers.h"
 #include "floyd_llvm_codegen.h"
 
