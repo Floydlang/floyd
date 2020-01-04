@@ -53,7 +53,7 @@ static value_t call_function(interpreter_t& vm, const floyd::value_t& f, const s
 	return rt_to_value(vm._backend, result);
 }
 
-value_t find_global_symbol(bc_execution_engine_t& ee, const module_symbol_t& name){
+value_t load_global(bc_execution_engine_t& ee, const module_symbol_t& name){
 	QUARK_ASSERT(ee.check_invariant());
 
 	const auto& result = load_global(ee.main_temp, name);

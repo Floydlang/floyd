@@ -58,7 +58,7 @@ std::unique_ptr<bc_execution_engine_t> make_bytecode_execution_engine(const bc_p
 //////////////////////////////////////		Free functions
 
 
-value_t find_global_symbol(bc_execution_engine_t& ee, const module_symbol_t& s);
+value_t 	(bc_execution_engine_t& ee, const module_symbol_t& s);
 value_t call_function(bc_execution_engine_t& ee, const floyd::value_t& f, const std::vector<value_t>& args);
 bc_program_t compile_to_bytecode(const compilation_unit_t& cu);
 
