@@ -191,8 +191,8 @@ bc_execution_engine_t::bc_execution_engine_t(const bc_program_t& program, const 
 	backend(link_functions(*_program), bc_make_struct_layouts(_program->_types), _program->_types, config),
 	main_temp(_program, backend, config, nullptr, runtime_handler),
 	handler(&runtime_handler),
-	_main_thread_id(),
 	_processes(),
+	_main_thread_id(),
 	_worker_threads()
 {
 	QUARK_ASSERT(program.check_invariant());

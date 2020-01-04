@@ -43,9 +43,12 @@ struct bc_execution_engine_t {
 	interpreter_t main_temp;
 
 	runtime_handler_i* handler;
-	std::thread::id _main_thread_id;
 
+	//	One for each floyd process. #0 is always the default process: used for main() and init()
 	std::vector<std::shared_ptr<bc_process_t>> _processes;
+
+	//	One for each floyd process. #0 is always the default process: used for main() and init()
+	std::thread::id _main_thread_id;
 	std::vector<std::thread> _worker_threads;
 };
 
