@@ -1165,7 +1165,7 @@ json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend)
 */
 
 struct interpreter_t : runtime_basics_i {
-	public: explicit interpreter_t(const std::shared_ptr<bc_program_t>& program, value_backend_t& backend, const config_t& config, runtime_process_i* process_handler, runtime_handler_i& runtime_handler);
+	public: explicit interpreter_t(const std::shared_ptr<bc_program_t>& program, value_backend_t& backend, const config_t& config, runtime_process_i* process_handler, runtime_handler_i& runtime_handler, const std::string& name);
 	public: interpreter_t(const interpreter_t& other) = delete;
 	public: ~interpreter_t();
 
@@ -1186,6 +1186,7 @@ struct interpreter_t : runtime_basics_i {
 	public: runtime_handler_i* _runtime_handler;
 
 	public: value_backend_t& _backend;
+	public: std::string _name;
 
 	//	Holds all values for all environments.
 	//	Notice: stack holds refs to RC-counted objects!

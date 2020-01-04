@@ -26,7 +26,13 @@
 
 namespace floyd {
 
-static const bool k_trace_stepping = false;
+static const bool k_trace_stepping = true;
+
+static bool should_trace(const std::string& name){
+	return false && name == "floyd process 1 server";
+}
+
+
 
 
 static std::string opcode_to_string(bc_opcode opcode);
@@ -564,11 +570,12 @@ rt_value_t interpreter_t::runtime_basics__call_thunk(const rt_value_t& f, const 
 
 //???std::chrono::high_resolution_clock::now()
 
-interpreter_t::interpreter_t(const std::shared_ptr<bc_program_t>& program, value_backend_t& backend, const config_t& config, runtime_process_i* process_handler, runtime_handler_i& runtime_handler) :
+interpreter_t::interpreter_t(const std::shared_ptr<bc_program_t>& program, value_backend_t& backend, const config_t& config, runtime_process_i* process_handler, runtime_handler_i& runtime_handler, const std::string& name) :
 	_program(program),
 	_process_handler(process_handler),
 	_runtime_handler(&runtime_handler),
 	_backend(backend),
+	_name(name),
 	_stack { &_backend, &_program->_globals }
 {
 	QUARK_ASSERT(program && program->check_invariant());
@@ -689,7 +696,11 @@ static std::vector<std::string> make(value_backend_t& backend, size_t i, rt_pod_
 }
 
 void trace_interpreter(interpreter_t& vm, int pc){
-	QUARK_SCOPED_TRACE("INTERPRETER STATE");
+	if(should_trace(vm._name) == false){
+		return;
+	}
+
+	QUARK_SCOPED_TRACE(vm._name);
 
 	auto& backend = vm._backend;
 	const auto& stack = vm._stack;
@@ -1262,12 +1273,13 @@ static void do_call_instruction(interpreter_t& vm, int target_reg, const rt_pod_
 
 
 rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_value_t args[], int callee_arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(f.check_invariant());
+
 	const auto& backend = vm._backend;
 	const auto& types = backend.types;
 
 #if DEBUG
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(f.check_invariant());
 	for(int i = 0 ; i < callee_arg_count ; i++){ QUARK_ASSERT(args[i].check_invariant()); };
 	QUARK_ASSERT(peek2(types, f._type).is_function());
 

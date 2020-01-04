@@ -215,7 +215,7 @@ bool bc_execution_engine_t::check_invariant() const {
 bc_execution_engine_t::bc_execution_engine_t(const bc_program_t& program, const config_t& config, runtime_handler_i& runtime_handler) :
 	_program(std::make_shared<bc_program_t>(program)),
 	backend(link_functions(*_program), bc_make_struct_layouts(_program->_types), _program->_types, config),
-	main_bc_thread(_program, backend, config, nullptr, runtime_handler),
+	main_bc_thread(_program, backend, config, nullptr, runtime_handler, "main"),
 	_main_thread_id(std::this_thread::get_id()),
 	handler(&runtime_handler),
 	_processes(),
@@ -346,7 +346,11 @@ static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& confi
 
 			//	All other processes gets their own interpreter_t and OS thread.
 			else{
-				auto bc_thread = std::make_shared<interpreter_t>(ee._program, ee.backend, config, process.get(), *ee.handler);
+				std::stringstream name_ss;
+				name_ss << "floyd process " << process_id << " " << t.first;
+				const auto name = name_ss.str();
+
+				auto bc_thread = std::make_shared<interpreter_t>(ee._program, ee.backend, config, process.get(), *ee.handler, name);
 				ee._bc_threads.push_back(bc_thread);
 
 				//??? dup
@@ -370,9 +374,7 @@ static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& confi
 				ee._os_threads.push_back(
 					std::thread(
 						[&](int process_id){
-							std::stringstream thread_name;
-							thread_name << std::string() << "process " << process_id << " thread";
-							set_current_threads_name(thread_name.str());
+							set_current_threads_name(name);
 
 							run_process(ee, process_id);
 						},

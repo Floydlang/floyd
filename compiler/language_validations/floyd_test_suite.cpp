@@ -8183,10 +8183,7 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_request()", "", ""){
 }
 #endif
 
-
-
-
-#if 0
+#if 1
 //	WARNING: This test never completes + is impure.
 FLOYD_LANG_PROOF_VIP("network component", "Multi-process HTTP server", "", ""){
 	ut_run_closed_lib(
@@ -8202,10 +8199,10 @@ FLOYD_LANG_PROOF_VIP("network component", "Multi-process HTTP server", "", ""){
 				"desc": "",
 				"clocks": {
 					"main_clock": {
-						"main": "my_main"
+						"sss-main": "my_main"
 					},
 					"http-server": {
-						"server": "my_server"
+						"mmm-server": "my_server"
 					}
 				}
 			}
