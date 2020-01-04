@@ -44,6 +44,7 @@ static const bool k_trace_function_link_map = false;
 
 namespace floyd {
 
+// ??? llvm should use 1 process instance for main and always use it. This avoids special-casing a lot and llvm_context_t
 
 ////////////////////////////////	BASICS
 
