@@ -129,12 +129,8 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 
 		auto run_output = run_program_bc(*interpreter, main_args, config);
 
-		const auto result_variable = find_global_symbol2(interpreter->main_temp, module_symbol_t("result"));
-		value_t result_global;
-		if(result_variable != nullptr){
-			//??? really
-			result_global = rt_to_value(*interpreter->main_temp._stack._backend, result_variable->_value);
-		}
+		const auto r = load_global(interpreter->main_temp, module_symbol_t("result"));
+		value_t result_global = r._type.is_undefined() ? value_t() : rt_to_value(*interpreter->main_temp._stack._backend, r);
 
 		interpreter->main_temp.unwind_stack();
 

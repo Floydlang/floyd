@@ -114,7 +114,7 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Text metrics", "", ""){
 	const auto program = compile_to_bytecode(gol_floyd_str);
 
 	interpreter_t vm(program);
-	const auto f = find_global_symbol2(vm, "f");
+	const auto f = load_global(vm, "f");
 	QUARK_ASSERT(f != nullptr);
 
 	const auto floyd_ns = measure_execution_time_ns(

@@ -1205,6 +1205,7 @@ json_t interpreter_to_json(interpreter_t& vm);
 std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions);
 
 
+/*
 struct value_entry_t {
 	bool check_invariant() const {
 		QUARK_ASSERT(_value.check_invariant());
@@ -1219,7 +1220,10 @@ struct value_entry_t {
 	symbol_t _symbol;
 	int _global_index;
 };
-std::shared_ptr<value_entry_t> find_global_symbol2(interpreter_t& vm, const module_symbol_t& s);
+*/
+
+//	Returns undefined if not found.
+rt_value_t load_global(interpreter_t& vm, const module_symbol_t& s);
 
 std::vector<std::pair<type_t, struct_layout_t>> bc_make_struct_layouts(const types_t& types);
 

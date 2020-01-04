@@ -76,7 +76,7 @@ int64_t measure_floyd_function_f(const std::string& floyd_program, int count){
 	std::cout << s << std::endl;
 
 	interpreter_t vm(program);
-	const auto f = find_global_symbol2(vm, "f");
+	const auto f = load_global(vm, "f");
 	QUARK_ASSERT(f != nullptr);
 
 	const auto floyd_ns = measure_execution_time_ns(

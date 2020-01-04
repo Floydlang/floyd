@@ -2221,9 +2221,9 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 //////////////////////////////////////////		FUNCTIONS
 
+	
 
-
-std::shared_ptr<value_entry_t> find_global_symbol2(interpreter_t& vm, const module_symbol_t& s){
+rt_value_t load_global(interpreter_t& vm, const module_symbol_t& s){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s.s.size() > 0);
 
@@ -2238,19 +2238,19 @@ std::shared_ptr<value_entry_t> find_global_symbol2(interpreter_t& vm, const modu
 		const auto pos = get_global_n_pos(index);
 		QUARK_ASSERT(pos >= 0 && pos < vm._stack.size());
 
-		const auto value_entry = value_entry_t{
-			vm._stack.load_value(pos, it->second._value_type),
+		const auto r = vm._stack.load_value(pos, it->second._value_type);
+/*
+			,
 			module_symbol_t(it->first),
 			it->second,
 			static_cast<int>(index)
-		};
-        QUARK_ASSERT(value_entry.check_invariant());
-		auto a = std::make_shared<value_entry_t>(value_entry);
-        QUARK_ASSERT(a->check_invariant());
-        return a;
+*/
+
+        QUARK_ASSERT(r.check_invariant());
+        return r;
 	}
 	else{
-		return nullptr;
+		return {};
 	}
 }
 

@@ -56,12 +56,12 @@ static value_t call_function(interpreter_t& vm, const floyd::value_t& f, const s
 value_t find_global_symbol(bc_execution_engine_t& ee, const module_symbol_t& name){
 	QUARK_ASSERT(ee.check_invariant());
 
-	const auto& result = find_global_symbol2(ee.main_temp, name);
-	if(result == nullptr){
+	const auto& result = load_global(ee.main_temp, name);
+	if(result._type.is_undefined()){
 		quark::throw_runtime_error(std::string() + "Cannot find global \"" + name.s + "\".");
 	}
 	else{
-		return rt_to_value(ee.main_temp._backend, result->_value);
+		return rt_to_value(ee.main_temp._backend, result);
 	}
 }
 
@@ -87,8 +87,8 @@ static void send(bc_process_t& process, const std::string& dest_process_id, cons
 //	NOTICE: Each process inbox has its own mutex + condition variable. No mutex protects cout.
 struct bc_process_t : public runtime_process_i {
 	bool check_invariant() const {
-		QUARK_ASSERT(_init_function != nullptr);
-		QUARK_ASSERT(_msg_function != nullptr);
+		QUARK_ASSERT(_init_function._type.is_undefined() == false);
+		QUARK_ASSERT(_msg_function._type.is_undefined() == false);
 		return true;
 	}
 
@@ -112,8 +112,8 @@ struct bc_process_t : public runtime_process_i {
 	std::thread::id _thread_id;
 
 	std::shared_ptr<interpreter_t> _interpreter;
-	std::shared_ptr<value_entry_t> _init_function;
-	std::shared_ptr<value_entry_t> _msg_function;
+	rt_value_t _init_function;
+	rt_value_t _msg_function;
 	value_t _process_state;
 	type_t _message_type;
 
@@ -226,7 +226,7 @@ static void run_process(bc_execution_engine_t& runtime, int process_id){
 	//	Call process init()
 	{
 		const std::vector<value_t> args = {};
-		process._process_state = call_function(*process._interpreter, rt_to_value(backend, process._init_function->_value), args);
+		process._process_state = call_function(*process._interpreter, rt_to_value(backend, process._init_function), args);
 	}
 
 	//	Handle process messages until exit.
@@ -253,7 +253,7 @@ static void run_process(bc_execution_engine_t& runtime, int process_id){
 
 		{
 			const std::vector<value_t> args = { process._process_state, rt_to_value(backend, message) };
-			const auto f = rt_to_value(backend, process._msg_function->_value);
+			const auto f = rt_to_value(backend, process._msg_function);
 			const auto& state2 = call_function(*process._interpreter, f, args);
 			process._process_state = state2;
 		}
@@ -287,13 +287,13 @@ static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& confi
 			process->_ee = &ee;
 			process->_name_key = t.first;
 			process->_interpreter = std::make_shared<interpreter_t>(ee._program, ee.backend, config, process.get(), *ee.handler);
-			process->_init_function = find_global_symbol2(*process->_interpreter, t.second.init_func_linkname);
-			process->_msg_function = find_global_symbol2(*process->_interpreter, t.second.msg_func_linkname);
+			process->_init_function = load_global(*process->_interpreter, t.second.init_func_linkname);
+			process->_msg_function = load_global(*process->_interpreter, t.second.msg_func_linkname);
 
-			if(process->_init_function == nullptr){
+			if(process->_init_function._type.is_undefined()){
 				throw std::runtime_error("Cannot link floyd init function: \"" + t.second.init_func_linkname.s + "\"");
 			}
-			if(process->_msg_function == nullptr){
+			if(process->_msg_function._type.is_undefined()){
 				throw std::runtime_error("Cannot link floyd message function: \"" + t.second.msg_func_linkname.s + "\"");
 			}
 
@@ -353,9 +353,9 @@ static int64_t bc_call_main(interpreter_t& interpreter, const floyd::value_t& f,
 run_output_t run_program_bc(bc_execution_engine_t& ee, const std::vector<std::string>& main_args, const config_t& config){
 	QUARK_ASSERT(ee.check_invariant());
 
-	const auto& main_function = find_global_symbol2(ee.main_temp, module_symbol_t("main"));
-	if(main_function != nullptr){
-		const auto main_result_int = bc_call_main(ee.main_temp, rt_to_value(ee.main_temp._backend, main_function->_value), main_args);
+	const auto& main_function = load_global(ee.main_temp, module_symbol_t("main"));
+	if(main_function._type.is_undefined() == false){
+		const auto main_result_int = bc_call_main(ee.main_temp, rt_to_value(ee.main_temp._backend, main_function), main_args);
 		return { main_result_int, {} };
 	}
 	else{
@@ -367,10 +367,10 @@ run_output_t run_program_bc(bc_execution_engine_t& ee, const std::vector<std::st
 std::vector<test_t> collect_tests(bc_execution_engine_t& ee){
 	QUARK_ASSERT(ee.check_invariant());
 
-	const auto& test_registry_bind = find_global_symbol2(ee.main_temp, module_symbol_t(k_global_test_registry));
-	QUARK_ASSERT(test_registry_bind != nullptr);
+	const auto& test_registry_bind = load_global(ee.main_temp, module_symbol_t(k_global_test_registry));
+	QUARK_ASSERT(test_registry_bind._type.is_undefined() == false);
 
-	const auto vec = rt_to_value(ee.main_temp._backend, test_registry_bind->_value);
+	const auto vec = rt_to_value(ee.main_temp._backend, test_registry_bind);
 	const auto vec2 = vec.get_vector_value();
 	std::vector<test_t> a = unpack_test_registry(vec2);
 	return a;
