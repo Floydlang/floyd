@@ -52,7 +52,11 @@ struct bc_execution_engine_t {
 	std::vector<std::thread> _worker_threads;
 };
 
-std::unique_ptr<bc_execution_engine_t> make_bytecode_execution_engine(const bc_program_t& program, const config_t& config, runtime_handler_i& runtime_handler);
+std::unique_ptr<bc_execution_engine_t> make_bytecode_execution_engine(
+	const bc_program_t& program,
+	const config_t& config,
+	runtime_handler_i& runtime_handler
+);
 
 
 //////////////////////////////////////		Free functions
