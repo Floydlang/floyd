@@ -26,7 +26,6 @@ namespace floyd {
 
 static const bool k_trace_messaging = true;
 
-//??? Avoid using value_t
 /*
 REFS:
 
@@ -101,7 +100,7 @@ static interpreter_t& get_main_interpreter(bc_execution_engine_t& ee){
 }
 
 
-static value_t call_function(interpreter_t& vm, const value_t& f, const std::vector<value_t>& args){
+static value_t call_function_values(interpreter_t& vm, const value_t& f, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
 QUARK_ASSERT(f.is_function());
@@ -140,7 +139,7 @@ value_t call_function(bc_execution_engine_t& ee, const value_t& f, const std::ve
 	QUARK_ASSERT(f.check_invariant());
 	QUARK_ASSERT(f.is_function());
 
-	return call_function(get_main_interpreter(ee), f, args);
+	return call_function_values(get_main_interpreter(ee), f, args);
 }
 
 
@@ -416,9 +415,11 @@ static int64_t bc_call_main(bc_execution_engine_t& ee, const rt_value_t& f, cons
 
 	//	int main([string] args) impure
 	if(f._type == get_main_signature_arg_impure(types) || f._type == get_main_signature_arg_pure(types)){
-		const auto main_args2 = mapf<value_t>(main_args, [](auto& e){ return value_t::make_string(e); });
-		const auto main_args3 = value_t::make_vector_value(types, type_t::make_string(), main_args2);
-		const auto main_result = call_function(interpreter, rt_to_value(ee.backend, f), { main_args3 });
+		const auto main_args2 = mapf<rt_value_t>(main_args, [&](auto& e){ return rt_value_t::make_string(ee.backend, e); });
+		const auto main_args3 = make_vector_value(ee.backend, type_t::make_string(), { main_args2.begin(), main_args2.end() });
+
+		const rt_value_t args[] = { main_args3 };
+		const auto main_result = call_function_bc(interpreter, f, args, 1);
 		const auto main_result_int = main_result.get_int_value();
 
 		QUARK_ASSERT(ee.check_invariant());
@@ -427,7 +428,7 @@ static int64_t bc_call_main(bc_execution_engine_t& ee, const rt_value_t& f, cons
 
 	//	int main() impure
 	else if(f._type == get_main_signature_no_arg_impure(types) || f._type == get_main_signature_no_arg_pure(types)){
-		const auto main_result = call_function(interpreter, rt_to_value(ee.backend, f), {});
+		const auto main_result = call_function_bc(interpreter, f, {}, 0);
 		const auto main_result_int = main_result.get_int_value();
 
 		QUARK_ASSERT(ee.check_invariant());
