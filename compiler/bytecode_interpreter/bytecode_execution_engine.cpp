@@ -26,6 +26,7 @@ namespace floyd {
 
 static const bool k_trace_messaging = true;
 
+//??? Avoid using value_t
 /*
 REFS:
 
@@ -34,20 +35,78 @@ std::packaged_task
 https://en.cppreference.com/w/cpp/thread/condition_variable/wait
 */
 
+static void send(bc_process_t& process, const std::string& dest_process_id, const rt_pod_t& message0, const type_t& type);
+
+//??? use process_def_t as member
+//	NOTICE: Each process inbox has its own mutex + condition variable. No mutex protects cout.
+struct bc_process_t : public runtime_process_i {
+	bool check_invariant() const {
+		QUARK_ASSERT(_ee != nullptr);
+		QUARK_ASSERT(_name_key.empty() == false);
+		QUARK_ASSERT(_bc_thread && _bc_thread->check_invariant());
+
+		QUARK_ASSERT(_init_function.check_invariant());
+		QUARK_ASSERT(_init_function._type.is_undefined() == false);
+
+		QUARK_ASSERT(_msg_function.check_invariant());
+		QUARK_ASSERT(_msg_function._type.is_undefined() == false);
+		QUARK_ASSERT(_message_type.check_invariant());
+
+		QUARK_ASSERT(_process_state.check_invariant());
+		return true;
+	}
+
+	void runtime_process__on_send_message(const std::string& dest_process_id, const rt_pod_t& message0, const type_t& type) override {
+		QUARK_ASSERT(check_invariant());
+
+		send(*this, dest_process_id, message0, type);
+
+		QUARK_ASSERT(check_invariant());
+	}
+
+	void runtime_process__on_exit_process() override {
+		QUARK_ASSERT(check_invariant());
+
+		_exiting_flag = true;
+	}
+
+
+	//////////////////////////////////////		STATE
+
+	bc_execution_engine_t* _ee;
+	std::condition_variable _inbox_condition_variable;
+	std::mutex _inbox_mutex;
+	std::deque<rt_value_t> _inbox;
+
+	std::string _name_key;
+//	std::thread::id _thread_id;
+	interpreter_t* _bc_thread;
+
+	rt_value_t _init_function;
+	rt_value_t _msg_function;
+	value_t _process_state;
+	type_t _message_type;
+
+	std::atomic<bool> _exiting_flag;
+};
+
+
+
+
 
 static interpreter_t& get_main_interpreter(bc_execution_engine_t& ee){
 	QUARK_ASSERT(ee.check_invariant());
 
-	return ee.main_temp2;
+	return ee.main_bc_thread;
 }
 
 
 static value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vector<value_t>& args){
-#if DEBUG
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
+QUARK_ASSERT(f.is_function());
+#if DEBUG
 	for(const auto& i: args){ QUARK_ASSERT(i.check_invariant()); };
-	QUARK_ASSERT(f.is_function());
 #endif
 
 	const auto f2 = value_to_rt(vm._backend, f);
@@ -77,14 +136,11 @@ rt_value_t load_global(bc_execution_engine_t& ee, const module_symbol_t& name){
 }
 
 value_t call_function(bc_execution_engine_t& ee, const floyd::value_t& f, const std::vector<value_t>& args){
+	QUARK_ASSERT(ee.check_invariant());
+	QUARK_ASSERT(f.check_invariant());
+	QUARK_ASSERT(f.is_function());
+
 	return call_function(get_main_interpreter(ee), f, args);
-}
-
-
-bc_program_t compile_to_bytecode(const compilation_unit_t& cu){
-	const auto sem_ast = compile_to_sematic_ast__errors(cu);
-	const auto bc = generate_bytecode(sem_ast);
-	return bc;
 }
 
 
@@ -92,48 +148,14 @@ bc_program_t compile_to_bytecode(const compilation_unit_t& cu){
 //////////////////////////////////////		bc_process_t
 
 
-static void send(bc_process_t& process, const std::string& dest_process_id, const rt_pod_t& message0, const type_t& type);
 
-
-//	NOTICE: Each process inbox has its own mutex + condition variable. No mutex protects cout.
-struct bc_process_t : public runtime_process_i {
-	bool check_invariant() const {
-		QUARK_ASSERT(_init_function._type.is_undefined() == false);
-		QUARK_ASSERT(_msg_function._type.is_undefined() == false);
-		return true;
-	}
-
-	void runtime_process__on_send_message(const std::string& dest_process_id, const rt_pod_t& message0, const type_t& type) override {
-		send(*this, dest_process_id, message0, type);
-	}
-
-	void runtime_process__on_exit_process() override {
-		_exiting_flag = true;
-	}
-
-
-	//////////////////////////////////////		STATE
-
-	bc_execution_engine_t* _ee;
-	std::condition_variable _inbox_condition_variable;
-	std::mutex _inbox_mutex;
-	std::deque<rt_value_t> _inbox;
-
-	std::string _name_key;
-	std::thread::id _thread_id;
-
-	std::shared_ptr<interpreter_t> _interpreter;
-	rt_value_t _init_function;
-	rt_value_t _msg_function;
-	value_t _process_state;
-	type_t _message_type;
-
-	std::atomic<bool> _exiting_flag;
-};
 
 
 static void send(bc_process_t& process, const std::string& dest_process_id, const rt_pod_t& message0, const type_t& type){
-	auto& backend = process._interpreter->_backend;
+	QUARK_ASSERT(process.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	auto& backend = process._ee->backend;
 	const auto& types = backend.types;
 	const auto message = make_rt_value(backend, message0, type, rt_value_t::rc_mode::bump);
 
@@ -180,19 +202,24 @@ static void send(bc_process_t& process, const std::string& dest_process_id, cons
 }
 
 
-
 //////////////////////////////////////		bc_execution_engine_t
 
+
 void unwind_global_stack(bc_execution_engine_t& ee){
+	QUARK_ASSERT(ee.check_invariant());
+
 	get_main_interpreter(ee).unwind_stack();
+
+	QUARK_ASSERT(ee.check_invariant());
 }
 
 bool bc_execution_engine_t::check_invariant() const {
 	QUARK_ASSERT(_program->check_invariant());
 	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(main_temp2.check_invariant());
+	QUARK_ASSERT(main_bc_thread.check_invariant());
 	QUARK_ASSERT(handler != nullptr);
-//	QUARK_ASSERT(_main_thread_id != std::thread::id());
+	QUARK_ASSERT(_main_thread_id != std::thread::id());
+//	QUARK_ASSERT(_processes.size() >= 1);
 	for(const auto& e: _processes){
 		QUARK_ASSERT(e && e->check_invariant());
 	}
@@ -202,11 +229,12 @@ bool bc_execution_engine_t::check_invariant() const {
 bc_execution_engine_t::bc_execution_engine_t(const bc_program_t& program, const config_t& config, runtime_handler_i& runtime_handler) :
 	_program(std::make_shared<bc_program_t>(program)),
 	backend(link_functions(*_program), bc_make_struct_layouts(_program->_types), _program->_types, config),
-	main_temp2(_program, backend, config, nullptr, runtime_handler),
+	main_bc_thread(_program, backend, config, nullptr, runtime_handler),
+	_main_thread_id(std::this_thread::get_id()),
 	handler(&runtime_handler),
 	_processes(),
-	_main_thread_id(),
-	_worker_threads()
+	_bc_threads(),
+	_os_threads()
 {
 	QUARK_ASSERT(program.check_invariant());
 
@@ -223,6 +251,8 @@ std::unique_ptr<bc_execution_engine_t> make_bytecode_execution_engine(
 }
 
 static std::string make_trace_process_header(const bc_process_t& process){
+	QUARK_ASSERT(process.check_invariant());
+
 	const auto process_name = process._name_key;
 	const auto os_thread_name = get_current_thread_name();
 
@@ -230,20 +260,24 @@ static std::string make_trace_process_header(const bc_process_t& process){
 	return header;
 }
 
+static void run_process(bc_execution_engine_t& ee, int process_id){
+	QUARK_ASSERT(ee.check_invariant());
+	QUARK_ASSERT(process_id >= 0 && process_id < ee._processes.size());
 
-static void run_process(bc_execution_engine_t& runtime, int process_id){
-	auto& process = *runtime._processes[process_id];
+	auto& process = *ee._processes[process_id];
 
 	QUARK_ASSERT(process.check_invariant());
 
-	auto& backend = process._interpreter->_backend;
+	auto& backend = ee.backend;
 	const auto& types = backend.types;
 	const auto trace_header = make_trace_process_header(process);
+
+	auto& interpreter = *process._bc_thread;
 
 	//	Call process init()
 	{
 		const std::vector<value_t> args = {};
-		process._process_state = call_function(*process._interpreter, rt_to_value(backend, process._init_function), args);
+		process._process_state = call_function(interpreter, rt_to_value(backend, process._init_function), args);
 	}
 
 	//	Handle process messages until exit.
@@ -271,95 +305,135 @@ static void run_process(bc_execution_engine_t& runtime, int process_id){
 		{
 			const std::vector<value_t> args = { process._process_state, rt_to_value(backend, message) };
 			const auto f = rt_to_value(backend, process._msg_function);
-			const auto& state2 = call_function(*process._interpreter, f, args);
+			const auto& state2 = call_function(interpreter, f, args);
 			process._process_state = state2;
 		}
 	}
+
+	QUARK_ASSERT(ee.check_invariant());
 }
 
-//	NOTICE: Will not run the main_temp VM, it makes new VMs for every thread run(!?) ???
+//	Remember that current thread (main) is also a thread, no need to create a worker thread for that process.
+//??? globals should be shared between interpreter_t instances!
 static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& config){
+	QUARK_ASSERT(ee.check_invariant());
+
 	const auto& container_def = ee._program->_container_def;
+	std::map<std::string, process_def_t> process_infos = reduce(
+		container_def._clock_busses,
+		std::map<std::string, process_def_t>(),
+		[&](const std::map<std::string, process_def_t>& acc, const std::pair<std::string, clock_bus_t>& e){
+			auto acc2 = acc;
+			acc2.insert(e.second._processes.begin(), e.second._processes.end());
+			return acc2;
+		}
+	);
 
-	if(container_def._clock_busses.empty()){
-	}
-	else{
-		ee.handler = get_main_interpreter(ee)._runtime_handler;
-		ee._main_thread_id = std::this_thread::get_id();
+	const auto process_infos2 = std::vector<std::pair<std::string, process_def_t>>(process_infos.begin(), process_infos.end());
 
-		std::map<std::string, process_def_t> process_infos = reduce(
-			ee._program->_container_def._clock_busses,
-			std::map<std::string, process_def_t>(),
-			[](const std::map<std::string, process_def_t>& acc, const std::pair<std::string, clock_bus_t>& e){
-				auto acc2 = acc;
-				acc2.insert(e.second._processes.begin(), e.second._processes.end());
-				return acc2;
-			}
-		);
+	if(process_infos2.empty() == false){
+		for(int process_id = 0 ; process_id < process_infos2.size() ; process_id++){
+			const auto& t = process_infos2[process_id];
 
-		for(const auto& t: process_infos	){
 			auto process = std::make_shared<bc_process_t>();
-			process->_exiting_flag = false;
-			process->_message_type = t.second.msg_type;
-			process->_ee = &ee;
-			process->_name_key = t.first;
-			process->_interpreter = std::make_shared<interpreter_t>(ee._program, ee.backend, config, process.get(), *ee.handler);
-			process->_init_function = load_global(*process->_interpreter, t.second.init_func_linkname);
-			process->_msg_function = load_global(*process->_interpreter, t.second.msg_func_linkname);
 
-			if(process->_init_function._type.is_undefined()){
-				throw std::runtime_error("Cannot link floyd init function: \"" + t.second.init_func_linkname.s + "\"");
-			}
-			if(process->_msg_function._type.is_undefined()){
-				throw std::runtime_error("Cannot link floyd message function: \"" + t.second.msg_func_linkname.s + "\"");
-			}
+			if(process_id == 0){
+				auto bc_thread = &ee.main_bc_thread;
 
-			ee._processes.push_back(process);
+				bc_thread->_process_handler = process.get();
+
+				//??? dup
+				process->_exiting_flag = false;
+				process->_message_type = t.second.msg_type;
+				process->_ee = &ee;
+				process->_name_key = t.first;
+				process->_bc_thread = bc_thread;
+				process->_init_function = load_global(*process->_bc_thread, t.second.init_func_linkname);
+				process->_msg_function = load_global(*process->_bc_thread, t.second.msg_func_linkname);
+
+				if(process->_init_function._type.is_undefined()){
+					throw std::runtime_error("Cannot link floyd init function: \"" + t.second.init_func_linkname.s + "\"");
+				}
+				if(process->_msg_function._type.is_undefined()){
+					throw std::runtime_error("Cannot link floyd message function: \"" + t.second.msg_func_linkname.s + "\"");
+				}
+
+				ee._processes.push_back(process);
+			}
+			else{
+				auto bc_thread = std::make_shared<interpreter_t>(ee._program, ee.backend, config, process.get(), *ee.handler);
+				ee._bc_threads.push_back(bc_thread);
+
+				//??? dup
+				process->_exiting_flag = false;
+				process->_message_type = t.second.msg_type;
+				process->_ee = &ee;
+				process->_name_key = t.first;
+				process->_bc_thread = bc_thread.get();
+				process->_init_function = load_global(*process->_bc_thread, t.second.init_func_linkname);
+				process->_msg_function = load_global(*process->_bc_thread, t.second.msg_func_linkname);
+
+				if(process->_init_function._type.is_undefined()){
+					throw std::runtime_error("Cannot link floyd init function: \"" + t.second.init_func_linkname.s + "\"");
+				}
+				if(process->_msg_function._type.is_undefined()){
+					throw std::runtime_error("Cannot link floyd message function: \"" + t.second.msg_func_linkname.s + "\"");
+				}
+
+				ee._processes.push_back(process);
+
+				ee._os_threads.push_back(
+					std::thread(
+						[&](int process_id){
+							std::stringstream thread_name;
+							thread_name << std::string() << "process " << process_id << " thread";
+							set_current_threads_name(thread_name.str());
+
+							run_process(ee, process_id);
+						},
+						process_id
+					)
+				);
+			}
 		}
 
-		//	Remember that current thread (main) is also a thread, no need to create a worker thread for that process.
-		ee._processes[0]->_thread_id = ee._main_thread_id;
-
-		for(int process_id = 1 ; process_id < ee._processes.size() ; process_id++){
-			ee._worker_threads.push_back(
-				std::thread([&](int process_id){
-					std::stringstream thread_name;
-					thread_name << std::string() << "process " << process_id << " thread";
-					set_current_threads_name(thread_name.str());
-
-					run_process(ee, process_id);
-				},
-				process_id
-				)
-			);
-		}
-
-		//	Run main process.
+		//	Run process 0 using main thread.
 		run_process(ee, 0);
 
-		for(auto &t: ee._worker_threads){
+		for(auto &t: ee._os_threads){
 			t.join();
 		}
 	}
+
+	QUARK_ASSERT(ee.check_invariant());
 }
 
-static int64_t bc_call_main(interpreter_t& interpreter, const floyd::value_t& f, const std::vector<std::string>& main_args){
-	QUARK_ASSERT(interpreter.check_invariant());
+//??? Check main prototype earlier in pipeline!
+static int64_t bc_call_main(bc_execution_engine_t& ee, const floyd::value_t& f, const std::vector<std::string>& main_args){
+	QUARK_ASSERT(ee.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
+	QUARK_ASSERT(f.is_function());
 
+	auto& interpreter = get_main_interpreter(ee);
 	auto types = interpreter._program->_types;
 
-	//??? Check types earlier in pipeline
+	//	int main([string] args) impure
 	if(f.get_type() == get_main_signature_arg_impure(types) || f.get_type() == get_main_signature_arg_pure(types)){
 		const auto main_args2 = mapf<value_t>(main_args, [](auto& e){ return value_t::make_string(e); });
 		const auto main_args3 = value_t::make_vector_value(types, type_t::make_string(), main_args2);
 		const auto main_result = call_function(interpreter, f, { main_args3 });
 		const auto main_result_int = main_result.get_int_value();
+
+		QUARK_ASSERT(ee.check_invariant());
 		return main_result_int;
 	}
+
+	//	int main() impure
 	else if(f.get_type() == get_main_signature_no_arg_impure(types) || f.get_type() == get_main_signature_no_arg_pure(types)){
 		const auto main_result = call_function(interpreter, f, {});
 		const auto main_result_int = main_result.get_int_value();
+
+		QUARK_ASSERT(ee.check_invariant());
 		return main_result_int;
 	}
 	else{
@@ -372,11 +446,15 @@ run_output_t run_program_bc(bc_execution_engine_t& ee, const std::vector<std::st
 
 	const auto& main_function = load_global(get_main_interpreter(ee), module_symbol_t("main"));
 	if(main_function._type.is_undefined() == false){
-		const auto main_result_int = bc_call_main(get_main_interpreter(ee), rt_to_value(get_main_interpreter(ee)._backend, main_function), main_args);
+		const auto main_result_int = bc_call_main(ee, rt_to_value(get_main_interpreter(ee)._backend, main_function), main_args);
+
+		QUARK_ASSERT(ee.check_invariant());
 		return { main_result_int, {} };
 	}
 	else{
 		run_floyd_processes(ee, config);
+
+		QUARK_ASSERT(ee.check_invariant());
 		return run_output_t(0, {});
 	}
 }
@@ -390,6 +468,8 @@ std::vector<test_t> collect_tests(bc_execution_engine_t& ee){
 	const auto vec = rt_to_value(get_main_interpreter(ee)._backend, test_registry_bind);
 	const auto vec2 = vec.get_vector_value();
 	std::vector<test_t> a = unpack_test_registry(vec2);
+
+	QUARK_ASSERT(ee.check_invariant());
 	return a;
 }
 
@@ -410,6 +490,7 @@ static std::string run_test(bc_execution_engine_t& ee, const test_t& test){
 	try {
 		const std::vector<rt_value_t> args2;
 		call_function_bc(get_main_interpreter(ee), f_value, &args2[0], static_cast<int>(args2.size()));
+		QUARK_ASSERT(ee.check_invariant());
 
 		return "";
 	}
@@ -425,11 +506,11 @@ static std::string run_test(bc_execution_engine_t& ee, const test_t& test){
 }
 
 std::vector<test_result_t> run_tests_bc(
-	bc_execution_engine_t& vm,
+	bc_execution_engine_t& ee,
 	const std::vector<test_t>& all_tests,
 	const std::vector<test_id_t>& wanted
 ){
-	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(ee.check_invariant());
 
 	std::vector<test_result_t> result;
 	for(int index = 0 ; index < all_tests.size() ; index++){
@@ -447,7 +528,7 @@ std::vector<test_result_t> run_tests_bc(
 			}
 		);
 		if(it != wanted.end()){
-			const auto r = run_test(vm, test);
+			const auto r = run_test(ee, test);
 			const auto r2 = r == ""
 				? test_result_t { test_result_t::type::success, "", test.test_id }
 				: test_result_t { test_result_t::type::fail_with_string, r, test.test_id };
@@ -458,9 +539,19 @@ std::vector<test_result_t> run_tests_bc(
 		}
 	}
 
+	QUARK_ASSERT(ee.check_invariant());
+
 	return result;
 }
 
+
+bc_program_t compile_to_bytecode(const compilation_unit_t& cu){
+	const auto sem_ast = compile_to_sematic_ast__errors(cu);
+	const auto bc = generate_bytecode(sem_ast);
+
+	QUARK_ASSERT(bc.check_invariant());
+	return bc;
+}
 
 
 }	//	floyd

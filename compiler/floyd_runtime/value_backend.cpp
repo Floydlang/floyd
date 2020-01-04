@@ -1599,11 +1599,15 @@ json_t bcvalue_to_json(value_backend_t& backend, const rt_value_t& v){
 		return result;
 	}
 	else if(peek.is_function()){
+		return value_to_hex_string(v.get_function_value_data(), 16);
+/*
 		return json_t::make_object(
 			{
-				{ "funtyp", type_to_json(types, v._type) }
+				{ "funtyp", type_to_json(types, v._type) },
 			}
 		);
+*/
+
 	}
 	else{
 		quark::throw_exception();
