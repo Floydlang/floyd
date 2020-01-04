@@ -931,6 +931,8 @@ std::pair<rt_pod_t, type_t> load_struct_member(
 	int member_index
 );
 
+rt_value_t make_string_vector(value_backend_t& backend, const std::vector<std::string>& vec);
+
 
 
 ////////////////////////////////		REFERENCE COUNTING

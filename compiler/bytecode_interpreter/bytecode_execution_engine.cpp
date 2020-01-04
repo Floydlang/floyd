@@ -407,10 +407,9 @@ static int64_t bc_call_main(bc_execution_engine_t& ee, const rt_value_t& f, cons
 
 	//	int main([string] args) impure
 	if(f._type == get_main_signature_arg_impure(types) || f._type == get_main_signature_arg_pure(types)){
-		const auto main_args2 = mapf<rt_value_t>(main_args, [&](auto& e){ return rt_value_t::make_string(ee.backend, e); });
-		const auto main_args3 = make_vector_value(ee.backend, type_t::make_string(), { main_args2.begin(), main_args2.end() });
+		const auto main_args2 = make_string_vector(ee.backend, main_args);
 
-		const rt_value_t args[] = { main_args3 };
+		const rt_value_t args[] = { main_args2 };
 		const auto main_result = call_function_bc(interpreter, f, args, 1);
 		const auto main_result_int = main_result.get_int_value();
 

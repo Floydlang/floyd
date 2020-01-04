@@ -2138,6 +2138,14 @@ std::pair<rt_pod_t, type_t> load_struct_member(
 }
 
 
+rt_value_t make_string_vector(value_backend_t& backend, const std::vector<std::string>& vec){
+	const auto vec2 = mapf<rt_value_t>(vec, [&](auto& e){ return rt_value_t::make_string(backend, e); });
+	const auto vec3 = make_vector_value(backend, type_t::make_string(), { vec2.begin(), vec2.end() });
+	return vec3;
+}
+
+
+
 ////////////////////////////////		VALUES
 
 

@@ -299,8 +299,6 @@ std::vector<func_link_t> make_function_link_map1(llvm::LLVMContext& context, con
 	return acc;
 }
 
-
-
 int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const std::vector<std::string>& main_args){
 	QUARK_ASSERT(f.address != nullptr);
 
@@ -312,17 +310,8 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 	if(f.type == get_main_signature_arg_impure(types) || f.type == get_main_signature_arg_pure(types)){
 		const auto f2 = reinterpret_cast<FLOYD_RUNTIME_MAIN_ARGS_IMPURE>(f.address);
 
-		//??? Slow path via value_t
-		std::vector<value_t> main_args2;
-		for(const auto& e: main_args){
-			main_args2.push_back(value_t::make_string(e));
-		}
-		const auto main_args3 = value_t::make_vector_value(types, type_t::make_string(), main_args2);
-		const auto main_args4 = to_runtime_value2(context.ee->backend, main_args3);
-		const auto main_result_int = (*f2)(&runtime_ptr, main_args4);
-
-		const auto return_itype = type_t::make_vector(types, type_t::make_string());
-		release_value(context.ee->backend, main_args4, return_itype);
+		const auto main_args2 = make_string_vector(ee.backend, main_args);
+		const auto main_result_int = (*f2)(&runtime_ptr, main_args2._pod);
 		return main_result_int;
 	}
 	else if(f.type == get_main_signature_no_arg_impure(types) || f.type == get_main_signature_no_arg_pure(types)){
@@ -780,7 +769,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 	There is only one LLVM execution engine, shared by all Floyd processes.
 	When client code calls  send() or print() we need to figure out which Floyd process they call from.
 */
-static std::map<std::string, value_t> run_processes(llvm_execution_engine_t& ee){
+static std::map<std::string, value_t> run_floyd_processes(llvm_execution_engine_t& ee){
 	if(ee.container_def._clock_busses.empty() == true){
 		return {};
 	}
@@ -857,7 +846,7 @@ run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::str
 		return { main_result_int, {} };
 	}
 	else{
-		const auto result = run_processes(ee);
+		const auto result = run_floyd_processes(ee);
 		return { 0, result };
 	}
 }
