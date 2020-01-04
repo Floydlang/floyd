@@ -129,10 +129,10 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 
 		auto run_output = run_program_bc(*interpreter, main_args, config);
 
-		const auto r = load_global(interpreter->main_temp, module_symbol_t("result"));
-		value_t result_global = r._type.is_undefined() ? value_t() : rt_to_value(*interpreter->main_temp._stack._backend, r);
+		const auto r = load_global(*interpreter, module_symbol_t("result"));
+		value_t result_global = r._type.is_undefined() ? value_t() : rt_to_value(interpreter->backend, r);
 
-		interpreter->main_temp.unwind_stack();
+		unwind_global_stack(*interpreter);
 
 		return test_report_t{
 			result_global.is_undefined() ? json_t() : value_and_type_to_json(exe._types, result_global),
@@ -140,7 +140,7 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 			handler._print_output,
 			""
 		};
-		if(detect_leaks(interpreter->main_temp._backend)){
+		if(detect_leaks(interpreter->backend)){
 			quark::throw_defective_request();
 		}
 	}

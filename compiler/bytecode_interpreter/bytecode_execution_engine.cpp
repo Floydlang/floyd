@@ -35,6 +35,7 @@ https://en.cppreference.com/w/cpp/thread/condition_variable/wait
 */
 
 
+
 static value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vector<value_t>& args){
 #if DEBUG
 	QUARK_ASSERT(vm.check_invariant());
@@ -53,20 +54,24 @@ static value_t call_function(interpreter_t& vm, const floyd::value_t& f, const s
 	return rt_to_value(vm._backend, result);
 }
 
-value_t load_global(bc_execution_engine_t& ee, const module_symbol_t& name){
+rt_value_t load_global(bc_execution_engine_t& ee, const module_symbol_t& name){
 	QUARK_ASSERT(ee.check_invariant());
 
-	const auto& result = load_global(ee.main_temp, name);
+	return load_global(ee.main_temp2, name);
+/*
 	if(result._type.is_undefined()){
 		quark::throw_runtime_error(std::string() + "Cannot find global \"" + name.s + "\".");
 	}
 	else{
-		return rt_to_value(ee.main_temp._backend, result);
+		return result;
+//		return rt_to_value(ee.main_temp2._backend, result);
 	}
+*/
+
 }
 
 value_t call_function(bc_execution_engine_t& ee, const floyd::value_t& f, const std::vector<value_t>& args){
-	return call_function(ee.main_temp, f, args);
+	return call_function(ee.main_temp2, f, args);
 }
 
 
@@ -172,12 +177,14 @@ static void send(bc_process_t& process, const std::string& dest_process_id, cons
 
 //////////////////////////////////////		bc_execution_engine_t
 
-
+void unwind_global_stack(bc_execution_engine_t& ee){
+	ee.main_temp2.unwind_stack();
+}
 
 bool bc_execution_engine_t::check_invariant() const {
 	QUARK_ASSERT(_program->check_invariant());
 	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(main_temp.check_invariant());
+	QUARK_ASSERT(main_temp2.check_invariant());
 	QUARK_ASSERT(handler != nullptr);
 //	QUARK_ASSERT(_main_thread_id != std::thread::id());
 	for(const auto& e: _processes){
@@ -189,7 +196,7 @@ bool bc_execution_engine_t::check_invariant() const {
 bc_execution_engine_t::bc_execution_engine_t(const bc_program_t& program, const config_t& config, runtime_handler_i& runtime_handler) :
 	_program(std::make_shared<bc_program_t>(program)),
 	backend(link_functions(*_program), bc_make_struct_layouts(_program->_types), _program->_types, config),
-	main_temp(_program, backend, config, nullptr, runtime_handler),
+	main_temp2(_program, backend, config, nullptr, runtime_handler),
 	handler(&runtime_handler),
 	_processes(),
 	_main_thread_id(),
@@ -271,7 +278,7 @@ static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& confi
 	if(container_def._clock_busses.empty()){
 	}
 	else{
-		ee.handler = ee.main_temp._runtime_handler;
+		ee.handler = ee.main_temp2._runtime_handler;
 		ee._main_thread_id = std::this_thread::get_id();
 
 		std::map<std::string, process_def_t> process_infos = reduce(
@@ -357,9 +364,9 @@ static int64_t bc_call_main(interpreter_t& interpreter, const floyd::value_t& f,
 run_output_t run_program_bc(bc_execution_engine_t& ee, const std::vector<std::string>& main_args, const config_t& config){
 	QUARK_ASSERT(ee.check_invariant());
 
-	const auto& main_function = load_global(ee.main_temp, module_symbol_t("main"));
+	const auto& main_function = load_global(ee.main_temp2, module_symbol_t("main"));
 	if(main_function._type.is_undefined() == false){
-		const auto main_result_int = bc_call_main(ee.main_temp, rt_to_value(ee.main_temp._backend, main_function), main_args);
+		const auto main_result_int = bc_call_main(ee.main_temp2, rt_to_value(ee.main_temp2._backend, main_function), main_args);
 		return { main_result_int, {} };
 	}
 	else{
@@ -371,10 +378,10 @@ run_output_t run_program_bc(bc_execution_engine_t& ee, const std::vector<std::st
 std::vector<test_t> collect_tests(bc_execution_engine_t& ee){
 	QUARK_ASSERT(ee.check_invariant());
 
-	const auto& test_registry_bind = load_global(ee.main_temp, module_symbol_t(k_global_test_registry));
+	const auto& test_registry_bind = load_global(ee.main_temp2, module_symbol_t(k_global_test_registry));
 	QUARK_ASSERT(test_registry_bind._type.is_undefined() == false);
 
-	const auto vec = rt_to_value(ee.main_temp._backend, test_registry_bind);
+	const auto vec = rt_to_value(ee.main_temp2._backend, test_registry_bind);
 	const auto vec2 = vec.get_vector_value();
 	std::vector<test_t> a = unpack_test_registry(vec2);
 	return a;
@@ -392,11 +399,11 @@ static std::string run_test(bc_execution_engine_t& ee, const test_t& test){
 		epure::pure
 	);
 
-	const auto f_value = rt_value_t::make_function_value(ee.main_temp._backend, f_type, function_id);
+	const auto f_value = rt_value_t::make_function_value(ee.main_temp2._backend, f_type, function_id);
 
 	try {
 		const std::vector<rt_value_t> args2;
-		call_function_bc(ee.main_temp, f_value, &args2[0], static_cast<int>(args2.size()));
+		call_function_bc(ee.main_temp2, f_value, &args2[0], static_cast<int>(args2.size()));
 
 		return "";
 	}

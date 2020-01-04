@@ -40,7 +40,7 @@ struct bc_execution_engine_t {
 	//////////////////////////////////////		STATE
 	std::shared_ptr<bc_program_t> _program;
 	value_backend_t backend;
-	interpreter_t main_temp;
+	interpreter_t main_temp2;
 
 	runtime_handler_i* handler;
 
@@ -61,8 +61,10 @@ std::unique_ptr<bc_execution_engine_t> make_bytecode_execution_engine(
 
 //////////////////////////////////////		Free functions
 
+void unwind_global_stack(bc_execution_engine_t& ee);
 
-value_t load_global(bc_execution_engine_t& ee, const module_symbol_t& s);
+
+rt_value_t load_global(bc_execution_engine_t& ee, const module_symbol_t& s);
 value_t call_function(bc_execution_engine_t& ee, const floyd::value_t& f, const std::vector<value_t>& args);
 bc_program_t compile_to_bytecode(const compilation_unit_t& cu);
 
