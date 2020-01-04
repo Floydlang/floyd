@@ -19,7 +19,6 @@
 #include <thread>
 #include <deque>
 #include <future>
-
 #include <condition_variable>
 
 namespace floyd {
@@ -78,7 +77,6 @@ struct bc_process_t : public runtime_process_i {
 	std::deque<rt_value_t> _inbox;
 
 	std::string _name_key;
-//	std::thread::id _thread_id;
 	interpreter_t* _bc_thread;
 
 	rt_value_t _init_function;
@@ -122,16 +120,6 @@ rt_value_t load_global(bc_execution_engine_t& ee, const module_symbol_t& name){
 	QUARK_ASSERT(ee.check_invariant());
 
 	return load_global(get_main_interpreter(ee), name);
-/*
-	if(result._type.is_undefined()){
-		quark::throw_runtime_error(std::string() + "Cannot find global \"" + name.s + "\".");
-	}
-	else{
-		return result;
-//		return rt_to_value(ee.main_temp2._backend, result);
-	}
-*/
-
 }
 
 value_t call_function(bc_execution_engine_t& ee, const value_t& f, const std::vector<value_t>& args){
@@ -218,7 +206,6 @@ bool bc_execution_engine_t::check_invariant() const {
 	QUARK_ASSERT(main_bc_thread.check_invariant());
 	QUARK_ASSERT(handler != nullptr);
 	QUARK_ASSERT(_main_thread_id != std::thread::id());
-//	QUARK_ASSERT(_processes.size() >= 1);
 	for(const auto& e: _processes){
 		QUARK_ASSERT(e && e->check_invariant());
 	}
@@ -309,7 +296,6 @@ static void run_process(bc_execution_engine_t& ee, int process_id){
 	QUARK_ASSERT(ee.check_invariant());
 }
 
-//	Remember that current thread (main) is also a thread, no need to create a worker thread for that process.
 //??? globals should be shared between interpreter_t instances!
 static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& config){
 	QUARK_ASSERT(ee.check_invariant());
@@ -333,6 +319,7 @@ static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& confi
 
 			auto process = std::make_shared<bc_process_t>();
 
+			//	Floyd process 0 is run on the main OS/BC thread.
 			if(process_id == 0){
 				auto bc_thread = &ee.main_bc_thread;
 
@@ -356,6 +343,8 @@ static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& confi
 
 				ee._processes.push_back(process);
 			}
+
+			//	All other processes gets their own interpreter_t and OS thread.
 			else{
 				auto bc_thread = std::make_shared<interpreter_t>(ee._program, ee.backend, config, process.get(), *ee.handler);
 				ee._bc_threads.push_back(bc_thread);
