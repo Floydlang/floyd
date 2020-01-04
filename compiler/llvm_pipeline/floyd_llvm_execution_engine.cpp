@@ -769,9 +769,8 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 	There is only one LLVM execution engine, shared by all Floyd processes.
 	When client code calls  send() or print() we need to figure out which Floyd process they call from.
 */
-static std::map<std::string, value_t> run_floyd_processes(llvm_execution_engine_t& ee){
+static void run_floyd_processes(llvm_execution_engine_t& ee){
 	if(ee.container_def._clock_busses.empty() == true){
-		return {};
 	}
 	else{
 		ee._process_infos = reduce(
@@ -836,7 +835,6 @@ static std::map<std::string, value_t> run_floyd_processes(llvm_execution_engine_
 
 		//	Delete the processes so we free up their resources and RCs
 		ee._processes.clear();
-		return {};
 	}
 }
 
@@ -846,8 +844,8 @@ run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::str
 		return { main_result_int, {} };
 	}
 	else{
-		const auto result = run_floyd_processes(ee);
-		return { 0, result };
+		run_floyd_processes(ee);
+		return { 0, {} };
 	}
 }
 
