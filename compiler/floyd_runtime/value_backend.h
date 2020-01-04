@@ -603,6 +603,11 @@ struct rt_value_t {
 	public: rt_value_t& operator=(const rt_value_t& other);
 	public: void swap(rt_value_t& other);
 
+	public: const type_t& get_type(){
+		QUARK_ASSERT(check_invariant());
+
+		return _type;
+	}
 
 	//	Bumps RC if needed.
 	enum class rc_mode { adopt, bump };

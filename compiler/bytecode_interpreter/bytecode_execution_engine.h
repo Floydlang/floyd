@@ -77,7 +77,7 @@ std::unique_ptr<bc_execution_engine_t> make_bytecode_execution_engine(
 void unwind_global_stack(bc_execution_engine_t& ee);
 
 rt_value_t load_global(bc_execution_engine_t& ee, const module_symbol_t& s);
-value_t call_function(bc_execution_engine_t& ee, const floyd::value_t& f, const std::vector<value_t>& args);
+value_t call_function(bc_execution_engine_t& ee, const value_t& f, const std::vector<value_t>& args);
 
 run_output_t run_program_bc(bc_execution_engine_t& ee, const std::vector<std::string>& main_args, const config_t& config);
 

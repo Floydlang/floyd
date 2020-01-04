@@ -84,7 +84,7 @@ struct bc_process_t : public runtime_process_i {
 
 	rt_value_t _init_function;
 	rt_value_t _msg_function;
-	value_t _process_state;
+	rt_value_t _process_state;
 	type_t _message_type;
 
 	std::atomic<bool> _exiting_flag;
@@ -101,7 +101,7 @@ static interpreter_t& get_main_interpreter(bc_execution_engine_t& ee){
 }
 
 
-static value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vector<value_t>& args){
+static value_t call_function(interpreter_t& vm, const value_t& f, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
 QUARK_ASSERT(f.is_function());
@@ -135,7 +135,7 @@ rt_value_t load_global(bc_execution_engine_t& ee, const module_symbol_t& name){
 
 }
 
-value_t call_function(bc_execution_engine_t& ee, const floyd::value_t& f, const std::vector<value_t>& args){
+value_t call_function(bc_execution_engine_t& ee, const value_t& f, const std::vector<value_t>& args){
 	QUARK_ASSERT(ee.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
 	QUARK_ASSERT(f.is_function());
@@ -276,8 +276,7 @@ static void run_process(bc_execution_engine_t& ee, int process_id){
 
 	//	Call process init()
 	{
-		const std::vector<value_t> args = {};
-		process._process_state = call_function(interpreter, rt_to_value(backend, process._init_function), args);
+		process._process_state = call_function_bc(interpreter, process._init_function, {}, 0);
 	}
 
 	//	Handle process messages until exit.
@@ -303,10 +302,8 @@ static void run_process(bc_execution_engine_t& ee, int process_id){
 		}
 
 		{
-			const std::vector<value_t> args = { process._process_state, rt_to_value(backend, message) };
-			const auto f = rt_to_value(backend, process._msg_function);
-			const auto& state2 = call_function(interpreter, f, args);
-			process._process_state = state2;
+			const rt_value_t args[] = { process._process_state, message };
+			process._process_state = call_function_bc(interpreter, process._msg_function, args, 2);
 		}
 	}
 
@@ -409,19 +406,19 @@ static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& confi
 }
 
 //??? Check main prototype earlier in pipeline!
-static int64_t bc_call_main(bc_execution_engine_t& ee, const floyd::value_t& f, const std::vector<std::string>& main_args){
+static int64_t bc_call_main(bc_execution_engine_t& ee, const rt_value_t& f, const std::vector<std::string>& main_args){
 	QUARK_ASSERT(ee.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
-	QUARK_ASSERT(f.is_function());
+	QUARK_ASSERT(f._type.is_function());
 
 	auto& interpreter = get_main_interpreter(ee);
 	auto types = interpreter._program->_types;
 
 	//	int main([string] args) impure
-	if(f.get_type() == get_main_signature_arg_impure(types) || f.get_type() == get_main_signature_arg_pure(types)){
+	if(f._type == get_main_signature_arg_impure(types) || f._type == get_main_signature_arg_pure(types)){
 		const auto main_args2 = mapf<value_t>(main_args, [](auto& e){ return value_t::make_string(e); });
 		const auto main_args3 = value_t::make_vector_value(types, type_t::make_string(), main_args2);
-		const auto main_result = call_function(interpreter, f, { main_args3 });
+		const auto main_result = call_function(interpreter, rt_to_value(ee.backend, f), { main_args3 });
 		const auto main_result_int = main_result.get_int_value();
 
 		QUARK_ASSERT(ee.check_invariant());
@@ -429,8 +426,8 @@ static int64_t bc_call_main(bc_execution_engine_t& ee, const floyd::value_t& f, 
 	}
 
 	//	int main() impure
-	else if(f.get_type() == get_main_signature_no_arg_impure(types) || f.get_type() == get_main_signature_no_arg_pure(types)){
-		const auto main_result = call_function(interpreter, f, {});
+	else if(f._type == get_main_signature_no_arg_impure(types) || f._type == get_main_signature_no_arg_pure(types)){
+		const auto main_result = call_function(interpreter, rt_to_value(ee.backend, f), {});
 		const auto main_result_int = main_result.get_int_value();
 
 		QUARK_ASSERT(ee.check_invariant());
@@ -446,7 +443,7 @@ run_output_t run_program_bc(bc_execution_engine_t& ee, const std::vector<std::st
 
 	const auto& main_function = load_global(get_main_interpreter(ee), module_symbol_t("main"));
 	if(main_function._type.is_undefined() == false){
-		const auto main_result_int = bc_call_main(ee, rt_to_value(get_main_interpreter(ee)._backend, main_function), main_args);
+		const auto main_result_int = bc_call_main(ee, main_function, main_args);
 
 		QUARK_ASSERT(ee.check_invariant());
 		return { main_result_int, {} };
