@@ -388,6 +388,9 @@ static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& confi
 		for(auto &t: ee._os_threads){
 			t.join();
 		}
+
+		//	Delete the processes so we free up their resources and RCs
+		ee._processes.clear();
 	}
 
 	QUARK_ASSERT(ee.check_invariant());

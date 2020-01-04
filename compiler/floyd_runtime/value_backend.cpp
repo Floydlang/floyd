@@ -1009,29 +1009,6 @@ rt_value_t::rt_value_t(const rt_value_t& other) :
 	QUARK_ASSERT(check_invariant());
 }
 
-rt_value_t& rt_value_t::operator=(const rt_value_t& other){
-	QUARK_ASSERT(other.check_invariant());
-	QUARK_ASSERT(check_invariant());
-
-	rt_value_t temp(other);
-	temp.swap(*this);
-
-	QUARK_ASSERT(other.check_invariant());
-	QUARK_ASSERT(check_invariant());
-	return *this;
-}
-
-void rt_value_t::swap(rt_value_t& other){
-	QUARK_ASSERT(other.check_invariant());
-	QUARK_ASSERT(check_invariant());
-
-	std::swap(_backend, other._backend);
-	std::swap(_type, other._type);
-	std::swap(_pod, other._pod);
-
-	QUARK_ASSERT(other.check_invariant());
-	QUARK_ASSERT(check_invariant());
-}
 
 rt_value_t::rt_value_t(const bc_static_frame_t* frame_ptr) :
 	_backend(nullptr),

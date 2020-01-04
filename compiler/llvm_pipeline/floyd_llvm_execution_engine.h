@@ -77,7 +77,11 @@ struct llvm_process_t : public runtime_basics_i, runtime_process_i {
 	type_t runtime_basics__get_global_symbol_type(const std::string& s) override;
 	rt_value_t runtime_basics__call_thunk(const rt_value_t& f, const rt_value_t args[], int arg_count) override;
 
-	void runtime_process__on_send_message(const std::string& dest_process_id, const rt_pod_t& message, const type_t& message_type) override;
+	void runtime_process__on_send_message(
+		const std::string& dest_process_id,
+		const rt_pod_t& message,
+		const type_t& message_type
+	) override;
 	void runtime_process__on_exit_process() override;
 
 
@@ -102,7 +106,7 @@ struct llvm_process_t : public runtime_basics_i, runtime_process_i {
 	std::deque<rt_value_t> _inbox;
 
 	//	Notice: before init() is called, this value is an undefined.
-	value_t _process_state;
+	rt_value_t _process_state;
 	std::atomic<bool> _exiting_flag;
 };
 
@@ -250,13 +254,11 @@ void* get_global_ptr(const llvm_execution_engine_t& c, const module_symbol_t& na
 
 
 std::pair<void*, type_t> bind_global(const llvm_execution_engine_t& ee, const module_symbol_t& name);
-value_t load_global(const llvm_context_t& c, const std::pair<void*, type_t>& v);
 
+value_t load_global(const llvm_context_t& c, const std::pair<void*, type_t>& v);
 void store_via_ptr(llvm_context_t& c, const type_t& member_type, void* value_ptr, const value_t& value);
 
 llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const module_symbol_t& name);
-
-
 
 runtime_t make_runtime_ptr(llvm_context_t* p);
 

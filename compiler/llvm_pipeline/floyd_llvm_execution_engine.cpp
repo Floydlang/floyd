@@ -637,13 +637,6 @@ static void send(llvm_process_t& process, const std::string& dest_process_id, co
 	auto& backend = process.ee->backend;
 	const auto& types = backend.types;
 
-/*
-	if(c.process == nullptr){
-		//	You can only send messages from within a running floyd process.
-		throw std::exception();
-	}
-*/
-
 	const auto trace = process.ee->_trace_processes;
 	const auto trace_header = trace ? make_trace_process_header(process) : "";
 	QUARK_SCOPED_TRACE_OPTIONAL(trace_header + ": Send message to dest process ID: " + dest_process_id, trace);
@@ -722,8 +715,7 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 	{
 		auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_INIT>(process._init_function->address);
 		const auto init_state = (*f)(&runtime_ptr);
-		process._process_state = from_runtime_value2(context.ee->backend, init_state, process._state_type);
-		release_value(backend, init_state, process._state_type);
+		process._process_state = rt_value_t(backend, init_state, process._state_type, rt_value_t::rc_mode::adopt);
 	}
 
 	//	Handle process messages until exit.
@@ -752,33 +744,32 @@ static void run_process(llvm_execution_engine_t& ee, int process_id){
 		if(trace){
 			{
 				QUARK_SCOPED_TRACE("Input message");
-				const auto v = from_runtime_value2(context.ee->backend, message._pod, message._type);
+				const auto v = from_runtime_value2(backend, message._pod, message._type);
 				const auto message2 = value_to_json(types, v);
 				QUARK_TRACE_SS(json_to_pretty_string(message2));
 			}
 			{
 				QUARK_SCOPED_TRACE("Input state");
-				const auto s = value_to_json(types, process._process_state);
+				const auto s = value_to_json(types, rt_to_value(backend, process._process_state));
 				QUARK_TRACE_SS(json_to_pretty_string(s));
 			}
 		}
 
-		rt_pod_t result = make_uninitialized_magic();
+		rt_value_t state2;
 
 		{
 			QUARK_SCOPED_TRACE_OPTIONAL("Call msg handler", trace);
 			auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE>(process._msg_function->address);
-			const auto state2 = to_runtime_value2(context.ee->backend, process._process_state);
-			result = (*f)(&runtime_ptr, state2, message._pod);
-			release_value(backend, state2, process._state_type);
+			auto s1 = (*f)(&runtime_ptr, process._process_state._pod, message._pod);
+			auto s2 = rt_value_t(backend, s1, process._state_type, rt_value_t::rc_mode::adopt);
+			state2.swap(s2);
 		}
 
-		process._process_state = from_runtime_value2(context.ee->backend, result, process._state_type);
-		release_value(backend, result, process._state_type);
+		process._process_state = state2;
 
 		if(trace){
 			QUARK_SCOPED_TRACE("Output state");
-			const auto s = value_to_json(types, process._process_state);
+			const auto s = value_to_json(types, rt_to_value(backend, process._process_state));
 			QUARK_TRACE_SS(json_to_pretty_string(s));
 		}
 	}
@@ -854,6 +845,8 @@ static std::map<std::string, value_t> run_processes(llvm_execution_engine_t& ee)
 			t.join();
 		}
 
+		//	Delete the processes so we free up their resources and RCs
+		ee._processes.clear();
 		return {};
 	}
 }

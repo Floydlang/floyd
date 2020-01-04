@@ -1095,6 +1095,30 @@ rt_pod_t get_keys__hamtmap_hamt(value_backend_t& backend, rt_pod_t dict_value, r
 
 
 
+inline void rt_value_t::swap(rt_value_t& other){
+	QUARK_ASSERT(other.check_invariant());
+	QUARK_ASSERT(check_invariant());
+
+	std::swap(_backend, other._backend);
+	std::swap(_type, other._type);
+	std::swap(_pod, other._pod);
+
+	QUARK_ASSERT(other.check_invariant());
+	QUARK_ASSERT(check_invariant());
+}
+
+inline rt_value_t& rt_value_t::operator=(const rt_value_t& other){
+	QUARK_ASSERT(other.check_invariant());
+	QUARK_ASSERT(check_invariant());
+
+	rt_value_t temp(other);
+	temp.swap(*this);
+
+	QUARK_ASSERT(other.check_invariant());
+	QUARK_ASSERT(check_invariant());
+	return *this;
+}
+
 
 
 

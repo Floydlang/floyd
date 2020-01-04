@@ -441,9 +441,8 @@ QUARK_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'resu
 
 	floyd::handler_t handler;
 	auto ee = init_llvm_jit(*program, handler, false);
-	auto context = floyd::llvm_context_t { ee.get(), nullptr };
 
-	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(*context.ee, floyd::module_symbol_t("result")));
+	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(*ee, floyd::module_symbol_t("result")));
 	QUARK_ASSERT(result == 6);
 
 //	QUARK_TRACE_SS("result = " << floyd::print_program(*program));
