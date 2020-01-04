@@ -692,6 +692,9 @@ struct interpreter_stack_t {
 		for(int i = 0 ; i < _stack_size ; i++){
 			QUARK_ASSERT(_entry_types[i].check_invariant());
 		}
+
+		const auto frames = get_stack_frames_noci();
+
 		return true;
 	}
 
@@ -829,7 +832,7 @@ struct interpreter_stack_t {
 		const bc_static_frame_t* static_frame;
 		size_t temp_count;
 	};
-	public: std::vector<active_frame_t> get_stack_frames() const;
+	public: std::vector<active_frame_t> get_stack_frames_noci() const;
 
 
 
@@ -1068,7 +1071,7 @@ struct interpreter_stack_t {
 	}
 
 	public: int64_t load_intq(int pos) const{
-		QUARK_ASSERT(check_invariant());
+//		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 		QUARK_ASSERT(peek2(_backend->types, _entry_types[pos]).is_int());
 
@@ -1127,7 +1130,7 @@ struct interpreter_stack_t {
 	}
 
 	public: size_t get_current_frame_start() const {
-		QUARK_ASSERT(check_invariant());
+//		QUARK_ASSERT(check_invariant());
 
 		const auto frame_pos = _current_frame_start_ptr - &_entries[0];
 		return frame_pos;

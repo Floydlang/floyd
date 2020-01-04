@@ -116,6 +116,7 @@ struct runtime_t {
 		return true;
 	}
 
+	std::string name;
 	value_backend_t* backend;
 	runtime_basics_i* basics;
 	runtime_process_i* handler;

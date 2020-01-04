@@ -869,6 +869,7 @@ runtime_t make_runtime_ptr(llvm_context_t* p){
 
 	if(p->process){
 		return {
+			std::string() + "llvm process" + p->process->_name_key,
 			&p->ee->backend,
 			p->process,
 			p->process
@@ -876,6 +877,7 @@ runtime_t make_runtime_ptr(llvm_context_t* p){
 	}
 	else{
 		return {
+			"llvm main",
 			&p->ee->backend,
 			&p->ee->_handler_router,
 			&p->ee->_handler_router

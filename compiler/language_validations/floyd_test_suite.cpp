@@ -8183,9 +8183,9 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_request()", "", ""){
 }
 #endif
 
-#if 1
+#if 0
 //	WARNING: This test never completes + is impure.
-FLOYD_LANG_PROOF_VIP("network component", "Multi-process HTTP server", "", ""){
+FLOYD_LANG_PROOF("network component", "Multi-process HTTP server", "", ""){
 	ut_run_closed_lib(
 		QUARK_POS,
 		R"(
@@ -8199,10 +8199,10 @@ FLOYD_LANG_PROOF_VIP("network component", "Multi-process HTTP server", "", ""){
 				"desc": "",
 				"clocks": {
 					"main_clock": {
-						"sss-main": "my_main"
+						"main": "my_main"
 					},
 					"http-server": {
-						"mmm-server": "my_server"
+						"server": "my_server"
 					}
 				}
 			}
@@ -8218,7 +8218,7 @@ FLOYD_LANG_PROOF_VIP("network component", "Multi-process HTTP server", "", ""){
 
 			struct server_t { int audio ; doc_t doc }
 
-			func void f(int socket_id) impure{
+			func void f(int socket_id) impure {
 				let read_data = read_socket(socket_id)
 				if(read_data == ""){
 					print("empty request\n")

@@ -29,7 +29,7 @@ namespace floyd {
 static const bool k_trace_stepping = true;
 
 static bool should_trace(const std::string& name){
-	return false && name == "floyd process 1 server";
+	return true && name == "floyd process 1 server";
 }
 
 
@@ -275,7 +275,7 @@ bool bc_function_definition_t::check_invariant() const {
 
 
 frame_pos_t interpreter_stack_t::read_frame_info(size_t pos) const{
-	QUARK_ASSERT(check_invariant());
+//	QUARK_ASSERT(check_invariant());
 
 	const auto v = load_intq((int)(pos + 0));
 	QUARK_ASSERT(v >= 0);
@@ -320,39 +320,42 @@ bool interpreter_stack_t::check_stack_frame(const frame_pos_t& in_frame) const{
 
 //	Returned elements are sorted with smaller stack positions first.
 //	Walks the stack from the active frame towards the start of the stack, the globals frame.
-std::vector<interpreter_stack_t::active_frame_t> interpreter_stack_t::get_stack_frames() const{
-	QUARK_ASSERT(check_invariant());
-
-	const auto stack_size = static_cast<int>(size());
+std::vector<interpreter_stack_t::active_frame_t> interpreter_stack_t::get_stack_frames_noci() const{
+//	QUARK_ASSERT(check_invariant());
 
 	std::vector<active_frame_t> result;
+
 	const auto frame_start0 = get_current_frame_start();
-	{
-		const auto frame_size0 = _current_static_frame->_symbols._symbols.size();
-		const auto frame_end0 = frame_start0 + frame_size0;
+	if(frame_start0 > 0){
+		const auto stack_size = static_cast<int>(_stack_size);
 
-		//??? Notice: during a call sequence: push_frame_ptr, push arguments, call, popn, pop_frame_ptr -- the stack size vs frames is slighly out of sync and gives us negative temporary stack entries.
-		const auto temp_count0 = stack_size >= frame_end0 ? stack_size - frame_end0 : 0;
-		const auto e = active_frame_t { frame_start0, frame_end0, _current_static_frame, temp_count0 };
-		result.push_back(e);
+		{
+			const auto frame_size0 = _current_static_frame->_symbols._symbols.size();
+			const auto frame_end0 = frame_start0 + frame_size0;
+
+			//??? Notice: during a call sequence: push_frame_ptr, push arguments, call, popn, pop_frame_ptr -- the stack size vs frames is slighly out of sync and gives us negative temporary stack entries.
+			const auto temp_count0 = stack_size >= frame_end0 ? stack_size - frame_end0 : 0;
+			const auto e = active_frame_t { frame_start0, frame_end0, _current_static_frame, temp_count0 };
+			result.push_back(e);
+		}
+
+		auto info_pos = frame_start0 - k_frame_overhead;
+		auto frame = read_frame_info(info_pos);
+		while(frame._frame_ptr != nullptr){
+			const auto frame_start = frame._frame_pos;
+			const auto frame_size = frame._frame_ptr->_symbols._symbols.size();
+			const auto frame_end = frame_start + frame_size;
+			const auto temp_count = info_pos >= frame_end ? info_pos - frame_end : 0;
+
+			const auto e = active_frame_t { frame_start, frame_end, frame._frame_ptr, temp_count };
+			result.push_back(e);
+
+			info_pos = frame_start - k_frame_overhead;
+			frame = read_frame_info(info_pos);
+		}
+
+		std::reverse(result.begin(), result.end());
 	}
-
-	auto info_pos = frame_start0 - k_frame_overhead;
-	auto frame = read_frame_info(info_pos);
-	while(frame._frame_ptr != nullptr){
-		const auto frame_start = frame._frame_pos;
-		const auto frame_size = frame._frame_ptr->_symbols._symbols.size();
-		const auto frame_end = frame_start + frame_size;
-		const auto temp_count = info_pos >= frame_end ? info_pos - frame_end : 0;
-
-		const auto e = active_frame_t { frame_start, frame_end, frame._frame_ptr, temp_count };
-		result.push_back(e);
-
-		info_pos = frame_start - k_frame_overhead;
-		frame = read_frame_info(info_pos);
-	}
-
-	std::reverse(result.begin(), result.end());
 	return result;
 }
 
@@ -361,7 +364,7 @@ json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend)
 
 	const int size = static_cast<int>(stack._stack_size);
 
-	const auto stack_frames = stack.get_stack_frames();
+	const auto stack_frames = stack.get_stack_frames_noci();
 
 	std::vector<json_t> frames;
 	for(int64_t i = 0 ; i < stack_frames.size() ; i++){
@@ -708,7 +711,7 @@ void trace_interpreter(interpreter_t& vm, int pc){
 	{
 		QUARK_SCOPED_TRACE("STACK");
 
-		const auto stack_frames = stack.get_stack_frames();
+		const auto stack_frames = stack.get_stack_frames_noci();
 
 		std::vector<std::vector<std::string>> matrix;
 
@@ -1121,7 +1124,7 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 	const int arg0_stack_pos = (int)(stack.size() - (function_def_dynamic_arg_count + callee_arg_count));
 	int stack_pos = arg0_stack_pos;
 
-	const auto runtime_ptr = runtime_t { &backend, &vm, vm._process_handler };
+	const auto runtime_ptr = runtime_t { vm._name, &backend, &vm, vm._process_handler };
 
 	std::vector<void*> values;
 
