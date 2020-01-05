@@ -636,7 +636,7 @@ static void call_via_libffi(interpreter_t& vm, int target_reg, const func_link_t
 		//	Cast the result to the destination symbol's type.
 		const auto dest_type = stack._current_static_frame->_symbol_effective_type[target_reg];
 		const auto result3 = rt_value_t(backend, result2, dest_type, rt_value_t::rc_mode::adopt);
-		stack.write_register(target_reg, result3);
+		vm.write_register(target_reg, result3);
 	}
 }
 
@@ -1284,7 +1284,7 @@ static void execute_new_1(interpreter_t& vm, int16_t dest_reg, int16_t target_it
 		}
 	}();
 
-	vm._stack.write_register(dest_reg, result);
+	vm.write_register(dest_reg, result);
 }
 
 //	IMPORTANT: No arguments are passed as DYN arguments.
@@ -1315,7 +1315,7 @@ static void execute_new_vector_obj(interpreter_t& vm, int16_t dest_reg, int16_t 
 	}
 
 	const auto result = make_vector_value(backend, element_type, elements2);
-	vm._stack.write_register(dest_reg, result);
+	vm.write_register(dest_reg, result);
 }
 
 static void execute_new_dict_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
@@ -1346,7 +1346,7 @@ static void execute_new_dict_obj(interpreter_t& vm, int16_t dest_reg, int16_t ta
 	}
 
 	const auto result = make_dict_value(backend, element_type, elements2);
-	vm._stack.write_register(dest_reg, result);
+	vm.write_register(dest_reg, result);
 }
 
 static void execute_new_dict_pod64(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
@@ -1377,7 +1377,7 @@ static void execute_new_dict_pod64(interpreter_t& vm, int16_t dest_reg, int16_t 
 	}
 
 	const auto result = make_dict(types, element_type, elements2);
-	vm._stack.write_register(dest_reg, result);
+	vm.write_register(dest_reg, result);
 */
 }
 
@@ -1405,7 +1405,7 @@ static void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t targ
 	const auto result = rt_value_t::make_struct_value(backend, target_type, elements2);
 	QUARK_ASSERT(result.check_invariant());
 
-	vm._stack.write_register(dest_reg, result);
+	vm.write_register(dest_reg, result);
 }
 
 inline void write_reg_rc(value_backend_t& backend, rt_pod_t regs[], int dest_reg, const type_t& dest_type, rt_pod_t value){
@@ -1461,8 +1461,8 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 
 		case bc_opcode::k_load_global_external_value: {
-			QUARK_ASSERT(stack.check_reg__external_value(i._a));
-			QUARK_ASSERT(stack.check_global_access_obj(i._b));
+			QUARK_ASSERT(vm.check_reg__external_value(i._a));
+			QUARK_ASSERT(vm.check_global_access_obj(i._b));
 
 			const auto& type = frame_ptr->_symbols._symbols[i._a].second._value_type;
 			release_value_safe(backend, regs[i._a], type);
@@ -1472,7 +1472,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 		case bc_opcode::k_load_global_inplace_value: {
-			QUARK_ASSERT(stack.check_reg__inplace_value(i._a));
+			QUARK_ASSERT(vm.check_reg__inplace_value(i._a));
 
 			regs[i._a] = globals[i._b];
 			break;
@@ -1487,8 +1487,8 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 		case bc_opcode::k_store_global_external_value: {
-			QUARK_ASSERT(stack.check_global_access_obj(i._a));
-			QUARK_ASSERT(stack.check_reg__external_value(i._b));
+			QUARK_ASSERT(vm.check_global_access_obj(i._a));
+			QUARK_ASSERT(vm.check_reg__external_value(i._b));
 
 			const auto& type = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			release_value_safe(backend, globals[i._a], type);
@@ -1498,8 +1498,8 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 		case bc_opcode::k_store_global_inplace_value: {
-			QUARK_ASSERT(stack.check_global_access_intern(i._a));
-			QUARK_ASSERT(stack.check_reg__inplace_value(i._b));
+			QUARK_ASSERT(vm.check_global_access_intern(i._a));
+			QUARK_ASSERT(vm.check_reg__inplace_value(i._b));
 
 			globals[i._a] = regs[i._b];
 			break;
@@ -1510,15 +1510,15 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 
 		case bc_opcode::k_copy_reg_inplace_value: {
-			QUARK_ASSERT(stack.check_reg__inplace_value(i._a));
-			QUARK_ASSERT(stack.check_reg__inplace_value(i._b));
+			QUARK_ASSERT(vm.check_reg__inplace_value(i._a));
+			QUARK_ASSERT(vm.check_reg__inplace_value(i._b));
 
 			regs[i._a] = regs[i._b];
 			break;
 		}
 		case bc_opcode::k_copy_reg_external_value: {
-			QUARK_ASSERT(stack.check_reg__external_value(i._a));
-			QUARK_ASSERT(stack.check_reg__external_value(i._b));
+			QUARK_ASSERT(vm.check_reg__external_value(i._a));
+			QUARK_ASSERT(vm.check_reg__external_value(i._b));
 
 			const auto& type = frame_ptr->_symbols._symbols[i._a].second._value_type;
 			release_value_safe(backend, regs[i._a], type);
@@ -1578,7 +1578,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 		case bc_opcode::k_push_inplace_value: {
-			QUARK_ASSERT(stack.check_reg__inplace_value(i._a));
+			QUARK_ASSERT(vm.check_reg__inplace_value(i._a));
 			const auto type = stack._entry_types[stack.get_current_frame_pos() + i._a];
 			stack._entries[stack._stack_size] = regs[i._a];
 			stack._stack_size++;
@@ -1587,7 +1587,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 		case bc_opcode::k_push_external_value: {
-			QUARK_ASSERT(stack.check_reg__external_value(i._a));
+			QUARK_ASSERT(vm.check_reg__external_value(i._a));
 			const auto& type = frame_ptr->_symbols._symbols[i._a].second._value_type;
 			const auto& new_value_pod = regs[i._a];
 			retain_value(backend, new_value_pod, type);
@@ -1627,44 +1627,44 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 
 		case bc_opcode::k_branch_false_bool: {
-			QUARK_ASSERT(stack.check_reg_bool(i._a));
+			QUARK_ASSERT(vm.check_reg_bool(i._a));
 
 			//	Notice that pc will be incremented too, hence the - 1.
 			pc = regs[i._a].bool_value ? pc : pc + i._b - 1;
 			break;
 		}
 		case bc_opcode::k_branch_true_bool: {
-			QUARK_ASSERT(stack.check_reg_bool(i._a));
+			QUARK_ASSERT(vm.check_reg_bool(i._a));
 
 			//	Notice that pc will be incremented too, hence the - 1.
 			pc = regs[i._a].bool_value ? pc + i._b - 1: pc;
 			break;
 		}
 		case bc_opcode::k_branch_zero_int: {
-			QUARK_ASSERT(stack.check_reg_int(i._a));
+			QUARK_ASSERT(vm.check_reg_int(i._a));
 
 			//	Notice that pc will be incremented too, hence the - 1.
 			pc = regs[i._a].int_value == 0 ? pc + i._b - 1 : pc;
 			break;
 		}
 		case bc_opcode::k_branch_notzero_int: {
-			QUARK_ASSERT(stack.check_reg_int(i._a));
+			QUARK_ASSERT(vm.check_reg_int(i._a));
 
 			//	Notice that pc will be incremented too, hence the - 1.
 			pc = regs[i._a].int_value == 0 ? pc : pc + i._b - 1;
 			break;
 		}
 		case bc_opcode::k_branch_smaller_int: {
-			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_int(i._b));
+			QUARK_ASSERT(vm.check_reg_int(i._a));
+			QUARK_ASSERT(vm.check_reg_int(i._b));
 
 			//	Notice that pc will be incremented too, hence the - 1.
 			pc = regs[i._a].int_value < regs[i._b].int_value ? pc + i._c - 1 : pc;
 			break;
 		}
 		case bc_opcode::k_branch_smaller_or_equal_int: {
-			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_int(i._b));
+			QUARK_ASSERT(vm.check_reg_int(i._a));
+			QUARK_ASSERT(vm.check_reg_int(i._b));
 
 			//	Notice that pc will be incremented too, hence the - 1.
 			pc = regs[i._a].int_value <= regs[i._b].int_value ? pc + i._c - 1 : pc;
@@ -1683,8 +1683,8 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 		//??? Make obj/intern version.
 		case bc_opcode::k_get_struct_member: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_any(i._a));
-			QUARK_ASSERT(stack.check_reg_struct(i._b));
+			QUARK_ASSERT(vm.check_reg_any(i._a));
+			QUARK_ASSERT(vm.check_reg_struct(i._b));
 
 			const auto& struct_type = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			const auto data_ptr = regs[i._b].struct_ptr->get_data_ptr();
@@ -1702,9 +1702,9 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_lookup_element_string: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_string(i._b));
-			QUARK_ASSERT(stack.check_reg_int(i._c));
+			QUARK_ASSERT(vm.check_reg_int(i._a));
+			QUARK_ASSERT(vm.check_reg_string(i._b));
+			QUARK_ASSERT(vm.check_reg_int(i._c));
 
 			//	??? faster to lookup via char* directly.
 			const auto s = from_runtime_string2(backend, regs[i._b]);
@@ -1723,16 +1723,16 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 		//	??? Simple JSON-values should not require ext. null, int, bool, empty object, empty array.
 		case bc_opcode::k_lookup_element_json: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_json(i._a));
-			QUARK_ASSERT(stack.check_reg_json(i._b));
+			QUARK_ASSERT(vm.check_reg_json(i._a));
+			QUARK_ASSERT(vm.check_reg_json(i._b));
 
 			// reg c points to different types depending on the runtime-type of the json.
-			QUARK_ASSERT(stack.check_reg_any(i._c));
+			QUARK_ASSERT(vm.check_reg_any(i._c));
 
 			const auto& parent_json = regs[i._b].json_ptr->get_json();
 
 			if(parent_json.is_object()){
-				QUARK_ASSERT(stack.check_reg_string(i._c));
+				QUARK_ASSERT(vm.check_reg_string(i._c));
 
 				const auto& lookup_key = from_runtime_string2(backend, regs[i._c]);
 
@@ -1747,7 +1747,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 				regs[i._a] = value2._pod;
 			}
 			else if(parent_json.is_array()){
-				QUARK_ASSERT(stack.check_reg_int(i._c));
+				QUARK_ASSERT(vm.check_reg_int(i._c));
 
 				const auto lookup_index = regs[i._c].int_value;
 				if(lookup_index < 0 || lookup_index >= parent_json.get_array_size()){
@@ -1776,8 +1776,8 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 		case bc_opcode::k_lookup_element_vector_w_inplace_elements:
 		{
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg__external_value(i._a));
-			QUARK_ASSERT(stack.check_reg_int(i._c));
+			QUARK_ASSERT(vm.check_reg__external_value(i._a));
+			QUARK_ASSERT(vm.check_reg_int(i._c));
 
 			const auto& vector_type = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			const auto lookup_index = regs[i._c].int_value;
@@ -1797,9 +1797,9 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 		case bc_opcode::k_lookup_element_dict_w_external_values:
 		case bc_opcode::k_lookup_element_dict_w_inplace_values:
 		{
-			QUARK_ASSERT(stack.check_reg__external_value(i._a));
-			QUARK_ASSERT(stack.check_reg_dict_w_external_values(i._b));
-			QUARK_ASSERT(stack.check_reg_string(i._c));
+			QUARK_ASSERT(vm.check_reg__external_value(i._a));
+			QUARK_ASSERT(vm.check_reg_dict_w_external_values(i._b));
+			QUARK_ASSERT(vm.check_reg_string(i._c));
 
 			const auto& dict_type = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			const auto key = regs[i._c];
@@ -1812,8 +1812,8 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_get_size_vector_w_external_elements: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
+			QUARK_ASSERT(vm.check_reg_int(i._a));
+			QUARK_ASSERT(vm.check_reg_vector_w_external_elements(i._b));
 			QUARK_ASSERT(i._c == 0);
 
 			const auto& type_b = frame_ptr->_symbols._symbols[i._b].second._value_type;
@@ -1824,8 +1824,8 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_get_size_vector_w_inplace_elements: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._b));
+			QUARK_ASSERT(vm.check_reg_int(i._a));
+			QUARK_ASSERT(vm.check_reg_vector_w_inplace_elements(i._b));
 			QUARK_ASSERT(i._c == 0);
 
 			const auto& type_b = frame_ptr->_symbols._symbols[i._b].second._value_type;
@@ -1836,8 +1836,8 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_get_size_dict_w_external_values: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_dict_w_external_values(i._b));
+			QUARK_ASSERT(vm.check_reg_int(i._a));
+			QUARK_ASSERT(vm.check_reg_dict_w_external_values(i._b));
 			QUARK_ASSERT(i._c == 0);
 
 			const auto& type_b = frame_ptr->_symbols._symbols[i._b].second._value_type;
@@ -1847,8 +1847,8 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 		}
 		case bc_opcode::k_get_size_dict_w_inplace_values: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_dict_w_inplace_values(i._b));
+			QUARK_ASSERT(vm.check_reg_int(i._a));
+			QUARK_ASSERT(vm.check_reg_dict_w_inplace_values(i._b));
 			QUARK_ASSERT(i._c == 0);
 
 			const auto& type_b = frame_ptr->_symbols._symbols[i._b].second._value_type;
@@ -1859,8 +1859,8 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_get_size_string: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_string(i._b));
+			QUARK_ASSERT(vm.check_reg_int(i._a));
+			QUARK_ASSERT(vm.check_reg_string(i._b));
 			QUARK_ASSERT(i._c == 0);
 
 			regs[i._a].int_value = get_vector_size(backend, type_t::make_string(), regs[i._b]);
@@ -1869,8 +1869,8 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 		}
 		case bc_opcode::k_get_size_jsonvalue: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_json(i._b));
+			QUARK_ASSERT(vm.check_reg_int(i._a));
+			QUARK_ASSERT(vm.check_reg_json(i._b));
 			QUARK_ASSERT(i._c == 0);
 
 			const auto& json = regs[i._b].json_ptr->get_json();
@@ -1892,9 +1892,9 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_pushback_vector_w_external_elements: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._a));
-			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
-			QUARK_ASSERT(stack.check_reg__external_value(i._c));
+			QUARK_ASSERT(vm.check_reg_vector_w_external_elements(i._a));
+			QUARK_ASSERT(vm.check_reg_vector_w_external_elements(i._b));
+			QUARK_ASSERT(vm.check_reg__external_value(i._c));
 
 			const auto type_b = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			write_reg_rc(backend, regs, i._a, type_b, push_back_vector_element(backend, regs[i._b], type_b, regs[i._c]));
@@ -1905,9 +1905,9 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_pushback_vector_w_inplace_elements: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._a));
-			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._b));
-			QUARK_ASSERT(stack.check_reg(i._c));
+			QUARK_ASSERT(vm.check_reg_vector_w_inplace_elements(i._a));
+			QUARK_ASSERT(vm.check_reg_vector_w_inplace_elements(i._b));
+			QUARK_ASSERT(vm.check_reg(i._c));
 
 			const auto type_b = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			write_reg_rc(backend, regs, i._a, type_b, push_back_vector_element(backend, regs[i._b], type_b, regs[i._c]));
@@ -1918,9 +1918,9 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_pushback_string: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_string(i._a));
-			QUARK_ASSERT(stack.check_reg_string(i._b));
-			QUARK_ASSERT(stack.check_reg_int(i._c));
+			QUARK_ASSERT(vm.check_reg_string(i._a));
+			QUARK_ASSERT(vm.check_reg_string(i._b));
+			QUARK_ASSERT(vm.check_reg_int(i._c));
 
 			const auto type_b = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			write_reg_rc(backend, regs, i._a, type_b, push_back_vector_element(backend, regs[i._b], type_b, regs[i._c]));
@@ -1932,7 +1932,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_call: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_function(i._b));
+			QUARK_ASSERT(vm.check_reg_function(i._b));
 
 			do_call_instruction(vm, i._a, regs[i._b], i._c);
 
@@ -1946,19 +1946,23 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 		case bc_opcode::k_new_1: {
-			QUARK_ASSERT(stack.check_reg(i._a));
+			QUARK_ASSERT(vm.check_reg(i._a));
 
 			const auto dest_reg = i._a;
 			const auto target_itype = i._b;
 			const auto source_itype = i._c;
 			const auto& target_type = lookup_full_type(vm, target_itype);
-			QUARK_ASSERT(peek2(types, target_type).is_vector() == false && peek2(types, target_type).is_dict() == false && peek2(types, target_type).is_struct() == false);
+			QUARK_ASSERT(
+				peek2(types, target_type).is_vector() == false
+				&& peek2(types, target_type).is_dict() == false
+				&& peek2(types, target_type).is_struct() == false
+			);
 			execute_new_1(vm, dest_reg, target_itype, source_itype);
 			break;
 		}
 
 		case bc_opcode::k_new_vector_w_external_elements: {
-			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._a));
+			QUARK_ASSERT(vm.check_reg_vector_w_external_elements(i._a));
 			QUARK_ASSERT(i._b >= 0);
 			QUARK_ASSERT(i._c >= 0);
 
@@ -1974,7 +1978,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_new_vector_w_inplace_elements: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._a));
+			QUARK_ASSERT(vm.check_reg_vector_w_inplace_elements(i._a));
 			QUARK_ASSERT(i._b == 0);
 			QUARK_ASSERT(i._c >= 0);
 
@@ -2021,92 +2025,92 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 
 		case bc_opcode::k_comparison_smaller_or_equal: {
-			QUARK_ASSERT(stack.check_reg_bool(i._a));
-			QUARK_ASSERT(stack.check_reg_any(i._b));
-			QUARK_ASSERT(stack.check_reg_any(i._c));
+			QUARK_ASSERT(vm.check_reg_bool(i._a));
+			QUARK_ASSERT(vm.check_reg_any(i._b));
+			QUARK_ASSERT(vm.check_reg_any(i._c));
 
 			const auto& type = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			QUARK_ASSERT(peek2(types, type).is_int() == false);
 
-			const auto left = stack.read_register(i._b);
-			const auto right = stack.read_register(i._c);
+			const auto left = vm.read_register(i._b);
+			const auto right = vm.read_register(i._c);
 			long diff = compare_value_true_deep(backend, left, right, type);
 
 			regs[i._a].bool_value = diff <= 0;
 			break;
 		}
 		case bc_opcode::k_comparison_smaller_or_equal_int: {
-			QUARK_ASSERT(stack.check_reg_bool(i._a));
-			QUARK_ASSERT(stack.check_reg_int(i._b));
-			QUARK_ASSERT(stack.check_reg_int(i._c));
+			QUARK_ASSERT(vm.check_reg_bool(i._a));
+			QUARK_ASSERT(vm.check_reg_int(i._b));
+			QUARK_ASSERT(vm.check_reg_int(i._c));
 
 			regs[i._a].bool_value = regs[i._b].int_value <= regs[i._c].int_value;
 			break;
 		}
 
 		case bc_opcode::k_comparison_smaller: {
-			QUARK_ASSERT(stack.check_reg_bool(i._a));
-			QUARK_ASSERT(stack.check_reg_any(i._b));
-			QUARK_ASSERT(stack.check_reg_any(i._c));
+			QUARK_ASSERT(vm.check_reg_bool(i._a));
+			QUARK_ASSERT(vm.check_reg_any(i._b));
+			QUARK_ASSERT(vm.check_reg_any(i._c));
 
 			const auto& type = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			QUARK_ASSERT(peek2(types, type).is_int() == false);
-			const auto left = stack.read_register(i._b);
-			const auto right = stack.read_register(i._c);
+			const auto left = vm.read_register(i._b);
+			const auto right = vm.read_register(i._c);
 			long diff = compare_value_true_deep(backend, left, right, type);
 
 			regs[i._a].bool_value = diff < 0;
 			break;
 		}
 		case bc_opcode::k_comparison_smaller_int:
-			QUARK_ASSERT(stack.check_reg_bool(i._a));
-			QUARK_ASSERT(stack.check_reg_int(i._b));
-			QUARK_ASSERT(stack.check_reg_int(i._c));
+			QUARK_ASSERT(vm.check_reg_bool(i._a));
+			QUARK_ASSERT(vm.check_reg_int(i._b));
+			QUARK_ASSERT(vm.check_reg_int(i._c));
 
 			regs[i._a].bool_value = regs[i._b].int_value < regs[i._c].int_value;
 			break;
 
 		case bc_opcode::k_logical_equal: {
-			QUARK_ASSERT(stack.check_reg_bool(i._a));
-			QUARK_ASSERT(stack.check_reg_any(i._b));
-			QUARK_ASSERT(stack.check_reg_any(i._c));
+			QUARK_ASSERT(vm.check_reg_bool(i._a));
+			QUARK_ASSERT(vm.check_reg_any(i._b));
+			QUARK_ASSERT(vm.check_reg_any(i._c));
 
 			const auto& type = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			QUARK_ASSERT(peek2(types, type).is_int() == false);
-			const auto left = stack.read_register(i._b);
-			const auto right = stack.read_register(i._c);
+			const auto left = vm.read_register(i._b);
+			const auto right = vm.read_register(i._c);
 			long diff = compare_value_true_deep(backend, left, right, type);
 
 			regs[i._a].bool_value = diff == 0;
 			break;
 		}
 		case bc_opcode::k_logical_equal_int: {
-			QUARK_ASSERT(stack.check_reg_bool(i._a));
-			QUARK_ASSERT(stack.check_reg_int(i._b));
-			QUARK_ASSERT(stack.check_reg_int(i._c));
+			QUARK_ASSERT(vm.check_reg_bool(i._a));
+			QUARK_ASSERT(vm.check_reg_int(i._b));
+			QUARK_ASSERT(vm.check_reg_int(i._c));
 
 			regs[i._a].bool_value = regs[i._b].int_value == regs[i._c].int_value;
 			break;
 		}
 
 		case bc_opcode::k_logical_nonequal: {
-			QUARK_ASSERT(stack.check_reg_bool(i._a));
-			QUARK_ASSERT(stack.check_reg_any(i._b));
-			QUARK_ASSERT(stack.check_reg_any(i._c));
+			QUARK_ASSERT(vm.check_reg_bool(i._a));
+			QUARK_ASSERT(vm.check_reg_any(i._b));
+			QUARK_ASSERT(vm.check_reg_any(i._c));
 
 			const auto& type = frame_ptr->_symbols._symbols[i._b].second._value_type;
 			QUARK_ASSERT(peek2(types, type).is_int() == false);
-			const auto left = stack.read_register(i._b);
-			const auto right = stack.read_register(i._c);
+			const auto left = vm.read_register(i._b);
+			const auto right = vm.read_register(i._c);
 			long diff = compare_value_true_deep(backend, left, right, type);
 
 			regs[i._a].bool_value = diff != 0;
 			break;
 		}
 		case bc_opcode::k_logical_nonequal_int: {
-			QUARK_ASSERT(stack.check_reg_bool(i._a));
-			QUARK_ASSERT(stack.check_reg_int(i._b));
-			QUARK_ASSERT(stack.check_reg_int(i._c));
+			QUARK_ASSERT(vm.check_reg_bool(i._a));
+			QUARK_ASSERT(vm.check_reg_int(i._b));
+			QUARK_ASSERT(vm.check_reg_int(i._c));
 
 			regs[i._a].bool_value = regs[i._b].int_value != regs[i._c].int_value;
 			break;
@@ -2118,34 +2122,34 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 		//??? Replace by a | b opcode.
 		case bc_opcode::k_add_bool: {
-			QUARK_ASSERT(stack.check_reg_bool(i._a));
-			QUARK_ASSERT(stack.check_reg_bool(i._b));
-			QUARK_ASSERT(stack.check_reg_bool(i._c));
+			QUARK_ASSERT(vm.check_reg_bool(i._a));
+			QUARK_ASSERT(vm.check_reg_bool(i._b));
+			QUARK_ASSERT(vm.check_reg_bool(i._c));
 
 			regs[i._a].bool_value = regs[i._b].bool_value + regs[i._c].bool_value;
 			break;
 		}
 		case bc_opcode::k_add_int: {
-			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_int(i._b));
-			QUARK_ASSERT(stack.check_reg_int(i._c));
+			QUARK_ASSERT(vm.check_reg_int(i._a));
+			QUARK_ASSERT(vm.check_reg_int(i._b));
+			QUARK_ASSERT(vm.check_reg_int(i._c));
 
 			regs[i._a].int_value = regs[i._b].int_value + regs[i._c].int_value;
 			break;
 		}
 		case bc_opcode::k_add_double: {
-			QUARK_ASSERT(stack.check_reg_double(i._a));
-			QUARK_ASSERT(stack.check_reg_double(i._b));
-			QUARK_ASSERT(stack.check_reg_double(i._c));
+			QUARK_ASSERT(vm.check_reg_double(i._a));
+			QUARK_ASSERT(vm.check_reg_double(i._b));
+			QUARK_ASSERT(vm.check_reg_double(i._c));
 
 			regs[i._a].double_value = regs[i._b].double_value + regs[i._c].double_value;
 			break;
 		}
 
 		case bc_opcode::k_concat_strings: {
-			QUARK_ASSERT(stack.check_reg_string(i._a));
-			QUARK_ASSERT(stack.check_reg_string(i._b));
-			QUARK_ASSERT(stack.check_reg_string(i._c));
+			QUARK_ASSERT(vm.check_reg_string(i._a));
+			QUARK_ASSERT(vm.check_reg_string(i._b));
+			QUARK_ASSERT(vm.check_reg_string(i._c));
 
 			const auto type = type_t::make_string();
 
@@ -2156,53 +2160,53 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 		case bc_opcode::k_concat_vectors_w_external_elements: {
-			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._a));
-			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
-			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._c));
+			QUARK_ASSERT(vm.check_reg_vector_w_external_elements(i._a));
+			QUARK_ASSERT(vm.check_reg_vector_w_external_elements(i._b));
+			QUARK_ASSERT(vm.check_reg_vector_w_external_elements(i._c));
 
 			const auto& vector_type = frame_ptr->_symbols._symbols[i._a].second._value_type;
 			const auto r = concatunate_vectors(backend, vector_type, regs[i._b], regs[i._c]);
 			const auto& result = rt_value_t(backend, r, vector_type, rt_value_t::rc_mode::adopt);
-			stack.write_register(i._a, result);
+			vm.write_register(i._a, result);
 			break;
 		}
 
 		case bc_opcode::k_subtract_double: {
-			QUARK_ASSERT(stack.check_reg_double(i._a));
-			QUARK_ASSERT(stack.check_reg_double(i._b));
-			QUARK_ASSERT(stack.check_reg_double(i._c));
+			QUARK_ASSERT(vm.check_reg_double(i._a));
+			QUARK_ASSERT(vm.check_reg_double(i._b));
+			QUARK_ASSERT(vm.check_reg_double(i._c));
 
 			regs[i._a].double_value = regs[i._b].double_value - regs[i._c].double_value;
 			break;
 		}
 		case bc_opcode::k_subtract_int: {
-			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_int(i._b));
-			QUARK_ASSERT(stack.check_reg_int(i._c));
+			QUARK_ASSERT(vm.check_reg_int(i._a));
+			QUARK_ASSERT(vm.check_reg_int(i._b));
+			QUARK_ASSERT(vm.check_reg_int(i._c));
 
 			regs[i._a].int_value = regs[i._b].int_value - regs[i._c].int_value;
 			break;
 		}
 		case bc_opcode::k_multiply_double: {
-			QUARK_ASSERT(stack.check_reg_double(i._a));
-			QUARK_ASSERT(stack.check_reg_double(i._c));
-			QUARK_ASSERT(stack.check_reg_double(i._c));
+			QUARK_ASSERT(vm.check_reg_double(i._a));
+			QUARK_ASSERT(vm.check_reg_double(i._c));
+			QUARK_ASSERT(vm.check_reg_double(i._c));
 
 			regs[i._a].double_value = regs[i._b].double_value * regs[i._c].double_value;
 			break;
 		}
 		case bc_opcode::k_multiply_int: {
-			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_int(i._c));
-			QUARK_ASSERT(stack.check_reg_int(i._c));
+			QUARK_ASSERT(vm.check_reg_int(i._a));
+			QUARK_ASSERT(vm.check_reg_int(i._c));
+			QUARK_ASSERT(vm.check_reg_int(i._c));
 
 			regs[i._a].int_value = regs[i._b].int_value * regs[i._c].int_value;
 			break;
 		}
 		case bc_opcode::k_divide_double: {
-			QUARK_ASSERT(stack.check_reg_double(i._a));
-			QUARK_ASSERT(stack.check_reg_double(i._b));
-			QUARK_ASSERT(stack.check_reg_double(i._c));
+			QUARK_ASSERT(vm.check_reg_double(i._a));
+			QUARK_ASSERT(vm.check_reg_double(i._b));
+			QUARK_ASSERT(vm.check_reg_double(i._c));
 
 			const auto right = regs[i._c].double_value;
 			if(right == 0.0f){
@@ -2212,9 +2216,9 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 		case bc_opcode::k_divide_int: {
-			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_int(i._b));
-			QUARK_ASSERT(stack.check_reg_int(i._c));
+			QUARK_ASSERT(vm.check_reg_int(i._a));
+			QUARK_ASSERT(vm.check_reg_int(i._b));
+			QUARK_ASSERT(vm.check_reg_int(i._c));
 
 			const auto right = regs[i._c].int_value;
 			if(right == 0.0f){
@@ -2224,9 +2228,9 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 		case bc_opcode::k_remainder_int: {
-			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_int(i._b));
-			QUARK_ASSERT(stack.check_reg_int(i._c));
+			QUARK_ASSERT(vm.check_reg_int(i._a));
+			QUARK_ASSERT(vm.check_reg_int(i._b));
+			QUARK_ASSERT(vm.check_reg_int(i._c));
 
 			const auto right = regs[i._c].int_value;
 			if(right == 0){
@@ -2238,50 +2242,50 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 
 		case bc_opcode::k_logical_and_bool: {
-			QUARK_ASSERT(stack.check_reg_bool(i._a));
-			QUARK_ASSERT(stack.check_reg_bool(i._b));
-			QUARK_ASSERT(stack.check_reg_bool(i._c));
+			QUARK_ASSERT(vm.check_reg_bool(i._a));
+			QUARK_ASSERT(vm.check_reg_bool(i._b));
+			QUARK_ASSERT(vm.check_reg_bool(i._c));
 
 			regs[i._a].bool_value = regs[i._b].bool_value  && regs[i._c].bool_value;
 			break;
 		}
 		case bc_opcode::k_logical_and_int: {
-			QUARK_ASSERT(stack.check_reg_bool(i._a));
-			QUARK_ASSERT(stack.check_reg_int(i._b));
-			QUARK_ASSERT(stack.check_reg_int(i._c));
+			QUARK_ASSERT(vm.check_reg_bool(i._a));
+			QUARK_ASSERT(vm.check_reg_int(i._b));
+			QUARK_ASSERT(vm.check_reg_int(i._c));
 
 			regs[i._a].bool_value = (regs[i._b].int_value != 0) && (regs[i._c].int_value != 0);
 			break;
 		}
 		case bc_opcode::k_logical_and_double: {
-			QUARK_ASSERT(stack.check_reg_bool(i._a));
-			QUARK_ASSERT(stack.check_reg_double(i._b));
-			QUARK_ASSERT(stack.check_reg_double(i._c));
+			QUARK_ASSERT(vm.check_reg_bool(i._a));
+			QUARK_ASSERT(vm.check_reg_double(i._b));
+			QUARK_ASSERT(vm.check_reg_double(i._c));
 
 			regs[i._a].bool_value = (regs[i._b].double_value != 0) && (regs[i._c].double_value != 0);
 			break;
 		}
 
 		case bc_opcode::k_logical_or_bool: {
-			QUARK_ASSERT(stack.check_reg_bool(i._a));
-			QUARK_ASSERT(stack.check_reg_bool(i._b));
-			QUARK_ASSERT(stack.check_reg_bool(i._c));
+			QUARK_ASSERT(vm.check_reg_bool(i._a));
+			QUARK_ASSERT(vm.check_reg_bool(i._b));
+			QUARK_ASSERT(vm.check_reg_bool(i._c));
 
 			regs[i._a].bool_value = regs[i._b].bool_value || regs[i._c].bool_value;
 			break;
 		}
 		case bc_opcode::k_logical_or_int: {
-			QUARK_ASSERT(stack.check_reg_bool(i._a));
-			QUARK_ASSERT(stack.check_reg_int(i._b));
-			QUARK_ASSERT(stack.check_reg_int(i._c));
+			QUARK_ASSERT(vm.check_reg_bool(i._a));
+			QUARK_ASSERT(vm.check_reg_int(i._b));
+			QUARK_ASSERT(vm.check_reg_int(i._c));
 
 			regs[i._a].bool_value = (regs[i._b].int_value != 0) || (regs[i._c].int_value != 0);
 			break;
 		}
 		case bc_opcode::k_logical_or_double: {
-			QUARK_ASSERT(stack.check_reg_bool(i._a));
-			QUARK_ASSERT(stack.check_reg_double(i._b));
-			QUARK_ASSERT(stack.check_reg_double(i._c));
+			QUARK_ASSERT(vm.check_reg_bool(i._a));
+			QUARK_ASSERT(vm.check_reg_double(i._b));
+			QUARK_ASSERT(vm.check_reg_double(i._c));
 
 			regs[i._a].bool_value = (regs[i._b].double_value != 0.0f) || (regs[i._c].double_value != 0.0f);
 			break;

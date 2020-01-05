@@ -8183,6 +8183,106 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_request()", "", ""){
 }
 #endif
 
+
+
+#if 0
+//	??? CRASHES.
+FLOYD_LANG_PROOF_VIP("network component", "Multi-process HTTP server", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let c = network_component_t(666)
+
+			container-def {
+				"name": "",
+				"tech": "",
+				"desc": "",
+				"clocks": {
+					"main_clock": {
+						"main": "my_main"
+					},
+					"http-server": {
+						"server": "my_server"
+					}
+				}
+			}
+
+
+			////////////////////////////////	SERVER
+
+
+			func void f(int socket_id) impure {
+				let read_data = read_socket(socket_id)
+				if(read_data == ""){
+					print("empty request\n")
+				}
+				else{
+					let request = unpack_http_request(read_data)
+
+					if(request.request_line == http_request_line_t( "GET", "/info.html", "HTTP/1.1" )){
+						print("Serving page\n")
+						let doc = "
+							<head>
+								<title>Hello Floyd Server</title>
+							</head>
+							<body>
+								<h1>Hello Floyd Server</h1>
+								This document may be found <a HREF=\"https://stackoverflow.com/index.html\">here</a>
+							</body>
+						"
+
+						let r = pack_http_response(
+							http_response_t (
+								http_response_status_line_t ( "HTTP/1.1", "200 OK" ),
+								[
+									http_header_t( "Content-Type", "text/html" ),
+									http_header_t( "Content-Length", to_string(size(doc)) )
+								],
+								doc
+							)
+						)
+						write_socket(socket_id, r)
+					}
+					else {
+						let r = pack_http_response(http_response_t ( http_response_status_line_t ( "HTTP/1.1", "404 OK" ), {}, "" ))
+						write_socket(socket_id, r)
+					}
+				}
+
+			}
+
+			func double my_server__init() impure {
+				execute_http_server(c, 8080, f)
+			}
+
+			func double my_server__msg(double state, int m) impure {
+				assert(false)
+				return state
+			}
+
+
+			////////////////////////////////	MAIN
+
+
+			func int my_main__init() impure {
+				return 13
+			}
+
+			func int my_main__msg(int state, int m) impure {
+				assert(false)
+				return state
+			}
+
+		)"
+	);
+}
+#endif
+
+
+
+
+
 #if 0
 //	WARNING: This test never completes + is impure.
 FLOYD_LANG_PROOF_VIP("network component", "Multi-process HTTP server", "", ""){

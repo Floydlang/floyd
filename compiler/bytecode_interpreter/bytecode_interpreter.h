@@ -728,19 +728,6 @@ struct interpreter_stack_t {
 	}
 
 
-	//////////////////////////////////////		GLOBAL VARIABLES
-
-
-	public: bool check_global_access_obj(const int global_index) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(global_index >= 0 && global_index < (k_frame_overhead + _global_frame->_symbols._symbols.size()));
-		return true;
-	}
-	public: bool check_global_access_intern(const int global_index) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(global_index >= 0 && global_index < (k_frame_overhead + _global_frame->_symbols._symbols.size()));
-		return true;
-	}
 
 
 	//////////////////////////////////////		FRAMES
@@ -772,152 +759,6 @@ struct interpreter_stack_t {
 	}
 
 
-	//////////////////////////////////////		REGISTERS
-
-
-	public: bool check_reg(int reg) const{
-		//	Makes sure register is within current stack frame bounds.
-		QUARK_ASSERT(reg >= 0 && reg < _current_static_frame->_symbols._symbols.size());
-
-		//	Makes sure debug types are in sync for this register.
-		const auto& symbol_type = _current_static_frame->_symbols._symbols[reg].second._value_type;
-		const auto& effective_type = _current_static_frame->_symbol_effective_type[reg];
-		const auto& debug_type = _entry_types[get_current_frame_pos() + reg];
-		QUARK_ASSERT(peek2(_backend->types, effective_type) == peek2(_backend->types, debug_type) || debug_type.is_undefined());
-		return true;
-	}
-
-	//	Slow since it looks up the type of the register at runtime.
-	//??? Notice: this function should be const in the future!
-	public: rt_value_t read_register(const int reg){
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(check_reg(reg));
-
-		const auto result = rt_value_t(
-			*_backend,
-			_current_frame_start_ptr[reg],
-			_current_static_frame->_symbol_effective_type[reg],
-			rt_value_t::rc_mode::bump
-		);
-		QUARK_ASSERT(result.check_invariant());
-		return result;
-	}
-
-	public: void write_register(const int reg, const rt_value_t& value){
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(value.check_invariant());
-		QUARK_ASSERT(peek2(_backend->types, _current_static_frame->_symbol_effective_type[reg]) == peek2(_backend->types, value._type));
-
-		const auto& frame_slot_type = _current_static_frame->_symbol_effective_type[reg];
-
-		const auto prev = _current_frame_start_ptr[reg];
-		release_value_safe(*_backend, prev, frame_slot_type);
-		retain_value(*_backend, value._pod, frame_slot_type);
-		_current_frame_start_ptr[reg] = value._pod;
-
-		QUARK_ASSERT(check_invariant());
-	}
-
-#if DEBUG
-	public: bool check_reg_any(const int reg) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(check_reg(reg));
-		return true;
-	}
-
-	public: bool check_reg_bool(const int reg) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(peek2(_backend->types, _current_static_frame->_symbol_effective_type[reg]).is_bool());
-		return true;
-	}
-
-	public: bool check_reg_int(const int reg) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(peek2(_backend->types, _current_static_frame->_symbol_effective_type[reg]).is_int());
-		return true;
-	}
-
-	public: bool check_reg_double(const int reg) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(peek2(_backend->types, _current_static_frame->_symbol_effective_type[reg]).is_double());
-		return true;
-	}
-
-	public: bool check_reg_string(const int reg) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(peek2(_backend->types, _current_static_frame->_symbol_effective_type[reg]).is_string());
-		return true;
-	}
-
-	public: bool check_reg_json(const int reg) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(peek2(_backend->types, _current_static_frame->_symbol_effective_type[reg]).is_json());
-		return true;
-	}
-
-	public: bool check_reg_vector_w_external_elements(const int reg) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(peek2(_backend->types, _current_static_frame->_symbol_effective_type[reg]).is_vector());
-		return true;
-	}
-
-	public: bool check_reg_vector_w_inplace_elements(const int reg) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(peek2(_backend->types, _current_static_frame->_symbol_effective_type[reg]).is_vector());
-		return true;
-	}
-
-	public: bool check_reg_dict_w_external_values(const int reg) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(peek2(_backend->types, _current_static_frame->_symbol_effective_type[reg]).is_dict());
-		return true;
-	}
-	public: bool check_reg_dict_w_inplace_values(const int reg) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(peek2(_backend->types, _current_static_frame->_symbol_effective_type[reg]).is_dict());
-		return true;
-	}
-
-	public: bool check_reg_struct(const int reg) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(check_reg(reg));
-//		QUARK_ASSERT(_current_static_frame->_symbol_effective_type[reg].is_struct());
-		return true;
-	}
-
-	public: bool check_reg_function(const int reg) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(check_reg(reg));
-//		QUARK_ASSERT(_current_static_frame->_symbol_effective_type[reg].is_function());
-		return true;
-	}
-
-	public: bool check_reg__external_value(const int reg) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(check_reg(reg));
-		return true;
-	}
-
-	public: bool check_reg__inplace_value(const int reg) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(check_reg(reg));
-		return true;
-	}
-#endif
-
-
-
-
 	//////////////////////////////////////		STACK
 
 
@@ -935,17 +776,6 @@ struct interpreter_stack_t {
 	}
 
 	public: void push_external_value_blank(const type_t& type){
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(type.check_invariant());
-
-		_entries[_stack_size] = make_uninitialized_magic();
-		_stack_size++;
-		_entry_types.push_back(type);
-
-		QUARK_ASSERT(check_invariant());
-	}
-
-	public: void push_blank(const type_t& type){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(type.check_invariant());
 
@@ -988,17 +818,6 @@ struct interpreter_stack_t {
 		return _entries[pos].int_value;
 	}
 
-	public: void replace_inplace_value(int pos, const rt_value_t& value){
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(value.check_invariant());
-		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
-		QUARK_ASSERT(_entry_types[pos] == value._type);
-
-		_entries[pos] = value._pod;
-
-		QUARK_ASSERT(check_invariant());
-	}
-
 	public: void replace_external_value(int pos, const rt_value_t& value){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
@@ -1038,7 +857,6 @@ struct interpreter_stack_t {
 
 		QUARK_ASSERT(check_invariant());
 	}
-
 
 
 
@@ -1086,6 +904,170 @@ struct interpreter_t : runtime_basics_i {
 	void runtime_basics__on_print(const std::string& s) override;
 	type_t runtime_basics__get_global_symbol_type(const std::string& s) override;
 	rt_value_t runtime_basics__call_thunk(const rt_value_t& f, const rt_value_t args[], int arg_count) override;
+
+
+
+
+
+	//////////////////////////////////////		GLOBAL VARIABLES
+
+
+	public: bool check_global_access_obj(const int global_index) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(global_index >= 0 && global_index < (k_frame_overhead + _stack._global_frame->_symbols._symbols.size()));
+		return true;
+	}
+	public: bool check_global_access_intern(const int global_index) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(global_index >= 0 && global_index < (k_frame_overhead + _stack._global_frame->_symbols._symbols.size()));
+		return true;
+	}
+
+
+	//////////////////////////////////////		REGISTERS
+
+
+	public: bool check_reg(int reg) const{
+		//	Makes sure register is within current stack frame bounds.
+		QUARK_ASSERT(reg >= 0 && reg < _stack._current_static_frame->_symbols._symbols.size());
+
+		//	Makes sure debug types are in sync for this register.
+		const auto& symbol_type = _stack._current_static_frame->_symbols._symbols[reg].second._value_type;
+		const auto& effective_type = _stack._current_static_frame->_symbol_effective_type[reg];
+		const auto& debug_type = _stack._entry_types[_stack.get_current_frame_pos() + reg];
+		QUARK_ASSERT(peek2(_backend.types, effective_type) == peek2(_backend.types, debug_type) || debug_type.is_undefined());
+		return true;
+	}
+
+	//	Slow since it looks up the type of the register at runtime.
+	//??? Notice: this function should be const in the future!
+	public: rt_value_t read_register(const int reg){
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(check_reg(reg));
+
+		const auto result = rt_value_t(
+			_backend,
+			_stack._current_frame_start_ptr[reg],
+			_stack._current_static_frame->_symbol_effective_type[reg],
+			rt_value_t::rc_mode::bump
+		);
+		QUARK_ASSERT(result.check_invariant());
+		return result;
+	}
+
+	public: void write_register(const int reg, const rt_value_t& value){
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(check_reg(reg));
+		QUARK_ASSERT(value.check_invariant());
+		QUARK_ASSERT(peek2(_backend.types, _stack._current_static_frame->_symbol_effective_type[reg]) == peek2(_backend.types, value._type));
+
+		const auto& frame_slot_type = _stack._current_static_frame->_symbol_effective_type[reg];
+
+		const auto prev = _stack._current_frame_start_ptr[reg];
+		release_value_safe(_backend, prev, frame_slot_type);
+		retain_value(_backend, value._pod, frame_slot_type);
+		_stack._current_frame_start_ptr[reg] = value._pod;
+
+		QUARK_ASSERT(check_invariant());
+	}
+
+#if DEBUG
+	public: bool check_reg_any(const int reg) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(check_reg(reg));
+		return true;
+	}
+
+	public: bool check_reg_bool(const int reg) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(check_reg(reg));
+		QUARK_ASSERT(peek2(_backend.types, _stack._current_static_frame->_symbol_effective_type[reg]).is_bool());
+		return true;
+	}
+
+	public: bool check_reg_int(const int reg) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(check_reg(reg));
+		QUARK_ASSERT(peek2(_backend.types, _stack._current_static_frame->_symbol_effective_type[reg]).is_int());
+		return true;
+	}
+
+	public: bool check_reg_double(const int reg) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(check_reg(reg));
+		QUARK_ASSERT(peek2(_backend.types, _stack._current_static_frame->_symbol_effective_type[reg]).is_double());
+		return true;
+	}
+
+	public: bool check_reg_string(const int reg) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(check_reg(reg));
+		QUARK_ASSERT(peek2(_backend.types, _stack._current_static_frame->_symbol_effective_type[reg]).is_string());
+		return true;
+	}
+
+	public: bool check_reg_json(const int reg) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(check_reg(reg));
+		QUARK_ASSERT(peek2(_backend.types, _stack._current_static_frame->_symbol_effective_type[reg]).is_json());
+		return true;
+	}
+
+	public: bool check_reg_vector_w_external_elements(const int reg) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(check_reg(reg));
+		QUARK_ASSERT(peek2(_backend.types, _stack._current_static_frame->_symbol_effective_type[reg]).is_vector());
+		return true;
+	}
+
+	public: bool check_reg_vector_w_inplace_elements(const int reg) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(check_reg(reg));
+		QUARK_ASSERT(peek2(_backend.types, _stack._current_static_frame->_symbol_effective_type[reg]).is_vector());
+		return true;
+	}
+
+	public: bool check_reg_dict_w_external_values(const int reg) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(check_reg(reg));
+		QUARK_ASSERT(peek2(_backend.types, _stack._current_static_frame->_symbol_effective_type[reg]).is_dict());
+		return true;
+	}
+	public: bool check_reg_dict_w_inplace_values(const int reg) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(check_reg(reg));
+		QUARK_ASSERT(peek2(_backend.types, _stack._current_static_frame->_symbol_effective_type[reg]).is_dict());
+		return true;
+	}
+
+	public: bool check_reg_struct(const int reg) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(check_reg(reg));
+//		QUARK_ASSERT(_stack._current_static_frame->_symbol_effective_type[reg].is_struct());
+		return true;
+	}
+
+	public: bool check_reg_function(const int reg) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(check_reg(reg));
+//		QUARK_ASSERT(_stack._current_static_frame->_symbol_effective_type[reg].is_function());
+		return true;
+	}
+
+	public: bool check_reg__external_value(const int reg) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(check_reg(reg));
+		return true;
+	}
+
+	public: bool check_reg__inplace_value(const int reg) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(check_reg(reg));
+		return true;
+	}
+#endif
+
+
 
 
 	////////////////////////		STATE
