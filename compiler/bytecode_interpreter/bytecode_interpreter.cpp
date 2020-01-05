@@ -1985,15 +1985,15 @@ QUARK_TEST_VIP("interpreter_t", "","", ""){
 
 	std::vector<bc_function_definition_t> function_defs;
 
-	bc_program_t* p0 = new bc_program_t {
-		global_frame,
-		function_defs,
-		types,
-		{},
-		{}
-	};
-
-	const auto program = std::shared_ptr<bc_program_t>(p0);
+	const auto program = std::shared_ptr<bc_program_t>(
+		new bc_program_t {
+			global_frame,
+			function_defs,
+			types,
+			{},
+			{}
+		}
+	);
 
 	interpreter_t vm(
 		program,
