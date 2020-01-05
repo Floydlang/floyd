@@ -185,6 +185,8 @@
 		2CEB57472071069B0005AC7A /* benchmark_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB57462071069B0005AC7A /* benchmark_basics.cpp */; };
 		2CF65DCB23B944020045F614 /* floyd_intrinsics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CF65DC923B944020045F614 /* floyd_intrinsics.cpp */; };
 		2CF65DCE23C297210045F614 /* bytecode_stack.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CF65DCC23C297200045F614 /* bytecode_stack.cpp */; };
+		2CF65DD123C299BE0045F614 /* bytecode_isa.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CF65DCF23C299BE0045F614 /* bytecode_isa.cpp */; };
+		2CF65DD423C29A8C0045F614 /* bytecode_program.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CF65DD223C29A8C0045F614 /* bytecode_program.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -745,6 +747,10 @@
 		2CF65DCA23B944020045F614 /* floyd_intrinsics.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_intrinsics.h; sourceTree = "<group>"; };
 		2CF65DCC23C297200045F614 /* bytecode_stack.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = bytecode_stack.cpp; sourceTree = "<group>"; };
 		2CF65DCD23C297200045F614 /* bytecode_stack.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bytecode_stack.h; sourceTree = "<group>"; };
+		2CF65DCF23C299BE0045F614 /* bytecode_isa.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = bytecode_isa.cpp; sourceTree = "<group>"; };
+		2CF65DD023C299BE0045F614 /* bytecode_isa.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bytecode_isa.h; sourceTree = "<group>"; };
+		2CF65DD223C29A8C0045F614 /* bytecode_program.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = bytecode_program.cpp; sourceTree = "<group>"; };
+		2CF65DD323C29A8C0045F614 /* bytecode_program.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bytecode_program.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1060,6 +1066,10 @@
 				2C5372B7207A9EAD00647AD1 /* bytecode_interpreter.h */,
 				2C557C362040173E006F6818 /* bytecode_intrinsics.cpp */,
 				2C557C372040173E006F6818 /* bytecode_intrinsics.h */,
+				2CF65DCF23C299BE0045F614 /* bytecode_isa.cpp */,
+				2CF65DD023C299BE0045F614 /* bytecode_isa.h */,
+				2CF65DD223C29A8C0045F614 /* bytecode_program.cpp */,
+				2CF65DD323C29A8C0045F614 /* bytecode_program.h */,
 				2CF65DCC23C297200045F614 /* bytecode_stack.cpp */,
 				2CF65DCD23C297200045F614 /* bytecode_stack.h */,
 			);
@@ -1813,6 +1823,7 @@
 				2C7005D4238FF3BD005298C2 /* floyd_sockets.cpp in Sources */,
 				2C40A71F1D76E179003245E3 /* immutable_ref_value.cpp in Sources */,
 				2C5372B9207A9EBA00647AD1 /* bytecode_interpreter.cpp in Sources */,
+				2CF65DD123C299BE0045F614 /* bytecode_isa.cpp in Sources */,
 				2CB30739214ACF09007D2732 /* software_system.cpp in Sources */,
 				2C085D0F23140CA6009E6D24 /* compressed_vector_benchmark.cpp in Sources */,
 				2C8C03A62221D95F0085EBBE /* csv_reporter.cc in Sources */,
@@ -1876,6 +1887,7 @@
 				2C00DEC822198C6300DB322E /* floyd_runtime.cpp in Sources */,
 				2C8C039E2221D95F0085EBBE /* commandlineflags.cc in Sources */,
 				2CBCA7DE1D569E04000FAE81 /* sha1_class.cpp in Sources */,
+				2CF65DD423C29A8C0045F614 /* bytecode_program.cpp in Sources */,
 				2CBD8932228C9B2900C10CDD /* os_process.cpp in Sources */,
 				2C8C03A22221D95F0085EBBE /* benchmark_register.cc in Sources */,
 				2C3174AC2262125F0004E086 /* parse_tree_to_ast_conv.cpp in Sources */,
