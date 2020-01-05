@@ -41,9 +41,11 @@ struct bc_thread_t {
 	std::shared_ptr<interpreter_t> _interpreter;
 };
 
+
 struct bc_execution_engine_t {
 	bc_execution_engine_t(const bc_program_t& program, const config_t& config, runtime_handler_i& runtime_handler);
 	bool check_invariant() const;
+	bool check_invariant_thread_safe() const;
 
 
 	//////////////////////////////////////		STATE

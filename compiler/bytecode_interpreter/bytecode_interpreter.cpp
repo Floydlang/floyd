@@ -207,7 +207,12 @@ bool bc_instruction_t::check_invariant() const {
 //////////////////////////////////////////		bc_static_frame_t
 
 
-bc_static_frame_t::bc_static_frame_t(const types_t& types, const std::vector<bc_instruction_t>& instrs2, const symbol_table_t& symbols, const std::vector<type_t>& args) :
+bc_static_frame_t::bc_static_frame_t(
+	const types_t& types,
+	const std::vector<bc_instruction_t>& instrs2,
+	const symbol_table_t& symbols,
+	const std::vector<type_t>& args
+) :
 	_instructions(instrs2),
 	_symbols(symbols),
 	_arg_count((int)args.size()),
@@ -269,190 +274,6 @@ bool bc_function_definition_t::check_invariant() const {
 
 //////////////////////////////////////		interpreter_stack_t - FRAMES
 
-
-
-void interpreter_stack_t::save_frame(){
-	const auto frame_pos = rt_value_t::make_int(get_current_frame_pos());
-	push_inplace_value(frame_pos);
-
-	const auto frame_ptr = rt_value_t(_current_static_frame);
-	push_inplace_value(frame_ptr);
-}
-
-void interpreter_stack_t::restore_frame(){
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(_stack_size >= k_frame_overhead);
-
-	const auto frame_pos = _entries[_stack_size - k_frame_overhead + 0].int_value;
-	const auto frame_ptr = (const bc_static_frame_t*)_entries[_stack_size - k_frame_overhead + 1].frame_ptr;
-	_stack_size -= k_frame_overhead;
-	_entry_types.pop_back();
-	_entry_types.pop_back();
-	_current_static_frame = frame_ptr;
-	_current_frame_start_ptr = &_entries[frame_pos];
-}
-
-//	Function arguments MUST ALREADY have been pushed on the stack!! Only handles locals.
-//	??? Faster: This function should just allocate a block for frame, then have a list of writes.
-//	???	ALTERNATIVELY: generate instructions to do this in the VM? Nah, that's always slower.
-void interpreter_stack_t::open_frame_except_args(const bc_static_frame_t& frame, int pushed_arg_count){
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(frame.check_invariant());
-	QUARK_ASSERT(frame._arg_count == pushed_arg_count);
-
-	const auto pos_with_args_already_pushed = size();
-
-	//	Carefully position the new stack frame so its includes the parameters that already sits in the stack.
-	//	The stack frame already has symbols/registers mapped for those parameters.
-	const auto new_frame_start_pos = pos_with_args_already_pushed - pushed_arg_count;
-
-	for(int i = 0 ; i < frame._locals_count ; i++){
-		const int symbol_index = i + frame._arg_count;
-		const auto& symbol_kv = frame._symbols._symbols[symbol_index];
-		const auto& symbol = symbol_kv.second;
-		const auto type = symbol._value_type;
-		const bool ext = is_rc_value(_backend->types, type);
-
-		if(symbol._symbol_type == symbol_t::symbol_type::immutable_reserve){
-			if(ext){
-				push_external_value_blank(type);
-			}
-			else{
-				push_inplace_value(value_to_rt(*_backend, make_default_value(type)));
-			}
-		}
-		else if(symbol._symbol_type == symbol_t::symbol_type::immutable_arg){
-			quark::throw_defective_request();
-		}
-		else if(symbol._symbol_type == symbol_t::symbol_type::immutable_precalc){
-//				QUARK_ASSERT(ext == false || (type.is_json() && symbol._init.get_json().is_null()));
-			if(ext){
-				push_external_value(value_to_rt(*_backend, symbol._init));
-			}
-			else {
-				push_inplace_value(value_to_rt(*_backend, symbol._init));
-			}
-		}
-		else if(symbol._symbol_type == symbol_t::symbol_type::named_type){
-			const auto v = rt_value_t::make_typeid_value(symbol._value_type);
-			push_inplace_value(v);
-		}
-		else if(symbol._symbol_type == symbol_t::symbol_type::mutable_reserve){
-			if(ext){
-				push_external_value_blank(type);
-			}
-			else{
-				push_inplace_value(value_to_rt(*_backend, make_default_value(type)));
-			}
-		}
-		else {
-			quark::throw_defective_request();
-		}
-	}
-	_current_static_frame = &frame;
-	_current_frame_start_ptr = &_entries[new_frame_start_pos];
-
-	QUARK_ASSERT(check_invariant());
-}
-
-//	Pops all locals, decrementing RC when needed.
-//	Only handles locals, not parameters.
-void interpreter_stack_t::close_frame(const bc_static_frame_t& frame){
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(frame.check_invariant());
-
-//		const auto type = frame._symbols[i + frame._arg_count].second._value_type;
-	const auto count = frame._symbols._symbols.size() - frame._arg_count;
-	for(auto i = count ; i > 0 ; i--){
-		const auto symbol_index = frame._arg_count + i - 1;
-		const auto& type = frame._symbol_effective_type[symbol_index];
-		pop(type);
-	}
-	QUARK_ASSERT(check_invariant());
-}
-
-frame_pos_t interpreter_stack_t::read_frame_info(size_t pos) const{
-//	QUARK_ASSERT(check_invariant());
-
-	const auto v = load_intq((int)(pos + 0));
-	QUARK_ASSERT(v >= 0);
-
-	const auto ptr = (const bc_static_frame_t*)_entries[pos + 1].frame_ptr;
-	QUARK_ASSERT(ptr == nullptr || ptr->check_invariant());
-
-	return frame_pos_t{ (size_t)v, ptr };
-}
-
-bool interpreter_stack_t::check_stack_frame(const frame_pos_t& in_frame) const{
-	QUARK_ASSERT(in_frame._frame_ptr != nullptr && in_frame._frame_ptr->check_invariant());
-
-	if(in_frame._frame_pos == 0){
-		return true;
-	}
-	else{
-		QUARK_ASSERT(in_frame._frame_ptr->_symbols.check_invariant());
-
-		for(int i = 0 ; i < in_frame._frame_ptr->_symbols._symbols.size() ; i++){
-//			const auto& symbol = in_frame._frame_ptr->_symbols._symbols[i];
-
-//			bool symbol_ext = encode_as_external(_types, symbol.second._value_type);
-//			int local_pos = get_local_n_pos(in_frame._frame_pos, i);
-
-//			bool stack_ext = debug_is_ext(local_pos);
-//			QUARK_ASSERT(symbol_ext == stack_ext);
-		}
-
-		const auto prev_frame = read_frame_info(in_frame._frame_pos - k_frame_overhead);
-		QUARK_ASSERT(prev_frame._frame_pos >= 0 && prev_frame._frame_pos < in_frame._frame_pos);
-		if(prev_frame._frame_pos > k_frame_overhead){
-			return check_stack_frame(prev_frame);
-		}
-		else{
-			return true;
-		}
-	}
-}
-
-//	Returned elements are sorted with smaller stack positions first.
-//	Walks the stack from the active frame towards the start of the stack, the globals frame.
-std::vector<interpreter_stack_t::active_frame_t> interpreter_stack_t::get_stack_frames_noci() const{
-//	QUARK_ASSERT(check_invariant());
-
-	std::vector<active_frame_t> result;
-
-	const auto frame_start0 = get_current_frame_pos();
-	if(frame_start0 > 0){
-		const auto stack_size = static_cast<int>(_stack_size);
-
-		{
-			const auto frame_size0 = _current_static_frame->_symbols._symbols.size();
-			const auto frame_end0 = frame_start0 + frame_size0;
-
-			//??? Notice: during a call sequence: push_frame_ptr, push arguments, call, popn, pop_frame_ptr -- the stack size vs frames is slighly out of sync and gives us negative temporary stack entries.
-			const auto temp_count0 = stack_size >= frame_end0 ? stack_size - frame_end0 : 0;
-			const auto e = active_frame_t { frame_start0, frame_end0, _current_static_frame, temp_count0 };
-			result.push_back(e);
-		}
-
-		auto info_pos = frame_start0 - k_frame_overhead;
-		auto frame = read_frame_info(info_pos);
-		while(frame._frame_ptr != nullptr){
-			const auto frame_start = frame._frame_pos;
-			const auto frame_size = frame._frame_ptr->_symbols._symbols.size();
-			const auto frame_end = frame_start + frame_size;
-			const auto temp_count = info_pos >= frame_end ? info_pos - frame_end : 0;
-
-			const auto e = active_frame_t { frame_start, frame_end, frame._frame_ptr, temp_count };
-			result.push_back(e);
-
-			info_pos = frame_start - k_frame_overhead;
-			frame = read_frame_info(info_pos);
-		}
-
-		std::reverse(result.begin(), result.end());
-	}
-	return result;
-}
 
 //	??? Make stub bc_static_frame_t for each host function to make call conventions same as Floyd functions.
 struct cif_t {
@@ -643,10 +464,10 @@ static rt_value_t open_frame_and_make_call(interpreter_t& vm, const func_link_t&
 	//	We need to remember the global pos where to store return value, since we're switching frame to call function.
 	auto frame_ptr = (const bc_static_frame_t*)func_link.f;
 
-	vm._stack.open_frame_except_args(*frame_ptr, callee_arg_count);
+	vm.open_frame_except_args(*frame_ptr, callee_arg_count);
 	const auto& result = execute_instructions(vm, frame_ptr->_instructions);
 	QUARK_ASSERT(result.second.check_invariant());
-	vm._stack.close_frame(*frame_ptr);
+	vm.close_frame(*frame_ptr);
 
 	const auto& return_type = peek2(types, func_link.function_type_optional).get_function_return(types);
 	const auto return_type_peek = peek2(types, return_type);
@@ -739,7 +560,7 @@ rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_val
 	if(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc){
 		const auto& return_type = peek2(types, func_link.function_type_optional).get_function_return(types);
 
-		vm._stack.save_frame();
+		vm.save_frame();
 
 		//	We push the values to the stack = the stack will take RC ownership of the values.
 		std::vector<type_t> arg_types2;
@@ -753,7 +574,7 @@ rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_val
 		const auto result = open_frame_and_make_call(vm, func_link, callee_arg_count);
 
 		vm._stack.pop_batch(arg_types2);
-		vm._stack.restore_frame();
+		vm.restore_frame();
 
 		const auto return_type_peek = peek2(types, return_type);
 		if(return_type_peek.is_void() == false){
@@ -779,10 +600,11 @@ json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend)
 	QUARK_ASSERT(backend.check_invariant());
 
 	const int size = static_cast<int>(stack._stack_size);
-
-	const auto stack_frames = stack.get_stack_frames_noci();
-
 	std::vector<json_t> frames;
+	std::vector<json_t> elements;
+
+/*
+	const auto stack_frames = stack.get_stack_frames_noci();
 	for(int64_t i = 0 ; i < stack_frames.size() ; i++){
 		auto a = json_t::make_array({
 			json_t(i),
@@ -792,12 +614,11 @@ json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend)
 		frames.push_back(a);
 	}
 
-	std::vector<json_t> elements;
 	for(int64_t i = 0 ; i < size ; i++){
 		const auto& frame_it = std::find_if(
 			stack_frames.begin(),
 			stack_frames.end(),
-			[&i](const interpreter_stack_t::active_frame_t& e) { return e.start_pos == i; }
+			[&i](const active_frame_t& e) { return e.start_pos == i; }
 		);
 
 		bool frame_start_flag = frame_it != stack_frames.end();
@@ -815,11 +636,13 @@ json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend)
 		auto a = json_t::make_array({
 			json_t(i),
 			type_to_json(backend.types, debug_type),
-			/*???unwritten ? json_t("UNWRITTEN") :*/ bcvalue_to_json(backend, rt_value_t{ bc })
+			bcvalue_to_json(backend, rt_value_t{ bc })
 		});
 		elements.push_back(a);
 #endif
 	}
+*/
+
 
 	return json_t::make_object({
 		{ "size", json_t(size) },
@@ -970,9 +793,218 @@ rt_value_t interpreter_t::runtime_basics__call_thunk(const rt_value_t& f, const 
 }
 
 
+
+
+
+
+
+
+
+//////////////////////////////////////		FRAMES
+
+
+
+void interpreter_t::save_frame(){
+	const auto frame_pos = rt_value_t::make_int(get_current_frame_pos());
+	_stack.push_inplace_value(frame_pos);
+
+	const auto frame_ptr = rt_value_t(_stack._current_static_frame);
+	_stack.push_inplace_value(frame_ptr);
+}
+
+void interpreter_t::restore_frame(){
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(_stack._stack_size >= k_frame_overhead);
+
+	const auto frame_pos = _stack._entries[_stack._stack_size - k_frame_overhead + 0].int_value;
+	const auto frame_ptr = (const bc_static_frame_t*)_stack._entries[_stack._stack_size - k_frame_overhead + 1].frame_ptr;
+	_stack._stack_size -= k_frame_overhead;
+	_stack._entry_types.pop_back();
+	_stack._entry_types.pop_back();
+	_stack._current_static_frame = frame_ptr;
+	_stack._current_frame_start_ptr = &_stack._entries[frame_pos];
+}
+
+//	Function arguments MUST ALREADY have been pushed on the stack!! Only handles locals.
+//	??? Faster: This function should just allocate a block for frame, then have a list of writes.
+//	???	ALTERNATIVELY: generate instructions to do this in the VM? Nah, that's always slower.
+void interpreter_t::open_frame_except_args(const bc_static_frame_t& frame, int pushed_arg_count){
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(frame.check_invariant());
+	QUARK_ASSERT(frame._arg_count == pushed_arg_count);
+
+	const auto pos_with_args_already_pushed = _stack.size();
+
+	//	Carefully position the new stack frame so its includes the parameters that already sits in the stack.
+	//	The stack frame already has symbols/registers mapped for those parameters.
+	const auto new_frame_start_pos = pos_with_args_already_pushed - pushed_arg_count;
+
+	for(int i = 0 ; i < frame._locals_count ; i++){
+		const int symbol_index = i + frame._arg_count;
+		const auto& symbol_kv = frame._symbols._symbols[symbol_index];
+		const auto& symbol = symbol_kv.second;
+		const auto type = symbol._value_type;
+		const bool ext = is_rc_value(_backend.types, type);
+
+		if(symbol._symbol_type == symbol_t::symbol_type::immutable_reserve){
+			if(ext){
+				_stack.push_external_value_blank(type);
+			}
+			else{
+				_stack.push_inplace_value(value_to_rt(_backend, make_default_value(type)));
+			}
+		}
+		else if(symbol._symbol_type == symbol_t::symbol_type::immutable_arg){
+			quark::throw_defective_request();
+		}
+		else if(symbol._symbol_type == symbol_t::symbol_type::immutable_precalc){
+//				QUARK_ASSERT(ext == false || (type.is_json() && symbol._init.get_json().is_null()));
+			if(ext){
+				_stack.push_external_value(value_to_rt(_backend, symbol._init));
+			}
+			else {
+				_stack.push_inplace_value(value_to_rt(_backend, symbol._init));
+			}
+		}
+		else if(symbol._symbol_type == symbol_t::symbol_type::named_type){
+			const auto v = rt_value_t::make_typeid_value(symbol._value_type);
+			_stack.push_inplace_value(v);
+		}
+		else if(symbol._symbol_type == symbol_t::symbol_type::mutable_reserve){
+			if(ext){
+				_stack.push_external_value_blank(type);
+			}
+			else{
+				_stack.push_inplace_value(value_to_rt(_backend, make_default_value(type)));
+			}
+		}
+		else {
+			quark::throw_defective_request();
+		}
+	}
+	_stack._current_static_frame = &frame;
+	_stack._current_frame_start_ptr = &_stack._entries[new_frame_start_pos];
+
+	QUARK_ASSERT(check_invariant());
+}
+
+//	Pops all locals, decrementing RC when needed.
+//	Only handles locals, not parameters.
+void interpreter_t::close_frame(const bc_static_frame_t& frame){
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(frame.check_invariant());
+
+//		const auto type = frame._symbols[i + frame._arg_count].second._value_type;
+	const auto count = frame._symbols._symbols.size() - frame._arg_count;
+	for(auto i = count ; i > 0 ; i--){
+		const auto symbol_index = frame._arg_count + i - 1;
+		const auto& type = frame._symbol_effective_type[symbol_index];
+		_stack.pop(type);
+	}
+	QUARK_ASSERT(check_invariant());
+}
+
+frame_pos_t interpreter_t::read_frame_info(size_t pos) const{
+//	QUARK_ASSERT(check_invariant());
+
+	const auto v = _stack.load_intq((int)(pos + 0));
+	QUARK_ASSERT(v >= 0);
+
+	const auto ptr = (const bc_static_frame_t*)_stack._entries[pos + 1].frame_ptr;
+	QUARK_ASSERT(ptr == nullptr || ptr->check_invariant());
+
+	return frame_pos_t{ (size_t)v, ptr };
+}
+
+bool interpreter_t::check_stack_frame(const frame_pos_t& in_frame) const{
+	QUARK_ASSERT(in_frame._frame_ptr != nullptr && in_frame._frame_ptr->check_invariant());
+
+	if(in_frame._frame_pos == 0){
+		return true;
+	}
+	else{
+		QUARK_ASSERT(in_frame._frame_ptr->_symbols.check_invariant());
+
+		for(int i = 0 ; i < in_frame._frame_ptr->_symbols._symbols.size() ; i++){
+//			const auto& symbol = in_frame._frame_ptr->_symbols._symbols[i];
+
+//			bool symbol_ext = encode_as_external(_types, symbol.second._value_type);
+//			int local_pos = get_local_n_pos(in_frame._frame_pos, i);
+
+//			bool stack_ext = debug_is_ext(local_pos);
+//			QUARK_ASSERT(symbol_ext == stack_ext);
+		}
+
+		const auto prev_frame = read_frame_info(in_frame._frame_pos - k_frame_overhead);
+		QUARK_ASSERT(prev_frame._frame_pos >= 0 && prev_frame._frame_pos < in_frame._frame_pos);
+		if(prev_frame._frame_pos > k_frame_overhead){
+			return check_stack_frame(prev_frame);
+		}
+		else{
+			return true;
+		}
+	}
+}
+
+//	Returned elements are sorted with smaller stack positions first.
+//	Walks the stack from the active frame towards the start of the stack, the globals frame.
+std::vector<active_frame_t> interpreter_t::get_stack_frames_noci() const{
+//	QUARK_ASSERT(check_invariant());
+
+	std::vector<active_frame_t> result;
+
+	const auto frame_start0 = get_current_frame_pos();
+	if(frame_start0 > 0){
+		const auto stack_size = static_cast<int>(_stack._stack_size);
+
+		{
+			const auto frame_size0 = _stack._current_static_frame->_symbols._symbols.size();
+			const auto frame_end0 = frame_start0 + frame_size0;
+
+			//??? Notice: during a call sequence: push_frame_ptr, push arguments, call, popn, pop_frame_ptr -- the
+			//	stack size vs frames is slighly out of sync and gives us negative temporary stack entries.
+			const auto temp_count0 = stack_size >= frame_end0 ? stack_size - frame_end0 : 0;
+			const auto e = active_frame_t { frame_start0, frame_end0, _stack._current_static_frame, temp_count0 };
+			result.push_back(e);
+		}
+
+		auto info_pos = frame_start0 - k_frame_overhead;
+		auto frame = read_frame_info(info_pos);
+		while(frame._frame_ptr != nullptr){
+			const auto frame_start = frame._frame_pos;
+			const auto frame_size = frame._frame_ptr->_symbols._symbols.size();
+			const auto frame_end = frame_start + frame_size;
+			const auto temp_count = info_pos >= frame_end ? info_pos - frame_end : 0;
+
+			const auto e = active_frame_t { frame_start, frame_end, frame._frame_ptr, temp_count };
+			result.push_back(e);
+
+			info_pos = frame_start - k_frame_overhead;
+			frame = read_frame_info(info_pos);
+		}
+
+		std::reverse(result.begin(), result.end());
+	}
+	return result;
+}
+
+
+
+
+
+
+
+
 //???std::chrono::high_resolution_clock::now()
 
-interpreter_t::interpreter_t(const std::shared_ptr<bc_program_t>& program, value_backend_t& backend, const config_t& config, runtime_process_i* process_handler, runtime_handler_i& runtime_handler, const std::string& name) :
+interpreter_t::interpreter_t(
+	const std::shared_ptr<bc_program_t>& program,
+	value_backend_t& backend,
+	const config_t& config,
+	runtime_process_i* process_handler,
+	runtime_handler_i& runtime_handler,
+	const std::string& name
+) :
 	_program(program),
 	_process_handler(process_handler),
 	_runtime_handler(&runtime_handler),
@@ -984,8 +1016,8 @@ interpreter_t::interpreter_t(const std::shared_ptr<bc_program_t>& program, value
 	QUARK_ASSERT(check_invariant());
 
 	{
-		_stack.save_frame();
-		_stack.open_frame_except_args(_program->_globals, 0);
+		save_frame();
+		open_frame_except_args(_program->_globals, 0);
 
 		QUARK_ASSERT(check_invariant());
 		if(false) trace_interpreter(*this, 0);
@@ -1009,13 +1041,22 @@ void interpreter_t::unwind_stack(){
 	QUARK_ASSERT(check_invariant());
 
 	QUARK_ASSERT(_stack._current_static_frame == &_program->_globals);
-	_stack.close_frame(_program->_globals);
+	close_frame(_program->_globals);
 
 	QUARK_ASSERT(check_invariant());
 }
 
 //??? Unify this debug code with trace_value_backend()
-static std::vector<std::string> make(value_backend_t& backend, size_t i, rt_pod_t bc_pod, const type_t& debug_type, const interpreter_stack_t::active_frame_t& frame, int frame_index, int symbol_index, bool is_symbol){
+static std::vector<std::string> make(
+	value_backend_t& backend,
+	size_t i,
+	rt_pod_t bc_pod,
+	const type_t& debug_type,
+	const active_frame_t& frame,
+	int frame_index,
+	int symbol_index,
+	bool is_symbol
+){
 	const bool is_rc = is_rc_value(backend.types, debug_type);
 
 	std::string value_str = "";
@@ -1110,7 +1151,7 @@ void trace_interpreter(interpreter_t& vm, int pc){
 	{
 		QUARK_SCOPED_TRACE("STACK");
 
-		const auto stack_frames = stack.get_stack_frames_noci();
+		const auto stack_frames = vm.get_stack_frames_noci();
 
 		std::vector<std::vector<std::string>> matrix;
 
@@ -1165,7 +1206,10 @@ void trace_interpreter(interpreter_t& vm, int pc){
 		}
 
 		QUARK_SCOPED_TRACE("STACK ENTRIES");
-		const auto result = generate_table_type1({ "#", "debug type", "value", "RC", "alloc ID", "frame", "symname", "sym.value type", "sym.effective type" }, matrix);
+		const auto result = generate_table_type1(
+			{ "#", "debug type", "value", "RC", "alloc ID", "frame", "symname", "sym.value type", "sym.effective type" },
+			matrix
+		);
 		QUARK_TRACE(result);
 	}
 
@@ -1401,7 +1445,10 @@ inline void write_reg_rc(value_backend_t& backend, rt_pod_t regs[], int dest_reg
 
 std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(instructions.empty() == true || (instructions.back()._opcode == bc_opcode::k_return || instructions.back()._opcode == bc_opcode::k_stop));
+	QUARK_ASSERT(
+		instructions.empty() == true
+		|| (instructions.back()._opcode == bc_opcode::k_return || instructions.back()._opcode == bc_opcode::k_stop)
+	);
 
 	auto& backend = vm._backend;
 	const auto& types = backend.types;
@@ -1561,7 +1608,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_push_inplace_value: {
 			QUARK_ASSERT(vm.check_reg__inplace_value(i._a));
-			const auto type = stack._entry_types[stack.get_current_frame_pos() + i._a];
+			const auto type = stack._entry_types[vm.get_current_frame_pos() + i._a];
 			stack._entries[stack._stack_size] = regs[i._a];
 			stack._stack_size++;
 			stack._entry_types.push_back(type);
@@ -2414,7 +2461,12 @@ static json_t functiondef_to_json(value_backend_t& backend, const bc_function_de
 }
 
 json_t bcprogram_to_json(const bc_program_t& program){
-	auto backend = value_backend_t({}, bc_make_struct_layouts(program._types), program._types, config_t { vector_backend::hamt, dict_backend::hamt, false });
+	auto backend = value_backend_t(
+		{},
+		bc_make_struct_layouts(program._types),
+		program._types,
+		config_t { vector_backend::hamt, dict_backend::hamt, false }
+	);
 
 	std::vector<json_t> callstack;
 	std::vector<json_t> function_defs;

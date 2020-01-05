@@ -661,7 +661,6 @@ struct interpreter_stack_t {
 		_backend(backend),
 		_current_static_frame(nullptr),
 		_current_frame_start_ptr(nullptr),
-		_global_frame(global_frame),
 		_entries(nullptr),
 		_allocated_count(0),
 		_stack_size(0)
@@ -695,8 +694,6 @@ struct interpreter_stack_t {
 			QUARK_ASSERT(_entry_types[i].check_invariant());
 		}
 
-		const auto frames = get_stack_frames_noci();
-
 		return true;
 	}
 
@@ -715,8 +712,6 @@ struct interpreter_stack_t {
 		std::swap(_current_static_frame, other._current_static_frame);
 		std::swap(_current_frame_start_ptr, other._current_frame_start_ptr);
 
-		std::swap(_global_frame, other._global_frame);
-
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 	}
@@ -726,36 +721,6 @@ struct interpreter_stack_t {
 
 		return static_cast<int>(_stack_size);
 	}
-
-
-	//////////////////////////////////////		FRAMES
-
-
-	public: void save_frame();
-	public: void restore_frame();
-	public: void open_frame_except_args(const bc_static_frame_t& frame, int pushed_arg_count);
-	public: void close_frame(const bc_static_frame_t& frame);
-
-	private: frame_pos_t read_frame_info(size_t pos) const;
-	public: bool check_stack_frame(const frame_pos_t& in_frame) const;
-
-	public: struct active_frame_t {
-		size_t start_pos;
-		size_t end_pos;
-		const bc_static_frame_t* static_frame;
-		size_t temp_count;
-	};
-	public: std::vector<active_frame_t> get_stack_frames_noci() const;
-
-	public: size_t get_current_frame_pos() const {
-//		QUARK_ASSERT(check_invariant());
-
-		const auto frame_pos = _current_frame_start_ptr - &_entries[0];
-		return frame_pos;
-	}
-
-
-	//////////////////////////////////////		STACK
 
 
 	public: void push_external_value(const rt_value_t& value){
@@ -841,7 +806,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	private: void pop(const type_t& type){
+	public: void pop(const type_t& type){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(_stack_size > 0);
 
@@ -867,12 +832,19 @@ struct interpreter_stack_t {
 
 	public: const bc_static_frame_t* _current_static_frame;
 	public: rt_pod_t* _current_frame_start_ptr;
-
-	public: const bc_static_frame_t* _global_frame;
 };
 
 json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend);
 
+
+
+
+struct active_frame_t {
+	size_t start_pos;
+	size_t end_pos;
+	const bc_static_frame_t* static_frame;
+	size_t temp_count;
+};
 
 
 //////////////////////////////////////		interpreter_t
@@ -884,7 +856,14 @@ json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend)
 */
 
 struct interpreter_t : runtime_basics_i {
-	public: explicit interpreter_t(const std::shared_ptr<bc_program_t>& program, value_backend_t& backend, const config_t& config, runtime_process_i* process_handler, runtime_handler_i& runtime_handler, const std::string& name);
+	public: explicit interpreter_t(
+		const std::shared_ptr<bc_program_t>& program,
+		value_backend_t& backend,
+		const config_t& config,
+		runtime_process_i* process_handler,
+		runtime_handler_i& runtime_handler,
+		const std::string& name
+	);
 	public: interpreter_t(const interpreter_t& other) = delete;
 	public: ~interpreter_t();
 
@@ -900,21 +879,39 @@ struct interpreter_t : runtime_basics_i {
 	rt_value_t runtime_basics__call_thunk(const rt_value_t& f, const rt_value_t args[], int arg_count) override;
 
 
-
-
-
 	//////////////////////////////////////		GLOBAL VARIABLES
 
 
 	public: bool check_global_access_obj(const int global_index) const{
 		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(global_index >= 0 && global_index < (k_frame_overhead + _stack._global_frame->_symbols._symbols.size()));
+		QUARK_ASSERT(global_index >= 0 && global_index < (k_frame_overhead + _program->_globals._symbols._symbols.size()));
 		return true;
 	}
 	public: bool check_global_access_intern(const int global_index) const{
 		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(global_index >= 0 && global_index < (k_frame_overhead + _stack._global_frame->_symbols._symbols.size()));
+		QUARK_ASSERT(global_index >= 0 && global_index < (k_frame_overhead + _program->_globals._symbols._symbols.size()));
 		return true;
+	}
+
+
+	//////////////////////////////////////		FRAMES
+
+
+	public: void save_frame();
+	public: void restore_frame();
+	public: void open_frame_except_args(const bc_static_frame_t& frame, int pushed_arg_count);
+	public: void close_frame(const bc_static_frame_t& frame);
+
+	private: frame_pos_t read_frame_info(size_t pos) const;
+	public: bool check_stack_frame(const frame_pos_t& in_frame) const;
+
+	public: std::vector<active_frame_t> get_stack_frames_noci() const;
+
+	public: size_t get_current_frame_pos() const {
+//		QUARK_ASSERT(check_invariant());
+
+		const auto frame_pos = _stack._current_frame_start_ptr - &_stack._entries[0];
+		return frame_pos;
 	}
 
 
@@ -926,9 +923,8 @@ struct interpreter_t : runtime_basics_i {
 		QUARK_ASSERT(reg >= 0 && reg < _stack._current_static_frame->_symbols._symbols.size());
 
 		//	Makes sure debug types are in sync for this register.
-		const auto& symbol_type = _stack._current_static_frame->_symbols._symbols[reg].second._value_type;
 		const auto& effective_type = _stack._current_static_frame->_symbol_effective_type[reg];
-		const auto& debug_type = _stack._entry_types[_stack.get_current_frame_pos() + reg];
+		const auto& debug_type = _stack._entry_types[get_current_frame_pos() + reg];
 		QUARK_ASSERT(peek2(_backend.types, effective_type) == peek2(_backend.types, debug_type) || debug_type.is_undefined());
 		return true;
 	}

@@ -201,14 +201,23 @@ void unwind_global_stack(bc_execution_engine_t& ee){
 }
 
 bool bc_execution_engine_t::check_invariant() const {
-	QUARK_ASSERT(_program->check_invariant());
-	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(check_invariant_thread_safe());
+
 	QUARK_ASSERT(main_bc_thread.check_invariant());
-	QUARK_ASSERT(handler != nullptr);
-	QUARK_ASSERT(_main_thread_id != std::thread::id());
+/*
+	//	Warning, cannot check invariant of this data since other OS threads mutate them concurrently.
 	for(const auto& e: _processes){
 		QUARK_ASSERT(e && e->check_invariant());
 	}
+*/
+	return true;
+}
+
+bool bc_execution_engine_t::check_invariant_thread_safe() const {
+	QUARK_ASSERT(_program->check_invariant());
+	QUARK_ASSERT(backend.check_invariant());
+	QUARK_ASSERT(handler != nullptr);
+	QUARK_ASSERT(_main_thread_id != std::thread::id());
 	for(const auto& e: _bc_threads){
 		//	Warning, cannot check invariant of this data since other OS threads mutate them concurrently.
 		QUARK_ASSERT(e && e->check_invariant_thread_safe());
@@ -231,7 +240,6 @@ bc_execution_engine_t::bc_execution_engine_t(const bc_program_t& program, const 
 	QUARK_ASSERT(check_invariant());
 }
 
-
 std::unique_ptr<bc_execution_engine_t> make_bytecode_execution_engine(
 	const bc_program_t& program,
 	const config_t& config,
@@ -251,7 +259,7 @@ static std::string make_trace_process_header(const bc_process_t& process){
 }
 
 static void run_process(bc_execution_engine_t& ee, int process_id){
-	QUARK_ASSERT(ee.check_invariant());
+	QUARK_ASSERT(ee.check_invariant_thread_safe());
 	QUARK_ASSERT(process_id >= 0 && process_id < ee._processes.size());
 
 	auto& process = *ee._processes[process_id];
@@ -269,7 +277,7 @@ static void run_process(bc_execution_engine_t& ee, int process_id){
 		process._process_state = call_function_bc(interpreter, process._init_function, {}, 0);
 	}
 
-	QUARK_ASSERT(ee.check_invariant());
+	QUARK_ASSERT(ee.check_invariant_thread_safe());
 
 	//	Handle process messages until exit.
 	while(process._exiting_flag == false){
@@ -293,20 +301,19 @@ static void run_process(bc_execution_engine_t& ee, int process_id){
 			QUARK_TRACE_SS(trace_header << ": received message: " << json_to_pretty_string(message2));
 		}
 
-		QUARK_ASSERT(ee.check_invariant());
+		QUARK_ASSERT(ee.check_invariant_thread_safe());
 
 		{
 			const rt_value_t args[] = { process._process_state, message };
 			process._process_state = call_function_bc(interpreter, process._msg_function, args, 2);
 		}
 
-		QUARK_ASSERT(ee.check_invariant());
+		QUARK_ASSERT(ee.check_invariant_thread_safe());
 	}
 
-	QUARK_ASSERT(ee.check_invariant());
+	QUARK_ASSERT(ee.check_invariant_thread_safe());
 }
 
-//??? globals should be shared between interpreter_t instances!
 static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& config){
 	QUARK_ASSERT(ee.check_invariant());
 
