@@ -728,8 +728,6 @@ struct interpreter_stack_t {
 	}
 
 
-
-
 	//////////////////////////////////////		FRAMES
 
 
@@ -760,7 +758,6 @@ struct interpreter_stack_t {
 
 
 	//////////////////////////////////////		STACK
-
 
 
 	public: void push_external_value(const rt_value_t& value){
@@ -857,7 +854,6 @@ struct interpreter_stack_t {
 
 		QUARK_ASSERT(check_invariant());
 	}
-
 
 
 	////////////////////////		STATE
@@ -1068,8 +1064,6 @@ struct interpreter_t : runtime_basics_i {
 #endif
 
 
-
-
 	////////////////////////		STATE
 	public: std::shared_ptr<bc_program_t> _program;
 	public: runtime_process_i* _process_handler;
@@ -1094,24 +1088,6 @@ std::vector<func_link_t> link_functions(const bc_program_t& program);
 rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_value_t args[], int arg_count);
 json_t interpreter_to_json(interpreter_t& vm);
 std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions);
-
-
-/*
-struct value_entry_t {
-	bool check_invariant() const {
-		QUARK_ASSERT(_value.check_invariant());
-		QUARK_ASSERT(_symbol_name.s.empty() == false);
-		QUARK_ASSERT(_symbol.check_invariant());
-		QUARK_ASSERT(_global_index >= 0);
-		return true;
-	}
-
-	rt_value_t _value;
-	module_symbol_t _symbol_name;
-	symbol_t _symbol;
-	int _global_index;
-};
-*/
 
 //	Returns undefined if not found.
 rt_value_t load_global(interpreter_t& vm, const module_symbol_t& s);
