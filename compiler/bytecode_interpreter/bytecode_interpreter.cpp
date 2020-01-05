@@ -1946,6 +1946,71 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 }
 
 
+
+
+
+QUARK_TEST_VIP("interpreter_t", "","", ""){
+	types_t types;
+
+	struct handler_t : public runtime_handler_i {
+		handler_t(std::ostream& out) : out(out) {}
+
+		void on_print(const std::string& s) override {
+			out << s;
+		}
+		std::ostream& out;
+	};
+	handler_t handler { std::cout };
+
+
+	std::vector<func_link_t> func_link_lookup;
+	std::vector<std::pair<type_t, struct_layout_t>> struct_layouts;
+	const auto config = make_default_config();
+
+	value_backend_t backend(
+		func_link_lookup,
+		struct_layouts,
+		types,
+		config
+	);
+
+	const bc_static_frame_t global_frame{
+		types,
+		{
+			bc_instruction_t(bc_opcode::k_stop, 0, 0, 0)
+		},
+		symbol_table_t(),
+		{}
+	};
+
+	std::vector<bc_function_definition_t> function_defs;
+
+	bc_program_t* p0 = new bc_program_t {
+		global_frame,
+		function_defs,
+		types,
+		{},
+		{}
+	};
+
+	const auto program = std::shared_ptr<bc_program_t>(p0);
+
+	interpreter_t vm(
+		program,
+		backend,
+		config,
+		nullptr,
+		handler,
+		"test vm"
+	);
+
+	QUARK_ASSERT(vm.check_invariant());
+}
+
+
+
+
+
 //////////////////////////////////////////		FUNCTIONS
 
 	
