@@ -737,9 +737,7 @@ struct interpreter_stack_t {
 	public: void close_frame(const bc_static_frame_t& frame);
 
 	private: frame_pos_t read_frame_info(size_t pos) const;
-#if DEBUG
 	public: bool check_stack_frame(const frame_pos_t& in_frame) const;
-#endif
 
 	public: struct active_frame_t {
 		size_t start_pos;

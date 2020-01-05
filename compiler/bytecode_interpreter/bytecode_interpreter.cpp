@@ -33,8 +33,6 @@ static bool should_trace(const std::string& name){
 }
 
 
-
-
 static std::string opcode_to_string(bc_opcode opcode);
 static std::vector<json_t> bc_symbols_to_json(value_backend_t& backend, const symbol_table_t& symbols);
 
@@ -262,22 +260,14 @@ bool bc_static_frame_t::check_invariant() const {
 //////////////////////////////////////////		bc_function_definition_t
 
 
-#if DEBUG
 bool bc_function_definition_t::check_invariant() const {
 	QUARK_ASSERT(func_link.check_invariant());
 	QUARK_ASSERT(_frame_ptr == nullptr || _frame_ptr->check_invariant());
 	return true;
 }
-#endif
-
-
-
-
 
 
 //////////////////////////////////////		interpreter_stack_t - FRAMES
-
-
 
 
 
@@ -393,7 +383,6 @@ frame_pos_t interpreter_stack_t::read_frame_info(size_t pos) const{
 	return frame_pos_t{ (size_t)v, ptr };
 }
 
-#if DEBUG
 bool interpreter_stack_t::check_stack_frame(const frame_pos_t& in_frame) const{
 	QUARK_ASSERT(in_frame._frame_ptr != nullptr && in_frame._frame_ptr->check_invariant());
 
@@ -423,7 +412,6 @@ bool interpreter_stack_t::check_stack_frame(const frame_pos_t& in_frame) const{
 		}
 	}
 }
-#endif
 
 //	Returned elements are sorted with smaller stack positions first.
 //	Walks the stack from the active frame towards the start of the stack, the globals frame.
@@ -787,9 +775,6 @@ rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_val
 
 
 
-
-
-
 json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend){
 	QUARK_ASSERT(backend.check_invariant());
 
@@ -963,9 +948,6 @@ std::vector<func_link_t> link_functions(const bc_program_t& program){
 	const auto func_lookup = concat(funcs2, intrinsics2);
 	return func_lookup;
 }
-
-
-
 
 
 void interpreter_t::runtime_basics__on_print(const std::string& s){
