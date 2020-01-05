@@ -13,8 +13,12 @@
 #include <vector>
 #include <map>
 
+struct json_t;
+
 namespace floyd {
 
+struct symbol_table_t;
+struct value_backend_t;
 
 
 
@@ -385,6 +389,9 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info;
 
 
 
+std::string opcode_to_string(bc_opcode opcode);
+
+
 //////////////////////////////////////		reg_flags_t
 
 
@@ -417,6 +424,7 @@ struct bc_instruction_t {
 };
 
 
+std::vector<json_t> bc_symbols_to_json(value_backend_t& backend, const symbol_table_t& symbols);
 
 } //	floyd
 

@@ -8,21 +8,12 @@
 
 #include "bytecode_interpreter.h"
 
-//??? temp
-#include "floyd_network_component.h"
 
 #include "floyd_runtime.h"
-#include "bytecode_intrinsics.h"
-#include "text_parser.h"
-#include "ast_value.h"
 #include "types.h"
-#include "value_features.h"
 #include "format_table.h"
 #include <ffi.h>
 
-#include <algorithm>
-
-#include "floyd_corelib.h"
 
 namespace floyd {
 
@@ -30,24 +21,6 @@ static const bool k_trace_stepping = true;
 
 static bool should_trace(const std::string& name){
 	return true && name == "floyd process 1 server";
-}
-
-
-static std::string opcode_to_string(bc_opcode opcode);
-static std::vector<json_t> bc_symbols_to_json(value_backend_t& backend, const symbol_table_t& symbols);
-
-
-static type_t lookup_full_type(const interpreter_t& vm, const bc_typeid_t& type){
-	const auto& backend = vm._backend;
-	const auto& types = backend.types;
-	return lookup_type_from_index(types, type);
-}
-
-static int get_global_n_pos(int n){
-	return k_frame_overhead + n;
-}
-static int get_local_n_pos(int frame_pos, int n){
-	return frame_pos + n;
 }
 
 //	Check memory layouts.
@@ -82,197 +55,21 @@ QUARK_TEST("", "", "", ""){
 	QUARK_ASSERT(immer_intkey_map_size == 16);
 }
 
-extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
-	{ bc_opcode::k_nop, { "nop", opcode_info_t::encoding::k_e_0000 }},
-
-	{ bc_opcode::k_load_global_external_value, { "load_global_external_value", opcode_info_t::encoding::k_k_0ri0 } },
-	{ bc_opcode::k_load_global_inplace_value, { "load_global_inplace_value", opcode_info_t::encoding::k_k_0ri0 } },
-
-	{ bc_opcode::k_init_local, { "init_local", opcode_info_t::encoding::k_q_0rr0 } },
-
-	{ bc_opcode::k_store_global_external_value, { "store_global_external_value", opcode_info_t::encoding::k_r_0ir0 } },
-	{ bc_opcode::k_store_global_inplace_value, { "store_global_inplace_value", opcode_info_t::encoding::k_r_0ir0 } },
-
-	{ bc_opcode::k_copy_reg_inplace_value, { "copy_reg_inplace_value", opcode_info_t::encoding::k_q_0rr0 } },
-	{ bc_opcode::k_copy_reg_external_value, { "copy_reg_external_value", opcode_info_t::encoding::k_q_0rr0 } },
-
-	{ bc_opcode::k_get_struct_member, { "get_struct_member", opcode_info_t::encoding::k_s_0rri } },
-
-	{ bc_opcode::k_lookup_element_string, { "lookup_element_string", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_lookup_element_json, { "lookup_element_jsonvalue", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_lookup_element_vector_w_external_elements, { "lookup_element_vector_w_external_elements", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_lookup_element_vector_w_inplace_elements, { "lookup_element_vector_w_inplace_elements", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_lookup_element_dict_w_external_values, { "lookup_element_dict_w_external_values", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_lookup_element_dict_w_inplace_values, { "lookup_element_dict_w_inplace_values", opcode_info_t::encoding::k_o_0rrr } },
-
-	{ bc_opcode::k_get_size_vector_w_external_elements, { "get_size_vector_w_external_elements", opcode_info_t::encoding::k_q_0rr0 } },
-	{ bc_opcode::k_get_size_vector_w_inplace_elements, { "get_size_vector_w_inplace_elements", opcode_info_t::encoding::k_q_0rr0 } },
-	{ bc_opcode::k_get_size_dict_w_external_values, { "get_size_dict_w_external_values", opcode_info_t::encoding::k_q_0rr0 } },
-	{ bc_opcode::k_get_size_dict_w_inplace_values, { "get_size_dict_w_inplace_values", opcode_info_t::encoding::k_q_0rr0 } },
-	{ bc_opcode::k_get_size_string, { "get_size_string", opcode_info_t::encoding::k_q_0rr0 } },
-	{ bc_opcode::k_get_size_jsonvalue, { "get_size_jsonvalue", opcode_info_t::encoding::k_q_0rr0 } },
-
-	{ bc_opcode::k_pushback_vector_w_external_elements, { "pushback_vector_w_external_elements", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_pushback_vector_w_inplace_elements, { "pushback_vector_w_inplace_elements", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_pushback_string, { "pushback_string", opcode_info_t::encoding::k_o_0rrr } },
-
-	{ bc_opcode::k_call, { "call", opcode_info_t::encoding::k_s_0rri } },
-
-	{ bc_opcode::k_add_bool, { "add_bool", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_add_int, { "add_int", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_add_double, { "add_double", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_concat_strings, { "concat_strings", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_concat_vectors_w_external_elements, { "concat_vectors_w_external_elements", opcode_info_t::encoding::k_o_0rrr } },
-//	{ bc_opcode::k_concat_vectors_w_inplace_elements, { "concat_vectors_pod64", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_subtract_double, { "subtract_double", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_subtract_int, { "subtract_int", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_multiply_double, { "multiply_double", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_multiply_int, { "multiply_int", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_divide_double, { "divide_double", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_divide_int, { "divide_int", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_remainder_int, { "remainder_int", opcode_info_t::encoding::k_o_0rrr } },
-
-	{ bc_opcode::k_logical_and_bool, { "logical_and_bool", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_logical_and_int, { "logical_and_int", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_logical_and_double, { "logical_and_double", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_logical_or_bool, { "logical_or_bool", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_logical_or_int, { "logical_or_int", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_logical_or_double, { "logical_or_double", opcode_info_t::encoding::k_o_0rrr } },
 
 
-	{ bc_opcode::k_comparison_smaller_or_equal, { "comparison_smaller_or_equal", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_comparison_smaller_or_equal_int, { "comparison_smaller_or_equal_int", opcode_info_t::encoding::k_o_0rrr } },
-
-	{ bc_opcode::k_comparison_smaller, { "comparison_smaller", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_comparison_smaller_int, { "comparison_smaller_int", opcode_info_t::encoding::k_o_0rrr } },
-
-	{ bc_opcode::k_logical_equal, { "logical_equal", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_logical_equal_int, { "logical_equal_int", opcode_info_t::encoding::k_o_0rrr } },
-
-	{ bc_opcode::k_logical_nonequal, { "logical_nonequal", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_logical_nonequal_int, { "logical_nonequal_int", opcode_info_t::encoding::k_o_0rrr } },
-
-
-	{ bc_opcode::k_new_1, { "new_1", opcode_info_t::encoding::k_t_0rii } },
-	{ bc_opcode::k_new_vector_w_external_elements, { "new_vector_w_external_elements", opcode_info_t::encoding::k_t_0rii } },
-	{ bc_opcode::k_new_vector_w_inplace_elements, { "new_vector_w_inplace_elements", opcode_info_t::encoding::k_t_0rii } },
-	{ bc_opcode::k_new_dict_w_external_values, { "new_dict_w_external_values", opcode_info_t::encoding::k_t_0rii } },
-	{ bc_opcode::k_new_dict_w_inplace_values, { "new_dict_w_inplace_values", opcode_info_t::encoding::k_t_0rii } },
-	{ bc_opcode::k_new_struct, { "new_struct", opcode_info_t::encoding::k_t_0rii } },
-
-	{ bc_opcode::k_return, { "return", opcode_info_t::encoding::k_p_0r00 } },
-	{ bc_opcode::k_stop, { "stop", opcode_info_t::encoding::k_e_0000 } },
-
-	{ bc_opcode::k_push_frame_ptr, { "push_frame_ptr", opcode_info_t::encoding::k_e_0000 } },
-	{ bc_opcode::k_pop_frame_ptr, { "pop_frame_ptr", opcode_info_t::encoding::k_e_0000 } },
-	{ bc_opcode::k_push_inplace_value, { "push_inplace_value", opcode_info_t::encoding::k_p_0r00 } },
-	{ bc_opcode::k_push_external_value, { "push_external_value", opcode_info_t::encoding::k_p_0r00 } },
-	{ bc_opcode::k_popn, { "popn", opcode_info_t::encoding::k_n_0ii0 } },
-
-	{ bc_opcode::k_branch_false_bool, { "branch_false_bool", opcode_info_t::encoding::k_k_0ri0 } },
-	{ bc_opcode::k_branch_true_bool, { "branch_true_bool", opcode_info_t::encoding::k_k_0ri0 } },
-	{ bc_opcode::k_branch_zero_int, { "branch_zero_int", opcode_info_t::encoding::k_k_0ri0 } },
-	{ bc_opcode::k_branch_notzero_int, { "branch_notzero_int", opcode_info_t::encoding::k_k_0ri0 } },
-
-	{ bc_opcode::k_branch_smaller_int, { "branch_smaller_int", opcode_info_t::encoding::k_s_0rri } },
-	{ bc_opcode::k_branch_smaller_or_equal_int, { "branch_smaller_or_equal_int", opcode_info_t::encoding::k_s_0rri } },
-
-	{ bc_opcode::k_branch_always, { "branch_always", opcode_info_t::encoding::k_l_00i0 } }
-
-
-};
-
-
-
-//////////////////////////////////////////		bc_instruction_t
-
-
-bc_instruction_t::bc_instruction_t(bc_opcode opcode, int16_t a, int16_t b, int16_t c) :
-	_opcode(opcode),
-	_zero(0),
-	_a(a),
-	_b(b),
-	_c(c)
-{
-	QUARK_ASSERT(check_invariant());
+static type_t lookup_full_type(const interpreter_t& vm, const bc_typeid_t& type){
+	const auto& backend = vm._backend;
+	const auto& types = backend.types;
+	return lookup_type_from_index(types, type);
 }
 
-#if DEBUG
-bool bc_instruction_t::check_invariant() const {
-	return true;
-}
-#endif
-
-
-//////////////////////////////////////////		bc_static_frame_t
-
-
-bc_static_frame_t::bc_static_frame_t(
-	const types_t& types,
-	const std::vector<bc_instruction_t>& instrs2,
-	const symbol_table_t& symbols,
-	const std::vector<type_t>& args
-) :
-	_instructions(instrs2),
-	_symbols(symbols),
-	_arg_count((int)args.size()),
-	_locals_count((int)_symbols._symbols.size() - (int)args.size())
-{
-	QUARK_ASSERT(types.check_invariant());
-
-	for(int symbol_index = 0 ; symbol_index < symbols._symbols.size() ; symbol_index++){
-		const auto& symbol_kv = symbols._symbols[symbol_index];
-		const auto& symbol = symbol_kv.second;
-		const auto type = symbol._value_type;
-
-		if(symbol._symbol_type == symbol_t::symbol_type::immutable_reserve){
-			_symbol_effective_type.push_back(type);
-		}
-		else if(symbol._symbol_type == symbol_t::symbol_type::immutable_arg){
-			_symbol_effective_type.push_back(type);
-		}
-		else if(symbol._symbol_type == symbol_t::symbol_type::immutable_precalc){
-			_symbol_effective_type.push_back(type);
-			QUARK_ASSERT(type == symbol._init.get_type());
-		}
-		else if(symbol._symbol_type == symbol_t::symbol_type::named_type){
-			_symbol_effective_type.push_back(type_t::make_typeid());
-		}
-		else if(symbol._symbol_type == symbol_t::symbol_type::mutable_reserve){
-			_symbol_effective_type.push_back(type);
-		}
-		else {
-			quark::throw_defective_request();
-		}
-	}
-
-	QUARK_ASSERT(check_invariant());
+static int get_global_n_pos(int n){
+	return k_frame_overhead + n;
 }
 
-bool bc_static_frame_t::check_invariant() const {
-	QUARK_ASSERT(_instructions.size() > 0);
-	QUARK_ASSERT(_instructions.size() < 65000);
-
-	QUARK_ASSERT(_symbols.check_invariant());
-	QUARK_ASSERT(_arg_count >= 0 && _arg_count <= _symbols._symbols.size());
-	QUARK_ASSERT(_locals_count >= 0 && _locals_count <= _symbols._symbols.size());
-	QUARK_ASSERT(_arg_count + _locals_count == _symbols._symbols.size());
-	QUARK_ASSERT(_symbol_effective_type.size() == _symbols._symbols.size());
-	return true;
+static int get_local_n_pos(int frame_pos, int n){
+	return frame_pos + n;
 }
-
-
-//////////////////////////////////////////		bc_function_definition_t
-
-
-bool bc_function_definition_t::check_invariant() const {
-	QUARK_ASSERT(func_link.check_invariant());
-	QUARK_ASSERT(_frame_ptr == nullptr || _frame_ptr->check_invariant());
-	return true;
-}
-
-
-//////////////////////////////////////		interpreter_stack_t - FRAMES
 
 
 //	??? Make stub bc_static_frame_t for each host function to make call conventions same as Floyd functions.
@@ -590,133 +387,6 @@ rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_val
 	}
 }
 
-
-
-
-
-
-
-//////////////////////////////////////////		GLOBAL FUNCTIONS
-
-
-
-//??? Use enum with register / immediate / unused, current info is not enough.
-
-reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
-	if(e == opcode_info_t::encoding::k_e_0000){
-		return { false, false, false };
-	}
-	else if(e == opcode_info_t::encoding::k_k_0ri0){
-		return { true, false, false };
-	}
-	else if(e == opcode_info_t::encoding::k_l_00i0){
-		return { false, false, false };
-	}
-	else if(e == opcode_info_t::encoding::k_n_0ii0){
-		return { false, false, false };
-	}
-	else if(e == opcode_info_t::encoding::k_o_0rrr){
-		return { true, true, true };
-	}
-	else if(e == opcode_info_t::encoding::k_p_0r00){
-		return { true, false, false };
-	}
-	else if(e == opcode_info_t::encoding::k_q_0rr0){
-		return { true, true, false };
-	}
-	else if(e == opcode_info_t::encoding::k_r_0ir0){
-		return { false, true, false };
-	}
-	else if(e == opcode_info_t::encoding::k_s_0rri){
-		return { true, true, false };
-	}
-	else if(e == opcode_info_t::encoding::k_t_0rii){
-		return { true, false, false };
-	}
-
-	else{
-		quark::throw_defective_request();
-	}
-}
-
-
-//////////////////////////////////////////		interpreter_t
-
-
-
-std::vector<std::pair<type_t, struct_layout_t>> bc_make_struct_layouts(const types_t& types){
-	QUARK_ASSERT(types.check_invariant());
-
-	std::vector<std::pair<type_t, struct_layout_t>> result;
-
-	for(int i = 0 ; i < types.nodes.size() ; i++){
-		const auto& type = lookup_type_from_index(types, i);
-		const auto peek_type = peek2(types, type);
-		if(peek_type.is_struct() && is_fully_defined(types, peek_type)){
-			const auto& source_struct_def = peek_type.get_struct(types);
-
-			const auto struct_bytes = source_struct_def._members.size() * 8;
-			std::vector<member_info_t> member_infos;
-			for(int member_index = 0 ; member_index < source_struct_def._members.size() ; member_index++){
-				const auto& member = source_struct_def._members[member_index];
-				const size_t offset = member_index * 8;
-				member_infos.push_back(member_info_t { offset, member._type } );
-			}
-
-			result.push_back( { type, struct_layout_t{ member_infos, struct_bytes } } );
-		}
-	}
-	return result;
-}
-
-
-	static std::map<std::string, void*> get_corelib_and_network_binds(){
-		const std::map<std::string, void*> corelib_binds = get_unified_corelib_binds();
-		const auto network_binds = get_network_component_binds();
-
-		std::map<std::string, void*> merge = corelib_binds;
-		merge.insert(network_binds.begin(), network_binds.end());
-
-		return merge;
-	}
-
-std::vector<func_link_t> link_functions(const bc_program_t& program){
-	QUARK_ASSERT(program.check_invariant());
-
-	auto temp_types = program._types;
-	const auto intrinsics2 = bc_get_intrinsics(temp_types);
-	const auto corelib_native_funcs = get_corelib_and_network_binds();
-
-	const auto funcs = mapf<func_link_t>(
-		program._function_defs,
-		[&corelib_native_funcs](const auto& e){
-			const auto it = corelib_native_funcs.find(e.func_link.module_symbol.s);
-
-			//	There is a native implementation of this function:
-			if(it != corelib_native_funcs.end()){
-				return set_f(e.func_link, func_link_t::eexecution_model::k_native__floydcc, (void*)it->second);
-			}
-
-			//	There is a BC implementation.
-			else if(e._frame_ptr != nullptr){
-				return set_f(e.func_link, func_link_t::eexecution_model::k_bytecode__floydcc, (void*)e._frame_ptr.get());
-			}
-
-			//	No implementation.
-			else{
-				return set_f(e.func_link, func_link_t::eexecution_model::k_bytecode__floydcc, nullptr);
-			}
-		}
-	);
-
-	//	Remove functions that don't have an implementation.
-	const auto funcs2 = filterf<func_link_t>(funcs, [](const auto& e){ return e.f != nullptr; });
-
-	const auto func_lookup = concat(funcs2, intrinsics2);
-	return func_lookup;
-}
-
-
 void interpreter_t::runtime_basics__on_print(const std::string& s){
 	_runtime_handler->on_print(s);
 }
@@ -735,18 +405,6 @@ type_t interpreter_t::runtime_basics__get_global_symbol_type(const std::string& 
 rt_value_t interpreter_t::runtime_basics__call_thunk(const rt_value_t& f, const rt_value_t args[], int arg_count){
 	return call_function_bc(*this, f, args, arg_count);
 }
-
-
-
-
-
-
-
-
-
-//////////////////////////////////////		FRAMES
-
-
 
 void interpreter_t::save_frame(){
 	const auto frame_pos = rt_value_t::make_int(get_current_frame_pos());
@@ -931,12 +589,6 @@ std::vector<active_frame_t> interpreter_t::get_stack_frames_noci() const{
 	}
 	return result;
 }
-
-
-
-
-
-
 
 
 //???std::chrono::high_resolution_clock::now()
@@ -1178,12 +830,6 @@ void trace_interpreter(interpreter_t& vm, int pc){
 			pos++;
 		}
 
-/*
-		const auto t = json_t::make_object({
-			{ "symbols", json_t::make_array(bc_symbols_to_json(backend, frame._symbols)) },
-			{ "instructions", json_t::make_array(instructions) }
-		});
-*/
 		QUARK_SCOPED_TRACE("INSTRUCTIONS");
 		QUARK_TRACE(json_to_pretty_string(json_t::make_array(instructions)));
 	}
@@ -1653,7 +1299,6 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 		//////////////////////////////////////////		COMPLEX
 
 
-		//??? Make obj/intern version.
 		case bc_opcode::k_get_struct_member: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(vm.check_reg_any(i._a));
@@ -2301,12 +1946,6 @@ rt_value_t load_global(interpreter_t& vm, const module_symbol_t& s){
 		QUARK_ASSERT(pos >= 0 && pos < vm._stack.size());
 
 		const auto r = vm._stack.load_value(pos, it->second._value_type);
-/*
-			,
-			module_symbol_t(it->first),
-			it->second,
-			static_cast<int>(index)
-*/
 
         QUARK_ASSERT(r.check_invariant());
         return r;
@@ -2314,10 +1953,6 @@ rt_value_t load_global(interpreter_t& vm, const module_symbol_t& s){
 	else{
 		return {};
 	}
-}
-
-static std::string opcode_to_string(bc_opcode opcode){
-	return k_opcode_info.at(opcode)._as_text;
 }
 
 json_t interpreter_to_json(interpreter_t& vm){
@@ -2329,55 +1964,6 @@ json_t interpreter_to_json(interpreter_t& vm){
 	return json_t::make_object({
 		{ "program", bcprogram_to_json(*vm._program) },
 		{ "callstack", stack }
-	});
-}
-
-static std::vector<json_t> bc_symbols_to_json(value_backend_t& backend, const symbol_table_t& symbols){
-	QUARK_ASSERT(backend.check_invariant());
-
-	return symbols_to_json(backend.types, symbols);
-/*
-	std::vector<json_t> r;
-	int symbol_index = 0;
-	for(const auto& e: symbols._symbols){
-		const auto& symbol = e.second;
-		const auto symbol_type_str = symbol._symbol_type == bc_symbol_t::type::immutable ? "immutable" : "mutable";
-		const auto e2 = json_t::make_array({
-			symbol_index,
-			e.first,
-			symbol_type_str,
-			json_t::make_object({
-				{ "value_type", type_to_json(backend.types, symbol._value_type) },
-			}),
-			value_and_type_to_json(backend.types, symbol._init)
-		});
-		r.push_back(e2);
-		symbol_index++;
-	}
-	return r;
-*/
-}
-
-static json_t frame_to_json(value_backend_t& backend, const bc_static_frame_t& frame){
-	QUARK_ASSERT(backend.check_invariant());
-
-	std::vector<json_t> instructions;
-	int pc = 0;
-	for(const auto& e: frame._instructions){
-		const auto i = json_t::make_array({
-			pc,
-			opcode_to_string(e._opcode),
-			json_t(e._a),
-			json_t(e._b),
-			json_t(e._c)
-		});
-		instructions.push_back(i);
-		pc++;
-	}
-
-	return json_t::make_object({
-		{ "symbols", json_t::make_array(bc_symbols_to_json(backend, frame._symbols)) },
-		{ "instructions", json_t::make_array(instructions) }
 	});
 }
 
@@ -2393,39 +1979,6 @@ static json_t types_to_json(const types_t& types, const std::vector<type_t>& typ
 		id++;
 	}
 	return json_t::make_array(r);
-}
-
-static json_t functiondef_to_json(value_backend_t& backend, const bc_function_definition_t& def){
-	QUARK_ASSERT(backend.check_invariant());
-
-	return json_t::make_array({
-		func_link_to_json(backend.types, def.func_link),
-		def._frame_ptr ? frame_to_json(backend, *def._frame_ptr) : json_t("no BC frame = native func")
-	});
-}
-
-json_t bcprogram_to_json(const bc_program_t& program){
-	auto backend = value_backend_t(
-		{},
-		bc_make_struct_layouts(program._types),
-		program._types,
-		config_t { vector_backend::hamt, dict_backend::hamt, false }
-	);
-
-	std::vector<json_t> callstack;
-	std::vector<json_t> function_defs;
-	for(const auto& e: program._function_defs){
-		function_defs.push_back(json_t::make_array({
-			functiondef_to_json(backend, e)
-		}));
-	}
-
-	return json_t::make_object({
-		{ "globals", frame_to_json(backend, program._globals) },
-		{ "types", types_to_json(program._types) },
-		{ "function_defs", json_t::make_array(function_defs) }
-//		{ "callstack", json_t::make_array(callstack) }
-	});
 }
 
 }	//	floyd
