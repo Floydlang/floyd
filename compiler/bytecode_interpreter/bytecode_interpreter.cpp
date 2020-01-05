@@ -914,15 +914,19 @@ void interpreter_t::swap(interpreter_t& other) throw(){
 	other._stack.swap(this->_stack);
 }
 
-#if DEBUG
 bool interpreter_t::check_invariant() const {
-	QUARK_ASSERT(_program && _program->check_invariant());
+	QUARK_ASSERT(check_invariant_thread_safe());
+
+	//	Also check per-thread state:
 	QUARK_ASSERT(_stack.check_invariant());
+	return true;
+}
+bool interpreter_t::check_invariant_thread_safe() const {
+	QUARK_ASSERT(_program && _program->check_invariant());
 //	QUARK_ASSERT(_process_handler != nullptr);
 	QUARK_ASSERT(_runtime_handler != nullptr);
 	return true;
 }
-#endif
 
 
 

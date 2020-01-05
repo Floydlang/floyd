@@ -8286,4 +8286,32 @@ FLOYD_LANG_PROOF_VIP("network component", "Multi-process HTTP server", "", ""){
 	);
 }
 #endif
+/*
+ 			////////////////////////////////	MAIN
+
+			func void sleep(int ns){
+				mutable x = 0
+				for(i in 0 ..< ns){
+					x = x + 1
+				}
+			}
+
+			struct main_t { int count ; doc_t doc }
+
+			func main_t my_main__init() impure {
+				sleep(3000)
+				mutable x = 0
+				for(i in 0 ..< 100000){
+					print("main is running: ") ; print(x) ; print("\n")
+					x = x + 1
+					if(x == 40){
+						x = 0
+					}
+					sleep(10000)
+				}
+//				send("gui", gui_message_t("key_press"))
+				return main_t(1000, doc_t([ 0.0, 1.0, 2.0 ]))
+			}
+*/
+
 

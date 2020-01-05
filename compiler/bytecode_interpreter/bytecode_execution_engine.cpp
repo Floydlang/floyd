@@ -210,7 +210,8 @@ bool bc_execution_engine_t::check_invariant() const {
 		QUARK_ASSERT(e && e->check_invariant());
 	}
 	for(const auto& e: _bc_threads){
-		QUARK_ASSERT(e && e->check_invariant());
+		//	Warning, cannot check invariant of this data since other OS threads mutate them concurrently.
+		QUARK_ASSERT(e && e->check_invariant_thread_safe());
 	}
 	return true;
 }

@@ -1080,6 +1080,7 @@ struct interpreter_t : runtime_basics_i {
 
 	public: const interpreter_t& operator=(const interpreter_t& other)= delete;
 	public: bool check_invariant() const;
+	public: bool check_invariant_thread_safe() const;
 	public: void swap(interpreter_t& other) throw();
 
 	void runtime_basics__on_print(const std::string& s) override;
