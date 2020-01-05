@@ -19,72 +19,63 @@
 */
 
 #include "types.h"
-#include "json_support.h"
-#include "compiler_basics.h"
-#include "ast_value.h"
 #include "value_backend.h"
 #include "floyd_runtime.h"
+#include "bytecode_stack.h"
 #include "quark.h"
-
-#include "immer/vector.hpp"
-#include "immer/map.hpp"
 
 #include <string>
 #include <vector>
-#include <map>
-#include <atomic>
-#include <chrono>
 
 /*
-FRAME INFO
-stack + 0	prev frame (stack pos)
-stack + 1	prev static frame ptr
+	FRAME INFO
+	stack + 0	prev frame (stack pos)
+	stack + 1	prev static frame ptr
 
-GLOBAL-FRAME START
-stack + 2	arg 0		symbol 0
-stack + 3	arg 1		symbol 1
-stack + 4	arg 2		symbol 2
-stack + 5	local 0		symbol 3
-stack + 6	local 1		symbol 4
-stack + 7	local 2		symbol 5
-stack + 8	local 3		symbol 6
-stack + 9	temporary
-stack + 10	temporary
+	GLOBAL-FRAME START
+	stack + 2	arg 0		symbol 0
+	stack + 3	arg 1		symbol 1
+	stack + 4	arg 2		symbol 2
+	stack + 5	local 0		symbol 3
+	stack + 6	local 1		symbol 4
+	stack + 7	local 2		symbol 5
+	stack + 8	local 3		symbol 6
+	stack + 9	temporary
+	stack + 10	temporary
 
-Call to function x:
+	Call to function x:
 
-FRAME INFO
-stack + 11	prev frame = 2 (stack pos)
-stack + 12	prev static frame ptr
+	FRAME INFO
+	stack + 11	prev frame = 2 (stack pos)
+	stack + 12	prev static frame ptr
 
-FUNCTION X FRAME START
-stack + 13	arg 0		symbol 0
-stack + 14	arg 1		symbol 1
-stack + 15	local 0		symbol 2
-stack + 16	local 1		symbol 3
-stack + 17	temporary
+	FUNCTION X FRAME START
+	stack + 13	arg 0		symbol 0
+	stack + 14	arg 1		symbol 1
+	stack + 15	local 0		symbol 2
+	stack + 16	local 1		symbol 3
+	stack + 17	temporary
 
 
 
-Call to function Y:
+	Call to function Y:
 
-FRAME INFO
-stack + 18	prev frame = 13 (stack pos)
-stack + 19	prev static frame ptr
+	FRAME INFO
+	stack + 18	prev frame = 13 (stack pos)
+	stack + 19	prev static frame ptr
 
-FUNCTION Y FRAME START
-stack + 20	arg 0		symbol 0
-stack + 21	arg 1		symbol 1
-stack + 22	local 0		symbol 2
-stack + 23	local 1		symbol 3
+	FUNCTION Y FRAME START
+	stack + 20	arg 0		symbol 0
+	stack + 21	arg 1		symbol 1
+	stack + 22	local 0		symbol 2
+	stack + 23	local 1		symbol 3
 
-Notice: symbol table maps to parameters AND locals.
-Notice: because of symbol table, the type & symbol infois always available for all stack entries.
-Notice: a frame starts where symbol 0 is.
+	Notice: symbol table maps to parameters AND locals.
+	Notice: because of symbol table, the type & symbol infois always available for all stack entries.
+	Notice: a frame starts where symbol 0 is.
 
-Registers are integers into current frame's symbols / stack. Register 0 is always symbol 0.
+	Registers are integers into current frame's symbols / stack. Register 0 is always symbol 0.
 */
-
 
 namespace floyd {
 
@@ -654,189 +645,6 @@ enum {
 	9	[local3]
 */
 
-void release_value_safe(value_backend_t& backend, rt_pod_t value, type_t type);
-
-struct interpreter_stack_t {
-	public: interpreter_stack_t(value_backend_t* backend, const bc_static_frame_t* global_frame) :
-		_backend(backend),
-		_current_static_frame(nullptr),
-		_current_frame_start_ptr(nullptr),
-		_entries(nullptr),
-		_allocated_count(0),
-		_stack_size(0)
-	{
-		QUARK_ASSERT(global_frame != nullptr && global_frame->check_invariant());
-		QUARK_ASSERT(backend != nullptr && backend->check_invariant());
-
-		_entries = new rt_pod_t[8192];
-		_allocated_count = 8192;
-		_current_frame_start_ptr = &_entries[0];
-
-		QUARK_ASSERT(check_invariant());
-	}
-
-	public: ~interpreter_stack_t(){
-		QUARK_ASSERT(check_invariant());
-
-		delete[] _entries;
-		_entries = nullptr;
-	}
-
-	public: bool check_invariant() const {
-		QUARK_ASSERT(_backend->check_invariant());
-		QUARK_ASSERT(_entries != nullptr);
-		QUARK_ASSERT(_stack_size >= 0 && _stack_size <= _allocated_count);
-
-		QUARK_ASSERT(_current_frame_start_ptr >= &_entries[0]);
-
-		QUARK_ASSERT(_entry_types.size() == _stack_size);
-		for(int i = 0 ; i < _stack_size ; i++){
-			QUARK_ASSERT(_entry_types[i].check_invariant());
-		}
-
-		return true;
-	}
-
-	public: interpreter_stack_t(const interpreter_stack_t& other) = delete;
-	public: interpreter_stack_t& operator=(const interpreter_stack_t& other) = delete;
-
-	public: void swap(interpreter_stack_t& other) throw() {
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-
-		std::swap(other._backend, _backend);
-		std::swap(other._entries, _entries);
-		std::swap(other._allocated_count, _allocated_count);
-		std::swap(other._stack_size, _stack_size);
-		other._entry_types.swap(_entry_types);
-		std::swap(_current_static_frame, other._current_static_frame);
-		std::swap(_current_frame_start_ptr, other._current_frame_start_ptr);
-
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-	}
-
-	public: int size() const {
-		QUARK_ASSERT(check_invariant());
-
-		return static_cast<int>(_stack_size);
-	}
-
-
-	public: void push_external_value(const rt_value_t& value){
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(value.check_invariant());
-
-		retain_value(*_backend, value._pod, value._type);
-		_entries[_stack_size] = value._pod;
-		_stack_size++;
-		_entry_types.push_back(value._type);
-
-		QUARK_ASSERT(check_invariant());
-	}
-
-	public: void push_external_value_blank(const type_t& type){
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(type.check_invariant());
-
-		_entries[_stack_size] = make_uninitialized_magic();
-		_stack_size++;
-		_entry_types.push_back(type);
-
-		QUARK_ASSERT(check_invariant());
-	}
-
-	public: void push_inplace_value(const rt_value_t& value){
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(value.check_invariant());
-
-		_entries[_stack_size] = value._pod;
-		_stack_size++;
-		_entry_types.push_back(value._type);
-
-		QUARK_ASSERT(check_invariant());
-	}
-
-	//	returned value will have ownership of obj, if it's an obj.
-	//??? should be const function
-	public: rt_value_t load_value(int pos, const type_t& type){
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
-		QUARK_ASSERT(type.check_invariant());
-		QUARK_ASSERT(peek2(_backend->types, type) == peek2(_backend->types, _entry_types[pos]));
-
-		const auto& e = _entries[pos];
-		const auto result = rt_value_t(*_backend, e, type, rt_value_t::rc_mode::bump);
-		return result;
-	}
-
-	public: int64_t load_intq(int pos) const{
-//		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
-		QUARK_ASSERT(peek2(_backend->types, _entry_types[pos]).is_int());
-
-		return _entries[pos].int_value;
-	}
-
-	public: void replace_external_value(int pos, const rt_value_t& value){
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(value.check_invariant());
-		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
-		QUARK_ASSERT(_entry_types[pos] == value._type);
-
-		auto prev_copy = _entries[pos];
-
-		retain_value(*_backend, value._pod, value._type);
-		_entries[pos] = value._pod;
-		release_value_safe(*_backend, prev_copy, value._type);
-
-		QUARK_ASSERT(check_invariant());
-	}
-
-	//	exts[exts.size() - 1] maps to the closed value on stack, the next to be popped.
-	public: void pop_batch(const std::vector<type_t>& exts){
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(_stack_size >= exts.size());
-
-		auto flag_index = exts.size() - 1;
-		for(int i = 0 ; i < exts.size() ; i++){
-			pop(exts[flag_index]);
-			flag_index--;
-		}
-		QUARK_ASSERT(check_invariant());
-	}
-
-	public: void pop(const type_t& type){
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(_stack_size > 0);
-
-		auto copy = _entries[_stack_size - 1];
-		_stack_size--;
-		_entry_types.pop_back();
-		release_value_safe(*_backend, copy, type);
-
-		QUARK_ASSERT(check_invariant());
-	}
-
-
-	////////////////////////		STATE
-
-	public: value_backend_t* _backend;
-	public: rt_pod_t* _entries;
-	public: size_t _allocated_count;
-	public: size_t _stack_size;
-
-	//	These are parallell with _entries, one element for each entry on the stack.
-	//??? Kill these - we should have the types in the static frames already.
-	public: std::vector<type_t> _entry_types;
-
-	public: const bc_static_frame_t* _current_static_frame;
-	public: rt_pod_t* _current_frame_start_ptr;
-};
-
-json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend);
-
-
 
 
 struct active_frame_t {
@@ -1088,28 +896,6 @@ rt_value_t load_global(interpreter_t& vm, const module_symbol_t& s);
 
 std::vector<std::pair<type_t, struct_layout_t>> bc_make_struct_layouts(const types_t& types);
 
-
-
-//////////////////////////////////////		INLINES
-
-
-
-//??? Remove need for this function! BC should overwrite registers by default = no need to release_value() on previous value.
-inline void release_value_safe(value_backend_t& backend, rt_pod_t value, type_t type){
-	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(value.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	const auto& peek = peek2(backend.types, type);
-
-	if(is_rc_value(backend.types, peek) && value.int_value == UNINITIALIZED_RUNTIME_VALUE){
-	}
-	else{
-		return release_value(backend, value, type);
-	}
-}
-
 } //	floyd
-
 
 #endif /* bytecode_interpreter_hpp */
