@@ -22,8 +22,6 @@ void release_value_safe(value_backend_t& backend, rt_pod_t value, type_t type);
 struct interpreter_stack_t {
 	public: interpreter_stack_t(value_backend_t* backend) :
 		_backend(backend),
-		_current_static_frame(nullptr),
-		_current_frame_start_ptr(nullptr),
 		_entries(nullptr),
 		_allocated_count(0),
 		_stack_size(0)
@@ -32,7 +30,6 @@ struct interpreter_stack_t {
 
 		_entries = new rt_pod_t[8192];
 		_allocated_count = 8192;
-		_current_frame_start_ptr = &_entries[0];
 
 		QUARK_ASSERT(check_invariant());
 	}
@@ -48,8 +45,6 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(_backend->check_invariant());
 		QUARK_ASSERT(_entries != nullptr);
 		QUARK_ASSERT(_stack_size >= 0 && _stack_size <= _allocated_count);
-
-		QUARK_ASSERT(_current_frame_start_ptr >= &_entries[0]);
 
 		QUARK_ASSERT(_entry_types.size() == _stack_size);
 		for(int i = 0 ; i < _stack_size ; i++){
@@ -71,8 +66,6 @@ struct interpreter_stack_t {
 		std::swap(other._allocated_count, _allocated_count);
 		std::swap(other._stack_size, _stack_size);
 		other._entry_types.swap(_entry_types);
-		std::swap(_current_static_frame, other._current_static_frame);
-		std::swap(_current_frame_start_ptr, other._current_frame_start_ptr);
 
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
@@ -191,9 +184,6 @@ struct interpreter_stack_t {
 	//	These are parallell with _entries, one element for each entry on the stack.
 	//??? Kill these - we should have the types in the static frames already.
 	public: std::vector<type_t> _entry_types;
-
-	public: const bc_static_frame_t* _current_static_frame;
-	public: rt_pod_t* _current_frame_start_ptr;
 };
 
 json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend);
