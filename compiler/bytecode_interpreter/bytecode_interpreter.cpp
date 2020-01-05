@@ -264,6 +264,8 @@ bool bc_static_frame_t::check_invariant() const {
 
 #if DEBUG
 bool bc_function_definition_t::check_invariant() const {
+	QUARK_ASSERT(func_link.check_invariant());
+	QUARK_ASSERT(_frame_ptr == nullptr || _frame_ptr->check_invariant());
 	return true;
 }
 #endif
@@ -318,6 +320,123 @@ bool interpreter_stack_t::check_stack_frame(const frame_pos_t& in_frame) const{
 }
 #endif
 
+
+
+
+
+
+
+
+
+
+
+void interpreter_stack_t::save_frame(){
+	const auto frame_pos = rt_value_t::make_int(get_current_frame_pos());
+	push_inplace_value(frame_pos);
+
+	const auto frame_ptr = rt_value_t(_current_static_frame);
+	push_inplace_value(frame_ptr);
+}
+
+void interpreter_stack_t::restore_frame(){
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(_stack_size >= k_frame_overhead);
+
+	const auto frame_pos = _entries[_stack_size - k_frame_overhead + 0].int_value;
+	const auto frame_ptr = (const bc_static_frame_t*)_entries[_stack_size - k_frame_overhead + 1].frame_ptr;
+	_stack_size -= k_frame_overhead;
+	_entry_types.pop_back();
+	_entry_types.pop_back();
+	_current_static_frame = frame_ptr;
+	_current_frame_start_ptr = &_entries[frame_pos];
+}
+
+//	Function arguments MUST ALREADY have been pushed on the stack!! Only handles locals.
+//	??? Faster: This function should just allocate a block for frame, then have a list of writes.
+//	???	ALTERNATIVELY: generate instructions to do this in the VM? Nah, that's always slower.
+void interpreter_stack_t::open_frame_except_args(const bc_static_frame_t& frame, int pushed_arg_count){
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(frame.check_invariant());
+	QUARK_ASSERT(frame._arg_count == pushed_arg_count);
+
+	const auto pos_with_args_already_pushed = size();
+
+	//	Carefully position the new stack frame so its includes the parameters that already sits in the stack.
+	//	The stack frame already has symbols/registers mapped for those parameters.
+	const auto new_frame_start_pos = pos_with_args_already_pushed - pushed_arg_count;
+
+	for(int i = 0 ; i < frame._locals_count ; i++){
+		const int symbol_index = i + frame._arg_count;
+		const auto& symbol_kv = frame._symbols._symbols[symbol_index];
+		const auto& symbol = symbol_kv.second;
+		const auto type = symbol._value_type;
+		const bool ext = is_rc_value(_backend->types, type);
+
+		if(symbol._symbol_type == symbol_t::symbol_type::immutable_reserve){
+			if(ext){
+				push_external_value_blank(type);
+			}
+			else{
+				push_inplace_value(value_to_rt(*_backend, make_default_value(type)));
+			}
+		}
+		else if(symbol._symbol_type == symbol_t::symbol_type::immutable_arg){
+			quark::throw_defective_request();
+		}
+		else if(symbol._symbol_type == symbol_t::symbol_type::immutable_precalc){
+//				QUARK_ASSERT(ext == false || (type.is_json() && symbol._init.get_json().is_null()));
+			if(ext){
+				push_external_value(value_to_rt(*_backend, symbol._init));
+			}
+			else {
+				push_inplace_value(value_to_rt(*_backend, symbol._init));
+			}
+		}
+		else if(symbol._symbol_type == symbol_t::symbol_type::named_type){
+			const auto v = rt_value_t::make_typeid_value(symbol._value_type);
+			push_inplace_value(v);
+		}
+		else if(symbol._symbol_type == symbol_t::symbol_type::mutable_reserve){
+			if(ext){
+				push_external_value_blank(type);
+			}
+			else{
+				push_inplace_value(value_to_rt(*_backend, make_default_value(type)));
+			}
+		}
+		else {
+			quark::throw_defective_request();
+		}
+	}
+	_current_static_frame = &frame;
+	_current_frame_start_ptr = &_entries[new_frame_start_pos];
+
+	QUARK_ASSERT(check_invariant());
+}
+
+//	Pops all locals, decrementing RC when needed.
+//	Only handles locals, not parameters.
+void interpreter_stack_t::close_frame(const bc_static_frame_t& frame){
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(frame.check_invariant());
+
+//		const auto type = frame._symbols[i + frame._arg_count].second._value_type;
+	const auto count = frame._symbols._symbols.size() - frame._arg_count;
+	for(auto i = count ; i > 0 ; i--){
+		const auto symbol_index = frame._arg_count + i - 1;
+		const auto& type = frame._symbol_effective_type[symbol_index];
+		pop(type);
+	}
+	QUARK_ASSERT(check_invariant());
+}
+
+
+
+
+
+
+
+
 //	Returned elements are sorted with smaller stack positions first.
 //	Walks the stack from the active frame towards the start of the stack, the globals frame.
 std::vector<interpreter_stack_t::active_frame_t> interpreter_stack_t::get_stack_frames_noci() const{
@@ -325,7 +444,7 @@ std::vector<interpreter_stack_t::active_frame_t> interpreter_stack_t::get_stack_
 
 	std::vector<active_frame_t> result;
 
-	const auto frame_start0 = get_current_frame_start();
+	const auto frame_start0 = get_current_frame_pos();
 	if(frame_start0 > 0){
 		const auto stack_size = static_cast<int>(_stack_size);
 
@@ -504,44 +623,30 @@ std::vector<func_link_t> link_functions(const bc_program_t& program){
 	const auto intrinsics2 = bc_get_intrinsics(temp_types);
 	const auto corelib_native_funcs = get_corelib_and_network_binds();
 
-	const auto funcs = mapf<func_link_t>(program._function_defs, [&corelib_native_funcs](const auto& e){
-		const auto& function_name_symbol = e.func_link.module_symbol;
-		const auto it = corelib_native_funcs.find(function_name_symbol.s);
+	const auto funcs = mapf<func_link_t>(
+		program._function_defs,
+		[&corelib_native_funcs](const auto& e){
+			const auto it = corelib_native_funcs.find(e.func_link.module_symbol.s);
 
-		//	There is a native implementation of this function:
-		if(it != corelib_native_funcs.end()){
-			return func_link_t {
-				e.func_link.module,
-				function_name_symbol,
-				e.func_link.function_type_optional,
-				func_link_t::eexecution_model::k_native__floydcc,
-				(void*)it->second,
-				{},
-				nullptr
-			};
-		}
+			//	There is a native implementation of this function:
+			if(it != corelib_native_funcs.end()){
+				return set_f(e.func_link, func_link_t::eexecution_model::k_native__floydcc, (void*)it->second);
+			}
 
-		//	There is a BC implementation.
-		else if(e._frame_ptr != nullptr){
-			return func_link_t {
-				e.func_link.module,
-				function_name_symbol,
-				e.func_link.function_type_optional,
-				e.func_link.execution_model,
-				(void*)e._frame_ptr.get(),
-				{},
-				nullptr
-			};
-		}
+			//	There is a BC implementation.
+			else if(e._frame_ptr != nullptr){
+				return set_f(e.func_link, func_link_t::eexecution_model::k_bytecode__floydcc, (void*)e._frame_ptr.get());
+			}
 
-		//	No implementation.
-		else{
-			return func_link_t { "", k_no_module_symbol, {}, func_link_t::eexecution_model::k_bytecode__floydcc, nullptr, {}, nullptr };
+			//	No implementation.
+			else{
+				return set_f(e.func_link, func_link_t::eexecution_model::k_bytecode__floydcc, nullptr);
+			}
 		}
-	});
+	);
 
 	//	Remove functions that don't have an implementation.
-	const auto funcs2 = filterf<func_link_t>(funcs, [](const auto& e){ return e.module_symbol.s.empty() == false; });
+	const auto funcs2 = filterf<func_link_t>(funcs, [](const auto& e){ return e.f != nullptr; });
 
 	const auto func_lookup = concat(funcs2, intrinsics2);
 	return func_lookup;
@@ -1509,7 +1614,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_push_inplace_value: {
 			QUARK_ASSERT(stack.check_reg__inplace_value(i._a));
-			const auto type = stack._entry_types[stack.get_current_frame_start() + i._a];
+			const auto type = stack._entry_types[stack.get_current_frame_pos() + i._a];
 			stack._entries[stack._stack_size] = regs[i._a];
 			stack._stack_size++;
 			stack._entry_types.push_back(type);

@@ -2216,7 +2216,7 @@ static std::vector<resolved_symbol_t> generate_function_symbol_slots(llvm_functi
 
 	const symbol_table_t& symbol_table = function_def._optional_body->_symbol_table;
 	const auto mapping0 = *gen_acc.gen.type_lookup.find_from_type(function_def._function_type).optional_function_signature;
-	const auto mapping = name_args(mapping0, get_member_names(function_def._named_args));
+	const auto mapping = name_args(mapping0, function_def._named_args);
 	return generate_symbol_slots(gen_acc, symbol_table, &mapping);
 }
 

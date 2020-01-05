@@ -796,7 +796,7 @@ QUARK_TESTQ("assoc_in()", "mixed arrays and trees"){
 }
 
 
-std::vector<std::string> to_string_vec(const json_t& json){
+std::vector<std::string> strings_from_json(const json_t& json){
 	QUARK_ASSERT(json.is_array());
 
 	const auto size = json.get_array_size();
@@ -808,7 +808,7 @@ std::vector<std::string> to_string_vec(const json_t& json){
 	return result;
 }
 
-json_t from_string_vec(const std::vector<std::string>& vec){
+json_t strings_to_json(const std::vector<std::string>& vec){
 	vector<json_t> str;
 	for(const auto& e: vec){
 		str.push_back(e);

@@ -2450,11 +2450,10 @@ static std::pair<analyser_t, expression_t> analyse_function_definition_expressio
 	const auto function_type_peek = dereference_type(a_acc._types, function_type0);
 	const auto function_pure = function_type_peek.get_function_pure(a_acc._types);
 
-	std::vector<member_t> args2;
-	for(const auto& arg: function_def._named_args){
-		const auto arg_type2 = resolve_type_symbols(a_acc, parent.location, arg._type);
-		args2.push_back(member_t { arg_type2, arg._name } );
-	}
+	const auto def_args = function_type_peek.get_function_args(a_acc._types);
+
+	QUARK_ASSERT(def_args.size() == function_def._named_args.size());
+
 
 	//??? Can there be a pure function inside an impure lexical scope? I think yes.
 	const auto pure = function_pure;
@@ -2463,9 +2462,17 @@ static std::pair<analyser_t, expression_t> analyse_function_definition_expressio
 	if(function_def._optional_body){
 		//	Make function body with arguments injected FIRST in body as local symbols.
 		auto symbol_vec = function_def._optional_body->_symbol_table;
-		for(const auto& arg: args2){
-			symbol_vec._symbols.push_back({ arg._name , symbol_t::make_immutable_arg(arg._type) });
+
+		//	Make a symbol for each argument.
+		for(int i = 0 ; i < def_args.size() ; i++){
+			const auto arg_type = def_args[i];
+			const auto arg_name = function_def._named_args[i];
+			QUARK_ASSERT(arg_name.empty() == false);
+
+			const auto arg_type2 = resolve_type_symbols(a_acc, parent.location, arg_type);
+			symbol_vec._symbols.push_back({ arg_name , symbol_t::make_immutable_arg(arg_type2) });
 		}
+
 		const auto function_body2 = lexical_scope_t(function_def._optional_body->_statements, symbol_vec);
 
 		const auto body_pair = analyse_body(a_acc, function_body2, pure, function_type_peek.get_function_return(a_acc._types));
@@ -2479,7 +2486,7 @@ static std::pair<analyser_t, expression_t> analyse_function_definition_expressio
 	const auto definition_name = function_def._definition_name;
 	const auto function_id = module_symbol_t(definition_name);
 
-	const auto function_def2 = function_definition_t::make_func(k_no_location, definition_name, function_type_peek, args2, body_result);
+	const auto function_def2 = function_definition_t::make_func(k_no_location, definition_name, function_type_peek, function_def._named_args, body_result);
 	QUARK_ASSERT(check_types_resolved(a_acc._types, function_def2));
 
 	a_acc._function_defs.insert({ function_id, function_def2 });

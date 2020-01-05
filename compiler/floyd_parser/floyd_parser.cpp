@@ -116,7 +116,7 @@ QUARK_TEST("", "parse_statement()", "", ""){
 					"function-def",
 					["func", "int", ["string"], true],
 					"f",
-					[{ "name": "name", "type": "string" }],
+					[ "name" ],
 					{ "statements": [[25, "return", ["k", 13, "int"]]], "symbols": null }
 				]
 			]
@@ -279,7 +279,7 @@ const std::string k_test_program_1_parserout = R"(
 				"function-def",
 				["func", "int", ["string"], true],
 				"main",
-				[{ "name": "args", "type": "string" }],
+				[ "args" ],
 				{ "statements": [[29, "return", ["k", 3, "int"]]], "symbols": null }
 			]
 		]
@@ -309,7 +309,7 @@ const char k_test_program_100_parserout[] = R"(
 				"function-def",
 				["func", "double", ["%pixel"], true],
 				"get_grey",
-				[{ "name": "p", "type": "%pixel" }],
+				[ "p" ],
 				{
 					"statements": [
 						[96, "return", ["/", ["+", ["+", ["->", ["@", "p"], "red"], ["->", ["@", "p"], "green"]], ["->", ["@", "p"], "blue"]], ["k", 3, "double"]]]

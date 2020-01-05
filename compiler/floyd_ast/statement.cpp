@@ -177,7 +177,8 @@ symbol_table_t ast_json_to_symbols(types_t& types, const json_t& p){
 bool lexical_scope_t::check_invariant() const {
 	for(const auto& i: _statements){
 		QUARK_ASSERT(i.check_invariant());
-	};
+	}
+	QUARK_ASSERT(_symbol_table.check_invariant());
 	return true;
 }
 

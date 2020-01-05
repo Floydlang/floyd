@@ -209,6 +209,9 @@ bool bc_execution_engine_t::check_invariant() const {
 	for(const auto& e: _processes){
 		QUARK_ASSERT(e && e->check_invariant());
 	}
+	for(const auto& e: _bc_threads){
+		QUARK_ASSERT(e && e->check_invariant());
+	}
 	return true;
 }
 
@@ -265,6 +268,8 @@ static void run_process(bc_execution_engine_t& ee, int process_id){
 		process._process_state = call_function_bc(interpreter, process._init_function, {}, 0);
 	}
 
+	QUARK_ASSERT(ee.check_invariant());
+
 	//	Handle process messages until exit.
 	while(process._exiting_flag == false){
 		rt_value_t message;
@@ -287,10 +292,14 @@ static void run_process(bc_execution_engine_t& ee, int process_id){
 			QUARK_TRACE_SS(trace_header << ": received message: " << json_to_pretty_string(message2));
 		}
 
+		QUARK_ASSERT(ee.check_invariant());
+
 		{
 			const rt_value_t args[] = { process._process_state, message };
 			process._process_state = call_function_bc(interpreter, process._msg_function, args, 2);
 		}
+
+		QUARK_ASSERT(ee.check_invariant());
 	}
 
 	QUARK_ASSERT(ee.check_invariant());

@@ -118,6 +118,13 @@ std::pair<struct_def_t, seq_t> parse_struct_def(types_t& types, const seq_t& p, 
 std::pair<std::shared_ptr<type_t>, seq_t> read_type(types_t& types, const seq_t& s);
 std::pair<type_t, seq_t> read_required_type(types_t& types, const seq_t& s);
 
+struct type_with_name_t {
+	std::shared_ptr<type_t> type_optional;
+	std::string name_optional;
+};
+
+std::pair<type_with_name_t, seq_t> read_type_with_optional_name(types_t& types, const seq_t& s);
+std::pair<type_with_name_t, seq_t> read_required_type_with_optional_name(types_t& types, const seq_t& s);
 
 
 

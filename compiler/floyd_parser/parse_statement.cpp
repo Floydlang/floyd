@@ -445,7 +445,7 @@ std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos){
 
 	const auto body = parse_optional_statement_body(prototype_kv.second);
 
-	const auto named_args = members_to_json(temp, prototype_kv.first.args_with_optional_names);
+	const auto named_args = strings_to_json(get_member_names(prototype_kv.first.args_with_optional_names));
 	const auto body_json = body.parse_tree.is_null()
 	? json_t()
 	: json_t::make_object({
@@ -475,6 +475,23 @@ std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos){
 	);
 	return { s, body.pos };
 }
+
+#if 0
+QUARK_TEST_VIP("", "parse_function_definition_statement()", "", ""){
+	const std::string input = "func void execute_http_server(network_component_t c, int port, func void f(int socket) impure) impure";
+	const std::string expected = R"(
+		[
+			0,
+			"init-local",
+			["func", "int", [], false],
+			"f",
+			["function-def", ["func", "int", [], false], "f", [], { "statements": [[21, "return", ["k", 3, "int"]]], "symbols": null }]
+		]
+	)";
+	ut_verify_json(QUARK_POS, parse_function_definition_statement(seq_t(input)).first, parse_json(seq_t(expected)).first);
+}
+#endif
+
 
 struct test {
 	std::string desc;
@@ -534,7 +551,7 @@ QUARK_TEST("", "parse_function_definition_statement()", "3 args of different typ
 						"function-def",
 						["func", "int", ["string", "double", "int"], true],
 						"printf",
-						[{ "name": "a", "type": "string" }, { "name": "barry", "type": "double" }, { "name": "c", "type": "int" }],
+						[ "a", "barry", "c" ],
 						{ "statements": [[48, "return", ["k", 3, "int"]]], "symbols": null }
 					]
 				]
@@ -561,7 +578,7 @@ QUARK_TEST("", "parse_function_definition_statement()", "Max whitespace", "Corre
 						"function-def",
 						["func", "int", ["string", "double"], true],
 						"printf",
-						[{ "name": "a", "type": "string" }, { "name": "b", "type": "double" }],
+						[ "a", "b" ],
 						{ "statements": [[60, "return", ["k", 3, "int"]]], "symbols": null }
 					]
 				]
@@ -587,7 +604,7 @@ QUARK_TEST("", "parse_function_definition_statement()", "Min whitespace", "Corre
 						"function-def",
 						["func", "int", ["string", "double"], true],
 						"printf",
-						[{ "name": "a", "type": "string" }, { "name": "b", "type": "double" }],
+						[ "a", "b" ],
 						{ "statements": [[35, "return", ["k", 3, "int"]]], "symbols": null }
 					]
 				]

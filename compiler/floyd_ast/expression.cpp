@@ -204,15 +204,15 @@ bool function_definition_t::floyd_func_t::operator==(const floyd_func_t& other) 
 */
 
 bool function_definition_t::check_invariant() const {
+	QUARK_ASSERT(_location.check_invariant());
+	QUARK_ASSERT(_definition_name.empty() == false);
+
 	QUARK_ASSERT(_function_type.is_function());
 //	QUARK_ASSERT(_function_type.get_function_args().size() == _named_args.size());
 
-/*
-	const auto args0 = _function_type.get_function_args();
-	for(int i = 0 ; i < args0.size(); i++){
-		QUARK_ASSERT(args0[i] == _named_args[i]._type);
+	for(const auto& e: _named_args){
+//		QUARK_ASSERT(e.empty() == false);
 	}
-*/
 	if(_optional_body){
 		QUARK_ASSERT(_optional_body->check_invariant());
 	}
@@ -233,6 +233,23 @@ bool operator==(const function_definition_t& lhs, const function_definition_t& r
 
 
 
+
+
+static std::string string_to_string(const types_t& types, const std::vector<std::string>& m){
+	std::string result;
+	for(const auto& e: m){
+		const std::string s = std::string("(") + e + std::string(")");
+		result = result + s;
+	}
+
+	//	Remove trailing ',' character, if any.
+	return result == "" ? "" : result.substr(0, result.size() - 1);
+}
+
+
+
+
+
 const type_desc_t& get_function_type(const function_definition_t& f){
 	return f._function_type;
 }
@@ -243,7 +260,7 @@ json_t function_def_to_ast_json(const types_t& types, const function_definition_
 	auto result = std::vector<json_t>{
 		type_to_json(types, function_type),
 		v._definition_name,
-		members_to_json(types, v._named_args)
+		strings_to_json(v._named_args)
 	};
 	if(v._optional_body){
 		result.push_back(scope_to_json(types, *v._optional_body));
@@ -263,7 +280,7 @@ function_definition_t json_to_function_def(types_t& types, const json_t& p){
 	const location_t location1 = k_no_location;
 	const std::string definition_name1 = definition_name0.get_string();
 	const auto function_type1 = type_from_json(types, function_type0);
-	const std::vector<member_t> args1 = members_from_json(types, args0);
+	const auto args1 = strings_from_json(args0);
 	const std::shared_ptr<lexical_scope_t> body1 = body0.is_null() ? std::shared_ptr<lexical_scope_t>() : std::make_shared<lexical_scope_t>(json_to_scope(types, body0));
 
 	return function_definition_t::make_func(
@@ -291,7 +308,7 @@ void trace_function_definition_t(const types_t& types, const function_definition
 		"location: " << def._location.offset
 		<< "\t" << "defintion_name: " << def._definition_name
 		<< "\t" << "function_type: " << type_to_compact_string(types, def._function_type)
-		<< "\t" << "named_args: " << members_to_string(types, def._named_args)
+		<< "\t" << "named_args: " << string_to_string(types, def._named_args)
 		<< "\t" << "optional_body: " << def._optional_body ? "BODY" : "NO_BODY"
 	);
 }
@@ -712,12 +729,14 @@ expression_t ast_json_to_expression(types_t& types, const json_t& e){
 
 		const auto function_type = type_from_json(types, e.get_array_n(1));
 		const auto function_name = e.get_array_n(2).get_string();
-		const auto named_args = members_from_json(types, e.get_array_n(3));
+		const auto named_args = strings_from_json(e.get_array_n(3));
 
 		//	Null or BODY as an object. Null: this is a declaration only.
 		const auto body0 = e.get_array_n(4);
 
-		const std::shared_ptr<lexical_scope_t> body1 = body0.is_null() ? std::shared_ptr<lexical_scope_t>() : std::make_shared<lexical_scope_t>(json_to_scope(types, body0));
+		const std::shared_ptr<lexical_scope_t> body1 = body0.is_null()
+			? std::shared_ptr<lexical_scope_t>()
+			: std::make_shared<lexical_scope_t>(json_to_scope(types, body0));
 
 		auto def = function_definition_t::make_func(
 			k_no_location,

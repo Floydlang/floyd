@@ -1926,7 +1926,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 	const auto& types = ast._tree._types;
 	generate_global_scope(gen, gen._ast_imm->_tree._globals);
 
-	//	There should be 1 global scope active. It's the global scope tree, flattened.
+	//	There should be 1 global scope active - the global scope tree. It is flattened.
 	QUARK_ASSERT(gen._scope_stack.size() == 1);
 
 	std::vector<bc_function_definition_t> funcs;
@@ -1949,7 +1949,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 					function_def._function_type,
 					func_link_t::eexecution_model::k_bytecode__floydcc,
 					frame2.get(),
-					get_member_names(function_def._named_args),
+					function_def._named_args,
 					nullptr
 				},
 				frame2
@@ -1964,7 +1964,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 					function_def._function_type,
 					func_link_t::eexecution_model::k_bytecode__floydcc,
 					nullptr,
-					get_member_names(function_def._named_args),
+					function_def._named_args,
 					nullptr
 				},
 				nullptr
@@ -1985,6 +1985,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 	if(trace_io_flag){
 		QUARK_TRACE_SS("OUTPUT: " << json_to_pretty_string(bcprogram_to_json(result)));
 	}
+	QUARK_ASSERT(result.check_invariant());
 
 	return result;
 }

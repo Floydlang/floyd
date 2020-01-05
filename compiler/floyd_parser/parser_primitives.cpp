@@ -417,9 +417,39 @@ static std::pair<std::shared_ptr<type_t>, seq_t> read_basic_type(types_t& types,
 }
 
 
+//	"int x"
+//	"double"
+//	"func a() impure"
+//	"func b(int y, string z)"
+//	"func c(func d(string e)"
+static std::pair<member_t, seq_t> read_arg(types_t& types, const seq_t& s){
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(s.check_invariant());
+
+	auto pos = skip_whitespace(s);
+
+	const auto arg_type = read_required_type_with_optional_name(types, pos);
+
+	if(arg_type.first.name_optional != ""){
+		return { member_t(*arg_type.first.type_optional, arg_type.first.name_optional), arg_type.second };
+	}
+	else{
+		const auto optional_identifier = read_identifier(arg_type.second);
+		return { member_t(*arg_type.first.type_optional, optional_identifier.first), optional_identifier.second };
+	}
+
+/*
+	if(arg_name.first.empty()){
+		quark::throw_runtime_error("Invalid function definition.");
+	}
+*/
+}
+
+
 
 //	"(int a, string b)"
 //	"(int, string)"
+//	"(int x, func y(void) impure)"
 static std::pair<std::vector<member_t>, seq_t> read_function_args(types_t& types, const seq_t& s){
 	if(s.first1() != "("){
 		throw_compiler_error_nopos("Expected (.");
@@ -435,15 +465,9 @@ static std::pair<std::vector<member_t>, seq_t> read_function_args(types_t& types
 	std::vector<member_t> args;
 	auto pos = skip_whitespace(s2);
 	while(!pos.empty()){
-		const auto arg_type = read_required_type(types, pos);
-		const auto arg_name = read_identifier(arg_type.second);
-/*
-		if(arg_name.first.empty()){
-			quark::throw_runtime_error("Invalid function definition.");
-		}
-*/
-		const auto optional_comma = read_optional_char(skip_whitespace(arg_name.second), ',');
-		args.push_back({ arg_type.first, arg_name.first });
+		const auto arg_pos = read_arg(types, pos);
+		const auto optional_comma = read_optional_char(skip_whitespace(arg_pos.second), ',');
+		args.push_back(arg_pos.first);
 		pos = skip_whitespace(optional_comma.second);
 	}
 
@@ -494,8 +518,9 @@ std::pair<function_desc_t, seq_t> parse_function_prototype(types_t& types, const
 }
 
 
+//	Notice: "void f()" is a type, but also defined the name "f".
 //??? shared_ptr<> is used to do optional return.
-static std::pair<std::shared_ptr<type_t>, seq_t> parse_type(types_t& types, const seq_t& s){
+static std::pair<type_with_name_t, seq_t> parse_type(types_t& types, const seq_t& s){
 	const auto pos0 = skip_whitespace(s);
 	if(pos0.first1() == "["){
 		const auto pos2 = pos0.rest1();
@@ -512,9 +537,10 @@ static std::pair<std::shared_ptr<type_t>, seq_t> parse_type(types_t& types, cons
 
 				if(element_type2_pos.second.first1() == "]"){
 					return {
-						std::make_shared<type_t>(
-							type_t::make_dict(types, element_type2_pos.first)
-						),
+						type_with_name_t {
+							std::make_shared<type_t>(type_t::make_dict(types, element_type2_pos.first)),
+							{}
+						},
 						element_type2_pos.second.rest1()
 					};
 				}
@@ -524,7 +550,7 @@ static std::pair<std::shared_ptr<type_t>, seq_t> parse_type(types_t& types, cons
 			}
 		}
 		else if(pos3.first1() == "]"){
-			return { std::make_shared<type_t>(type_t::make_vector(types, element_type_pos.first)), pos3.rest1() };
+			return { type_with_name_t { std::make_shared<type_t>(type_t::make_vector(types, element_type_pos.first)), {} }, pos3.rest1() };
 		}
 		else{
 			throw_compiler_error_nopos("unbalanced [].");
@@ -532,28 +558,28 @@ static std::pair<std::shared_ptr<type_t>, seq_t> parse_type(types_t& types, cons
 	}
 	else if(is_first(pos0, keyword_t::k_struct)){
 		const auto r = parse_struct_def(types, pos0, location_t(pos0.pos()));
-		return { std::make_shared<type_t>(type_t::make_struct(types, struct_type_desc_t { r.first.members_optional_names } )), r.second };
+		return { type_with_name_t { std::make_shared<type_t>(type_t::make_struct(types, struct_type_desc_t { r.first.members_optional_names } )), {}, }, r.second };
 	}
 	else if(is_first(pos0, keyword_t::k_func)){
 		const auto r = parse_function_prototype(types, pos0, location_t(pos0.pos()));
-		return { std::make_shared<type_t>(r.first.function_type), r.second };
+		return { type_with_name_t { std::make_shared<type_t>(r.first.function_type), "" }, r.second };
 	}
 	else {
 		//	Read basic type.
 		const auto basic = read_basic_type(types, pos0);
-		return basic;
+		return { type_with_name_t { basic.first, "" }, basic.second };
 	}
+}
+
+std::pair<type_with_name_t, seq_t> read_type_with_optional_name(types_t& types, const seq_t& s){
+	const auto type_pos = parse_type(types, s);
+	return type_pos;
 }
 
 
 std::pair<std::shared_ptr<type_t>, seq_t> read_type(types_t& types, const seq_t& s){
 	const auto type_pos = parse_type(types, s);
-	if(type_pos.first == nullptr){
-		return type_pos;
-	}
-	else {
-		return { std::make_shared<type_t>(*type_pos.first), type_pos.second };
-	}
+	return { type_pos.first.type_optional, type_pos.second };
 }
 
 QUARK_TEST("", "read_type()", "", ""){
@@ -681,6 +707,14 @@ std::pair<type_t, seq_t> read_required_type(types_t& types, const seq_t& s){
 		throw_compiler_error_nopos("illegal character in type identifier");
 	}
 	return { *type_pos.first, type_pos.second };
+}
+
+std::pair<type_with_name_t, seq_t> read_required_type_with_optional_name(types_t& types, const seq_t& s){
+	const auto type_pos = read_type_with_optional_name(types, s);
+	if(type_pos.first.type_optional == nullptr){
+		throw_compiler_error_nopos("illegal character in type identifier");
+	}
+	return type_pos;
 }
 
 

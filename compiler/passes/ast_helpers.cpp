@@ -128,12 +128,14 @@ bool check_types_resolved(const types_t& types, const function_definition_t& def
 		return false;
 	}
 
+/*
 	for(const auto& e: def._named_args){
 		bool result2 = floyd::check_types_resolved(types, e._type);
 		if(result2 == false){
 			return false;
 		}
 	}
+*/
 
 	if(def._optional_body){
 		if(check_types_resolved(types, *def._optional_body) == false){

@@ -245,7 +245,7 @@ static std::vector<func_link_t> make_floyd_code_and_corelib_link_map(llvm::LLVMC
 				function_def._function_type,
 				func_link_t::eexecution_model::k_native__floydcc,
 				nullptr,
-				get_member_names(function_def._named_args),
+				function_def._named_args,
 				(native_type_t*)function_type
 			};
 			prototypes.push_back(def);
@@ -269,7 +269,7 @@ static std::vector<func_link_t> make_floyd_code_and_corelib_link_map(llvm::LLVMC
 	for(const auto& e: prototypes){
 		const auto it = binds0.find(e.module_symbol);
 		if(it != binds0.end()){
-			const auto def2 = set_f(e, it->second);
+			const auto def2 = set_f(e, e.execution_model, it->second);
 			result.push_back(def2);
 		}
 		else{
@@ -385,7 +385,7 @@ static std::vector<func_link_t> resolve_function_ptrs(const types_t& types, llvm
 	for(const auto& e: function_link_map){
 		if(e.function_type_optional.is_function()){
 			const auto f = (void*)ee.getFunctionAddress(e.module_symbol.s);
-			result.push_back(set_f(e, f));
+			result.push_back(set_f(e, e.execution_model, f));
 		}
 	}
 

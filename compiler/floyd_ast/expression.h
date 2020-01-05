@@ -188,30 +188,34 @@ struct function_definition_t {
 		const location_t& location,
 		const std::string& definition_name,
 		const type_t& function_type,
-		const std::vector<member_t>& named_args,
+		const std::vector<std::string>& named_args,
 		const std::shared_ptr<lexical_scope_t>& scope
 	){
-		return {
+		const auto result = function_definition_t{
 			location,
 			definition_name,
 			function_type,
 			named_args,
 			scope
 		};
+		QUARK_ASSERT(result.check_invariant());
+		return result;
 	}
 	static function_definition_t make_intrinsic(
 		const location_t& location,
 		const std::string& definition_name,
 		const type_t& function_type,
-		const std::vector<member_t>& named_args
+		const std::vector<std::string>& named_args
 	){
-		return {
+		const auto result = function_definition_t{
 			location,
 			definition_name,
 			function_type,
 			named_args,
 			{}
 		};
+		QUARK_ASSERT(result.check_invariant());
+		return result;
 	}
 
 	public: bool check_invariant() const;
@@ -227,8 +231,7 @@ struct function_definition_t {
 	type_t _function_type;
 
 	//	Same types as in _function_type, but augumented with argument names.
-	//??? Remove. Instead have vector of just the argument names. Or update type_t to contain the argument names of functions!?
-	std::vector<member_t> _named_args;
+	std::vector<std::string> _named_args;
 
 	//	Contains scope if this function is implemented using Floyd code.
 	//	Else the implementation needs to be linked in.

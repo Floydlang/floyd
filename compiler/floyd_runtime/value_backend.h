@@ -810,7 +810,20 @@ struct func_link_t {
 	}
 
 	bool check_invariant() const {
+		QUARK_ASSERT(module.empty() == false);
+		QUARK_ASSERT(module_symbol.s.empty() == false);
 		QUARK_ASSERT(function_type_optional.is_function() || function_type_optional.is_undefined());
+		QUARK_ASSERT(
+			execution_model == eexecution_model::k_bytecode__floydcc
+			|| execution_model == eexecution_model::k_native__ccc
+			|| execution_model == eexecution_model::k_native__floydcc
+		);
+
+//		QUARK_ASSERT(arg_names.empty() || arg_names.size() == function_type_optional.get_function_args(<#const types_t &types#>))
+		for(const auto& e: arg_names){
+//			QUARK_ASSERT(e.empty() == false);
+		}
+		QUARK_ASSERT(module_symbol.s.empty() == false);
 		return true;
 	}
 
@@ -839,12 +852,12 @@ void trace_function_link_map(const types_t& types, const std::vector<func_link_t
 
 const func_link_t* lookup_func_link_by_symbol(const std::vector<func_link_t>& v, const module_symbol_t& s);
 
-inline func_link_t set_f(const func_link_t& e, void* f){
+inline func_link_t set_f(const func_link_t& e, func_link_t::eexecution_model execution_model, void* f){
 	const auto v2 = func_link_t {
 		e.module,
 		e.module_symbol,
 		e.function_type_optional,
-		e.execution_model,
+		execution_model,
 		f,
 		e.arg_names,
 		e.native_type
