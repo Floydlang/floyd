@@ -1949,7 +1949,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 
 
-QUARK_TEST_VIP("interpreter_t", "","", ""){
+QUARK_TEST("interpreter_t", "","", ""){
 	types_t types;
 
 	struct handler_t : public runtime_handler_i {
@@ -2003,6 +2003,10 @@ QUARK_TEST_VIP("interpreter_t", "","", ""){
 		handler,
 		"test vm"
 	);
+
+	QUARK_ASSERT(vm.check_invariant());
+
+//	const std::pair<bc_typeid_t, rt_value_t> result = execute_instructions(const std::vector<bc_instruction_t>& instructions);
 
 	QUARK_ASSERT(vm.check_invariant());
 }
