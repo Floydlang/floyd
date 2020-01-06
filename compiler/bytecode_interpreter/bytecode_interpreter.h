@@ -281,7 +281,9 @@ struct interpreter_t : runtime_basics_i {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
 		QUARK_ASSERT(value.check_invariant());
-		QUARK_ASSERT(peek2(_backend.types, _current_static_frame->_symbol_effective_type[reg]) == peek2(_backend.types, value._type));
+		QUARK_ASSERT(
+			peek2(_backend.types, _current_static_frame->_symbol_effective_type[reg]) == peek2(_backend.types, value._type)
+		);
 
 		const auto& frame_slot_type = _current_static_frame->_symbol_effective_type[reg];
 
@@ -289,6 +291,18 @@ struct interpreter_t : runtime_basics_i {
 		release_value_safe(_backend, prev, frame_slot_type);
 		retain_value(_backend, value._pod, frame_slot_type);
 		_stack._entries[_current_frame_start_pos + reg] = value._pod;
+
+		QUARK_ASSERT(check_invariant());
+	}
+
+	public: void write_register2(int dest_reg, const type_t& dest_type, rt_pod_t value){
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(check_reg(dest_reg));
+		QUARK_ASSERT(dest_type.check_invariant());
+
+		release_value_safe(_backend, _stack._entries[_current_frame_start_pos + dest_reg], dest_type);
+		retain_value(_backend, value, dest_type);
+		_stack._entries[_current_frame_start_pos + dest_reg] = value;
 
 		QUARK_ASSERT(check_invariant());
 	}
