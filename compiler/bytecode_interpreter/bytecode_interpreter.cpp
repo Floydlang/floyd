@@ -26,6 +26,7 @@ static bool should_trace(const std::string& name){
 
 //	??? Flatten all instructions in program, not separate for each bc_static_frame_t.
 //	??? Calling BC function should not use recursive C++ stack, it should move PC.
+//	??? bc_static_frame_t should use rt_value_t, not value_t!
 
 
 
@@ -169,7 +170,6 @@ static cif_t make_cif(const value_backend_t& backend, const type_t& function_typ
 	return result;
 }
 
-//	??? bc_static_frame_t should use rt_value_t, not value_t!
 //	Function arguments MUST ALREADY have been pushed on the stack!! Only handles locals.
 //	??? Faster: This function should just allocate a block for frame, then have a list of writes.
 //	???	ALTERNATIVELY: generate instructions to do this in the VM? Nah, that's always slower.
@@ -197,7 +197,6 @@ static void push_frame_locals(interpreter_stack_t& stack, value_backend_t& backe
 			quark::throw_defective_request();
 		}
 		else if(symbol._symbol_type == symbol_t::symbol_type::immutable_precalc){
-//				QUARK_ASSERT(ext == false || (type.is_json() && symbol._init.get_json().is_null()));
 			if(ext){
 				stack.push_external_value(value_to_rt(backend, symbol._init));
 			}
@@ -550,28 +549,29 @@ void interpreter_t::restore_frame(){
 
 //	Returned elements are sorted with smaller stack positions first.
 //	Walks the stack from the active frame towards the start of the stack, the globals frame.
-std::vector<active_frame_t> interpreter_t::get_stack_frames_noci() const{
+static std::vector<active_frame_t> get_stack_frames_noci(const interpreter_stack_t& stack, const frame_pos_t& current_frame){
 //	QUARK_ASSERT(check_invariant());
 
-	const auto frame_start0 = get_current_frame_pos();
+	const auto frame_start0 = current_frame._frame_pos;
 	if(frame_start0 > 0){
 		std::vector<active_frame_t> result;
-		const auto stack_size = _stack._stack_size;
+		const auto stack_size = stack._stack_size;
 
 		{
-			const auto frame_size0 = _current_static_frame->_symbols._symbols.size();
+			const auto frame0_ptr = current_frame._frame_ptr;
+			const auto frame_size0 = frame0_ptr->_symbols._symbols.size();
 			const auto frame_end0 = frame_start0 + frame_size0;
 
 			//??? Notice: during a call sequence: push_frame_ptr, push arguments, call, popn, pop_frame_ptr -- the
 			//	stack size vs frames is slighly out of sync and gives us negative temporary stack entries.
 			const auto temp_count0 = stack_size >= frame_end0 ? stack_size - frame_end0 : 0;
 
-			const auto e = active_frame_t { frame_start0, frame_end0, _current_static_frame, temp_count0 };
+			const auto e = active_frame_t { frame_start0, frame_end0, frame0_ptr, temp_count0 };
 			result.push_back(e);
 		}
 
 		auto info_pos = frame_start0 - k_frame_overhead;
-		auto frame = read_frame_info(_stack, info_pos);
+		auto frame = read_frame_info(stack, info_pos);
 		while(frame._frame_ptr != nullptr){
 			const auto frame_start = frame._frame_pos;
 			const auto frame_size = frame._frame_ptr->_symbols._symbols.size();
@@ -582,7 +582,7 @@ std::vector<active_frame_t> interpreter_t::get_stack_frames_noci() const{
 			result.push_back(e);
 
 			info_pos = frame_start - k_frame_overhead;
-			frame = read_frame_info(_stack, info_pos);
+			frame = read_frame_info(stack, info_pos);
 		}
 
 		std::reverse(result.begin(), result.end());
@@ -693,7 +693,7 @@ bool interpreter_t::check_invariant() const {
 	QUARK_ASSERT(_current_static_frame == 0 || _current_static_frame->check_invariant());
 
 	// Traverse all stack frames and check them.
-	std::vector<active_frame_t> frames = get_stack_frames_noci();
+	std::vector<active_frame_t> frames = get_stack_frames_noci(_stack, get_current_frame());
 
 	return true;
 }
@@ -812,7 +812,7 @@ void trace_interpreter(interpreter_t& vm, size_t pc){
 	{
 		QUARK_SCOPED_TRACE("STACK");
 
-		const auto stack_frames = vm.get_stack_frames_noci();
+		const auto stack_frames = get_stack_frames_noci(vm._stack, vm.get_current_frame());
 
 		std::vector<std::vector<std::string>> matrix;
 

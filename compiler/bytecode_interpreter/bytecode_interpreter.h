@@ -232,8 +232,6 @@ struct interpreter_t : runtime_basics_i {
 	public: void save_frame();
 	public: void restore_frame();
 
-	public: std::vector<active_frame_t> get_stack_frames_noci() const;
-
 	public: size_t get_current_frame_pos() const {
 //		QUARK_ASSERT(check_invariant());
 
@@ -245,6 +243,9 @@ struct interpreter_t : runtime_basics_i {
 		return &_stack._entries[_current_frame_start_pos];
 	}
 
+	public: frame_pos_t get_current_frame() const {
+		return frame_pos_t { _current_frame_start_pos, _current_static_frame };
+	}
 
 	//////////////////////////////////////		REGISTERS
 
