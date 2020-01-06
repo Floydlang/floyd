@@ -293,6 +293,8 @@ static void do_call_instruction_via_libffi(interpreter_t& vm, int target_reg, co
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(func_link.f != nullptr);
 
+	const auto pos0 = vm._stack.size();
+
 	auto& backend = vm._backend;
 	const auto& types = backend.types;
 
@@ -370,11 +372,14 @@ static void do_call_instruction_via_libffi(interpreter_t& vm, int target_reg, co
 		const auto result3 = rt_value_t(backend, result2, dest_type, rt_value_t::rc_mode::adopt);
 		vm.write_register(target_reg, result3);
 	}
+
+	const auto pos1 = vm._stack.size();
+	QUARK_ASSERT(pos0 == pos1);
 }
 
 //	The arguments are already on the floyd stack.
 //	Returns the call's return value or void.
-static rt_value_t open_frame_and_make_call(interpreter_t& vm, const func_link_t& func_link, int callee_arg_count){
+static rt_value_t complete_frame_and_make_call(interpreter_t& vm, const func_link_t& func_link, int callee_arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	const auto& backend = vm._backend;
 	const auto& types = backend.types;
@@ -434,7 +439,7 @@ static void do_call_instruction_bc(interpreter_t& vm, int target_reg, const func
 	//	We need to remember the global pos where to store return value, since we're switching frame to called function's.
 	const auto result_reg_pos = vm.get_current_frame_pos() + target_reg;
 
-	const auto result = open_frame_and_make_call(vm, func_link, callee_arg_count);
+	const auto result = complete_frame_and_make_call(vm, func_link, callee_arg_count);
 
 	const auto return_type_peek = peek2(types, return_type);
 	if(return_type_peek.is_void() == false){
@@ -508,7 +513,7 @@ rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_val
 			vm._stack.push_external_value(bc);
 		}
 
-		const auto result = open_frame_and_make_call(vm, func_link, callee_arg_count);
+		const auto result = complete_frame_and_make_call(vm, func_link, callee_arg_count);
 
 		// Pop arguments
 		vm._stack.pop_batch(arg_types2);
