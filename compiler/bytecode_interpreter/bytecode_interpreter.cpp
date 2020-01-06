@@ -23,6 +23,12 @@ static bool should_trace(const std::string& name){
 	return true && name == "floyd process 1 server";
 }
 
+
+//	??? Flatten all instructions in program, not separate for each bc_static_frame_t.
+//	??? Calling BC function should not use recursive C++ stack, it should move PC.
+
+
+
 //	Check memory layouts.
 QUARK_TEST("", "", "", ""){
 	const auto int_size = sizeof(int);
@@ -163,11 +169,13 @@ static cif_t make_cif(const value_backend_t& backend, const type_t& function_typ
 	return result;
 }
 
+//	??? bc_static_frame_t should use rt_value_t, not value_t!
 //	Function arguments MUST ALREADY have been pushed on the stack!! Only handles locals.
 //	??? Faster: This function should just allocate a block for frame, then have a list of writes.
 //	???	ALTERNATIVELY: generate instructions to do this in the VM? Nah, that's always slower.
-static void push_frame_locals(interpreter_t& vm, const bc_static_frame_t& frame){
-	QUARK_ASSERT(vm.check_invariant());
+static void push_frame_locals(interpreter_stack_t& stack, value_backend_t& backend, const bc_static_frame_t& frame){
+	QUARK_ASSERT(stack.check_invariant());
+	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(frame.check_invariant());
 
 	for(int i = 0 ; i < frame._locals_count ; i++){
@@ -175,14 +183,14 @@ static void push_frame_locals(interpreter_t& vm, const bc_static_frame_t& frame)
 		const auto& symbol_kv = frame._symbols._symbols[symbol_index];
 		const auto& symbol = symbol_kv.second;
 		const auto type = symbol._value_type;
-		const bool ext = is_rc_value(vm._backend.types, type);
+		const bool ext = is_rc_value(backend.types, type);
 
 		if(symbol._symbol_type == symbol_t::symbol_type::immutable_reserve){
 			if(ext){
-				vm._stack.push_external_value_blank(type);
+				stack.push_external_value_blank(type);
 			}
 			else{
-				vm._stack.push_inplace_value(value_to_rt(vm._backend, make_default_value(type)));
+				stack.push_inplace_value(value_to_rt(backend, make_default_value(type)));
 			}
 		}
 		else if(symbol._symbol_type == symbol_t::symbol_type::immutable_arg){
@@ -191,22 +199,22 @@ static void push_frame_locals(interpreter_t& vm, const bc_static_frame_t& frame)
 		else if(symbol._symbol_type == symbol_t::symbol_type::immutable_precalc){
 //				QUARK_ASSERT(ext == false || (type.is_json() && symbol._init.get_json().is_null()));
 			if(ext){
-				vm._stack.push_external_value(value_to_rt(vm._backend, symbol._init));
+				stack.push_external_value(value_to_rt(backend, symbol._init));
 			}
 			else {
-				vm._stack.push_inplace_value(value_to_rt(vm._backend, symbol._init));
+				stack.push_inplace_value(value_to_rt(backend, symbol._init));
 			}
 		}
 		else if(symbol._symbol_type == symbol_t::symbol_type::named_type){
 			const auto v = rt_value_t::make_typeid_value(symbol._value_type);
-			vm._stack.push_inplace_value(v);
+			stack.push_inplace_value(v);
 		}
 		else if(symbol._symbol_type == symbol_t::symbol_type::mutable_reserve){
 			if(ext){
-				vm._stack.push_external_value_blank(type);
+				stack.push_external_value_blank(type);
 			}
 			else{
-				vm._stack.push_inplace_value(value_to_rt(vm._backend, make_default_value(type)));
+				stack.push_inplace_value(value_to_rt(backend, make_default_value(type)));
 			}
 		}
 		else {
@@ -214,7 +222,7 @@ static void push_frame_locals(interpreter_t& vm, const bc_static_frame_t& frame)
 		}
 	}
 
-	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(stack.check_invariant());
 }
 
 static void push_frame(interpreter_stack_t& stack, const frame_pos_t& frame){
@@ -383,7 +391,7 @@ static rt_value_t open_frame_and_make_call(interpreter_t& vm, const func_link_t&
 	//	The stack frame already has symbols/registers mapped for those parameters.
 	const auto new_frame_start_pos = vm._stack.size() - callee_arg_count;
 
-	push_frame_locals(vm, *frame_ptr);
+	push_frame_locals(vm._stack, vm._backend, *frame_ptr);
 
 	vm._current_static_frame = frame_ptr;
 	vm._current_frame_start_pos = new_frame_start_pos;
@@ -632,7 +640,7 @@ interpreter_t::interpreter_t(
 		save_frame();
 
 		const auto new_frame_start_pos = _stack.size();
-		push_frame_locals(*this, _program->_globals);
+		push_frame_locals(_stack, _backend, _program->_globals);
 
 		_current_static_frame = &_program->_globals;
 		_current_frame_start_pos = new_frame_start_pos;
@@ -926,7 +934,7 @@ static void execute_new_1(interpreter_t& vm, int16_t dest_reg, int16_t target_it
 	const auto target_peek = peek2(types, target_type);
 	QUARK_ASSERT(target_peek.is_vector() == false && target_peek.is_dict() == false && target_peek.is_struct() == false);
 
-	const int arg0_stack_pos = vm._stack.size() - 1;
+	const auto arg0_stack_pos = vm._stack.size() - 1;
 	const auto source_itype2 = lookup_type_from_index(types, source_itype);
 	const auto input_value = vm._stack.load_value(arg0_stack_pos + 0, source_itype2);
 
