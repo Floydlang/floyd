@@ -47,7 +47,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(_stack_size >= 0 && _stack_size <= _allocated_count);
 
 		QUARK_ASSERT(_entry_types.size() == _stack_size);
-		for(int i = 0 ; i < _stack_size ; i++){
+		for(size_t i = 0 ; i < _stack_size ; i++){
 			QUARK_ASSERT(_entry_types[i].check_invariant());
 		}
 
@@ -71,10 +71,10 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(other.check_invariant());
 	}
 
-	public: int size() const {
+	public: size_t size() const {
 		QUARK_ASSERT(check_invariant());
 
-		return static_cast<int>(_stack_size);
+		return _stack_size;
 	}
 
 
@@ -114,7 +114,7 @@ struct interpreter_stack_t {
 
 	//	returned value will have ownership of obj, if it's an obj.
 	//??? should be const function
-	public: rt_value_t load_value(int pos, const type_t& type){
+	public: rt_value_t load_value(size_t pos, const type_t& type){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 		QUARK_ASSERT(type.check_invariant());
@@ -125,7 +125,7 @@ struct interpreter_stack_t {
 		return result;
 	}
 
-	public: int64_t load_intq(int pos) const{
+	public: int64_t load_intq(size_t pos) const{
 //		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 		QUARK_ASSERT(peek2(_backend->types, _entry_types[pos]).is_int());
@@ -133,7 +133,7 @@ struct interpreter_stack_t {
 		return _entries[pos].int_value;
 	}
 
-	public: void replace_external_value(int pos, const rt_value_t& value){
+	public: void replace_external_value(size_t pos, const rt_value_t& value){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
@@ -154,7 +154,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(_stack_size >= exts.size());
 
 		auto flag_index = exts.size() - 1;
-		for(int i = 0 ; i < exts.size() ; i++){
+		for(size_t i = 0 ; i < exts.size() ; i++){
 			pop(exts[flag_index]);
 			flag_index--;
 		}

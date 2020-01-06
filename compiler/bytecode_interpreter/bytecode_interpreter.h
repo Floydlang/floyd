@@ -31,43 +31,51 @@
 
 /*
 	FRAME INFO
-	stack + 0	prev frame (stack pos)
-	stack + 1	prev static frame ptr
+	stack + 0	prev frame (stack pos)	always 0x0000000000000000
+	stack + 1	prev static frame ptr	always 0x0000000000000000
+
+
+
+	Global frame has no args.
 
 	GLOBAL-FRAME START
-	stack + 2	arg 0		symbol 0
-	stack + 3	arg 1		symbol 1
-	stack + 4	arg 2		symbol 2
-	stack + 5	local 0		symbol 3
-	stack + 6	local 1		symbol 4
-	stack + 7	local 2		symbol 5
-	stack + 8	local 3		symbol 6
-	stack + 9	temporary
-	stack + 10	temporary
+0:	stack + 2	local 0		symbol 0
+	stack + 3	local 1		symbol 1
+	stack + 4	local 2		symbol 2
+	stack + 5	local 3		symbol 3
+	stack + 6	local 4		symbol 4
+	stack + 7	local 5		symbol 5
+	stack + 8	local 6		symbol 6
+
+	Runtime temoraries are pushed / poped while executing and not part of symbols.
+	stack + 9	runtime temporary
+	stack + 10	runtime temporary
+
 
 	Call to function x:
+
 
 	FRAME INFO
 	stack + 11	prev frame = 2 (stack pos)
 	stack + 12	prev static frame ptr
 
 	FUNCTION X FRAME START
-	stack + 13	arg 0		symbol 0
+1:	stack + 13	arg 0		symbol 0
 	stack + 14	arg 1		symbol 1
 	stack + 15	local 0		symbol 2
 	stack + 16	local 1		symbol 3
-	stack + 17	temporary
-
+	stack + 17	runtime temporary
 
 
 	Call to function Y:
+
 
 	FRAME INFO
 	stack + 18	prev frame = 13 (stack pos)
 	stack + 19	prev static frame ptr
 
 	FUNCTION Y FRAME START
-	stack + 20	arg 0		symbol 0
+2:	stack + 20	arg 0		symbol 0
 	stack + 21	arg 1		symbol 1
 	stack + 22	local 0		symbol 2
 	stack + 23	local 1		symbol 3
@@ -139,6 +147,31 @@ enum {
 */
 
 struct active_frame_t {
+	active_frame_t(
+		size_t start_pos,
+		size_t end_pos,
+		const bc_static_frame_t* static_frame,
+		size_t temp_count
+	) :
+		start_pos(start_pos),
+		end_pos(end_pos),
+		static_frame(static_frame),
+		temp_count(temp_count)
+	{
+	}
+
+	bool check_invariant() const {
+		QUARK_ASSERT(start_pos > 0);
+		QUARK_ASSERT(start_pos <= end_pos);
+		QUARK_ASSERT(static_frame != nullptr);
+		QUARK_ASSERT(temp_count >= 0 && temp_count < 10000);
+
+		return true;
+	}
+
+
+	//////////////////////////////////////		STATE
+
 	size_t start_pos;
 	size_t end_pos;
 	const bc_static_frame_t* static_frame;
@@ -198,19 +231,18 @@ struct interpreter_t : runtime_basics_i {
 
 	public: void save_frame();
 	public: void restore_frame();
-	public: void open_frame_except_args(const bc_static_frame_t& frame, int pushed_arg_count);
-	public: void close_frame(const bc_static_frame_t& frame);
-
-	private: frame_pos_t read_frame_info(size_t pos) const;
-	public: bool check_stack_frame(const frame_pos_t& in_frame) const;
 
 	public: std::vector<active_frame_t> get_stack_frames_noci() const;
 
 	public: size_t get_current_frame_pos() const {
 //		QUARK_ASSERT(check_invariant());
 
-		const auto frame_pos = _current_frame_start_ptr - &_stack._entries[0];
-		return frame_pos;
+		return _current_frame_start_pos;
+	}
+	public: rt_pod_t* get_current_frame_ptr() const {
+//		QUARK_ASSERT(check_invariant());
+
+		return &_stack._entries[_current_frame_start_pos];
 	}
 
 
@@ -236,7 +268,7 @@ struct interpreter_t : runtime_basics_i {
 
 		const auto result = rt_value_t(
 			_backend,
-			_current_frame_start_ptr[reg],
+			_stack._entries[_current_frame_start_pos + reg],
 			_current_static_frame->_symbol_effective_type[reg],
 			rt_value_t::rc_mode::bump
 		);
@@ -252,10 +284,10 @@ struct interpreter_t : runtime_basics_i {
 
 		const auto& frame_slot_type = _current_static_frame->_symbol_effective_type[reg];
 
-		const auto prev = _current_frame_start_ptr[reg];
+		const auto prev = _stack._entries[_current_frame_start_pos + reg];
 		release_value_safe(_backend, prev, frame_slot_type);
 		retain_value(_backend, value._pod, frame_slot_type);
-		_current_frame_start_ptr[reg] = value._pod;
+		_stack._entries[_current_frame_start_pos + reg] = value._pod;
 
 		QUARK_ASSERT(check_invariant());
 	}
@@ -369,11 +401,11 @@ struct interpreter_t : runtime_basics_i {
 	//	Holds all values for all environments.
 	//	Notice: stack holds refs to RC-counted objects!
 	public: interpreter_stack_t _stack;
-	public: rt_pod_t* _current_frame_start_ptr;
+	public: size_t _current_frame_start_pos;
 	public: const bc_static_frame_t* _current_static_frame;
 };
 
-void trace_interpreter(interpreter_t& vm, int pc);
+void trace_interpreter(interpreter_t& vm, size_t pc);
 
 
 //////////////////////////////////////		Free functions

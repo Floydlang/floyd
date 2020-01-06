@@ -16,7 +16,7 @@ namespace floyd {
 json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend){
 	QUARK_ASSERT(backend.check_invariant());
 
-	const int size = static_cast<int>(stack._stack_size);
+	const auto size = stack._stack_size;
 	std::vector<json_t> frames;
 	std::vector<json_t> elements;
 
@@ -62,7 +62,7 @@ json_t stack_to_json(const interpreter_stack_t& stack, value_backend_t& backend)
 
 
 	return json_t::make_object({
-		{ "size", json_t(size) },
+		{ "size", json_t((int)size) },
 		{ "frames", json_t::make_array(frames) },
 		{ "elements", json_t::make_array(elements) }
 	});
