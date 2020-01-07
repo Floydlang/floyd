@@ -897,6 +897,7 @@ struct value_backend_t {
 	~value_backend_t();
 
 	bool check_invariant() const;
+	bool check_invariant_light() const;
 
 
 	////////////////////////////////		STATE

@@ -1930,6 +1930,19 @@ static bool check_pod_deep(const value_backend_t& backend, rt_pod_t pod, const t
 	return true;
 }
 
+bool value_backend_t::check_invariant_light() const {
+	QUARK_ASSERT(types.check_invariant());
+	QUARK_ASSERT(child_type.size() == types.nodes.size());
+	for(const auto& e: func_link_lookup){
+		QUARK_ASSERT(e.check_invariant());
+	}
+	for(const auto& e: struct_layouts){
+		QUARK_ASSERT(e.first.check_invariant());
+		QUARK_ASSERT(e.second.check_invariant());
+	}
+	QUARK_ASSERT(config.check_invariant());
+	return true;
+}
 
 bool value_backend_t::check_invariant() const {
 	QUARK_ASSERT(heap.check_invariant());
@@ -1948,17 +1961,7 @@ bool value_backend_t::check_invariant() const {
 			QUARK_ASSERT(check_pod_deep(*this, pod, type));
 		}
 	}
-
-	QUARK_ASSERT(types.check_invariant());
-	QUARK_ASSERT(child_type.size() == types.nodes.size());
-	for(const auto& e: func_link_lookup){
-		QUARK_ASSERT(e.check_invariant());
-	}
-	for(const auto& e: struct_layouts){
-		QUARK_ASSERT(e.first.check_invariant());
-		QUARK_ASSERT(e.second.check_invariant());
-	}
-	QUARK_ASSERT(config.check_invariant());
+	QUARK_ASSERT(check_invariant_light());
 
 	return true;
 }

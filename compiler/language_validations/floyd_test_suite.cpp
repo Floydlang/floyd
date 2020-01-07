@@ -7361,7 +7361,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "hello_world.floyd", "", ""){
 	ut_run_closed_lib(QUARK_POS, program);
 }
 
-#if 1
+#if 0
 FLOYD_LANG_PROOF("Floyd test suite", "game_of_life.floyd", "", ""){
 	const auto path = get_working_dir() + "/examples/game_of_life.floyd";
 	const auto program = read_text_file(path);
@@ -7369,7 +7369,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "game_of_life.floyd", "", ""){
 	ut_run_closed_lib(QUARK_POS, program);
 }
 #endif
-
 
 
 

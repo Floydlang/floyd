@@ -42,7 +42,7 @@ struct interpreter_stack_t {
 	}
 
 	public: bool check_invariant() const {
-		QUARK_ASSERT(_backend->check_invariant());
+		QUARK_ASSERT(_backend != nullptr && _backend->check_invariant_light());
 		QUARK_ASSERT(_entries != nullptr);
 		QUARK_ASSERT(_stack_size >= 0 && _stack_size <= _allocated_count);
 
@@ -112,9 +112,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	//	returned value will have ownership of obj, if it's an obj.
-	//??? should be const function
-	public: rt_value_t load_value(size_t pos, const type_t& type){
+	public: rt_value_t load_value(size_t pos, const type_t& type) const {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 		QUARK_ASSERT(type.check_invariant());
@@ -126,7 +124,7 @@ struct interpreter_stack_t {
 	}
 
 	public: int64_t load_intq(size_t pos) const{
-//		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 		QUARK_ASSERT(peek2(_backend->types, _entry_types[pos]).is_int());
 
