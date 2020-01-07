@@ -108,6 +108,7 @@ floyd_runtime/value_features.cpp
 #floyd_runtime/value_thunking.cpp
 floyd_runtime/variable_length_quantity.cpp
 floyd_runtime/write_cache.cpp
+floyd_runtime/floyd_intrinsics.cpp
 language_validations/floyd_test_suite.cpp
 language_validations/issue_regression_tests.cpp
 language_validations/test_helpers.cpp
