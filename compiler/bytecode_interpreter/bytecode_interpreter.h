@@ -30,37 +30,28 @@
 #include <vector>
 
 /*
-	FRAME INFO
-	stack + 0	prev frame (stack pos)	always 0x0000000000000000
-	stack + 1	prev static frame ptr	always 0x0000000000000000
-
-
-
 	Global frame has no args.
-
-	GLOBAL-FRAME START
-0:	stack + 2	local 0		symbol 0
+0:	stack + 0	prev frame (stack pos)	always 0x0000000000000000
+	stack + 1	prev static frame ptr	always 0x0000000000000000
+	stack + 2	local 0		symbol 0
 	stack + 3	local 1		symbol 1
 	stack + 4	local 2		symbol 2
 	stack + 5	local 3		symbol 3
 	stack + 6	local 4		symbol 4
 	stack + 7	local 5		symbol 5
 	stack + 8	local 6		symbol 6
-
-	Runtime temoraries are pushed / poped while executing and not part of symbols.
 	stack + 9	runtime temporary
 	stack + 10	runtime temporary
+
+ Runtime temporaries are pushed / popped while executing and not part of symbols.
 
 
 	Call to function x:
 
 
-	FRAME INFO
-	stack + 11	prev frame = 2 (stack pos)
+1:	stack + 11	prev frame = 0 (stack pos)
 	stack + 12	prev static frame ptr
-
-	FUNCTION X FRAME START
-1:	stack + 13	arg 0		symbol 0
+	stack + 13	arg 0		symbol 0
 	stack + 14	arg 1		symbol 1
 	stack + 15	local 0		symbol 2
 	stack + 16	local 1		symbol 3
@@ -70,15 +61,14 @@
 	Call to function Y:
 
 
-	FRAME INFO
-	stack + 18	prev frame = 13 (stack pos)
+2:	stack + 18	prev frame = 11 (stack pos)
 	stack + 19	prev static frame ptr
-
-	FUNCTION Y FRAME START
-2:	stack + 20	arg 0		symbol 0
+	stack + 20	arg 0		symbol 0
 	stack + 21	arg 1		symbol 1
 	stack + 22	local 0		symbol 2
 	stack + 23	local 1		symbol 3
+	stack + 24	runtime temporary
+
 
 	Notice: symbol table maps to parameters AND locals.
 	Notice: because of symbol table, the type & symbol infois always available for all stack entries.
@@ -132,50 +122,74 @@ enum {
 	k_frame_overhead = 2
 };
 
-/*
-	0	[int = 0] 		previous stack frame pos, 0 = global
-	1	[symbols_ptr frame #0]
-	2	[local0]		<- stack frame #0
-	3	[local1]
-	4	[local2]
 
-	5	[int = 1] //	prev stack frame pos
-	6	[symbols_ptr frame #1]
-	7	[local1]		<- stack frame #1
-	8	[local2]
-	9	[local3]
+/*
+1:	stack + 11	prev frame = 2 (stack pos)
+	stack + 12	prev static frame ptr
+
+	FUNCTION X FRAME START
+	stack + 13	arg 0		symbol 0
+	stack + 14	arg 1		symbol 1
+	stack + 15	local 0		symbol 2
+	stack + 16	local 1		symbol 3
+	stack + 17	runtime temporary
 */
 
 struct active_frame_t {
 	active_frame_t(
+		const std::string& info,
 		size_t start_pos,
-		size_t end_pos,
+		size_t effective_size,
+		bool symbols_flag,
 		const bc_static_frame_t* static_frame,
-		size_t temp_count
+		size_t runtime_temp_count
 	) :
+		info(info),
 		start_pos(start_pos),
-		end_pos(end_pos),
+		effective_size(effective_size),
+		symbols_flag(symbols_flag),
 		static_frame(static_frame),
-		temp_count(temp_count)
+		runtime_temp_count(runtime_temp_count)
 	{
+		QUARK_ASSERT(check_invariant());
 	}
 
 	bool check_invariant() const {
-		QUARK_ASSERT(start_pos > 0);
-		QUARK_ASSERT(start_pos <= end_pos);
+		QUARK_ASSERT(start_pos >= 0);
+		QUARK_ASSERT(effective_size >= 0);
 		QUARK_ASSERT(static_frame != nullptr);
-		QUARK_ASSERT(temp_count >= 0 && temp_count < 10000);
+		QUARK_ASSERT(runtime_temp_count >= 0 && runtime_temp_count < 100000);
 
 		return true;
 	}
 
+	size_t get_symbol_start() const {
+		QUARK_ASSERT(check_invariant());
+
+		return start_pos + k_frame_overhead;
+	}
+	size_t get_symbol_end() const {
+		QUARK_ASSERT(check_invariant());
+
+		return symbols_flag
+			? start_pos + k_frame_overhead + static_frame->_symbols._symbols.size()
+			: get_symbol_start();
+	}
+	size_t get_end() const {
+		QUARK_ASSERT(check_invariant());
+
+		return start_pos + effective_size;
+	}
 
 	//////////////////////////////////////		STATE
 
+	std::string info;
 	size_t start_pos;
-	size_t end_pos;
+	size_t effective_size;
+	bool symbols_flag;
+	size_t runtime_temp_count;
+
 	const bc_static_frame_t* static_frame;
-	size_t temp_count;
 };
 
 
@@ -229,9 +243,6 @@ struct interpreter_t : runtime_basics_i {
 	//////////////////////////////////////		FRAMES
 
 
-	public: void save_frame();
-	public: void restore_frame();
-
 	public: size_t get_current_frame_pos() const {
 //		QUARK_ASSERT(check_invariant());
 
@@ -241,6 +252,12 @@ struct interpreter_t : runtime_basics_i {
 //		QUARK_ASSERT(check_invariant());
 
 		return &_stack._entries[_current_frame._frame_pos];
+	}
+
+	public: rt_pod_t* get_current_frame_regs() const {
+//		QUARK_ASSERT(check_invariant());
+
+		return &_stack._entries[_current_frame._frame_pos + k_frame_overhead];
 	}
 
 	public: frame_pos_t get_current_frame() const {
@@ -256,7 +273,7 @@ struct interpreter_t : runtime_basics_i {
 
 		//	Makes sure debug types are in sync for this register.
 		const auto& effective_type = _current_frame._static_frame_ptr->_symbol_effective_type[reg];
-		const auto& debug_type = _stack._entry_types[get_current_frame_pos() + reg];
+		const auto& debug_type = _stack._entry_types[get_current_frame_pos() + k_frame_overhead + reg];
 		QUARK_ASSERT(peek2(_backend.types, effective_type) == peek2(_backend.types, debug_type) || debug_type.is_undefined());
 		return true;
 	}
@@ -269,7 +286,7 @@ struct interpreter_t : runtime_basics_i {
 
 		const auto result = rt_value_t(
 			_backend,
-			_stack._entries[_current_frame._frame_pos + reg],
+			get_current_frame_regs()[reg],
 			_current_frame._static_frame_ptr->_symbol_effective_type[reg],
 			rt_value_t::rc_mode::bump
 		);
@@ -287,10 +304,10 @@ struct interpreter_t : runtime_basics_i {
 
 		const auto& frame_slot_type = _current_frame._static_frame_ptr->_symbol_effective_type[reg];
 
-		const auto prev = _stack._entries[_current_frame._frame_pos + reg];
+		const auto prev = get_current_frame_regs()[reg];
 		release_value_safe(_backend, prev, frame_slot_type);
 		retain_value(_backend, value._pod, frame_slot_type);
-		_stack._entries[_current_frame._frame_pos + reg] = value._pod;
+		get_current_frame_regs()[reg] = value._pod;
 
 		QUARK_ASSERT(check_invariant());
 	}
@@ -300,9 +317,9 @@ struct interpreter_t : runtime_basics_i {
 		QUARK_ASSERT(check_reg(dest_reg));
 		QUARK_ASSERT(dest_type.check_invariant());
 
-		release_value_safe(_backend, _stack._entries[_current_frame._frame_pos + dest_reg], dest_type);
+		release_value_safe(_backend, get_current_frame_regs()[dest_reg], dest_type);
 		retain_value(_backend, value, dest_type);
-		_stack._entries[_current_frame._frame_pos + dest_reg] = value;
+		get_current_frame_regs()[dest_reg] = value;
 
 		QUARK_ASSERT(check_invariant());
 	}
@@ -419,6 +436,7 @@ struct interpreter_t : runtime_basics_i {
 	public: frame_pos_t _current_frame;
 };
 
+void trace_stack(interpreter_stack_t& stack, const frame_pos_t& current_frame);
 void trace_interpreter(interpreter_t& vm, size_t pc);
 
 

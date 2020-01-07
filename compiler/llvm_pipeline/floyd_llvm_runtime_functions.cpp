@@ -77,12 +77,12 @@ static std::vector<llvm_function_bind_t> floydrt_alloc_kstr__make(llvm::LLVMCont
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
 static rt_pod_t floydrt_allocate_vector_carray(runtime_t* frp, rt_type_t type, uint64_t element_count){
 	auto& backend = get_backend(frp);
-	return alloc_vector_carray(backend.heap, element_count, element_count, type_t(type));
+	return alloc_vector_carray(backend, element_count, element_count, type_t(type));
 }
 
 static rt_pod_t floydrt_allocate_vector_hamt(runtime_t* frp, rt_type_t type, uint64_t element_count){
 	auto& backend = get_backend(frp);
-	return alloc_vector_hamt(backend.heap, element_count, element_count, type_t(type));
+	return alloc_vector_hamt(backend, element_count, element_count, type_t(type));
 }
 
 static std::vector<llvm_function_bind_t> floydrt_allocate_vector__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -138,10 +138,10 @@ static rt_pod_t floydrt_allocate_vector_fill(runtime_t* frp, rt_type_t type, rt_
 	auto& backend = get_backend(frp);
 
 	if(is_vector_carray(backend.types, backend.config, type_t(type))){
-		return alloc_vector_carray(backend.heap, element_count, element_count, type_t(type));
+		return alloc_vector_carray(backend, element_count, element_count, type_t(type));
 	}
 	else if(is_vector_hamt(backend.types, backend.config, type_t(type))){
-		return alloc_vector_hamt(backend.heap, element_count, element_count, type_t(type));
+		return alloc_vector_hamt(backend, element_count, element_count, type_t(type));
 	}
 	else{
 		quark::throw_defective_request();
@@ -271,10 +271,10 @@ static const rt_pod_t floydrt_allocate_dict(runtime_t* frp, rt_type_t type){
 	auto& backend = get_backend(frp);
 
 	if(is_dict_cppmap(backend.types, backend.config, type_t(type))){
-		return alloc_dict_cppmap(backend.heap, type_t(type));
+		return alloc_dict_cppmap(backend, type_t(type));
 	}
 	else if(is_dict_hamt(backend.types, backend.config, type_t(type))){
-		return alloc_dict_hamt(backend.heap, type_t(type));
+		return alloc_dict_hamt(backend, type_t(type));
 	}
 	else{
 		quark::throw_defective_request();
@@ -451,12 +451,12 @@ static rt_pod_t floydrt_allocate_json(runtime_t* frp, rt_pod_t arg0_value, rt_ty
 
 	const auto& type0 = lookup_type_ref(backend, arg0_type);
 	if(type0.is_json() && arg0_value.int_value == 123){
-		return alloc_json(backend.heap, json_t());
+		return alloc_json(backend, json_t());
 	}
 	else{
 		const auto value = from_runtime_value2(backend, arg0_value, type0);
 		const auto a = value_to_json(backend.types, value);
-		return alloc_json(backend.heap, a);
+		return alloc_json(backend, a);
 	}
 }
 
@@ -496,7 +496,7 @@ static rt_pod_t floydrt_lookup_json(runtime_t* frp, rt_pod_t json0, rt_pod_t arg
 		}
 
 		const auto result = json.get_object_element(value.get_string_value());
-		return alloc_json(backend.heap, result);
+		return alloc_json(backend, result);
 	}
 	else if(json.is_array()){
 		if(type0_peek.is_int() == false){
@@ -504,7 +504,7 @@ static rt_pod_t floydrt_lookup_json(runtime_t* frp, rt_pod_t json0, rt_pod_t arg
 		}
 
 		const auto result = json.get_array_n(value.get_int_value());
-		auto result2 = alloc_json(backend.heap, result);
+		auto result2 = alloc_json(backend, result);
 		return result2;
 	}
 	else{
@@ -577,7 +577,7 @@ static rt_pod_t floydrt_allocate_struct(runtime_t* frp, const rt_type_t type, ui
 	const auto& type0 = lookup_type_ref(backend, type);
 	QUARK_ASSERT(type0.check_invariant());
 #endif
-	return alloc_struct(backend.heap, size, type_t(type));
+	return alloc_struct(backend, size, type_t(type));
 }
 
 static std::vector<llvm_function_bind_t> floydrt_allocate_struct__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -644,7 +644,7 @@ static const rt_pod_t floydrt_update_struct_member_nonpod(runtime_t* frp, rt_pod
 	const std::pair<type_t, struct_layout_t>& struct_layout_info = find_struct_layout(backend, type_t(struct_type));
 
 	const auto struct_bytes = struct_layout_info.second.size;
-	auto struct_ptr = alloc_struct_copy(backend.heap, reinterpret_cast<const uint64_t*>(s0.struct_ptr->get_data_ptr()), struct_bytes, peek2(backend.types, type_t(struct_type)));
+	auto struct_ptr = alloc_struct_copy(backend, reinterpret_cast<const uint64_t*>(s0.struct_ptr->get_data_ptr()), struct_bytes, peek2(backend.types, type_t(struct_type)));
 	auto struct_base_ptr = struct_ptr.struct_ptr->get_data_ptr();
 
 	const auto member_offset = struct_layout_info.second.members[member_index].offset;
@@ -674,7 +674,7 @@ static const rt_pod_t floydrt_copy_struct(runtime_t* frp, rt_pod_t s0, uint64_t 
 	const auto struct_size2 = struct_layout_info.second.size;
 	QUARK_ASSERT(struct_size == struct_size2);
 #endif
-	return alloc_struct_copy(backend.heap, reinterpret_cast<const uint64_t*>(s0.struct_ptr->get_data_ptr()), struct_size, peek2(backend.types, type_t(struct_type)));
+	return alloc_struct_copy(backend, reinterpret_cast<const uint64_t*>(s0.struct_ptr->get_data_ptr()), struct_size, peek2(backend.types, type_t(struct_type)));
 }
 
 static std::vector<llvm_function_bind_t> floydrt_update_struct_member__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){

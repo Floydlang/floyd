@@ -584,7 +584,7 @@ rt_pod_t intrinsic__map__carray(
 	const auto f = reinterpret_cast<MAP_F>(func_link.f);
 
 	const auto count = elements_vec.vector_carray_ptr->get_element_count();
-	auto result_vec = alloc_vector_carray(backend.heap, count, count, type_t(result_vec_type));
+	auto result_vec = alloc_vector_carray(backend, count, count, type_t(result_vec_type));
 	for(int i = 0 ; i < count ; i++){
 		const auto& element = elements_vec.vector_carray_ptr->get_element_ptr()[i];
 
@@ -654,7 +654,7 @@ rt_pod_t intrinsic__map__hamt(
 	const auto f = (MAP_F)f_value.function_data;
 
 	const auto count = elements_vec.vector_hamt_ptr->get_element_count();
-	auto result_vec = alloc_vector_hamt(backend.heap, count, count, type_t(vec_r_type));
+	auto result_vec = alloc_vector_hamt(backend, count, count, type_t(vec_r_type));
 	for(int i = 0 ; i < count ; i++){
 		const auto& element = elements_vec.vector_hamt_ptr->load_element(i);
 		const auto a = (*f)(frp, element, context_value);
@@ -939,7 +939,7 @@ rt_pod_t intrinsic__map_dag__carray(
 				}
 			}
 
-			auto solved_deps2 = alloc_vector_carray(backend.heap, solved_deps.size(), solved_deps.size(), vec_r_type);
+			auto solved_deps2 = alloc_vector_carray(backend, solved_deps.size(), solved_deps.size(), vec_r_type);
 			for(int i = 0 ; i < solved_deps.size() ; i++){
 				solved_deps2.vector_carray_ptr->store(i, solved_deps[i]);
 			}
@@ -984,7 +984,7 @@ rt_pod_t intrinsic__map_dag__carray(
 
 	//??? No need to copy all elements -- could store them directly into the VEC_T.
 	const auto count = complete.size();
-	auto result_vec = alloc_vector_carray(backend.heap, count, count, vec_r_type);
+	auto result_vec = alloc_vector_carray(backend, count, count, vec_r_type);
 	for(int i = 0 ; i < count ; i++){
 //		retain_value(r, complete[i], r_type);
 		result_vec.vector_carray_ptr->store(i, complete[i]);
@@ -1087,7 +1087,7 @@ rt_pod_t intrinsic__map_dag__hamt(
 				}
 			}
 
-			auto solved_deps2 = alloc_vector_hamt(backend.heap, solved_deps.size(), solved_deps.size(), vec_r_type);
+			auto solved_deps2 = alloc_vector_hamt(backend, solved_deps.size(), solved_deps.size(), vec_r_type);
 			for(int i = 0 ; i < solved_deps.size() ; i++){
 				solved_deps2.vector_hamt_ptr->store_mutate(i, solved_deps[i]);
 			}
@@ -1131,7 +1131,7 @@ rt_pod_t intrinsic__map_dag__hamt(
 
 	//??? No need to copy all elements -- could store them directly into the VEC_T.
 	const auto count = complete.size();
-	auto result_vec = alloc_vector_hamt(backend.heap, count, count, vec_r_type);
+	auto result_vec = alloc_vector_hamt(backend, count, count, vec_r_type);
 	for(int i = 0 ; i < count ; i++){
 //		retain_value(r, complete[i], r_type);
 		result_vec.vector_hamt_ptr->store_mutate(i, complete[i]);
@@ -1239,7 +1239,7 @@ rt_pod_t intrinsic__filter_carray(
 	}
 
 	const auto count2 = acc.size();
-	auto result_vec = alloc_vector_carray(backend.heap, count2, count2, vec_e_type);
+	auto result_vec = alloc_vector_carray(backend, count2, count2, vec_e_type);
 
 	if(count2 > 0){
 		//	Count > 0 required to get address to first element in acc.
@@ -1312,7 +1312,7 @@ rt_pod_t intrinsic__filter_hamt(
 	}
 
 	const auto count2 = acc.size();
-	auto result_vec = alloc_vector_hamt(backend.heap, &acc[0], count2, vec_e_type);
+	auto result_vec = alloc_vector_hamt(backend, &acc[0], count2, vec_e_type);
 	return result_vec;
 }
 
@@ -1642,7 +1642,7 @@ rt_pod_t intrinsic__parse_json_script(runtime_t* frp, rt_pod_t string_s0){
 	const auto string_s = from_runtime_string2(backend, string_s0);
 
 	std::pair<json_t, seq_t> result0 = parse_json(seq_t(string_s));
-	return alloc_json(backend.heap, result0.first);
+	return alloc_json(backend, result0.first);
 }
 
 rt_pod_t intrinsic__to_json(runtime_t* frp, rt_pod_t value, rt_type_t value_type){
@@ -1651,7 +1651,7 @@ rt_pod_t intrinsic__to_json(runtime_t* frp, rt_pod_t value, rt_type_t value_type
 	const auto& type0 = lookup_type_ref(backend, value_type);
 	const auto value0 = from_runtime_value2(backend, value, type0);
 	const auto j = value_to_json(backend.types, value0);
-	return alloc_json(backend.heap, j);
+	return alloc_json(backend, j);
 }
 
 rt_pod_t intrinsic__from_json(runtime_t* frp, rt_pod_t json0, rt_type_t target_type){

@@ -142,8 +142,9 @@ struct heap_t {
 
 struct heap_t;
 
-static const uint64_t ALLOC_64_MAGIC = 0xa110a11c;
-static const uint64_t ALLOC_64_MAGIC_DELETED = 0x11dead11;
+static const uint32_t ALLOC_64_MAGIC_ACTIVE = 0x11aaaa11;
+static const uint32_t ALLOC_64_MAGIC_DELETED = 0x11dead11;
+static const uint32_t ALLOC_64_MAGIC_RESERVED = 0x11000011;
 
 //	This header is followed by a number of uint64_t elements in the same heap block.
 //	This header represents a sharepoint of many clients and holds an RC to count clients.
@@ -154,9 +155,9 @@ struct heap_alloc_64_t {
 	static const int k_data_elements = 4;
 	static const size_t k_data_bytes = sizeof(uint64_t) * k_data_elements;
 
-	heap_alloc_64_t(heap_t* heap0, uint64_t allocation_word_count, type_t debug_value_type, const char debug_string[]) :
+	heap_alloc_64_t(heap_t* heap0, uint32_t magic, uint64_t allocation_word_count, type_t debug_value_type, const char debug_string[]) :
 		rc(1),
-		magic(ALLOC_64_MAGIC),
+		magic(magic),
 		allocation_word_count(allocation_word_count),
 		heap(heap0)
 #if DEBUG
@@ -229,7 +230,7 @@ std::string get_debug_info(const heap_alloc_64_t& alloc);
 
 	DEBUG VERSION: We never actually free the heap blocks, we keep them around for debugging.
 */
-heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, type_t value_type, const char debug_string[]);
+heap_alloc_64_t* alloc_64(heap_t& heap, uint32_t magic, uint64_t allocation_word_count, type_t value_type, const char debug_string[]);
 
 //	Returns pointer to the allocated words that sits after the
 void* get_alloc_ptr(heap_alloc_64_t& alloc);
@@ -378,7 +379,7 @@ struct VECTOR_CARRAY_T {
 	heap_alloc_64_t alloc;
 };
 
-rt_pod_t alloc_vector_carray(heap_t& heap, uint64_t allocation_count, uint64_t element_count, type_t value_type);
+rt_pod_t alloc_vector_carray(value_backend_t& backend, uint64_t allocation_count, uint64_t element_count, type_t value_type);
 void dispose_vector_carray(const rt_pod_t& value);
 
 
@@ -459,8 +460,8 @@ struct VECTOR_HAMT_T {
 	heap_alloc_64_t alloc;
 };
 
-rt_pod_t alloc_vector_hamt(heap_t& heap, uint64_t allocation_count, uint64_t element_count, type_t value_type);
-rt_pod_t alloc_vector_hamt(heap_t& heap, const rt_pod_t elements[], uint64_t element_count, type_t value_type);
+rt_pod_t alloc_vector_hamt(value_backend_t& backend, uint64_t allocation_count, uint64_t element_count, type_t value_type);
+rt_pod_t alloc_vector_hamt(value_backend_t& backend, const rt_pod_t elements[], uint64_t element_count, type_t value_type);
 void dispose_vector_hamt(const rt_pod_t& vec);
 
 rt_pod_t store_immutable_hamt(const rt_pod_t& vec, const uint64_t index, rt_pod_t value);
@@ -494,7 +495,7 @@ struct DICT_CPPMAP_T {
 	heap_alloc_64_t alloc;
 };
 
-rt_pod_t alloc_dict_cppmap(heap_t& heap, type_t value_type);
+rt_pod_t alloc_dict_cppmap(value_backend_t& backend, type_t value_type);
 
 
 
@@ -523,7 +524,7 @@ struct DICT_HAMT_T {
 	heap_alloc_64_t alloc;
 };
 
-rt_pod_t alloc_dict_hamt(heap_t& heap, type_t value_type);
+rt_pod_t alloc_dict_hamt(value_backend_t& backend, type_t value_type);
 
 
 
@@ -548,7 +549,7 @@ struct JSON_T {
 	heap_alloc_64_t alloc;
 };
 
-rt_pod_t alloc_json(heap_t& heap, const json_t& init);
+rt_pod_t alloc_json(value_backend_t& backend, const json_t& init);
 
 
 ////////////////////////////////		STRUCT_T
@@ -576,8 +577,8 @@ struct STRUCT_T {
 	heap_alloc_64_t alloc;
 };
 
-rt_pod_t alloc_struct(heap_t& heap, std::size_t size, type_t value_type);
-rt_pod_t alloc_struct_copy(heap_t& heap, const uint64_t data[], std::size_t size, type_t value_type);
+rt_pod_t alloc_struct(value_backend_t& backend, std::size_t size, type_t value_type);
+rt_pod_t alloc_struct_copy(value_backend_t& backend, const uint64_t data[], std::size_t size, type_t value_type);
 
 
 ////////////////////////////////		HELPERS
@@ -728,7 +729,7 @@ struct rt_value_t {
 ////////////////////////////////////////////			FREE
 
 
-//??? All functions like this should take type of *collection*, not its element / value.
+//??? All functions like this should take *type*of*collection*, not type of its element.
 
 
 const immer::vector<rt_value_t> get_vector_elements(value_backend_t& backend, const rt_value_t& value);
@@ -757,6 +758,23 @@ struct member_info_t {
 };
 
 struct struct_layout_t {
+	bool check_invariant() const {
+		QUARK_ASSERT((size > 0 && members.size() > 0) || (size == 0 && members.size() == 0));
+
+		for(const auto& e: members){
+			QUARK_ASSERT(e.offset >= 0);
+			QUARK_ASSERT(e.type.check_invariant());
+		}
+
+		if(members.size() > 0){
+			QUARK_ASSERT(members[0].offset == 0);
+			for(int i = 1 ; i < members.size() ; i++){
+				QUARK_ASSERT(members[i].offset > members[i - 1].offset);
+			}
+		}
+		return true;
+	}
+
 	std::vector<member_info_t> members;
 	size_t size;
 };
@@ -819,10 +837,6 @@ struct func_link_t {
 			|| execution_model == eexecution_model::k_native__floydcc
 		);
 
-//		QUARK_ASSERT(arg_names.empty() || arg_names.size() == function_type_optional.get_function_args(<#const types_t &types#>))
-		for(const auto& e: arg_names){
-//			QUARK_ASSERT(e.empty() == false);
-		}
 		QUARK_ASSERT(module_symbol.s.empty() == false);
 		return true;
 	}
