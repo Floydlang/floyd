@@ -60,7 +60,7 @@ jobs:
 
   build-mac:
     macos:
-       xcode: "10.3.0"
+       xcode: "11.2.1"
     workDir: /Users/distiller/compiler/ 
     steps:
       - checkout
