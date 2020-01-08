@@ -16,7 +16,7 @@
 
 namespace floyd {
 
-static const bool k_trace_stepping = false;
+static const bool k_trace_stepping = true;
 
 static bool should_trace(const std::string& name){
 	return true;

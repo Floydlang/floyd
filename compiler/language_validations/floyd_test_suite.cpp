@@ -6248,6 +6248,8 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running benchmark_de
 	);
 }
 
+#if 0
+//	Too slow with BC and single stepping.
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Example", ""){
 	ut_run_closed_nolib(
 		QUARK_POS,
@@ -6285,6 +6287,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Example", ""){
 		)"
 	);
 }
+#endif
 
 FLOYD_LANG_PROOF("Floyd test suite", "get_benchmarks()", "", ""){
 	ut_verify_printout_lib(
@@ -8128,7 +8131,7 @@ FLOYD_LANG_PROOF("network component", "execute_http_request()", "", ""){
 
 #if 0
 //	WARNING: This test never completes + is impure.
-FLOYD_LANG_PROOF_VIP("network component", "execute_http_request()", "", ""){
+FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "", ""){
 	ut_run_closed_lib(
 		QUARK_POS,
 		R"(
@@ -8186,7 +8189,7 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_request()", "", ""){
 
 #if 0
 //	??? CRASHES.
-FLOYD_LANG_PROOF_VIP("network component", "Multi-process HTTP server", "", ""){
+FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "Multi-process HTTP server", ""){
 	ut_run_closed_lib(
 		QUARK_POS,
 		R"(
@@ -8284,7 +8287,7 @@ FLOYD_LANG_PROOF_VIP("network component", "Multi-process HTTP server", "", ""){
 
 #if 0
 //	WARNING: This test never completes + is impure.
-FLOYD_LANG_PROOF_VIP("network component", "Multi-process HTTP server", "", ""){
+FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "Multi-process HTTP server", "", ""){
 	ut_run_closed_lib(
 		QUARK_POS,
 		R"(

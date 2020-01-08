@@ -8,15 +8,16 @@
 
 #include "value_backend.h"
 
-#include <string>
-#include <vector>
-
 #include "types.h"
 #include "json_support.h"
 #include "compiler_basics.h"
 #include "quark.h"
 #include "format_table.h"
 #include "floyd_llvm_helpers.h"
+
+#include <string>
+#include <vector>
+#include <climits>
 
 namespace floyd {
 
@@ -489,7 +490,7 @@ rt_pod_t alloc_vector_hamt(value_backend_t& backend, uint64_t allocation_count, 
 	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc_64(backend.heap, ALLOC_64_MAGIC_ACTIVE, 0, value_type, "vechamt"));
 
 	QUARK_ASSERT(sizeof(immer::vector<rt_pod_t>) <= heap_alloc_64_t::k_data_bytes);
-    new (&vec->alloc.data[0]) immer::vector<rt_pod_t>(allocation_count, rt_pod_t{ .int_value = (int64_t)0xdeadbeef12345678 } );
+    new (&vec->alloc.data[0]) immer::vector<rt_pod_t>(allocation_count, rt_pod_t{ .int_value = UNINITIALIZED_RUNTIME_VALUE } );
 
 	QUARK_ASSERT(vec->check_invariant());
 	QUARK_ASSERT(backend.check_invariant());
@@ -2089,7 +2090,6 @@ static std::vector<structure_t> get_value_structure_children(const value_backend
 }
 static structure_t get_value_structure(const value_backend_t& backend, rt_pod_t value, const type_t& type0){
 	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(check_invariant(backend, value, type0));
 	QUARK_ASSERT(type0.check_invariant());
 
 	const auto& type = peek2(backend.types, type0);
@@ -2097,10 +2097,18 @@ static structure_t get_value_structure(const value_backend_t& backend, rt_pod_t 
 	const auto is_rc = is_rc_value(backend.types, type);
 	QUARK_ASSERT(is_rc);
 
-	const auto alloc_id = value.gp_ptr->alloc_id;
-	const int32_t rc = value.gp_ptr->rc;
-	const auto children = get_value_structure_children(backend, value, type);
-	return { type.get_base_type(), rc, alloc_id, children };
+	if(value.int_value == UNINITIALIZED_RUNTIME_VALUE){
+		return { type.get_base_type(), k_value_rc_max, k_alloc_end_id, {} };
+	}
+	else{
+		QUARK_ASSERT(check_invariant(backend, value, type0));
+		QUARK_ASSERT(type0.check_invariant());
+
+		const auto alloc_id = value.gp_ptr->alloc_id;
+		const int32_t rc = value.gp_ptr->rc;
+		const auto children = get_value_structure_children(backend, value, type);
+		return { type.get_base_type(), rc, alloc_id, children };
+	}
 }
 
 static std::string get_value_structure_str(const value_backend_t& backend, const structure_t& str){
