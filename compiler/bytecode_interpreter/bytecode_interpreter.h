@@ -435,7 +435,7 @@ json_t interpreter_to_json(interpreter_t& vm);
 std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions);
 
 //	Returns undefined if not found.
-rt_value_t load_global(interpreter_t& vm, const module_symbol_t& s);
+rt_value_t load_global(const interpreter_t& vm, const module_symbol_t& s);
 
 
 } //	floyd

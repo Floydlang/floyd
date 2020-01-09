@@ -19,7 +19,7 @@ namespace floyd {
 static const bool k_trace_stepping = false;
 
 static bool should_trace(const std::string& name){
-	return true && name == "floyd process 1 server";
+	return false && name == "floyd process 1 server";
 }
 
 
@@ -355,7 +355,7 @@ static void do_call_instruction_via_libffi(interpreter_t& vm, int target_reg, co
 		}
 	}
 
-	ffi_arg return_value;
+	ffi_arg return_value = 0x1111deadbeef2222;
 
 	ffi_call(&cif.cif, FFI_FN(func_link.f), &return_value, &values[0]);
 
@@ -452,6 +452,8 @@ static void do_call_instruction_bc(interpreter_t& vm, int target_reg, const func
 	QUARK_ASSERT(vm.check_invariant());
 }
 
+		void network_component__execute_http_server(runtime_t* frp, rt_pod_t c, rt_pod_t port, rt_pod_t f);
+
 static void do_call_instruction(interpreter_t& vm, int target_reg, const rt_pod_t callee, int callee_arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	const auto& backend = vm._backend;
@@ -466,7 +468,20 @@ static void do_call_instruction(interpreter_t& vm, int target_reg, const rt_pod_
 		do_call_instruction_bc(vm, target_reg, func_link, callee_arg_count);
 	}
 	else if(func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc){
-		do_call_instruction_via_libffi(vm, target_reg, func_link, callee_arg_count);
+		if(false && func_link.module_symbol.s == "execute_http_server"){
+
+			auto runtime_ptr = runtime_t { vm._name, &vm._backend, &vm, vm._process_handler };
+
+			//			static void network_component__execute_http_server(runtime_t* frp, rt_pod_t c, rt_pod_t port, rt_pod_t f){
+
+			rt_pod_t c = vm._stack._entries[vm._stack._stack_size - 3 + 0];
+			rt_pod_t port = vm._stack._entries[vm._stack._stack_size - 3 + 1];
+			rt_pod_t f = vm._stack._entries[vm._stack._stack_size - 3 + 2];
+			network_component__execute_http_server(&runtime_ptr, c, port, f);
+		}
+		else{
+			do_call_instruction_via_libffi(vm, target_reg, func_link, callee_arg_count);
+		}
 	}
 	else{
 		quark::throw_defective_request();
@@ -477,7 +492,13 @@ static void do_call_instruction(interpreter_t& vm, int target_reg, const rt_pod_
 
 rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_value_t args[], int callee_arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(f.check_invariant());
+	QUARK_ASSERT(f.check_invariant() && f._type.is_function());
+	QUARK_ASSERT(callee_arg_count >= 0 && callee_arg_count < 1000);
+#if DEBUG
+	for(int i = 0 ; i < callee_arg_count ; i++){
+		QUARK_ASSERT(args[i].check_invariant());
+	}
+#endif
 
 	const auto& backend = vm._backend;
 	const auto& types = backend.types;
@@ -652,7 +673,7 @@ interpreter_t::interpreter_t(
 
 		QUARK_ASSERT(check_invariant());
 
-		if(false) trace_interpreter(*this, 0);
+		if(true) trace_interpreter(*this, 0);
 
 		//	Run static intialization (basically run global instructions before calling main()).
 		execute_instructions(*this, _program->_globals._instructions);
@@ -947,6 +968,15 @@ void trace_interpreter(interpreter_t& vm, size_t pc){
 }
 
 rt_value_t interpreter_t::runtime_basics__call_thunk(const rt_value_t& f, const rt_value_t args[], int arg_count){
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(f.check_invariant() && f._type.is_function());
+	QUARK_ASSERT(arg_count >= 0 && arg_count < 1000);
+#if DEBUG
+	for(int i = 0 ; i < arg_count ; i++){
+		QUARK_ASSERT(args[i].check_invariant());
+	}
+#endif
+
 	return call_function_bc(*this, f, args, arg_count);
 }
 
@@ -2252,7 +2282,7 @@ QUARK_TEST("interpreter_t", "","", ""){
 
 	
 
-rt_value_t load_global(interpreter_t& vm, const module_symbol_t& s){
+rt_value_t load_global(const interpreter_t& vm, const module_symbol_t& s){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s.s.size() > 0);
 

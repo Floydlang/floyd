@@ -156,6 +156,14 @@ inline void on_exit_process(runtime_t* runtime){
 
 inline rt_value_t call_thunk(runtime_t* runtime, const rt_value_t& f, const rt_value_t args[], int arg_count){
 	QUARK_ASSERT(runtime != nullptr && runtime->check_invariant());
+	QUARK_ASSERT(f.check_invariant() && f._type.is_function());
+	QUARK_ASSERT(args != nullptr);
+	QUARK_ASSERT(arg_count >= 0 && arg_count < 1000);
+#if DEBUG
+	for(int i = 0 ; i < arg_count ; i++){
+		QUARK_ASSERT(args[i].check_invariant());
+	}
+#endif
 
 	return runtime->basics->runtime_basics__call_thunk(f, args, arg_count);
 }

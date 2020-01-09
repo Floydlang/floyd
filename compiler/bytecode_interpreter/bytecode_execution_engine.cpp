@@ -258,12 +258,8 @@ static std::string make_trace_process_header(const bc_process_t& process){
 	return header;
 }
 
-static void run_process(bc_execution_engine_t& ee, int process_id){
+static void run_process(bc_execution_engine_t& ee, bc_process_t& process){
 	QUARK_ASSERT(ee.check_invariant_thread_safe());
-	QUARK_ASSERT(process_id >= 0 && process_id < ee._processes.size());
-
-	auto& process = *ee._processes[process_id];
-
 	QUARK_ASSERT(process.check_invariant());
 
 	auto& backend = ee.backend;
@@ -314,6 +310,28 @@ static void run_process(bc_execution_engine_t& ee, int process_id){
 	QUARK_ASSERT(ee.check_invariant_thread_safe());
 }
 
+static rt_value_t get_init_f(const interpreter_t& vm, const module_symbol_t& name){
+	QUARK_ASSERT(vm.check_invariant());
+
+	const auto init_f = load_global(vm, name);
+	if(init_f._type.is_undefined()){
+		throw std::runtime_error("Cannot link floyd init function: \"" + name.s + "\"");
+	}
+	return init_f;
+}
+
+static rt_value_t get_msg_f(const interpreter_t& vm,  const module_symbol_t& name){
+	QUARK_ASSERT(vm.check_invariant());
+
+	const auto msg_f = load_global(vm, name);
+	if(msg_f._type.is_undefined()){
+		throw std::runtime_error("Cannot link floyd message function: \"" + name.s + "\"");
+	}
+	return msg_f;
+}
+
+
+
 static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& config){
 	QUARK_ASSERT(ee.check_invariant());
 
@@ -331,32 +349,29 @@ static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& confi
 	const auto process_infos2 = std::vector<std::pair<std::string, process_def_t>>(process_infos.begin(), process_infos.end());
 
 	if(process_infos2.empty() == false){
+		//	Important so vector isn't reallocated when we push elements to it.
+		ee._processes.reserve(process_infos2.size());
+
 		for(int process_id = 0 ; process_id < process_infos2.size() ; process_id++){
 			const auto& t = process_infos2[process_id];
 
 			auto process = std::make_shared<bc_process_t>();
+
+			process->_name_key = t.first;
+			process->_exiting_flag = false;
+			process->_message_type = t.second.msg_type;
+			process->_ee = &ee;
 
 			//	Floyd process 0 is run on the main OS/BC thread.
 			if(process_id == 0){
 				auto bc_thread = &ee.main_bc_thread;
 
 				bc_thread->_process_handler = process.get();
-
-				//??? dup
-				process->_exiting_flag = false;
-				process->_message_type = t.second.msg_type;
-				process->_ee = &ee;
-				process->_name_key = t.first;
 				process->_bc_thread = bc_thread;
-				process->_init_function = load_global(*process->_bc_thread, t.second.init_func_linkname);
-				process->_msg_function = load_global(*process->_bc_thread, t.second.msg_func_linkname);
 
-				if(process->_init_function._type.is_undefined()){
-					throw std::runtime_error("Cannot link floyd init function: \"" + t.second.init_func_linkname.s + "\"");
-				}
-				if(process->_msg_function._type.is_undefined()){
-					throw std::runtime_error("Cannot link floyd message function: \"" + t.second.msg_func_linkname.s + "\"");
-				}
+				process->_init_function = get_init_f(*process->_bc_thread, t.second.init_func_linkname);
+				process->_msg_function = get_msg_f(*process->_bc_thread, t.second.msg_func_linkname);
+
 
 				ee._processes.push_back(process);
 			}
@@ -370,30 +385,18 @@ static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& confi
 				auto bc_thread = std::make_shared<interpreter_t>(ee._program, ee.backend, config, process.get(), *ee.handler, name);
 				ee._bc_threads.push_back(bc_thread);
 
-				//??? dup
-				process->_exiting_flag = false;
-				process->_message_type = t.second.msg_type;
-				process->_ee = &ee;
-				process->_name_key = t.first;
 				process->_bc_thread = bc_thread.get();
-				process->_init_function = load_global(*process->_bc_thread, t.second.init_func_linkname);
-				process->_msg_function = load_global(*process->_bc_thread, t.second.msg_func_linkname);
-
-				if(process->_init_function._type.is_undefined()){
-					throw std::runtime_error("Cannot link floyd init function: \"" + t.second.init_func_linkname.s + "\"");
-				}
-				if(process->_msg_function._type.is_undefined()){
-					throw std::runtime_error("Cannot link floyd message function: \"" + t.second.msg_func_linkname.s + "\"");
-				}
-
 				ee._processes.push_back(process);
+
+				process->_init_function = get_init_f(*process->_bc_thread, t.second.init_func_linkname);
+				process->_msg_function = get_msg_f(*process->_bc_thread, t.second.msg_func_linkname);
 
 				ee._os_threads.push_back(
 					std::thread(
 						[&](int process_id){
 							set_current_threads_name(name);
 
-							run_process(ee, process_id);
+							run_process(ee, *process);
 						},
 						process_id
 					)
@@ -402,7 +405,7 @@ static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& confi
 		}
 
 		//	Run process 0 using main thread.
-		run_process(ee, 0);
+		run_process(ee, *ee._processes[0]);
 
 		for(auto &t: ee._os_threads){
 			t.join();

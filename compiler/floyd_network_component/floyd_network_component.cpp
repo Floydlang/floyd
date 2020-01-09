@@ -558,10 +558,37 @@ struct server_connection_t : public connection_i {
 
 //	Blocks forever.
 //	func void execute_http_server(network_component_t c, int port, func void f(int socket)) impure
-static void network_component__execute_http_server(runtime_t* frp, rt_pod_t c, rt_pod_t port, rt_pod_t f){
+void network_component__execute_http_server(runtime_t* frp, rt_pod_t c, rt_pod_t port, rt_pod_t f){
 	const auto port2 = port.int_value;
 
 	server_connection_t connection { frp, f };
+
+#if 0
+	const int socket2 = port2;
+
+
+	auto& backend = get_backend(frp);
+	const auto& func_link = lookup_func_link_by_pod_required(backend, f);
+
+	// ??? This thunking must be moved of inner loop. Use ffi to make bridge for k_native__floydcc?
+	if(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc){
+		const rt_value_t f_args[] = {
+			rt_value_t::make_int(socket2)
+		};
+		const auto a = call_thunk(frp, rt_value_t(backend, f, func_link.function_type_optional, rt_value_t::rc_mode::bump), f_args, 1);
+		QUARK_ASSERT(a._type.is_void());
+	}
+	else if(func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc){
+		const auto f2 = reinterpret_cast<HTTP_SERVER_F>(func_link.f);
+		(*f2)(frp, make_runtime_int(socket2));
+	}
+	else{
+		quark::throw_defective_request();
+	}
+#endif
+
+
+
 	execute_http_server(server_params_t { (int)port2 }, connection);
 }
 
