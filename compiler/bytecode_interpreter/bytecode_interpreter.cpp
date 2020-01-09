@@ -19,7 +19,6 @@ namespace floyd {
 static const bool k_trace_stepping = false;
 
 static bool should_trace(const std::string& name){
-	return true;
 	return true && name == "floyd process 1 server";
 }
 
@@ -402,6 +401,8 @@ static rt_value_t complete_frame_and_make_call(interpreter_t& vm, const func_lin
 
 	const auto pos0 = vm._stack.size();
 
+trace_interpreter(vm, 0);
+
 	const auto& result = execute_instructions(vm, static_frame_ptr->_instructions);
 	QUARK_ASSERT(result.second.check_invariant());
 
@@ -506,7 +507,9 @@ rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_val
 	if(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc){
 		const auto& return_type = peek2(types, func_link.function_type_optional).get_function_return(types);
 
-//??? setup _current_frame
+
+trace_interpreter(vm, 0);
+
 		push_frame(vm._stack, vm.get_current_frame());
 
 		//	We push the arguments on the stack. The stack will take RC ownership of the values.
@@ -598,7 +601,7 @@ static std::vector<active_frame_t> get_stack_frames_noci(const interpreter_stack
 		for(int i = 0 ; i < result.size() - 1 ; i++){
 			QUARK_ASSERT(result[i + 0].check_invariant());
 			const auto end = result[i + 0].get_end();
-			QUARK_ASSERT(end <= result[i + 1].start_pos);
+			QUARK_ASSERT(end == result[i + 1].start_pos);
 		}
 
 		QUARK_ASSERT(result.back().get_end() <= stack_size);
@@ -768,6 +771,24 @@ void trace_stack(interpreter_stack_t& stack, const frame_pos_t& current_frame){
 	QUARK_SCOPED_TRACE("STACK");
 
 	const auto stack_frames = get_stack_frames_noci(stack, current_frame);
+	{
+		QUARK_SCOPED_TRACE("FRAMES");
+		for(int i = 0 ; i < stack_frames.size() ; i++){
+			const auto& e = stack_frames[i];
+
+			const auto esize = e.effective_end -  e.start_pos;
+			std::stringstream ss;
+			ss <<
+				i << " " << e.info << ", "
+				<< " [" << e.start_pos << " - " << e.effective_end << " (" << esize << ")]" << ", "
+				<< " symbols: " << e.symbols_flag << ", "
+				<< " run.temps: " << e.runtime_temp_count << ","
+				<< " ptr: " << ptr_to_hexstring(e.static_frame)
+			;
+			QUARK_TRACE(ss.str());
+			
+		}
+	}
 
 	std::vector<std::vector<std::string>> matrix;
 
@@ -776,39 +797,45 @@ void trace_stack(interpreter_stack_t& stack, const frame_pos_t& current_frame){
 		const std::string frame_str = std::to_string(frame_index) + (frame_index == 0 ? " GLOBAL" : "");
 		const auto& frame = stack_frames[frame_index];
 
-		for(int i = 0 ; i < (frame.get_end() - frame.start_pos) ; i++){
+		for(int frame_entry_index = 0 ; frame_entry_index < (frame.get_end() - frame.start_pos) ; frame_entry_index++){
 			const auto bc_pod = stack._entries[stack_pos];
 			const auto debug_type = stack._entry_types[stack_pos];
 			const auto value_info = make_value_info(backend, bc_pod, debug_type);
+			const auto value_str = value_info.value_str.substr(0, 20);
 
-			const auto debug_type_str = type_to_compact_string(backend.types, debug_type);
+			const auto debug_type_str0 = type_to_compact_string(backend.types, debug_type);
+			const auto debug_type_str = debug_type_str0.substr(0, 20);
 
 
-			if(i == 0){
+			const auto stack_pos_str = std::string() + "[" + std::to_string(stack_pos) + ":" + std::to_string(frame_entry_index) + "]";
+
+			if(frame_entry_index == 0){
 				const auto line0 = std::vector<std::string> {
-					std::to_string(stack_pos),
+					stack_pos_str + ":0",
+					frame_str,
+					"frame: prev frame pos",
 					debug_type_str,
 					std::to_string(stack._entries[stack_pos].int_value),
 					"",
 					"",
 
-					frame_str,
-					"<prev frame pos>",
+					"",
 					"",
 					""
 				};
 				matrix.push_back(line0);
 			}
-			else if(i == 1){
+			else if(frame_entry_index == 1){
 				const auto line1 = std::vector<std::string> {
-					std::to_string(stack_pos),
+					stack_pos_str + ":1",
+					frame_str,
+					"frame: prev frame ptr",
 					debug_type_str,
 					ptr_to_hexstring(stack._entries[stack_pos].frame_ptr),
 					"",
 					"",
 
-					frame_str,
-					"<prev frame ptr>",
+					"",
 					"",
 					""
 				};
@@ -829,14 +856,17 @@ void trace_stack(interpreter_stack_t& stack, const frame_pos_t& current_frame){
 					const std::string symname = symbol.first;
 					const std::string symbol_value_type = type_to_compact_string(backend.types, symbol.second._value_type);
 
+					const std::string symbol_type_str = std::string() + "symbol: " + symbol_type_to_string(symbol.second._symbol_type);
+
 					const auto line = std::vector<std::string> {
-						std::to_string(i) + ":" + std::to_string(symbol_index),
+						stack_pos_str + ":" + std::to_string(symbol_index),
+						frame_str,
+						symbol_type_str,
 						debug_type_str,
-						value_info.value_str,
+						value_str,
 						value_info.rc_str,
 						value_info.alloc_id_str,
 
-						frame_str,
 						symname,
 						symbol_value_type,
 						symbol_effective_type
@@ -848,16 +878,17 @@ void trace_stack(interpreter_stack_t& stack, const frame_pos_t& current_frame){
 				else{
 					const auto runtime_temporary_index = (int)(stack_pos - runtime_temporary_start);
 
-					const std::string symname = std::string() + "<runtime temporary>" + std::to_string(runtime_temporary_index);
+					const std::string symname = std::string() + "<runtime temporary> " + std::to_string(runtime_temporary_index);
 
 					const auto line = std::vector<std::string> {
-						std::to_string(i) + ":" + std::to_string(runtime_temporary_index),
+						stack_pos_str + ":" + std::to_string(runtime_temporary_index),
+						frame_str,
+						"runtime temporary",
 						debug_type_str,
-						value_info.value_str,
+						value_str,
 						value_info.rc_str,
 						value_info.alloc_id_str,
 
-						frame_str,
 						symname,
 						"",
 						""
@@ -867,11 +898,14 @@ void trace_stack(interpreter_stack_t& stack, const frame_pos_t& current_frame){
 			}
 			stack_pos++;
 		}
+
+		matrix.push_back({ "", "", "", "", "", "",		"", "", "", "" });
 	}
 
 	QUARK_SCOPED_TRACE("STACK ENTRIES");
 	const auto result = generate_table_type1(
-		{ "#", "debug type", "value", "RC", "alloc ID", "frame", "symname", "sym.value type", "sym.effective type" },
+		{ "#", "frame", "type", "debug type", "value", "RC", "alloc ID",
+		"symname", "sym.value type", "sym.effective type" },
 		matrix
 	);
 	QUARK_TRACE(result);

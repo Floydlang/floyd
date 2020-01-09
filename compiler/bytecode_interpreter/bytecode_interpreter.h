@@ -146,7 +146,7 @@ struct active_frame_t {
 	) :
 		info(info),
 		start_pos(start_pos),
-		effective_size(effective_size),
+		effective_end(start_pos + effective_size),
 		symbols_flag(symbols_flag),
 		static_frame(static_frame),
 		runtime_temp_count(runtime_temp_count)
@@ -156,7 +156,7 @@ struct active_frame_t {
 
 	bool check_invariant() const {
 		QUARK_ASSERT(start_pos >= 0);
-		QUARK_ASSERT(effective_size >= 0);
+		QUARK_ASSERT(effective_end >= start_pos);
 		QUARK_ASSERT(static_frame != nullptr);
 		QUARK_ASSERT(runtime_temp_count >= 0 && runtime_temp_count < 100000);
 
@@ -178,14 +178,14 @@ struct active_frame_t {
 	size_t get_end() const {
 		QUARK_ASSERT(check_invariant());
 
-		return start_pos + effective_size;
+		return effective_end;
 	}
 
 	//////////////////////////////////////		STATE
 
 	std::string info;
 	size_t start_pos;
-	size_t effective_size;
+	size_t effective_end;
 	bool symbols_flag;
 	size_t runtime_temp_count;
 

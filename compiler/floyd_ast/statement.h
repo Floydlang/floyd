@@ -165,6 +165,7 @@ inline bool is_mutable(const symbol_t& s){
 	return s._symbol_type == symbol_t::symbol_type::mutable_reserve;
 }
 
+std::string symbol_type_to_string(symbol_t::symbol_type type);
 
 std::string symbol_to_string(const types_t& types, const symbol_t& symbol);
 

@@ -19,7 +19,7 @@ namespace floyd {
 ////////////////////////////////////////////		symbol_t
 
 
-static std::string symbol_type_to_string(symbol_t::symbol_type type){
+std::string symbol_type_to_string(symbol_t::symbol_type type){
 	switch(type){
 		case symbol_t::symbol_type::immutable_reserve:
 			return "immutable_reserve";

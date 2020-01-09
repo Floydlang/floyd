@@ -203,7 +203,7 @@ void unwind_global_stack(bc_execution_engine_t& ee){
 bool bc_execution_engine_t::check_invariant() const {
 	QUARK_ASSERT(check_invariant_thread_safe());
 
-	QUARK_ASSERT(main_bc_thread.check_invariant());
+//	QUARK_ASSERT(main_bc_thread.check_invariant());
 /*
 	//	Warning, cannot check invariant of this data since other OS threads mutate them concurrently.
 	for(const auto& e: _processes){

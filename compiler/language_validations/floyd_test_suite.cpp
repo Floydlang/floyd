@@ -6248,7 +6248,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running benchmark_de
 	);
 }
 
-#if 0
+#if 1
 //	Too slow with BC and single stepping.
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Example", ""){
 	ut_run_closed_nolib(
@@ -7365,6 +7365,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "hello_world.floyd", "", ""){
 }
 
 #if 0
+// Very slow when running in deep debug mode: creats lots of big vectors.
 FLOYD_LANG_PROOF("Floyd test suite", "game_of_life.floyd", "", ""){
 	const auto path = get_working_dir() + "/examples/game_of_life.floyd";
 	const auto program = read_text_file(path);
@@ -8186,6 +8187,32 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "", ""){
 #endif
 
 
+
+
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "map()", "map() from inside another map()", ""){
+	ut_run_closed_nolib(QUARK_POS, R"(
+
+		struct context_t { int a string b }
+
+		func int f2(int v, string c){
+			return v + 3000
+		}
+
+		func int f1(int v, context_t context){
+			assert(context.a == 2000)
+			assert(context.b == "twenty")
+
+			let r = map([ 100, 200, 300, v ], f2, "xyz")
+
+			return r[3]
+		}
+
+		let r = map([ 10, 11, 12 ], f1, context_t( 2000, "twenty"))
+//		print(r) ; print("\n")
+		assert(r == [ 3010, 3011, 3012 ])
+
+	)");
+}
 
 #if 0
 //	??? CRASHES.
