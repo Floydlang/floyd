@@ -570,8 +570,8 @@ rt_pod_t intrinsic__map__carray(
 
 	QUARK_ASSERT(backend.check_invariant());
 
+const auto& f_type2 = lookup_type_ref(backend, f_type);
 #if DEBUG
-	const auto& f_type2 = lookup_type_ref(backend, f_type);
 	const auto f_arg_types = peek2(types, f_type2).get_function_args(types);
 #endif
 	const auto e_type = peek2(types, type_t(elements_vec_type)).get_vector_element_type(types);

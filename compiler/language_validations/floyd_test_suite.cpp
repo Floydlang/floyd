@@ -8214,7 +8214,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "map()", "map() from inside another map()",
 	)");
 }
 
-#if 0
+#if 1
 //	??? CRASHES.
 FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "Multi-process HTTP server", ""){
 	ut_run_closed_lib(
@@ -8229,10 +8229,10 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "Multi-proces
 				"desc": "",
 				"clocks": {
 					"main_clock": {
-						"mmm-main": "my_main"
+						"sss-main": "my_main"
 					},
 					"http-server": {
-						"sss-server": "my_server"
+						"mmm-server": "my_server"
 					}
 				}
 			}
@@ -8247,7 +8247,6 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "Multi-proces
 
 			func double my_server__init() impure {
 //				f(44)
-				let a = get_time_of_day()
 				exit()
 				return 123.456
 			}
@@ -8262,7 +8261,6 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "Multi-proces
 
 			func int my_main__init() impure {
 				f(44)
-				let a = get_time_of_day()
 				exit()
 				return 13
 			}

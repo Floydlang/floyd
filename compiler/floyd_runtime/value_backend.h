@@ -118,7 +118,7 @@ struct heap_t {
 	std::shared_ptr<std::recursive_mutex> alloc_records_mutex;
 	std::vector<heap_rec_t> alloc_records;
 
-	uint64_t allocation_id_generator;
+	std::atomic<uint64_t> allocation_id_generator;
 	bool record_allocs_flag;
 };
 

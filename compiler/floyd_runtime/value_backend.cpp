@@ -1407,7 +1407,7 @@ rt_value_t make_vector_value(value_backend_t& backend, const type_t& element_typ
 			retain_value(backend, e._pod, element_type);
 			temp.push_back(e._pod);
 		}
-		auto result = alloc_vector_hamt(backend, &temp[0], temp.size(), type);
+		auto result = alloc_vector_hamt(backend, temp.data(), temp.size(), type);
 		const auto result2 = rt_value_t(backend, result, type, rt_value_t::rc_mode::adopt);
 		QUARK_ASSERT(result2.check_invariant());
 		return result2;

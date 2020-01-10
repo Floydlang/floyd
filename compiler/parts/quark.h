@@ -203,6 +203,7 @@ inline void on_problem___put_breakpoint_here(){
 
 
 #if QUARK_ASSERT_ON
+	inline void on_assert_hook(runtime_i* runtime, const source_code_location& location, const char expression[]) QUARK_NO_RETURN;
 	inline void on_assert_hook(runtime_i* runtime, const source_code_location& location, const char expression[]){
 		on_problem___put_breakpoint_here();
 

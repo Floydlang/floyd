@@ -71,6 +71,7 @@ struct bc_process_t : public runtime_process_i {
 
 	//////////////////////////////////////		STATE
 
+	int process_id;
 	bc_execution_engine_t* _ee;
 	std::condition_variable _inbox_condition_variable;
 	std::mutex _inbox_mutex;
@@ -258,9 +259,14 @@ static std::string make_trace_process_header(const bc_process_t& process){
 	return header;
 }
 
-static void run_process(bc_execution_engine_t& ee, bc_process_t& process){
+// 56 bytes
+static void run_process(bc_execution_engine_t& ee, bc_process_t* process0){
 	QUARK_ASSERT(ee.check_invariant_thread_safe());
-	QUARK_ASSERT(process.check_invariant());
+	QUARK_ASSERT(process0 != nullptr && process0->check_invariant());
+
+	trace_psthread_stack_info();
+
+	auto& process = *process0;
 
 	auto& backend = ee.backend;
 	const auto& types = backend.types;
@@ -357,6 +363,7 @@ static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& confi
 
 			auto process = std::make_shared<bc_process_t>();
 
+			process->process_id = process_id;
 			process->_name_key = t.first;
 			process->_exiting_flag = false;
 			process->_message_type = t.second.msg_type;
@@ -391,21 +398,32 @@ static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& confi
 				process->_init_function = get_init_f(*process->_bc_thread, t.second.init_func_linkname);
 				process->_msg_function = get_msg_f(*process->_bc_thread, t.second.msg_func_linkname);
 
-				ee._os_threads.push_back(
-					std::thread(
-						[&](int process_id){
-							set_current_threads_name(name);
+				//	Warning: The thread may start executing NOW or LATER.
+				//	Warning: make sure new thread doesn't capture any local that goes out of scope.
+				auto os_thread = std::thread(
+					[](bc_process_t* process_ptr){
+						QUARK_ASSERT(process_ptr != nullptr && process_ptr->check_invariant());
 
-							run_process(ee, *process);
-						},
-						process_id
-					)
+						trace_psthread_stack_info();
+
+#if 0
+						set_current_threads_name(process_ptr->_name_key);
+						stack_test(9000, nullptr);
+#endif
+						run_process(*process_ptr->_ee, process_ptr);
+					},
+					process.get()
 				);
+
+				ee._os_threads.push_back(std::move(os_thread));
 			}
 		}
 
+	while(true){
+	}
+
 		//	Run process 0 using main thread.
-		run_process(ee, *ee._processes[0]);
+		run_process(ee, ee._processes[0].get());
 
 		for(auto &t: ee._os_threads){
 			t.join();

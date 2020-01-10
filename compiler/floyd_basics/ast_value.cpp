@@ -352,7 +352,7 @@ static int compare_struct_true_deep(const types_t& types, const struct_value_t& 
 static int compare_vector_true_deep(const types_t& types, const std::vector<value_t>& left, const std::vector<value_t>& right){
 	QUARK_ASSERT(types.check_invariant());
 
-	const auto& shared_count = std::min(left.size(), right.size());
+	const auto shared_count = std::min(left.size(), right.size());
 	for(int i = 0 ; i < shared_count ; i++){
 		const auto& left2 = left[i];
 		const auto& right2 = right[i];

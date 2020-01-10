@@ -1173,7 +1173,7 @@ static gen_expr_out_t generate_call_expression(
 	gen._scope_stack.back()._instrs.push_back(gen_instruction_t(bc_opcode::k_push_frame_ptr, {}, {}, {} ));
 
 	const auto callee_expr = generate_callee(gen, details);
-	const auto call_setup = generate_call_setup(gen, function_def_arg_types, &details.args[0], callee_arg_count);
+	const auto call_setup = generate_call_setup(gen, function_def_arg_types, details.args.data(), callee_arg_count);
 
 	const auto target_reg2 = target_reg.is_empty()
 		? generate_local_temp(gen, call_output_type, "temp: call return")
@@ -1365,7 +1365,7 @@ static gen_expr_out_t generate_construct_value_expression(
 	}
 	const auto arg_count = callee_arg_count;
 
-	const auto call_setup = generate_call_setup(gen, arg_types, &details.elements[0], arg_count);
+	const auto call_setup = generate_call_setup(gen, arg_types, details.elements.data(), arg_count);
 
 	const auto source_itype = arg_count == 0 ? -1 : itype_from_type(details.elements[0].get_output_type());
 
