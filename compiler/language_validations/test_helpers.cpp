@@ -37,7 +37,7 @@
 
 
 static const bool k_run_bc = true;
-static const bool k_run_llvm = false;
+static const bool k_run_llvm = true;
 
 namespace floyd {
 
