@@ -431,7 +431,7 @@ static rt_pod_t network_component__read_socket(runtime_t* frp, rt_pod_t socket_i
 	auto& backend = get_backend(frp);
 
 	const auto socket_id2 = (int)socket_id.int_value;
-	const auto r = read_socket_string(socket_id2);
+	const auto r = read_socket_string(*frp->sockets, socket_id2);
 	const auto r2 = rt_value_t::make_string(backend, r);
 	r2.retain();
 	return r2._pod;
@@ -443,7 +443,7 @@ static void network_component__write_socket(runtime_t* frp, rt_pod_t socket_id, 
 
 	const auto socket_id2 = (int)socket_id.int_value;
 	const auto& data2 = from_runtime_string2(backend, data);
-	write_socket_string(socket_id2, data2);
+	write_socket_string(*frp->sockets, socket_id2, data2);
 }
 
 
@@ -451,7 +451,7 @@ static rt_pod_t network_component__lookup_host_from_ip(runtime_t* frp, rt_pod_t 
 	auto& backend = get_backend(frp);
 
 	const auto ip2 = from_runtime_ip_address_t(backend, ip);
-	const auto info = lookup_host(ip2);
+	const auto info = frp->sockets->sockets_i__lookup_host(ip2);
 	const auto info2 = to_runtime__host_info_t(backend, info);
 	info2.retain();
 	return info2._pod;
@@ -461,7 +461,7 @@ static rt_pod_t network_component__lookup_host_from_name(runtime_t* frp, rt_pod_
 	auto& backend = get_backend(frp);
 
 	const auto name = from_runtime_string2(backend, name_str);
-	const auto info = lookup_host(name);
+	const auto info = frp->sockets->sockets_i__lookup_host(name);
 	const auto info2 = to_runtime__host_info_t(backend, info);
 	info2.retain();
 	return info2._pod;
@@ -507,7 +507,7 @@ static rt_pod_t network_component__execute_http_request(runtime_t* frp, rt_pod_t
 
 	const auto addr2 = from_runtime__ip_address_and_port_t(backend, addr);
 	const auto request2 = from_runtime_string2(backend, request_string);
-	const auto response = execute_http_request(addr2, request2);
+	const auto response = execute_http_request(*frp->sockets, addr2, request2);
 	return to_runtime_string2(backend, response);
 }
 
@@ -574,7 +574,7 @@ static void network_component__execute_http_server(runtime_t* frp, rt_pod_t c, r
 	}
 
 	server_connection_t connection { frp, f, f_type, context, context_type };
-	execute_http_server(server_params_t { (int)port2 }, connection);
+	execute_http_server(*frp->sockets, server_params_t { (int)port2 }, connection);
 }
 
 

@@ -164,7 +164,7 @@ static bool SetSocketBlockingEnabled(int fd, bool blocking){
 #endif
 
 
-std::vector<uint8_t> read_socket_binary(int socket){
+std::vector<uint8_t> socket_impl::read_socket_binary(int socket){
 	QUARK_ASSERT(socket >= 0);
 
 	uint8_t buffer[1024] = { 0 };
@@ -194,7 +194,7 @@ std::vector<uint8_t> read_socket_binary(int socket){
 	}
 }
 
-void write_socket_binary(int socket, const std::vector<uint8_t>& data){
+void socket_impl::write_socket_binary(int socket, const std::vector<uint8_t>& data){
 //	::write(socket, data.c_str(), data.size());
 	const auto send_result = ::send(socket , data.data() , data.size(), 0);
 	if(send_result < 0){
@@ -203,14 +203,14 @@ void write_socket_binary(int socket, const std::vector<uint8_t>& data){
 	}
 }
 
-std::string read_socket_string(int socket){
-	const auto binary = read_socket_binary(socket);
+std::string read_socket_string(sockets_i& sockets, int socket){
+	const auto binary = sockets.sockets_i__read_socket(socket);
 	return std::string(binary.begin(), binary.end());
 }
 
-void write_socket_string(int socket, const std::string& data){
+void write_socket_string(sockets_i& sockets, int socket, const std::string& data){
 	const std::vector<uint8_t> temp(data.begin(), data.end());
-	write_socket_binary(socket, temp);
+	sockets.sockets_i__write_socket(socket, temp);
 }
 
 
@@ -282,7 +282,7 @@ static hostent_t unpack_hostent(const struct hostent& e){
 	return r;
 }
 
-hostent_t lookup_host(const std::string& name){
+hostent_t socket_impl::lookup_host(const std::string& name){
 	//	Function: struct hostent * gethostbyname2 (const char *name, int af)
 	const auto e = ::gethostbyname2(name.c_str(), AF_INET);
 	if(e == nullptr){
@@ -298,7 +298,7 @@ hostent_t lookup_host(const std::string& name){
 }
 
 QUARK_TEST("socket-component", "gethostbyname2_r()","google.com", ""){
-	const auto a = lookup_host("google.com");
+	const auto a = socket_impl::lookup_host("google.com");
 	QUARK_VERIFY(a.official_host_name == "google.com");
 	QUARK_VERIFY(a.addresses_IPv4.size() == 1);
 
@@ -307,7 +307,7 @@ QUARK_TEST("socket-component", "gethostbyname2_r()","google.com", ""){
 //	QUARK_VERIFY(to_string(a.addresses_IPv4[0]) == "216.58.207.238");
 }
 
-hostent_t lookup_host(const ip_address_t& addr){
+hostent_t socket_impl::lookup_host(const ip_address_t& addr){
 	const auto e = ::gethostbyaddr(&addr.ipv4, 4, AF_INET);
 	if(e == nullptr){
 		const auto host_error = h_errno;
@@ -323,7 +323,7 @@ hostent_t lookup_host(const ip_address_t& addr){
 
 QUARK_TEST("socket-component", "lookup_host()","google.com", ""){
 	const std::string k_addr = "172.217.21.174";
-	const auto a = lookup_host(from_ipv4_dotted_decimal_string(k_addr));
+	const auto a = socket_impl::lookup_host(from_ipv4_dotted_decimal_string(k_addr));
 	QUARK_VERIFY(a.official_host_name != "");
 	QUARK_VERIFY(a.addresses_IPv4.size() == 1);
 	QUARK_VERIFY(to_ipv4_dotted_decimal_string(a.addresses_IPv4[0]) == k_addr);
@@ -354,7 +354,7 @@ close()
 
 */
 
-connection_to_server_t connect_to_server(const ip_address_and_port_t& server_addr){
+connection_to_server_t socket_impl::connect_to_server(const ip_address_and_port_t& server_addr){
 	const auto socket = std::make_shared<socket_t>(AF_INET);
 
 	struct sockaddr_in a;
@@ -370,7 +370,7 @@ connection_to_server_t connect_to_server(const ip_address_and_port_t& server_add
 	return connection_to_server_t { socket };
 }
 
-void execute_server(const server_params_t& params, connection_i& connection){
+void socket_impl::execute_server(const server_params_t& params, connection_i& connection){
 	socket_t socket1(AF_INET);
 
 	struct sockaddr_in address;

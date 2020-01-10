@@ -278,8 +278,8 @@ QUARK_TEST("http", "unpack_http_response()", "k_http_response2", ""){
 }
 
 
-ip_address_and_port_t make_http_dest(const std::string& addr, int port, int af){
-	const auto e = lookup_host(addr);
+ip_address_and_port_t make_http_dest(sockets_i& sockets, const std::string& addr, int port, int af){
+	const auto e = sockets.sockets_i__lookup_host(addr);
 	QUARK_ASSERT(e.addresses_IPv4.size() >= 1);
 
 	return ip_address_and_port_t { e.addresses_IPv4[0], port };
@@ -490,58 +490,76 @@ struct uri_parts_t {
 */
 
 
-std::string execute_http_request(const ip_address_and_port_t& addr, const std::string& message){
-	const auto connection = connect_to_server(addr);
-	write_socket_string(connection.socket->_fd, message);
-	std::string response = read_socket_string(connection.socket->_fd);
+std::string execute_http_request(sockets_i& sockets, const ip_address_and_port_t& addr, const std::string& message){
+	const auto connection = sockets.sockets_i__connect_to_server(addr);
+	write_socket_string(sockets, connection.socket->_fd, message);
+	std::string response = read_socket_string(sockets, connection.socket->_fd);
 	return response;
 }
 
 QUARK_TEST("http", "execute_http_request()", "", ""){
+	sockets_t sockets;
 	const auto a = http_request_t {
 		http_request_line_t { "GET", "/", "HTTP/1.1" },
 		std::vector<http_header_t>{ http_header_t{ "Host", "www.cnn.com" } },
 		""
 	};
-	const auto r = execute_http_request(make_http_dest("cnn.com", 80, AF_INET), pack_http_request(a));
+	const auto r = execute_http_request(sockets, make_http_dest(sockets, "cnn.com", 80, AF_INET), pack_http_request(a));
 	QUARK_TRACE(r);
 	QUARK_VERIFY(r.empty() == false);
 }
 
 QUARK_TEST("http", "execute_http_request()", "", ""){
+	sockets_t sockets;
 	const auto a = http_request_t { http_request_line_t { "GET", "/index.html", "HTTP/1.0" }, { }, "" };
-	const auto r = execute_http_request(make_http_dest("example.com", 80, AF_INET), pack_http_request(a));
+	const auto r = execute_http_request(sockets, make_http_dest(sockets, "example.com", 80, AF_INET), pack_http_request(a));
 	QUARK_TRACE(r);
 }
 
 QUARK_TEST("http", "execute_http_request()", "", ""){
+	sockets_t sockets;
 	const auto a = http_request_t { http_request_line_t { "GET", "/index.html", "HTTP/1.0" }, { }, "" };
-	const auto r = execute_http_request(make_http_dest("google.com", 80, AF_INET), pack_http_request(a));
+	const auto r = execute_http_request(sockets, make_http_dest(sockets, "google.com", 80, AF_INET), pack_http_request(a));
 	QUARK_TRACE(r);
 }
 
 QUARK_TEST("http", "execute_http_request()", "", ""){
+	sockets_t sockets;
 	const auto a = http_request_t { http_request_line_t { "GET", "/", "HTTP/1.0" }, std::vector<http_header_t>{ http_header_t{ "Host", "www.google.com" } }, "" };
-	const auto r = execute_http_request(make_http_dest("google.com", 80, AF_INET), pack_http_request(a));
+	const auto r = execute_http_request(sockets, make_http_dest(sockets, "google.com", 80, AF_INET), pack_http_request(a));
 	QUARK_TRACE(r);
 }
 
 QUARK_TEST("http", "execute_http_request()", "", ""){
+sockets_t sockets;
 //	const auto r = execute_http_request(http_request_t { lookup_host("stackoverflow.com", AF_INET).addresses_IPv4[0], 80, AF_INET, "GET / HTTP/1.0" "\r\n" "Host: stackoverflow.com" "\r\n" "\r\n" });
 	const auto a = http_request_t { http_request_line_t { "GET", "/index.html", "HTTP/1.0" }, std::vector<http_header_t>{ http_header_t{ "Host", "www.stackoverflow.com" } }, "" };
-	const auto r = execute_http_request(make_http_dest("stackoverflow.com", 80, AF_INET), pack_http_request(a));
+	const auto r = execute_http_request(sockets, make_http_dest(sockets, "stackoverflow.com", 80, AF_INET), pack_http_request(a));
 	QUARK_TRACE(r);
 }
 
 
+
+
+
+
+
+void execute_http_server(sockets_i& sockets, const server_params_t& params, connection_i& connection){
+	sockets.sockets_i__execute_server(params, connection);
+}
 
 
 
 
 
 struct test_connection_t : public connection_i {
+	test_connection_t(sockets_i* sockets) :
+		sockets(sockets)
+	{
+	}
+
 	public: bool connection_i__on_accept(int socket2) override {
-		const auto read_data = read_socket_string(socket2);
+		const auto read_data = read_socket_string(*sockets, socket2);
 		if(read_data.empty()){
 			QUARK_TRACE("empty");
 		}
@@ -571,26 +589,26 @@ struct test_connection_t : public connection_i {
 						doc
 					}
 				);
-				write_socket_string(socket2, r);
+				write_socket_string(*sockets, socket2, r);
 			}
 			else {
 				std::string r = pack_http_response(http_response_t { http_response_status_line_t { "HTTP/1.1", "404 OK" }, {}, "" });
-				write_socket_string(socket2, r);
+				write_socket_string(*sockets, socket2, r);
 			}
 		}
 		return true;
 	}
-};
 
-void execute_http_server(const server_params_t& params, connection_i& connection){
-	execute_server(params, connection);
-}
+
+	sockets_i* sockets;
+};
 
 #if 0
 //	Warning: this is not a real unit test, it runs forever.
 QUARK_TEST_VIP("http", "execute_http_server", "", ""){
-	test_connection_t test_conn;
-	execute_http_server(server_params_t { 8080 }, test_conn);
+	sockets_t sockets;
+	test_connection_t test_conn { &sockets };
+	execute_http_server(sockets, server_params_t { 8080 }, test_conn);
 }
 
 #endif

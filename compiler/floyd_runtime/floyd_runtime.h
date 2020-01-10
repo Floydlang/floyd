@@ -15,8 +15,10 @@
 #include "compiler_basics.h"
 #include "ast_value.h"
 #include "value_backend.h"
+//#include "floyd_sockets.h"
 
 struct json_t;
+struct sockets_i;
 
 namespace floyd {
 
@@ -120,6 +122,7 @@ struct runtime_t {
 	value_backend_t* backend;
 	runtime_basics_i* basics;
 	runtime_process_i* handler;
+	sockets_i* sockets;
 };
 
 inline value_backend_t& get_backend(runtime_t* runtime){
