@@ -112,6 +112,24 @@ struct route_process_handler_t : public runtime_process_i {
 */
 
 struct runtime_t {
+
+	runtime_t(
+		const std::string& name,
+		value_backend_t* backend,
+		runtime_basics_i* basics,
+		runtime_process_i* handler,
+		sockets_i* sockets
+	) :
+		name(name),
+		backend(backend),
+		basics(basics),
+		handler(handler),
+		sockets(sockets)
+	{
+		QUARK_ASSERT(check_invariant());
+	}
+
+
 	bool check_invariant() const {
 		QUARK_ASSERT(backend != nullptr && backend->check_invariant());
 //		QUARK_ASSERT(handler != nullptr);

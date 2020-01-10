@@ -453,7 +453,7 @@ static std::string strip_link_name(const std::string& platform_link_name){
 
 
 //	Destroys program_breaks, can only called once!
-static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks, runtime_handler_i& runtime_handler, bool trace_processes){
+static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks, runtime_handler_i& runtime_handler, sockets_i& sockets, bool trace_processes){
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(program_breaks.check_invariant());
 
@@ -525,7 +525,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			&instance,
 			ee1,
 			program_breaks.debug_globals,
-			route_t(&runtime_handler, nullptr),
+			route_t(&runtime_handler, nullptr, &sockets),
 			start_time,
 			llvm_bind_t{ k_no_module_symbol, nullptr, type_t::make_undefined() },
 			false,
@@ -555,10 +555,10 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 
 //	Destroys program_breaks, can only run it once!
 //	Also runs floyd_runtime_init() - to execute Floyd's global functions and initialize global constants.
-std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& program_breaks, runtime_handler_i& handler, bool trace_processes){
+std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& program_breaks, runtime_handler_i& handler, sockets_i& sockets, bool trace_processes){
 	QUARK_ASSERT(program_breaks.check_invariant());
 
-	auto ee = make_engine_no_init(*program_breaks.instance, program_breaks, handler, trace_processes);
+	auto ee = make_engine_no_init(*program_breaks.instance, program_breaks, handler, sockets, trace_processes);
 	auto context = llvm_context_t{ ee.get(), nullptr };
 
 //	trace_heap(ee->backend.heap);
@@ -872,7 +872,8 @@ runtime_t make_runtime_ptr(llvm_context_t* p){
 			std::string() + "llvm process" + p->process->_name_key,
 			&p->ee->backend,
 			p->process,
-			p->process
+			p->process,
+			p->process->sockets
 		};
 	}
 	else{
@@ -880,7 +881,8 @@ runtime_t make_runtime_ptr(llvm_context_t* p){
 			"llvm main",
 			&p->ee->backend,
 			&p->ee->_handler_router,
-			&p->ee->_handler_router
+			&p->ee->_handler_router,
+			p->ee->_handler_router.sockets
 		};
 	}
 }

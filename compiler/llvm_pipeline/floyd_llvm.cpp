@@ -15,6 +15,7 @@
 #include "semantic_ast.h"
 #include "compiler_helpers.h"
 #include "floyd_corelib.h"
+#include "floyd_sockets.h"
 #include "text_parser.h"
 
 
@@ -60,7 +61,8 @@ std::vector<bench_t> collect_benchmarks_source(const std::string& program_source
 	auto program = generate_llvm_ir_program(instance, sem_ast, file, settings);
 
 	handler_t handler;
-	auto ee = init_llvm_jit(*program, handler, false);
+	sockets_t sockets;
+	auto ee = init_llvm_jit(*program, handler, sockets, false);
 
 	std::vector<bench_t> b = collect_benchmarks(*ee);
 	return b;
@@ -146,7 +148,8 @@ std::vector<benchmark_result2_t> run_benchmarks_source(
 	auto program = generate_llvm_ir_program(instance, sem_ast, program_source, compiler_settings);
 
 	handler_t handler;
-	auto ee = init_llvm_jit(*program, handler, false);
+	sockets_t sockets;
+	auto ee = init_llvm_jit(*program, handler, sockets, false);
 
 
 	const auto b = collect_benchmarks(*ee);
@@ -233,7 +236,8 @@ std::vector<test_t> collect_tests_source(
 	auto program = generate_llvm_ir_program(instance, sem_ast, file, settings);
 
 	handler_t handler;
-	auto ee = init_llvm_jit(*program, handler, false);
+	sockets_t sockets;
+	auto ee = init_llvm_jit(*program, handler, sockets, false);
 
 	std::vector<test_t> b = collect_tests(*ee);
 	return b;
@@ -357,7 +361,8 @@ std::vector<test_result_t> run_tests_source(
 	auto program = generate_llvm_ir_program(instance, sem_ast, source_path, compiler_settings);
 
 	handler_t handler;
-	auto ee = init_llvm_jit(*program, handler, true);
+	sockets_t sockets;
+	auto ee = init_llvm_jit(*program, handler, sockets, true);
 
 
 	std::vector<test_t> all_tests = collect_tests(*ee);
@@ -440,7 +445,8 @@ QUARK_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'resu
 	auto program = generate_llvm_ir_program(instance, sem_ast, "myfile.floyd", floyd::make_default_compiler_settings());
 
 	floyd::handler_t handler;
-	auto ee = init_llvm_jit(*program, handler, false);
+	sockets_t sockets;
+	auto ee = init_llvm_jit(*program, handler, sockets, false);
 
 	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(*ee, floyd::module_symbol_t("result")));
 	QUARK_ASSERT(result == 6);
@@ -457,7 +463,8 @@ QUARK_TEST("", "From JSON: Simple function call, call print() from floyd_runtime
 	auto program = generate_llvm_ir_program(instance, sem_ast, "myfile.floyd", floyd::make_default_compiler_settings());
 
 	floyd::handler_t handler;
-	auto ee = init_llvm_jit(*program, handler, false);
+	sockets_t sockets;
+	auto ee = init_llvm_jit(*program, handler, sockets, false);
 	QUARK_ASSERT(handler._print_output == std::vector<std::string>{"5"});
 }
 

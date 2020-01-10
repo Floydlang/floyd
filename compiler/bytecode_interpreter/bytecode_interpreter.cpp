@@ -12,6 +12,7 @@
 #include "types.h"
 #include "format_table.h"
 #include <ffi.h>
+#include "floyd_sockets.h"
 
 #include "os_process.h"
 
@@ -310,7 +311,7 @@ static void do_call_instruction_via_libffi(interpreter_t& vm, int target_reg, co
 	const size_t arg0_stack_pos = stack.size() - (function_def_dynamic_arg_count + callee_arg_count);
 	size_t stack_pos = arg0_stack_pos;
 
-	const auto runtime_ptr = runtime_t { vm._name, &backend, &vm, vm._process_handler };
+	const auto runtime_ptr = runtime_t { vm._name, &backend, &vm, vm._process_handler, vm._sockets };
 
 	std::vector<void*> values;
 
@@ -650,11 +651,13 @@ interpreter_t::interpreter_t(
 	const config_t& config,
 	runtime_process_i* process_handler,
 	runtime_handler_i& runtime_handler,
+	sockets_i& sockets,
 	const std::string& name
 ) :
 	_program(program),
 	_process_handler(process_handler),
 	_runtime_handler(&runtime_handler),
+	_sockets(&sockets),
 	_backend(backend),
 	_name(name),
 	_stack { &_backend },
@@ -2223,6 +2226,7 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 
 QUARK_TEST("interpreter_t", "","", ""){
 	types_t types;
+	sockets_t sockets;
 
 	struct handler_t : public runtime_handler_i {
 		handler_t(std::ostream& out) : out(out) {}
@@ -2273,6 +2277,7 @@ QUARK_TEST("interpreter_t", "","", ""){
 		config,
 		nullptr,
 		handler,
+		sockets,
 		"test vm"
 	);
 

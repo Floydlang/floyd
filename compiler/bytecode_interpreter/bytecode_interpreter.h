@@ -208,6 +208,7 @@ struct interpreter_t : runtime_basics_i {
 		const config_t& config,
 		runtime_process_i* process_handler,
 		runtime_handler_i& runtime_handler,
+		sockets_i& sockets,
 		const std::string& name
 	);
 	public: interpreter_t(const interpreter_t& other) = delete;
@@ -411,6 +412,7 @@ struct interpreter_t : runtime_basics_i {
 	public: std::shared_ptr<bc_program_t> _program;
 	public: runtime_process_i* _process_handler;
 	public: runtime_handler_i* _runtime_handler;
+	public: sockets_i* _sockets;
 
 	public: value_backend_t& _backend;
 	public: std::string _name;
