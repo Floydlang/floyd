@@ -141,17 +141,24 @@ inline void throw_format(const std::string& noun_type, const std::string& what){
 */
 
 struct source_code_location {
-	source_code_location(const char source_file[], long line_number) :
-		_line_number(line_number)
+	source_code_location(const char* source_file, long line_number, const char* func) :
+		_source_file(source_file),
+		_line_number(line_number),
+		_func(func)
 	{
 		assert(source_file != nullptr);
-		assert(std::strlen(source_file) <= 1024);
-		strcpy(_source_file, source_file);
+//		assert(std::strlen(source_file) <= 1024);
+//		strcpy(_source_file, source_file);
+		assert(func != nullptr);
 	}
 
-	char _source_file[1024 + 1];
+	const char* _source_file;
 	long _line_number;
+	const char* _func;
 };
+
+#define QUARK_SOURCE_LOCATION() ::quark::source_code_location(__FILE__, __LINE__, __func__)
+
 
 
 ////////////////////////////		runtime_i
@@ -214,7 +221,7 @@ inline void on_problem___put_breakpoint_here(){
 		exit(-1);
 	}
 
-	#define QUARK_ASSERT(x) if(x){}else {::quark::on_assert_hook(::quark::get_runtime(), quark::source_code_location(__FILE__, __LINE__), QUARK_STRING(x)); }
+	#define QUARK_ASSERT(x) if(x){}else {::quark::on_assert_hook(::quark::get_runtime(), QUARK_SOURCE_LOCATION(), QUARK_STRING(x)); }
 #else
 	#define QUARK_ASSERT(x)
 #endif
@@ -268,9 +275,9 @@ inline void throw_feature_not_implemented_yet(){
 
 struct trace_i {
 	public: virtual ~trace_i(){};
-	public: virtual void trace_i__trace(const char s[]) const = 0;
-	public: virtual void trace_i__open_scope(const char s[]) const = 0;
-	public: virtual void trace_i__close_scope(const char s[]) const = 0;
+	public: virtual void trace_i__trace(const source_code_location& location, const char s[]) = 0;
+	public: virtual void trace_i__open_scope(const source_code_location& location, const char s[]) = 0;
+	public: virtual void trace_i__close_scope(const source_code_location& location, const char s[]) = 0;
 	public: virtual int trace_i__get_indent() const = 0;
 };
 
@@ -283,10 +290,10 @@ struct trace_i {
 struct default_tracer_t : public trace_i {
 	public: default_tracer_t();
 
-	public: virtual void trace_i__trace(const char s[]) const;
-	public: virtual void trace_i__open_scope(const char s[]) const;
-	public: virtual void trace_i__close_scope(const char s[]) const;
-	public: virtual int trace_i__get_indent() const;
+	public: void trace_i__trace(const source_code_location& location, const char s[]) override;
+	public: void trace_i__open_scope(const source_code_location& location, const char s[]) override;
+	public: void trace_i__close_scope(const source_code_location& location, const char s[]) override;
+	public: int trace_i__get_indent() const override;
 
 
 	///////////////		State.
@@ -340,19 +347,19 @@ inline void trace_indent(const char s[], int indent, const std::string& indent_s
 
 
 //	Indents each line in s correctly.
-inline void default_tracer_t::trace_i__trace(const char s[]) const{
+inline void default_tracer_t::trace_i__trace(const source_code_location& location, const char s[]){
 	const auto count = strlen(s);
 	if(count > 0){
 		trace_indent(s, _indent, "\t");
 	}
 }
-inline void default_tracer_t::trace_i__open_scope(const char s[]) const{
-	trace_i__trace(s);
+inline void default_tracer_t::trace_i__open_scope(const source_code_location& location, const char s[]){
+	trace_i__trace(location, s);
 	_indent++;
 }
-inline void default_tracer_t::trace_i__close_scope(const char s[]) const{
+inline void default_tracer_t::trace_i__close_scope(const source_code_location& location, const char s[]){
 	_indent--;
-	trace_i__trace(s);
+	trace_i__trace(location, s);
 }
 inline int default_tracer_t::trace_i__get_indent() const{
 	return _indent;
@@ -364,8 +371,8 @@ struct trace_globals_t {
 		_current(nullptr)
 	{
 	}
-	public: const default_tracer_t _default_tracer;
-	public: const trace_i* _current;
+	public: default_tracer_t _default_tracer;
+	public: trace_i* _current;
 };
 
 inline trace_globals_t* get_global_data(){
@@ -380,7 +387,7 @@ inline trace_globals_t* get_global_data(){
 }
 
 
-inline const trace_i& get_trace(){
+inline trace_i& get_trace(){
 	const auto g = get_global_data();
 
 	const auto result = g->_current;
@@ -388,7 +395,7 @@ inline const trace_i& get_trace(){
 	return *result;
 }
 
-inline void set_trace(const trace_i* v){
+inline void set_trace(trace_i* v){
 	const auto g = get_global_data();
 	g->_current = v;
 }
@@ -404,24 +411,24 @@ inline void set_trace(const trace_i* v){
 
 #if QUARK_TRACE_ON
 	struct scoped_trace {
-		scoped_trace(const std::string& s, bool enabled, const trace_i& tracer) :
+		scoped_trace(const source_code_location& location, const std::string& s, bool enabled, trace_i& tracer) :
 			_tracer(tracer),
 			_enabled(enabled)
 		{
 			if(_enabled){
-				_tracer.trace_i__open_scope((s + " {").c_str());
+				_tracer.trace_i__open_scope(location, (s + " {").c_str());
 			}
 		}
 
 		~scoped_trace(){
 			if(_enabled){
-				_tracer.trace_i__close_scope("}");
+				_tracer.trace_i__close_scope({ "", 0, "" }, "}");
 			}
 			else{
 			}
 		}
 
-		private: const trace_i& _tracer;
+		private: trace_i& _tracer;
 		private: bool _enabled;
 	};
 
@@ -430,28 +437,28 @@ inline void set_trace(const trace_i* v){
 		These functions are called by the macros and they in turn call the runtime_i.
 		TODO: Use only trace_context_t, runtime_i should contain a tracer.
 	*/
-	inline void on_trace_hook(const char s[], const trace_i& tracer){
-		tracer.trace_i__trace(s);
+	inline void on_trace_hook(const source_code_location& location, const char s[], trace_i& tracer){
+		tracer.trace_i__trace(location, s);
 	}
 
 	//	Overloaded for char[] and std::string.
-	inline void quark_trace_func(const char s[], const trace_i& tracer){
-		::quark::on_trace_hook(s, tracer);
+	inline void quark_trace_func(const source_code_location& location, const char s[], trace_i& tracer){
+		::quark::on_trace_hook(location, s, tracer);
 	}
-	inline void quark_trace_func(const std::string& s, const trace_i& tracer){
-		quark_trace_func(s.c_str(), tracer);
+	inline void quark_trace_func(const source_code_location& location, const std::string& s, trace_i& tracer){
+		quark_trace_func(location, s.c_str(), tracer);
 	}
-	inline void quark_trace_func(const std::stringstream& s, const trace_i& tracer){
-		quark_trace_func(s.str().c_str(), tracer);
+	inline void quark_trace_func(const source_code_location& location, const std::stringstream& s, trace_i& tracer){
+		quark_trace_func(location, s.str().c_str(), tracer);
 	}
 
-	#define QUARK_TRACE(s) ::quark::quark_trace_func(s, quark::get_trace())
-	#define QUARK_TRACE_SS(x) {std::stringstream ss; ss << x; ::quark::quark_trace_func(ss, quark::get_trace());}
-	#define QUARK_SCOPED_TRACE(s) ::quark::scoped_trace QUARK_UNIQUE_LABEL(scoped_trace) (s, true, quark::get_trace())
-	#define QUARK_SCOPED_TRACE_OPTIONAL(s, enabled) ::quark::scoped_trace QUARK_UNIQUE_LABEL(scoped_trace) (s, enabled, quark::get_trace())
+	#define QUARK_TRACE(s) ::quark::quark_trace_func(QUARK_SOURCE_LOCATION(), s, quark::get_trace())
+	#define QUARK_TRACE_SS(x) {std::stringstream ss; ss << x; ::quark::quark_trace_func(QUARK_SOURCE_LOCATION(), ss, quark::get_trace());}
+	#define QUARK_SCOPED_TRACE(s) ::quark::scoped_trace QUARK_UNIQUE_LABEL(scoped_trace) (QUARK_SOURCE_LOCATION(), s, true, quark::get_trace())
+	#define QUARK_SCOPED_TRACE_OPTIONAL(s, enabled) ::quark::scoped_trace QUARK_UNIQUE_LABEL(scoped_trace) (QUARK_SOURCE_LOCATION(), s, enabled, quark::get_trace())
 #else
 	struct scoped_trace {
-		scoped_trace(const std::string& s, bool enabled, const trace_i& tracer){
+		scoped_trace(const source_code_location& location, const std::string& s, bool enabled, trace_i& tracer){
 		}
 
 		~scoped_trace(){
@@ -466,7 +473,7 @@ inline void set_trace(const trace_i* v){
 
 
 	inline int get_log_indent(){
-		const trace_i& tracer = get_trace();
+		trace_i& tracer = get_trace();
 		return tracer.trace_i__get_indent();
 	}
 
@@ -591,7 +598,7 @@ struct call_context_t {
 
 
 	//### Add argument to unit-test functions that can be used / checked in QUARK_VERIFY().
-	#define QUARK_VERIFY(exp) if(exp){}else{ ::quark::on_unit_test_failed_hook(::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__), QUARK_STRING(exp)); }
+	#define QUARK_VERIFY(exp) if(exp){}else{ ::quark::on_unit_test_failed_hook(::quark::get_runtime(), QUARK_SOURCE_LOCATION(), QUARK_STRING(exp)); }
 
 
 
@@ -694,7 +701,7 @@ inline void ut_verify_stringvec(const quark::call_context_t& context, const std:
 
 #endif
 
-	#define QUARK_POS quark::call_context_t{::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__)}
+	#define QUARK_POS quark::call_context_t{::quark::get_runtime(), QUARK_SOURCE_LOCATION()}
 
 
 #if QUARK_UNIT_TESTS_ON
@@ -733,7 +740,7 @@ inline bool run_test(const unit_test_def& test, bool oneline){
 			return true;
 		}
 		else{
-			::quark::scoped_trace tracer(testInfo.str(), true, quark::get_trace());
+			::quark::scoped_trace tracer(QUARK_SOURCE_LOCATION(), testInfo.str(), true, quark::get_trace());
 			test._test_f();
 			return true;
 		}
@@ -906,8 +913,8 @@ inline void run_tests(const std::vector<std::string>& source_file_order, bool on
 struct default_runtime : public runtime_i {
 	default_runtime(const std::string& test_data_root);
 
-	public: virtual void runtime_i__on_assert(const source_code_location& location, const char expression[]);
-	public: virtual void runtime_i__on_unit_test_failed(const source_code_location& location, const char expression[]);
+	public: void runtime_i__on_assert(const source_code_location& location, const char expression[]) override;
+	public: void runtime_i__on_unit_test_failed(const source_code_location& location, const char expression[]) override;
 
 
 	///////////////		State.

@@ -558,7 +558,7 @@ struct server_connection_t : public connection_i {
 
 //	Blocks forever.
 //	func void execute_http_server(network_component_t c, int port, func void f(int socket)) impure
-void network_component__execute_http_server(runtime_t* frp, rt_pod_t c, rt_pod_t port, rt_pod_t f){
+static void network_component__execute_http_server(runtime_t* frp, rt_pod_t c, rt_pod_t port, rt_pod_t f){
 	const auto port2 = port.int_value;
 
 	server_connection_t connection { frp, f };

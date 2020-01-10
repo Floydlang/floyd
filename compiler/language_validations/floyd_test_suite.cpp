@@ -8214,9 +8214,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "map()", "map() from inside another map()",
 	)");
 }
 
-#if 1
-//	??? CRASHES.
-FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "Multi-process HTTP server", ""){
+FLOYD_LANG_PROOF("network component", "call BC function from 2nd thread -- used to crash in d98c84ce9cd5ddd8ccbab350aebf4108482d18e0", "", ""){
 	ut_run_closed_lib(
 		QUARK_POS,
 		R"___(
@@ -8272,15 +8270,14 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "Multi-proces
 		)___"
 	);
 }
-#endif
 
 
 
 
 
-#if 0
+#if 1
 //	WARNING: This test never completes + is impure.
-FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "Multi-process HTTP server", "", ""){
+FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "Multi-process HTTP server", ""){
 	ut_run_closed_lib(
 		QUARK_POS,
 		R"(

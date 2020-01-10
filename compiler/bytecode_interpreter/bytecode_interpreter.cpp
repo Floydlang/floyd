@@ -379,10 +379,9 @@ static void do_call_instruction_via_libffi(interpreter_t& vm, int target_reg, co
 
 //	The arguments are already on the floyd stack.
 //	Returns the call's return value or void.
-//	Stack: 76 bytes
 static rt_value_t complete_frame_and_make_call(interpreter_t& vm, const func_link_t& func_link, int callee_arg_count){
 
-trace_psthread_stack_info();
+TRACE_STACK();
 
 	QUARK_ASSERT(vm.check_invariant());
 	const auto& backend = vm._backend;
@@ -408,7 +407,7 @@ trace_psthread_stack_info();
 
 trace_interpreter(vm, 0);
 
-trace_psthread_stack_info();
+TRACE_STACK();
 
 	const auto result = execute_instructions(vm, static_frame_ptr->_instructions);
 	QUARK_ASSERT(result.second.check_invariant());
@@ -431,9 +430,8 @@ trace_psthread_stack_info();
 
 //	This is a floyd function, with a static_frame_ptr to execute.
 //	The arguments are already on the floyd stack.
-//	188 bytes
 static void do_call_instruction_bc(interpreter_t& vm, int target_reg, const func_link_t& func_link, int callee_arg_count){
-	trace_psthread_stack_info();
+	TRACE_STACK();
 
 	QUARK_ASSERT(vm.check_invariant());
 	const auto& backend = vm._backend;
@@ -450,7 +448,7 @@ static void do_call_instruction_bc(interpreter_t& vm, int target_reg, const func
 	//	We need to remember the global pos where to store return value, since we're switching frame to called function's.
 	const auto result_reg_pos = &vm.get_current_frame_regs()[target_reg] - vm._stack._entries;
 
-	trace_psthread_stack_info();
+	TRACE_STACK();
 
 	const auto result = complete_frame_and_make_call(vm, func_link, callee_arg_count);
 
@@ -464,9 +462,6 @@ static void do_call_instruction_bc(interpreter_t& vm, int target_reg, const func
 	QUARK_ASSERT(vm.check_invariant());
 }
 
-		void network_component__execute_http_server(runtime_t* frp, rt_pod_t c, rt_pod_t port, rt_pod_t f);
-
-// 75 bytes
 static void do_call_instruction(interpreter_t& vm, int target_reg, const rt_pod_t callee, int callee_arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	const auto& backend = vm._backend;
@@ -478,24 +473,11 @@ static void do_call_instruction(interpreter_t& vm, int target_reg, const rt_pod_
 	const auto& func_link = *func_link_ptr;
 
 	if(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc){
-		trace_psthread_stack_info();
+		TRACE_STACK();
 		do_call_instruction_bc(vm, target_reg, func_link, callee_arg_count);
 	}
 	else if(func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc){
-		if(false && func_link.module_symbol.s == "execute_http_server"){
-
-			auto runtime_ptr = runtime_t { vm._name, &vm._backend, &vm, vm._process_handler };
-
-			//			static void network_component__execute_http_server(runtime_t* frp, rt_pod_t c, rt_pod_t port, rt_pod_t f){
-
-			rt_pod_t c = vm._stack._entries[vm._stack._stack_size - 3 + 0];
-			rt_pod_t port = vm._stack._entries[vm._stack._stack_size - 3 + 1];
-			rt_pod_t f = vm._stack._entries[vm._stack._stack_size - 3 + 2];
-			network_component__execute_http_server(&runtime_ptr, c, port, f);
-		}
-		else{
-			do_call_instruction_via_libffi(vm, target_reg, func_link, callee_arg_count);
-		}
+		do_call_instruction_via_libffi(vm, target_reg, func_link, callee_arg_count);
 	}
 	else{
 		quark::throw_defective_request();
@@ -504,9 +486,8 @@ static void do_call_instruction(interpreter_t& vm, int target_reg, const rt_pod_
 	QUARK_ASSERT(vm.check_invariant());
 }
 
-//488
 rt_value_t call_function_bc(interpreter_t& vm, const rt_value_t& f, const rt_value_t args[], int callee_arg_count){
-	trace_psthread_stack_info();
+	TRACE_STACK();
 
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant() && f._type.is_function());
@@ -559,7 +540,7 @@ trace_interpreter(vm, 0);
 			vm._stack.push_external_value(bc);
 		}
 
-		trace_psthread_stack_info();
+		TRACE_STACK();
 
 		const auto result = complete_frame_and_make_call(vm, func_link, callee_arg_count);
 
@@ -956,7 +937,7 @@ void trace_interpreter(interpreter_t& vm, size_t pc){
 		return;
 	}
 
-	trace_psthread_stack_info();
+	TRACE_STACK();
 
 	QUARK_SCOPED_TRACE(vm._name);
 
@@ -1184,7 +1165,7 @@ static void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t targ
 
 // 216 bytes stack
 std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions){
-	trace_psthread_stack_info();
+	TRACE_STACK();
 
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(
@@ -1762,11 +1743,11 @@ std::pair<bc_typeid_t, rt_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(vm.check_reg_function(i._b));
 
-			trace_psthread_stack_info();
+			TRACE_STACK();
 
 			do_call_instruction(vm, i._a, regs[i._b], i._c);
 
-			trace_psthread_stack_info();
+			TRACE_STACK();
 
 			static_frame_ptr = vm._current_frame._static_frame_ptr;
 			regs = vm.get_current_frame_regs();

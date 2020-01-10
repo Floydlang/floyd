@@ -264,7 +264,7 @@ static void run_process(bc_execution_engine_t& ee, bc_process_t* process0){
 	QUARK_ASSERT(ee.check_invariant_thread_safe());
 	QUARK_ASSERT(process0 != nullptr && process0->check_invariant());
 
-	trace_psthread_stack_info();
+	TRACE_STACK();
 
 	auto& process = *process0;
 
@@ -404,7 +404,7 @@ static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& confi
 					[](bc_process_t* process_ptr){
 						QUARK_ASSERT(process_ptr != nullptr && process_ptr->check_invariant());
 
-						trace_psthread_stack_info();
+						TRACE_STACK();
 
 #if 0
 						set_current_threads_name(process_ptr->_name_key);
@@ -419,8 +419,10 @@ static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& confi
 			}
 		}
 
+/*
 	while(true){
 	}
+*/
 
 		//	Run process 0 using main thread.
 		run_process(ee, ee._processes[0].get());

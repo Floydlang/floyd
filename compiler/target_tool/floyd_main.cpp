@@ -16,6 +16,7 @@
 #include "floyd_runtime.h"
 #include "bytecode_execution_engine.h"
 #include "floyd_parser.h"
+#include "os_process.h"
 
 #include "floyd_llvm.h"
 #include "floyd_llvm_execution_engine.h"
@@ -120,34 +121,74 @@ static void run_tests(){
 struct floyd_tracer : public quark::trace_i {
 	public: floyd_tracer();
 
-	public: virtual void trace_i__trace(const char s[]) const;
-	public: virtual void trace_i__open_scope(const char s[]) const;
-	public: virtual void trace_i__close_scope(const char s[]) const;
-	public: virtual int trace_i__get_indent() const;
+	public: void trace_i__trace(const quark::source_code_location& location, const char s[]) override;
+	public: void trace_i__open_scope(const quark::source_code_location& location, const char s[]) override;
+	public: void trace_i__close_scope(const quark::source_code_location& location, const char s[]) override;
+	public: int trace_i__get_indent() const override;
 
+
+	
 
 	///////////////		State.
 	public: quark::default_tracer_t def;
+
+	void push(const stack_info_light_t& info){
+		const auto count = write_index - read_index;
+		if(count == 65536){
+			read_index++;
+			stack_traces[write_index & 65535] = info;
+			write_index++;
+		}
+		else if(count < 65536){
+			stack_traces[write_index & 65535] = info;
+			write_index++;
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+	int get_count() const{
+		const auto count = write_index - read_index;
+		return count;
+	}
+	std::vector<stack_info_light_t> get(int count){
+		const auto count2 = write_index - read_index;
+		const auto count3 = std::min(count, count2);
+
+		std::vector<stack_info_light_t> result;
+		for(int i = 0 ; i < count3 ; i++){
+			const auto& e = stack_traces[read_index & 65535];
+			read_index++;
+			result.push_back(e);
+		}
+		return result;
+	}
+
+	public: stack_info_light_t stack_traces[65536];
+	public: int read_index;
+	public: int write_index;
 };
 
 floyd_tracer::floyd_tracer(){
 }
 
-void floyd_tracer::trace_i__trace(const char s[]) const {
+void floyd_tracer::trace_i__trace(const quark::source_code_location& location, const char s[]){
 	if(g_trace_on){
-		def.trace_i__trace(s);
+		push(sample_stack_light());
+
+		def.trace_i__trace(location, s);
 	}
 }
 
-void floyd_tracer::trace_i__open_scope(const char s[]) const {
+void floyd_tracer::trace_i__open_scope(const quark::source_code_location& location, const char s[]){
 	if(g_trace_on){
-		def.trace_i__open_scope(s);
+		def.trace_i__open_scope(location, s);
 	}
 }
 
-void floyd_tracer::trace_i__close_scope(const char s[]) const{
+void floyd_tracer::trace_i__close_scope(const quark::source_code_location& location, const char s[]){
 	if(g_trace_on){
-		def.trace_i__close_scope(s);
+		def.trace_i__close_scope(location, s);
 	}
 }
 
