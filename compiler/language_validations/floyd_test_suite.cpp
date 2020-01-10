@@ -8275,7 +8275,7 @@ FLOYD_LANG_PROOF("network component", "call BC function from 2nd thread -- used 
 
 
 
-#if 1
+#if 0
 //	WARNING: This test never completes + is impure.
 FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "Multi-process HTTP server", ""){
 	ut_run_closed_lib(
