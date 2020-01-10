@@ -8139,6 +8139,19 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "", ""){
 
 			let c = network_component_t(666)
 
+			func string make_webpage(){
+				let doc = "
+					<head>
+						<title>Hello Floyd Server</title>
+					</head>
+					<body>
+						<h1>Hello Floyd Server</h1>
+						This document may be found <a HREF=\"https://stackoverflow.com/index.html\">here</a>
+					</body>
+				"
+				return doc
+			}
+
 			func void f(int socket_id) impure{
 				let read_data = read_socket(socket_id)
 				if(read_data == ""){
@@ -8149,16 +8162,7 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "", ""){
 
 					if(request.request_line == http_request_line_t( "GET", "/info.html", "HTTP/1.1" )){
 						print("Serving page\n")
-						let doc = "
-							<head>
-								<title>Hello Floyd Server</title>
-							</head>
-							<body>
-								<h1>Hello Floyd Server</h1>
-								This document may be found <a HREF=\"https://stackoverflow.com/index.html\">here</a>
-							</body>
-						"
-
+						let doc = make_webpage()
 						let r = pack_http_response(
 							http_response_t (
 								http_response_status_line_t ( "HTTP/1.1", "200 OK" ),
@@ -8214,7 +8218,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "map()", "map() from inside another map()",
 	)");
 }
 
-FLOYD_LANG_PROOF("network component", "call BC function from 2nd thread -- used to crash in d98c84ce9cd5ddd8ccbab350aebf4108482d18e0", "", ""){
+FLOYD_LANG_PROOF("regression test", "call BC function from 2nd thread -- used to crash in d98c84ce9cd5ddd8ccbab350aebf4108482d18e0", "", ""){
 	ut_run_closed_lib(
 		QUARK_POS,
 		R"___(
@@ -8275,15 +8279,14 @@ FLOYD_LANG_PROOF("network component", "call BC function from 2nd thread -- used 
 
 
 
-#if 0
+#if 1
 //	WARNING: This test never completes + is impure.
-FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "Multi-process HTTP server", ""){
+FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "DEMO Multi-process HTTP server", ""){
 	ut_run_closed_lib(
 		QUARK_POS,
 		R"(
 
 			let c = network_component_t(666)
-
 
 			container-def {
 				"name": "",
@@ -8310,6 +8313,20 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "Multi-proces
 
 			struct server_t { int audio ; doc_t doc }
 
+
+			func string make_webpage(){
+				let s = "
+					<head>
+						<title>Hello Floyd Server</title>
+					</head>
+					<body>
+						<h1>Hello Floyd Server</h1>
+						This document may be found <a HREF=\"https://stackoverflow.com/index.html\">here</a>
+					</body>
+				"
+				return s
+			}
+
 			func void f(int socket_id) impure {
 				let read_data = read_socket(socket_id)
 				if(read_data == ""){
@@ -8320,24 +8337,16 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "Multi-proces
 
 					if(request.request_line == http_request_line_t( "GET", "/info.html", "HTTP/1.1" )){
 						print("Serving page\n")
-						let doc = "
-							<head>
-								<title>Hello Floyd Server</title>
-							</head>
-							<body>
-								<h1>Hello Floyd Server</h1>
-								This document may be found <a HREF=\"https://stackoverflow.com/index.html\">here</a>
-							</body>
-						"
+						let page = make_webpage()
 
 						let r = pack_http_response(
 							http_response_t (
 								http_response_status_line_t ( "HTTP/1.1", "200 OK" ),
 								[
 									http_header_t( "Content-Type", "text/html" ),
-									http_header_t( "Content-Length", to_string(size(doc)) )
+									http_header_t( "Content-Length", to_string(size(page)) )
 								],
-								doc
+								page
 							)
 						)
 						write_socket(socket_id, r)
