@@ -81,10 +81,9 @@ QUARK_TEST_VIP("", "", "", ""){
 
 static const size_t k_low_stack = 100000;
 
-void trace_psthread_stack_info(){
-	uint64_t probe = 0x0123456789abcdef;
 
-	const uint8_t* stack_pos = (uint8_t*)&probe;
+stack_info_t sample_stack(){
+	uint64_t probe = 0x0123456789abcdef;
 
 	const auto p = pthread_self();
 
@@ -94,37 +93,52 @@ void trace_psthread_stack_info(){
 
 //	pthread_id_np_t tid = pthread_getthreadid_np();
 
-	char name_buffer[200 + 1];
-	int	name_x = pthread_getname_np(p, name_buffer, 200);
+	char name_buffer[100 + 1];
+	int	name_x = pthread_getname_np(p, name_buffer, 100);
 	(void)name_x;
-	const auto name = std::string(name_buffer);
 
 	/* returns non-zero if the current thread is the main thread */
 	const int is_main = pthread_main_np();
-	if(false && is_main == 1){
-		return;
-	}
 
 	const size_t size = pthread_get_stacksize_np(p);
 	const uint8_t* stack_base_high = (uint8_t*)pthread_get_stackaddr_np(p);
 	const uint8_t* stack_end_low = stack_base_high - size;
 
-	const auto used_bytes = stack_base_high - stack_pos;
-	const auto free_bytes = stack_pos - stack_end_low;
-#if 0
+	stack_info_t result;
+	result.stack_pos = (uint8_t*)&probe;
+	result.stack_base_high = stack_base_high;
+	result.stack_end_low = stack_end_low;
+	strcpy(result.thread_name, name_buffer);
+	result.thread_id = thread_id;
+	result.is_main_thread = is_main == 1;
+	return result;
+}
+
+
+void trace_psthread_stack_info(){
+	const auto s = sample_stack();
+
+	if(s.is_main_thread){
+		return;
+	}
+
+	const auto size = s.stack_base_high - s.stack_end_low;
+	const auto used_bytes = s.stack_base_high - s.stack_pos;
+	const auto free_bytes = s.stack_pos - s.stack_end_low;
+#if 1
 	QUARK_TRACE_SS(
 		"PTHREAD INFO "
-		<< thread_id
-		<< " probe addr:" << ptr_to_hexstring(stack_pos)
+		<< s.thread_id
+		<< " probe addr:" << ptr_to_hexstring(s.stack_pos)
 
-		<< " (" << ptr_to_hexstring(stack_base_high)
-		<< " - " << ptr_to_hexstring(stack_end_low) << ")"
+		<< " (" << ptr_to_hexstring(s.stack_base_high)
+		<< " - " << ptr_to_hexstring(s.stack_end_low) << ")"
 
 		<< ", size: " << size
 		<< ", used: " << used_bytes
 		<< ", free: " << free_bytes
-		<< ", name: " << name
-		<< ", main: " << (is_main == 1 ? "YES" : "NO")
+		<< ", name: " << std::string(s.thread_name)
+		<< ", main: " << (s.is_main_thread ? "YES" : "NO")
 		<< (free_bytes < k_low_stack ? "•••LOW-STACK•••" : "")
 	);
 #else
