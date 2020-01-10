@@ -31,6 +31,7 @@
 #ifndef value_backend_hpp
 #define value_backend_hpp
 
+#include <climits>
 #include "immer/vector.hpp"
 #include "immer/map.hpp"
 

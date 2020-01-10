@@ -85,7 +85,11 @@ bytecode_interpreter/bytecode_generator.cpp
 #bytecode_interpreter/bytecode_helpers.cpp
 bytecode_interpreter/bytecode_interpreter.cpp
 bytecode_interpreter/bytecode_intrinsics.cpp
-bytecode_interpreter/floyd_interpreter.cpp
+bytecode_interpreter/bytecode_execution_engine.cpp
+bytecode_interpreter/bytecode_isa.cpp
+bytecode_interpreter/bytecode_program.cpp
+#bytecode_interpreter/floyd_interpreter.cpp
+bytecode_interpreter/bytecode_stack.cpp
 cpp_experiments.cpp
 floyd_ast/floyd_ast.cpp
 floyd_ast/ast_visitor.cpp
@@ -138,7 +142,7 @@ llvm_pipeline/floyd_llvm_codegen_basics.cpp
 llvm_pipeline/floyd_llvm_helpers.cpp
 llvm_pipeline/floyd_llvm_intrinsics.cpp
 llvm_pipeline/floyd_llvm_optimization.cpp
-llvm_pipeline/floyd_llvm_runtime.cpp
+llvm_pipeline/floyd_llvm_execution_engine.cpp
 llvm_pipeline/floyd_llvm_runtime_functions.cpp
 llvm_pipeline/floyd_llvm_types.cpp
 parts/command_line_parser.cpp
@@ -221,7 +225,7 @@ bytecode_interpreter/bytecode_generator.cpp
 bytecode_interpreter/bytecode_helpers.cpp
 bytecode_interpreter/bytecode_interpreter.cpp
 bytecode_interpreter/bytecode_intrinsics.cpp
-bytecode_interpreter/floyd_interpreter.cpp
+#bytecode_interpreter/floyd_interpreter.cpp
 cpp_experiments.cpp
 #examples/process_test1.floyd
 #examples/test_main.floyd

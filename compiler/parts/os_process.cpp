@@ -82,7 +82,7 @@ QUARK_TEST_VIP("", "", "", ""){
 static const size_t k_low_stack = 100000;
 
 
-
+#ifdef __APPLE__
 stack_info_light_t sample_stack_light(){
 	uint64_t probe = 0x0123456789abcdef;
 
@@ -91,7 +91,6 @@ stack_info_light_t sample_stack_light(){
 	__uint64_t thread_id = 0;
 	const int err = pthread_threadid_np(p, &thread_id);
 	QUARK_ASSERT(err == 0);
-
 	const size_t size = pthread_get_stacksize_np(p);
 	const uint8_t* stack_base_high = (uint8_t*)pthread_get_stackaddr_np(p);
 	const uint8_t* stack_end_low = stack_base_high - size;
@@ -124,6 +123,40 @@ stack_info_t sample_stack(){
 	result.is_main_thread = is_main == 1;
 	return result;
 }
+
+
+#else 
+stack_info_light_t sample_stack_light(){
+	pthread_attr_t tattr;
+	size_t actualStackSize=0;
+	const auto p = pthread_self();
+
+	pthread_getattr_np(p, &tattr);
+	if (pthread_attr_getstacksize(&tattr, &actualStackSize) == 0){
+		// Success
+	}
+
+	void *addr;
+    size_t size;
+	pthread_attr_getstack(&tattr,
+                          &addr,  &size);
+
+	stack_info_light_t result;
+	const uint8_t* stack_base_high = (uint8_t*)addr;
+	const uint8_t* stack_end_low = stack_base_high - size;
+	return result;
+}
+
+stack_info_t sample_stack(){
+	const auto light = sample_stack_light();
+
+    stack_info_t result = {0};
+	result.light = light;
+	return result;
+
+}
+
+#endif
 
 
 //	Result is not a valid FS path -- it's for preview only.
