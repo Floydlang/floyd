@@ -8369,12 +8369,28 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "DEMO Multi-p
 			}
 
 
-
 			////////////////////////////////	MAIN
+
+
+			func void sleep_busy(int ms) impure {
+				let end_ms = get_time_of_day() + ms
+				while(get_time_of_day() < end_ms){
+				}
+			}
 
 			struct main_t { int count ; doc_t doc }
 
 			func main_t my_main__init() impure {
+				mutable x = 0
+				for(i in 0 ..< 100000){
+					print("main is running: ") ; print(x) ; print("\n")
+					x = x + 1
+					if(x == 40){
+						x = 0
+					}
+					sleep_busy(3000)
+				}
+
 				return main_t(1000, doc_t([ 0.0, 1.0, 2.0 ]))
 			}
 
@@ -8390,17 +8406,11 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "DEMO Multi-p
 /*
  			////////////////////////////////	MAIN
 
-			func void sleep(int ns){
-				mutable x = 0
-				for(i in 0 ..< ns){
-					x = x + 1
-				}
-			}
 
 			struct main_t { int count ; doc_t doc }
 
 			func main_t my_main__init() impure {
-				sleep(3000)
+				sleep_busy(3000)
 				mutable x = 0
 				for(i in 0 ..< 100000){
 					print("main is running: ") ; print(x) ; print("\n")
