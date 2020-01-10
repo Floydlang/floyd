@@ -3485,11 +3485,11 @@ Stores a UDT.
 	}
 
 <a id="gettime_ofday"></a>
-### get\_time\_of\_day()
+### get\_time\_ns()
 
-Returns the computer's realtime clock, expressed in the number of milliseconds since system start. Useful to measure program execution. Sample get_time_of_day() before and after execution and compare them to see duration.
+Returns the computer's realtime clock, expressed in the number of nameseconds. It's undefined if 0 is system startup time or another time. Useful to measure program execution. Sample get_time_ns() before and after execution and compare them to see duration.
 
-	int get_time_of_day() impure
+	int get_time_ns() impure
 
 
 

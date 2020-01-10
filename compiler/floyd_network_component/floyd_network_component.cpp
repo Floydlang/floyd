@@ -114,12 +114,6 @@ static const std::string k_network_component_header = R"(
 		string optional_body
 	}
 
-/*
-	func int get_time_ns() impure {
-		return get_time_of_day() * 1000
-	}
-*/
-
 	func string pack_http_response(http_response_t r)
 	func http_response_t unpack_http_response(string s)
 

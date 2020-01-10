@@ -6558,30 +6558,30 @@ FLOYD_LANG_PROOF("Floyd test suite", "calc_binary_sha1()", "", ""){
 
 
 
-//////////////////////////////////////////		CORE LIBRARY - get_time_of_day()
+//////////////////////////////////////////		CORE LIBRARY - get_time_ns()
 
-FLOYD_LANG_PROOF("Floyd test suite", "get_time_of_day()", "", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "get_time_ns()", "", ""){
 	ut_run_closed_lib(QUARK_POS, R"(
 
-		let start = get_time_of_day()
+		let start = get_time_ns()
 		mutable b = 0
 		mutable t = [0]
 		for(i in 0...100){
 			b = b + 1
 			t = push_back(t, b)
 		}
-		let end = get_time_of_day()
+		let end = get_time_ns()
 //		print("Duration: " + to_string(end - start) + ", number = " + to_string(b))
 //		print(t)
 
 	)");
 }
 
-FLOYD_LANG_PROOF("Floyd test suite", "get_time_of_day()", "", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "get_time_ns()", "", ""){
 	ut_run_closed_lib(QUARK_POS, R"(
 
-		let int a = get_time_of_day()
-		let int b = get_time_of_day()
+		let int a = get_time_ns()
+		let int b = get_time_ns()
 		let int c = b - a
 //		print("Delta time:" + to_string(a))
 
@@ -8279,7 +8279,7 @@ FLOYD_LANG_PROOF("regression test", "call BC function from 2nd thread -- used to
 
 
 
-#if 1
+#if 0
 //	WARNING: This test never completes + is impure.
 FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "DEMO Multi-process HTTP server", ""){
 	ut_run_closed_lib(
@@ -8373,8 +8373,8 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "DEMO Multi-p
 
 
 			func void sleep_busy(int ms) impure {
-				let end_ms = get_time_of_day() + ms
-				while(get_time_of_day() < end_ms){
+				let end_ns = get_time_ns() + ms * 1000
+				while(get_time_ns() < end_ns){
 				}
 			}
 
