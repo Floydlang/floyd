@@ -565,6 +565,14 @@ struct server_connection_t : public connection_i {
 static void network_component__execute_http_server(runtime_t* frp, rt_pod_t c, rt_pod_t port, rt_pod_t f, rt_type_t f_type, rt_pod_t context, rt_type_t context_type){
 	const auto port2 = port.int_value;
 
+	const auto f2 = type_t(f_type);
+	const auto& types = frp->backend->types;
+	if(f2.is_function() && f2.get_function_return(types).is_bool() && f2.get_function_args(types).size() == 2 && f2.get_function_args(types)[0].is_int() && f2.get_function_args(types)[1] == type_t(context_type)){
+	}
+	else{
+		quark::throw_runtime_error("execute_http_server() - the function has wrong type");
+	}
+
 	server_connection_t connection { frp, f, f_type, context, context_type };
 	execute_http_server(server_params_t { (int)port2 }, connection);
 }

@@ -332,6 +332,9 @@ void ut_verify_mainfunc_return_nolib(const quark::call_context_t& context, const
 void ut_verify_exception_nolib(const quark::call_context_t& context, const std::string& program, const std::string& expected_what){
 	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), make_default_compiler_settings(), {}, check_exception(expected_what), false);
 }
+void ut_verify_exception_lib(const quark::call_context_t& context, const std::string& program, const std::string& expected_what){
+	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_include_core_lib), make_default_compiler_settings(), {}, check_exception(expected_what), false);
+}
 
 
 

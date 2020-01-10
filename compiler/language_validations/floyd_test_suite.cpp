@@ -8130,9 +8130,9 @@ FLOYD_LANG_PROOF("network component", "execute_http_request()", "", ""){
 }
 
 
-#if 1
+#if 0
 //	WARNING: This test never completes + is impure.
-FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "", ""){
+FLOYD_LANG_PROOF("network component", "execute_http_server()", "", ""){
 	ut_run_closed_lib(
 		QUARK_POS,
 		R"(
@@ -8193,9 +8193,7 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "", ""){
 #endif
 
 
-
-
-FLOYD_LANG_PROOF("Floyd test suite", "map()", "map() from inside another map()", ""){
+FLOYD_LANG_PROOF("regression test", "map()", "map() from inside another map()", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(
 
 		struct context_t { int a string b }
@@ -8277,7 +8275,22 @@ FLOYD_LANG_PROOF("regression test", "call BC function from 2nd thread -- used to
 	);
 }
 
+FLOYD_LANG_PROOF("network component", "execute_http_server()", "Make sure f's type is checked", ""){
+	ut_verify_exception_lib(
+		QUARK_POS,
+		R"(
 
+			func bool f(int socket_id) impure {
+				return true
+			}
+
+			let c = network_component_t(666)
+			execute_http_server(c, 8080, f, 0)
+
+		)",
+		"execute_http_server() - the function has wrong type"
+	);
+}
 
 
 
@@ -8329,7 +8342,7 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "DEMO Multi-p
 				return s
 			}
 
-			func void f(int socket_id) impure {
+			func bool f(int socket_id) impure {
 				let read_data = read_socket(socket_id)
 				if(read_data == ""){
 					print("empty request\n")
@@ -8358,11 +8371,11 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "DEMO Multi-p
 						write_socket(socket_id, r)
 					}
 				}
-
+				return true
 			}
 
 			func server_t my_server__init() impure {
-				execute_http_server(c, 8080, f)
+				execute_http_server(c, 8080, f, 0)
 			}
 
 			func server_t my_server__msg(server_t state, server_message_t m) impure {
@@ -8405,26 +8418,4 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "DEMO Multi-p
 	);
 }
 #endif
-/*
- 			////////////////////////////////	MAIN
-
-
-			struct main_t { int count ; doc_t doc }
-
-			func main_t my_main__init() impure {
-				sleep_busy(3000)
-				mutable x = 0
-				for(i in 0 ..< 100000){
-					print("main is running: ") ; print(x) ; print("\n")
-					x = x + 1
-					if(x == 40){
-						x = 0
-					}
-					sleep(10000)
-				}
-//				send("gui", gui_message_t("key_press"))
-				return main_t(1000, doc_t([ 0.0, 1.0, 2.0 ]))
-			}
-*/
-
 

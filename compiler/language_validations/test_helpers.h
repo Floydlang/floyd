@@ -85,6 +85,7 @@ void ut_run_closed_lib(const quark::call_context_t& context, const std::string& 
 void ut_verify_mainfunc_return_nolib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& args, int64_t expected_return);
 
 void ut_verify_exception_nolib(const quark::call_context_t& context, const std::string& program, const std::string& expected_what);
+void ut_verify_exception_lib(const quark::call_context_t& context, const std::string& program, const std::string& expected_what);
 
 
 } // floyd
