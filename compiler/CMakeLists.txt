@@ -20,8 +20,10 @@ SET (CMAKE_BUILD_TYPE Debug)
 
 include_directories(/usr/local/Cellar/llvm@8/8.0.1/include
 floyd_network_component 
+/usr/lib/libffi-3.2.1/include
 /usr/lib/llvm-8/include passes parts target_tool  /usr/include target_benchmark_internals libs/benchmark/include libs/benchmark/googletest/googlemock/ libs/benchmark/googletest/googlemock/include libs/benchmark/googletest/googletest/include/ floyd_runtime floyd_basics floyd_ast bytecode_interpreter  parts/immer-master floyd_parser parts/sha1 llvm_pipeline  .)
 
+include_directories(/home/olof/work/floyd/llvm-project/llvm/include/)
 if (MSVC)  # - Microsoft Visual C++
 set (PROJECTNAME_ARCHITECTURE "x64")
 endif()
@@ -78,14 +80,14 @@ set(CMAKE_CXX_FLAGS "-D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACR
 
 
 set(FLOYD_SOURCES
-bytecode_interpreter/bytecode_corelib.cpp
+#bytecode_interpreter/bytecode_corelib.cpp
 bytecode_interpreter/bytecode_generator.cpp
-bytecode_interpreter/bytecode_helpers.cpp
+#bytecode_interpreter/bytecode_helpers.cpp
 bytecode_interpreter/bytecode_interpreter.cpp
 bytecode_interpreter/bytecode_intrinsics.cpp
 bytecode_interpreter/floyd_interpreter.cpp
 cpp_experiments.cpp
-floyd_ast/ast.cpp
+floyd_ast/floyd_ast.cpp
 floyd_ast/ast_visitor.cpp
 floyd_ast/expression.cpp
 floyd_ast/statement.cpp
@@ -103,9 +105,10 @@ floyd_runtime/floyd_runtime.cpp
 floyd_runtime/quadratic_probing_hash_table.cpp
 floyd_runtime/value_backend.cpp
 floyd_runtime/value_features.cpp
-floyd_runtime/value_thunking.cpp
+#floyd_runtime/value_thunking.cpp
 floyd_runtime/variable_length_quantity.cpp
 floyd_runtime/write_cache.cpp
+floyd_runtime/floyd_intrinsics.cpp
 language_validations/floyd_test_suite.cpp
 language_validations/issue_regression_tests.cpp
 language_validations/test_helpers.cpp
@@ -131,7 +134,7 @@ libs/benchmark/src/timers.cc
 llvm_pipeline/floyd_llvm.cpp
 llvm_pipeline/floyd_llvm_codegen.cpp
 llvm_pipeline/floyd_llvm_codegen_basics.cpp
-llvm_pipeline/floyd_llvm_corelib.cpp
+#llvm_pipeline/floyd_llvm_corelib.cpp
 llvm_pipeline/floyd_llvm_helpers.cpp
 llvm_pipeline/floyd_llvm_intrinsics.cpp
 llvm_pipeline/floyd_llvm_optimization.cpp
@@ -342,12 +345,12 @@ elseif(APPLE)
 target_link_options(floyd  PRIVATE "-L/usr/local/opt/llvm/lib,-L/usr/local/opt/llvm@8/lib -Wl,-rpath,/usr/local/opt/llvm@8/lib")
 target_link_libraries( floyd
 ${FLOYD_SPEAK_STATIC_DEPENDENCIES}
-${FLOYD_SPEAK_DEPENDENCIES} pthread LLVM ${LLVM_LIB} readline)
+${FLOYD_SPEAK_DEPENDENCIES} pthread LLVM ${LLVM_LIB} readline ffi)
 
 else()
 target_link_libraries( floyd
 ${FLOYD_SPEAK_STATIC_DEPENDENCIES}
-${FLOYD_SPEAK_DEPENDENCIES} pthread LLVM-8 ${LLVM_LIB} edit)
+${FLOYD_SPEAK_DEPENDENCIES} pthread LLVM-8 ${LLVM_LIB} edit ffi)
 ENDIF()
 
 
