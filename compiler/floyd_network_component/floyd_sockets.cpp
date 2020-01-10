@@ -388,7 +388,8 @@ void execute_server(const server_params_t& params, connection_i& connection){
 		throw_errno2("listen()", get_unix_err());
 	}
 
-	while(true){
+	bool keep_running_flag = true;
+	while(keep_running_flag){
 		int addrlen = sizeof(address);
 		const auto socket2 = accept(socket1._fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
 		if (socket2 < 0){
@@ -397,8 +398,9 @@ void execute_server(const server_params_t& params, connection_i& connection){
 		}
 
 		//	This returns when the client-server session is done.
-		connection.connection_i__on_accept(socket2);
-
+		const auto continue_flag = connection.connection_i__on_accept(socket2);
 		::close(socket2);
+
+		keep_running_flag = continue_flag;
 	}
 }

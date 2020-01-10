@@ -116,7 +116,7 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 	- [3.4 DATE AND TIME](#34-date-and-time)
 		- [time\_ms\_t](#timemst)
 		- [date_t](#date_t)
-		- [get\_time\_of\_day\(\)](#gettime_ofday)
+		- [get\_time\_ns\(\)](#gettimens)
 	- [3.5 FILE SYSTEM FEATURES](#35-file-system-features)
 		- [read\_text\_file\(\) impure](#readtextfile-impure)
 		- [write\_text\_file\(\) impure](#writetextfile-impure)
@@ -131,11 +131,11 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 	- [3.6 NETWORK FEATURES \(SOCKETS, TCP, HTTP\)](#36-network-features-sockets-tcp-http)
 		- [struct network\_component\_t](#struct-networkcomponentt)
 		- [struct ip\_address\_and\_port_t](#struct-ipaddress_and_portt)
-		- [read\_socket\(\) impure](#read_socket-impure)
-		- [write\_socket\(\) impure](#write_socket-impure)
+		- [read\_socket(](#read_socket)
+		- [write\_socket(](#write_socket)
 		- [struct host\_info\_t](#struct-hostinfot)
-		- [lookup\_host\_from\_ip\(\) impure](#lookuphost_fromip-impure)
-		- [lookup\_host\_from\_name\(\) impure](#lookuphost_fromname-impure)
+		- [lookup\_host\_from\_ip(](#lookuphost_fromip)
+		- [lookup\_host\_from\_name(](#lookuphost_fromname)
 		- [struct http\-header\_t](#struct-http-header_t)
 		- [struct http\_request\_line\_t](#struct-httprequest_linet)
 		- [struct http\_request\_t](#struct-httprequestt)
@@ -145,7 +145,7 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 		- [unpack\_http\_response\(\)](#unpackhttpresponse)
 		- [execute\_http\_request\(\)](#executehttprequest)
 		- [execute\_http\_server\(\)](#executehttpserver)
-	- [3.7 STANDARD TYPES](#37-standard-types)
+	- [3.7 STANDARD LIBRARY TYPES](#37-standard-library-types)
 		- [uuid_t](#uuid_t)
 		- [ip\_address\_t](#ipaddresst)
 		- [url_t](#url_t)
@@ -3484,7 +3484,7 @@ Stores a UDT.
 		string utc_date
 	}
 
-<a id="gettime_ofday"></a>
+<a id="gettimens"></a>
 ### get\_time\_ns()
 
 Returns the computer's realtime clock, expressed in the number of nameseconds. It's undefined if 0 is system startup time or another time. Useful to measure program execution. Sample get_time_ns() before and after execution and compare them to see duration.
@@ -3753,7 +3753,7 @@ Notice that ip\_address\_t is used here - it is part of the Floyd language itsel
 
 
 
-<a id="read_socket-impure"></a>
+<a id="read_socket"></a>
 ### read\_socket(
 
 Reads data from the socket. It supports both binary data and text in the string.
@@ -3764,7 +3764,7 @@ Warning: Blocks, impure
 
 
 
-<a id="write_socket-impure"></a>
+<a id="write_socket"></a>
 ### write\_socket(
 
 Writes data from the socket. It supports both binary data and text in the string.
@@ -3791,7 +3791,7 @@ Holds information about one specific Internet host. Use lookup_host_from_name().
 
 
 
-<a id="lookuphost_fromip-impure"></a>
+<a id="lookuphost_fromip"></a>
 ### lookup\_host\_from\_ip(
 
 This function lookups up information about an Internet host, based on the host's IP address. The OS gets this info from a DNS. Use this function to find the IP addresses of an Internet domain.
@@ -3804,7 +3804,7 @@ Warning: Blocks, impure
 
 
 
-<a id="lookuphost_fromname-impure"></a>
+<a id="lookuphost_fromname"></a>
 ### lookup\_host\_from\_name(
 
 This function lookups up information about an Internet host, based on the host's name. The OS gets this info from a DNS. Use this function to find the IP addresses of an Internet domain.
@@ -3913,16 +3913,18 @@ Warning: Blocks, impure
 <a id="executehttpserver"></a>
 ### execute\_http\_server()
 
-Starts a local HTTP server on the supplied port. When an incoming connection is requested, the function f is called. Inside f, you should use read_socket() and write_socket() to talk to the client. Return from f when a connection is over.
+Starts a local HTTP server on the supplied port. When an incoming connection is requested, the function f is called. Inside f, you should use read_socket() and write_socket() to talk to the client. Return from f when a connection is over. Return true to keep the server up, false makes execute_http_server() return.
 
-Warning: Blocks forever, impure
+C is generic parameter where you can send any value via execute_http_server() to your custom function f.
 
-	func void execute_http_server(network_component_t c, int port, func void f(int socket)) impure
+Warning: Blocks, impure
+
+	func void execute_http_server(network_component_t c, int port, func void f(int socket, C context), C context) impure
 
 
 
 
-<a id="37-standard-types"></a>
+<a id="37-standard-library-types"></a>
 ## 3.7 STANDARD LIBRARY TYPES
 A bunch of common data types are built into Floyd's standard library. This is to make composition easier and avoid the noise of converting all simple types between different component's own versions.
 

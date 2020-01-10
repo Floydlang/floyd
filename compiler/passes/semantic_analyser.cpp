@@ -321,7 +321,6 @@ static type_t analyze_expr_output_type(analyser_t& a, const expression_t& e){
 
 //	When callee has "any" as return type, we need to figure out its return type using its algorithm and the actual types.
 static const type_t figure_out_callee_return_type(analyser_t& a, const statement_t& parent, const type_t& callee_type, const std::vector<expression_t>& call_args){
-
 	const auto callee_type_desc = dereference_type(a._types, callee_type);
 	const auto callee_return_type = callee_type_desc.get_function_return(a._types);
 

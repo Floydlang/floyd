@@ -125,7 +125,7 @@ static const std::string k_network_component_header = R"(
 	func string execute_http_request(network_component_t c, ip_address_and_port_t addr, string request) impure
 
 	//	Blocks forever.
-	func void execute_http_server(network_component_t c, int port, func void f(int socket) impure) impure
+	func void execute_http_server(network_component_t c, int port, any f, any context) impure
 
 )";
 
@@ -513,30 +513,36 @@ static rt_pod_t network_component__execute_http_request(runtime_t* frp, rt_pod_t
 
 
 
-typedef void (*HTTP_SERVER_F)(runtime_t* frp, rt_pod_t socket_id);
+typedef bool (*HTTP_SERVER_F)(runtime_t* frp, rt_pod_t socket_id, rt_pod_t context);
 
 struct server_connection_t : public connection_i {
-	server_connection_t(runtime_t* frp, rt_pod_t f) :
+	server_connection_t(runtime_t* frp, rt_pod_t f, rt_type_t f_type, rt_pod_t context, rt_type_t context_type) :
 		frp(frp),
-		f(f)
+		f(f),
+		f_type(f_type),
+		context(context),
+		context_type(context_type)
 	{
 	}
 
-	void connection_i__on_accept(int socket2) override {
+	bool connection_i__on_accept(int socket2) override {
 		auto& backend = get_backend(frp);
 		const auto& func_link = lookup_func_link_by_pod_required(backend, f);
 
 		// ??? This thunking must be moved of inner loop. Use ffi to make bridge for k_native__floydcc?
 		if(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc){
 			const rt_value_t f_args[] = {
-				rt_value_t::make_int(socket2)
+				rt_value_t::make_int(socket2),
+				rt_value_t(backend, context, type_t(context_type), rt_value_t::rc_mode::bump)
 			};
-			const auto a = call_thunk(frp, rt_value_t(backend, f, func_link.function_type_optional, rt_value_t::rc_mode::bump), f_args, 1);
-			QUARK_ASSERT(a._type.is_void());
+			const auto continue_flag = call_thunk(frp, rt_value_t(backend, f, func_link.function_type_optional, rt_value_t::rc_mode::bump), f_args, 2);
+			QUARK_ASSERT(continue_flag._type.is_bool());
+			return continue_flag._pod.bool_value == 1;
 		}
 		else if(func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc){
 			const auto f2 = reinterpret_cast<HTTP_SERVER_F>(func_link.f);
-			(*f2)(frp, make_runtime_int(socket2));
+			const uint8_t continue_flag = (*f2)(frp, make_runtime_int(socket2), context);
+			return continue_flag == 1;
 		}
 		else{
 			quark::throw_defective_request();
@@ -548,41 +554,18 @@ struct server_connection_t : public connection_i {
 
 	runtime_t* frp;
 	rt_pod_t f;
+	rt_type_t f_type;
+	rt_pod_t context;
+	rt_type_t context_type;
 };
 
+//	??? This is the first-non intrinsic function that uses ANY and an arg of function-using-any. It's type checking is sloppy.
 //	Blocks forever.
 //	func void execute_http_server(network_component_t c, int port, func void f(int socket)) impure
-static void network_component__execute_http_server(runtime_t* frp, rt_pod_t c, rt_pod_t port, rt_pod_t f){
+static void network_component__execute_http_server(runtime_t* frp, rt_pod_t c, rt_pod_t port, rt_pod_t f, rt_type_t f_type, rt_pod_t context, rt_type_t context_type){
 	const auto port2 = port.int_value;
 
-	server_connection_t connection { frp, f };
-
-#if 0
-	const int socket2 = port2;
-
-
-	auto& backend = get_backend(frp);
-	const auto& func_link = lookup_func_link_by_pod_required(backend, f);
-
-	// ??? This thunking must be moved of inner loop. Use ffi to make bridge for k_native__floydcc?
-	if(func_link.execution_model == func_link_t::eexecution_model::k_bytecode__floydcc){
-		const rt_value_t f_args[] = {
-			rt_value_t::make_int(socket2)
-		};
-		const auto a = call_thunk(frp, rt_value_t(backend, f, func_link.function_type_optional, rt_value_t::rc_mode::bump), f_args, 1);
-		QUARK_ASSERT(a._type.is_void());
-	}
-	else if(func_link.execution_model == func_link_t::eexecution_model::k_native__floydcc){
-		const auto f2 = reinterpret_cast<HTTP_SERVER_F>(func_link.f);
-		(*f2)(frp, make_runtime_int(socket2));
-	}
-	else{
-		quark::throw_defective_request();
-	}
-#endif
-
-
-
+	server_connection_t connection { frp, f, f_type, context, context_type };
 	execute_http_server(server_params_t { (int)port2 }, connection);
 }
 

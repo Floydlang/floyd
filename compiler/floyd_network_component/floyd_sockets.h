@@ -90,7 +90,7 @@ struct server_params_t {
 struct connection_i {
 	public: virtual ~connection_i(){};
 
-	public: virtual void connection_i__on_accept(int socket2_fd) = 0;
+	public: virtual bool connection_i__on_accept(int socket2_fd) = 0;
 };
 
 //	http://localhost:8080/info.html

@@ -8130,7 +8130,7 @@ FLOYD_LANG_PROOF("network component", "execute_http_request()", "", ""){
 }
 
 
-#if 0
+#if 1
 //	WARNING: This test never completes + is impure.
 FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "", ""){
 	ut_run_closed_lib(
@@ -8152,7 +8152,9 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "", ""){
 				return doc
 			}
 
-			func void f(int socket_id) impure{
+			func bool f(int socket_id, string context) impure{
+				assert(context == "my-context")
+
 				let read_data = read_socket(socket_id)
 				if(read_data == ""){
 					print("empty request\n")
@@ -8180,10 +8182,10 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "", ""){
 						write_socket(socket_id, r)
 					}
 				}
-
+				return true
 			}
 
-			execute_http_server(c, 8080, f)
+			execute_http_server(c, 8080, f, "my-context")
 
 		)"
 	);

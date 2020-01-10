@@ -540,7 +540,7 @@ QUARK_TEST("http", "execute_http_request()", "", ""){
 
 
 struct test_connection_t : public connection_i {
-	public: void connection_i__on_accept(int socket2) override {
+	public: bool connection_i__on_accept(int socket2) override {
 		const auto read_data = read_socket_string(socket2);
 		if(read_data.empty()){
 			QUARK_TRACE("empty");
@@ -578,6 +578,7 @@ struct test_connection_t : public connection_i {
 				write_socket_string(socket2, r);
 			}
 		}
+		return true;
 	}
 };
 
