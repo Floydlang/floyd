@@ -96,6 +96,41 @@ void ut_verify_exception_nolib(const quark::call_context_t& context, const std::
 void ut_verify_exception_lib(const quark::call_context_t& context, const std::string& program, const std::string& expected_what);
 
 
+
+
+
+inline json_t make_expected_typeid(const types_t& types, const type_t& s){
+	const auto a = value_t::make_typeid_value(s);
+	return value_and_type_to_json(types, a);
+}
+
+inline json_t make_expected_int(int64_t v){
+	types_t types;
+	const auto a = value_t::make_int(v);
+	return value_and_type_to_json(types, a);
+}
+inline json_t make_expected_string(const std::string& s){
+	types_t types;
+	const auto a = value_t::make_string(s);
+	return value_and_type_to_json(types, a);
+}
+inline json_t make_expected_double(double v){
+	types_t types;
+	const auto a = value_t::make_double(v);
+	return value_and_type_to_json(types, a);
+}
+inline json_t make_expected_bool(bool v){
+	types_t types;
+	const auto a = value_t::make_bool(v);
+	return value_and_type_to_json(types, a);
+}
+
+inline json_t make_expected_json(const json_t& j){
+	types_t types;
+	const auto a = value_t::make_json(j);
+	return value_and_type_to_json(types, a);
+}
+
 } // floyd
 
 #endif /* test_helpers_hpp */
