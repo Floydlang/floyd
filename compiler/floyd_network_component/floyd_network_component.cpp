@@ -669,6 +669,46 @@ QUARK_TEST("network component", "lookup_host_from_ip()", "", ""){
 	);
 }
 
+
+#if 0
+void test_floyd(const quark::call_context_t& context, const compilation_unit_t& cu, const compiler_settings_t& settings, const std::vector<std::string>& main_args, const test_report_t& expected, bool check_printout){
+	QUARK_ASSERT(cu.check_invariant());
+	QUARK_ASSERT(settings.check_invariant());
+
+	semantic_ast_t semast( {}, {} );
+
+	try {
+		const auto temp_semast = compile_to_sematic_ast__errors(cu);
+		semast = temp_semast;
+	}
+	catch(const std::runtime_error& e){
+		ut_verify_string(context, std::string(e.what()), expected.exception_what);
+		return;
+	}
+	catch(...){
+		throw std::exception();
+	}
+
+
+	if(k_run_bc){
+		const auto bc_report = run_test_program_bc(semast, main_args, settings.config);
+		if(compare(bc_report, expected, check_printout) == false){
+			QUARK_SCOPED_TRACE("BYTE CODE INTERPRETER FAILURE");
+			ut_verify_report(context, bc_report, expected);
+		}
+	}
+
+	if(k_run_llvm){
+		const auto llvm_report = run_test_program_llvm(semast, settings, main_args, false);
+
+		if(compare(llvm_report, expected, check_printout) == false){
+			QUARK_SCOPED_TRACE("LLVM JIT FAILURE");
+			ut_verify_report(context, llvm_report, expected);
+		}
+	}
+}
+#endif
+
 QUARK_TEST("network component", "lookup_host_from_name()", "", ""){
 	ut_run_closed_lib(
 		QUARK_POS,

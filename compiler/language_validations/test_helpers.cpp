@@ -110,15 +110,20 @@ struct test_handler_t : public runtime_handler_i {
 	std::vector<std::string> _print_output;
 };
 
-static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std::vector<std::string>& main_args, const config_t& config){
+struct run_env_t {
+	compiler_settings_t settings;
+	std::vector<std::string> main_args;
+	runtime_handler_i* handler2;
+	sockets_i* sockets;
+};
+
+
+static test_report_t run_test_program_bc(const semantic_ast_t& semast, const run_env_t& env){
 	try {
 		const auto exe = generate_bytecode(semast);
 
-		test_handler_t handler;
-		sockets_t sockets;
-
 		//	Runs global code.
-		auto interpreter = make_bytecode_execution_engine(exe, config, handler, sockets);
+		auto interpreter = make_bytecode_execution_engine(exe, env.settings.config, *env.handler2, *env.sockets);
 
 		std::vector<test_t> all_tests = collect_tests(*interpreter);
 		const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
@@ -129,7 +134,7 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 			return test_report_t{ {}, {}, {}, report };
 		}
 
-		auto run_output = run_program_bc(*interpreter, main_args, config);
+		auto run_output = run_program_bc(*interpreter, env.main_args, env.settings.config);
 
 		const auto r = load_global(*interpreter, module_symbol_t("result"));
 		value_t result_global = r._type.is_undefined() ? value_t() : rt_to_value(interpreter->backend, r);
@@ -139,7 +144,7 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 		return test_report_t{
 			result_global.is_undefined() ? json_t() : value_and_type_to_json(exe._types, result_global),
 			run_output,
-			handler._print_output,
+			{},
 			""
 		};
 		if(detect_leaks(interpreter->backend)){
@@ -154,18 +159,15 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 	}
 }
 
-
-static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const compiler_settings_t& settings, const std::vector<std::string>& main_args, bool trace_processes){
+static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const run_env_t& env){
 	QUARK_ASSERT(semast.check_invariant());
-	QUARK_ASSERT(settings.check_invariant());
+	QUARK_ASSERT(env.settings.check_invariant());
 
 	try {
 		llvm_instance_t llvm_instance;
-		auto exe = generate_llvm_ir_program(llvm_instance, semast, "", settings);
+		auto exe = generate_llvm_ir_program(llvm_instance, semast, "", env.settings);
 
-		test_handler_t handler;
-		sockets_t sockets;
-		auto ee = init_llvm_jit(*exe, handler, sockets, trace_processes);
+		auto ee = init_llvm_jit(*exe, *env.handler2, *env.sockets, false);
 
 		std::vector<test_t> all_tests = collect_tests(*ee);
 		const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
@@ -178,7 +180,7 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 			return test_report_t{ {}, {}, {}, report };
 		}
 
-		const auto run_output = run_program(*ee, main_args);
+		const auto run_output = run_program(*ee, env.main_args);
 
 		QUARK_ASSERT(ee->check_invariant());
 
@@ -197,7 +199,7 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 		return test_report_t{
 			result_global.is_undefined() ? json_t() : value_and_type_to_json(exe->type_lookup.state.types, result_global),
 			run_output,
-			handler._print_output,
+			{},
 			""
 		};
 	}
@@ -229,7 +231,17 @@ void test_floyd(const quark::call_context_t& context, const compilation_unit_t& 
 
 
 	if(k_run_bc){
-		const auto bc_report = run_test_program_bc(semast, main_args, settings.config);
+		test_handler_t test_handler;
+		sockets_t sockets;
+		const run_env_t env {
+			settings,
+			main_args,
+			&test_handler,
+			&sockets
+		};
+
+		auto bc_report = run_test_program_bc(semast, env);
+		bc_report.print_out = test_handler._print_output;
 		if(compare(bc_report, expected, check_printout) == false){
 			QUARK_SCOPED_TRACE("BYTE CODE INTERPRETER FAILURE");
 			ut_verify_report(context, bc_report, expected);
@@ -237,7 +249,17 @@ void test_floyd(const quark::call_context_t& context, const compilation_unit_t& 
 	}
 
 	if(k_run_llvm){
-		const auto llvm_report = run_test_program_llvm(semast, settings, main_args, false);
+		test_handler_t test_handler;
+		sockets_t sockets;
+		const run_env_t env {
+			settings,
+			main_args,
+			&test_handler,
+			&sockets
+		};
+
+		auto llvm_report = run_test_program_llvm(semast, env);
+		llvm_report.print_out = test_handler._print_output;
 
 		if(compare(llvm_report, expected, check_printout) == false){
 			QUARK_SCOPED_TRACE("LLVM JIT FAILURE");
@@ -245,6 +267,11 @@ void test_floyd(const quark::call_context_t& context, const compilation_unit_t& 
 		}
 	}
 }
+
+/*
+void test_floyd2(const quark::call_context_t& context, const compilation_unit_t& cu, const compiler_settings_t& settings, const std::vector<std::string>& main_args, std::function< bool(const test_report_t& result) >& check_result){
+}
+*/
 
 
 QUARK_TEST("test_helpers", "test_floyd()", "", ""){
