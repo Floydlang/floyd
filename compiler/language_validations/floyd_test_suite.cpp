@@ -8296,126 +8296,14 @@ FLOYD_LANG_PROOF("network component", "execute_http_server()", "Make sure f's ty
 
 #if 0
 //	WARNING: This test never completes + is impure.
-FLOYD_LANG_PROOF_VIP("network component", "examples/http_test.floyd", "DEMO Multi-process HTTP server", ""){
-	ut_run_closed_lib(
-		QUARK_POS,
-		R"(
+//	WARNING: Since it doesn't stop running, only the BC will run the program, not LLVM.
+// Very slow when running in deep debug mode: creats lots of big vectors.
+FLOYD_LANG_PROOF("Floyd test suite", "game_of_life.floyd", "", ""){
+	const auto path = get_working_dir() + "/examples/http_test.floyd";
+	const auto program = read_text_file(path);
 
-			let c = network_component_t(666)
-
-			container-def {
-				"name": "",
-				"tech": "",
-				"desc": "",
-				"clocks": {
-					"main_clock": {
-						"main": "my_main"
-					},
-					"http-server": {
-						"server": "my_server"
-					}
-				}
-			}
-
-			struct doc_t { [double] audio }
-
-			struct gui_message_t { string type }
-			struct server_message_t { string type ; doc_t doc }
-
-
-			////////////////////////////////	SERVER
-
-
-			struct server_t { int audio ; doc_t doc }
-
-
-			func string make_webpage(){
-				let s = "
-					<head>
-						<title>Hello Floyd Server</title>
-					</head>
-					<body>
-						<h1>Hello Floyd Server</h1>
-						This document may be found <a HREF=\"https://stackoverflow.com/index.html\">here</a>
-					</body>
-				"
-				return s
-			}
-
-			func bool f(int socket_id) impure {
-				let read_data = read_socket(socket_id)
-				if(read_data == ""){
-					print("empty request\n")
-				}
-				else{
-					let request = unpack_http_request(read_data)
-
-					if(request.request_line == http_request_line_t( "GET", "/info.html", "HTTP/1.1" )){
-						print("Serving page\n")
-						let page = make_webpage()
-
-						let r = pack_http_response(
-							http_response_t (
-								http_response_status_line_t ( "HTTP/1.1", "200 OK" ),
-								[
-									http_header_t( "Content-Type", "text/html" ),
-									http_header_t( "Content-Length", to_string(size(page)) )
-								],
-								page
-							)
-						)
-						write_socket(socket_id, r)
-					}
-					else {
-						let r = pack_http_response(http_response_t ( http_response_status_line_t ( "HTTP/1.1", "404 OK" ), {}, "" ))
-						write_socket(socket_id, r)
-					}
-				}
-				return true
-			}
-
-			func server_t my_server__init() impure {
-				execute_http_server(c, 8080, f, 0)
-			}
-
-			func server_t my_server__msg(server_t state, server_message_t m) impure {
-				assert(false)
-				return state
-			}
-
-
-			////////////////////////////////	MAIN
-
-
-			func void sleep_busy(int ms) impure {
-				let end_ns = get_time_ns() + ms * 1000
-				while(get_time_ns() < end_ns){
-				}
-			}
-
-			struct main_t { int count ; doc_t doc }
-
-			func main_t my_main__init() impure {
-				mutable x = 0
-				for(i in 0 ..< 100000){
-					print("main is running: ") ; print(x) ; print("\n")
-					x = x + 1
-					if(x == 40){
-						x = 0
-					}
-					sleep_busy(3000)
-				}
-
-				return main_t(1000, doc_t([ 0.0, 1.0, 2.0 ]))
-			}
-
-			func main_t my_main__msg(main_t state, gui_message_t m) impure {
-				assert(false)
-				return state
-			}
-
-		)"
-	);
+	ut_run_closed_lib(QUARK_POS, program);
 }
 #endif
+
 
