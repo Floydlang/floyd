@@ -787,6 +787,7 @@ static void run_floyd_processes(llvm_execution_engine_t& ee){
 			auto process = std::make_shared<llvm_process_t>();
 			process->ee = &ee;
 			process->_name_key = t.first;
+			process->sockets = ee._handler_router.sockets;
 			process->_message_type = t.second.msg_type;
 			process->_state_type = t.second.state_type;
 			process->_exiting_flag = false;

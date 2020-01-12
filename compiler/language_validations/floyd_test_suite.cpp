@@ -8296,7 +8296,7 @@ FLOYD_LANG_PROOF("network component", "execute_http_server()", "Make sure f's ty
 
 #if 0
 //	WARNING: This test never completes + is impure.
-FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "DEMO Multi-process HTTP server", ""){
+FLOYD_LANG_PROOF_VIP("network component", "examples/http_test.floyd", "DEMO Multi-process HTTP server", ""){
 	ut_run_closed_lib(
 		QUARK_POS,
 		R"(
