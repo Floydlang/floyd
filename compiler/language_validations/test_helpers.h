@@ -72,6 +72,9 @@ inline test_report_t check_exception(const std::string& exception_what){
 }
 
 
+//??? All these should have test_report_t arg and config arg (provide custom sockets_i* etc)
+//??? Run all FLOYD_LANG_PROOF() twice => test code can manual check results which avoids inversion of control problem.
+
 void ut_verify_global_result_lib(const quark::call_context_t& context, const std::string& program, const json_t& expected_result);
 void ut_verify_global_result_nolib(const quark::call_context_t& context, const std::string& program, const json_t& expected_result);
 
