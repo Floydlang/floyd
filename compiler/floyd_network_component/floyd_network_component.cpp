@@ -9,14 +9,9 @@
 #include "floyd_network_component.h"
 
 #include "floyd_corelib.h"
-
-#include "compiler_basics.h"
-#include "floyd_sockets.h"
+#include "floyd_runtime.h"
 #include "floyd_http.h"
-
-
-//??? temporary
-#include "bytecode_interpreter.h"
+#include "test_helpers.h"
 
 
 namespace floyd {
@@ -601,3 +596,368 @@ std::map<std::string, void*> get_network_component_binds(){
 
 
 } // floyd
+
+
+
+
+
+
+
+
+using namespace floyd;
+
+
+//######################################################################################################################
+//	NETWORK COMPONENT TESTS
+//######################################################################################################################
+
+//#define QUARK_TEST QUARK_TEST_VIP
+
+QUARK_TEST("network component", "network_component_t()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let c = network_component_t(100)
+			assert(c.internal == 100)
+
+		)"
+	);
+}
+QUARK_TEST("network component", "ip_address_and_port_t()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let a = ip_address_and_port_t(ip_address_t("abcd"), 8080)
+			assert(a.addr.data == "abcd")
+			assert(a.port == 8080)
+
+		)"
+	);
+}
+
+QUARK_TEST("network component", "host_info_t()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let a = host_info_t(
+				"example.com",
+				[ "example2.com", "example3.com"],
+				[ ip_address_t("abcd"), ip_address_t("zxyz") ]
+			)
+			assert(a.official_host_name == "example.com")
+			assert(a.name_aliases[0] == "example2.com")
+			assert(a.name_aliases[1] == "example3.com")
+			assert(a.addresses_IPv4[0].data == "abcd")
+			assert(a.addresses_IPv4[1].data == "zxyz")
+
+		)"
+	);
+}
+
+QUARK_TEST("network component", "lookup_host_from_ip()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let x = ip_address_t("abcd")
+//			let a = lookup_host_from_ip(x)
+
+		)"
+	);
+}
+
+QUARK_TEST("network component", "lookup_host_from_name()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let a = lookup_host_from_name("example.com")
+
+			print(a)
+			assert(a.official_host_name == "example.com")
+//			assert(size(a.name_aliases[0]) > 0)
+			assert(size(a.addresses_IPv4) > 0)
+//			assert(a.addresses_IPv4[0].data == "abcd")
+
+		)"
+	);
+}
+
+QUARK_TEST("network component", "http_header_t()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let a = http_header_t("Content-Type", "text/html")
+			assert(a.key == "Content-Type")
+			assert(a.value == "text/html")
+
+		)"
+	);
+}
+
+QUARK_TEST("network component", "http_request_line_t()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let a = http_request_line_t("POST", "/test/demo_form.php", "HTTP/1.1")
+			assert(a.method == "POST")
+			assert(a.uri == "/test/demo_form.php")
+			assert(a.http_version == "HTTP/1.1")
+
+		)"
+	);
+}
+
+QUARK_TEST("network component", "pack_http_request()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let request_line = http_request_line_t ( "GET", "/index.html", "HTTP/1.0" )
+			let a = http_request_t ( request_line, [], "" )
+			let r = pack_http_request(a)
+			print(r)
+			assert(r == "GET /index.html HTTP/1.0\r\n\r\n")
+
+		)"
+	);
+}
+
+QUARK_TEST("network component", "unpack_http_request()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let r = unpack_http_request("GET /test.html HTTP/1.1")
+
+			assert(r.request_line.method == "GET")
+			assert(r.request_line.uri == "/test.html")
+			assert(r.request_line.http_version == "HTTP/1.1")
+			assert(r.headers == [])
+			assert(r.optional_body == "")
+
+		)"
+	);
+}
+
+QUARK_TEST("network component", "pack_http_response()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let r = pack_http_response(
+				http_response_t(
+					http_response_status_line_t("HTTP/1.1", "301 Moved Permanently"),
+					[ http_header_t("Server", "Varnish"), http_header_t("X-Cache-Hits", "0") ],
+					""
+				)
+			)
+			assert(r == "HTTP/1.1 301 Moved Permanently\r\nServer: Varnish\r\nX-Cache-Hits: 0\r\n\r\n")
+
+		)"
+	);
+}
+
+
+QUARK_TEST("network component", "unpack_http_response()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let r = unpack_http_response("HTTP/1.1 301 Moved Permanently\r\n	Server: Varnish\r\n	X-Cache-Hits: 0\r\n\r\n")
+			assert(r.status_line == http_response_status_line_t ( "HTTP/1.1", "301 Moved Permanently" ))
+			assert(size(r.headers) == 2)
+			assert(r.headers[0] == http_header_t ( "Server", "Varnish" ))
+			assert(r.headers[1] == http_header_t ( "X-Cache-Hits", "0" ))
+			assert(r.optional_body == "")
+
+		)"
+	);
+}
+
+
+QUARK_TEST("network component", "execute_http_request()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let c = network_component_t(666)
+
+			let request_line = http_request_line_t ( "GET", "/index.html", "HTTP/1.0" )
+			let a = http_request_t ( request_line, [], "" )
+			let ip = lookup_host_from_name("example.com").addresses_IPv4[0]
+			let dest = ip_address_and_port_t(ip, 80)
+			let r = execute_http_request(c, dest, pack_http_request(a))
+			print(r)
+
+		)"
+	);
+}
+
+
+#if 0
+//	WARNING: This test never completes + is impure.
+QUARK_TEST("network component", "execute_http_server()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let c = network_component_t(666)
+
+			func string make_webpage(){
+				let doc = "
+					<head>
+						<title>Hello Floyd Server</title>
+					</head>
+					<body>
+						<h1>Hello Floyd Server</h1>
+						This document may be found <a HREF=\"https://stackoverflow.com/index.html\">here</a>
+					</body>
+				"
+				return doc
+			}
+
+			func bool f(int socket_id, string context) impure{
+				assert(context == "my-context")
+
+				let read_data = read_socket(socket_id)
+				if(read_data == ""){
+					print("empty request\n")
+				}
+				else{
+					let request = unpack_http_request(read_data)
+
+					if(request.request_line == http_request_line_t( "GET", "/info.html", "HTTP/1.1" )){
+						print("Serving page\n")
+						let doc = make_webpage()
+						let r = pack_http_response(
+							http_response_t (
+								http_response_status_line_t ( "HTTP/1.1", "200 OK" ),
+								[
+									http_header_t( "Content-Type", "text/html" ),
+									http_header_t( "Content-Length", to_string(size(doc)) )
+								],
+								doc
+							)
+						)
+						write_socket(socket_id, r)
+					}
+					else {
+						let r = pack_http_response(http_response_t ( http_response_status_line_t ( "HTTP/1.1", "404 OK" ), {}, "" ))
+						write_socket(socket_id, r)
+					}
+				}
+				return true
+			}
+
+			execute_http_server(c, 8080, f, "my-context")
+
+		)"
+	);
+}
+#endif
+
+
+QUARK_TEST("regression test", "map()", "map() from inside another map()", ""){
+	ut_run_closed_nolib(QUARK_POS, R"(
+
+		struct context_t { int a string b }
+
+		func int f2(int v, string c){
+			return v + 3000
+		}
+
+		func int f1(int v, context_t context){
+			assert(context.a == 2000)
+			assert(context.b == "twenty")
+
+			let r = map([ 100, 200, 300, v ], f2, "xyz")
+
+			return r[3]
+		}
+
+		let r = map([ 10, 11, 12 ], f1, context_t( 2000, "twenty"))
+//		print(r) ; print("\n")
+		assert(r == [ 3010, 3011, 3012 ])
+
+	)");
+}
+
+QUARK_TEST("regression test", "call BC function from 2nd thread -- used to crash in d98c84ce9cd5ddd8ccbab350aebf4108482d18e0", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"___(
+
+			let c = network_component_t(666)
+
+			container-def {
+				"name": "",
+				"tech": "",
+				"desc": "",
+				"clocks": {
+					"main_clock": {
+						"sss-main": "my_main"
+					},
+					"http-server": {
+						"mmm-server": "my_server"
+					}
+				}
+			}
+
+
+			////////////////////////////////	SERVER
+
+
+			func void f(int socket_id) impure {
+				print("f()")
+			}
+
+			func double my_server__init() impure {
+//				f(44)
+				exit()
+				return 123.456
+			}
+
+			func double my_server__msg(double state, int m) impure {
+				return state
+			}
+
+
+			////////////////////////////////	MAIN
+
+
+			func int my_main__init() impure {
+				f(44)
+				exit()
+				return 13
+			}
+
+			func int my_main__msg(int state, int m) impure {
+				return state
+			}
+
+		)___"
+	);
+}
+
+QUARK_TEST("network component", "execute_http_server()", "Make sure f's type is checked", ""){
+	ut_verify_exception_lib(
+		QUARK_POS,
+		R"(
+
+			func bool f(int socket_id) impure {
+				return true
+			}
+
+			let c = network_component_t(666)
+			execute_http_server(c, 8080, f, 0)
+
+		)",
+		"execute_http_server() - the function has wrong type"
+	);
+}
