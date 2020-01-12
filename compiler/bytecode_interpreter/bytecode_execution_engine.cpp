@@ -9,6 +9,7 @@
 #include "bytecode_execution_engine.h"
 
 #include "floyd_runtime.h"
+#include "floyd_sockets.h"
 
 #include "bytecode_generator.h"
 #include "bytecode_interpreter.h"
@@ -226,10 +227,10 @@ bool bc_execution_engine_t::check_invariant_thread_safe() const {
 	return true;
 }
 
-bc_execution_engine_t::bc_execution_engine_t(const bc_program_t& program, const config_t& config, runtime_handler_i& runtime_handler) :
+bc_execution_engine_t::bc_execution_engine_t(const bc_program_t& program, const config_t& config, runtime_handler_i& runtime_handler, sockets_i& sockets) :
 	_program(std::make_shared<bc_program_t>(program)),
 	backend(link_functions(*_program), bc_make_struct_layouts(_program->_types), _program->_types, config),
-	main_bc_thread(_program, backend, config, nullptr, runtime_handler, "main"),
+	main_bc_thread(_program, backend, config, nullptr, runtime_handler, sockets, "main"),
 	_main_thread_id(std::this_thread::get_id()),
 	handler(&runtime_handler),
 	_processes(),
@@ -244,9 +245,10 @@ bc_execution_engine_t::bc_execution_engine_t(const bc_program_t& program, const 
 std::unique_ptr<bc_execution_engine_t> make_bytecode_execution_engine(
 	const bc_program_t& program,
 	const config_t& config,
-	runtime_handler_i& runtime_handler
+	runtime_handler_i& runtime_handler,
+	sockets_i& sockets
 ){
-	return std::make_unique<bc_execution_engine_t>(program, config, runtime_handler);
+	return std::make_unique<bc_execution_engine_t>(program, config, runtime_handler, sockets);
 }
 
 static std::string make_trace_process_header(const bc_process_t& process){
@@ -389,7 +391,7 @@ static void run_floyd_processes(bc_execution_engine_t& ee, const config_t& confi
 				name_ss << "floyd process " << process_id << " " << t.first;
 				const auto name = name_ss.str();
 
-				auto bc_thread = std::make_shared<interpreter_t>(ee._program, ee.backend, config, process.get(), *ee.handler, name);
+				auto bc_thread = std::make_shared<interpreter_t>(ee._program, ee.backend, config, process.get(), *ee.handler, *ee.main_bc_thread._sockets, name);
 				ee._bc_threads.push_back(bc_thread);
 
 				process->_bc_thread = bc_thread.get();

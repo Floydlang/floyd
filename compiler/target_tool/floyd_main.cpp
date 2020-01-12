@@ -17,6 +17,7 @@
 #include "bytecode_execution_engine.h"
 #include "floyd_parser.h"
 #include "os_process.h"
+#include "floyd_sockets.h"
 
 #include "floyd_llvm.h"
 #include "floyd_llvm_execution_engine.h"
@@ -389,7 +390,8 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 		};
 		handler_t handler { out };
 
-		auto ee = init_llvm_jit(*program, handler, command2.verbose);
+		sockets_t sockets;
+		auto ee = init_llvm_jit(*program, handler, sockets, command2.verbose);
 
 		//	Run tests before calling main()?
 		if(command2.run_tests){
@@ -427,7 +429,8 @@ static int do_run_command(tool_i& tool, std::ostream& out, const command_t& comm
 			std::ostream& out;
 		};
 		handler_t handler { out };
-		auto interpreter = make_bytecode_execution_engine(program, command2.compiler_settings.config, handler);
+		sockets_t sockets;
+		auto interpreter = make_bytecode_execution_engine(program, command2.compiler_settings.config, handler, sockets);
 
 		//	Run tests before calling main()?
 		if(command2.run_tests){

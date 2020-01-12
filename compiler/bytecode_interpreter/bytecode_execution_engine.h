@@ -21,6 +21,8 @@
 #include <string>
 #include <vector>
 
+struct sockets_i;
+
 namespace floyd {
 struct value_t;
 struct compilation_unit_t;
@@ -43,7 +45,7 @@ struct bc_thread_t {
 
 
 struct bc_execution_engine_t {
-	bc_execution_engine_t(const bc_program_t& program, const config_t& config, runtime_handler_i& runtime_handler);
+	bc_execution_engine_t(const bc_program_t& program, const config_t& config, runtime_handler_i& runtime_handler, sockets_i& sockets);
 	bool check_invariant() const;
 	bool check_invariant_thread_safe() const;
 
@@ -69,7 +71,8 @@ struct bc_execution_engine_t {
 std::unique_ptr<bc_execution_engine_t> make_bytecode_execution_engine(
 	const bc_program_t& program,
 	const config_t& config,
-	runtime_handler_i& runtime_handler
+	runtime_handler_i& runtime_handler,
+	sockets_i& sockets
 );
 
 

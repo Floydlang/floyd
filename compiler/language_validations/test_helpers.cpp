@@ -15,6 +15,7 @@
 #include "json_support.h"
 #include "text_parser.h"
 #include "file_handling.h"
+#include "floyd_sockets.h"
 
 #include "floyd_llvm_helpers.h"
 #include "floyd_llvm_codegen.h"
@@ -36,7 +37,7 @@
 
 
 static const bool k_run_bc = true;
-static const bool k_run_llvm = false;
+static const bool k_run_llvm = true;
 
 namespace floyd {
 
@@ -114,9 +115,10 @@ static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std
 		const auto exe = generate_bytecode(semast);
 
 		test_handler_t handler;
+		sockets_t sockets;
 
 		//	Runs global code.
-		auto interpreter = make_bytecode_execution_engine(exe, config, handler);
+		auto interpreter = make_bytecode_execution_engine(exe, config, handler, sockets);
 
 		std::vector<test_t> all_tests = collect_tests(*interpreter);
 		const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
@@ -162,8 +164,8 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const c
 		auto exe = generate_llvm_ir_program(llvm_instance, semast, "", settings);
 
 		test_handler_t handler;
-
-		auto ee = init_llvm_jit(*exe, handler, trace_processes);
+		sockets_t sockets;
+		auto ee = init_llvm_jit(*exe, handler, sockets, trace_processes);
 
 		std::vector<test_t> all_tests = collect_tests(*ee);
 		const auto all_test_ids = mapf<test_id_t>(all_tests, [&](const auto& e){ return e.test_id; });
@@ -331,6 +333,9 @@ void ut_verify_mainfunc_return_nolib(const quark::call_context_t& context, const
 
 void ut_verify_exception_nolib(const quark::call_context_t& context, const std::string& program, const std::string& expected_what){
 	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), make_default_compiler_settings(), {}, check_exception(expected_what), false);
+}
+void ut_verify_exception_lib(const quark::call_context_t& context, const std::string& program, const std::string& expected_what){
+	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_include_core_lib), make_default_compiler_settings(), {}, check_exception(expected_what), false);
 }
 
 

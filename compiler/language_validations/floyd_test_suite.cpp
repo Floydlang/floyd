@@ -65,14 +65,14 @@ unsupported syntax
 
 
 #define FLOYD_LANG_PROOF(class_under_test, function_under_test, scenario, expected_result) \
-	static void QUARK_UNIQUE_LABEL(quark_unit_test_)(); \
-	static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(quark_unit_test_), false); \
-	static void QUARK_UNIQUE_LABEL(quark_unit_test_)()
+	static void QUARK_UNIQUE_LABEL(floyd_lang_test_suite_)(); \
+	static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(floyd_lang_test_suite_), false); \
+	static void QUARK_UNIQUE_LABEL(floyd_lang_test_suite_)()
 
 #define FLOYD_LANG_PROOF_VIP(class_under_test, function_under_test, scenario, expected_result) \
-	static void QUARK_UNIQUE_LABEL(quark_unit_test_)(); \
-	static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(quark_unit_test_), true); \
-	static void QUARK_UNIQUE_LABEL(quark_unit_test_)()
+	static void QUARK_UNIQUE_LABEL(floyd_lang_test_suite_)(); \
+	static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(floyd_lang_test_suite_), true); \
+	static void QUARK_UNIQUE_LABEL(floyd_lang_test_suite_)()
 
 
 
@@ -6558,30 +6558,30 @@ FLOYD_LANG_PROOF("Floyd test suite", "calc_binary_sha1()", "", ""){
 
 
 
-//////////////////////////////////////////		CORE LIBRARY - get_time_of_day()
+//////////////////////////////////////////		CORE LIBRARY - get_time_ns()
 
-FLOYD_LANG_PROOF("Floyd test suite", "get_time_of_day()", "", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "get_time_ns()", "", ""){
 	ut_run_closed_lib(QUARK_POS, R"(
 
-		let start = get_time_of_day()
+		let start = get_time_ns()
 		mutable b = 0
 		mutable t = [0]
 		for(i in 0...100){
 			b = b + 1
 			t = push_back(t, b)
 		}
-		let end = get_time_of_day()
+		let end = get_time_ns()
 //		print("Duration: " + to_string(end - start) + ", number = " + to_string(b))
 //		print(t)
 
 	)");
 }
 
-FLOYD_LANG_PROOF("Floyd test suite", "get_time_of_day()", "", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "get_time_ns()", "", ""){
 	ut_run_closed_lib(QUARK_POS, R"(
 
-		let int a = get_time_of_day()
-		let int b = get_time_of_day()
+		let int a = get_time_ns()
+		let int b = get_time_ns()
 		let int c = b - a
 //		print("Delta time:" + to_string(a))
 
@@ -8132,14 +8132,29 @@ FLOYD_LANG_PROOF("network component", "execute_http_request()", "", ""){
 
 #if 0
 //	WARNING: This test never completes + is impure.
-FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "", ""){
+FLOYD_LANG_PROOF("network component", "execute_http_server()", "", ""){
 	ut_run_closed_lib(
 		QUARK_POS,
 		R"(
 
 			let c = network_component_t(666)
 
-			func void f(int socket_id) impure{
+			func string make_webpage(){
+				let doc = "
+					<head>
+						<title>Hello Floyd Server</title>
+					</head>
+					<body>
+						<h1>Hello Floyd Server</h1>
+						This document may be found <a HREF=\"https://stackoverflow.com/index.html\">here</a>
+					</body>
+				"
+				return doc
+			}
+
+			func bool f(int socket_id, string context) impure{
+				assert(context == "my-context")
+
 				let read_data = read_socket(socket_id)
 				if(read_data == ""){
 					print("empty request\n")
@@ -8149,16 +8164,7 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "", ""){
 
 					if(request.request_line == http_request_line_t( "GET", "/info.html", "HTTP/1.1" )){
 						print("Serving page\n")
-						let doc = "
-							<head>
-								<title>Hello Floyd Server</title>
-							</head>
-							<body>
-								<h1>Hello Floyd Server</h1>
-								This document may be found <a HREF=\"https://stackoverflow.com/index.html\">here</a>
-							</body>
-						"
-
+						let doc = make_webpage()
 						let r = pack_http_response(
 							http_response_t (
 								http_response_status_line_t ( "HTTP/1.1", "200 OK" ),
@@ -8176,10 +8182,10 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "", ""){
 						write_socket(socket_id, r)
 					}
 				}
-
+				return true
 			}
 
-			execute_http_server(c, 8080, f)
+			execute_http_server(c, 8080, f, "my-context")
 
 		)"
 	);
@@ -8187,9 +8193,7 @@ FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "", ""){
 #endif
 
 
-
-
-FLOYD_LANG_PROOF("Floyd test suite", "map()", "map() from inside another map()", ""){
+FLOYD_LANG_PROOF("regression test", "map()", "map() from inside another map()", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(
 
 		struct context_t { int a string b }
@@ -8214,7 +8218,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "map()", "map() from inside another map()",
 	)");
 }
 
-FLOYD_LANG_PROOF("network component", "call BC function from 2nd thread -- used to crash in d98c84ce9cd5ddd8ccbab350aebf4108482d18e0", "", ""){
+FLOYD_LANG_PROOF("regression test", "call BC function from 2nd thread -- used to crash in d98c84ce9cd5ddd8ccbab350aebf4108482d18e0", "", ""){
 	ut_run_closed_lib(
 		QUARK_POS,
 		R"___(
@@ -8271,139 +8275,35 @@ FLOYD_LANG_PROOF("network component", "call BC function from 2nd thread -- used 
 	);
 }
 
+FLOYD_LANG_PROOF("network component", "execute_http_server()", "Make sure f's type is checked", ""){
+	ut_verify_exception_lib(
+		QUARK_POS,
+		R"(
 
+			func bool f(int socket_id) impure {
+				return true
+			}
+
+			let c = network_component_t(666)
+			execute_http_server(c, 8080, f, 0)
+
+		)",
+		"execute_http_server() - the function has wrong type"
+	);
+}
 
 
 
 #if 0
 //	WARNING: This test never completes + is impure.
-FLOYD_LANG_PROOF_VIP("network component", "execute_http_server()", "Multi-process HTTP server", ""){
-	ut_run_closed_lib(
-		QUARK_POS,
-		R"(
+//	WARNING: Since it doesn't stop running, only the BC will run the program, not LLVM.
+// Very slow when running in deep debug mode: creats lots of big vectors.
+FLOYD_LANG_PROOF("Floyd test suite", "game_of_life.floyd", "", ""){
+	const auto path = get_working_dir() + "/examples/http_test.floyd";
+	const auto program = read_text_file(path);
 
-			let c = network_component_t(666)
-
-
-			container-def {
-				"name": "",
-				"tech": "",
-				"desc": "",
-				"clocks": {
-					"main_clock": {
-						"main": "my_main"
-					},
-					"http-server": {
-						"server": "my_server"
-					}
-				}
-			}
-
-			struct doc_t { [double] audio }
-
-			struct gui_message_t { string type }
-			struct server_message_t { string type ; doc_t doc }
-
-
-			////////////////////////////////	SERVER
-
-
-			struct server_t { int audio ; doc_t doc }
-
-			func void f(int socket_id) impure {
-				let read_data = read_socket(socket_id)
-				if(read_data == ""){
-					print("empty request\n")
-				}
-				else{
-					let request = unpack_http_request(read_data)
-
-					if(request.request_line == http_request_line_t( "GET", "/info.html", "HTTP/1.1" )){
-						print("Serving page\n")
-						let doc = "
-							<head>
-								<title>Hello Floyd Server</title>
-							</head>
-							<body>
-								<h1>Hello Floyd Server</h1>
-								This document may be found <a HREF=\"https://stackoverflow.com/index.html\">here</a>
-							</body>
-						"
-
-						let r = pack_http_response(
-							http_response_t (
-								http_response_status_line_t ( "HTTP/1.1", "200 OK" ),
-								[
-									http_header_t( "Content-Type", "text/html" ),
-									http_header_t( "Content-Length", to_string(size(doc)) )
-								],
-								doc
-							)
-						)
-						write_socket(socket_id, r)
-					}
-					else {
-						let r = pack_http_response(http_response_t ( http_response_status_line_t ( "HTTP/1.1", "404 OK" ), {}, "" ))
-						write_socket(socket_id, r)
-					}
-				}
-
-			}
-
-			func server_t my_server__init() impure {
-				execute_http_server(c, 8080, f)
-			}
-
-			func server_t my_server__msg(server_t state, server_message_t m) impure {
-				assert(false)
-				return state
-			}
-
-
-
-			////////////////////////////////	MAIN
-
-			struct main_t { int count ; doc_t doc }
-
-			func main_t my_main__init() impure {
-				return main_t(1000, doc_t([ 0.0, 1.0, 2.0 ]))
-			}
-
-			func main_t my_main__msg(main_t state, gui_message_t m) impure {
-				assert(false)
-				return state
-			}
-
-		)"
-	);
+	ut_run_closed_lib(QUARK_POS, program);
 }
 #endif
-/*
- 			////////////////////////////////	MAIN
-
-			func void sleep(int ns){
-				mutable x = 0
-				for(i in 0 ..< ns){
-					x = x + 1
-				}
-			}
-
-			struct main_t { int count ; doc_t doc }
-
-			func main_t my_main__init() impure {
-				sleep(3000)
-				mutable x = 0
-				for(i in 0 ..< 100000){
-					print("main is running: ") ; print(x) ; print("\n")
-					x = x + 1
-					if(x == 40){
-						x = 0
-					}
-					sleep(10000)
-				}
-//				send("gui", gui_message_t("key_press"))
-				return main_t(1000, doc_t([ 0.0, 1.0, 2.0 ]))
-			}
-*/
 
 

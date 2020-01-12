@@ -216,7 +216,7 @@ static const std::string k_corelib = R"(
 	func sha1_t calc_string_sha1(string s)
 	func sha1_t calc_binary_sha1(binary_t d)
 
-	func int get_time_of_day() impure
+	func int get_time_ns() impure
 
 	func string read_text_file(string abs_path) impure
 	func void write_text_file(string abs_path, string data) impure
@@ -949,13 +949,10 @@ void corelib_write_text_file(const std::string& abs_path, const std::string& fil
 	std::chrono::duration<double> elapsed_seconds = b - a;
 	const int ms = static_cast<int>((static_cast<double>(elapsed_seconds.count()) * 1000.0));
 */
-int64_t corelib__get_time_of_day(){
+int64_t corelib__get_time_ns(){
 	const std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
-//	std::chrono::duration<double> elapsed_seconds = t - 0;
-//	const auto ms = t * 1000.0;
-	const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-	const auto result = int64_t(ms);
-	return result;
+	const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
+	return int64_t(ns);
 }
 
 QUARK_TEST("sizeof(int)", "", "", ""){
@@ -963,15 +960,15 @@ QUARK_TEST("sizeof(int)", "", "", ""){
 	QUARK_VERIFY(sizeof(int64_t) == 8);
 }
 
-QUARK_TEST("get_time_of_day_ms()", "", "", ""){
+QUARK_TEST("get_time_ns()", "", "", ""){
 	const auto a = std::chrono::high_resolution_clock::now();
-	std::this_thread::sleep_for(std::chrono::milliseconds(7));
+	std::this_thread::sleep_for(std::chrono::nanoseconds(7));
 	const auto b = std::chrono::high_resolution_clock::now();
 
 	std::chrono::duration<double> elapsed_seconds = b - a;
-	const int ms = static_cast<int>((static_cast<double>(elapsed_seconds.count()) * 1000.0));
+	const int ns = static_cast<int>((static_cast<double>(elapsed_seconds.count()) * 1000000000.0));
 
-	QUARK_VERIFY(ms >= 7)
+	QUARK_VERIFY(ns >= 7)
 }
 
 std::vector<TDirEntry> corelib_get_fsentries_shallow(const std::string& abs_path){
@@ -1244,8 +1241,8 @@ static rt_pod_t corelib_impl__calc_string_sha1(runtime_t* frp, rt_pod_t s0){
 	return to_runtime_value2(backend, a);
 }
 
-static int64_t corelib_impl__get_time_of_day(runtime_t* frp){
-	return corelib__get_time_of_day();
+static int64_t corelib_impl__get_time_ns(runtime_t* frp){
+	return corelib__get_time_ns();
 }
 
 static rt_pod_t corelib_impl__read_text_file(runtime_t* frp, rt_pod_t arg){
@@ -1379,7 +1376,7 @@ std::map<std::string, void*> get_unified_corelib_binds(){
 		{ "calc_string_sha1", reinterpret_cast<void *>(&corelib_impl__calc_string_sha1) },
 		{ "calc_binary_sha1", reinterpret_cast<void *>(&corelib_impl__calc_binary_sha1) },
 
-		{ "get_time_of_day", reinterpret_cast<void *>(&corelib_impl__get_time_of_day) },
+		{ "get_time_ns", reinterpret_cast<void *>(&corelib_impl__get_time_ns) },
 
 		{ "read_text_file", reinterpret_cast<void *>(&corelib_impl__read_text_file) },
 		{ "write_text_file", reinterpret_cast<void *>(&corelib_impl__write_text_file) },

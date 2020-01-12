@@ -72,6 +72,9 @@ inline test_report_t check_exception(const std::string& exception_what){
 }
 
 
+//??? All these should have test_report_t arg and config arg (provide custom sockets_i* etc)
+//??? Run all FLOYD_LANG_PROOF() twice => test code can manual check results which avoids inversion of control problem.
+
 void ut_verify_global_result_lib(const quark::call_context_t& context, const std::string& program, const json_t& expected_result);
 void ut_verify_global_result_nolib(const quark::call_context_t& context, const std::string& program, const json_t& expected_result);
 
@@ -85,6 +88,7 @@ void ut_run_closed_lib(const quark::call_context_t& context, const std::string& 
 void ut_verify_mainfunc_return_nolib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& args, int64_t expected_return);
 
 void ut_verify_exception_nolib(const quark::call_context_t& context, const std::string& program, const std::string& expected_what);
+void ut_verify_exception_lib(const quark::call_context_t& context, const std::string& program, const std::string& expected_what);
 
 
 } // floyd

@@ -89,6 +89,7 @@ struct llvm_process_t : public runtime_basics_i, runtime_process_i {
 	//////////////////////////////////////		STATE - INIT
 
 	llvm_execution_engine_t* ee;
+	sockets_i* sockets;
 	std::string _name_key;
 	process_def_t _process_def;
 	std::thread::id _thread_id;
@@ -119,9 +120,10 @@ struct llvm_execution_engine_t;
 const uint64_t k_debug_magic = 0xFACEFEED05050505;
 
 struct route_t : public runtime_basics_i, runtime_process_i {
-	route_t(runtime_handler_i* runtime_handler, const symbol_table_t* symbol_table) :
+	route_t(runtime_handler_i* runtime_handler, const symbol_table_t* symbol_table, sockets_i* sockets) :
 		_runtime_handler(runtime_handler),
-		_symbol_table(symbol_table)
+		_symbol_table(symbol_table),
+		sockets(sockets)
 	{
 	}
 
@@ -158,6 +160,7 @@ struct route_t : public runtime_basics_i, runtime_process_i {
 
 	public: runtime_handler_i* _runtime_handler;
 	public: const symbol_table_t* _symbol_table;
+	public: sockets_i* sockets;
 };
 
 struct llvm_execution_engine_t {
@@ -284,7 +287,7 @@ void deinit_program(llvm_execution_engine_t& ee);
 
 
 //	Calls init() and will perform deinit() when engine is destructed later.
-std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& program, runtime_handler_i& handler, bool trace_processes);
+std::unique_ptr<llvm_execution_engine_t> init_llvm_jit(llvm_ir_program_t& program, runtime_handler_i& handler, sockets_i& sockets, bool trace_processes);
 
 
 //	Calls main() if it exists, else runs the floyd processes. Returns when execution is done.

@@ -66,10 +66,14 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-t"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "examples/process_test1.floyd"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "examples/http_test.floyd"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

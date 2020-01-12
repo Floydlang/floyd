@@ -1,93 +1,125 @@
+/*
+	This program demos how to run a simple HTTP server at http://localhost:8080/info.html.
+	It runs the server in one floyd process and simultaneously runs my_main in another floyd process.
+
+	All the my_* structs can be replaced with your own types and pass any type and size of data
+	around safely.
+*/
 
 
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////		NETWORK COMPONENT
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////		DEMO
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-func void test(network_component c) impure {
-	let timeout = get_time_ns() + 3000000
-	let addr = ip_address_and_port_t(ip_address2_t("123234234"), 8080)
-	let r = http_request_t(http_request_line_t("GET", "/", "HTTP/1.1"), [], "")
-	let a = execute_http_request(c, addr, r)
-}
-
-
-struct my_state_t {
-}
-
-//??? needs a custom context
-func void connection_i__on_accept(int socket2){
-	let read_data = read_socket_string(socket2)
-	if(size(read_data) == 0){
-		print("empty")
-	}
-	else{
-		write_socket_string(socket2, "Hello!")
-	}
-}
-
-func void test_server() impure {
-	let c = network_component(666)
-	execute_http_server(c, server_params_t(8080), "resp_process")
-}
-
-
-test-def("execute_http_server()", ""){
-}
-
-
-func void f(func string read(), func void write(string v), my_state_t context){
-}
-
-//execute_http_server(server_params_t(8080), f, my_state)
-
-
-struct my_gui_state_t { int x }
-struct my_gui_msg_t { string type }
-
-struct my_server_state_t { int x }
-struct my_server_msg_t { string type }
-
-
-func my_gui_state_t my_gui__init() impure{
-	print("my_gui__init\n")
-	send("c", my_server_msg_t("hi!"))
-	exit()
-	return my_gui_state_t(3)
-}
-func my_gui_state_t my_gui__msg(my_gui_state_t s, my_gui_msg_t m) impure {
-	print("my_gui__msg" + to_string(s) + to_string(m) + "\n")
-	exit()
-	return s
-}
-
-
-func my_server_state_t server_com__init(){
-	print("server_com__init\n")
-	return my_server_state_t(3)
-}
-func my_server_state_t server_com__msg(my_server_state_t s, my_server_msg_t m) impure {
-	print("server_com__msg" + to_string(s) + to_string(m) + "\n")
-	exit()
-	return s
-}
+let c = network_component_t(666)
 
 container-def {
-	"name": "", "tech": "", "desc": "",
+	"name": "",
+	"tech": "",
+	"desc": "",
 	"clocks": {
-		"main": { "a": "my_gui" },
-		"com-clock": { "c": "server_com" }
+		"main_clock": {
+			"main": "my_main"
+		},
+		"http-server": {
+			"server": "my_server"
+		}
 	}
 }
 
-print("Hello, world!\n")
+struct my_doc_t { [double] audio }
 
+struct my_main_message_t { string type }
+struct my_server_message_t { string type ; my_doc_t doc }
+
+
+////////////////////////////////	SERVER
+
+
+struct my_server_t { int audio ; my_doc_t doc }
+
+
+func string make_webpage(){
+	let s = "
+		<head>
+			<title>Hello Floyd Server</title>
+		</head>
+		<body>
+			<h1>Hello Floyd Server</h1>
+			This document may be found <a HREF=\"https://stackoverflow.com/index.html\">here</a>
+		</body>
+	"
+	return s
+}
+
+//	The context can be any type -- make sure it matches what you pass in execute_http_server()
+func bool f(int socket_id, int context) impure {
+	let read_data = read_socket(socket_id)
+	if(read_data == ""){
+		print("empty request\n")
+	}
+	else{
+		let request = unpack_http_request(read_data)
+
+		if(request.request_line == http_request_line_t( "GET", "/info.html", "HTTP/1.1" )){
+			print("Serving page\n")
+			let page = make_webpage()
+
+			let r = pack_http_response(
+				http_response_t (
+					http_response_status_line_t ( "HTTP/1.1", "200 OK" ),
+					[
+						http_header_t( "Content-Type", "text/html" ),
+						http_header_t( "Content-Length", to_string(size(page)) )
+					],
+					page
+				)
+			)
+			write_socket(socket_id, r)
+		}
+		else {
+			let r = pack_http_response(
+				http_response_t ( http_response_status_line_t ( "HTTP/1.1", "404 OK" ), {}, "" )
+			)
+			write_socket(socket_id, r)
+		}
+	}
+	return true
+}
+
+func my_server_t my_server__init() impure {
+	execute_http_server(c, 8080, f, 0)
+	return my_server_t(0, my_doc_t ( [0.0] ) )
+}
+
+func my_server_t my_server__msg(my_server_t state, my_main_message_t m) impure {
+	assert(false)
+	return state
+}
+
+
+////////////////////////////////	MAIN
+
+
+func void sleep_busy_ms(int ms) impure {
+	let end_ns = get_time_ns() + ms * 1000
+	while(get_time_ns() < end_ns){
+	}
+}
+
+struct my_main_t { int count ; my_doc_t doc }
+
+func my_main_t my_main__init() impure {
+	mutable x = 0
+	for(i in 0 ..< 100000){
+		print("main is running: ") ; print(x) ; print("\n")
+		x = x + 1
+		if(x == 40){
+			x = 0
+		}
+		sleep_busy_ms(3000)
+	}
+
+	return my_main_t(1000, my_doc_t([ 0.0, 1.0, 2.0 ]))
+}
+
+func my_main_t my_main__msg(my_main_t state, my_main_message_t m) impure {
+	assert(false)
+	return state
+}

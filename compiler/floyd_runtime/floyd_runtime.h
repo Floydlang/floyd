@@ -15,8 +15,10 @@
 #include "compiler_basics.h"
 #include "ast_value.h"
 #include "value_backend.h"
+//#include "floyd_sockets.h"
 
 struct json_t;
+struct sockets_i;
 
 namespace floyd {
 
@@ -110,6 +112,24 @@ struct route_process_handler_t : public runtime_process_i {
 */
 
 struct runtime_t {
+
+	runtime_t(
+		const std::string& name,
+		value_backend_t* backend,
+		runtime_basics_i* basics,
+		runtime_process_i* handler,
+		sockets_i* sockets
+	) :
+		name(name),
+		backend(backend),
+		basics(basics),
+		handler(handler),
+		sockets(sockets)
+	{
+		QUARK_ASSERT(check_invariant());
+	}
+
+
 	bool check_invariant() const {
 		QUARK_ASSERT(backend != nullptr && backend->check_invariant());
 //		QUARK_ASSERT(handler != nullptr);
@@ -120,6 +140,7 @@ struct runtime_t {
 	value_backend_t* backend;
 	runtime_basics_i* basics;
 	runtime_process_i* handler;
+	sockets_i* sockets;
 };
 
 inline value_backend_t& get_backend(runtime_t* runtime){

@@ -78,11 +78,11 @@ http_response_t unpack_http_response(const std::string& s);
 
 
 //	Lookups up addr, uses the first IP. Always IPv4 (for now).
-ip_address_and_port_t make_http_dest(const std::string& addr, int port, int af);
+ip_address_and_port_t make_http_dest(sockets_i& sockets, const std::string& addr, int port, int af);
 
-std::string execute_http_request(const ip_address_and_port_t& addr, const std::string& message);
+std::string execute_http_request(sockets_i& sockets, const ip_address_and_port_t& addr, const std::string& message);
 
 
-void execute_http_server(const server_params_t& params, connection_i& connection);
+void execute_http_server(sockets_i& sockets, const server_params_t& params, connection_i& connection);
 
 #endif /* floyd_http_hpp */
