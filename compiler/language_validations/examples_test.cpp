@@ -16,8 +16,6 @@ using namespace floyd;
 
 
 
-#if RUN_EXAMPLE_AND_DOCS_TESTS
-
 //######################################################################################################################
 //	RUN ALL EXAMPLE PROGRAMS IN EXAMPLES-DIRECTORY-- VERIFY THEY WORK
 //######################################################################################################################
@@ -57,4 +55,3 @@ QUARK_TEST("Floyd test suite", "game_of_life.floyd", "", ""){
 #endif
 
 
-#endif
