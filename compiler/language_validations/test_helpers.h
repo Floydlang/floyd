@@ -42,6 +42,11 @@ void test_floyd(const quark::call_context_t& context, const compilation_unit_t& 
 
 
 
+
+#define FLOYD_LANG_PROOF QUARK_TEST
+#define FLOYD_LANG_PROOF_VIP QUARK_TEST_VIP
+
+
 //////////////////////////////////////////		SHORTCUTS
 
 

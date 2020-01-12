@@ -91,18 +91,3 @@ void throw_errno2(const std::string& header, const unix_errno_t& error) {
 	const auto what = make_what(header, error);
 	throw std::runtime_error(what);
 }
-
-
-/*
-void default_runtime::runtime_i__on_assert(const source_code_location& location, const char expression[]){
-	QUARK_TRACE_SS(std::string("Assertion failed ") << location._source_file << ", " << location._line_number << " \"" << expression << "\"");
-
-	int error = errno;
-	if(error != 0){
-		perror("perror() says");
-	}
-
-	throw std::logic_error("assert");
-}
-*/
-

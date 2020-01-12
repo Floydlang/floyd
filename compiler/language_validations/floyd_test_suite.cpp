@@ -64,17 +64,6 @@ unsupported syntax
 #endif
 
 
-#define FLOYD_LANG_PROOF(class_under_test, function_under_test, scenario, expected_result) \
-	static void QUARK_UNIQUE_LABEL(floyd_lang_test_suite_)(); \
-	static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(floyd_lang_test_suite_), false); \
-	static void QUARK_UNIQUE_LABEL(floyd_lang_test_suite_)()
-
-#define FLOYD_LANG_PROOF_VIP(class_under_test, function_under_test, scenario, expected_result) \
-	static void QUARK_UNIQUE_LABEL(floyd_lang_test_suite_)(); \
-	static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(floyd_lang_test_suite_), true); \
-	static void QUARK_UNIQUE_LABEL(floyd_lang_test_suite_)()
-
-
 
 static json_t make_expected_int(int64_t v){
 	types_t types;

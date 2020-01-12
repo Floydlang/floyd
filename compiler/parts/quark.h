@@ -497,7 +497,7 @@ struct call_context_t {
 	source_code_location location;
 };
 
-	typedef void (*unit_test_function)();
+typedef void (*unit_test_function)();
 
 
 	////////////////////////////		unit_test_def
@@ -575,6 +575,28 @@ struct call_context_t {
 
 
 	////////////////////////////		Macros used by client code
+
+
+	/*
+		QUARK_TEST("my class", "my_func()", "no params", "returns 1"){
+			QUARK_ASSERT(my_func() == 1);
+		}
+
+
+		//	Make prototype. The function name is generated to avoid collisions.
+		static void quark_test_f_123();
+
+		//	Create a global object of type unit_test_rec. It's constructor registers the new function and the 4 strings etc.
+		//	The test is not executed now. The registration is done at static initialization time.
+		static ::quark::unit_test_rec rec_123(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, quark_test_f_123, false, "");
+
+		//	Define the test function.
+		static void quark_test_f_123()
+		
+		{
+			QUARK_ASSERT(my_func() == 1);
+		}
+	*/
 
 
 	//	The generated function is static and will be stripped in optimized builds (it will not be referenced).
@@ -687,7 +709,7 @@ inline void ut_verify_stringvec(const quark::call_context_t& context, const std:
 
 	#define QUARK_VERIFY(exp)
 
-
+/*
 inline void fail_test(const call_context_t& context){
 }
 
@@ -698,6 +720,7 @@ inline void ut_verify_string(const quark::call_context_t& context, const std::st
 }
 inline void ut_verify_stringvec(const quark::call_context_t& context, const std::vector<std::string>& result, const std::vector<std::string>& expected){
 }
+*/
 
 #endif
 
@@ -715,6 +738,37 @@ inline void on_unit_test_failed_hook(runtime_i* runtime, const source_code_locat
 
 	runtime->runtime_i__on_unit_test_failed(location, expression);
 }
+
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//	OPTIONAL TEST RUNNER IMPLEMENTATION -- ??? BREAK OUT TO SEPARATE HEADER
+//	====================================================================================================================
+
+
+
+
 
 inline std::string path_to_name(const std::string& path){
 	size_t pos = path.size();
@@ -758,7 +812,6 @@ inline bool run_test(const unit_test_def& test, bool oneline){
 		return false;
 	}
 }
-
 
 inline std::vector<unit_test_def> sort_tests(const std::vector<unit_test_def>& tests, const std::vector<std::string>& source_file_order){
 	std::vector<unit_test_def> ordered_tests;
@@ -897,7 +950,10 @@ inline void run_tests(const std::vector<std::string>& source_file_order, bool on
 	run_tests(*unit_test_rec::registry_instance, source_file_order, oneline);
 }
 
-#endif
+
+
+
+
 
 
 //	Default implementation
@@ -920,6 +976,19 @@ struct default_runtime : public runtime_i {
 	///////////////		State.
 		const std::string _test_data_root;
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 }	//	quark
