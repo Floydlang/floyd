@@ -1,3 +1,12 @@
+/*
+	This program demos how to run a simple HTTP server at http://localhost:8080/info.html.
+	It runs the server in one floyd process and simultaneously runs my_main in another floyd process.
+
+	All the my_* structs can be replaced with your own types and pass any type and size of data
+	around safely.
+*/
+
+
 let c = network_component_t(666)
 
 container-def {
@@ -14,16 +23,16 @@ container-def {
 	}
 }
 
-struct doc_t { [double] audio }
+struct my_doc_t { [double] audio }
 
-struct gui_message_t { string type }
-struct server_message_t { string type ; doc_t doc }
+struct my_main_message_t { string type }
+struct my_server_message_t { string type ; my_doc_t doc }
 
 
 ////////////////////////////////	SERVER
 
 
-struct server_t { int audio ; doc_t doc }
+struct my_server_t { int audio ; my_doc_t doc }
 
 
 func string make_webpage(){
@@ -39,6 +48,7 @@ func string make_webpage(){
 	return s
 }
 
+//	The context can be any type -- make sure it matches what you pass in execute_http_server()
 func bool f(int socket_id, int context) impure {
 	let read_data = read_socket(socket_id)
 	if(read_data == ""){
@@ -64,19 +74,21 @@ func bool f(int socket_id, int context) impure {
 			write_socket(socket_id, r)
 		}
 		else {
-			let r = pack_http_response(http_response_t ( http_response_status_line_t ( "HTTP/1.1", "404 OK" ), {}, "" ))
+			let r = pack_http_response(
+				http_response_t ( http_response_status_line_t ( "HTTP/1.1", "404 OK" ), {}, "" )
+			)
 			write_socket(socket_id, r)
 		}
 	}
 	return true
 }
 
-func server_t my_server__init() impure {
+func my_server_t my_server__init() impure {
 	execute_http_server(c, 8080, f, 0)
-	return server_t(0, doc_t ( [0.0] ) )
+	return my_server_t(0, my_doc_t ( [0.0] ) )
 }
 
-func server_t my_server__msg(server_t state, server_message_t m) impure {
+func my_server_t my_server__msg(my_server_t state, my_main_message_t m) impure {
 	assert(false)
 	return state
 }
@@ -85,15 +97,15 @@ func server_t my_server__msg(server_t state, server_message_t m) impure {
 ////////////////////////////////	MAIN
 
 
-func void sleep_busy(int ms) impure {
+func void sleep_busy_ms(int ms) impure {
 	let end_ns = get_time_ns() + ms * 1000
 	while(get_time_ns() < end_ns){
 	}
 }
 
-struct main_t { int count ; doc_t doc }
+struct my_main_t { int count ; my_doc_t doc }
 
-func main_t my_main__init() impure {
+func my_main_t my_main__init() impure {
 	mutable x = 0
 	for(i in 0 ..< 100000){
 		print("main is running: ") ; print(x) ; print("\n")
@@ -101,13 +113,13 @@ func main_t my_main__init() impure {
 		if(x == 40){
 			x = 0
 		}
-		sleep_busy(3000)
+		sleep_busy_ms(3000)
 	}
 
-	return main_t(1000, doc_t([ 0.0, 1.0, 2.0 ]))
+	return my_main_t(1000, my_doc_t([ 0.0, 1.0, 2.0 ]))
 }
 
-func main_t my_main__msg(main_t state, gui_message_t m) impure {
+func my_main_t my_main__msg(my_main_t state, my_main_message_t m) impure {
 	assert(false)
 	return state
 }
