@@ -268,6 +268,95 @@ void test_floyd(const quark::call_context_t& context, const compilation_unit_t& 
 	}
 }
 
+
+struct test_sockets_t : public sockets_i {
+	public: ~test_sockets_t() override {
+	}
+
+	public: std::vector<uint8_t> sockets_i__read_socket(int socket) override {
+		QUARK_ASSERT(false);
+	}
+	public: void sockets_i__write_socket(int socket, const std::vector<uint8_t>& data) override {
+		QUARK_ASSERT(false);
+	}
+
+	public: hostent_t sockets_i__lookup_host(const ip_address_t& addr) override {
+		QUARK_ASSERT(false);
+	}
+	public: hostent_t sockets_i__lookup_host(const std::string& name) override {
+		return lookup_host_by_name[name];
+	}
+
+	public: connection_to_server_t sockets_i__connect_to_server(const ip_address_and_port_t& server_addr) override {
+		QUARK_ASSERT(false);
+	}
+	public: void sockets_i__execute_server(const server_params_t& params, connection_i& connection) override {
+		QUARK_ASSERT(false);
+	}
+
+	std::map<std::string, hostent_t> lookup_host_by_name;
+};
+
+void test_floyd2(const quark::call_context_t& context, const compilation_unit_t& cu, const compiler_settings_t& settings, const std::vector<std::string>& main_args, const test_report_t& expected, bool check_printout){
+	QUARK_ASSERT(cu.check_invariant());
+	QUARK_ASSERT(settings.check_invariant());
+
+	semantic_ast_t semast( {}, {} );
+
+	try {
+		const auto temp_semast = compile_to_sematic_ast__errors(cu);
+		semast = temp_semast;
+	}
+	catch(const std::runtime_error& e){
+		ut_verify_string(context, std::string(e.what()), expected.exception_what);
+		return;
+	}
+	catch(...){
+		throw std::exception();
+	}
+
+
+	test_sockets_t sockets;
+	sockets.lookup_host_by_name = {
+		{ "example.com", hostent_t { "example.com", { "a", "b" }, { ip_address_t(), ip_address_t() } } }
+	};
+
+	if(k_run_bc){
+		test_handler_t test_handler;
+		const run_env_t env {
+			settings,
+			main_args,
+			&test_handler,
+			&sockets
+		};
+
+		auto bc_report = run_test_program_bc(semast, env);
+		bc_report.print_out = test_handler._print_output;
+		if(compare(bc_report, expected, check_printout) == false){
+			QUARK_SCOPED_TRACE("BYTE CODE INTERPRETER FAILURE");
+			ut_verify_report(context, bc_report, expected);
+		}
+	}
+
+	if(k_run_llvm){
+		test_handler_t test_handler;
+		const run_env_t env {
+			settings,
+			main_args,
+			&test_handler,
+			&sockets
+		};
+
+		auto llvm_report = run_test_program_llvm(semast, env);
+		llvm_report.print_out = test_handler._print_output;
+
+		if(compare(llvm_report, expected, check_printout) == false){
+			QUARK_SCOPED_TRACE("LLVM JIT FAILURE");
+			ut_verify_report(context, llvm_report, expected);
+		}
+	}
+}
+
 /*
 void test_floyd2(const quark::call_context_t& context, const compilation_unit_t& cu, const compiler_settings_t& settings, const std::vector<std::string>& main_args, std::function< bool(const test_report_t& result) >& check_result){
 }

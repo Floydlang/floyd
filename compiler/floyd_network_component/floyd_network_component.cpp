@@ -13,6 +13,9 @@
 #include "floyd_http.h"
 #include "test_helpers.h"
 
+#include "compiler_helpers.h"
+#include "semantic_ast.h"
+#include "text_parser.h"
 
 namespace floyd {
 
@@ -670,44 +673,32 @@ QUARK_TEST("network component", "lookup_host_from_ip()", "", ""){
 }
 
 
-#if 0
-void test_floyd(const quark::call_context_t& context, const compilation_unit_t& cu, const compiler_settings_t& settings, const std::vector<std::string>& main_args, const test_report_t& expected, bool check_printout){
-	QUARK_ASSERT(cu.check_invariant());
-	QUARK_ASSERT(settings.check_invariant());
-
-	semantic_ast_t semast( {}, {} );
-
-	try {
-		const auto temp_semast = compile_to_sematic_ast__errors(cu);
-		semast = temp_semast;
-	}
-	catch(const std::runtime_error& e){
-		ut_verify_string(context, std::string(e.what()), expected.exception_what);
-		return;
-	}
-	catch(...){
-		throw std::exception();
-	}
 
 
-	if(k_run_bc){
-		const auto bc_report = run_test_program_bc(semast, main_args, settings.config);
-		if(compare(bc_report, expected, check_printout) == false){
-			QUARK_SCOPED_TRACE("BYTE CODE INTERPRETER FAILURE");
-			ut_verify_report(context, bc_report, expected);
-		}
-	}
 
-	if(k_run_llvm){
-		const auto llvm_report = run_test_program_llvm(semast, settings, main_args, false);
-
-		if(compare(llvm_report, expected, check_printout) == false){
-			QUARK_SCOPED_TRACE("LLVM JIT FAILURE");
-			ut_verify_report(context, llvm_report, expected);
-		}
-	}
+void ut_run_closed_libXXX(const quark::call_context_t& context, const std::string& program){
+	test_floyd2(context, make_compilation_unit(program, "", compilation_unit_mode::k_include_core_lib), make_default_compiler_settings(), {}, check_nothing(), false);
 }
-#endif
+
+QUARK_TEST_VIP("network component", "lookup_host_from_name()", "", ""){
+	ut_run_closed_libXXX(
+		QUARK_POS,
+		R"(
+
+			let a = lookup_host_from_name("example.com")
+
+			print(a)
+
+			assert(a.official_host_name == "example.com")
+			assert(a.name_aliases == [ "a", "b" ])
+
+//			assert(size(a.addresses_IPv4) == 0)
+
+		)"
+	);
+}
+
+
 
 QUARK_TEST("network component", "lookup_host_from_name()", "", ""){
 	ut_run_closed_lib(

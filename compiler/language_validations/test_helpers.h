@@ -38,6 +38,8 @@ bool operator==(const test_report_t& lhs, const test_report_t& rhs);
 void ut_verify_report(const quark::call_context_t& context, const test_report_t& result, const test_report_t& expected);
 
 void test_floyd(const quark::call_context_t& context, const compilation_unit_t& cu, const compiler_settings_t& settings, const std::vector<std::string>& main_args, const test_report_t& expected, bool check_printout);
+
+void test_floyd2(const quark::call_context_t& context, const compilation_unit_t& cu, const compiler_settings_t& settings, const std::vector<std::string>& main_args, const test_report_t& expected, bool check_printout);
 //void test_floyd2(const quark::call_context_t& context, const compilation_unit_t& cu, const compiler_settings_t& settings, const std::vector<std::string>& main_args, std::function< bool(const test_report_t& result) >& check_result);
 
 
