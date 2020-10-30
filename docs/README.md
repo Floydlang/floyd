@@ -1,8 +1,6 @@
 ![](floyd_logo_banner.png)
 
 
-[![CircleCI](https://circleci.com/gh/Floydlang/floyd/tree/master.svg?style=svg)](https://circleci.com/gh/Floydlang/floyd/tree/master)
-
 
 # TL;DR
 **WHAT:** General-purpose programming language with a unique take on programming and performance.
