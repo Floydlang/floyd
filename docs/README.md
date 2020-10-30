@@ -11,7 +11,7 @@
 
 **THIS REPO:** This Github repository holds the compiler, the bytecode interpreter and documentation.
 
-**2019:** 1) first generation of Injector (optimiser), 2) Flesh out language, approx 15% more features.
+**NEXT:** 1) first generation of Injector (optimiser), 2) Flesh out language, approx 15% more features, 3) Graphical tools
 
 [**[FLOYD BLOG]**](https://medium.com/floyd-programming-language "Floyd Blog") - [**[MANUAL]**](floyd_manual/floyd_manual.md "Manual")
 
