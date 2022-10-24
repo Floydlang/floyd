@@ -14,6 +14,11 @@ static const bool k_trace_after = false;
 
 #include "floyd_llvm_helpers.h"
 
+
+#include "llvm/CodeGen/CommandFlags.h"
+
+
+
 #include <llvm/IR/Argument.h>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Constants.h>
@@ -56,7 +61,7 @@ static const bool k_trace_after = false;
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
 
-#include "llvm/Bitcode/BitstreamWriter.h"
+#include "llvm/Bitstream/BitstreamWriter.h"
 
 
 
@@ -69,7 +74,7 @@ static const bool k_trace_after = false;
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/Bitcode/BitcodeWriterPass.h"
-#include "llvm/CodeGen/CommandFlags.inc"
+//#include "llvm/CodeGen/CommandFlags.inc"
 #include "llvm/CodeGen/TargetPassConfig.h"
 #include "llvm/Config/llvm-config.h"
 #include "llvm/IR/DataLayout.h"
@@ -377,15 +382,15 @@ void optimize_module_mutating(llvm_instance_t& instance, std::unique_ptr<llvm::M
 	Triple ModuleTriple(M->getTargetTriple());
 	TargetMachine *Machine = instance.target.target_machine;
 
-	std::string CPUStr = Machine->getTargetCPU();
-	std::string FeaturesStr = Machine->getTargetFeatureString();
-	const TargetOptions Options = InitTargetOptionsFromCodeGenFlags();
+	std::string CPUStr = Machine->getTargetCPU().str();
+	std::string FeaturesStr = Machine->getTargetFeatureString().str();
+	const TargetOptions Options = codegen::InitTargetOptionsFromCodeGenFlags();
 
 	TargetMachine* TM = Machine;
 
 	// Override function attributes based on CPUStr, FeaturesStr, and command line
 	// flags.
-	setFunctionAttributes(CPUStr, FeaturesStr, *M);
+	codegen::setFunctionAttributes(CPUStr, FeaturesStr, *M);
 
 
 	// Create a PassManager to hold and optimize the collection of passes we are

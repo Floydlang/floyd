@@ -1984,7 +1984,7 @@
 				);
 				LLVM_LTO = YES_THIN;
 				SDKROOT = macosx;
-				SYSTEM_HEADER_SEARCH_PATHS = "/usr/local/Cellar/zlib/1.2.11/include /usr/local/Cellar/llvm/8.0.1/include";
+				SYSTEM_HEADER_SEARCH_PATHS = "/usr/local/Cellar/zlib/1.2.11/include /usr/local/Cellar/llvm/8.0.1/include /opt/homebrew/Cellar/llvm@11/11.1.0_4/include";
 			};
 			name = "Release - Profiling";
 		};
@@ -1995,6 +1995,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)",
 					/usr/local/Cellar/llvm/8.0.1/lib,
+					"\"/opt/homebrew/Cellar/llvm@11/11.1.0_4/lib\"",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				PRODUCT_NAME = floyd;
@@ -2057,7 +2058,7 @@
 				);
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
-				SYSTEM_HEADER_SEARCH_PATHS = "/usr/local/Cellar/zlib/1.2.11/include /usr/local/Cellar/llvm/8.0.1/include";
+				SYSTEM_HEADER_SEARCH_PATHS = "/usr/local/Cellar/zlib/1.2.11/include /usr/local/Cellar/llvm/8.0.1/include /opt/homebrew/Cellar/llvm@11/11.1.0_4/include";
 			};
 			name = Debug;
 		};
@@ -2114,7 +2115,7 @@
 				);
 				LLVM_LTO = YES_THIN;
 				SDKROOT = macosx;
-				SYSTEM_HEADER_SEARCH_PATHS = "/usr/local/Cellar/zlib/1.2.11/include /usr/local/Cellar/llvm/8.0.1/include";
+				SYSTEM_HEADER_SEARCH_PATHS = "/usr/local/Cellar/zlib/1.2.11/include /usr/local/Cellar/llvm/8.0.1/include /opt/homebrew/Cellar/llvm@11/11.1.0_4/include";
 			};
 			name = Release;
 		};
@@ -2125,6 +2126,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)",
 					/usr/local/Cellar/llvm/8.0.1/lib,
+					"\"/opt/homebrew/Cellar/llvm@11/11.1.0_4/lib\"",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				PRODUCT_NAME = floyd;
@@ -2138,6 +2140,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)",
 					/usr/local/Cellar/llvm/8.0.1/lib,
+					"\"/opt/homebrew/Cellar/llvm@11/11.1.0_4/lib\"",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				PRODUCT_NAME = floyd;

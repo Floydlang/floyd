@@ -81,8 +81,9 @@ llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, const type_
 
 	auto& builder = gen_acc.get_builder();
 
-	//	Callee, as LLVM function signature. It gets the param #0 runtime pointer and each ANY is expanded to valye/type pairs.
-	const auto& callee_mapping = *gen_acc.gen.type_lookup.find_from_type(callee_function_type).optional_function_def;
+	//	Callee, as LLVM function signature. It gets the param #0 runtime pointer and each ANY is expanded to value / type pairs.
+    const auto& callee_type_entry = gen_acc.gen.type_lookup.find_from_type(callee_function_type);
+    const auto& callee_mapping = *callee_type_entry.optional_function_def;
 
 	//	Generate code that evaluates all argument expressions.
 	std::vector<llvm::Value*> arg_regs;
@@ -123,7 +124,10 @@ llvm::Value* generate_floyd_call(llvm_function_generator_t& gen_acc, const type_
 		}
 	}
 	QUARK_ASSERT(arg_regs.size() == callee_mapping.args.size());
-	auto result0_reg = builder.CreateCall(&callee_reg, arg_regs, "");
+
+	llvm::PointerType* function_type0 = llvm::cast<llvm::PointerType>(callee_type_entry.llvm_type_specific);
+	llvm::FunctionType* function_type = llvm::cast<llvm::FunctionType>(function_type0->getElementType());
+	auto result0_reg = builder.CreateCall(function_type, &callee_reg, arg_regs, "");
 
 	for(const auto& m: destroy){
 		generate_release(gen_acc, *m.first, m.second);

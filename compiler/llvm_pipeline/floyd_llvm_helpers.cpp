@@ -14,6 +14,8 @@
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
+#include "llvm/Support/Host.h"
+
 
 #include <string>
 #include <vector>
@@ -273,7 +275,7 @@ std::string print_type(llvm::Type* type){
 		type->print(rso);
 
 		if(type->isStructTy()){
-			std::string name = type->getStructName();
+			std::string name = type->getStructName().str();
 			rso << name;
 		}
 

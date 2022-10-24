@@ -30,7 +30,7 @@ static const bool k_trace_function_link_map = false;
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/IR/DataLayout.h>
 
-//#include "llvm/Bitcode/BitstreamWriter.h"
+//#include "llvm/Bitstream/BitstreamWriter.h"
 
 
 #include <thread>

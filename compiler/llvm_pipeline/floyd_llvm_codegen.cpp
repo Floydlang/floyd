@@ -78,7 +78,7 @@ static const bool k_trace_pass_io = false;
 
 
 
-#include "llvm/Bitcode/BitstreamWriter.h"
+#include "llvm/Bitstream/BitstreamWriter.h"
 
 #include <map>
 #include <algorithm>
@@ -2388,7 +2388,7 @@ static void generate_all_floyd_function_bodies(llvm_code_generator_t& gen_acc, c
 }
 
 //	Generate LLVM function nodes and merge them into link map.
-static std::vector<function_link_entry_t> generate_function_nodes(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<function_link_entry_t>& link_map1){
+static std::vector<function_link_entry_t> generate_empty_function_nodes(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<function_link_entry_t>& link_map1){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	std::vector<function_link_entry_t> result;
@@ -2396,13 +2396,14 @@ static std::vector<function_link_entry_t> generate_function_nodes(llvm::Module& 
 		auto existing_f = module.getFunction(e.link_name.s);
 		QUARK_ASSERT(existing_f == nullptr);
 
-		auto f0 = module.getOrInsertFunction(e.link_name.s, e.llvm_function_type);
-		auto f = llvm::cast<llvm::Function>(f0);
+		auto callee = module.getOrInsertFunction(e.link_name.s, e.llvm_function_type);
+		auto f = module.getFunction(e.link_name.s);
 
-		QUARK_ASSERT(check_invariant__function(f));
+		//QUARK_ASSERT(check_invariant__function(f));
 		QUARK_ASSERT(check_invariant__module(&module));
 
 		//	Set names for all function defintion's arguments - makes IR easier to read.
+#if 1
 		if(e.function_type_or_undef.is_undefined() == false && e.arg_names_or_empty.empty() == false){
 			const auto unnamed_mapping_ptr = type_lookup.find_from_type(e.function_type_or_undef).optional_function_def;
 			if(unnamed_mapping_ptr != nullptr){
@@ -2421,11 +2422,22 @@ static std::vector<function_link_entry_t> generate_function_nodes(llvm::Module& 
 				}
 			}
 		}
+#endif
 
-		QUARK_ASSERT(check_invariant__function(f));
+		//QUARK_ASSERT(check_invariant__function(f));
 		QUARK_ASSERT(check_invariant__module(&module));
 
-		result.push_back(function_link_entry_t{ e.module, e.link_name, e.llvm_function_type, f, e.function_type_or_undef, e.arg_names_or_empty, e.native_f });
+		result.push_back(
+			function_link_entry_t {
+				e.module,
+				e.link_name,
+				e.llvm_function_type,
+				f,
+				e.function_type_or_undef,
+				e.arg_names_or_empty,
+				e.native_f
+			}
+		);
 	}
 	if(false){
 		trace_function_link_map(type_lookup.state.types, result);
@@ -2572,7 +2584,7 @@ static module_output_t generate_module(llvm_instance_t& instance, const std::str
 	if(false){
 		trace_function_link_map(type_lookup.state.types, link_map1);
 	}
-	const auto link_map2 = generate_function_nodes(*module, type_lookup, link_map1);
+	const auto link_map2 = generate_empty_function_nodes(*module, type_lookup, link_map1);
 
 	auto gen_acc = llvm_code_generator_t(instance, module.get(), semantic_ast._tree._types, type_lookup, link_map2, settings, semantic_ast.intrinsic_signatures);
 
@@ -2602,7 +2614,7 @@ static module_output_t generate_module(llvm_instance_t& instance, const std::str
 }
 
 
-static std::vector<uint8_t> write_object_file(llvm::Module& module, const target_t& target, llvm::TargetMachine::CodeGenFileType type){
+static std::vector<uint8_t> write_object_file(llvm::Module& module, const target_t& target, llvm::CodeGenFileType type){
 	QUARK_ASSERT(target.check_invariant());
 
 	//	??? Migrate from legacy.
@@ -2623,12 +2635,12 @@ static std::vector<uint8_t> write_object_file(llvm::Module& module, const target
 std::vector<uint8_t> write_object_file(llvm_ir_program_t& program, const target_t& target){
 	QUARK_ASSERT(target.check_invariant());
 
-	return write_object_file(*program.module, target, llvm::TargetMachine::CGFT_ObjectFile);
+	return write_object_file(*program.module, target, llvm::CGFT_ObjectFile);
 }
 std::string write_ir_file(llvm_ir_program_t& program, const target_t& target){
 	QUARK_ASSERT(target.check_invariant());
 
-	const auto a = write_object_file(*program.module, target, llvm::TargetMachine::CGFT_AssemblyFile);
+	const auto a = write_object_file(*program.module, target, llvm::CGFT_AssemblyFile);
 	return std::string(a.begin(), a.end());
 }
 
